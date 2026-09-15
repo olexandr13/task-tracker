@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  },
+  "overrides": [
+    {
+      "files": ["src/core/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["react", "react-*", "react/*", "react-dom/*"],
+                "message": "src/core must stay framework-free. Move anything React-aware into src/app."
+              },
+              {
+                "group": ["**/app/**", "**/storage/**", "../app", "../storage"],
+                "message": "src/core must not depend on the app or storage layers. Dependencies point inwards only."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
