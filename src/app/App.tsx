@@ -1,26 +1,36 @@
-import { isComplete } from '../core'
-import { localStorageTaskRepository } from '../storage/localStorageTaskRepository'
-import { AddTaskForm } from './components/AddTaskForm'
-import { TaskList } from './components/TaskList'
-import { useTasks } from './useTasks'
+import { firebaseApp } from '../storage/firebaseApp'
+import { createFirebaseAuthService } from '../storage/firebaseAuthService'
+import { SignInScreen } from './components/SignInScreen'
+import { TasksScreen } from './TasksScreen'
+import { useAuth } from './useAuth'
 
+/** One for the life of the page. */
+const auth = createFirebaseAuthService(firebaseApp)
+
+/**
+ * Nothing is shown without an account: the tasks are the signed-in person's,
+ * so until someone is signed in there are none to show.
+ */
 export function App() {
-  const { tasks, isLoading, addTask, complete, remove } = useTasks(localStorageTaskRepository)
+  const state = useAuth(auth)
 
-  // Done tasks sink to the bottom; sort is stable, so the rest keep their order.
-  const ordered = [...tasks].sort((a, b) => Number(isComplete(a)) - Number(isComplete(b)))
+  // A saved session takes a moment to read back. Showing nothing for it beats
+  // flashing the sign-in screen at someone who is already signed in.
+  if (state.status === 'checking') {
+    return null
+  }
 
-  return (
-    <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
+  if (state.status === 'signed-out') {
+    return <SignInScreen onSignIn={() => auth.signInWithGoogle()} />
+  }
 
-      <AddTaskForm onAdd={addTask} />
+  function handleSignOut() {
+    auth.signOut().catch((error: unknown) => {
+      console.error('Could not sign out.', error)
+    })
+  }
 
-      {isLoading ? (
-        <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
-      ) : (
-        <TaskList tasks={ordered} onComplete={complete} onRemove={remove} />
-      )}
-    </main>
-  )
+  // Keyed by the account, so nothing held on screen for one person is still
+  // there when another signs in.
+  return <TasksScreen key={state.account.id} account={state.account} onSignOut={handleSignOut} />
 }

@@ -6,6 +6,11 @@
  * reusable if the app ever grows a second front end. See CLAUDE.md.
  */
 
+import { InvalidDayError, isLocalDay, type LocalDay } from './day'
+import { assertValidRepeat, countsForCurrentOccurrence, type Repeat } from './repeat'
+import { createSubtask, isSubtaskComplete, type Subtask, type SubtaskId } from './subtask'
+import { normalizeTitle } from './title'
+
 export type TaskId = string
 
 export type TaskStatus = 'todo' | 'done'
@@ -13,48 +18,401 @@ export type TaskStatus = 'todo' | 'done'
 export interface Task {
   readonly id: TaskId
   readonly title: string
+  /**
+   * Free text about the task, or `''` when there is none. Unlike a title, an
+   * empty description is a fair thing to want — clearing one is ordinary — so
+   * emptiness is spelled a single way rather than being split between `''` and
+   * `null`, which would only invite one of them to be forgotten.
+   */
+  readonly description: string
+  /**
+   * The last thing that happened to the task. For a repeating task this is the
+   * record of its most recent completion, not the answer to "is it done now" —
+   * that answer is `isComplete`, which takes the current occurrence into account.
+   */
   readonly status: TaskStatus
   /** ISO 8601 timestamp. */
   readonly createdAt: string
   /** ISO 8601 timestamp, or null while the task is still todo. */
   readonly completedAt: string | null
-}
-
-export class EmptyTitleError extends Error {
-  constructor() {
-    super('A task needs a title.')
-    this.name = 'EmptyTitleError'
-  }
+  /** A recurrence rule, or null for a task that happens once. */
+  readonly repeat: Repeat | null
+  /**
+   * The local day a one-off is due, or null for one that has no day. Always null
+   * on a repeating task: its rule is what says which days it falls on. See ./due.
+   */
+  readonly dueDate: LocalDay | null
+  /**
+   * The checklist, in the order it was written. Empty for a task that has no
+   * parts worth naming — which is most of them. A task carrying one is done
+   * exactly when every item on it is; see `syncWithSubtasks`. The items are not
+   * tasks: they never reach a period's count, and they have no trash of their
+   * own. See ./subtask.
+   */
+  readonly subtasks: readonly Subtask[]
+  /**
+   * ISO 8601 timestamp of when the task went to the trash, or null while it is
+   * live. Deleting is reversible, so a deleted task is still a task — it is just
+   * no longer part of the list, or of any period's count. See ./trash.
+   */
+  readonly deletedAt: string | null
+  /**
+   * Where the task sits in the list: lower comes first. Done tasks still sink
+   * below the rest; this orders each group. See ./order.
+   */
+  readonly order: number
 }
 
 /**
  * `now` is injectable so tests stay deterministic, and so future rules that care
  * about time (streaks, daily quotas) have a seam to hook into.
+ *
+ * A task on its own is first in nothing: `appendTask` is what gives it its place
+ * at the end of a list.
  */
-export function createTask(title: string, now: Date = new Date()): Task {
-  const trimmed = title.trim()
-  if (trimmed.length === 0) {
-    throw new EmptyTitleError()
+export function createTask(title: string, repeat: Repeat | null = null, now: Date = new Date()): Task {
+  const trimmed = normalizeTitle(title)
+
+  if (repeat !== null) {
+    assertValidRepeat(repeat)
   }
 
   return {
     id: crypto.randomUUID(),
     title: trimmed,
+    description: '',
     status: 'todo',
     createdAt: now.toISOString(),
     completedAt: null,
+    repeat,
+    dueDate: null,
+    subtasks: [],
+    deletedAt: null,
+    order: 0,
   }
 }
 
-/** Returns a new task; the one passed in is never modified. */
-export function completeTask(task: Task, now: Date = new Date()): Task {
-  if (task.status === 'done') {
+/**
+ * Changes the title and nothing else. The task keeps its id, its completion
+ * record and its rule, so a rename stays a rename: nothing counting tasks or
+ * deriving progress from them sees a different task afterwards.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function renameTask(task: Task, title: string): Task {
+  const trimmed = normalizeTitle(title)
+  if (trimmed === task.title) {
     return task
   }
 
-  return { ...task, status: 'done', completedAt: now.toISOString() }
+  return { ...task, title: trimmed }
 }
 
-export function isComplete(task: Task): boolean {
-  return task.status === 'done'
+/**
+ * Writes the description, or clears it with an empty string. Like a rename this
+ * changes one field and leaves the rest of the record alone, so a task that has
+ * had something written about it is still the same task.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function setDescription(task: Task, description: string): Task {
+  // Trimming the ends and not the middle: the blank lines *between* paragraphs
+  // are part of what was written, the ones around it are not.
+  const trimmed = description.trim()
+  if (trimmed === task.description) {
+    return task
+  }
+
+  return { ...task, description: trimmed }
+}
+
+export function hasDescription(task: Task): boolean {
+  return task.description.length > 0
+}
+
+/**
+ * Ticking the task ticks its checklist with it, so a done task never sits there
+ * showing open items. That is the task's own box speaking for the whole thing —
+ * an item ticked one at a time goes through `setSubtaskDone` instead.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function completeTask(task: Task, now: Date = new Date()): Task {
+  if (isComplete(task, now)) {
+    return task
+  }
+
+  const at = now.toISOString()
+
+  return {
+    ...task,
+    status: 'done',
+    completedAt: at,
+    subtasks: task.subtasks.map((subtask) =>
+      isSubtaskComplete(subtask, task.repeat, now) ? subtask : { ...subtask, completedAt: at },
+    ),
+  }
+}
+
+/**
+ * The inverse of completing: the task goes back to todo and forgets when it was
+ * done, and its checklist is cleared with it for the same reason completing
+ * ticked it. For a repeating task that undoes the current occurrence only —
+ * there is nothing else stored to undo. Returns a new task; the one passed in is
+ * never modified.
+ */
+export function uncompleteTask(task: Task, now: Date = new Date()): Task {
+  if (!isComplete(task, now)) {
+    return task
+  }
+
+  return {
+    ...task,
+    status: 'todo',
+    completedAt: null,
+    subtasks: task.subtasks.map((subtask) =>
+      subtask.completedAt === null ? subtask : { ...subtask, completedAt: null },
+    ),
+  }
+}
+
+/**
+ * Whether the task is done *as of `now`*. A task that happens once is simply
+ * done or not. A repeating task is done when its last completion falls within
+ * the occurrence currently in play, so a daily task ticked off yesterday reads
+ * as todo again today without anything having to rewrite it at midnight.
+ */
+export function isComplete(task: Task, now: Date = new Date()): boolean {
+  if (task.repeat === null) {
+    return task.status === 'done'
+  }
+
+  if (task.completedAt === null) {
+    return false
+  }
+
+  return countsForCurrentOccurrence(task.completedAt, task.repeat, now)
+}
+
+/**
+ * Moves the task to the trash. Nothing else about it changes: a restored task
+ * comes back exactly as it was, down to a repeating task's current occurrence.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function deleteTask(task: Task, now: Date = new Date()): Task {
+  if (isDeleted(task)) {
+    return task
+  }
+
+  return { ...task, deletedAt: now.toISOString() }
+}
+
+/** Takes the task back out of the trash. Returns a new task; the one passed in is never modified. */
+export function restoreTask(task: Task): Task {
+  if (!isDeleted(task)) {
+    return task
+  }
+
+  return { ...task, deletedAt: null }
+}
+
+export function isDeleted(task: Task): boolean {
+  return task.deletedAt !== null
+}
+
+/**
+ * Gives a task a recurrence rule, drops it, or swaps one for another.
+ *
+ * The completion record is kept, because how a task reads is derived from it:
+ * a one-off ticked off this morning that becomes a daily task is still done
+ * today. The one case that needs a hand is the reverse — a repeating task that
+ * had already come round again would suddenly read as a finished one-off, since
+ * its stored status is still the `done` of an occurrence that has passed. Its
+ * checklist needs the same hand for the same reason: a tick from an occurrence
+ * that has gone by would harden into a permanent one.
+ */
+export function setRepeat(task: Task, repeat: Repeat | null, now: Date = new Date()): Task {
+  if (repeat !== null) {
+    assertValidRepeat(repeat)
+  }
+
+  if (repeat === null) {
+    const subtasks = task.subtasks.map((subtask) => forgetStaleTick(subtask, task.repeat, now))
+
+    if (!isComplete(task, now)) {
+      return { ...task, repeat: null, status: 'todo', completedAt: null, subtasks }
+    }
+
+    return { ...task, repeat: null, subtasks }
+  }
+
+  // The rule decides the days from here on, so a date set before it would only
+  // be a second, disagreeing answer.
+  return { ...task, repeat, dueDate: null }
+}
+
+export class DueDateOnRepeatingTaskError extends Error {
+  constructor() {
+    super('A repeating task is due on the days its rule gives it, not on a date of its own.')
+    this.name = 'DueDateOnRepeatingTaskError'
+  }
+}
+
+/**
+ * Gives a one-off the day it is due, moves it, or takes the day away with null.
+ * Nothing else changes: a task finished early or late keeps its completion, so
+ * moving the date is never a way to undo a tick.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function setDueDate(task: Task, dueDate: LocalDay | null): Task {
+  if (dueDate !== null && !isLocalDay(dueDate)) {
+    throw new InvalidDayError(dueDate)
+  }
+
+  if (dueDate === task.dueDate) {
+    return task
+  }
+
+  if (dueDate !== null && task.repeat !== null) {
+    throw new DueDateOnRepeatingTaskError()
+  }
+
+  return { ...task, dueDate }
+}
+
+/** Lets go of a tick that no longer counts, leaving live ones — and blanks — alone. */
+function forgetStaleTick(subtask: Subtask, repeat: Repeat | null, now: Date): Subtask {
+  if (subtask.completedAt === null || isSubtaskComplete(subtask, repeat, now)) {
+    return subtask
+  }
+
+  return { ...subtask, completedAt: null }
+}
+
+export function isRepeating(task: Task): boolean {
+  return task.repeat !== null
+}
+
+/**
+ * A task with a checklist is done exactly when every item on it is.
+ *
+ * This runs after every change to the list, so the task's stored completion can
+ * never disagree with what the list shows: the last tick finishes the task,
+ * taking any tick back reopens it, and so does adding a fresh item to a task
+ * already done. A task with no checklist is left to its own box.
+ *
+ * It settles the task and never the list — unlike `completeTask`, which speaks
+ * for the whole thing. That is the difference between unticking one item of five
+ * and unticking the task itself: the first must leave the other four alone.
+ */
+function syncWithSubtasks(task: Task, now: Date): Task {
+  if (task.subtasks.length === 0) {
+    return task
+  }
+
+  const done = isComplete(task, now)
+  const allDone = task.subtasks.every((subtask) => isSubtaskComplete(subtask, task.repeat, now))
+
+  if (allDone === done) {
+    return task
+  }
+
+  return allDone
+    ? { ...task, status: 'done', completedAt: now.toISOString() }
+    : { ...task, status: 'todo', completedAt: null }
+}
+
+/**
+ * Adds an item to the end of the checklist. The new item is not done, so a task
+ * that was finished is not any more — you have just given it another part.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function addSubtask(task: Task, title: string, now: Date = new Date()): Task {
+  return insertSubtask(task, task.subtasks.length, title, now)
+}
+
+/**
+ * Adds an item at `index`, pushing the ones from there down — the line opened
+ * under an item. An index past either end is held to it. Reopens a finished
+ * task, as ./addSubtask does.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function insertSubtask(task: Task, index: number, title: string, now: Date = new Date()): Task {
+  const at = Math.min(Math.max(index, 0), task.subtasks.length)
+  const subtasks = [...task.subtasks.slice(0, at), createSubtask(title, now), ...task.subtasks.slice(at)]
+  return syncWithSubtasks({ ...task, subtasks }, now)
+}
+
+/**
+ * Changes one item's title and nothing else — same id, same tick — so renaming
+ * can neither finish a task nor reopen one.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function renameSubtask(task: Task, subtaskId: SubtaskId, title: string): Task {
+  const trimmed = normalizeTitle(title)
+  const target = task.subtasks.find((subtask) => subtask.id === subtaskId)
+  if (target === undefined || target.title === trimmed) {
+    return task
+  }
+
+  return {
+    ...task,
+    subtasks: task.subtasks.map((subtask) => (subtask === target ? { ...subtask, title: trimmed } : subtask)),
+  }
+}
+
+/**
+ * Takes an item off the list. Removing the last one that was still open finishes
+ * the task; emptying the list altogether hands the decision back to the task's
+ * own box, which is the only thing left to answer it.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function removeSubtask(task: Task, subtaskId: SubtaskId, now: Date = new Date()): Task {
+  const kept = task.subtasks.filter((subtask) => subtask.id !== subtaskId)
+  if (kept.length === task.subtasks.length) {
+    return task
+  }
+
+  return syncWithSubtasks({ ...task, subtasks: kept }, now)
+}
+
+/**
+ * Ticks one item, or unticks it, and brings the task into line behind it.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function setSubtaskDone(
+  task: Task,
+  subtaskId: SubtaskId,
+  done: boolean,
+  now: Date = new Date(),
+): Task {
+  const target = task.subtasks.find((subtask) => subtask.id === subtaskId)
+  if (target === undefined || isSubtaskComplete(target, task.repeat, now) === done) {
+    return task
+  }
+
+  const subtasks = task.subtasks.map((subtask) =>
+    subtask === target ? { ...subtask, completedAt: done ? now.toISOString() : null } : subtask,
+  )
+
+  return syncWithSubtasks({ ...task, subtasks }, now)
+}
+
+/** How the checklist stands as of `now` — what a row reads out as "2/5". */
+export function countSubtasks(task: Task, now: Date = new Date()): { done: number; total: number } {
+  return {
+    done: task.subtasks.filter((subtask) => isSubtaskComplete(subtask, task.repeat, now)).length,
+    total: task.subtasks.length,
+  }
+}
+
+export function hasSubtasks(task: Task): boolean {
+  return task.subtasks.length > 0
 }

@@ -4,22 +4,20 @@ A personal task tracker that fights procrastination through gamification. The ga
 primarily **technical** (XP, levels, rules) and will grow a visual side over time. Built as a daily
 routine: a long series of small steps, not one big build.
 
-## Ground rule
+# General rules
+- If user ask to add something, check if this functionality already exists.
+- Think about architecture and long-term support, this project is long-term and will evolve over time, thus need to be designed for that.
+- TickTick is good implemented (https://ticktick.com/webapp), before implementing something, check how its implemented there (but user prompt has higher priority).
+- Be concise in your output of what was done.
+- When asked to implement something, update `wiki` accordingly.
 
-**Do not add functionality without the owner's explicit approval.** Not "while I'm here" extras, not
-helpful-looking adjacents. If something seems missing, propose it and wait. Ideas go in the backlog
-below so nothing is lost.
+## Wiki
 
-## Commands
+`wiki/` holds the requirements as built, feature by feature, with a stable id on each one. It is
+the description of the app; this file stays the description of how to work on it.
 
-```bash
-npm run dev     # dev server on http://localhost:5173
-npm run test    # vitest, core rules only
-npm run lint    # oxlint, including the layer boundary rule
-npm run build   # type-check + production build
-```
-
-Node comes from nvm (v24). `~/.zshrc` sources it.
+**A change to behaviour is not finished until `wiki/` matches it.** New behaviour gets new ids,
+changed behaviour is rewritten in place, removed behaviour is deleted. Start at `wiki/README.md`.
 
 ## Architecture
 
@@ -28,7 +26,7 @@ Three layers. **Dependencies point inwards only.**
 | Layer | Responsibility | May import |
 |---|---|---|
 | `src/core/` | The rules. What a task is, what completing one means. Pure functions over plain data. | nothing else in `src/` |
-| `src/storage/` | Saving and loading. | `src/core` |
+| `src/storage/` | Saving and loading, including loading from a service, and signing in. | `src/core` |
 | `src/app/` | React components and screen state. | `src/core`, `src/storage` |
 
 `src/core/` is framework-free on purpose: no React, no browser APIs, no saving. That keeps the game
@@ -48,23 +46,16 @@ ceremony. If a native app ever happens, `src/core/` moves into a workspace packa
   the saved shape means bumping `SCHEMA_VERSION` and migrating on load — not breaking saved data.
 - Ids are `crypto.randomUUID()` and timestamps are ISO 8601, so records from two devices could merge
   if sync ever lands.
-- Every call site talks to the `TaskRepository` interface, never to `localStorage` directly.
+- Every call site talks to the `TaskRepository` interface, never to `localStorage` directly, and to
+  the `AuthService` interface, never to Firebase directly.
+- Service settings (Firebase) come from `VITE_*` variables: `.env.local` locally, the Vercel project's
+  environment variables in production. **No key, token or secret goes in source or any committed
+  file**, even ones a browser is sent anyway; only `.env.example`, with empty values, is committed.
+- Rules are tested in `src/core/*.test.ts` (plain Node). Interaction a person could break — keys,
+  focus, where the caret goes — is tested beside its component as `*.test.tsx`, with Testing Library
+  and `user-event`; such a file starts with `// @vitest-environment jsdom` so core tests stay DOM-free.
 
-## Current state (Step 1)
 
-Add a task, see the list, complete it, delete it. Saved locally, survives a refresh.
+# TEMP
 
-Deliberately **not** built yet: XP/points/levels/streaks/achievements, any visual gamification, PWA
-manifest and offline support, deployment, un-completing a task, editing titles, due dates,
-priorities, categories, notes, device sync, backend, accounts.
-
-## Backlog
-
-Rough order, each one a day-sized step. Nothing here is approved until the owner says so.
-
-1. XP on completion
-2. Level curve
-3. PWA + deploy, so the Pixel can install it
-4. Streaks (needs completion history)
-5. Device sync (Mac ↔ Pixel)
-6. Quests / achievements
+Lets focus on web version only currently. Mobile will be the next step.
