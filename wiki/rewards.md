@@ -10,8 +10,8 @@ earned whatever becomes of the task afterwards.
   A reward is a **whole number of points from 1 to 999**, earned on each completion.
 - **RWD-2** A new reward **starts at what the task's rule is worth**. Daily is **1**, and so is a weekly
   rule on all seven days, which reads "Daily" (RPT-25). Weekly is **5**, monthly is **25**, and a
-  task that happens once is **1**. It is only a starting number, offered when a reward is added
-  (RWD-5). Nothing is given for it until then.
+  task that happens once is **1**. It is where **+** lands when stepping up **from 0** in the panel
+  (RWD-5). The star itself always gives **1**.
 - **RWD-3** Changing or removing a reward only affects **completions from then on**. What earlier
   completions earned stays as it was (RWD-13).
 - **RWD-4** A duplicated task carries the reward of the original (TASK-51).
@@ -19,13 +19,15 @@ earned whatever becomes of the task afterwards.
 ## Setting a reward
 
 - **RWD-5** The **star button** on a row opens the reward panel. It is tinted while the task has a
-  reward (UI-26). On a task without one, the panel offers a number already set to the rule's
-  starting amount (RWD-2), with **−** and **+** beside it. Stepping or typing changes the number, and
-  **Add reward** (or Enter in the box) gives it and closes the panel. Opening the panel gives nothing.
-- **RWD-6** On a task with a reward, **every step and every number typed is saved as it is made**, with
-  nothing to confirm, as in the other pickers (RPT-22). A number that cannot be a reward is not
-  saved, and the box goes back to the reward on leaving it. **−** stops at 1. **Remove reward**
-  takes the reward away (UI-38). The panel closes as the other pickers do (UI-9, UI-10).
+  reward (UI-26). The panel is a number with **−** and **+** beside it and nothing to confirm. **0 is
+  no reward**. **Clicking the star of a task without a reward gives it 1 point** at once, whatever its
+  rule, and opens the panel on it; opening the panel of a task that has a reward changes nothing.
+  **+** from 0 gives the rule's starting amount (RWD-2); typing a number gives that.
+- **RWD-6** **Every step and every number typed is saved as it is made**, as in the other pickers
+  (RPT-22). Past 1, **−** and **+** move by one. **Stepping down to 0 or typing 0 takes the reward
+  away**, and **−** stops there. A number that is neither 0 nor a reward is not saved, and the box goes
+  back to what is saved on leaving it. Enter closes the panel, as do a click outside and Escape
+  (UI-9, UI-10).
 - **RWD-7** The star sits in a slot of its own after the tag button (UI-27). A woken row spells the
   reward out under it: `+5`.
 - **RWD-8** On a phone the row's line has no room for the star, so the woken row has it on a line
@@ -95,7 +97,8 @@ row), `src/app/components/RewardsPage.tsx`, `RedeemForm.tsx`, `RewardTotals.tsx`
 `src/storage/rewardRepository.ts`, `firestoreRewardRepository.ts`, `rewardSchema.ts` — see
 [Storage](storage.md).
 **Tested in:** `src/core/reward.test.ts`, `src/core/redemption.test.ts`, `src/core/task.test.ts`,
-`src/storage/rewardSchema.test.ts`, `src/app/components/RewardPicker.test.tsx`,
+`src/storage/rewardSchema.test.ts`, `src/app/useTasks.test.ts` (what a change records),
+`src/app/components/RewardPicker.test.tsx`,
 `src/app/components/RedeemForm.test.tsx`, `src/app/components/RedemptionList.test.tsx`,
 `src/app/components/TaskItem.test.tsx`, `src/app/components/SideNav.test.tsx`,
 `src/app/components/BottomNav.test.tsx`.

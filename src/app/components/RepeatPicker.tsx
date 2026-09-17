@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Weekday } from '../../core'
 import type { RepeatDraft, RepeatKind } from '../repeatDraft'
 import { toRepeat } from '../repeatDraft'
+import { panelOption as option, panelOptionOff as optionOff, panelOptionOn as optionOn } from '../panelControls'
 import { WEEKDAYS, describeRepeat } from '../repeatLabels'
 import { controlOff, controlOn } from '../rowControls'
 import { RepeatIcon } from './RepeatIcon'
@@ -13,11 +14,6 @@ const KINDS: readonly { readonly value: Exclude<RepeatKind, 'once'>; readonly la
 ]
 
 const button = 'flex h-6 w-full items-center gap-1.5 rounded-lg px-2 text-sm leading-none transition-colors'
-
-const option =
-  'flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800'
-const optionOn = 'font-medium text-blue-600 dark:text-blue-400'
-const optionOff = 'text-neutral-700 dark:text-neutral-200'
 
 const dayChip = 'size-6 rounded-full text-xs transition-colors'
 const dayChipOn = 'bg-blue-600 text-white hover:bg-blue-700'

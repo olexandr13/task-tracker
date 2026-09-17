@@ -1,5 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
-import type { Account } from '../../storage/authService'
+import { useEffect, useRef, useState, type ReactElement } from 'react'
+import type { Account, AccountProvider } from '../../storage/authService'
+import { panelOption } from '../panelControls'
+import { GoogleLogo } from './GoogleLogo'
+
+/** What each way in is called and what it looks like. A new provider is a line here. */
+const PROVIDERS: Record<AccountProvider, { name: string; Mark: (props: { className?: string }) => ReactElement }> = {
+  google: { name: 'Google', Mark: GoogleLogo },
+}
 
 interface AccountMenuProps {
   account: Account
@@ -7,8 +14,8 @@ interface AccountMenuProps {
 }
 
 /**
- * Who is signed in, as their picture, opening onto their name, their address
- * and the way out.
+ * Who is signed in, as the mark of the service they signed in through, opening
+ * onto their name, their address and the way out.
  */
 export function AccountMenu({ account, onSignOut }: AccountMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -26,6 +33,7 @@ export function AccountMenu({ account, onSignOut }: AccountMenuProps) {
   }, [isOpen])
 
   const who = account.name || account.email || 'Signed in'
+  const provider = PROVIDERS[account.provider]
 
   return (
     <div
@@ -43,11 +51,11 @@ export function AccountMenu({ account, onSignOut }: AccountMenuProps) {
         onClick={() => { setIsOpen(!isOpen) }}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        aria-label={`Account: ${who}`}
-        title={who}
+        aria-label={`Account: ${who}, signed in with ${provider.name}`}
+        title={`${who} · ${provider.name}`}
         className="flex rounded-full transition-shadow hover:ring-2 hover:ring-neutral-300 dark:hover:ring-neutral-700"
       >
-        <Avatar account={account} className="size-8 text-sm" />
+        <ProviderMark provider={account.provider} className="size-8" markClassName="size-5" />
       </button>
 
       {isOpen && (
@@ -57,7 +65,7 @@ export function AccountMenu({ account, onSignOut }: AccountMenuProps) {
           className="absolute right-0 z-20 mt-2 flex w-64 flex-col gap-1 rounded-xl border border-neutral-200 bg-white p-1 shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
         >
           <div className="flex items-center gap-3 px-2 py-2">
-            <Avatar account={account} className="size-10 text-base" />
+            <ProviderMark provider={account.provider} className="size-10" markClassName="size-6" />
             <div className="min-w-0 flex-1">
               {account.name !== null && <p className="truncate text-sm font-medium">{account.name}</p>}
               {account.email !== null && (
@@ -73,7 +81,7 @@ export function AccountMenu({ account, onSignOut }: AccountMenuProps) {
                 setIsOpen(false)
                 onSignOut()
               }}
-              className="w-full rounded-lg px-3 py-2 text-left text-sm text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+              className={`${panelOption} text-neutral-700 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100`}
             >
               Sign out
             </button>
@@ -85,34 +93,27 @@ export function AccountMenu({ account, onSignOut }: AccountMenuProps) {
 }
 
 /**
- * The account's picture, or the first letter of its name where there is no
- * picture or it will not load. Purely decorative: whatever holds it says who it is.
+ * The mark of the service the account signed in through, on a white disc so the
+ * mark keeps its own colours in either theme. Neither the Google picture nor the
+ * name is shown here. Purely decorative: whatever holds it says who it is.
  */
-function Avatar({ account, className }: { account: Account; className: string }) {
-  const [isBroken, setIsBroken] = useState(false)
-  const shape = `${className} shrink-0 rounded-full`
-
-  if (account.photoUrl !== null && !isBroken) {
-    return (
-      <img
-        src={account.photoUrl}
-        alt=""
-        // Google's picture host refuses requests that name another site as the referrer.
-        referrerPolicy="no-referrer"
-        onError={() => { setIsBroken(true) }}
-        className={`${shape} object-cover`}
-      />
-    )
-  }
-
-  const initial = Array.from(account.name || account.email || '?')[0].toUpperCase()
+function ProviderMark({
+  provider,
+  className,
+  markClassName,
+}: {
+  provider: AccountProvider
+  className: string
+  markClassName: string
+}) {
+  const { Mark } = PROVIDERS[provider]
 
   return (
     <span
       aria-hidden="true"
-      className={`${shape} flex items-center justify-center bg-blue-600 font-medium text-white dark:bg-blue-500`}
+      className={`${className} flex shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white dark:border-neutral-700`}
     >
-      {initial}
+      <Mark className={`${markClassName} shrink-0`} />
     </span>
   )
 }

@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, type KeyboardEvent, type SyntheticEvent } from 'react'
+import { panelItem } from '../panelControls'
 
 export interface ContextMenuItem {
   label: string
@@ -23,8 +24,7 @@ interface ContextMenuProps {
 /** How close to the window's edge the menu may come. */
 const margin = 8
 
-const item =
-  'w-full rounded-lg px-2 py-1.5 text-left text-sm whitespace-nowrap text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:bg-neutral-100 focus-visible:text-neutral-900 focus-visible:outline-none dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:focus-visible:bg-neutral-800 dark:focus-visible:text-neutral-100'
+const item = `${panelItem} whitespace-nowrap text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:bg-neutral-100 focus-visible:text-neutral-900 focus-visible:outline-none dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:focus-visible:bg-neutral-800 dark:focus-visible:text-neutral-100`
 
 /**
  * Nothing inside the menu reaches whatever holds it: a click on an item is not a

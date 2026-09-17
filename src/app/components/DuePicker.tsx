@@ -1,13 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { isLocalDay, nextWeekDueDay, offsetDay, toLocalDay, type LocalDay } from '../../core'
 import { describeDueDate, describeWeekday } from '../dueLabels'
+import { panelOption as option, panelOptionOff as optionOff, panelOptionOn as optionOn } from '../panelControls'
 import { controlOff, controlOn } from '../rowControls'
 import { CalendarIcon } from './CalendarIcon'
-
-const option =
-  'flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800'
-const optionOn = 'font-medium text-blue-600 dark:text-blue-400'
-const optionOff = 'text-neutral-700 dark:text-neutral-200'
 
 const button = 'flex h-6 w-full items-center gap-1.5 rounded-lg px-2 text-sm leading-none transition-colors'
 /** A day gone by with the task still open reads as a warning, not as information. */

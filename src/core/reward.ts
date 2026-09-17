@@ -17,19 +17,22 @@ import { toLocalDay, type LocalDay } from './day'
 import { repeatsEveryDay, type Repeat } from './repeat'
 import type { Task, TaskId } from './task'
 
+/** The least a single completion can be worth. */
+export const MIN_REWARD = 1
+
 /** The most a single completion can be worth. */
 export const MAX_REWARD = 999
 
 export class InvalidRewardError extends Error {
   constructor(points: number) {
-    super(`${String(points)} is not a reward: a reward is a whole number of points from 1 to ${String(MAX_REWARD)}.`)
+    super(`${String(points)} is not a reward: a reward is a whole number of points from ${String(MIN_REWARD)} to ${String(MAX_REWARD)}.`)
     this.name = 'InvalidRewardError'
   }
 }
 
 /** Whether a task can be worth this many points a completion. */
 export function isRewardAmount(points: number): boolean {
-  return Number.isInteger(points) && points >= 1 && points <= MAX_REWARD
+  return Number.isInteger(points) && points >= MIN_REWARD && points <= MAX_REWARD
 }
 
 /**

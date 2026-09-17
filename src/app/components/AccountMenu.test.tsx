@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Account } from '../../storage/authService'
@@ -13,7 +13,7 @@ const ADA: Account = {
   id: 'uid-ada',
   name: 'Ada Lovelace',
   email: 'ada@example.com',
-  photoUrl: 'https://example.com/ada.png',
+  provider: 'google',
 }
 
 function setup(account: Account = ADA) {
@@ -27,26 +27,23 @@ const trigger = () => screen.getByRole('button', { name: /^Account:/ })
 const panel = () => screen.queryByRole('dialog', { name: 'Account' })
 
 describe('AccountMenu', () => {
-  it('shows the account as its picture, named for a screen reader (AUTH-9)', () => {
+  it('shows the account as the mark of the service it signed in with (AUTH-9)', () => {
     const { container } = setup()
 
-    expect(trigger()).toHaveProperty('ariaLabel', 'Account: Ada Lovelace')
-    expect(container.querySelector('img')?.getAttribute('src')).toBe(ADA.photoUrl)
+    expect(container.querySelector('svg')).not.toBeNull()
+    expect(trigger().textContent).toBe('')
   })
 
-  it('stands in the first letter of the name where there is no picture (AUTH-9)', () => {
-    setup({ ...ADA, photoUrl: null })
+  it('names the account and the service for a screen reader (AUTH-9)', () => {
+    setup()
 
-    expect(trigger().textContent).toBe('A')
+    expect(trigger()).toHaveProperty('ariaLabel', 'Account: Ada Lovelace, signed in with Google')
   })
 
-  it('stands in the first letter of the name when the picture will not load (AUTH-9)', () => {
+  it('shows no picture of the account (AUTH-9)', () => {
     const { container } = setup()
-
-    fireEvent.error(container.querySelector('img')!)
 
     expect(container.querySelector('img')).toBeNull()
-    expect(trigger().textContent).toBe('A')
   })
 
   it('opens onto the name, the address and signing out (AUTH-10)', async () => {

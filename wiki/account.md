@@ -25,10 +25,11 @@ Who the app belongs to. Nothing is shown without an account, and the only way to
 
 ## The account menu
 
-- **AUTH-9** The signed-in account sits at the end of the heading as its Google picture — on every
-  view, and on a phone as well, where the navigation is a bar of four tabs. Without a picture, or when it
-  will not load, the first letter of the name stands in. A screen reader hears it as the account
-  and the name.
+- **AUTH-9** The signed-in account sits at the end of the heading as the mark of the service it
+  signed in through — Google's "G" on a white disc, the same mark as the sign-in button carries — on
+  every view, and on a phone as well, where the navigation is a bar of four tabs. Neither the Google
+  picture nor the name is shown there; the app does not keep the picture at all. A screen reader
+  hears it as the account, the name and the service.
 - **AUTH-10** Pressing it opens a panel with the name, the email address and **Sign out**. It closes
   like any other panel: on a click outside or on Escape (UI-9, UI-10).
 - **AUTH-11** Signing out goes straight back to the sign-in screen without asking. Nothing is lost

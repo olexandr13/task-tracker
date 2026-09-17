@@ -20,6 +20,7 @@ import {
   tagTypedAtCaret,
   takeTypedTag,
 } from '../descriptionBox'
+import { panelItem } from '../panelControls'
 
 /**
  * A step dimmer than a title, and smaller, so a description reads as what it is:
@@ -40,7 +41,7 @@ const listText = '[&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5'
 const margin = 8
 const gap = 4
 
-const suggestion = 'flex w-full min-w-0 cursor-pointer items-center rounded-lg px-2 py-1.5 text-left text-sm'
+const suggestion = `${panelItem} cursor-pointer`
 const suggestionOn = 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100'
 const suggestionOff = 'text-neutral-700 dark:text-neutral-200'
 

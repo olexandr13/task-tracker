@@ -6,13 +6,16 @@
  * here rather than something the UI knows about.
  */
 
+/** The service an account signed in through. There is only one way in (AUTH-2). */
+export type AccountProvider = 'google'
+
 /** The signed-in person, as much of them as the screen has any use for. */
 export interface Account {
   /** Stable for the life of the account; what saved data will be filed under. */
   readonly id: string
   readonly name: string | null
   readonly email: string | null
-  readonly photoUrl: string | null
+  readonly provider: AccountProvider
 }
 
 /** Why a sign-in ended without anyone signed in. */

@@ -1,20 +1,21 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { defaultReward, isRewardAmount, MAX_REWARD, type Repeat } from '../../core'
+import { defaultReward, isRewardAmount, MAX_REWARD, MIN_REWARD, type Repeat } from '../../core'
+import { panelStep as stepButton } from '../panelControls'
 import { describePoints } from '../rewardLabels'
-import { controlOff, controlOn, deleteControl } from '../rowControls'
+import { controlOff, controlOn } from '../rowControls'
 import { StarIcon } from './StarIcon'
 
 const button = 'flex h-6 w-full items-center gap-1.5 rounded-lg px-2 text-sm leading-none transition-colors'
 
-const stepButton =
-  'grid size-7 shrink-0 place-items-center rounded-lg text-base leading-none text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:pointer-events-none disabled:opacity-40 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
-
-const action = 'flex w-full items-center justify-center rounded-lg px-2 py-1.5 text-sm transition-colors'
+/** What the box can hold: a reward, or 0 for none. */
+function isPoints(points: number): boolean {
+  return points === 0 || isRewardAmount(points)
+}
 
 interface RewardPickerProps {
   /** The points each completion earns, or null for none. */
   reward: number | null
-  /** The task's rule, which says what a reward starts at when one is added. */
+  /** The task's rule, which says where the first step up from no reward lands. */
   repeat: Repeat | null
   onChange: (reward: number | null) => void
   /** What this picker is for, when there is more than one on screen. */
@@ -29,11 +30,12 @@ interface RewardPickerProps {
  * A task's reward: a small star that opens a panel for the points each
  * completion earns.
  *
- * A task without a reward is offered one at the amount its rule starts at,
- * which can be stepped or typed over before **Add reward** gives it. Opening the
- * panel gives nothing: a look is not a choice. Once there is a reward, the
- * panel is like the other pickers — every step or number typed is saved as it
- * is made, with nothing to confirm — and **Remove reward** takes it away.
+ * Clicking the star of a task without a reward gives it 1 point and opens the
+ * panel on it. The panel is like the other pickers: every step or number typed
+ * is saved as it is made, with nothing to confirm. 0 is no reward, so stepping
+ * down to it or typing it takes the reward away. A step up from 0 lands on what
+ * the task's rule starts at rather than on 1, so a monthly task is not 25 clicks
+ * from its reward.
  */
 export function RewardPicker({
   reward,
@@ -44,8 +46,8 @@ export function RewardPicker({
   align = 'right',
 }: RewardPickerProps) {
   const [isOpen, setIsOpen] = useState(false)
-  // What the box holds: the reward, or what a new one would start at, and
-  // whatever is typed over it until that is a reward or given up.
+  // What the box holds: the reward, or 0 for none, and whatever is typed over
+  // it until that is a number of points or given up.
   const [typed, setTyped] = useState('')
   const root = useRef<HTMLDivElement>(null)
 
@@ -60,10 +62,10 @@ export function RewardPicker({
     return () => { document.removeEventListener('pointerdown', handlePointerDown) }
   }, [isOpen])
 
-  const settled = reward ?? defaultReward(repeat)
+  const settled = reward ?? 0
   const amount = Number(typed)
-  const isValid = typed.trim() !== '' && isRewardAmount(amount)
-  // Where the steps count from: what is typed while it is a reward, and what it was otherwise.
+  const isValid = typed.trim() !== '' && isPoints(amount)
+  // Where the steps count from: what is typed while it is a number of points, and what it was otherwise.
   const base = isValid ? amount : settled
   const summary = reward === null ? 'No reward' : describePoints(reward)
 
@@ -72,33 +74,33 @@ export function RewardPicker({
       setIsOpen(false)
       return
     }
-    setTyped(String(settled))
+    // Reaching for the star of a task without a reward is asking for one: it gets
+    // the least there is at once, to step up from.
+    if (reward === null) {
+      onChange(MIN_REWARD)
+      setTyped(String(MIN_REWARD))
+    } else {
+      setTyped(String(reward))
+    }
     setIsOpen(true)
   }
 
-  /** Saved as it is chosen once there is a reward; held for Add until then. */
+  /** Saved as it is chosen, 0 as no reward. */
   function choose(next: number) {
     setTyped(String(next))
-    if (reward !== null) onChange(next)
+    onChange(next === 0 ? null : next)
   }
 
   function handleType(value: string) {
     setTyped(value)
     const next = Number(value)
-    if (reward !== null && value.trim() !== '' && isRewardAmount(next)) onChange(next)
-  }
-
-  function add() {
-    if (!isValid) return
-    onChange(amount)
-    setIsOpen(false)
+    if (value.trim() !== '' && isPoints(next)) onChange(next === 0 ? null : next)
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== 'Enter') return
     event.preventDefault()
-    if (reward === null) add()
-    else setIsOpen(false)
+    setIsOpen(false)
   }
 
   return (
@@ -133,11 +135,11 @@ export function RewardPicker({
         >
           <p className="px-1 pt-0.5 text-xs text-neutral-500 dark:text-neutral-400">Points each time it is done</p>
 
-          <div role="group" aria-label="Points" className="flex items-center gap-1">
+          <div role="group" aria-label="Points" className="flex items-center justify-center gap-1">
             <button
               type="button"
               onClick={() => { choose(base - 1) }}
-              disabled={base <= 1}
+              disabled={base <= 0}
               aria-label="Fewer points"
               className={stepButton}
             >
@@ -146,21 +148,21 @@ export function RewardPicker({
             <input
               type="number"
               inputMode="numeric"
-              min={1}
+              min={0}
               max={MAX_REWARD}
               step={1}
               value={typed}
               onChange={(event) => { handleType(event.target.value) }}
               onKeyDown={handleKeyDown}
-              // A number that cannot be a reward is not kept: the box goes back to what is.
+              // A number that cannot be points is not kept: the box goes back to what is.
               onBlur={() => { if (!isValid) setTyped(String(settled)) }}
               aria-label="Points"
               enterKeyHint="done"
-              className="min-w-0 flex-1 [appearance:textfield] rounded-lg border border-neutral-300 bg-transparent px-2 py-1 text-center text-sm text-neutral-900 tabular-nums focus:border-blue-500 focus:outline-none dark:border-neutral-700 dark:text-neutral-100 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="w-14 [appearance:textfield] rounded-lg border border-neutral-300 bg-transparent px-2 py-1 text-center text-sm text-neutral-900 tabular-nums focus:border-blue-500 focus:outline-none dark:border-neutral-700 dark:text-neutral-100 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             <button
               type="button"
-              onClick={() => { choose(base + 1) }}
+              onClick={() => { choose(base === 0 ? defaultReward(repeat) : base + 1) }}
               disabled={base >= MAX_REWARD}
               aria-label="More points"
               className={stepButton}
@@ -168,28 +170,6 @@ export function RewardPicker({
               +
             </button>
           </div>
-
-          {reward === null ? (
-            <button
-              type="button"
-              onClick={add}
-              disabled={!isValid}
-              className={`${action} bg-blue-600 font-medium text-white hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-40`}
-            >
-              Add reward
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                onChange(null)
-                setIsOpen(false)
-              }}
-              className={`${action} ${deleteControl}`}
-            >
-              Remove reward
-            </button>
-          )}
         </div>
       )}
     </div>

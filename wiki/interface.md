@@ -58,6 +58,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   menu of the bottom bar — close on a click outside them or on Escape. The tags offered while typing
   `#` in a description close on Escape too, but a click outside is leaving the description (TAG-9).
 - **UI-10** Escape inside an open panel closes the panel rather than reaching anything behind it.
+- **UI-40** A panel's buttons are **compact** and the same in every panel — its choices, its menu
+  items, a stepper's **−** and **+**. A panel is a quick aside, so nothing in it outweighs the screen
+  behind it.
 - **UI-15** A description is **not** a popover: it opens as an area inside the row, pushing the list
   down rather than floating over it, and a click outside keeps what was written instead of
   dismissing it.
@@ -131,7 +134,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   than as a line that happens to start with a bullet. At rest the description is a single control
   that opens the box — reached with Tab and opened with Enter or Space, like any button.
 - **UI-38** Every control that **deletes or removes** something — a task, a checklist item, a task
-  in the trash for good, a tag, a task's reward, a redemption — is muted at rest like the controls around it and **turns red under
+  in the trash for good, a tag, a redemption — is muted at rest like the controls around it and **turns red under
   the pointer**, so what a click would do is plain before it is done. Closing the undo toast deletes
   nothing, and stays neutral.
 - **UI-14** The whole screen is drawn for one moment, so the list order, each row, the three bars,
@@ -145,7 +148,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 row at rest and awake), `src/app/components/ContextMenu.tsx` (a task's menu), `src/app/textOffsetAtPoint.ts` (which character a click landed on), `src/app/components/SideNav.tsx`,
 `src/app/components/BottomNav.tsx` (the phone's bar), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/useLongPress.ts` (a press told from a
 long press), `src/app/components/SettingsList.tsx`, `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
-view's icon), `src/app/rowControls.ts` (the tones a row's controls share), `src/styles.css`,
+view's icon), `src/app/rowControls.ts` (the tones a row's controls share), `src/app/panelControls.ts` (the size a panel's buttons share), `src/styles.css`,
 `public/favicon.svg` (the app's icon).
 **Tested in:** `src/app/components/BottomNav.test.tsx` (the bottom bar), `src/app/components/SideNav.test.tsx` (the sidebar), `src/app/useView.test.ts` (the
 view in the address).

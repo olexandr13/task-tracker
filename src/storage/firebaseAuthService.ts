@@ -14,7 +14,9 @@ function failureOf(error: unknown): SignInFailure {
 }
 
 function toAccount(user: User): Account {
-  return { id: user.uid, name: user.displayName, email: user.email, photoUrl: user.photoURL }
+  // Google is the only provider this signs in with, so there is nothing to read
+  // back; a second one would come from `user.providerData`.
+  return { id: user.uid, name: user.displayName, email: user.email, provider: 'google' }
 }
 
 /**
