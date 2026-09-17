@@ -1,11 +1,14 @@
-import { useState } from 'react'
-import { isComplete, isInToday, liveTasks, sortByOrder, toLocalDay, trashedTasks, type TaskId } from '../core'
+import { useEffect, useState } from 'react'
+import { habitTasks, isComplete, isInToday, liveTasks, sortByOrder, toLocalDay, trashedTasks, type TaskId } from '../core'
 import type { Account } from '../storage/authService'
+import { firestore } from '../storage/firebaseApp'
+import { createFirestoreTaskRepository } from '../storage/firestoreTaskRepository'
 import { localStorageQuoteRepository } from '../storage/localStorageQuoteRepository'
-import { localStorageTaskRepository } from '../storage/localStorageTaskRepository'
+import { importLocalTasks } from '../storage/localTaskImport'
 import { quotableQuoteSource } from '../storage/quotableQuoteSource'
 import { AccountMenu } from './components/AccountMenu'
 import { AddTaskForm } from './components/AddTaskForm'
+import { HabitList } from './components/HabitList'
 import { ProgressPanel } from './components/ProgressPanel'
 import { QuoteCard } from './components/QuoteCard'
 import { SideNav } from './components/SideNav'
@@ -15,7 +18,7 @@ import { UndoToast } from './components/UndoToast'
 import { useQuote } from './useQuote'
 import { useTasks } from './useTasks'
 import { useUndoToast } from './useUndoToast'
-import { EMPTY_MESSAGES, VIEW_LABELS, type View } from './view'
+import { ALL_DONE_MESSAGES, EMPTY_MESSAGES, isListView, VIEW_LABELS, type View } from './view'
 
 /**
  * Three areas once there is room for them: navigation down the left, the work —
@@ -23,9 +26,10 @@ import { EMPTY_MESSAGES, VIEW_LABELS, type View } from './view'
  * and how the periods are going. On a phone there is no room, so they stack:
  * the nav collapses to a single button, then the rail, then the work.
  *
- * The rail belongs to the lists of tasks, not to the app, so the trash does
- * without it — how much of the week is cleared says nothing about what was
- * thrown away, and nobody needs spurring on to empty a bin.
+ * The rail belongs to the lists of tasks, not to the app, so habits and the
+ * trash do without it. The habits page is a record of progress already, and
+ * how much of the week is cleared says nothing about what was thrown away —
+ * nobody needs spurring on to empty a bin.
  *
  * Today and Tasks are one screen showing different tasks: the full list, or the
  * part of it due today. The bars count every live task either way, being about
@@ -33,8 +37,21 @@ import { EMPTY_MESSAGES, VIEW_LABELS, type View } from './view'
  *
  * The account sits at the end of the heading rather than in the nav, so it is
  * one tap away on a phone too, where the nav is collapsed.
+ *
+ * The tasks are the account's. The screen is remade for each account (App), so
+ * one repository serves it for as long as it is up.
  */
 export function TasksScreen({ account, onSignOut }: { account: Account; onSignOut: () => void }) {
+  const [repository] = useState(() => createFirestoreTaskRepository(firestore, account.id))
+
+  // Tasks kept in this browser from before they belonged to the account join it
+  // the first time it is open here with a connection.
+  useEffect(() => {
+    importLocalTasks(repository).catch((error: unknown) => {
+      console.warn('Could not move the tasks kept in this browser into the account; will try again next time.', error)
+    })
+  }, [repository])
+
   const {
     tasks,
     isLoading,
@@ -46,6 +63,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     changeDescription,
     changeDueDate,
     changeRepeat,
+    setHabitDay,
     addChecklistItem,
     setChecklistItemDone,
     renameChecklistItem,
@@ -54,7 +72,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     restore,
     purge,
     emptyTrash,
-  } = useTasks(localStorageTaskRepository)
+  } = useTasks(repository)
   const [view, setView] = useState<View>('today')
   const undo = useUndoToast()
 
@@ -98,7 +116,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
         <SideNav view={view} onChange={setView} />
 
         {/* Before the work in the markup so a phone, and a screen reader, meet it first. */}
-        {view !== 'trash' && (
+        {isListView(view) && (
           <div className="flex flex-col gap-5 md:order-last md:w-64 md:shrink-0">
             <QuoteCard quote={quote} />
 
@@ -109,7 +127,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
         <div className="flex min-w-0 flex-1 flex-col gap-5">
           {isLoading ? (
             <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
-          ) : view !== 'trash' ? (
+          ) : isListView(view) ? (
             <>
               {/* Keyed by the list, so switching lists starts the box on that list's day. */}
               <AddTaskForm
@@ -124,6 +142,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                   tasks={ordered}
                   now={now}
                   emptyMessage={EMPTY_MESSAGES[view]}
+                  allDoneMessage={ALL_DONE_MESSAGES[view]}
                   onMove={move}
                   onComplete={complete}
                   onUncomplete={uncomplete}
@@ -139,6 +158,16 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                 />
               </section>
             </>
+          ) : view === 'habits' ? (
+            <section aria-label="Habits">
+              <HabitList
+                habits={habitTasks(tasks)}
+                now={now}
+                onComplete={complete}
+                onUncomplete={uncomplete}
+                onSetDay={setHabitDay}
+              />
+            </section>
           ) : (
             <section aria-label="Trash">
               <TrashList

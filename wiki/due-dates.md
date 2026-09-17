@@ -18,9 +18,9 @@ instead of in a long list of everything — see [Lists](lists.md).
 - **DUE-4** The add row has a date button beside the repeat one. The day chosen goes with the task
   on Enter, and the button goes back to the list's own day afterwards, so a date picked for one task
   is never inherited by the next unnoticed.
-- **DUE-5** On a task row the date sits before the repeat button. Set, it stays on show at rest;
-  unset, the button appears only once the row is clicked into — as the repeat button does. A change
-  is saved straight away.
+- **DUE-5** On a task row the date sits before the repeat button, on show at rest whether set or
+  not (UI-18). On a narrow screen it is the icon alone, still tinted, the date being its name and
+  tooltip. A change is saved straight away.
 - **DUE-6** While a repeat rule is chosen there is no date button, in the add row or on the task:
   the rule says which days the task is due.
 - **DUE-7** Setting, moving or clearing the day changes the day and nothing else. A task keeps its

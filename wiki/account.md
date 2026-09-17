@@ -34,11 +34,10 @@ Who the app belongs to. Nothing is shown without an account, and the only way to
 - **AUTH-11** Signing out goes straight back to the sign-in screen without asking. Nothing is lost
   by it.
 
-## Known gap
+## Whose tasks
 
-- **AUTH-13** Tasks are not yet tied to the account. They are still kept in the browser (STORE-1),
-  so a second device signed into the same account starts empty, and another account signed in on
-  the same browser sees the same tasks. Syncing tasks to the account is the next step.
+- **AUTH-13** Tasks belong to the account. Signing in on any device or address shows the same
+  tasks (STORE-2), and another account signed in on the same browser sees only its own (STORE-17).
 
 ---
 
@@ -46,5 +45,5 @@ Who the app belongs to. Nothing is shown without an account, and the only way to
 `firebaseApp.ts` (Google sign-in through Firebase, and the project it signs in to),
 `src/app/App.tsx` (nothing without an account), `src/app/useAuth.ts`,
 `src/app/components/SignInScreen.tsx`, `AccountMenu.tsx`. The project itself: `firebase.json`,
-`.firebaserc`; its settings: `.env.example`.
+`.firebaserc`, `firestore.rules`; its settings: `.env.example`.
 **Tested in:** `src/app/components/SignInScreen.test.tsx`, `src/app/components/AccountMenu.test.tsx`.

@@ -14,6 +14,7 @@ import {
   renameTask,
   restoreTask,
   setDescription,
+  setDoneOnDay,
   setDueDate,
   setRepeat,
   setSubtaskDone,
@@ -25,16 +26,20 @@ import {
   type Task,
   type TaskId,
 } from '../core'
-import type { TaskRepository } from '../storage/taskRepository'
+import { changesBetween, type TaskChanges, type TaskRepository } from '../storage/taskRepository'
 
-function persist(repository: TaskRepository, tasks: Task[]): void {
-  repository.save(tasks).catch((error: unknown) => {
+function persist(repository: TaskRepository, changes: TaskChanges): void {
+  if (changes.saved.length === 0 && changes.removed.length === 0) return
+
+  repository.save(changes).catch((error: unknown) => {
     console.error('Could not save tasks.', error)
   })
 }
 
 /**
- * Holds the task list on screen and keeps the repository in step with it.
+ * Holds the task list on screen and keeps it and the repository in step both
+ * ways: a change made here is saved, and one saved elsewhere — another tab,
+ * another device — comes back through the subscription and is shown.
  * The rules themselves live in ../core; this only wires them to React.
  */
 export function useTasks(repository: TaskRepository) {
@@ -42,39 +47,30 @@ export function useTasks(repository: TaskRepository) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    let cancelled = false
-
-    repository
-      .load()
-      .then((saved) => {
-        if (cancelled) return
-
-        // Anything whose time in the trash ran out while the app was closed goes
-        // now, and is written back so storage stops carrying it around.
+    return repository.subscribe(
+      (saved) => {
+        // Anything whose time in the trash ran out, while the app was closed or on
+        // another device, goes now, and is written back so storage stops carrying it.
         const kept = purgeExpired(saved)
         setTasks(kept)
         setIsLoading(false)
-        if (kept.length !== saved.length) {
-          persist(repository, kept)
-        }
-      })
-      .catch((error: unknown) => {
+        persist(repository, changesBetween(saved, kept))
+      },
+      (error) => {
         console.error('Could not load tasks.', error)
-        if (!cancelled) setIsLoading(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
+        setIsLoading(false)
+      },
+    )
   }, [repository])
 
   const apply = useCallback(
     (change: (current: Task[]) => Task[]) => {
       // Expiry is a matter of elapsed time, so any moment the list is touched is
-      // a fair one to take the trash out too.
+      // a fair one to take the trash out too. Only the tasks the change touched are
+      // written, so nothing another device changed meanwhile is written back over.
       const next = purgeExpired(change(tasks))
       setTasks(next)
-      persist(repository, next)
+      persist(repository, changesBetween(tasks, next))
     },
     [tasks, repository],
   )
@@ -132,6 +128,14 @@ export function useTasks(repository: TaskRepository) {
   const changeRepeat = useCallback(
     (id: TaskId, repeat: Repeat | null) => {
       apply((current) => current.map((task) => (task.id === id ? setRepeat(task, repeat) : task)))
+    },
+    [apply],
+  )
+
+  /** Marks a habit done on a day up to today, or not done. */
+  const setHabitDay = useCallback(
+    (id: TaskId, day: LocalDay, done: boolean) => {
+      apply((current) => current.map((task) => (task.id === id ? setDoneOnDay(task, day, done) : task)))
     },
     [apply],
   )
@@ -215,6 +219,7 @@ export function useTasks(repository: TaskRepository) {
     changeDescription,
     changeDueDate,
     changeRepeat,
+    setHabitDay,
     addChecklistItem,
     setChecklistItemDone,
     renameChecklistItem,

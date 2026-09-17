@@ -3,13 +3,16 @@ import type { Weekday } from '../../core'
 import type { RepeatDraft, RepeatKind } from '../repeatDraft'
 import { toRepeat } from '../repeatDraft'
 import { WEEKDAYS, describeRepeat } from '../repeatLabels'
+import { controlOff, controlOn } from '../rowControls'
 import { RepeatIcon } from './RepeatIcon'
 
 const KINDS: readonly { readonly value: Exclude<RepeatKind, 'once'>; readonly label: string }[] = [
   { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Every week' },
-  { value: 'monthly', label: 'Every month' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
 ]
+
+const button = 'flex h-6 w-full items-center gap-1.5 rounded-lg px-2 text-sm leading-none transition-colors'
 
 const option =
   'flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800'
@@ -26,6 +29,11 @@ interface RepeatPickerProps {
   onChange: (draft: RepeatDraft) => void
   /** What this picker is for, when there is more than one on screen. */
   label?: string
+  /**
+   * Whether the button spells the rule out beside its icon. Off, the icon alone
+   * says there is one; the rule is still its name and its tooltip.
+   */
+  showRule?: boolean
 }
 
 /**
@@ -36,7 +44,7 @@ interface RepeatPickerProps {
  * footer would only have offered a second way to do what clicking the chosen
  * kind again already does — clear it.
  */
-export function RepeatPicker({ draft, onChange, label = 'Repeat' }: RepeatPickerProps) {
+export function RepeatPicker({ draft, onChange, label = 'Repeat', showRule = true }: RepeatPickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
 
@@ -63,7 +71,7 @@ export function RepeatPicker({ draft, onChange, label = 'Repeat' }: RepeatPicker
   }
 
   const rule = toRepeat(draft)
-  const summary = rule === null ? 'Does not repeat' : describeRepeat(rule)
+  const summary = rule === null ? 'Repeat' : describeRepeat(rule)
 
   return (
     <div
@@ -83,14 +91,10 @@ export function RepeatPicker({ draft, onChange, label = 'Repeat' }: RepeatPicker
         aria-expanded={isOpen}
         aria-label={`${label}: ${summary}`}
         title={summary}
-        className={
-          rule === null
-            ? 'flex h-6 w-full items-center gap-1.5 rounded-lg px-2 text-sm leading-none text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
-            : 'flex h-6 w-full items-center gap-1.5 rounded-lg bg-blue-600/10 px-2 text-sm leading-none text-blue-600 transition-colors hover:bg-blue-600/20 dark:text-blue-400'
-        }
+        className={rule === null ? `${button} ${controlOff}` : `${button} ${controlOn}`}
       >
         <RepeatIcon />
-        {rule !== null && <span className="max-w-28 truncate sm:max-w-48">{describeRepeat(rule)}</span>}
+        {rule !== null && showRule && <span className="max-w-28 truncate sm:max-w-48">{summary}</span>}
       </button>
 
       {isOpen && (

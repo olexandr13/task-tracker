@@ -1,12 +1,18 @@
 rules_version = '2';
 
-// Nothing reads or writes Firestore yet: tasks are still kept in the browser
-// (wiki/account.md, AUTH-13). Everything is denied until the tasks data model
-// lands, and its rules are written against that model.
+// Each account's tasks sit under its own id, one document per task, stored as
+// { version, task } (src/storage/firestoreTaskRepository.ts). Only the account
+// itself reads or writes them, and a task is always filed under its own id.
+// Anything else in the database is denied.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+    match /users/{accountId}/tasks/{taskId} {
+      function isOwner() {
+        return request.auth != null && request.auth.uid == accountId;
+      }
+
+      allow read, delete: if isOwner();
+      allow create, update: if isOwner() && request.resource.data.task.id == taskId;
     }
   }
 }

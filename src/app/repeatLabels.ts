@@ -1,4 +1,4 @@
-import type { Repeat, Weekday } from '../core'
+import { repeatsEveryDay, type Repeat, type Weekday } from '../core'
 
 /**
  * How recurrence rules read on screen. The rules themselves live in ../core;
@@ -27,14 +27,15 @@ const SHORT_NAMES: Record<Weekday, string> = {
 }
 
 export function describeRepeat(repeat: Repeat): string {
+  if (repeatsEveryDay(repeat)) {
+    return 'Daily'
+  }
+
   switch (repeat.kind) {
     case 'daily':
       return 'Daily'
 
     case 'weekly': {
-      if (repeat.weekdays.length === 7) {
-        return 'Daily'
-      }
       const names = WEEKDAYS.filter((day) => repeat.weekdays.includes(day.value)).map(
         (day) => SHORT_NAMES[day.value],
       )
@@ -62,23 +63,5 @@ export function ordinal(day: number): string {
       return `${String(day)}rd`
     default:
       return `${String(day)}th`
-  }
-}
-
-/**
- * How long a completion holds, said in the period it holds for. A weekly rule on
- * every weekday is a daily rule under another name, the way `describeRepeat`
- * already reads it.
- */
-export function describeDoneUntil(repeat: Repeat): string {
-  switch (repeat.kind) {
-    case 'daily':
-      return 'done today'
-
-    case 'weekly':
-      return repeat.weekdays.length === 7 ? 'done today' : 'done this week'
-
-    case 'monthly':
-      return 'done this month'
   }
 }

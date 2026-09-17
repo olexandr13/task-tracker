@@ -19,6 +19,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Repeating tasks](repeating-tasks.md) | Daily, weekly and monthly rules, and how a repeat reads as done |
 | [Trash](trash.md) | Deleting, the undo window, retention and purging |
 | [Progress](progress.md) | The three bars: today, this week, this month |
+| [Habits](habits.md) | Daily tasks as habits: streaks, rates and the grid of days |
 | [Daily quote](daily-quote.md) | One quote a day, in two languages, with a fallback |
 | [Interface](interface.md) | Layout, navigation, popovers, phone behaviour, accessibility |
 | [Storage](storage.md) | Where data lives, schema versions and migrations |

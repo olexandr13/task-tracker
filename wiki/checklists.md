@@ -29,7 +29,7 @@ count.
   leaving the row, and brings it back. A row at rest shows no checklist, so the list stays
   something you can run your eye down.
 - **CHK-5** That button shows whether there is a checklist: marked when there is, muted when there
-  is not — and muted, it appears only once the row is clicked into, as the description one does. Where there is room it also reads how it stands — `2/5`. On a narrow screen the count is
+  is not, and on show at rest either way (UI-18). Where there is room it also reads how it stands — `2/5`. On a narrow screen the count is
   dropped and the button alone remains, the width being worth more; a screen reader is still told
   the full count either way.
 - **CHK-6** Items are added on one line at the foot of the list: type and press Enter. There is no

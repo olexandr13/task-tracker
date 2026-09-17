@@ -7,11 +7,11 @@ and whether it reads as done is derived from the occurrence currently in play ra
 
 - **RPT-1** A task can repeat **daily**, **weekly** on chosen weekdays, or **monthly** on a chosen
   day of the month.
-- **RPT-2** A repeating task is one task, not a fresh one each day. No completion history
-  accumulates, and nothing is created in the background.
+- **RPT-2** A repeating task is one task, not a fresh one each day. Nothing is created in the
+  background: what builds up is a list of the days it was done on (RPT-27), kept on the task itself.
 - **RPT-3** A rule stores no dates of its own. It answers one question — given a moment, which day
-  is the occurrence in play? — and everything else follows from that answer and the single stored
-  completion time.
+  is the occurrence in play? — and whether the task reads as done follows from that answer and the
+  single stored completion time.
 
 ## Which occurrence is in play
 
@@ -48,9 +48,12 @@ and whether it reads as done is derived from the occurrence currently in play ra
 
 - **RPT-16** Repeat is **one control**, not a row of them: a small button that opens a panel
   holding every choice, so the add row stays a single line.
-- **RPT-17** The button shows the rule in words when there is one, and is plain when there is not.
-  On a task row a rule stays on show at rest, while a plain button appears only once the row is
-  clicked into; in the add row it is always there.
+- **RPT-17** The button is tinted when there is a rule, and plain when there is not. In the add
+  row it is always there and spells the rule out beside its icon. On a task row the button is the
+  **icon alone** — enough to say the task repeats, and the rule is its name and tooltip. How often
+  is a detail, spelled out once the row is clicked into — as muted text **right beside the repeat
+  button**, which it describes, in the room a date takes on a one-off (UI-27), so it moves no icon
+  along. A plain button is on show at rest too (UI-18).
 - **RPT-18** Choosing the kind already chosen turns it back off, so the task happens once.
 - **RPT-19** Weekly shows the seven days, Sunday first. The last selected day cannot be removed —
   it would leave a rule with no occurrences.
@@ -70,12 +73,27 @@ and whether it reads as done is derived from the occurrence currently in play ra
   "Every month on the 5th".
 - **RPT-25** A weekly rule covering all seven days reads "Daily" — it is a daily rule under another
   name.
-- **RPT-26** While a repeating task is done, the row says how long that holds — "done today", "done
-  this week", "done this month". It is dropped on narrow screens, where the width is worth more.
+
+## History
+
+- **RPT-27** A repeating task keeps the **days it was done on**: its local days, oldest first, each
+  day at most once. This is what [Habits](habits.md) read from.
+- **RPT-28** The history always agrees with the task's box. Completing a task, whether from its own
+  box or by its checklist's last tick, adds the day. Taking the completion back, from the box or by
+  unticking an item, removes the days of the occurrence in play, and only those (RPT-11). Ticking
+  and unticking never touch days from earlier occurrences. Only the Habits page changes those, one
+  day at a time (HAB-16).
+- **RPT-29** Completing, reopening and ticking the same day again and again leaves one day, not many.
+- **RPT-30** A task that happens once records no history. Dropping a rule keeps the days already
+  recorded, so a task given its rule back picks its record up where it was.
+- **RPT-31** Giving a rule to a task that still reads as done under it records that day, as ticking
+  it off under the rule would have: a one-off finished today that becomes daily is done today and
+  in its history (RPT-13).
 
 ---
 
 **Where it lives:** `src/core/repeat.ts` (the rules), `src/core/task.ts` (`isComplete`,
-`setRepeat`), `src/app/repeatDraft.ts` (what the picker holds while choosing),
+`setRepeat`, `doneDays` and `settleHistory`), `src/app/repeatDraft.ts` (what the picker holds while choosing),
 `src/app/repeatLabels.ts` (wording), `src/app/components/RepeatPicker.tsx`.
-**Tested in:** `src/core/repeat.test.ts`, `src/core/task.test.ts`.
+**Tested in:** `src/core/repeat.test.ts`, `src/core/task.test.ts`,
+`src/app/components/TaskItem.test.tsx`.

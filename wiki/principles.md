@@ -16,23 +16,24 @@ these, so a feature page only mentions them where the feature bends them.
 
 ## Data
 
-- **PRIN-4** Nothing is shown without a Google account (AUTH-1), but the tasks themselves are
-  still kept on the device, with no sync between devices — a refresh or a closed browser loses
-  nothing, but a second device knows nothing.
+- **PRIN-4** Nothing is shown without a Google account (AUTH-1), and the tasks are the account's:
+  every device signed into it shows the same ones, kept in step as they change (STORE-2).
 - **PRIN-5** Saved data is versioned and migrated on load. Changing the stored shape never silently
   breaks what is already saved. See [Storage](storage.md).
-- **PRIN-6** Ids are UUIDs and timestamps are ISO 8601, so records written on two devices could
-  merge if sync ever happens.
-- **PRIN-7** History is not kept. A task stores its **most recent** completion and nothing more,
-  which is why progress counts tasks rather than occurrences and why streaks are not possible yet.
+- **PRIN-6** Ids are UUIDs and timestamps are ISO 8601, so records written on two devices merge one
+  by one rather than colliding.
+- **PRIN-7** A task stores its **most recent** completion time. A repeating task also stores the
+  **days** it was done on (RPT-27), which is what habits and their streaks are read from
+  ([Habits](habits.md)). Nothing else is kept: a one-off has no history, and neither does a
+  checklist item.
 
 ## Behaviour
 
 - **PRIN-8** Destructive actions are reversible, or they ask first. Deleting is reversible twice
   over; the two actions that genuinely end a task say so.
 - **PRIN-9** The app works offline. Signing in for the first time needs a connection; after that
-  the session is remembered (AUTH-7). The daily quote is the only other thing that reaches the
-  network, and it falls back to a bundled pack rather than failing.
+  the session is remembered (AUTH-7). The tasks open from the browser's copy and changes wait for
+  a connection (STORE-18). The daily quote falls back to a bundled pack rather than failing.
 - **PRIN-10** Nothing is lost by a mis-click: an abandoned edit leaves no trace, and a deletion can
   be taken straight back.
 

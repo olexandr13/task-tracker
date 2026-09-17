@@ -38,6 +38,14 @@ export function assertValidRepeat(repeat: Repeat): void {
   }
 }
 
+/**
+ * Whether the rule comes round every single day: a daily rule, or a weekly one
+ * that has all seven weekdays and so is a daily rule under another name.
+ */
+export function repeatsEveryDay(repeat: Repeat): boolean {
+  return repeat.kind === 'daily' || (repeat.kind === 'weekly' && new Set(repeat.weekdays).size === 7)
+}
+
 function isDayOfMonth(day: number): boolean {
   return Number.isInteger(day) && day >= 1 && day <= 31
 }

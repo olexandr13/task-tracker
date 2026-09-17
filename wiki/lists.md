@@ -22,8 +22,8 @@ record — but a question asked of all of them, answered fresh on every render. 
 - **LIST-7** Otherwise Today is the same list as Tasks: the same rows, done tasks sinking to the
   bottom, dragging to reorder — which moves the task in the full list too — and the same rail, whose
   bars count every task rather than only today's.
-- **LIST-8** An empty Today says there is nothing due and that a task added above will be due
-  today.
+- **LIST-8** An empty Today greets a fresh day and says to add a task above. Once everything in it
+  is done, it praises the day's work instead (TASK-50).
 - **LIST-9** Nothing moves at midnight. What is in Today follows from the day it is, so a page left
   open picks up the new day on its next render (PRIN-2).
 

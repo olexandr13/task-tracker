@@ -23,7 +23,8 @@ The backend is Firebase project `task-tracker-a6e9e`
   listed under **Authentication → Settings → Authorized domains**: `localhost` and the Vercel
   address must both be there.
 - **Firestore** — the `(default)` database, Standard edition, in `eur3`, with delete protection on.
-  `firebase.json` points at `firestore.rules` and `firestore.indexes.json`.
+  Tasks live at `users/{uid}/tasks/{taskId}`, readable only by that account. `firebase.json` points
+  at `firestore.rules` and `firestore.indexes.json`; deploy the rules after changing them.
 - **Web app** "Task Tracker Web". Its settings are the `VITE_FIREBASE_*` variables in `.env.local`,
   which git ignores, so no key is kept in the repository. Print them with
   `npx -y firebase-tools@latest apps:sdkconfig WEB --project task-tracker-a6e9e`, and restart
@@ -64,7 +65,7 @@ so the hosted app does not see tasks saved on `localhost`.
 ## How it's organised
 
 - `src/core/` — the rules. Pure TypeScript, no React, no browser APIs.
-- `src/storage/` — saving and loading, and signing in. Currently `localStorage`, and Firebase Auth.
+- `src/storage/` — saving and loading, and signing in. Tasks in Firestore, the quote cache in `localStorage`, and Firebase Auth.
 - `src/app/` — the React UI.
 
 Dependencies point inwards only, and `npm run lint` enforces it. See `CLAUDE.md` for the details.

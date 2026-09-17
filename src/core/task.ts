@@ -6,8 +6,8 @@
  * reusable if the app ever grows a second front end. See CLAUDE.md.
  */
 
-import { InvalidDayError, isLocalDay, type LocalDay } from './day'
-import { assertValidRepeat, countsForCurrentOccurrence, type Repeat } from './repeat'
+import { InvalidDayError, isLocalDay, toLocalDay, type LocalDay } from './day'
+import { assertValidRepeat, countsForCurrentOccurrence, currentOccurrence, type Repeat } from './repeat'
 import { createSubtask, isSubtaskComplete, type Subtask, type SubtaskId } from './subtask'
 import { normalizeTitle } from './title'
 
@@ -37,6 +37,14 @@ export interface Task {
   readonly completedAt: string | null
   /** A recurrence rule, or null for a task that happens once. */
   readonly repeat: Repeat | null
+  /**
+   * The local days a repeating task was done on, oldest first — its history,
+   * which `completedAt` alone cannot be, since that holds only the latest one.
+   * Kept in step with whether the task reads as done; see `settleHistory`. A
+   * task that happens once needs no history and records none, but keeps what it
+   * gathered while it repeated, should it repeat again.
+   */
+  readonly doneDays: readonly LocalDay[]
   /**
    * The local day a one-off is due, or null for one that has no day. Always null
    * on a repeating task: its rule is what says which days it falls on. See ./due.
@@ -85,6 +93,7 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
     createdAt: now.toISOString(),
     completedAt: null,
     repeat,
+    doneDays: [],
     dueDate: null,
     subtasks: [],
     deletedAt: null,
@@ -144,14 +153,17 @@ export function completeTask(task: Task, now: Date = new Date()): Task {
 
   const at = now.toISOString()
 
-  return {
-    ...task,
-    status: 'done',
-    completedAt: at,
-    subtasks: task.subtasks.map((subtask) =>
-      isSubtaskComplete(subtask, task.repeat, now) ? subtask : { ...subtask, completedAt: at },
-    ),
-  }
+  return settleHistory(
+    {
+      ...task,
+      status: 'done',
+      completedAt: at,
+      subtasks: task.subtasks.map((subtask) =>
+        isSubtaskComplete(subtask, task.repeat, now) ? subtask : { ...subtask, completedAt: at },
+      ),
+    },
+    now,
+  )
 }
 
 /**
@@ -166,14 +178,17 @@ export function uncompleteTask(task: Task, now: Date = new Date()): Task {
     return task
   }
 
-  return {
-    ...task,
-    status: 'todo',
-    completedAt: null,
-    subtasks: task.subtasks.map((subtask) =>
-      subtask.completedAt === null ? subtask : { ...subtask, completedAt: null },
-    ),
-  }
+  return settleHistory(
+    {
+      ...task,
+      status: 'todo',
+      completedAt: null,
+      subtasks: task.subtasks.map((subtask) =>
+        subtask.completedAt === null ? subtask : { ...subtask, completedAt: null },
+      ),
+    },
+    now,
+  )
 }
 
 /**
@@ -192,6 +207,32 @@ export function isComplete(task: Task, now: Date = new Date()): boolean {
   }
 
   return countsForCurrentOccurrence(task.completedAt, task.repeat, now)
+}
+
+/**
+ * Brings a repeating task's history into line with whether it reads as done:
+ * while it is, the day its completion was stamped on is in the history; while
+ * it is not, nothing from the occurrence in play is, so taking a tick back takes
+ * its day back with it (RPT-11). Days from occurrences that have gone by are
+ * never touched — they are what happened.
+ *
+ * Every rule that can finish or reopen a task ends here, so the history can
+ * never disagree with the task's own box. Returns the task itself when there is
+ * nothing to change.
+ */
+function settleHistory(task: Task, now: Date): Task {
+  if (task.repeat === null) {
+    return task
+  }
+
+  if (task.completedAt !== null && isComplete(task, now)) {
+    const day = toLocalDay(new Date(task.completedAt))
+    return task.doneDays.includes(day) ? task : { ...task, doneDays: [...task.doneDays, day].sort() }
+  }
+
+  const occurrence = toLocalDay(currentOccurrence(task.repeat, now))
+  const kept = task.doneDays.filter((day) => day < occurrence)
+  return kept.length === task.doneDays.length ? task : { ...task, doneDays: kept }
 }
 
 /**
@@ -248,8 +289,9 @@ export function setRepeat(task: Task, repeat: Repeat | null, now: Date = new Dat
   }
 
   // The rule decides the days from here on, so a date set before it would only
-  // be a second, disagreeing answer.
-  return { ...task, repeat, dueDate: null }
+  // be a second, disagreeing answer. A completion that still stands under the
+  // new rule goes into the history, the way ticking it off under the rule would have.
+  return settleHistory({ ...task, repeat, dueDate: null }, now)
 }
 
 export class DueDateOnRepeatingTaskError extends Error {
@@ -319,9 +361,12 @@ function syncWithSubtasks(task: Task, now: Date): Task {
     return task
   }
 
-  return allDone
-    ? { ...task, status: 'done', completedAt: now.toISOString() }
-    : { ...task, status: 'todo', completedAt: null }
+  return settleHistory(
+    allDone
+      ? { ...task, status: 'done', completedAt: now.toISOString() }
+      : { ...task, status: 'todo', completedAt: null },
+    now,
+  )
 }
 
 /**

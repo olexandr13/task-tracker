@@ -5,9 +5,10 @@ import { defineConfig } from 'vitest/config'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // Tasks live in localStorage, which the browser keeps per address — port
-  // included. Left to itself Vite moves to the next free port when this one is
-  // taken, and the app opens there with an empty list. Failing to start is better.
+  // The browser keeps the signed-in session and the offline copy of the tasks per
+  // address — port included. Left to itself Vite moves to the next free port when
+  // this one is taken, and the app opens there signed out with nothing cached.
+  // Failing to start is better.
   server: {
     port: 5173,
     strictPort: true,

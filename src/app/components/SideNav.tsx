@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactElement } from 'react'
 import { VIEW_LABELS, type View } from '../view'
 import { CalendarIcon } from './CalendarIcon'
+import { FlameIcon } from './FlameIcon'
 import { ListIcon } from './ListIcon'
 import { TrashIcon } from './TrashIcon'
 
@@ -11,6 +12,7 @@ const VIEWS: readonly {
 }[] = [
   { value: 'today', label: VIEW_LABELS.today, Icon: CalendarIcon },
   { value: 'tasks', label: VIEW_LABELS.tasks, Icon: ListIcon },
+  { value: 'habits', label: VIEW_LABELS.habits, Icon: FlameIcon },
   { value: 'trash', label: VIEW_LABELS.trash, Icon: TrashIcon },
 ]
 

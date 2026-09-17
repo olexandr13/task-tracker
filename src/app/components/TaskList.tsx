@@ -1,4 +1,4 @@
-import type { LocalDay, Placement, Repeat, SubtaskId, Task, TaskId } from '../../core'
+import { isComplete, type LocalDay, type Placement, type Repeat, type SubtaskId, type Task, type TaskId } from '../../core'
 import { SortableTasks } from './SortableTasks'
 import { TaskItem } from './TaskItem'
 
@@ -8,6 +8,8 @@ interface TaskListProps {
   now: Date
   /** What an empty list says, pointing at the box above it. */
   emptyMessage: string
+  /** What the list says above its tasks once every one of them is done. */
+  allDoneMessage: string
   onMove: (id: TaskId, targetId: TaskId, placement: Placement) => void
   onComplete: (id: TaskId) => void
   onUncomplete: (id: TaskId) => void
@@ -26,6 +28,7 @@ export function TaskList({
   tasks,
   now,
   emptyMessage,
+  allDoneMessage,
   onMove,
   onComplete,
   onUncomplete,
@@ -47,28 +50,35 @@ export function TaskList({
     )
   }
 
+  const allDone = tasks.every((task) => isComplete(task, now))
+
   return (
-    <ul className="flex flex-col gap-1">
-      <SortableTasks tasks={tasks} onMove={onMove}>
-        {tasks.map((task) => (
-          <TaskItem
-            key={task.id}
-            task={task}
-            now={now}
-            onComplete={onComplete}
-            onUncomplete={onUncomplete}
-            onRename={onRename}
-            onChangeDescription={onChangeDescription}
-            onChangeDueDate={onChangeDueDate}
-            onChangeRepeat={onChangeRepeat}
-            onRemove={onRemove}
-            onAddSubtask={onAddSubtask}
-            onSetSubtaskDone={onSetSubtaskDone}
-            onRenameSubtask={onRenameSubtask}
-            onRemoveSubtask={onRemoveSubtask}
-          />
-        ))}
-      </SortableTasks>
-    </ul>
+    <>
+      {allDone && (
+        <p className="pt-4 pb-6 text-center text-green-700/70 dark:text-green-500/55">{allDoneMessage}</p>
+      )}
+      <ul className="flex flex-col gap-1">
+        <SortableTasks tasks={tasks} onMove={onMove}>
+          {tasks.map((task) => (
+            <TaskItem
+              key={task.id}
+              task={task}
+              now={now}
+              onComplete={onComplete}
+              onUncomplete={onUncomplete}
+              onRename={onRename}
+              onChangeDescription={onChangeDescription}
+              onChangeDueDate={onChangeDueDate}
+              onChangeRepeat={onChangeRepeat}
+              onRemove={onRemove}
+              onAddSubtask={onAddSubtask}
+              onSetSubtaskDone={onSetSubtaskDone}
+              onRenameSubtask={onRenameSubtask}
+              onRemoveSubtask={onRemoveSubtask}
+            />
+          ))}
+        </SortableTasks>
+      </ul>
+    </>
   )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { isLocalDay, offsetDay, toLocalDay, type LocalDay } from '../../core'
 import { describeDueDate, describeWeekday } from '../dueLabels'
+import { controlOff, controlOn } from '../rowControls'
 import { CalendarIcon } from './CalendarIcon'
 
 const option =
@@ -9,9 +10,6 @@ const optionOn = 'font-medium text-blue-600 dark:text-blue-400'
 const optionOff = 'text-neutral-700 dark:text-neutral-200'
 
 const button = 'flex h-6 w-full items-center gap-1.5 rounded-lg px-2 text-sm leading-none transition-colors'
-const buttonOff =
-  'text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
-const buttonOn = 'bg-blue-600/10 text-blue-600 hover:bg-blue-600/20 dark:text-blue-400'
 /** A day gone by with the task still open reads as a warning, not as information. */
 const buttonOverdue = 'bg-red-600/10 text-red-600 hover:bg-red-600/20 dark:text-red-400'
 
@@ -23,6 +21,11 @@ interface DuePickerProps {
   overdue?: boolean
   /** What this picker is for, when there is more than one on screen. */
   label?: string
+  /**
+   * Whether a narrow screen still spells the date out beside the icon. Off, it
+   * is the icon alone there, still tinted, with the date as its name and tooltip.
+   */
+  showDateWhenNarrow?: boolean
 }
 
 /**
@@ -34,7 +37,14 @@ interface DuePickerProps {
  * leaves it open, since a date is typed a part at a time and closing on the
  * first part would take the rest away.
  */
-export function DuePicker({ dueDate, now, onChange, overdue = false, label = 'Due date' }: DuePickerProps) {
+export function DuePicker({
+  dueDate,
+  now,
+  onChange,
+  overdue = false,
+  label = 'Due date',
+  showDateWhenNarrow = true,
+}: DuePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
 
@@ -81,11 +91,15 @@ export function DuePicker({ dueDate, now, onChange, overdue = false, label = 'Du
         aria-label={`${label}: ${summary}${overdue ? ', overdue' : ''}`}
         title={overdue ? `${summary} — overdue` : summary}
         className={
-          dueDate === null ? `${button} ${buttonOff}` : overdue ? `${button} ${buttonOverdue}` : `${button} ${buttonOn}`
+          dueDate === null ? `${button} ${controlOff}` : overdue ? `${button} ${buttonOverdue}` : `${button} ${controlOn}`
         }
       >
         <CalendarIcon />
-        {dueDate !== null && <span className="whitespace-nowrap">{summary}</span>}
+        {dueDate !== null && (
+          <span className={showDateWhenNarrow ? 'whitespace-nowrap' : 'hidden whitespace-nowrap sm:inline'}>
+            {summary}
+          </span>
+        )}
       </button>
 
       {isOpen && (

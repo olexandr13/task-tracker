@@ -42,11 +42,13 @@ ceremony. If a native app ever happens, `src/core/` moves into a workspace packa
 - Core functions are pure and never mutate their arguments; they return new objects.
 - Anything time-dependent in core takes an injectable `now: Date` so tests stay deterministic and
   future time-based rules (streaks) have a seam.
-- Tasks are saved under a **versioned envelope** (`{ version, tasks }`) in `localStorage`. Changing
-  the saved shape means bumping `SCHEMA_VERSION` and migrating on load — not breaking saved data.
-- Ids are `crypto.randomUUID()` and timestamps are ISO 8601, so records from two devices could merge
-  if sync ever lands.
-- Every call site talks to the `TaskRepository` interface, never to `localStorage` directly, and to
+- Tasks are saved in Firestore, one document per task at `users/{uid}/tasks/{taskId}`, under a
+  **versioned envelope** (`{ version, task }`). Changing the saved shape means bumping
+  `SCHEMA_VERSION` (`src/storage/taskSchema.ts`) and migrating on load — not breaking saved data.
+  Changing who may read or write means editing `firestore.rules` and deploying it.
+- Ids are `crypto.randomUUID()` and timestamps are ISO 8601, so records from two devices merge task
+  by task.
+- Every call site talks to the `TaskRepository` interface, never to Firestore directly, and to
   the `AuthService` interface, never to Firebase directly.
 - Service settings (Firebase) come from `VITE_*` variables: `.env.local` locally, the Vercel project's
   environment variables in production. **No key, token or secret goes in source or any committed

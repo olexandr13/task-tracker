@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { InvalidRepeatError, assertValidRepeat, currentOccurrence, type Repeat } from './repeat'
+import { InvalidRepeatError, assertValidRepeat, currentOccurrence, repeatsEveryDay, type Repeat } from './repeat'
 
 // Local dates on purpose: occurrences are local days. September 2026 runs
 // Mon 14, Tue 15, Wed 16, Thu 17, Fri 18, Sat 19, Sun 20, Mon 21.
@@ -86,5 +86,18 @@ describe('assertValidRepeat', () => {
     expect(() => { assertValidRepeat({ kind: 'daily' }) }).not.toThrow()
     expect(() => { assertValidRepeat(MONDAYS) }).not.toThrow()
     expect(() => { assertValidRepeat({ kind: 'monthly', day: 31 }) }).not.toThrow()
+  })
+})
+
+describe('repeatsEveryDay', () => {
+  it('holds for a daily rule, and a weekly one on all seven days', () => {
+    expect(repeatsEveryDay({ kind: 'daily' })).toBe(true)
+    expect(repeatsEveryDay({ kind: 'weekly', weekdays: [0, 1, 2, 3, 4, 5, 6] })).toBe(true)
+  })
+
+  it('does not hold for any rule that skips a day', () => {
+    expect(repeatsEveryDay({ kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6] })).toBe(false)
+    expect(repeatsEveryDay({ kind: 'weekly', weekdays: [1, 1, 2, 3, 4, 5, 6] })).toBe(false)
+    expect(repeatsEveryDay({ kind: 'monthly', day: 1 })).toBe(false)
   })
 })

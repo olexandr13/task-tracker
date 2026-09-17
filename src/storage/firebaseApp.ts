@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app'
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
 
 /**
  * The Firebase project behind the app: project `task-tracker-a6e9e`, web app
@@ -32,4 +33,14 @@ export const firebaseApp = initializeApp({
   authDomain: SETTINGS.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: SETTINGS.VITE_FIREBASE_PROJECT_ID,
   appId: SETTINGS.VITE_FIREBASE_APP_ID,
+})
+
+/**
+ * The database, with a copy of what it holds kept in the browser and shared by
+ * every open tab: the tasks open offline, and changes made offline are sent once
+ * there is a connection. Set up here, once, because Firestore can only be set up
+ * once per page.
+ */
+export const firestore = initializeFirestore(firebaseApp, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
 })

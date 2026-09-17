@@ -37,15 +37,16 @@ renamed, it is described, it is completed, it is moved, it is deleted. Deleting 
 
 ## Renaming
 
-- **TASK-8** Clicking a task's title turns it into a text box in place, with the caret at the end —
-  an edit is usually a tweak, not a rewrite.
+- **TASK-8** Clicking a task's title turns it into a text box in place, with the caret **where you
+  clicked or tapped** — between the two characters nearest the pointer, or at the end when the click
+  is just past the last word. Nothing is selected: an edit is usually a tweak, not a rewrite. Opened
+  from the keyboard, the caret goes to the end. The part of the row that edits the title is the
+  words themselves and a few pixels past them (UI-29).
 - **TASK-9** Enter, or clicking away, keeps the new title. Escape drops the edit.
 - **TASK-10** An empty box counts as an abandoned edit rather than a request for a nameless task:
   the old title stays.
 - **TASK-11** A rename changes the title and nothing else — same id, same completion record, same
   rule — so nothing counting tasks sees a different one afterwards.
-- **TASK-12** While the title is being edited the row hides its "done today" hint, so the text box
-  has the width.
 
 ## Describing
 
@@ -56,8 +57,7 @@ renamed, it is described, it is completed, it is moved, it is deleted. Deleting 
   leaving the row, and brings it back. A row at rest shows no description, so the list stays
   something you can run your eye down.
 - **TASK-23** That button shows whether there is anything written: marked when there is, muted when
-  there is not. Marked, it stays on the row at rest; muted, it appears only once the row is clicked
-  into — see [Interface](interface.md).
+  there is not. It is on the row at rest either way — see [Interface](interface.md).
 - **TASK-24** It opens as text either way, a blank one reading as the line that invites you to
   write. Clicking that text turns it into a box in place, as a title does. Opening a row does
   **not** take the caret: the description comes up on every click into a task, and one that grabbed
@@ -130,7 +130,9 @@ renamed, it is described, it is completed, it is moved, it is deleted. Deleting 
   the order they were added, until one is moved — and completing one does not shuffle the rest.
 - **TASK-18** A repeating task is only at the bottom while its current occurrence is done; it comes
   back up on its own when the next one arrives.
-- **TASK-19** An empty list says so and points at the box above it.
+- **TASK-19** An empty list encourages a start and points at the box above it.
+- **TASK-50** A list whose tasks are all done praises the work, above the done tasks. The moment one
+  is open again, the praise goes.
 - **TASK-20** Until the saved tasks have loaded, the list area says it is loading rather than
   flashing an empty list.
 
@@ -165,4 +167,4 @@ description is written in), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx` (or
 `src/app/useSortableTask.ts` and `src/app/dragSensors.ts` (dragging).
 
 **Tested in:** `src/core/task.test.ts`, `src/core/emphasis.test.ts`, `src/core/lists.test.ts`,
-`src/core/order.test.ts`.
+`src/core/order.test.ts`, `src/app/components/TaskList.test.tsx` (what a list says).

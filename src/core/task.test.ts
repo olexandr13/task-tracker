@@ -4,6 +4,7 @@ import { InvalidRepeatError, type Repeat } from './repeat'
 import { EmptyTitleError } from './title'
 import {
   DueDateOnRepeatingTaskError,
+  addSubtask,
   completeTask,
   createTask,
   deleteTask,
@@ -16,6 +17,7 @@ import {
   setDescription,
   setDueDate,
   setRepeat,
+  setSubtaskDone,
   uncompleteTask,
 } from './task'
 
@@ -388,5 +390,78 @@ describe('restoreTask', () => {
     const task = createTask('buy milk', null, NOW)
 
     expect(restoreTask(task)).toBe(task)
+  })
+})
+
+// Local dates again: a history is made of local days.
+const TUE_15_NIGHT = new Date(2026, 8, 15, 23, 59)
+const THU_17 = new Date(2026, 8, 17, 9, 0)
+
+describe('doneDays', () => {
+  it('records the day a repeating task is done on, oldest first', () => {
+    const task = completeTask(completeTask(createTask('stretch', DAILY, MON_14), MON_14), TUE_15_NIGHT)
+
+    expect(task.doneDays).toEqual(['2026-09-14', '2026-09-15'])
+  })
+
+  it('records a day once, however many times it is ticked on it', () => {
+    const task = createTask('stretch', DAILY, MON_14)
+    const again = completeTask(uncompleteTask(completeTask(task, MON_14), MON_14), MON_14)
+
+    expect(again.doneDays).toEqual(['2026-09-14'])
+  })
+
+  it('takes the day back when the tick is taken back, leaving the days before it', () => {
+    const done = completeTask(completeTask(createTask('stretch', DAILY, MON_14), MON_14), TUE_15)
+
+    expect(uncompleteTask(done, TUE_15).doneDays).toEqual(['2026-09-14'])
+  })
+
+  it('takes back a weekly tick made after its day, for the occurrence it counted towards', () => {
+    const done = completeTask(createTask('review', MONDAYS, MON_14), TUE_15)
+
+    expect(done.doneDays).toEqual(['2026-09-15'])
+    expect(uncompleteTask(done, WED_16).doneDays).toEqual([])
+  })
+
+  it('keeps no history for a task that happens once', () => {
+    expect(completeTask(createTask('buy milk', null, NOW), LATER).doneDays).toEqual([])
+  })
+
+  it('follows a checklist that finishes the task, and reopens it', () => {
+    const task = addSubtask(createTask('morning routine', DAILY, MON_14), 'stretch', MON_14)
+    const itemId = task.subtasks[0].id
+    const finished = setSubtaskDone(task, itemId, true, TUE_15)
+
+    expect(finished.doneDays).toEqual(['2026-09-15'])
+    expect(setSubtaskDone(finished, itemId, false, TUE_15).doneDays).toEqual([])
+  })
+
+  it('counts a one-off finished today once it becomes a habit (RPT-13)', () => {
+    const task = setRepeat(completeTask(createTask('stretch', null, MON_14), TUE_15), DAILY, TUE_15)
+
+    expect(task.doneDays).toEqual(['2026-09-15'])
+  })
+
+  it('keeps the history when the rule is dropped, and picks it back up when a rule returns', () => {
+    const habit = completeTask(createTask('stretch', DAILY, MON_14), MON_14)
+    const dropped = setRepeat(habit, null, WED_16)
+
+    expect(dropped.doneDays).toEqual(['2026-09-14'])
+    expect(setRepeat(dropped, DAILY, THU_17).doneDays).toEqual(['2026-09-14'])
+  })
+
+  it('forgets today when a rule returns to a task that was reopened while it happened once', () => {
+    const doneToday = completeTask(createTask('stretch', DAILY, MON_14), TUE_15)
+    const reopened = uncompleteTask(setRepeat(doneToday, null, TUE_15), TUE_15)
+
+    expect(setRepeat(reopened, DAILY, TUE_15).doneDays).toEqual([])
+  })
+
+  it('never touches the task it was given', () => {
+    const task = completeTask(createTask('stretch', DAILY, MON_14), MON_14)
+    completeTask(task, TUE_15)
+
+    expect(task.doneDays).toEqual(['2026-09-14'])
   })
 })

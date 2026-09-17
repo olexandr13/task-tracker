@@ -37,8 +37,9 @@ the month stand.
 
 ## Deliberately not counted
 
-- **PROG-15** Per-occurrence progress — "done on five of this week's seven days" — is not possible
-  from what is saved. It needs a completion history, the same thing streaks need.
+- **PROG-15** The bars do not count occurrences — "done on five of this week's seven days". Repeating
+  tasks now keep the days they were done on (RPT-27), so this could be counted, but the bars still
+  count tasks. How often a habit was kept is on the Habits page instead (HAB-8).
 
 ---
 

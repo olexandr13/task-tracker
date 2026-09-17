@@ -1,5 +1,5 @@
 import { CSS } from '@dnd-kit/utilities'
-import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react'
 import {
   countSubtasks,
   hasDescription,
@@ -13,7 +13,9 @@ import {
   type TaskId,
 } from '../../core'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
-import { describeDoneUntil } from '../repeatLabels'
+import { describeRepeat } from '../repeatLabels'
+import { completionBoxOff, completionBoxOn, controlOff, controlOn } from '../rowControls'
+import { textOffsetAtPoint } from '../textOffsetAtPoint'
 import { useSortableTask } from '../useSortableTask'
 import { ChecklistIcon } from './ChecklistIcon'
 import { DuePicker } from './DuePicker'
@@ -39,11 +41,8 @@ interface TaskItemProps {
   onRemoveSubtask: (id: TaskId, subtaskId: SubtaskId) => void
 }
 
-const checkbox =
-  'grid size-5 shrink-0 place-items-center rounded-md border-2 text-xs leading-none transition-colors'
-
-/** The title and the box that replaces it sit in the same space, so nothing shifts. */
-const titleBox = 'min-w-0 flex-1 text-left text-sm'
+/** The title and the box that replaces it start in the same place, so nothing shifts. */
+const titleBox = 'min-w-0 text-left text-sm'
 
 /**
  * Where the title starts, and so where everything the row holds lines up: the
@@ -51,15 +50,19 @@ const titleBox = 'min-w-0 flex-1 text-left text-sm'
  */
 const indent = 'pl-10'
 
+/**
+ * Each control sits in a slot of fixed width, content at its start, so an icon is
+ * in the same place on every row whatever its neighbours hold. A slot is as wide
+ * as the longest thing its control usually says — `Sep 20, 2027`, `9/9` — and just
+ * the icon's width on a narrow screen, where those words are dropped.
+ */
+const slot = 'flex shrink-0 items-center'
+
 /** Shares the shape of the repeat button beside them: small controls, not a row. */
 const rowButton = 'flex h-6 shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm leading-none transition-colors'
-const rowButtonOn = 'bg-blue-600/10 text-blue-600 hover:bg-blue-600/20 dark:text-blue-400'
 /** Sits in the page's gutter, just left of the row's border. */
 const grip =
   'absolute top-1 -left-4 grid h-6 w-4 cursor-grab place-items-center rounded text-neutral-400 transition-opacity hover:text-neutral-900 active:cursor-grabbing dark:text-neutral-500 dark:hover:text-neutral-100'
-
-const rowButtonOff =
-  'text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
 
 export function TaskItem({
   task,
@@ -84,17 +87,20 @@ export function TaskItem({
   // Null unless the title is being edited. The text lives here rather than in the
   // task while it is being typed, so an abandoned edit leaves nothing behind.
   const [editedTitle, setEditedTitle] = useState<string | null>(null)
-  // A row at rest is a task, not a toolbar: its controls appear once you click
-  // into it. What is already set stays on show regardless, being information
-  // about the task rather than only a way of changing it.
+  // A woken row is the one being worked on: it spells its repeat rule out and
+  // opens what it holds. Its controls are on show either way.
   const [isActive, setIsActive] = useState(false)
   // What the woken row is showing. Both come up with it — clicking a task is
   // asking to see the whole of it, not to be handed two more buttons to press —
   // and either can be put away again without leaving the row.
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false)
   const [isChecklistOpen, setIsChecklistOpen] = useState(false)
+  // Where the caret goes when the title opens as a box: where it was clicked, or
+  // the end when there is no such place.
+  const caret = useRef<number | null>(null)
   const input = useRef<HTMLInputElement>(null)
   const row = useRef<HTMLLIElement>(null)
+  const line = useRef<HTMLDivElement>(null)
   const sortable = useSortableTask(task, now)
   const isEditing = editedTitle !== null
 
@@ -103,9 +109,10 @@ export function TaskItem({
     if (element === null) return
 
     element.focus()
-    // Caret at the end rather than the whole title selected: an edit is usually a
-    // tweak to what is already there, not a rewrite.
-    element.setSelectionRange(element.value.length, element.value.length)
+    // A caret rather than the whole title selected: an edit is usually a tweak to
+    // what is already there, not a rewrite.
+    const at = Math.min(caret.current ?? element.value.length, element.value.length)
+    element.setSelectionRange(at, at)
   }, [isEditing])
 
   useEffect(() => {
@@ -120,9 +127,8 @@ export function TaskItem({
   }, [isActive])
 
   /**
-   * Opening the row: its controls come out and it shows what it holds. Clicks
-   * inside an already-woken row change nothing, so a button that closes one of
-   * the two is not undone by the same click reaching the row beneath it.
+   * Opening the row: it shows what it holds. A row already awake is left as it
+   * is, so focus moving between its controls does not bring back what was put away.
    */
   function wake() {
     if (isActive) return
@@ -136,6 +142,30 @@ export function TaskItem({
     setIsActive(false)
     setIsChecklistOpen(false)
     setIsDescriptionOpen(false)
+  }
+
+  /**
+   * A click on a resting row wakes it. On a woken row only a click on the task's
+   * own line, clear of everything on it that does something, rests it again:
+   * a click inside a control, a picker or a panel is about that, and a button
+   * that closes one of those is not undone by the same click reaching the row.
+   */
+  function handleClick(event: MouseEvent<HTMLLIElement>) {
+    if (!isActive) {
+      wake()
+      return
+    }
+
+    const target = event.target as Element
+    const onLine = target === event.currentTarget || line.current?.contains(target) === true
+    if (onLine && target.closest('button, input, [role="dialog"]') === null) rest()
+  }
+
+  /** The title opens as a box, caret where it was clicked; from the keyboard, at the end. */
+  function startEdit(event: MouseEvent<HTMLButtonElement>) {
+    caret.current =
+      event.detail === 0 ? null : textOffsetAtPoint(event.currentTarget, event.clientX, event.clientY)
+    setEditedTitle(task.title)
   }
 
   /**
@@ -194,7 +224,7 @@ export function TaskItem({
       {...sortable.listeners}
       // On the click rather than the press: waking the row moves the buttons
       // along, and a press that moves what is under it never becomes a click.
-      onClick={wake}
+      onClick={handleClick}
       onFocus={handleFocus}
       onBlur={handleBlur}
       onKeyDown={(event) => {
@@ -227,7 +257,7 @@ export function TaskItem({
         <GripIcon className="size-3.5" />
       </button>
 
-      <div className="flex items-center gap-2.5 px-2.5 py-1">
+      <div ref={line} className="flex items-center gap-2.5 px-2.5 py-1">
         <button
           type="button"
           onClick={(event) => {
@@ -238,65 +268,82 @@ export function TaskItem({
           }}
           aria-pressed={done}
           aria-label={done ? `Mark "${task.title}" as not done` : `Mark "${task.title}" as done`}
-          className={
-            done
-              ? `${checkbox} border-green-600 bg-green-600 text-white hover:border-green-700 hover:bg-green-700`
-              : `${checkbox} border-neutral-300 text-transparent hover:border-neutral-900 dark:border-neutral-600 dark:hover:border-neutral-300`
-          }
+          className={done ? completionBoxOn : completionBoxOff}
         >
           ✓
         </button>
 
-        {editedTitle === null ? (
-          <button
-            type="button"
-            onClick={() => { setEditedTitle(task.title) }}
-            aria-label={`Edit "${task.title}"`}
-            className={
-              done
-                ? `${titleBox} cursor-text break-words text-neutral-400 line-through dark:text-neutral-600`
-                : `${titleBox} cursor-text break-words text-neutral-900 dark:text-neutral-100`
-            }
-          >
-            {task.title}
-          </button>
-        ) : (
-          <input
-            ref={input}
-            type="text"
-            value={editedTitle}
-            onChange={(event) => { setEditedTitle(event.target.value) }}
-            onKeyDown={handleKeyDown}
-            onBlur={commitEdit}
-            aria-label={`Title of "${task.title}"`}
-            autoComplete="off"
-            enterKeyHint="done"
-            className={`${titleBox} bg-transparent text-neutral-900 focus:outline-none dark:text-neutral-100`}
+        {/* The title is only as wide as its words and a little past them, so the
+            rest of the line is the row to click, not the title. The box, once
+            open, takes the whole of it to type into. */}
+        <div className="flex min-w-0 flex-1">
+          {editedTitle === null ? (
+            <button
+              type="button"
+              onClick={startEdit}
+              aria-label={`Edit "${task.title}"`}
+              className={
+                done
+                  ? `${titleBox} cursor-text pr-2 break-words text-neutral-400 line-through dark:text-neutral-600`
+                  : `${titleBox} cursor-text pr-2 break-words text-neutral-900 dark:text-neutral-100`
+              }
+            >
+              {task.title}
+            </button>
+          ) : (
+            <input
+              ref={input}
+              type="text"
+              value={editedTitle}
+              onChange={(event) => { setEditedTitle(event.target.value) }}
+              onKeyDown={handleKeyDown}
+              onBlur={commitEdit}
+              aria-label={`Title of "${task.title}"`}
+              autoComplete="off"
+              enterKeyHint="done"
+              className={`${titleBox} flex-1 bg-transparent text-neutral-900 focus:outline-none dark:text-neutral-100`}
+            />
+          )}
+        </div>
+
+        {/* A repeating task is due on its rule's days, so only a one-off has a date to
+            set; the slot holds the rule's note instead, pushed up against the repeat button. */}
+        <div className={`${slot} w-8 sm:w-32`}>
+          {task.repeat === null ? (
+            <DuePicker
+              dueDate={task.dueDate}
+              now={now}
+              overdue={isOverdue(task, now)}
+              onChange={(dueDate) => { onChangeDueDate(task.id, dueDate) }}
+              label={`Due date for "${task.title}"`}
+              showDateWhenNarrow={false}
+            />
+          ) : (
+            // How often, beside the button it describes. Whether it is done is the box's to say.
+            isActive && (
+              <span
+                title={describeRepeat(task.repeat)}
+                className="ml-auto hidden min-w-0 truncate pl-2 text-xs text-neutral-400 sm:block dark:text-neutral-500"
+              >
+                {describeRepeat(task.repeat)}
+              </span>
+            )
+          )}
+        </div>
+
+        <div className={`${slot} w-8`}>
+          <RepeatPicker
+            draft={draft}
+            onChange={handleRepeatChange}
+            label={`Repeat for "${task.title}"`}
+            // The icon says the task repeats; how often is spelled out beside the controls.
+            showRule={false}
           />
-        )}
+        </div>
 
-        {done && task.repeat !== null && !isEditing && (
-          <span className="hidden shrink-0 text-xs text-neutral-400 sm:inline dark:text-neutral-500">
-            {describeDoneUntil(task.repeat)}
-          </span>
-        )}
-
-        {/* A repeating task is due on its rule's days, so only a one-off has a date to set. */}
-        {task.repeat === null && (task.dueDate !== null || isActive) && (
-          <DuePicker
-            dueDate={task.dueDate}
-            now={now}
-            overdue={isOverdue(task, now)}
-            onChange={(dueDate) => { onChangeDueDate(task.id, dueDate) }}
-            label={`Due date for "${task.title}"`}
-          />
-        )}
-
-        {(task.repeat !== null || isActive) && (
-          <RepeatPicker draft={draft} onChange={handleRepeatChange} label={`Repeat for "${task.title}"`} />
-        )}
-
-        {(hasSubtasks(task) || isActive) && (
+        {/* Sized for a checklist of up to nine, which is all a task usually has; a
+            longer one widens its own slot rather than running into the next button. */}
+        <div className={`${slot} w-8 sm:w-auto sm:min-w-15`}>
           <button
             type="button"
             onClick={() => { setIsChecklistOpen(!isChecklistOpen) }}
@@ -307,33 +354,31 @@ export function TaskItem({
                 : `Add a checklist to "${task.title}"`
             }
             title={hasSubtasks(task) ? `${String(checklist.done)}/${String(checklist.total)} done` : 'Add a checklist'}
-            className={hasSubtasks(task) ? `${rowButton} ${rowButtonOn}` : `${rowButton} ${rowButtonOff}`}
+            className={hasSubtasks(task) ? `${rowButton} ${controlOn}` : `${rowButton} ${controlOff}`}
           >
             <ChecklistIcon />
             {/* The count is a hint, and a narrow row would rather have the title:
                 the button itself stays, tinted, and its name still reads it out. */}
             {hasSubtasks(task) && (
-              <span className="hidden sm:inline">
+              <span className="hidden tabular-nums sm:inline">
                 {checklist.done}/{checklist.total}
               </span>
             )}
           </button>
-        )}
+        </div>
 
-        {(hasDescription(task) || isActive) && (
-          <button
-            type="button"
-            onClick={() => { setIsDescriptionOpen(!isDescriptionOpen) }}
-            aria-expanded={isDescriptionOpen}
-            aria-label={
-              hasDescription(task) ? `Description of "${task.title}"` : `Add a description to "${task.title}"`
-            }
-            title={hasDescription(task) ? 'Description' : 'Add a description'}
-            className={hasDescription(task) ? `${rowButton} ${rowButtonOn}` : `${rowButton} ${rowButtonOff}`}
-          >
-            <NoteIcon />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => { setIsDescriptionOpen(!isDescriptionOpen) }}
+          aria-expanded={isDescriptionOpen}
+          aria-label={
+            hasDescription(task) ? `Description of "${task.title}"` : `Add a description to "${task.title}"`
+          }
+          title={hasDescription(task) ? 'Description' : 'Add a description'}
+          className={hasDescription(task) ? `${rowButton} ${controlOn}` : `${rowButton} ${controlOff}`}
+        >
+          <NoteIcon />
+        </button>
 
         {/* Always on show, and last, so it keeps its place as the row wakes and rests. */}
         <button
