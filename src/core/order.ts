@@ -44,6 +44,18 @@ export function appendTask(tasks: readonly Task[], task: Task): Task[] {
 }
 
 /**
+ * Adds a task just before or just after another — where a copy of a task goes.
+ * The same as adding it at the end and moving it there, so it takes a number
+ * between its neighbours by the same rule a move does. A target that is not in
+ * the list leaves the task at the end.
+ *
+ * Returns a new list; the one passed in is never modified.
+ */
+export function insertTask(tasks: readonly Task[], task: Task, targetId: TaskId, placement: Placement): Task[] {
+  return moveTask(appendTask(tasks, task), task.id, targetId, placement)
+}
+
+/**
  * Moves a task to just before or just after another. Only the moved task
  * changes — unless its new neighbours' numbers have grown too close to split,
  * in which case the whole list is numbered afresh, once, in its new order.

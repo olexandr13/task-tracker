@@ -34,7 +34,7 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 - **HAB-10** A day in the grid is **done** (green), **missed** (a darker gap), **not tracked** (a
   pale square, before the task was created) or **today still to do** (an outlined square). Days after
   today are left empty. A legend at the top of the page names the shades, beside a line saying a day
-  can be clicked. Pointing at a day shows its date and what it was: `Wed, Sep 16 · Done`.
+  can be clicked (on a phone: that a habit is tapped to see its days, HAB-21). Pointing at a day shows its date and what it was: `Wed, Sep 16 · Done`.
 - **HAB-11** A screen reader hears the numbers as text, and the grid as a group of day buttons,
   named for how many days of the year shown were done. Each day is heard by its date and what it
   was, and as pressed when it was done.
@@ -73,11 +73,24 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   becomes the completion, stamped at the start of that day. Taking back the day of the last
   completion falls back to the latest day before it, or to no completion if none is left.
 
+## On a phone
+
+- **HAB-21** Below `md` (UI-4) a card starts **folded**: the box for today (HAB-4), the title, and
+  the current streak as a flame and a number. **Tapping the card's line** — anywhere on it but the
+  box — unfolds the numbers (HAB-5 to HAB-8) and the grid (HAB-9) beneath it, and tapping it again
+  folds them away. A chevron at the end of the line points down while folded and up while open.
+  Open, the line drops its streak, which the numbers below already give. A list of year-long grids
+  is a long way to scroll for a box to tick, and ticking is what the page is visited for.
+- **HAB-22** Ticking the box never unfolds a card. Each card folds on its own, so opening one never
+  moves one being reached for, and a card starts folded again when the page is next opened. A screen
+  reader hears the fold as a button named for its habit (`Record of "stretch"`), reporting whether
+  it is open. On a wide screen every card is always open, and there is nothing to fold.
+
 ---
 
 **Where it lives:** `src/core/habit.ts` (what a habit is, streaks, rates, the weeks, `setDoneOnDay`),
 `src/core/task.ts` (`doneDays`, kept in step by `settleHistory`), `src/app/components/HabitList.tsx`
-(the page and its cards), `src/app/components/HabitGrid.tsx`, `src/app/habitLabels.ts` (wording),
+(the page and its cards), `src/app/components/HabitGrid.tsx`, `src/app/components/ChevronIcon.tsx`, `src/app/habitLabels.ts` (wording),
 `src/app/habitTones.ts` (the shades), `src/app/components/FlameIcon.tsx`, `src/app/useTasks.ts`
 (`setHabitDay`).
 **Tested in:** `src/core/habit.test.ts`, `src/core/task.test.ts`,

@@ -102,6 +102,30 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
 }
 
 /**
+ * A new task carrying what this one says — title, description, rule, due date,
+ * checklist — and none of what has happened to it. It is not done, its checklist
+ * is unticked, a repeating one has no history, and it is not in the trash: a
+ * copy is another go at the same thing, not a second record of the first.
+ *
+ * Its place in the list is the caller's to give, as with `createTask`; see
+ * `insertTask` in ./order. Returns a new task; the one passed in is never modified.
+ */
+export function duplicateTask(task: Task, now: Date = new Date()): Task {
+  const at = now.toISOString()
+
+  return {
+    ...task,
+    id: crypto.randomUUID(),
+    status: 'todo',
+    createdAt: at,
+    completedAt: null,
+    doneDays: [],
+    subtasks: task.subtasks.map((subtask) => ({ ...subtask, id: crypto.randomUUID(), createdAt: at, completedAt: null })),
+    deletedAt: null,
+  }
+}
+
+/**
  * Changes the title and nothing else. The task keeps its id, its completion
  * record and its rule, so a rename stays a rename: nothing counting tasks or
  * deriving progress from them sees a different task afterwards.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { appendTask, compareOrder, moveTask, ORDER_STEP, sortByOrder } from './order'
+import { appendTask, compareOrder, insertTask, moveTask, ORDER_STEP, sortByOrder } from './order'
 import { createTask, deleteTask, type Task } from './task'
 
 const NOW = new Date('2026-09-16T10:00:00.000Z')
@@ -117,6 +117,37 @@ describe('moveTask', () => {
     const before = structuredClone(tasks)
 
     moveTask(tasks, idOf(tasks, 'a'), idOf(tasks, 'c'), 'after')
+
+    expect(tasks).toEqual(before)
+  })
+})
+
+describe('insertTask', () => {
+  it('puts a new task just after its target, between it and the next (TASK-54)', () => {
+    const tasks = listOf('a', 'b', 'c')
+    const inserted = insertTask(tasks, createTask('copy', null, NOW), idOf(tasks, 'a'), 'after')
+
+    expect(titles(inserted)).toEqual(['a', 'copy', 'b', 'c'])
+    expect(inserted.slice(0, 3)).toEqual(tasks)
+  })
+
+  it('puts it at the end when the target is the last task', () => {
+    const tasks = listOf('a', 'b')
+
+    expect(titles(insertTask(tasks, createTask('copy', null, NOW), idOf(tasks, 'b'), 'after'))).toEqual(['a', 'b', 'copy'])
+  })
+
+  it('puts it at the end when the target is not in the list', () => {
+    const tasks = listOf('a', 'b')
+
+    expect(titles(insertTask(tasks, createTask('copy', null, NOW), 'missing', 'after'))).toEqual(['a', 'b', 'copy'])
+  })
+
+  it('never modifies the list it is given', () => {
+    const tasks = listOf('a', 'b')
+    const before = structuredClone(tasks)
+
+    insertTask(tasks, createTask('copy', null, NOW), idOf(tasks, 'a'), 'after')
 
     expect(tasks).toEqual(before)
   })

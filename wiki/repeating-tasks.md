@@ -51,9 +51,9 @@ and whether it reads as done is derived from the occurrence currently in play ra
 - **RPT-17** The button is tinted when there is a rule, and plain when there is not. In the add
   row it is always there and spells the rule out beside its icon. On a task row the button is the
   **icon alone** — enough to say the task repeats, and the rule is its name and tooltip. How often
-  is a detail, spelled out once the row is clicked into — as muted text **right beside the repeat
-  button**, which it describes, in the room a date takes on a one-off (UI-27), so it moves no icon
-  along. A plain button is on show at rest too (UI-18).
+  is a detail, spelled out once the row is clicked into — on the line of details, **under the
+  button**, on every screen width (UI-27), so it moves no icon along. A plain
+  button is on show at rest too (UI-18).
 - **RPT-18** Choosing the kind already chosen turns it back off, so the task happens once.
 - **RPT-19** Weekly shows the seven days, Sunday first. The last selected day cannot be removed —
   it would leave a rule with no occurrences.

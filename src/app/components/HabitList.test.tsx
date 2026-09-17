@@ -79,6 +79,29 @@ describe('HabitList', () => {
     expect(onSetDay).toHaveBeenLastCalledWith(habit.id, '2026-09-14', false)
   })
 
+  it('on a phone, folds a card to its streak and unfolds its record on a tap (HAB-21, HAB-22)', async () => {
+    const { user, onComplete } = setup([stretch()])
+    const toggle = screen.getByRole('button', { name: 'Record of "stretch"' })
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.getByText('Current streak:').parentElement?.textContent).toBe('Current streak: 2')
+    const record = document.getElementById(toggle.getAttribute('aria-controls') ?? '')
+    expect(record?.contains(screen.getByRole('group', { name: /Last 52 weeks/ }))).toBe(true)
+
+    // Ticking off is not asking for the record.
+    await user.click(screen.getByRole('button', { name: 'Mark "stretch" as done today' }))
+    expect(onComplete).toHaveBeenCalled()
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+
+    await user.click(toggle)
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    // The streak is in the record now, so the line no longer repeats it.
+    expect(screen.queryByText('Current streak:')).toBeNull()
+
+    await user.click(toggle)
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+  })
+
   it('offers no day after today (HAB-18)', () => {
     setup([stretch()])
 

@@ -1,7 +1,7 @@
 # Tasks
 
-The record the whole app is about, and the six things that can happen to one: it is added, it is
-renamed, it is described, it is completed, it is moved, it is deleted. Deleting has a page of its own — see
+The record the whole app is about, and the seven things that can happen to one: it is added, it is
+renamed, it is described, it is completed, it is moved, it is duplicated, it is deleted. Deleting has a page of its own — see
 [Trash](trash.md).
 
 ## The record
@@ -41,7 +41,7 @@ renamed, it is described, it is completed, it is moved, it is deleted. Deleting 
   clicked or tapped** — between the two characters nearest the pointer, or at the end when the click
   is just past the last word. Nothing is selected: an edit is usually a tweak, not a rewrite. Opened
   from the keyboard, the caret goes to the end. The part of the row that edits the title is the
-  words themselves and a few pixels past them (UI-29).
+  words themselves and 13 pixels past them (UI-29).
 - **TASK-9** Enter, or clicking away, keeps the new title. Escape drops the edit.
 - **TASK-10** An empty box counts as an abandoned edit rather than a request for a nameless task:
   the old title stays.
@@ -157,14 +157,28 @@ renamed, it is described, it is completed, it is moved, it is deleted. Deleting 
 - **TASK-43** A move changes the moved task's `order` and nothing else, so it counts for nothing in
   any period's bar.
 
+## Duplicating
+
+- **TASK-51** **Duplicate**, in the menu a right-click on a row opens (UI-31), adds a copy of the
+  task carrying what it says: the same title, description, repeat rule, due date and checklist
+  items.
+- **TASK-52** The copy is a task of its own — its own id, stamped as created now — and each item on
+  its checklist is its own too, so changing one never changes the other.
+- **TASK-53** It carries **none of what happened** to the original: it is not done, its checklist is
+  unticked, and a repeating one starts with no history of done days, so a duplicated habit starts
+  its streak afresh. A copy is another go at the same thing, not a second record of the first.
+- **TASK-54** The copy goes **just below the original**, among the tasks still to do (TASK-17). The
+  original is left exactly as it was.
+
 ---
 
 **Where it lives:** `src/core/task.ts` (the rules), `src/core/due.ts` and `src/core/day.ts` (due dates), `src/core/emphasis.ts` (bold and italic, written
 down and read back), `src/core/lists.ts` (lists, the same), `src/app/components/AddTaskForm.tsx`,
-`TaskList.tsx`, `TaskItem.tsx`, `TaskDescription.tsx`, `src/app/descriptionBox.ts` (the box a
+`TaskList.tsx`, `TaskItem.tsx`, `ContextMenu.tsx` (a task's menu), `TaskDescription.tsx`, `src/app/descriptionBox.ts` (the box a
 description is written in), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx` (ordering), `src/core/order.ts`
-(where a task sits, and moving it), `src/app/components/SortableTasks.tsx`,
+(where a task sits, moving it, and where a copy goes), `src/app/components/SortableTasks.tsx`,
 `src/app/useSortableTask.ts` and `src/app/dragSensors.ts` (dragging).
 
 **Tested in:** `src/core/task.test.ts`, `src/core/emphasis.test.ts`, `src/core/lists.test.ts`,
-`src/core/order.test.ts`, `src/app/components/TaskList.test.tsx` (what a list says).
+`src/core/order.test.ts`, `src/app/components/TaskList.test.tsx` (what a list says),
+`src/app/components/TaskItem.test.tsx` (the row, and its menu).

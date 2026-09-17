@@ -1,11 +1,13 @@
 # Lists
 
 Ways of looking at the tasks. A list is not somewhere a task is kept — every task is still one
-record — but a question asked of all of them, answered fresh on every render. The first is
-**Today**.
+record — but a question asked of all of them, answered fresh on every render. There are
+**Today**, **Week** and **Month**.
 
-- **LIST-1** The navigation carries **Today** above **Tasks**. Tasks is every live task; Today is
-  the part of it that is due today. The app opens on **Today**, including after a reload.
+- **LIST-1** The navigation carries **Today**, **Week** and **Month**, in that order, above
+  **Tasks**. Tasks is every live task; Today, Week and Month are the parts of it due today, this
+  week and this month. The app opens on **Today**, unless the address names another view (UI-36). On a phone Today, Week
+  and Month share one tab of the bottom bar (UI-33).
 
 ## Today
 
@@ -27,9 +29,41 @@ record — but a question asked of all of them, answered fresh on every render. 
 - **LIST-9** Nothing moves at midnight. What is in Today follows from the day it is, so a page left
   open picks up the new day on its next render (PRIN-2).
 
+## Week
+
+- **LIST-10** Week is Today stretched over this week, **Monday to Sunday** — the week the progress
+  bars count (PROG-2). A task still to do is in it when it is **due by Sunday**, overdue included, so
+  everything in Today is in Week too.
+- **LIST-11** Repeating tasks are in on their occurrence in play, as in Today (LIST-3): a daily task
+  every day, a Friday task from Friday. Ahead of its day the only occurrence there is to show is last
+  week's, so a repeat does not appear early.
+- **LIST-12** A done task stays when it was due this week, whenever it was finished, and an overdue
+  one stays when it was finished this week. A task finished ahead of a later week stays in that week.
+- **LIST-13** A task with no day is never in Week.
+- **LIST-14** A task added in Week is **due this Sunday**, the day the week closes, unless another
+  day or a repeat rule is chosen for it before Enter.
+- **LIST-15** Otherwise Week is the same list as Today (LIST-7): the same rows, order and rail. An
+  empty Week says nothing is due this week yet; once everything in it is done, it praises the week.
+- **LIST-16** Nothing moves at the turn of the week either: on Monday the list is the new week's on
+  its next render.
+
+## Month
+
+- **LIST-17** Month is the same rule again over this calendar month, the one the progress bars count
+  (PROG-2). A task still to do is in it when it is **due by the month's last day**, overdue included,
+  so everything in Week is in Month too — bar the days of a week that run into next month.
+- **LIST-18** Repeating tasks, done tasks and tasks with no day go as in Week (LIST-11 – LIST-13),
+  over the month: a monthly task joins it on its day, a done task stays when it was due this month
+  or was overdue and finished this month.
+- **LIST-19** A task added in Month is **due on the month's last day**, unless another day or a
+  repeat rule is chosen for it before Enter.
+- **LIST-20** Otherwise Month is the same list as Today (LIST-7), says nothing is due this month yet
+  when empty and praises the month once everything in it is done. On the 1st the list is the new
+  month's on its next render.
+
 ---
 
-**Where it lives:** `src/core/due.ts` (`isInToday`), `src/app/view.ts` (the views, their names and
-empty lists), `src/app/TasksScreen.tsx` (which tasks a list shows, and the day it gives new ones),
-`src/app/components/SideNav.tsx`.
+**Where it lives:** `src/core/due.ts` (`isInPeriod`, `lastDayOf`), `src/app/view.ts` (the
+views, their names, empty lists, which tasks a list shows and the day it gives new ones),
+`src/app/TasksScreen.tsx`, `src/app/components/SideNav.tsx`, `src/app/components/BottomNav.tsx`.
 **Tested in:** `src/core/due.test.ts`, `src/app/components/AddTaskForm.test.tsx`.

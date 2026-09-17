@@ -12,12 +12,15 @@ import {
   type Task,
   type TaskId,
 } from '../../core'
+import { describeDueDate } from '../dueLabels'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { describeRepeat } from '../repeatLabels'
 import { completionBoxOff, completionBoxOn, controlOff, controlOn } from '../rowControls'
+import { isInTextEntry } from '../textEntry'
 import { textOffsetAtPoint } from '../textOffsetAtPoint'
 import { useSortableTask } from '../useSortableTask'
 import { ChecklistIcon } from './ChecklistIcon'
+import { ContextMenu } from './ContextMenu'
 import { DuePicker } from './DuePicker'
 import { GripIcon } from './GripIcon'
 import { NoteIcon } from './NoteIcon'
@@ -35,6 +38,7 @@ interface TaskItemProps {
   onChangeDueDate: (id: TaskId, dueDate: LocalDay | null) => void
   onChangeRepeat: (id: TaskId, repeat: Repeat | null) => void
   onRemove: (id: TaskId) => void
+  onDuplicate: (id: TaskId) => void
   onAddSubtask: (id: TaskId, index: number, title: string) => void
   onSetSubtaskDone: (id: TaskId, subtaskId: SubtaskId, done: boolean) => void
   onRenameSubtask: (id: TaskId, subtaskId: SubtaskId, title: string) => void
@@ -51,12 +55,20 @@ const titleBox = 'min-w-0 text-left text-sm'
 const indent = 'pl-10'
 
 /**
- * Each control sits in a slot of fixed width, content at its start, so an icon is
- * in the same place on every row whatever its neighbours hold. A slot is as wide
- * as the longest thing its control usually says — `Sep 20, 2027`, `9/9` — and just
- * the icon's width on a narrow screen, where those words are dropped.
+ * Each control sits in a slot of one icon's width, so an icon is in the same
+ * place on every row whatever its neighbours hold.
  */
-const slot = 'flex shrink-0 items-center'
+const slot = 'flex w-8 shrink-0 items-center'
+
+/**
+ * The columns of a task's line: the completion box, the title, the date, repeat
+ * and checklist slots, the description and delete. The slots are fixed, so what
+ * is spelled out under them can run wider without widening them.
+ */
+const lineColumns = 'grid-cols-[auto_minmax(0,1fr)_repeat(3,--spacing(8))_auto_auto]'
+
+/** What a control holds, on the second line under it. */
+const detail = 'row-start-2 pb-1 text-[10px] leading-3 whitespace-nowrap text-neutral-400 tabular-nums dark:text-neutral-500'
 
 /** Shares the shape of the repeat button beside them: small controls, not a row. */
 const rowButton = 'flex h-6 shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm leading-none transition-colors'
@@ -74,6 +86,7 @@ export function TaskItem({
   onChangeDueDate,
   onChangeRepeat,
   onRemove,
+  onDuplicate,
   onAddSubtask,
   onSetSubtaskDone,
   onRenameSubtask,
@@ -98,11 +111,18 @@ export function TaskItem({
   // Where the caret goes when the title opens as a box: where it was clicked, or
   // the end when there is no such place.
   const caret = useRef<number | null>(null)
+  // Where the task's menu was opened, while it is open.
+  const [menuAt, setMenuAt] = useState<{ x: number; y: number; fromKeyboard: boolean } | null>(null)
   const input = useRef<HTMLInputElement>(null)
   const row = useRef<HTMLLIElement>(null)
   const line = useRef<HTMLDivElement>(null)
   const sortable = useSortableTask(task, now)
   const isEditing = editedTitle !== null
+  // What the controls hold, spelled out on a second line under each: the date
+  // whenever there is one, the repeat rule and the checklist count once woken.
+  const due = task.repeat === null && task.dueDate !== null ? describeDueDate(task.dueDate, now) : null
+  const rule = isActive && task.repeat !== null ? describeRepeat(task.repeat) : null
+  const count = isActive && hasSubtasks(task) ? `${String(checklist.done)}/${String(checklist.total)}` : null
 
   useEffect(() => {
     const element = input.current
@@ -184,6 +204,25 @@ export function TaskItem({
     }
   }
 
+  /**
+   * A right-click opens the task's menu where it was clicked, and leaves the row
+   * as it was: the menu is about the task as a whole, not working on it. Text
+   * being typed in keeps the browser's own menu, which is there for the text.
+   */
+  function handleContextMenu(event: MouseEvent<HTMLLIElement>) {
+    if (isInTextEntry(event.target) || sortable.isDragging) return
+
+    event.preventDefault()
+    // The context-menu key presses no button, so there is no pointer to open at:
+    // it opens under the task's line instead.
+    if (event.button !== 2 && event.buttons === 0) {
+      const box = line.current?.getBoundingClientRect()
+      setMenuAt({ x: box?.left ?? 0, y: box?.bottom ?? 0, fromKeyboard: true })
+      return
+    }
+    setMenuAt({ x: event.clientX, y: event.clientY, fromKeyboard: false })
+  }
+
   function handleRepeatChange(next: RepeatDraft) {
     setDraft(next)
     onChangeRepeat(task.id, toRepeat(next))
@@ -227,6 +266,7 @@ export function TaskItem({
       onClick={handleClick}
       onFocus={handleFocus}
       onBlur={handleBlur}
+      onContextMenu={handleContextMenu}
       onKeyDown={(event) => {
         sortable.listeners?.onKeyDown?.(event)
         // Panels and edit boxes stop Escape before it reaches here, so this only
@@ -237,7 +277,10 @@ export function TaskItem({
       className={
         sortable.isDragging
           ? 'group relative z-10 rounded-xl border border-neutral-200 bg-white shadow-lg dark:border-neutral-800 dark:bg-neutral-900'
-          : 'group relative rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+          : menuAt !== null
+            // Marked while its menu is open, so it is plain which task the menu is for.
+            ? 'group relative rounded-xl border border-neutral-400 bg-white dark:border-neutral-600 dark:bg-neutral-900'
+            : 'group relative rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
       }
     >
       {/* In the gutter left of the row, so it takes nothing from the row itself.
@@ -257,7 +300,9 @@ export function TaskItem({
         <GripIcon className="size-3.5" />
       </button>
 
-      <div ref={line} className="flex items-center gap-2.5 px-2.5 py-1">
+      {/* Two lines sharing columns: the task's own, then what its controls hold, each
+          detail under the column it belongs to. */}
+      <div ref={line} className={`grid ${lineColumns} items-center gap-x-2.5 px-2.5 py-1`}>
         <button
           type="button"
           onClick={(event) => {
@@ -276,7 +321,7 @@ export function TaskItem({
         {/* The title is only as wide as its words and a little past them, so the
             rest of the line is the row to click, not the title. The box, once
             open, takes the whole of it to type into. */}
-        <div className="flex min-w-0 flex-1">
+        <div className="flex min-w-0">
           {editedTitle === null ? (
             <button
               type="button"
@@ -284,8 +329,8 @@ export function TaskItem({
               aria-label={`Edit "${task.title}"`}
               className={
                 done
-                  ? `${titleBox} cursor-text pr-2 break-words text-neutral-400 line-through dark:text-neutral-600`
-                  : `${titleBox} cursor-text pr-2 break-words text-neutral-900 dark:text-neutral-100`
+                  ? `${titleBox} cursor-text pr-[13px] break-words text-neutral-400 line-through dark:text-neutral-600`
+                  : `${titleBox} cursor-text pr-[13px] break-words text-neutral-900 dark:text-neutral-100`
               }
             >
               {task.title}
@@ -307,43 +352,32 @@ export function TaskItem({
         </div>
 
         {/* A repeating task is due on its rule's days, so only a one-off has a date to
-            set; the slot holds the rule's note instead, pushed up against the repeat button. */}
-        <div className={`${slot} w-8 sm:w-32`}>
-          {task.repeat === null ? (
+            set; a repeating one keeps the slot empty, so its icons stay in line. */}
+        <div className={slot}>
+          {task.repeat === null && (
             <DuePicker
               dueDate={task.dueDate}
               now={now}
               overdue={isOverdue(task, now)}
               onChange={(dueDate) => { onChangeDueDate(task.id, dueDate) }}
               label={`Due date for "${task.title}"`}
-              showDateWhenNarrow={false}
+              // The date is spelled out under the button.
+              showDate={false}
             />
-          ) : (
-            // How often, beside the button it describes. Whether it is done is the box's to say.
-            isActive && (
-              <span
-                title={describeRepeat(task.repeat)}
-                className="ml-auto hidden min-w-0 truncate pl-2 text-xs text-neutral-400 sm:block dark:text-neutral-500"
-              >
-                {describeRepeat(task.repeat)}
-              </span>
-            )
           )}
         </div>
 
-        <div className={`${slot} w-8`}>
+        <div className={slot}>
           <RepeatPicker
             draft={draft}
             onChange={handleRepeatChange}
             label={`Repeat for "${task.title}"`}
-            // The icon says the task repeats; how often is spelled out beside the controls.
+            // The icon says the task repeats; how often is spelled out under it.
             showRule={false}
           />
         </div>
 
-        {/* Sized for a checklist of up to nine, which is all a task usually has; a
-            longer one widens its own slot rather than running into the next button. */}
-        <div className={`${slot} w-8 sm:w-auto sm:min-w-15`}>
+        <div className={slot}>
           <button
             type="button"
             onClick={() => { setIsChecklistOpen(!isChecklistOpen) }}
@@ -357,13 +391,6 @@ export function TaskItem({
             className={hasSubtasks(task) ? `${rowButton} ${controlOn}` : `${rowButton} ${controlOff}`}
           >
             <ChecklistIcon />
-            {/* The count is a hint, and a narrow row would rather have the title:
-                the button itself stays, tinted, and its name still reads it out. */}
-            {hasSubtasks(task) && (
-              <span className="hidden tabular-nums sm:inline">
-                {checklist.done}/{checklist.total}
-              </span>
-            )}
           </button>
         </div>
 
@@ -393,6 +420,37 @@ export function TaskItem({
         >
           ×
         </button>
+
+        {/* The second line is part of the task's line too, so a click on it rests a woken
+            row as the line does. Each detail is centred under its control and free to run
+            wider than it. Whether the task is done is the box's to say. */}
+        {due !== null && (
+          <p
+            className={
+              isOverdue(task, now)
+                ? `${detail} col-start-3 justify-self-center text-red-600 dark:text-red-400`
+                : `${detail} col-start-3 justify-self-center`
+            }
+          >
+            {due}
+          </p>
+        )}
+
+        {/* A long rule would run into the count beside it, so beside a count it ends
+            under its button instead, running left over the empty date slot and title. */}
+        {rule !== null && (
+          <p
+            className={
+              count === null
+                ? `${detail} col-start-4 justify-self-center`
+                : `${detail} col-start-2 col-end-5 min-w-8 justify-self-end text-center`
+            }
+          >
+            {rule}
+          </p>
+        )}
+
+        {count !== null && <p className={`${detail} col-start-5 justify-self-center`}>{count}</p>}
       </div>
 
       {/* Indented to start where the title does, so it reads as part of the same row. */}
@@ -419,6 +477,17 @@ export function TaskItem({
             onChange={(description) => { onChangeDescription(task.id, description) }}
           />
         </div>
+      )}
+
+      {menuAt !== null && (
+        <ContextMenu
+          x={menuAt.x}
+          y={menuAt.y}
+          label={`Actions for "${task.title}"`}
+          fromKeyboard={menuAt.fromKeyboard}
+          items={[{ label: 'Duplicate', onSelect: () => { onDuplicate(task.id) } }]}
+          onClose={() => { setMenuAt(null) }}
+        />
       )}
     </li>
   )

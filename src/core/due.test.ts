@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { dueDay, isInToday, isOverdue } from './due'
+import { dueDay, isInPeriod, isOverdue, lastDayOf, nextWeekDueDay } from './due'
 import type { Repeat } from './repeat'
 import { completeTask, createTask, deleteTask, setDueDate, type Task } from './task'
 
 // Local dates on purpose: due days are local days. September 2026 runs
-// Mon 14, Tue 15, Wed 16, Thu 17, Fri 18.
+// Mon 14, Tue 15, Wed 16, Thu 17, Fri 18, and the week closes on Sun 20.
 const MON_14 = new Date(2026, 8, 14, 9, 0)
 const TUE_15 = new Date(2026, 8, 15, 9, 0)
 const WED_16 = new Date(2026, 8, 16, 9, 0)
@@ -20,6 +20,18 @@ function dueOn(day: string | null): Task {
 
 function repeating(repeat: Repeat, createdAt: Date = MON_14): Task {
   return createTask('a task', repeat, createdAt)
+}
+
+function isInToday(task: Task, now: Date): boolean {
+  return isInPeriod(task, 'today', now)
+}
+
+function isInWeek(task: Task, now: Date): boolean {
+  return isInPeriod(task, 'week', now)
+}
+
+function isInMonth(task: Task, now: Date): boolean {
+  return isInPeriod(task, 'month', now)
 }
 
 describe('dueDay', () => {
@@ -121,5 +133,106 @@ describe('isInToday, done', () => {
     expect(isInToday(completeTask(repeating(DAILY), WED_16), WED_16_EVENING)).toBe(true)
     expect(isInToday(completeTask(repeating(MONDAYS), MON_14), WED_16)).toBe(false)
     expect(isInToday(completeTask(repeating(MONDAYS), WED_16), WED_16_EVENING)).toBe(true)
+  })
+})
+
+describe('isInWeek, to do', () => {
+  it('holds what is due any day up to Sunday, today and overdue included', () => {
+    expect(isInWeek(dueOn('2026-09-16'), WED_16)).toBe(true)
+    expect(isInWeek(dueOn('2026-09-20'), WED_16)).toBe(true)
+    expect(isInWeek(dueOn('2026-09-01'), WED_16)).toBe(true)
+  })
+
+  it('leaves out what is due next week, and what has no day', () => {
+    expect(isInWeek(dueOn('2026-09-21'), WED_16)).toBe(false)
+    expect(isInWeek(dueOn(null), WED_16)).toBe(false)
+  })
+
+  it('holds a repeating task on its occurrence in play, not on one still to come', () => {
+    const fridays = repeating({ kind: 'weekly', weekdays: [5] })
+
+    expect(isInWeek(repeating(DAILY), WED_16)).toBe(true)
+    expect(isInWeek(repeating(MONDAYS), WED_16)).toBe(true)
+    expect(isInWeek(fridays, WED_16)).toBe(false)
+    expect(isInWeek(fridays, new Date(2026, 8, 18, 9, 0))).toBe(true)
+  })
+
+  it('leaves out the trash', () => {
+    expect(isInWeek(deleteTask(dueOn('2026-09-18'), TUE_15), WED_16)).toBe(false)
+  })
+})
+
+describe('isInWeek, done', () => {
+  it('keeps what was due this week, whenever it was finished', () => {
+    expect(isInWeek(completeTask(dueOn('2026-09-14'), MON_14), WED_16)).toBe(true)
+    expect(isInWeek(completeTask(dueOn('2026-09-20'), TUE_15), WED_16)).toBe(true)
+  })
+
+  it('keeps an overdue task finished this week, and lets go of one finished before it', () => {
+    expect(isInWeek(completeTask(dueOn('2026-09-10'), TUE_15), WED_16)).toBe(true)
+    expect(isInWeek(completeTask(dueOn('2026-09-10'), new Date(2026, 8, 12, 9, 0)), WED_16)).toBe(false)
+  })
+
+  it('leaves a task finished ahead of a later week in that week', () => {
+    expect(isInWeek(completeTask(dueOn('2026-09-22'), WED_16), WED_16_EVENING)).toBe(false)
+  })
+
+  it('keeps a repeating task ticked for an occurrence this week', () => {
+    expect(isInWeek(completeTask(repeating(MONDAYS), MON_14), WED_16)).toBe(true)
+  })
+})
+
+describe('isInMonth', () => {
+  it('holds what is due any day up to the end of the month, today and overdue included', () => {
+    expect(isInMonth(dueOn('2026-09-30'), WED_16)).toBe(true)
+    expect(isInMonth(dueOn('2026-08-20'), WED_16)).toBe(true)
+  })
+
+  it('leaves out what is due next month, and what has no day', () => {
+    expect(isInMonth(dueOn('2026-10-01'), WED_16)).toBe(false)
+    expect(isInMonth(dueOn(null), WED_16)).toBe(false)
+  })
+
+  it('keeps what was due this month, and an overdue task finished this month', () => {
+    expect(isInMonth(completeTask(dueOn('2026-09-02'), new Date(2026, 8, 1, 9, 0)), WED_16)).toBe(true)
+    expect(isInMonth(completeTask(dueOn('2026-08-20'), MON_14), WED_16)).toBe(true)
+    expect(isInMonth(completeTask(dueOn('2026-08-20'), new Date(2026, 7, 31, 9, 0)), WED_16)).toBe(false)
+  })
+
+  it('holds a monthly task on its occurrence in play, not on one still to come', () => {
+    const on25th = repeating({ kind: 'monthly', day: 25 }, new Date(2026, 8, 1, 9, 0))
+
+    expect(isInMonth(on25th, WED_16)).toBe(false)
+    expect(isInMonth(on25th, new Date(2026, 8, 25, 9, 0))).toBe(true)
+  })
+})
+
+describe('lastDayOf', () => {
+  it('is today for today', () => {
+    expect(lastDayOf('today', WED_16_EVENING)).toBe('2026-09-16')
+  })
+
+  it('is the Sunday that closes this week, from any day of it — Sunday included', () => {
+    expect(lastDayOf('week', MON_14)).toBe('2026-09-20')
+    expect(lastDayOf('week', new Date(2026, 8, 20, 23, 59))).toBe('2026-09-20')
+    expect(lastDayOf('week', new Date(2026, 11, 30, 9, 0))).toBe('2027-01-03')
+  })
+
+  it('is the last day of this month, however long it runs', () => {
+    expect(lastDayOf('month', WED_16)).toBe('2026-09-30')
+    expect(lastDayOf('month', new Date(2028, 1, 1, 0, 0))).toBe('2028-02-29')
+    expect(lastDayOf('month', new Date(2026, 11, 31, 23, 59))).toBe('2026-12-31')
+  })
+})
+
+describe('nextWeekDueDay', () => {
+  it('is the Sunday that closes next week, from any day of this one', () => {
+    expect(nextWeekDueDay(MON_14)).toBe('2026-09-27')
+    expect(nextWeekDueDay(WED_16)).toBe('2026-09-27')
+    expect(nextWeekDueDay(new Date(2026, 8, 20, 23, 0))).toBe('2026-09-27')
+  })
+
+  it('crosses the end of a month and a year', () => {
+    expect(nextWeekDueDay(new Date(2026, 11, 30, 9, 0))).toBe('2027-01-10')
   })
 })

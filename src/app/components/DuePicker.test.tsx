@@ -44,15 +44,15 @@ describe('DuePicker', () => {
     expect(panel()).toBeNull()
   })
 
-  it('offers next week as the same weekday seven days on, and says which day that is', async () => {
+  it('offers next week as the Sunday that closes it, and says which day that is (DUE-9)', async () => {
     const user = setup()
 
     await user.click(trigger())
     const nextWeek = screen.getByRole('button', { name: /^Next week/ })
-    expect(nextWeek.textContent).toContain('Wed, Sep 23')
+    expect(nextWeek.textContent).toContain('Sun, Sep 27')
 
     await user.click(nextWeek)
-    expect(trigger().textContent).toBe('Sep 23')
+    expect(trigger().textContent).toBe('Sep 27')
   })
 
   it('marks the quick choice that is already set', async () => {

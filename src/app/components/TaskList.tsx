@@ -18,6 +18,7 @@ interface TaskListProps {
   onChangeDueDate: (id: TaskId, dueDate: LocalDay | null) => void
   onChangeRepeat: (id: TaskId, repeat: Repeat | null) => void
   onRemove: (id: TaskId) => void
+  onDuplicate: (id: TaskId) => void
   onAddSubtask: (id: TaskId, index: number, title: string) => void
   onSetSubtaskDone: (id: TaskId, subtaskId: SubtaskId, done: boolean) => void
   onRenameSubtask: (id: TaskId, subtaskId: SubtaskId, title: string) => void
@@ -37,6 +38,7 @@ export function TaskList({
   onChangeDueDate,
   onChangeRepeat,
   onRemove,
+  onDuplicate,
   onAddSubtask,
   onSetSubtaskDone,
   onRenameSubtask,
@@ -71,6 +73,7 @@ export function TaskList({
               onChangeDueDate={onChangeDueDate}
               onChangeRepeat={onChangeRepeat}
               onRemove={onRemove}
+              onDuplicate={onDuplicate}
               onAddSubtask={onAddSubtask}
               onSetSubtaskDone={onSetSubtaskDone}
               onRenameSubtask={onRenameSubtask}

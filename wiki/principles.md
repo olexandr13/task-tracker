@@ -40,7 +40,7 @@ these, so a feature page only mentions them where the feature bends them.
 ## Presentation
 
 - **PRIN-11** It works on a phone. Below `md` the three areas stack into one column and the
-  navigation collapses; nothing is only reachable on a wide screen.
+  navigation moves to a bar along the bottom; nothing is only reachable on a wide screen.
 - **PRIN-12** Dark mode follows the system; there is no theme switch.
 - **PRIN-13** Every control carries a name for a screen reader, toggles report whether they are on,
   the current view is marked, and the quote says which language it is in.

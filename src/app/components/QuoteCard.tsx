@@ -5,7 +5,7 @@ interface QuoteCardProps {
   quote: Quote | null
 }
 
-/** Today's quote, sat above the progress bars in the rail. */
+/** Today's quote, sat below the progress bars in the rail. */
 export function QuoteCard({ quote }: QuoteCardProps) {
   if (quote === null) {
     return null

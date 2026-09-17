@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it } from 'vitest'
-import { createTask, type Repeat } from '../../core'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createSubtask, createTask, type LocalDay, type Repeat } from '../../core'
 import { TaskItem } from './TaskItem'
 
 /*
  * What a task row shows at rest and once clicked into. RPT ids refer to
- * wiki/repeating-tasks.md, UI ids to wiki/interface.md, TASK ids to wiki/tasks.md.
+ * wiki/repeating-tasks.md, UI ids to wiki/interface.md, TASK ids to wiki/tasks.md,
+ * DUE ids to wiki/due-dates.md.
  */
 
 const NOW = new Date('2026-09-15T10:00:00.000Z')
@@ -15,13 +16,23 @@ const TASK = 'stretch'
 
 afterEach(cleanup)
 
-function setup(repeat: Repeat | null = { kind: 'daily' }) {
+function setup(
+  repeat: Repeat | null = { kind: 'daily' },
+  subtasks: readonly string[] = [],
+  onDuplicate: (id: string) => void = () => undefined,
+  dueDate: LocalDay | null = null,
+) {
   const user = userEvent.setup()
   const nothing = () => undefined
+  const task = {
+    ...createTask(TASK, repeat, NOW),
+    dueDate,
+    subtasks: subtasks.map((title) => createSubtask(title, NOW)),
+  }
   render(
     <ul>
       <TaskItem
-        task={createTask(TASK, repeat, NOW)}
+        task={task}
         now={NOW}
         onComplete={nothing}
         onUncomplete={nothing}
@@ -30,6 +41,7 @@ function setup(repeat: Repeat | null = { kind: 'daily' }) {
         onChangeDueDate={nothing}
         onChangeRepeat={nothing}
         onRemove={nothing}
+        onDuplicate={onDuplicate}
         onAddSubtask={nothing}
         onSetSubtaskDone={nothing}
         onRenameSubtask={nothing}
@@ -77,7 +89,7 @@ describe('the repeat rule on a task row', () => {
     expect(repeatButton().getAttribute('title')).toBe('Daily')
   })
 
-  it('spells the rule out beside the controls once the row is clicked into, the button staying an icon (RPT-17, UI-17)', async () => {
+  it('spells the rule out under its button once the row is clicked into, the button staying an icon (RPT-17, UI-17)', async () => {
     const user = setup()
 
     await user.click(screen.getByRole('listitem'))
@@ -93,6 +105,39 @@ describe('the repeat rule on a task row', () => {
     await user.click(document.body)
 
     expect(within(screen.getByRole('listitem')).queryByText('Daily')).toBeNull()
+  })
+})
+
+describe('the due date on a task row', () => {
+  it('is spelled out under its button at rest, the button staying an icon that names it (DUE-5, UI-27)', () => {
+    setup(null, [], undefined, '2026-09-16')
+    const dueButton = screen.getByRole('button', { name: `Due date for "${TASK}": Tomorrow` })
+
+    expect(dueButton).toHaveProperty('textContent', '')
+    expect(within(screen.getByRole('listitem')).getByText('Tomorrow')).toBeDefined()
+  })
+})
+
+describe('the checklist count on a task row', () => {
+  it('is not on the button, at rest or woken, the button still naming it (CHK-5)', async () => {
+    const user = setup(null, ['one', 'two'])
+    const checklistButton = () => screen.getByRole('button', { name: `Checklist for "${TASK}": 0 of 2 done` })
+
+    expect(checklistButton()).toHaveProperty('textContent', '')
+    expect(within(screen.getByRole('listitem')).queryByText('0/2')).toBeNull()
+
+    await user.click(screen.getByRole('listitem'))
+
+    expect(checklistButton()).toHaveProperty('textContent', '')
+  })
+
+  it('is spelled out under its button once the row is clicked into (CHK-5, UI-27)', async () => {
+    const user = setup(null, ['one', 'two'])
+
+    await user.click(screen.getByRole('listitem'))
+
+    // The row's own item, not one of the checklist's that waking it opened.
+    expect(within(screen.getAllByRole('listitem')[0]).getByText('0/2')).toBeDefined()
   })
 })
 
@@ -167,5 +212,103 @@ describe('the caret in a title opened for editing', () => {
     await user.keyboard('{Enter}')
 
     expect(titleBox().selectionStart).toBe(TASK.length)
+  })
+})
+
+describe('the menu a right-click opens on a task row', () => {
+  function row() {
+    return screen.getAllByRole('listitem')[0]
+  }
+
+  function menu() {
+    return screen.queryByRole('menu', { name: `Actions for "${TASK}"` })
+  }
+
+  it('offers to duplicate the task (UI-31, TASK-51)', async () => {
+    const user = setup()
+
+    await user.pointer({ keys: '[MouseRight]', target: row() })
+
+    expect(within(menu() as HTMLElement).getByRole('menuitem', { name: 'Duplicate' })).toBeDefined()
+  })
+
+  it('duplicates the task when chosen, and closes (TASK-51)', async () => {
+    const onDuplicate = vi.fn()
+    const user = setup({ kind: 'daily' }, [], onDuplicate)
+
+    await user.pointer({ keys: '[MouseRight]', target: row() })
+    await user.click(screen.getByRole('menuitem', { name: 'Duplicate' }))
+
+    expect(onDuplicate).toHaveBeenCalledTimes(1)
+    expect(menu()).toBeNull()
+  })
+
+  it('leaves the row as it was, at rest or awake (UI-31)', async () => {
+    const user = setup()
+
+    await user.pointer({ keys: '[MouseRight]', target: row() })
+    await user.click(screen.getByRole('menuitem', { name: 'Duplicate' }))
+
+    expect(within(row()).queryByText('Daily')).toBeNull()
+
+    await user.click(row())
+    await user.pointer({ keys: '[MouseRight]', target: row() })
+    await user.click(screen.getByRole('menuitem', { name: 'Duplicate' }))
+
+    expect(within(row()).getByText('Daily')).toBeDefined()
+  })
+
+  it('closes on Escape without resting the row behind it (UI-10, UI-31)', async () => {
+    const user = setup()
+
+    await user.click(row())
+    await user.pointer({ keys: '[MouseRight]', target: row() })
+    await user.keyboard('{Escape}')
+
+    expect(menu()).toBeNull()
+    expect(within(row()).getByText('Daily')).toBeDefined()
+  })
+
+  it('closes on a click outside it (UI-9)', async () => {
+    const user = setup()
+
+    await user.pointer({ keys: '[MouseRight]', target: row() })
+    await user.click(document.body)
+
+    expect(menu()).toBeNull()
+  })
+
+  it('opened from the keyboard, starts on its first item and gives focus back when closed (UI-31)', async () => {
+    const user = setup()
+    const grip = screen.getByRole('button', { name: `Move "${TASK}"` })
+
+    grip.focus()
+    // The context-menu key: a contextmenu event with no button pressed.
+    fireEvent.contextMenu(grip)
+
+    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Duplicate' }))
+
+    await user.keyboard('{Escape}')
+
+    expect(menu()).toBeNull()
+    expect(document.activeElement).toBe(grip)
+  })
+
+  it('opened by a pointer, picks out no item (UI-31)', async () => {
+    const user = setup()
+
+    await user.pointer({ keys: '[MouseRight]', target: row() })
+
+    expect(document.activeElement).toBe(menu())
+  })
+
+  it('is not opened from text being typed in, which keeps the browser\'s own menu (UI-31)', async () => {
+    const user = setup()
+
+    titleButton().focus()
+    await user.keyboard('{Enter}')
+    await user.pointer({ keys: '[MouseRight]', target: titleBox() })
+
+    expect(menu()).toBeNull()
   })
 })

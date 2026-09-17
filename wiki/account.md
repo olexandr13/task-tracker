@@ -26,7 +26,7 @@ Who the app belongs to. Nothing is shown without an account, and the only way to
 ## The account menu
 
 - **AUTH-9** The signed-in account sits at the end of the heading as its Google picture — on every
-  view, and on a phone as well, where the navigation is collapsed. Without a picture, or when it
+  view, and on a phone as well, where the navigation is a bar of four tabs. Without a picture, or when it
   will not load, the first letter of the name stands in. A screen reader hears it as the account
   and the name.
 - **AUTH-10** Pressing it opens a panel with the name, the email address and **Sign out**. It closes

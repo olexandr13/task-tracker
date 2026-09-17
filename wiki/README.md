@@ -15,7 +15,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Tasks](tasks.md) | The record itself — adding, renaming, completing, ordering |
 | [Checklists](checklists.md) | Subtasks: ticking them off, and the rule that finishes the task |
 | [Due dates](due-dates.md) | The day a task is due, setting it, and overdue |
-| [Lists](lists.md) | Views of the tasks — Today, and what belongs in it |
+| [Lists](lists.md) | Views of the tasks — Today, Week and Month, and what belongs in them |
 | [Repeating tasks](repeating-tasks.md) | Daily, weekly and monthly rules, and how a repeat reads as done |
 | [Trash](trash.md) | Deleting, the undo window, retention and purging |
 | [Progress](progress.md) | The three bars: today, this week, this month |

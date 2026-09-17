@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import {
   habitRate,
   habitStats,
@@ -12,6 +12,7 @@ import {
 import { describeDays, describeRate, HABIT_DAY_LABELS } from '../habitLabels'
 import { completionBoxOff, completionBoxOn } from '../rowControls'
 import { HABIT_DAY_TONES } from '../habitTones'
+import { ChevronIcon } from './ChevronIcon'
 import { FlameIcon } from './FlameIcon'
 import { HabitGrid } from './HabitGrid'
 
@@ -53,7 +54,10 @@ export function HabitList({ habits, now, onComplete, onUncomplete, onSetDay }: H
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          Tasks that repeat every day. Click a day to mark it done, or to take it back.
+          Tasks that repeat every day.{' '}
+          {/* On a phone the days are folded away until a habit is opened (HAB-21). */}
+          <span className="md:hidden">Tap a habit to see its days, and a day to mark it done or take it back.</span>
+          <span className="hidden md:inline">Click a day to mark it done, or to take it back.</span>
         </p>
 
         <ul aria-label="Legend" className="flex items-center gap-3">
@@ -82,49 +86,89 @@ export function HabitList({ habits, now, onComplete, onUncomplete, onSetDay }: H
   )
 }
 
+/**
+ * One habit. On a wide screen the whole record is on show. On a phone a list of
+ * year-long grids is a long way to scroll for a box to tick, so a card starts
+ * folded to the box, the title and the streak, and a tap on its line unfolds
+ * the numbers and the days. Each card folds on its own, so opening one never
+ * moves the one being reached for.
+ *
+ * Folding is only drawn on a phone: the toggle is hidden on a wide screen, and
+ * its hit area — stretched over the card's line — goes with it.
+ */
 function HabitCard({ habit, now, onComplete, onUncomplete, onSetDay }: { habit: Task } & Omit<HabitListProps, 'habits'>) {
   const done = isComplete(habit, now)
   const { currentStreak, bestStreak } = habitStats(habit, now)
+  const [isOpen, setIsOpen] = useState(false)
+  const recordId = useId()
 
   return (
-    <li className="@container flex flex-col gap-4 rounded-xl border border-neutral-200 bg-white px-4 py-3.5 dark:border-neutral-800 dark:bg-neutral-900">
-      <div className="flex items-center gap-2.5">
+    <li className="flex flex-col rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="relative flex items-center gap-2.5 px-4 py-3.5">
+        {/* Above the toggle's hit area, so ticking off never unfolds the card. */}
         <button
           type="button"
           onClick={() => { if (done) onUncomplete(habit.id); else onComplete(habit.id) }}
           aria-pressed={done}
           aria-label={done ? `Mark "${habit.title}" as not done today` : `Mark "${habit.title}" as done today`}
-          className={done ? completionBoxOn : completionBoxOff}
+          className={`relative z-10 ${done ? completionBoxOn : completionBoxOff}`}
         >
           ✓
         </button>
 
         <h2 className="min-w-0 truncate text-sm font-medium">{habit.title}</h2>
+
+        {!isOpen && (
+          <span className="ml-auto flex shrink-0 items-center gap-1 text-sm font-medium tabular-nums md:hidden">
+            <Flame streak={currentStreak} />
+            <span className="sr-only">Current streak: </span>
+            {String(currentStreak)}
+          </span>
+        )}
+
+        <button
+          type="button"
+          onClick={() => { setIsOpen(!isOpen) }}
+          aria-expanded={isOpen}
+          aria-controls={recordId}
+          aria-label={`Record of "${habit.title}"`}
+          className={`${isOpen ? 'ml-auto' : ''} grid size-6 shrink-0 place-items-center rounded-md text-neutral-400 outline-offset-2 after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-blue-500 md:hidden dark:text-neutral-500`}
+        >
+          <ChevronIcon className={`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
       </div>
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 @xs:grid-cols-3 @lg:grid-cols-5">
-        <Stat label="Current streak">
-          <span className="flex items-center gap-1">
-            <FlameIcon
-              className={
-                currentStreak > 0
-                  ? 'size-4 shrink-0 text-orange-500'
-                  : 'size-4 shrink-0 text-neutral-300 dark:text-neutral-600'
-              }
-            />
-            {describeDays(currentStreak)}
-          </span>
-        </Stat>
-        <Stat label="Best streak">{describeDays(bestStreak)}</Stat>
-        {RATE_WINDOWS.map(([days, label]) => (
-          <Stat key={days} label={label}>
-            <Rate rate={habitRate(habit, days, now)} />
+      <div
+        id={recordId}
+        className={`${isOpen ? 'flex' : 'hidden'} @container flex-col gap-4 px-4 pt-0.5 pb-3.5 md:flex`}
+      >
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 @xs:grid-cols-3 @lg:grid-cols-5">
+          <Stat label="Current streak">
+            <span className="flex items-center gap-1">
+              <Flame streak={currentStreak} />
+              {describeDays(currentStreak)}
+            </span>
           </Stat>
-        ))}
-      </dl>
+          <Stat label="Best streak">{describeDays(bestStreak)}</Stat>
+          {RATE_WINDOWS.map(([days, label]) => (
+            <Stat key={days} label={label}>
+              <Rate rate={habitRate(habit, days, now)} />
+            </Stat>
+          ))}
+        </dl>
 
-      <HabitGrid task={habit} now={now} onSetDay={(day, dayDone) => { onSetDay(habit.id, day, dayDone) }} />
+        <HabitGrid task={habit} now={now} onSetDay={(day, dayDone) => { onSetDay(habit.id, day, dayDone) }} />
+      </div>
     </li>
+  )
+}
+
+/** Lit while there is a streak (HAB-5). */
+function Flame({ streak }: { streak: number }) {
+  return (
+    <FlameIcon
+      className={streak > 0 ? 'size-4 shrink-0 text-orange-500' : 'size-4 shrink-0 text-neutral-300 dark:text-neutral-600'}
+    />
   )
 }
 

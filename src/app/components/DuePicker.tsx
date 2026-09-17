@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { isLocalDay, offsetDay, toLocalDay, type LocalDay } from '../../core'
+import { isLocalDay, nextWeekDueDay, offsetDay, toLocalDay, type LocalDay } from '../../core'
 import { describeDueDate, describeWeekday } from '../dueLabels'
 import { controlOff, controlOn } from '../rowControls'
 import { CalendarIcon } from './CalendarIcon'
@@ -22,10 +22,10 @@ interface DuePickerProps {
   /** What this picker is for, when there is more than one on screen. */
   label?: string
   /**
-   * Whether a narrow screen still spells the date out beside the icon. Off, it
-   * is the icon alone there, still tinted, with the date as its name and tooltip.
+   * Whether the button spells the date out beside its icon. Off, it is the icon
+   * alone, still tinted, with the date as its name and tooltip.
    */
-  showDateWhenNarrow?: boolean
+  showDate?: boolean
 }
 
 /**
@@ -43,7 +43,7 @@ export function DuePicker({
   onChange,
   overdue = false,
   label = 'Due date',
-  showDateWhenNarrow = true,
+  showDate = true,
 }: DuePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -63,7 +63,7 @@ export function DuePicker({
   const choices: readonly { readonly label: string; readonly day: LocalDay }[] = [
     { label: 'Today', day: today },
     { label: 'Tomorrow', day: offsetDay(today, 1) },
-    { label: 'Next week', day: offsetDay(today, 7) },
+    { label: 'Next week', day: nextWeekDueDay(now) },
   ]
   const summary = dueDate === null ? 'No date' : describeDueDate(dueDate, now)
 
@@ -95,11 +95,7 @@ export function DuePicker({
         }
       >
         <CalendarIcon />
-        {dueDate !== null && (
-          <span className={showDateWhenNarrow ? 'whitespace-nowrap' : 'hidden whitespace-nowrap sm:inline'}>
-            {summary}
-          </span>
-        )}
+        {dueDate !== null && showDate && <span className="whitespace-nowrap">{summary}</span>}
       </button>
 
       {isOpen && (

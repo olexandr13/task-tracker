@@ -27,6 +27,7 @@ function setup(tasks: Task[]) {
       onChangeDueDate={vi.fn()}
       onChangeRepeat={vi.fn()}
       onRemove={vi.fn()}
+      onDuplicate={vi.fn()}
       onAddSubtask={vi.fn()}
       onSetSubtaskDone={vi.fn()}
       onRenameSubtask={vi.fn()}

@@ -1,6 +1,6 @@
 # Progress
 
-Three bars in the rail beside the task list, showing how much of each period is cleared. They are
+Three bars in the rail beside the task list — below it on a phone — showing how much of each period is cleared. They are
 the first piece of the gamification: no points yet, just the picture of where the day, the week and
 the month stand.
 

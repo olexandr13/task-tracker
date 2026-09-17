@@ -8,6 +8,7 @@ import {
   completeTask,
   createTask,
   deleteTask,
+  duplicateTask,
   isComplete,
   isDeleted,
   hasDescription,
@@ -463,5 +464,58 @@ describe('doneDays', () => {
     completeTask(task, TUE_15)
 
     expect(task.doneDays).toEqual(['2026-09-14'])
+  })
+})
+
+describe('duplicateTask', () => {
+  it('copies what the task says: title, description, rule, due date and checklist (TASK-51)', () => {
+    const task = setDueDate(addSubtask(setDescription(createTask('pack', null, NOW), 'for the trip'), 'socks', NOW), '2026-09-20')
+    const copy = duplicateTask(task, LATER)
+
+    expect(copy.title).toBe('pack')
+    expect(copy.description).toBe('for the trip')
+    expect(copy.dueDate).toBe('2026-09-20')
+    expect(copy.subtasks.map((subtask) => subtask.title)).toEqual(['socks'])
+    expect(duplicateTask(createTask('stretch', DAILY, MON_14), TUE_15).repeat).toEqual(DAILY)
+  })
+
+  it('is a task of its own, and so is every item on its checklist (TASK-52)', () => {
+    const task = addSubtask(createTask('pack', null, NOW), 'socks', NOW)
+    const copy = duplicateTask(task, LATER)
+
+    expect(copy.id).not.toBe(task.id)
+    expect(copy.subtasks[0].id).not.toBe(task.subtasks[0].id)
+    expect(copy.createdAt).toBe(LATER.toISOString())
+    expect(copy.subtasks[0].createdAt).toBe(LATER.toISOString())
+  })
+
+  it('starts out todo with its checklist unticked, whatever the original had done (TASK-53)', () => {
+    const task = addSubtask(addSubtask(createTask('pack', null, NOW), 'socks', NOW), 'boots', NOW)
+    const halfway = setSubtaskDone(task, task.subtasks[0].id, true, NOW)
+
+    expect(duplicateTask(halfway, LATER).subtasks.every((subtask) => subtask.completedAt === null)).toBe(true)
+
+    const copy = duplicateTask(completeTask(task, NOW), LATER)
+
+    expect(copy.status).toBe('todo')
+    expect(copy.completedAt).toBeNull()
+    expect(copy.subtasks.every((subtask) => subtask.completedAt === null)).toBe(true)
+    expect(isComplete(copy, LATER)).toBe(false)
+  })
+
+  it("carries none of a habit's history (TASK-53)", () => {
+    const habit = completeTask(completeTask(createTask('stretch', DAILY, MON_14), MON_14), TUE_15)
+
+    expect(duplicateTask(habit, TUE_15).doneDays).toEqual([])
+    expect(isComplete(duplicateTask(habit, TUE_15), TUE_15)).toBe(false)
+  })
+
+  it('never touches the task it was given', () => {
+    const task = completeTask(addSubtask(createTask('pack', null, NOW), 'socks', NOW), NOW)
+    const before = structuredClone(task)
+
+    duplicateTask(task, LATER)
+
+    expect(task).toEqual(before)
   })
 })

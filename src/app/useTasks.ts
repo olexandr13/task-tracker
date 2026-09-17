@@ -4,7 +4,9 @@ import {
   completeTask,
   createTask,
   deleteTask,
+  duplicateTask,
   insertSubtask,
+  insertTask,
   isDeleted,
   liveTasks,
   moveTask,
@@ -189,6 +191,17 @@ export function useTasks(repository: TaskRepository) {
     [tasks, apply],
   )
 
+  /** Puts a fresh copy of the task just below it. */
+  const duplicate = useCallback(
+    (id: TaskId) => {
+      apply((current) => {
+        const original = current.find((task) => task.id === id)
+        return original === undefined ? current : insertTask(current, duplicateTask(original), id, 'after')
+      })
+    },
+    [apply],
+  )
+
   const restore = useCallback(
     (id: TaskId) => {
       apply((current) => current.map((task) => (task.id === id ? restoreTask(task) : task)))
@@ -225,6 +238,7 @@ export function useTasks(repository: TaskRepository) {
     renameChecklistItem,
     removeChecklistItem,
     remove,
+    duplicate,
     restore,
     purge,
     emptyTrash,

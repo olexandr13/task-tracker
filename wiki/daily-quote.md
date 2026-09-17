@@ -1,6 +1,6 @@
 # Daily quote
 
-The one thing on screen that is not a task: a quote at the top of the rail, above the progress
+The one thing on screen that is not a task: a quote at the bottom of the rail, below the progress
 bars, which changes once a day.
 
 ## Which quote

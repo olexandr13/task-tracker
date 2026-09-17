@@ -18,7 +18,8 @@ in which it can be fetched out of the trash.
 
 ## The trash
 
-- **TRASH-6** The trash is its own view, reached from the navigation, listing what has been deleted
+- **TRASH-6** The trash is its own view, reached from the navigation — on a phone, from the foot
+  of Tasks (UI-34) — listing what has been deleted
   and not yet cleared out — most recently deleted first.
 - **TRASH-7** Each row shows the title and how long the task has left before it goes for good.
 - **TRASH-8** **Restore** takes the task back out, exactly as it was — same id, same completion
