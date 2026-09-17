@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { InvalidDayError } from './day'
 import { InvalidRepeatError, type Repeat } from './repeat'
+import { setReward } from './reward'
+import { addTag } from './tag'
 import { EmptyTitleError } from './title'
 import {
   DueDateOnRepeatingTaskError,
@@ -43,6 +45,10 @@ describe('createTask', () => {
     expect(task.deletedAt).toBeNull()
     expect(task.subtasks).toEqual([])
     expect(task.createdAt).toBe(NOW.toISOString())
+  })
+
+  it('earns no points until it is given a reward (RWD-1)', () => {
+    expect(createTask('buy milk', { kind: 'daily' }, NOW).reward).toBeNull()
   })
 
   it('rejects a title that is blank or only whitespace', () => {
@@ -468,14 +474,22 @@ describe('doneDays', () => {
 })
 
 describe('duplicateTask', () => {
-  it('copies what the task says: title, description, rule, due date and checklist (TASK-51)', () => {
-    const task = setDueDate(addSubtask(setDescription(createTask('pack', null, NOW), 'for the trip'), 'socks', NOW), '2026-09-20')
+  it('copies what the task says: title, description, rule, due date, checklist, tags and reward (TASK-51)', () => {
+    const task = setReward(
+      addTag(
+        setDueDate(addSubtask(setDescription(createTask('pack', null, NOW), 'for the trip'), 'socks', NOW), '2026-09-20'),
+        'travel',
+      ),
+      3,
+    )
     const copy = duplicateTask(task, LATER)
 
     expect(copy.title).toBe('pack')
     expect(copy.description).toBe('for the trip')
     expect(copy.dueDate).toBe('2026-09-20')
     expect(copy.subtasks.map((subtask) => subtask.title)).toEqual(['socks'])
+    expect(copy.tags).toEqual(['travel'])
+    expect(copy.reward).toBe(3)
     expect(duplicateTask(createTask('stretch', DAILY, MON_14), TUE_15).repeat).toEqual(DAILY)
   })
 

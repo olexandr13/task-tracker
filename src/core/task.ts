@@ -59,6 +59,18 @@ export interface Task {
    */
   readonly subtasks: readonly Subtask[]
   /**
+   * The tags the task carries, in the order they were put on it, each once
+   * whatever its case. Empty for a task with none. See ./tag.
+   */
+  readonly tags: readonly string[]
+  /**
+   * The points each completion of the task earns, or null for a task that earns
+   * none — which is every task until it is given some. Only the amount for the
+   * next completion lives here; what completions already earned is kept apart
+   * from the task, so it outlives a change of amount and the task itself. See ./reward.
+   */
+  readonly reward: number | null
+  /**
    * ISO 8601 timestamp of when the task went to the trash, or null while it is
    * live. Deleting is reversible, so a deleted task is still a task — it is just
    * no longer part of the list, or of any period's count. See ./trash.
@@ -96,6 +108,8 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
     doneDays: [],
     dueDate: null,
     subtasks: [],
+    tags: [],
+    reward: null,
     deletedAt: null,
     order: 0,
   }
@@ -103,7 +117,7 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
 
 /**
  * A new task carrying what this one says — title, description, rule, due date,
- * checklist — and none of what has happened to it. It is not done, its checklist
+ * checklist, tags, reward — and none of what has happened to it. It is not done, its checklist
  * is unticked, a repeating one has no history, and it is not in the trash: a
  * copy is another go at the same thing, not a second record of the first.
  *

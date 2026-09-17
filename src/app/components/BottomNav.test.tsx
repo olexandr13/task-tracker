@@ -62,6 +62,21 @@ describe('BottomNav', () => {
     expect(screen.getByRole('button', { name: 'Tasks' }).getAttribute('aria-current')).toBe('page')
   })
 
+  it('has no tab for the rewards, and keeps Tasks marked while they are open (UI-34, RWD-19)', () => {
+    setup('rewards')
+
+    expect(screen.queryByRole('button', { name: 'Rewards' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Tasks' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('keeps Tasks marked while the tags, or a tag\'s list, are open (UI-34, TAG-17)', () => {
+    for (const view of ['tags', 'tag/work'] as const) {
+      setup(view)
+      expect(screen.getByRole('button', { name: 'Tasks' }).getAttribute('aria-current')).toBe('page')
+      cleanup()
+    }
+  })
+
   it('goes back to the period last on screen on a tap (UI-33)', async () => {
     const { user, onChange } = setup('week')
 

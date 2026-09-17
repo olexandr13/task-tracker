@@ -1,18 +1,33 @@
 rules_version = '2';
 
-// Each account's tasks sit under its own id, one document per task, stored as
-// { version, task } (src/storage/firestoreTaskRepository.ts). Only the account
-// itself reads or writes them, and a task is always filed under its own id.
-// Anything else in the database is denied.
+// Everything sits under the account's own id, and only the account itself reads
+// or writes it. Anything else in the database is denied.
+//
+// - Tasks: one document per task, stored as { version, task }
+//   (src/storage/firestoreTaskRepository.ts), always filed under the task's id.
+// - Points earned: one document per day, stored as { version, day, entries }
+//   (src/storage/firestoreRewardRepository.ts), always filed under its day.
+// - Points redeemed: one document per redemption, stored as { version, redemption },
+//   always filed under the redemption's id.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{accountId}/tasks/{taskId} {
-      function isOwner() {
-        return request.auth != null && request.auth.uid == accountId;
-      }
+    function isOwner(accountId) {
+      return request.auth != null && request.auth.uid == accountId;
+    }
 
-      allow read, delete: if isOwner();
-      allow create, update: if isOwner() && request.resource.data.task.id == taskId;
+    match /users/{accountId}/tasks/{taskId} {
+      allow read, delete: if isOwner(accountId);
+      allow create, update: if isOwner(accountId) && request.resource.data.task.id == taskId;
+    }
+
+    match /users/{accountId}/rewardDays/{day} {
+      allow read, delete: if isOwner(accountId);
+      allow create, update: if isOwner(accountId) && request.resource.data.day == day;
+    }
+
+    match /users/{accountId}/redemptions/{redemptionId} {
+      allow read, delete: if isOwner(accountId);
+      allow create, update: if isOwner(accountId) && request.resource.data.redemption.id == redemptionId;
     }
   }
 }

@@ -6,7 +6,7 @@ record — but a question asked of all of them, answered fresh on every render. 
 
 - **LIST-1** The navigation carries **Today**, **Week** and **Month**, in that order, above
   **Tasks**. Tasks is every live task; Today, Week and Month are the parts of it due today, this
-  week and this month. The app opens on **Today**, unless the address names another view (UI-36). On a phone Today, Week
+  week and this month. Each tag has a list of its own as well — see [Tags](tags.md). The app opens on **Today**, unless the address names another view (UI-36). On a phone Today, Week
   and Month share one tab of the bottom bar (UI-33).
 
 ## Today

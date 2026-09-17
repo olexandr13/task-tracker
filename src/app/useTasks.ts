@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
+  addTag,
   appendTask,
   completeTask,
   createTask,
+  deleteTag,
   deleteTask,
   duplicateTask,
+  hasRewardChanges,
   insertSubtask,
   insertTask,
   isDeleted,
@@ -12,22 +15,28 @@ import {
   moveTask,
   purgeExpired,
   removeSubtask,
+  removeTag,
   renameSubtask,
   renameTask,
   restoreTask,
+  rewardChanges,
   setDescription,
   setDoneOnDay,
   setDueDate,
   setRepeat,
+  setReward,
   setSubtaskDone,
+  tagsInUse,
   uncompleteTask,
   type LocalDay,
   type Placement,
   type Repeat,
+  type RewardChanges,
   type SubtaskId,
   type Task,
   type TaskId,
 } from '../core'
+import type { RewardRepository } from '../storage/rewardRepository'
 import { changesBetween, type TaskChanges, type TaskRepository } from '../storage/taskRepository'
 
 function persist(repository: TaskRepository, changes: TaskChanges): void {
@@ -38,13 +47,24 @@ function persist(repository: TaskRepository, changes: TaskChanges): void {
   })
 }
 
+function record(rewards: RewardRepository, changes: RewardChanges): void {
+  if (!hasRewardChanges(changes)) return
+
+  rewards.save(changes).catch((error: unknown) => {
+    console.error('Could not save rewards.', error)
+  })
+}
+
 /**
  * Holds the task list on screen and keeps it and the repository in step both
  * ways: a change made here is saved, and one saved elsewhere — another tab,
  * another device — comes back through the subscription and is shown.
  * The rules themselves live in ../core; this only wires them to React.
+ *
+ * What a change here earns or takes back is recorded in `rewards` alongside it.
+ * A change arriving from elsewhere is not: the device that made it recorded it.
  */
-export function useTasks(repository: TaskRepository) {
+export function useTasks(repository: TaskRepository, rewards: RewardRepository) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -73,13 +93,18 @@ export function useTasks(repository: TaskRepository) {
       const next = purgeExpired(change(tasks))
       setTasks(next)
       persist(repository, changesBetween(tasks, next))
+      record(rewards, rewardChanges(tasks, next))
     },
-    [tasks, repository],
+    [tasks, repository, rewards],
   )
 
   const addTask = useCallback(
-    (title: string, repeat: Repeat | null = null, dueDate: LocalDay | null = null) => {
-      apply((current) => appendTask(current, setDueDate(createTask(title, repeat), dueDate)))
+    (title: string, repeat: Repeat | null = null, dueDate: LocalDay | null = null, tags: readonly string[] = []) => {
+      apply((current) => {
+        const known = tagsInUse(liveTasks(current))
+        const task = tags.reduce((tagged, tag) => addTag(tagged, tag, known), setDueDate(createTask(title, repeat), dueDate))
+        return appendTask(current, task)
+      })
     },
     [apply],
   )
@@ -130,6 +155,43 @@ export function useTasks(repository: TaskRepository) {
   const changeRepeat = useCallback(
     (id: TaskId, repeat: Repeat | null) => {
       apply((current) => current.map((task) => (task.id === id ? setRepeat(task, repeat) : task)))
+    },
+    [apply],
+  )
+
+  /** Gives a task a reward, changes it, or takes it away with null. Later completions earn it. */
+  const changeReward = useCallback(
+    (id: TaskId, reward: number | null) => {
+      apply((current) => current.map((task) => (task.id === id ? setReward(task, reward) : task)))
+    },
+    [apply],
+  )
+
+  /**
+   * Puts a tag on a task, spelled the way the tag already is wherever another
+   * live task carries it, so one tag is never written two ways.
+   */
+  const tag = useCallback(
+    (id: TaskId, name: string) => {
+      apply((current) => {
+        const known = tagsInUse(liveTasks(current))
+        return current.map((task) => (task.id === id ? addTag(task, name, known) : task))
+      })
+    },
+    [apply],
+  )
+
+  const untag = useCallback(
+    (id: TaskId, name: string) => {
+      apply((current) => current.map((task) => (task.id === id ? removeTag(task, name) : task)))
+    },
+    [apply],
+  )
+
+  /** Deletes a tag: off every task that carries it, the tasks themselves staying. */
+  const removeTagEverywhere = useCallback(
+    (name: string) => {
+      apply((current) => deleteTag(current, name))
     },
     [apply],
   )
@@ -232,6 +294,10 @@ export function useTasks(repository: TaskRepository) {
     changeDescription,
     changeDueDate,
     changeRepeat,
+    changeReward,
+    tag,
+    untag,
+    removeTagEverywhere,
     setHabitDay,
     addChecklistItem,
     setChecklistItemDone,

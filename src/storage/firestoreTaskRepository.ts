@@ -3,17 +3,14 @@ import {
   doc,
   getDocsFromServer,
   onSnapshot,
-  writeBatch,
   type DocumentData,
   type Firestore,
   type WriteBatch,
 } from 'firebase/firestore'
 import type { Task } from '../core'
+import { commitInBatches } from './firestoreBatches'
 import { migrateTasks, SCHEMA_VERSION } from './taskSchema'
 import type { TaskRepository } from './taskRepository'
-
-/** The most writes Firestore takes in one batch. */
-const BATCH_LIMIT = 500
 
 /** One task, under the version of the shape it was saved in. */
 interface StoredTask {
@@ -47,21 +44,6 @@ function fromStored(id: string, data: DocumentData): Task[] {
 export function createFirestoreTaskRepository(firestore: Firestore, accountId: string): TaskRepository {
   const tasks = collection(firestore, 'users', accountId, 'tasks')
 
-  /**
-   * Every batch is committed at once rather than one after another: a commit
-   * only settles when the server has it, and offline that waits, but the write
-   * itself is already queued in the browser.
-   */
-  async function commit(writes: ((batch: WriteBatch) => void)[]): Promise<void> {
-    const batches: WriteBatch[] = []
-    for (let start = 0; start < writes.length; start += BATCH_LIMIT) {
-      const batch = writeBatch(firestore)
-      writes.slice(start, start + BATCH_LIMIT).forEach((write) => write(batch))
-      batches.push(batch)
-    }
-    await Promise.all(batches.map((batch) => batch.commit()))
-  }
-
   return {
     subscribe(onTasks, onError) {
       return onSnapshot(
@@ -74,7 +56,7 @@ export function createFirestoreTaskRepository(firestore: Firestore, accountId: s
     },
 
     save({ saved, removed }) {
-      return commit([
+      return commitInBatches(firestore, [
         ...saved.map((task) => (batch: WriteBatch) => batch.set(doc(tasks, task.id), toStored(task))),
         ...removed.map((id) => (batch: WriteBatch) => batch.delete(doc(tasks, id))),
       ])
@@ -86,7 +68,8 @@ export function createFirestoreTaskRepository(firestore: Firestore, accountId: s
       const existing = await getDocsFromServer(tasks)
       const known = new Set(existing.docs.map((saved) => saved.id))
 
-      await commit(
+      await commitInBatches(
+        firestore,
         incoming
           .filter((task) => !known.has(task.id))
           .map((task) => (batch: WriteBatch) => batch.set(doc(tasks, task.id), toStored(task))),

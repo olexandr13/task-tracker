@@ -1,6 +1,6 @@
 import { useState, type ComponentProps } from 'react'
 import { useLongPress } from '../useLongPress'
-import { isPeriodView, PERIOD_VIEWS, VIEW_LABELS, type PeriodView, type View } from '../view'
+import { isPeriodView, isUnder, PERIOD_VIEWS, VIEW_LABELS, type FixedView, type PeriodView, type View } from '../view'
 import { VIEW_ICONS } from '../viewIcons'
 import { ContextMenu } from './ContextMenu'
 
@@ -25,9 +25,9 @@ const pillOn = 'bg-neutral-200/80 dark:bg-neutral-800'
  * sidebar would be on a wide screen.
  *
  * Today, Week and Month share the first tab, which shows the one last chosen and
- * goes to it on a tap; holding it down opens a menu to switch. The trash has no
- * tab — it is reached from the bottom of Tasks, so Tasks stays marked while it is
- * open.
+ * goes to it on a tap; holding it down opens a menu to switch. The rewards, the
+ * tags and the trash have no tab — they are reached from the bottom of Tasks, so
+ * Tasks stays marked while any of them is open, or a tag's list.
  */
 export function BottomNav({ view, onChange }: BottomNavProps) {
   // The period the first tab goes back to after leaving it: the last one on
@@ -66,7 +66,11 @@ export function BottomNav({ view, onChange }: BottomNavProps) {
             <Tab value="habits" active={view === 'habits'} onClick={() => { onChange('habits') }} />
           </li>
           <li>
-            <Tab value="tasks" active={view === 'tasks' || view === 'trash'} onClick={() => { onChange('tasks') }} />
+            <Tab
+              value="tasks"
+              active={view === 'tasks' || view === 'rewards' || isUnder(view, 'trash') || isUnder(view, 'tags')}
+              onClick={() => { onChange('tasks') }}
+            />
           </li>
           <li>
             <Tab value="settings" active={view === 'settings'} onClick={() => { onChange('settings') }} />
@@ -89,7 +93,7 @@ export function BottomNav({ view, onChange }: BottomNavProps) {
   )
 }
 
-type TabProps = { value: View; active: boolean; description?: string } & Omit<
+type TabProps = { value: FixedView; active: boolean; description?: string } & Omit<
   ComponentProps<'button'>,
   'value' | 'type' | 'className' | 'children'
 >

@@ -5,10 +5,16 @@ import { ORDER_STEP, toLocalDay, type Task } from '../core'
  * changes, and add a step below: storing the version means old saved data can be
  * upgraded rather than silently breaking.
  */
-export const SCHEMA_VERSION = 8
+export const SCHEMA_VERSION = 10
+
+/** Version 9 had no rewards: finishing a task earned nothing. */
+type TaskV9 = Omit<Task, 'reward'>
+
+/** Version 8 had no tags: a task belonged with no others. */
+type TaskV8 = Omit<TaskV9, 'tags'>
 
 /** Version 7 kept no history: a repeating task knew only the last time it was done. */
-type TaskV7 = Omit<Task, 'doneDays'>
+type TaskV7 = Omit<TaskV8, 'doneDays'>
 
 /** Version 6 had no due dates: a one-off belonged to no day in particular. */
 type TaskV6 = Omit<TaskV7, 'dueDate'>
@@ -28,13 +34,21 @@ type TaskV2 = Omit<TaskV3, 'deletedAt'>
 /** Version 1 knew nothing about repeating either: every task happened once. */
 type TaskV1 = Omit<TaskV2, 'repeat'>
 
+function fromV9(task: TaskV9): Task {
+  return { ...task, reward: null }
+}
+
+function fromV8(task: TaskV8): Task {
+  return fromV9({ ...task, tags: [] })
+}
+
 /**
  * The last completion is the one day of a repeating task's history anything
  * remembers, so its history starts there. A one-off has none to start.
  */
 function fromV7(task: TaskV7): Task {
   const last = task.repeat === null ? null : task.completedAt
-  return { ...task, doneDays: last === null ? [] : [toLocalDay(new Date(last))] }
+  return fromV8({ ...task, doneDays: last === null ? [] : [toLocalDay(new Date(last))] })
 }
 
 function fromV6(task: TaskV6): Task {
@@ -91,6 +105,10 @@ export function migrateTasks(version: unknown, tasks: unknown): Task[] | null {
       return (tasks as TaskV6[]).map(fromV6)
     case 7:
       return (tasks as TaskV7[]).map(fromV7)
+    case 8:
+      return (tasks as TaskV8[]).map(fromV8)
+    case 9:
+      return (tasks as TaskV9[]).map(fromV9)
     case SCHEMA_VERSION:
       return tasks as Task[]
     default:

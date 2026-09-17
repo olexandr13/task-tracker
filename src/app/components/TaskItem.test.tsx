@@ -2,17 +2,18 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createSubtask, createTask, type LocalDay, type Repeat } from '../../core'
+import { addTag, createSubtask, createTask, type LocalDay, type Repeat } from '../../core'
 import { TaskItem } from './TaskItem'
 
 /*
  * What a task row shows at rest and once clicked into. RPT ids refer to
  * wiki/repeating-tasks.md, UI ids to wiki/interface.md, TASK ids to wiki/tasks.md,
- * DUE ids to wiki/due-dates.md.
+ * DUE ids to wiki/due-dates.md, TAG ids to wiki/tags.md, RWD ids to wiki/rewards.md.
  */
 
 const NOW = new Date('2026-09-15T10:00:00.000Z')
 const TASK = 'stretch'
+const nothing = () => undefined
 
 afterEach(cleanup)
 
@@ -21,12 +22,13 @@ function setup(
   subtasks: readonly string[] = [],
   onDuplicate: (id: string) => void = () => undefined,
   dueDate: LocalDay | null = null,
+  reward: number | null = null,
 ) {
   const user = userEvent.setup()
-  const nothing = () => undefined
   const task = {
     ...createTask(TASK, repeat, NOW),
     dueDate,
+    reward,
     subtasks: subtasks.map((title) => createSubtask(title, NOW)),
   }
   render(
@@ -34,12 +36,16 @@ function setup(
       <TaskItem
         task={task}
         now={NOW}
+        knownTags={[]}
         onComplete={nothing}
         onUncomplete={nothing}
         onRename={nothing}
         onChangeDescription={nothing}
         onChangeDueDate={nothing}
         onChangeRepeat={nothing}
+        onChangeReward={nothing}
+        onAddTag={nothing}
+        onRemoveTag={nothing}
         onRemove={nothing}
         onDuplicate={onDuplicate}
         onAddSubtask={nothing}
@@ -148,7 +154,56 @@ describe('the controls on a task row', () => {
     expect(screen.getByRole('button', { name: `Due date for "${TASK}": No date` })).toBeDefined()
     expect(screen.getByRole('button', { name: `Repeat for "${TASK}": Repeat` })).toBeDefined()
     expect(screen.getByRole('button', { name: `Add a checklist to "${TASK}"` })).toBeDefined()
+    expect(screen.getByRole('button', { name: `Tags for "${TASK}": No tags` })).toBeDefined()
+    expect(screen.getByRole('button', { name: `Reward for "${TASK}": No reward` })).toBeDefined()
     expect(screen.getByRole('button', { name: `Add a description to "${TASK}"` })).toBeDefined()
+  })
+})
+
+describe('the reward on a task row', () => {
+  it('is spelled out under its star once the row is clicked into, and named on the phone\'s line (RWD-7, RWD-8)', async () => {
+    const user = setup({ kind: 'daily' }, [], () => undefined, null, 5)
+    const row = () => within(screen.getByRole('listitem'))
+
+    expect(row().queryByText('+5')).toBeNull()
+
+    await user.click(screen.getByRole('listitem'))
+
+    expect(row().getByText('+5')).toBeDefined()
+    expect(row().getByText('5 points')).toBeDefined()
+  })
+})
+
+describe('the tags on a task row', () => {
+  it('are shown beside the title at rest (TAG-12)', () => {
+    render(
+      <ul>
+        <TaskItem
+          task={addTag(addTag(createTask(TASK, null, NOW), 'health'), 'morning')}
+          now={NOW}
+          knownTags={['health', 'morning']}
+          onComplete={nothing}
+          onUncomplete={nothing}
+          onRename={nothing}
+          onChangeDescription={nothing}
+          onChangeDueDate={nothing}
+          onChangeRepeat={nothing}
+          onChangeReward={nothing}
+          onAddTag={nothing}
+          onRemoveTag={nothing}
+          onRemove={nothing}
+          onDuplicate={nothing}
+          onAddSubtask={nothing}
+          onSetSubtaskDone={nothing}
+          onRenameSubtask={nothing}
+          onRemoveSubtask={nothing}
+        />
+      </ul>,
+    )
+    const chips = within(screen.getByRole('list', { name: 'Tags' })).getAllByRole('listitem')
+
+    expect(chips.map((chip) => chip.textContent)).toEqual(['health', 'morning'])
+    expect(screen.getByRole('button', { name: `Tags for "${TASK}": health, morning` })).toBeDefined()
   })
 })
 

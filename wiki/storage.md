@@ -28,6 +28,23 @@ changes shape.
 - **STORE-18** Offline, the tasks still open from a copy the browser keeps, and changes made
   offline are sent once there is a connection. Every open tab shares that copy.
 
+## Points
+
+- **STORE-21** What completions earned is saved in the account **apart from the tasks**, so it
+  outlives a task deleted and purged (RWD-13). It is kept as **one record per day**, holding what
+  each task done that day earned. Reading the ledger costs a record a day, however many tasks were
+  done.
+- **STORE-22** A day is only ever changed **task by task**: earning adds that task's points to the
+  day, taking back removes them, and nothing else on the day is touched. Two devices completing
+  different tasks on the same day keep both. The same completion recorded twice is recorded once.
+- **STORE-23** Each redemption is saved as **its own record**, and deleting one removes it.
+- **STORE-24** The ledger has **its own version**, apart from the tasks'. A day or a redemption in a
+  version the app does not recognise, or not shaped as it should be, is ignored with a warning and
+  left as it is (STORE-7).
+- **STORE-25** What a change earns is recorded by the device that made the change. A change arriving
+  from another device is not recorded again. The ledger is readable and writable by the account
+  alone (STORE-17), opens offline and waits for a connection like the tasks (STORE-18).
+
 ## Tasks kept in the browser
 
 - **STORE-19** Tasks saved before they belonged to the account were kept in the browser's
@@ -46,10 +63,12 @@ changes shape.
 - **STORE-6** Older saved tasks, in the account or still in the browser, are upgraded in a chain, each step adding only the one thing its
   version did not know about. Today that covers data saved before repeats existed, before the trash
   existed, before a task could carry a description, before it could carry a checklist, before it
-  had an order of its own, before it could be due on a day, and before a repeating task kept the
-  days it was done on. The order step keeps each task where it was: the saved list was already in
+  had an order of its own, before it could be due on a day, before a repeating task kept the days
+  it was done on, before a task could carry tags, and before it could carry a reward. The order step keeps each task where it was: the saved list was already in
   order. Tasks saved before due dates have no day. A repeating task saved before history was kept
-  starts its history with the day of its last completion, the one day anything remembers.
+  starts its history with the day of its last completion, the one day anything remembers. Tasks
+  saved before tags have none, and tasks saved before rewards have no reward, so none of what they
+  did before earns anything.
 - **STORE-7** Data in a version the app does not recognise, or that cannot be parsed at all, is
   **ignored with a warning** rather than crashing, and left as it is: a task the app cannot read is
   not shown, and never overwritten or deleted by it.
@@ -84,8 +103,10 @@ changes shape.
 **Where it lives:** `src/storage/taskRepository.ts` (the interface, and what a change comes to),
 `firestoreTaskRepository.ts` (the account's tasks), `firebaseApp.ts` (the database and its offline
 copy), `taskSchema.ts` (versions and upgrades), `localTaskImport.ts` (tasks kept in the browser),
-`src/storage/quoteRepository.ts` and `localStorageQuoteRepository.ts`,
+`firestoreBatches.ts` (writing in batches), `rewardRepository.ts`, `firestoreRewardRepository.ts` and
+`rewardSchema.ts` (the points ledger), `src/storage/quoteRepository.ts` and `localStorageQuoteRepository.ts`,
 `src/storage/quoteSource.ts` and `quotableQuoteSource.ts`, `src/app/useTasks.ts`,
 `src/app/TasksScreen.tsx` (the repository and the move). Who may read what: `firestore.rules`.
 **Tested in:** `src/storage/taskRepository.test.ts` (what a change writes),
-`src/storage/localTaskImport.test.ts` (the move, and upgrading older data).
+`src/storage/localTaskImport.test.ts` (the move, and upgrading older data), `src/storage/rewardSchema.test.ts`
+(reading the ledger back).

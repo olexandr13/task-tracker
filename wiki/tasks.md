@@ -17,6 +17,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 | `repeat` | A recurrence rule, or nothing for a task that happens once. See [Repeating tasks](repeating-tasks.md). |
 | `dueDate` | The local day a one-off is due, or nothing. Always nothing on a repeating task. See [Due dates](due-dates.md). |
 | `subtasks` | The checklist, in the order it was written, or empty. See [Checklists](checklists.md). |
+| `tags` | The tags it carries, in the order they were put on, or empty. See [Tags](tags.md). |
+| `reward` | The points each completion earns, or nothing. What completions already earned is kept apart from the task. See [Rewards](rewards.md). |
 | `deletedAt` | When it went to the trash, or nothing while it is live. |
 | `order` | Where it sits in the list, as a number: lower comes first. |
 
@@ -160,8 +162,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 ## Duplicating
 
 - **TASK-51** **Duplicate**, in the menu a right-click on a row opens (UI-31), adds a copy of the
-  task carrying what it says: the same title, description, repeat rule, due date and checklist
-  items.
+  task carrying what it says: the same title, description, repeat rule, due date, checklist
+  items, tags and reward.
 - **TASK-52** The copy is a task of its own — its own id, stamped as created now — and each item on
   its checklist is its own too, so changing one never changes the other.
 - **TASK-53** It carries **none of what happened** to the original: it is not done, its checklist is

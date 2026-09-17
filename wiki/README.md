@@ -15,11 +15,13 @@ lets this be read as a description of the app rather than a wish list.
 | [Tasks](tasks.md) | The record itself — adding, renaming, completing, ordering |
 | [Checklists](checklists.md) | Subtasks: ticking them off, and the rule that finishes the task |
 | [Due dates](due-dates.md) | The day a task is due, setting it, and overdue |
+| [Tags](tags.md) | Names a task carries, tagging by picker or by typing `#`, the Tags page and each tag's list |
 | [Lists](lists.md) | Views of the tasks — Today, Week and Month, and what belongs in them |
 | [Repeating tasks](repeating-tasks.md) | Daily, weekly and monthly rules, and how a repeat reads as done |
 | [Trash](trash.md) | Deleting, the undo window, retention and purging |
 | [Progress](progress.md) | The three bars: today, this week, this month |
 | [Habits](habits.md) | Daily tasks as habits: streaks, rates and the grid of days |
+| [Rewards](rewards.md) | Points a task earns on every completion, redeeming them, and the Rewards page |
 | [Daily quote](daily-quote.md) | One quote a day, in two languages, with a fallback |
 | [Interface](interface.md) | Layout, navigation, popovers, phone behaviour, accessibility |
 | [Storage](storage.md) | Where data lives, schema versions and migrations |

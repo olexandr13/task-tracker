@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { isSubtaskComplete, type Subtask, type SubtaskId, type Repeat } from '../../core'
+import { deleteControl } from '../rowControls'
 
 interface SubtaskItemProps {
   subtask: Subtask
@@ -151,7 +152,7 @@ export function SubtaskItem({
         type="button"
         onClick={() => { onRemove(subtask.id) }}
         aria-label={`Delete "${subtask.title}" from "${taskTitle}"`}
-        className="shrink-0 rounded px-1.5 leading-none text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+        className={`shrink-0 rounded px-1.5 leading-none ${deleteControl}`}
       >
         ×
       </button>

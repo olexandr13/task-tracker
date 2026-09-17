@@ -1,14 +1,15 @@
 import { Fragment } from 'react'
-import { VIEW_LABELS, type View } from '../view'
+import { isUnder, VIEW_LABELS, type FixedView, type View } from '../view'
 import { VIEW_ICONS } from '../viewIcons'
 
 /**
- * The views, grouped: the lists named after a period, then every task and the
- * habits, then the trash, then settings. A thin line is drawn between groups.
+ * The views, grouped: the lists named after a period, then every task, the
+ * habits, the rewards and the tags, then the trash, then settings. A thin line is drawn
+ * between groups. A tag's own list has no entry: it is reached from Tags.
  */
-const VIEW_GROUPS: readonly (readonly View[])[] = [
+const VIEW_GROUPS: readonly (readonly FixedView[])[] = [
   ['today', 'week', 'month'],
-  ['tasks', 'habits'],
+  ['tasks', 'habits', 'rewards', 'tags'],
   ['trash'],
   ['settings'],
 ]
@@ -25,7 +26,8 @@ interface SideNavProps {
 
 /**
  * Which screen you are on: a plain list down the left. Only where there is room
- * for one — a phone gets the bar along the bottom instead (BottomNav).
+ * for one — a phone gets the bar along the bottom instead (BottomNav). Tags stays
+ * marked while a tag's list is open, being where it was opened from.
  */
 export function SideNav({ view, onChange }: SideNavProps) {
   return (
@@ -37,7 +39,7 @@ export function SideNav({ view, onChange }: SideNavProps) {
               <li aria-hidden="true" className="mx-3 my-1.5 border-t border-neutral-200 dark:border-neutral-800" />
             )}
             {group.map((value) => (
-              <NavItem key={value} value={value} active={value === view} onSelect={onChange} />
+              <NavItem key={value} value={value} active={isUnder(view, value)} onSelect={onChange} />
             ))}
           </Fragment>
         ))}
@@ -46,7 +48,7 @@ export function SideNav({ view, onChange }: SideNavProps) {
   )
 }
 
-function NavItem({ value, active, onSelect }: { value: View; active: boolean; onSelect: (view: View) => void }) {
+function NavItem({ value, active, onSelect }: { value: FixedView; active: boolean; onSelect: (view: View) => void }) {
   const Icon = VIEW_ICONS[value]
 
   return (

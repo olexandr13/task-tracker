@@ -1,6 +1,25 @@
-import { Fragment, useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent, type ReactNode } from 'react'
-import { parseDescription, type EmphasisSpan } from '../../core'
-import { fillBox, placeCaretAtEnd, readBox, startListIfTyped } from '../descriptionBox'
+import {
+  Fragment,
+  useEffect,
+  useEffectEvent,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
+import { parseDescription, suggestTags, type EmphasisSpan, type TagSuggestion } from '../../core'
+import {
+  caretPosition,
+  fillBox,
+  placeCaretAtEnd,
+  readBox,
+  startListIfTyped,
+  tagTypedAtCaret,
+  takeTypedTag,
+} from '../descriptionBox'
 
 /**
  * A step dimmer than a title, and smaller, so a description reads as what it is:
@@ -17,11 +36,33 @@ const descriptionText = 'text-sm text-neutral-500 dark:text-neutral-400'
  */
 const listText = '[&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5'
 
+/** How close to the window's edge the tag suggestions may come, and how far they sit from the caret. */
+const margin = 8
+const gap = 4
+
+const suggestion = 'flex w-full min-w-0 cursor-pointer items-center rounded-lg px-2 py-1.5 text-left text-sm'
+const suggestionOn = 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100'
+const suggestionOff = 'text-neutral-700 dark:text-neutral-200'
+
+/** A tag being typed after a `#`, and where the caret is drawn, while there is one. */
+interface TypedTag {
+  query: string
+  left: number
+  top: number
+  bottom: number
+}
+
 interface TaskDescriptionProps {
   description: string
   /** The task this belongs to, so the box says which one it is writing about. */
   title: string
+  /** The tags the task carries, which typing `#` does not offer again. */
+  tags: readonly string[]
+  /** Every tag in use, which typing `#` offers. */
+  knownTags: readonly string[]
   onChange: (description: string) => void
+  /** Puts a tag chosen after typing `#` on the task. */
+  onAddTag: (name: string) => void
 }
 
 /**
@@ -31,8 +72,13 @@ interface TaskDescriptionProps {
  * an editable element rather than a text box — a text box can only hold
  * characters, and `**` or `- ` on screen is a detail of how a description is
  * saved leaking into how it is read.
+ *
+ * Typing `#` in the box offers the tags there are to put on the task, narrowed
+ * as a name is typed after it, and a new tag of that name when there is none.
+ * Choosing one takes the `#name` out of the text and puts the tag on the task:
+ * a tag is something the task carries, not something written in it.
  */
-export function TaskDescription({ description, title, onChange }: TaskDescriptionProps) {
+export function TaskDescription({ description, title, tags, knownTags, onChange, onAddTag }: TaskDescriptionProps) {
   // The box is uncontrolled, which a box holding formatted words has to be: the
   // browser is what puts emphasis on a selection, and rewriting its contents
   // under it on every keystroke would take the caret with it. So the element
@@ -41,6 +87,16 @@ export function TaskDescription({ description, title, onChange }: TaskDescriptio
   const [isEditing, setIsEditing] = useState(false)
   const box = useRef<HTMLDivElement>(null)
   const written = useRef(description)
+  // The tag being typed, and which suggestion is picked out. Escape puts the
+  // suggestions away until the caret leaves that `#` behind.
+  const [typing, setTyping] = useState<TypedTag | null>(null)
+  const [highlighted, setHighlighted] = useState(0)
+  const dismissed = useRef(false)
+  const list = useRef<HTMLUListElement>(null)
+  const listId = useId()
+  const suggestions = typing === null ? [] : suggestTags(knownTags, typing.query, tags)
+  const isSuggesting = suggestions.length > 0
+  const active = Math.min(highlighted, suggestions.length - 1)
 
   useEffect(() => {
     const element = box.current
@@ -51,6 +107,67 @@ export function TaskDescription({ description, title, onChange }: TaskDescriptio
     // Caret at the end: writing more is the common case, rewriting is not.
     placeCaretAtEnd(element)
   }, [isEditing])
+
+  /**
+   * Whether a tag is being typed where the caret now is, and where to offer it:
+   * after every change to the box and every move of the caret.
+   */
+  function followCaret() {
+    const element = box.current
+    const query = element === null ? null : tagTypedAtCaret(element)
+    if (element === null || query === null) {
+      dismissed.current = false
+      if (typing !== null) setTyping(null)
+      return
+    }
+    if (dismissed.current) return
+
+    const { left, top, bottom } = caretPosition(element)
+    if (typing?.query === query && typing.left === left && typing.top === top) return
+    if (typing?.query !== query) setHighlighted(0)
+    setTyping({ query, left, top, bottom })
+  }
+
+  const onCaretMove = useEffectEvent(followCaret)
+
+  useEffect(() => {
+    if (!isEditing) return
+
+    function handleMove() {
+      onCaretMove()
+    }
+
+    // The caret moves with arrow keys and clicks as well as typing, and the page
+    // scrolls under it; capturing, so a scroll inside any part of the page counts.
+    document.addEventListener('selectionchange', handleMove)
+    window.addEventListener('scroll', handleMove, true)
+    return () => {
+      document.removeEventListener('selectionchange', handleMove)
+      window.removeEventListener('scroll', handleMove, true)
+    }
+  }, [isEditing])
+
+  // Under the caret, or above it where the window runs out; never past either side.
+  useLayoutEffect(() => {
+    const element = list.current
+    if (element === null || typing === null) return
+
+    const { width, height } = element.getBoundingClientRect()
+    const below = typing.bottom + gap
+    element.style.left = `${String(Math.max(margin, Math.min(typing.left, window.innerWidth - margin - width)))}px`
+    element.style.top = `${String(below + height > window.innerHeight - margin ? Math.max(margin, typing.top - gap - height) : below)}px`
+  })
+
+  /** Puts the chosen tag on the task, taking the `#name` it was typed as out of the text. */
+  function pick({ name }: TagSuggestion) {
+    const element = box.current
+    if (element === null || typing === null) return
+
+    takeTypedTag(element, typing.query)
+    handleInput()
+    setTyping(null)
+    onAddTag(name)
+  }
 
   /** What the box now says, read back after every change to it. */
   function handleInput() {
@@ -68,6 +185,7 @@ export function TaskDescription({ description, title, onChange }: TaskDescriptio
       element.replaceChildren()
     }
     written.current = readBox(element)
+    followCaret()
   }
 
   /** Keeping the edit. An empty box clears the description, unlike an empty title. */
@@ -77,6 +195,7 @@ export function TaskDescription({ description, title, onChange }: TaskDescriptio
     if (written.current.trim() !== description) {
       onChange(written.current)
     }
+    setTyping(null)
     setIsEditing(false)
   }
 
@@ -90,6 +209,8 @@ export function TaskDescription({ description, title, onChange }: TaskDescriptio
   useEffect(() => () => { commit.current() }, [])
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (isSuggesting && handleSuggestionKey(event)) return
+
     // Enter makes a new line here, so keeping the edit has a shortcut of its own.
     if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
       event.preventDefault()
@@ -111,8 +232,39 @@ export function TaskDescription({ description, title, onChange }: TaskDescriptio
       // Dropping the edit unmounts the box, so nothing is left to keep it from.
       event.stopPropagation()
       written.current = description
+      setTyping(null)
       setIsEditing(false)
     }
+  }
+
+  /**
+   * The keys that work the suggestions while they are up: the arrows move
+   * between them, Enter or Tab chooses one, and Escape puts them away without
+   * dropping the edit. Returns whether the key was theirs.
+   */
+  function handleSuggestionKey(event: KeyboardEvent<HTMLDivElement>): boolean {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      const step = event.key === 'ArrowDown' ? 1 : -1
+      setHighlighted((active + step + suggestions.length) % suggestions.length)
+      return true
+    }
+
+    if ((event.key === 'Enter' && !event.metaKey && !event.ctrlKey) || (event.key === 'Tab' && !event.shiftKey)) {
+      event.preventDefault()
+      pick(suggestions[active])
+      return true
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      dismissed.current = true
+      setTyping(null)
+      return true
+    }
+
+    return false
   }
 
   function handlePaste(event: ClipboardEvent<HTMLDivElement>) {
@@ -158,23 +310,57 @@ export function TaskDescription({ description, title, onChange }: TaskDescriptio
   }
 
   return (
-    <div
-      key="box"
-      ref={box}
-      contentEditable
-      suppressContentEditableWarning
-      role="textbox"
-      aria-multiline="true"
-      aria-label={`Description of "${title}"`}
-      data-placeholder="Add a description"
-      onInput={handleInput}
-      onKeyDown={handleKeyDown}
-      onPaste={handlePaste}
-      onBlur={commitEdit}
-      // Grows with what is written rather than sitting at a fixed height, up to
-      // a point: past that the box scrolls instead of pushing the list around.
-      className={`${descriptionText} ${listText} max-h-64 w-full overflow-y-auto break-words whitespace-pre-wrap focus:outline-none empty:before:text-neutral-400 empty:before:content-[attr(data-placeholder)] dark:empty:before:text-neutral-500`}
-    />
+    <>
+      <div
+        key="box"
+        ref={box}
+        contentEditable
+        suppressContentEditableWarning
+        role="textbox"
+        aria-multiline="true"
+        aria-label={`Description of "${title}"`}
+        aria-autocomplete="list"
+        aria-controls={isSuggesting ? listId : undefined}
+        aria-activedescendant={isSuggesting ? `${listId}-${String(active)}` : undefined}
+        data-placeholder="Add a description"
+        onInput={handleInput}
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
+        onBlur={commitEdit}
+        // Grows with what is written rather than sitting at a fixed height, up to
+        // a point: past that the box scrolls instead of pushing the list around.
+        className={`${descriptionText} ${listText} max-h-64 w-full overflow-y-auto break-words whitespace-pre-wrap focus:outline-none empty:before:text-neutral-400 empty:before:content-[attr(data-placeholder)] dark:empty:before:text-neutral-500`}
+      />
+
+      {/* Beside the box rather than in it, so the box never reads it as text, and at the
+          caret rather than under the box, where the eye already is. A press on it keeps
+          the caret in the box, so choosing a tag does not end the edit. */}
+      {isSuggesting && typing !== null && (
+        <ul
+          ref={list}
+          id={listId}
+          role="listbox"
+          aria-label="Tags"
+          style={{ left: typing.left, top: typing.bottom + gap }}
+          onMouseDown={(event) => { event.preventDefault() }}
+          className="fixed z-30 flex max-h-60 w-56 flex-col gap-0.5 overflow-y-auto rounded-xl border border-neutral-200 bg-white p-1 shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
+        >
+          {suggestions.map((option, index) => (
+            <li
+              key={option.name}
+              id={`${listId}-${String(index)}`}
+              role="option"
+              aria-selected={index === active}
+              onClick={() => { pick(option) }}
+              onMouseEnter={() => { setHighlighted(index) }}
+              className={index === active ? `${suggestion} ${suggestionOn}` : `${suggestion} ${suggestionOff}`}
+            >
+              <span className="min-w-0 truncate">{option.isNew ? `Create “${option.name}”` : option.name}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   )
 }
 

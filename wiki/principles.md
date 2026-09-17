@@ -24,13 +24,15 @@ these, so a feature page only mentions them where the feature bends them.
   by one rather than colliding.
 - **PRIN-7** A task stores its **most recent** completion time. A repeating task also stores the
   **days** it was done on (RPT-27), which is what habits and their streaks are read from
-  ([Habits](habits.md)). Nothing else is kept: a one-off has no history, and neither does a
-  checklist item.
+  ([Habits](habits.md)). A one-off has no history, and neither does a checklist item. The one
+  record kept apart from the tasks is the **points ledger**: what each completion earned and what
+  was redeemed ([Rewards](rewards.md)). It outlives the tasks, so earned stays earned (RWD-13).
 
 ## Behaviour
 
 - **PRIN-8** Destructive actions are reversible, or they ask first. Deleting is reversible twice
-  over; the two actions that genuinely end a task say so.
+  over; the two actions that genuinely end a task say so, and so does deleting a redemption
+  (RWD-18).
 - **PRIN-9** The app works offline. Signing in for the first time needs a connection; after that
   the session is remembered (AUTH-7). The tasks open from the browser's copy and changes wait for
   a connection (STORE-18). The daily quote falls back to a bundled pack rather than failing.

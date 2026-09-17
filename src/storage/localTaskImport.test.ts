@@ -27,7 +27,7 @@ afterEach(() => { localStorage.clear() })
 describe('importLocalTasks', () => {
   it('moves the tasks kept in the browser into the account, then forgets them here', async () => {
     const task = setDueDate(createTask('file taxes', null, NOW), '2026-09-20')
-    localStorage.setItem(KEY, JSON.stringify({ version: 8, tasks: [task] }))
+    localStorage.setItem(KEY, JSON.stringify({ version: 9, tasks: [task] }))
     const { repository, imported } = repositoryThat('accepts')
 
     await importLocalTasks(repository)
@@ -37,7 +37,7 @@ describe('importLocalTasks', () => {
   })
 
   it('keeps them in the browser when the account could not take them', async () => {
-    const saved = JSON.stringify({ version: 8, tasks: [createTask('file taxes', null, NOW)] })
+    const saved = JSON.stringify({ version: 9, tasks: [createTask('file taxes', null, NOW)] })
     localStorage.setItem(KEY, saved)
 
     await expect(importLocalTasks(repositoryThat('fails').repository)).rejects.toThrow('offline')
@@ -55,6 +55,28 @@ describe('importLocalTasks', () => {
     expect(localStorage.getItem(KEY)).not.toBeNull()
   })
 
+  it('gives tasks saved before rewards existed none', async () => {
+    const { reward, ...savedAtV9 } = createTask('file taxes', { kind: 'daily' }, NOW)
+    expect(reward).toBeNull()
+    localStorage.setItem(KEY, JSON.stringify({ version: 9, tasks: [savedAtV9] }))
+    const { repository, imported } = repositoryThat('accepts')
+
+    await importLocalTasks(repository)
+
+    expect(imported).toEqual([{ ...savedAtV9, reward: null }])
+  })
+
+  it('gives tasks saved before tags existed none', async () => {
+    const { tags, reward, ...savedAtV8 } = createTask('file taxes', null, NOW)
+    expect([tags, reward]).toEqual([[], null])
+    localStorage.setItem(KEY, JSON.stringify({ version: 8, tasks: [savedAtV8] }))
+    const { repository, imported } = repositoryThat('accepts')
+
+    await importLocalTasks(repository)
+
+    expect(imported).toEqual([{ ...savedAtV8, tags: [], reward: null }])
+  })
+
   it('starts the history of a repeating task saved before history was kept at its last completion', async () => {
     const { doneDays, ...daily } = completeTask(createTask('stretch', { kind: 'daily' }, NOW), NOW)
     const { doneDays: none, ...oneOff } = completeTask(createTask('file taxes', null, NOW), NOW)
@@ -68,14 +90,14 @@ describe('importLocalTasks', () => {
   })
 
   it('gives tasks saved before due dates existed no day of their own', async () => {
-    const { dueDate, doneDays, ...savedAtV6 } = createTask('file taxes', null, NOW)
-    expect([dueDate, doneDays]).toEqual([null, []])
+    const { dueDate, doneDays, tags, reward, ...savedAtV6 } = createTask('file taxes', null, NOW)
+    expect([dueDate, doneDays, tags, reward]).toEqual([null, [], [], null])
     localStorage.setItem(KEY, JSON.stringify({ version: 6, tasks: [savedAtV6] }))
     const { repository, imported } = repositoryThat('accepts')
 
     await importLocalTasks(repository)
 
-    expect(imported).toEqual([{ ...savedAtV6, dueDate: null, doneDays: [] }])
+    expect(imported).toEqual([{ ...savedAtV6, dueDate: null, doneDays: [], tags: [], reward: null }])
   })
 
   it('carries the oldest saved shape all the way up', async () => {
@@ -87,6 +109,6 @@ describe('importLocalTasks', () => {
     await importLocalTasks(repository)
 
     expect(imported.map((task) => task.dueDate)).toEqual([null, null])
-    expect(imported[1]).toMatchObject({ repeat: null, description: '', subtasks: [], deletedAt: null })
+    expect(imported[1]).toMatchObject({ repeat: null, description: '', subtasks: [], tags: [], reward: null, deletedAt: null })
   })
 })

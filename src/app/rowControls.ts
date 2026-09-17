@@ -1,6 +1,6 @@
 /**
- * The tones the small controls on a row share — due date, repeat, checklist,
- * description — so they read as one set and change together.
+ * The tones the small controls share — due date, repeat, checklist, tags,
+ * description, deleting — so they read as one set and change together.
  */
 
 /** Nothing set: the control is only a way of setting it. */
@@ -13,6 +13,15 @@ export const controlOff =
  */
 export const controlOn =
   'bg-blue-600/5 text-blue-600/70 hover:bg-blue-600/10 hover:text-blue-600 dark:bg-blue-400/5 dark:text-blue-300/55 dark:hover:bg-blue-400/10 dark:hover:text-blue-300/90'
+
+/**
+ * A control that deletes or removes something, wherever it is: a task, a checklist
+ * item, a task in the trash, a tag. Muted at rest like any other, so a list is not
+ * lined with red, and red under the pointer, so what a click would do is plain
+ * before it is done.
+ */
+export const deleteControl =
+  'text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400'
 
 /**
  * The box that ticks a task off, wherever a task can be ticked off — a row, a

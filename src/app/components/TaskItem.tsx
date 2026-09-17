@@ -4,6 +4,7 @@ import {
   countSubtasks,
   hasDescription,
   hasSubtasks,
+  hasTags,
   isComplete,
   isOverdue,
   type LocalDay,
@@ -15,7 +16,8 @@ import {
 import { describeDueDate } from '../dueLabels'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { describeRepeat } from '../repeatLabels'
-import { completionBoxOff, completionBoxOn, controlOff, controlOn } from '../rowControls'
+import { describeReward } from '../rewardLabels'
+import { completionBoxOff, completionBoxOn, controlOff, controlOn, deleteControl } from '../rowControls'
 import { isInTextEntry } from '../textEntry'
 import { textOffsetAtPoint } from '../textOffsetAtPoint'
 import { useSortableTask } from '../useSortableTask'
@@ -25,18 +27,25 @@ import { DuePicker } from './DuePicker'
 import { GripIcon } from './GripIcon'
 import { NoteIcon } from './NoteIcon'
 import { RepeatPicker } from './RepeatPicker'
+import { RewardPicker } from './RewardPicker'
 import { SubtaskList } from './SubtaskList'
+import { TagPicker } from './TagPicker'
 import { TaskDescription } from './TaskDescription'
 
 interface TaskItemProps {
   task: Task
   now: Date
+  /** Every tag in use, to offer when tagging this task. */
+  knownTags: readonly string[]
   onComplete: (id: TaskId) => void
   onUncomplete: (id: TaskId) => void
   onRename: (id: TaskId, title: string) => void
   onChangeDescription: (id: TaskId, description: string) => void
   onChangeDueDate: (id: TaskId, dueDate: LocalDay | null) => void
   onChangeRepeat: (id: TaskId, repeat: Repeat | null) => void
+  onChangeReward: (id: TaskId, reward: number | null) => void
+  onAddTag: (id: TaskId, name: string) => void
+  onRemoveTag: (id: TaskId, name: string) => void
   onRemove: (id: TaskId) => void
   onDuplicate: (id: TaskId) => void
   onAddSubtask: (id: TaskId, index: number, title: string) => void
@@ -61,11 +70,21 @@ const indent = 'pl-10'
 const slot = 'flex w-8 shrink-0 items-center'
 
 /**
- * The columns of a task's line: the completion box, the title, the date, repeat
- * and checklist slots, the description and delete. The slots are fixed, so what
- * is spelled out under them can run wider without widening them.
+ * The columns of a task's line: the completion box, the title with its tags, the
+ * date, repeat, checklist, tag and reward slots, the description and delete. The
+ * slots are fixed, so what is spelled out under them can run wider without
+ * widening them. A phone has no room for the tag and reward slots beside the
+ * title; its tags and reward are set from the woken row instead.
  */
-const lineColumns = 'grid-cols-[auto_minmax(0,1fr)_repeat(3,--spacing(8))_auto_auto]'
+const lineColumns =
+  'grid-cols-[auto_minmax(0,1fr)_repeat(3,--spacing(8))_auto_auto] md:grid-cols-[auto_minmax(0,1fr)_repeat(5,--spacing(8))_auto_auto]'
+
+/**
+ * A tag the task carries, beside its title. Quieter than the title and smaller,
+ * as a label on the task rather than part of what it says.
+ */
+const chip =
+  'max-w-28 min-w-0 truncate rounded-full bg-neutral-100 px-1.5 text-[11px] leading-4 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400'
 
 /** What a control holds, on the second line under it. */
 const detail = 'row-start-2 pb-1 text-[10px] leading-3 whitespace-nowrap text-neutral-400 tabular-nums dark:text-neutral-500'
@@ -79,12 +98,16 @@ const grip =
 export function TaskItem({
   task,
   now,
+  knownTags,
   onComplete,
   onUncomplete,
   onRename,
   onChangeDescription,
   onChangeDueDate,
   onChangeRepeat,
+  onChangeReward,
+  onAddTag,
+  onRemoveTag,
   onRemove,
   onDuplicate,
   onAddSubtask,
@@ -119,10 +142,11 @@ export function TaskItem({
   const sortable = useSortableTask(task, now)
   const isEditing = editedTitle !== null
   // What the controls hold, spelled out on a second line under each: the date
-  // whenever there is one, the repeat rule and the checklist count once woken.
+  // whenever there is one, the repeat rule, the checklist count and the reward once woken.
   const due = task.repeat === null && task.dueDate !== null ? describeDueDate(task.dueDate, now) : null
   const rule = isActive && task.repeat !== null ? describeRepeat(task.repeat) : null
   const count = isActive && hasSubtasks(task) ? `${String(checklist.done)}/${String(checklist.total)}` : null
+  const points = isActive && task.reward !== null ? describeReward(task.reward) : null
 
   useEffect(() => {
     const element = input.current
@@ -320,21 +344,35 @@ export function TaskItem({
 
         {/* The title is only as wide as its words and a little past them, so the
             rest of the line is the row to click, not the title. The box, once
-            open, takes the whole of it to type into. */}
-        <div className="flex min-w-0">
+            open, takes the whole of it to type into. The tags sit at the far end,
+            and go under the title when there is no room beside it. */}
+        <div className="flex min-w-0 flex-wrap items-center gap-y-0.5">
           {editedTitle === null ? (
-            <button
-              type="button"
-              onClick={startEdit}
-              aria-label={`Edit "${task.title}"`}
-              className={
-                done
-                  ? `${titleBox} cursor-text pr-[13px] break-words text-neutral-400 line-through dark:text-neutral-600`
-                  : `${titleBox} cursor-text pr-[13px] break-words text-neutral-900 dark:text-neutral-100`
-              }
-            >
-              {task.title}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={startEdit}
+                aria-label={`Edit "${task.title}"`}
+                className={
+                  done
+                    ? `${titleBox} cursor-text pr-[13px] break-words text-neutral-400 line-through dark:text-neutral-600`
+                    : `${titleBox} cursor-text pr-[13px] break-words text-neutral-900 dark:text-neutral-100`
+                }
+              >
+                {task.title}
+              </button>
+              {/* Labels, not controls: a click on one is a click on the row. One line of
+                  them, each giving up room to the rest when there is not enough. */}
+              {hasTags(task) && (
+                <ul aria-label="Tags" className="ml-auto flex min-w-0 justify-end gap-1 overflow-hidden">
+                  {task.tags.map((tag) => (
+                    <li key={tag} className={done ? `${chip} opacity-60` : chip}>
+                      {tag}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           ) : (
             <input
               ref={input}
@@ -394,6 +432,25 @@ export function TaskItem({
           </button>
         </div>
 
+        <div className={`${slot} max-md:hidden`}>
+          <TagPicker
+            tags={task.tags}
+            known={knownTags}
+            onAdd={(name) => { onAddTag(task.id, name) }}
+            onRemove={(name) => { onRemoveTag(task.id, name) }}
+            label={`Tags for "${task.title}"`}
+          />
+        </div>
+
+        <div className={`${slot} max-md:hidden`}>
+          <RewardPicker
+            reward={task.reward}
+            repeat={task.repeat}
+            onChange={(reward) => { onChangeReward(task.id, reward) }}
+            label={`Reward for "${task.title}"`}
+          />
+        </div>
+
         <button
           type="button"
           onClick={() => { setIsDescriptionOpen(!isDescriptionOpen) }}
@@ -416,7 +473,7 @@ export function TaskItem({
             onRemove(task.id)
           }}
           aria-label={`Delete "${task.title}"`}
-          className="flex h-6 shrink-0 items-center rounded-lg px-1.5 text-base leading-none text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+          className={`flex h-6 shrink-0 items-center rounded-lg px-1.5 text-base leading-none ${deleteControl}`}
         >
           ×
         </button>
@@ -451,6 +508,9 @@ export function TaskItem({
         )}
 
         {count !== null && <p className={`${detail} col-start-5 justify-self-center`}>{count}</p>}
+
+        {/* Under the reward's slot, which a phone does not have: its woken row names the points instead. */}
+        {points !== null && <p className={`${detail} col-start-7 justify-self-center max-md:hidden`}>{points}</p>}
       </div>
 
       {/* Indented to start where the title does, so it reads as part of the same row. */}
@@ -474,7 +534,36 @@ export function TaskItem({
           <TaskDescription
             description={task.description}
             title={task.title}
+            tags={task.tags}
+            knownTags={knownTags}
             onChange={(description) => { onChangeDescription(task.id, description) }}
+            onAddTag={(name) => { onAddTag(task.id, name) }}
+          />
+        </div>
+      )}
+
+      {/* A phone's line has no tag or reward slot, so the woken row carries the controls
+          instead, one above the other so each panel opens from the left edge with room. */}
+      {isActive && (
+        <div
+          className={`flex flex-col items-start gap-0.5 border-t border-neutral-200 py-1 pr-2.5 ${indent} md:hidden dark:border-neutral-800`}
+        >
+          <TagPicker
+            tags={task.tags}
+            known={knownTags}
+            onAdd={(name) => { onAddTag(task.id, name) }}
+            onRemove={(name) => { onRemoveTag(task.id, name) }}
+            label={`Tags for "${task.title}"`}
+            showNames
+            align="left"
+          />
+          <RewardPicker
+            reward={task.reward}
+            repeat={task.repeat}
+            onChange={(reward) => { onChangeReward(task.id, reward) }}
+            label={`Reward for "${task.title}"`}
+            showAmount
+            align="left"
           />
         </div>
       )}

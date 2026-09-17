@@ -2,7 +2,7 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { useView } from './useView'
-import { viewFromHash, viewHash } from './view'
+import { tagView, viewFromHash, viewHash } from './view'
 
 /* The view kept in the address. LIST and UI ids refer to wiki/lists.md and wiki/interface.md. */
 
@@ -18,9 +18,22 @@ async function hashSettles() {
 
 describe('viewFromHash', () => {
   it('reads back every view it writes', () => {
-    for (const view of ['today', 'week', 'month', 'tasks', 'habits', 'trash', 'settings'] as const) {
+    for (const view of ['today', 'week', 'month', 'tasks', 'habits', 'rewards', 'tags', 'trash', 'settings'] as const) {
       expect(viewFromHash(viewHash(view))).toBe(view)
     }
+  })
+
+  it('reads back a tag\'s list, whatever the tag is written in (TAG-13)', () => {
+    for (const tag of ['work', 'дім', 'q&a']) {
+      expect(viewFromHash(viewHash(tagView(tag)))).toBe(tagView(tag))
+    }
+    expect(viewHash(tagView('дім'))).toBe('#/tag/%D0%B4%D1%96%D0%BC')
+  })
+
+  it('names no view for a tag no tag can be', () => {
+    expect(viewFromHash('#/tag/')).toBeNull()
+    expect(viewFromHash('#/tag/two%20words')).toBeNull()
+    expect(viewFromHash('#/tag/%E0%A4%A')).toBeNull()
   })
 
   it('names no view for an empty or unknown hash', () => {

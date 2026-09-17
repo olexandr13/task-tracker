@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { habitTasks, isComplete, liveTasks, sortByOrder, trashedTasks, type TaskId } from '../core'
+import { habitTasks, isComplete, liveTasks, sortByOrder, summarizeTags, tagsInUse, trashedTasks, type TaskId } from '../core'
 import type { Account } from '../storage/authService'
 import { firestore } from '../storage/firebaseApp'
+import { createFirestoreRewardRepository } from '../storage/firestoreRewardRepository'
 import { createFirestoreTaskRepository } from '../storage/firestoreTaskRepository'
 import { localStorageQuoteRepository } from '../storage/localStorageQuoteRepository'
 import { importLocalTasks } from '../storage/localTaskImport'
@@ -12,17 +13,36 @@ import { BottomNav } from './components/BottomNav'
 import { HabitList } from './components/HabitList'
 import { ProgressPanel } from './components/ProgressPanel'
 import { QuoteCard } from './components/QuoteCard'
+import { RewardsPage } from './components/RewardsPage'
 import { SettingsList } from './components/SettingsList'
 import { SideNav } from './components/SideNav'
+import { StarIcon } from './components/StarIcon'
+import { TagIcon } from './components/TagIcon'
+import { TagList } from './components/TagList'
 import { TaskList } from './components/TaskList'
 import { TrashIcon } from './components/TrashIcon'
 import { TrashList } from './components/TrashList'
 import { UndoToast } from './components/UndoToast'
 import { useQuote } from './useQuote'
+import { useRewards } from './useRewards'
 import { useTasks } from './useTasks'
 import { useUndoToast } from './useUndoToast'
 import { useView } from './useView'
-import { ALL_DONE_MESSAGES, EMPTY_MESSAGES, isInList, isListView, listDueDay, VIEW_LABELS } from './view'
+import {
+  allDoneMessage,
+  emptyMessage,
+  isInList,
+  isListView,
+  listDueDay,
+  listTags,
+  tagView,
+  VIEW_LABELS,
+  viewLabel,
+} from './view'
+
+/** A way on from the foot of Tasks, where a phone's bar has no tab for it. */
+const footLink =
+  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100'
 
 /**
  * Three areas once there is room for them: navigation down the left, the work —
@@ -31,24 +51,26 @@ import { ALL_DONE_MESSAGES, EMPTY_MESSAGES, isInList, isListView, listDueDay, VI
  * the work, then the bars, then the quote at the very bottom, with the
  * navigation moved to a bar along the bottom of the screen.
  *
- * The rail belongs to the lists of tasks, not to the app, so habits, the trash
- * and settings do without it. The habits page is a record of progress already,
+ * The rail belongs to the lists of tasks, not to the app, so habits, rewards,
+ * the tags, the trash and settings do without it. The habits page is a record of progress already,
  * and how much of the week is cleared says nothing about what was thrown away —
  * nobody needs spurring on to empty a bin.
  *
- * Today, Week, Month and Tasks are one screen showing different tasks: the part
- * of the list due today, this week or this month, or all of it. The bars count every
+ * Today, Week, Month, Tasks and each tag's list are one screen showing different
+ * tasks: the part of the list due today, this week or this month, all of it, or
+ * the part carrying a tag. The bars count every
  * live task either way, being about the periods rather than about the list on
  * screen.
  *
  * The account sits at the end of the heading rather than in the nav, so it is
  * one tap away on a phone too, where the nav has room for four tabs only.
  *
- * The tasks are the account's. The screen is remade for each account (App), so
- * one repository serves it for as long as it is up.
+ * The tasks, and the points they earn, are the account's. The screen is remade
+ * for each account (App), so one repository of each serves it for as long as it is up.
  */
 export function TasksScreen({ account, onSignOut }: { account: Account; onSignOut: () => void }) {
   const [repository] = useState(() => createFirestoreTaskRepository(firestore, account.id))
+  const [rewardRepository] = useState(() => createFirestoreRewardRepository(firestore, account.id))
 
   // Tasks kept in this browser from before they belonged to the account join it
   // the first time it is open here with a connection.
@@ -69,6 +91,10 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     changeDescription,
     changeDueDate,
     changeRepeat,
+    changeReward,
+    tag,
+    untag,
+    removeTagEverywhere,
     setHabitDay,
     addChecklistItem,
     setChecklistItemDone,
@@ -79,7 +105,8 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     restore,
     purge,
     emptyTrash,
-  } = useTasks(repository)
+  } = useTasks(repository, rewardRepository)
+  const rewards = useRewards(rewardRepository)
   const [view, setView] = useView()
   const undo = useUndoToast()
 
@@ -89,6 +116,9 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   const now = new Date()
   const live = liveTasks(tasks)
   const trashed = trashedTasks(tasks, now)
+  // The tags there are are the ones live tasks carry: one in the trash alone is
+  // not offered, and comes back with its task.
+  const tags = tagsInUse(live)
 
   // Done tasks sink to the bottom; sort is stable, so each group keeps the order
   // it was given. A repeating task is only done for its current occurrence.
@@ -116,7 +146,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     // The bottom padding on a phone keeps the end of the page clear of the bar.
     <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-6 px-4 pt-8 pb-24 md:pb-8">
       <header className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">{VIEW_LABELS[view]}</h1>
+        <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight">{viewLabel(view)}</h1>
         <AccountMenu account={account} onSignOut={onSignOut} />
       </header>
 
@@ -128,6 +158,20 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
             <section aria-label="Settings">
               <SettingsList />
             </section>
+          ) : view === 'rewards' ? (
+            <section aria-label="Rewards">
+              {rewards.isLoading ? (
+                <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+              ) : (
+                <RewardsPage
+                  entries={rewards.entries}
+                  redemptions={rewards.redemptions}
+                  now={now}
+                  onRedeem={rewards.redeem}
+                  onRemoveRedemption={rewards.removeRedemption}
+                />
+              )}
+            </section>
           ) : isLoading ? (
             <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
           ) : isListView(view) ? (
@@ -137,15 +181,16 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                 key={view}
                 now={now}
                 defaultDueDate={listDueDay(view, now)}
-                onAdd={addTask}
+                onAdd={(title, repeat, dueDate) => { addTask(title, repeat, dueDate, listTags(view)) }}
               />
 
-              <section aria-label={VIEW_LABELS[view]}>
+              <section aria-label={viewLabel(view)}>
                 <TaskList
                   tasks={ordered}
                   now={now}
-                  emptyMessage={EMPTY_MESSAGES[view]}
-                  allDoneMessage={ALL_DONE_MESSAGES[view]}
+                  knownTags={tags}
+                  emptyMessage={emptyMessage(view)}
+                  allDoneMessage={allDoneMessage(view)}
                   onMove={move}
                   onComplete={complete}
                   onUncomplete={uncomplete}
@@ -153,6 +198,9 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                   onChangeDescription={changeDescription}
                   onChangeDueDate={changeDueDate}
                   onChangeRepeat={changeRepeat}
+                  onChangeReward={changeReward}
+                  onAddTag={tag}
+                  onRemoveTag={untag}
                   onRemove={handleRemove}
                   onDuplicate={duplicate}
                   onAddSubtask={addChecklistItem}
@@ -162,18 +210,33 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                 />
               </section>
 
-              {/* A phone's bar has no room for the trash, so it is kept at the foot of every task. */}
+              {/* A phone's bar has no room for the tags, the rewards or the trash, so they are
+                  kept at the foot of every task. */}
               {view === 'tasks' && (
-                <button
-                  type="button"
-                  onClick={() => { setView('trash') }}
-                  className="flex items-center gap-2 self-start rounded-lg px-3 py-2 text-sm text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 md:hidden dark:text-neutral-400 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100"
-                >
-                  <TrashIcon />
-                  {VIEW_LABELS.trash}
-                </button>
+                <nav aria-label="More" className="flex flex-wrap gap-1 md:hidden">
+                  <button type="button" onClick={() => { setView('tags') }} className={footLink}>
+                    <TagIcon />
+                    {VIEW_LABELS.tags}
+                  </button>
+                  <button type="button" onClick={() => { setView('rewards') }} className={footLink}>
+                    <StarIcon />
+                    {VIEW_LABELS.rewards}
+                  </button>
+                  <button type="button" onClick={() => { setView('trash') }} className={footLink}>
+                    <TrashIcon />
+                    {VIEW_LABELS.trash}
+                  </button>
+                </nav>
               )}
             </>
+          ) : view === 'tags' ? (
+            <section aria-label="Tags">
+              <TagList
+                tags={summarizeTags(live, now)}
+                onOpen={(name) => { setView(tagView(name)) }}
+                onDelete={removeTagEverywhere}
+              />
+            </section>
           ) : view === 'habits' ? (
             <section aria-label="Habits">
               <HabitList

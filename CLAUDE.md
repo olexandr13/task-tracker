@@ -7,9 +7,8 @@ routine: a long series of small steps, not one big build.
 # General rules
 - If user ask to add something, check if this functionality already exists.
 - Think about architecture and long-term support, this project is long-term and will evolve over time, thus need to be designed for that.
-- TickTick is good implemented (https://ticktick.com/webapp), before implementing something, check how its implemented there (but user prompt has higher priority).
 - Be concise in your output of what was done.
-- When asked to implement something, update `wiki` accordingly.
+- When implement something, update `wiki` accordingly.
 
 ## Wiki
 
@@ -46,10 +45,14 @@ ceremony. If a native app ever happens, `src/core/` moves into a workspace packa
   **versioned envelope** (`{ version, task }`). Changing the saved shape means bumping
   `SCHEMA_VERSION` (`src/storage/taskSchema.ts`) and migrating on load — not breaking saved data.
   Changing who may read or write means editing `firestore.rules` and deploying it.
+- The points ledger lives beside the tasks, not on them, so earned stays earned: one document per
+  day at `users/{uid}/rewardDays/{day}`, merged field by field per task, and one per redemption at
+  `users/{uid}/redemptions/{id}`, with their own `REWARD_SCHEMA_VERSION` (`src/storage/rewardSchema.ts`).
+  What a task change earns is derived in core (`rewardChanges`) and written from `useTasks`.
 - Ids are `crypto.randomUUID()` and timestamps are ISO 8601, so records from two devices merge task
   by task.
-- Every call site talks to the `TaskRepository` interface, never to Firestore directly, and to
-  the `AuthService` interface, never to Firebase directly.
+- Every call site talks to the `TaskRepository` and `RewardRepository` interfaces, never to
+  Firestore directly, and to the `AuthService` interface, never to Firebase directly.
 - Service settings (Firebase) come from `VITE_*` variables: `.env.local` locally, the Vercel project's
   environment variables in production. **No key, token or secret goes in source or any committed
   file**, even ones a browser is sent anyway; only `.env.example`, with empty values, is committed.

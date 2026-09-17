@@ -1,4 +1,5 @@
 import type { Task, TaskId } from '../../core'
+import { deleteControl } from '../rowControls'
 import { describeTimeLeft } from '../trashLabels'
 import { TrashIcon } from './TrashIcon'
 
@@ -74,7 +75,7 @@ export function TrashList({ tasks, now, onRestore, onPurge, onEmpty }: TrashList
               onClick={() => { onPurge(task.id) }}
               aria-label={`Delete "${task.title}" for good`}
               title="Delete for good"
-              className="shrink-0 rounded-lg px-2 py-1 text-lg leading-none text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
+              className={`shrink-0 rounded-lg px-2 py-1 text-lg leading-none ${deleteControl}`}
             >
               ×
             </button>

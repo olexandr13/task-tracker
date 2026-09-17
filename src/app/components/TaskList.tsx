@@ -6,6 +6,8 @@ interface TaskListProps {
   tasks: Task[]
   /** The moment the list is drawn for; a repeating task is only done for its current occurrence. */
   now: Date
+  /** Every tag in use, for a row to offer. */
+  knownTags: readonly string[]
   /** What an empty list says, pointing at the box above it. */
   emptyMessage: string
   /** What the list says above its tasks once every one of them is done. */
@@ -17,6 +19,9 @@ interface TaskListProps {
   onChangeDescription: (id: TaskId, description: string) => void
   onChangeDueDate: (id: TaskId, dueDate: LocalDay | null) => void
   onChangeRepeat: (id: TaskId, repeat: Repeat | null) => void
+  onChangeReward: (id: TaskId, reward: number | null) => void
+  onAddTag: (id: TaskId, name: string) => void
+  onRemoveTag: (id: TaskId, name: string) => void
   onRemove: (id: TaskId) => void
   onDuplicate: (id: TaskId) => void
   onAddSubtask: (id: TaskId, index: number, title: string) => void
@@ -28,6 +33,7 @@ interface TaskListProps {
 export function TaskList({
   tasks,
   now,
+  knownTags,
   emptyMessage,
   allDoneMessage,
   onMove,
@@ -37,6 +43,9 @@ export function TaskList({
   onChangeDescription,
   onChangeDueDate,
   onChangeRepeat,
+  onChangeReward,
+  onAddTag,
+  onRemoveTag,
   onRemove,
   onDuplicate,
   onAddSubtask,
@@ -66,12 +75,16 @@ export function TaskList({
               key={task.id}
               task={task}
               now={now}
+              knownTags={knownTags}
               onComplete={onComplete}
               onUncomplete={onUncomplete}
               onRename={onRename}
               onChangeDescription={onChangeDescription}
               onChangeDueDate={onChangeDueDate}
               onChangeRepeat={onChangeRepeat}
+              onChangeReward={onChangeReward}
+              onAddTag={onAddTag}
+              onRemoveTag={onRemoveTag}
               onRemove={onRemove}
               onDuplicate={onDuplicate}
               onAddSubtask={onAddSubtask}

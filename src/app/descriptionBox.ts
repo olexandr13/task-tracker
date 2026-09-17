@@ -2,6 +2,7 @@ import {
   listMarker,
   listStartedBy,
   parseDescription,
+  typedTag,
   writeEmphasis,
   type DescriptionBlock,
   type EmphasisSpan,
@@ -88,6 +89,55 @@ export function startListIfTyped(box: HTMLElement): void {
   document.execCommand('delete')
 }
 
+/**
+ * The tag being typed at the caret — the name after a `#` starting the word the
+ * caret is at the end of — or null when none is. See `typedTag` in ../core.
+ */
+export function tagTypedAtCaret(box: HTMLElement): string | null {
+  const caret = caretIn(box)
+  return caret === null ? null : typedTag(textBefore(box, caret))
+}
+
+/**
+ * Takes the tag being typed — its `#` and the `typed` name after it — out of
+ * the box, leaving the caret where the `#` was. Through the browser's own
+ * editing commands, as a list is started, so it can be undone like typing.
+ */
+export function takeTypedTag(box: HTMLElement, typed: string): void {
+  const selection = window.getSelection()
+  if (selection === null || caretIn(box) === null) return
+
+  // The browser moves by what reads as one character, which an emoji made of
+  // several code points is; so the name is counted the same way.
+  const characters = [...new Intl.Segmenter().segment(`#${typed}`)].length
+  for (let left = characters; left > 0; left--) {
+    selection.modify('extend', 'backward', 'character')
+  }
+  document.execCommand('delete')
+}
+
+/**
+ * Where the caret is drawn, in window pixels: what a list of suggestions opens
+ * under. Where the browser cannot say, the box itself stands in for it.
+ */
+export function caretPosition(box: HTMLElement): { left: number; top: number; bottom: number } {
+  const caret = caretIn(box)
+  // Not every browser — nor jsdom — draws a range it has nothing to lay out.
+  const drawn = caret?.getClientRects?.()[0]
+  const { left, top, bottom } = drawn !== undefined && drawn.height > 0 ? drawn : box.getBoundingClientRect()
+
+  return { left, top, bottom }
+}
+
+/** The caret, when there is one inside the box and nothing is selected. */
+function caretIn(box: HTMLElement): Range | null {
+  const selection = window.getSelection()
+  if (selection === null || selection.rangeCount === 0 || !selection.isCollapsed) return null
+
+  const caret = selection.getRangeAt(0)
+  return box.contains(caret.startContainer) ? caret : null
+}
+
 function itemAround(node: Node | null, box: HTMLElement): HTMLElement | null {
   for (let at = node; at !== null && at !== box; at = at.parentNode) {
     if (at instanceof HTMLElement && at.tagName === 'LI') return at
@@ -101,10 +151,17 @@ function itemAround(node: Node | null, box: HTMLElement): HTMLElement | null {
  * is already a list item and there is no list to start.
  */
 function typedOnLine(box: HTMLElement, caret: Range): string | null {
+  return itemAround(caret.startContainer, box) === null ? textBefore(box, caret) : null
+}
+
+/** What is on the caret's line before the caret, a list item's line included. */
+function textBefore(box: HTMLElement, caret: Range): string {
   let line: Node = box
   for (let node: Node | null = caret.startContainer; node !== null && node !== box; node = node.parentNode) {
-    if (node instanceof HTMLElement && node.tagName === 'LI') return null
-    if (line === box && node instanceof HTMLElement && startsALine(node)) line = node
+    if (node instanceof HTMLElement && startsALine(node)) {
+      line = node
+      break
+    }
   }
 
   const before = document.createRange()
