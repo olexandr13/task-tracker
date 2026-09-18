@@ -118,6 +118,9 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     changeDueDate,
     changeRepeat,
     changeReward,
+    changeTimeGoal,
+    logTaskTime,
+    removeTaskTime,
     tag,
     untag,
     removeTagEverywhere,
@@ -253,6 +256,9 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     onChangeDueDate={changeDueDate}
                     onChangeRepeat={changeRepeat}
                     onChangeReward={changeReward}
+                    onChangeTimeGoal={changeTimeGoal}
+                    onLogTime={logTaskTime}
+                    onRemoveTimeEntry={removeTaskTime}
                     onChangeList={changeList}
                     onAddTag={tag}
                     onRemoveTag={untag}
@@ -320,6 +326,9 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                   onComplete={complete}
                   onUncomplete={uncomplete}
                   onSetDay={setHabitDay}
+                  onChangeTimeGoal={changeTimeGoal}
+                  onLogTime={logTaskTime}
+                  onRemoveTimeEntry={removeTaskTime}
                 />
               </section>
             ) : (

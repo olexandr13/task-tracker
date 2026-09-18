@@ -11,6 +11,7 @@ import { InvalidDayError, isLocalDay, toLocalDay, type LocalDay } from './day'
 import type { ListId } from './list'
 import { assertValidRepeat, countsForCurrentOccurrence, currentOccurrence, type Repeat } from './repeat'
 import { createSubtask, isSubtaskComplete, type Subtask, type SubtaskId } from './subtask'
+import { currentEntries, type TimeEntry } from './timeLog'
 import { normalizeTitle } from './title'
 
 export type TaskId = string
@@ -80,6 +81,18 @@ export interface Task {
    */
   readonly reward: number | null
   /**
+   * The minutes the task asks for, or null for a task that is not an amount of
+   * time — which is most of them. Reaching it says the task is ready to be
+   * ticked off; it never ticks it. See ./timeLog.
+   */
+  readonly timeGoal: number | null
+  /**
+   * The sessions logged against the task, oldest first. Under a repeating task
+   * only those of the occurrence in play count, and logging lets go of the rest,
+   * so this never grows into a history. See ./timeLog.
+   */
+  readonly timeLog: readonly TimeEntry[]
+  /**
    * ISO 8601 timestamp of when the task went to the trash, or null while it is
    * live. Deleting is reversible, so a deleted task is still a task — it is just
    * no longer part of the list, or of any period's count. See ./trash.
@@ -120,6 +133,8 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
     tags: [],
     listId: null,
     reward: null,
+    timeGoal: null,
+    timeLog: [],
     deletedAt: null,
     order: 0,
   }
@@ -127,9 +142,10 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
 
 /**
  * A new task carrying what this one says — title, description, rule, due date,
- * checklist, tags, reward — and none of what has happened to it. It is not done, its checklist
- * is unticked, a repeating one has no history, and it is not in the trash: a
- * copy is another go at the same thing, not a second record of the first.
+ * checklist, tags, reward, time goal — and none of what has happened to it. It
+ * is not done, its checklist is unticked, it has no time logged, a repeating one
+ * has no history, and it is not in the trash: a copy is another go at the same
+ * thing, not a second record of the first.
  *
  * Its place in the list is the caller's to give, as with `createTask`; see
  * `insertTask` in ./order. Returns a new task; the one passed in is never modified.
@@ -145,6 +161,7 @@ export function duplicateTask(task: Task, now: Date = new Date()): Task {
     completedAt: null,
     doneDays: [],
     subtasks: task.subtasks.map((subtask) => ({ ...subtask, id: crypto.randomUUID(), createdAt: at, completedAt: null })),
+    timeLog: [],
     deletedAt: null,
   }
 }
@@ -318,8 +335,8 @@ export function isDeleted(task: Task): boolean {
  * today. The one case that needs a hand is the reverse — a repeating task that
  * had already come round again would suddenly read as a finished one-off, since
  * its stored status is still the `done` of an occurrence that has passed. Its
- * checklist needs the same hand for the same reason: a tick from an occurrence
- * that has gone by would harden into a permanent one.
+ * checklist and its logged time need the same hand for the same reason: a tick
+ * or a session from an occurrence that has gone by would harden into a permanent one.
  */
 export function setRepeat(task: Task, repeat: Repeat | null, now: Date = new Date()): Task {
   if (repeat !== null) {
@@ -328,12 +345,13 @@ export function setRepeat(task: Task, repeat: Repeat | null, now: Date = new Dat
 
   if (repeat === null) {
     const subtasks = task.subtasks.map((subtask) => forgetStaleTick(subtask, task.repeat, now))
+    const timeLog = currentEntries(task.timeLog, task.repeat, now)
 
     if (!isComplete(task, now)) {
-      return { ...task, repeat: null, status: 'todo', completedAt: null, subtasks }
+      return { ...task, repeat: null, status: 'todo', completedAt: null, subtasks, timeLog }
     }
 
-    return { ...task, repeat: null, subtasks }
+    return { ...task, repeat: null, subtasks, timeLog }
   }
 
   // The rule decides the days from here on, so a date set before it would only

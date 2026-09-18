@@ -28,6 +28,9 @@ function setup(tasks: Task[]) {
       onChangeDueDate={vi.fn()}
       onChangeRepeat={vi.fn()}
       onChangeReward={vi.fn()}
+      onChangeTimeGoal={vi.fn()}
+      onLogTime={vi.fn()}
+      onRemoveTimeEntry={vi.fn()}
       onChangeList={vi.fn()}
       onAddTag={vi.fn()}
       onRemoveTag={vi.fn()}

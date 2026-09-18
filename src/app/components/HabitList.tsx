@@ -1,20 +1,25 @@
 import { useId, useState, type ReactNode } from 'react'
 import {
+  currentEntries,
   habitRate,
   habitStats,
+  hasTimeGoal,
   isComplete,
+  isTimeGoalReached,
   type HabitDayState,
   type HabitRate,
   type LocalDay,
   type Task,
   type TaskId,
+  type TimeEntryId,
 } from '../../core'
 import { describeDays, describeRate, HABIT_DAY_LABELS } from '../habitLabels'
-import { completionBoxOff, completionBoxOn } from '../rowControls'
+import { completionBoxOff, completionBoxOn, completionBoxReady } from '../rowControls'
 import { HABIT_DAY_TONES } from '../habitTones'
 import { ChevronIcon } from './ChevronIcon'
 import { FlameIcon } from './FlameIcon'
 import { HabitGrid } from './HabitGrid'
+import { TimePicker } from './TimePicker'
 
 interface HabitListProps {
   /** Already chosen and ordered by `habitTasks`. */
@@ -25,6 +30,9 @@ interface HabitListProps {
   onUncomplete: (id: TaskId) => void
   /** Marks a day up to today done, or not done: what clicking a day in the grid asks for. */
   onSetDay: (id: TaskId, day: LocalDay, done: boolean) => void
+  onChangeTimeGoal: (id: TaskId, minutes: number | null) => void
+  onLogTime: (id: TaskId, minutes: number) => void
+  onRemoveTimeEntry: (id: TaskId, entryId: TimeEntryId) => void
 }
 
 const LEGEND: readonly HabitDayState[] = ['done', 'missed', 'untracked']
@@ -41,7 +49,16 @@ const RATE_WINDOWS: readonly (readonly [days: number, label: string])[] = [
  * stands, and the days behind it. The habits are the tasks themselves, so
  * ticking one off here is ticking it off in the list, and the other way round.
  */
-export function HabitList({ habits, now, onComplete, onUncomplete, onSetDay }: HabitListProps) {
+export function HabitList({
+  habits,
+  now,
+  onComplete,
+  onUncomplete,
+  onSetDay,
+  onChangeTimeGoal,
+  onLogTime,
+  onRemoveTimeEntry,
+}: HabitListProps) {
   if (habits.length === 0) {
     return (
       <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">
@@ -79,6 +96,9 @@ export function HabitList({ habits, now, onComplete, onUncomplete, onSetDay }: H
             onComplete={onComplete}
             onUncomplete={onUncomplete}
             onSetDay={onSetDay}
+            onChangeTimeGoal={onChangeTimeGoal}
+            onLogTime={onLogTime}
+            onRemoveTimeEntry={onRemoveTimeEntry}
           />
         ))}
       </ul>
@@ -95,9 +115,23 @@ export function HabitList({ habits, now, onComplete, onUncomplete, onSetDay }: H
  *
  * Folding is only drawn on a phone: the toggle is hidden on a wide screen, and
  * its hit area — stretched over the card's line — goes with it.
+ *
+ * A habit that asks for an amount of time has its clock on the card's line, so
+ * the time is logged where the habit is ticked off.
  */
-function HabitCard({ habit, now, onComplete, onUncomplete, onSetDay }: { habit: Task } & Omit<HabitListProps, 'habits'>) {
+function HabitCard({
+  habit,
+  now,
+  onComplete,
+  onUncomplete,
+  onSetDay,
+  onChangeTimeGoal,
+  onLogTime,
+  onRemoveTimeEntry,
+}: { habit: Task } & Omit<HabitListProps, 'habits'>) {
   const done = isComplete(habit, now)
+  const timed = hasTimeGoal(habit)
+  const ready = !done && isTimeGoalReached(habit, now)
   const { currentStreak, bestStreak } = habitStats(habit, now)
   const [isOpen, setIsOpen] = useState(false)
   const recordId = useId()
@@ -110,16 +144,42 @@ function HabitCard({ habit, now, onComplete, onUncomplete, onSetDay }: { habit: 
           type="button"
           onClick={() => { if (done) onUncomplete(habit.id); else onComplete(habit.id) }}
           aria-pressed={done}
-          aria-label={done ? `Mark "${habit.title}" as not done today` : `Mark "${habit.title}" as done today`}
-          className={`relative z-10 ${done ? completionBoxOn : completionBoxOff}`}
+          aria-label={
+            done
+              ? `Mark "${habit.title}" as not done today`
+              : ready
+                ? `Mark "${habit.title}" as done today: its time goal is reached`
+                : `Mark "${habit.title}" as done today`
+          }
+          title={ready ? 'Time goal reached: ready to tick off' : undefined}
+          className={`relative z-10 ${done ? completionBoxOn : ready ? completionBoxReady : completionBoxOff}`}
         >
           ✓
         </button>
 
         <h2 className="min-w-0 truncate text-sm font-medium">{habit.title}</h2>
 
+        {/* Above the toggle's hit area like the box, and above the next card's box, which
+            its panel can open over. */}
+        {timed && (
+          <div className="relative z-20 ml-auto shrink-0">
+            <TimePicker
+              goal={habit.timeGoal}
+              sessions={currentEntries(habit.timeLog, habit.repeat, now)}
+              now={now}
+              onLog={(minutes) => { onLogTime(habit.id, minutes) }}
+              onRemove={(entryId) => { onRemoveTimeEntry(habit.id, entryId) }}
+              onChangeGoal={(minutes) => { onChangeTimeGoal(habit.id, minutes) }}
+              label={`Time for "${habit.title}"`}
+              showAmount
+            />
+          </div>
+        )}
+
         {!isOpen && (
-          <span className="ml-auto flex shrink-0 items-center gap-1 text-sm font-medium tabular-nums md:hidden">
+          <span
+            className={`${timed ? '' : 'ml-auto'} flex shrink-0 items-center gap-1 text-sm font-medium tabular-nums md:hidden`}
+          >
             <Flame streak={currentStreak} />
             <span className="sr-only">Current streak: </span>
             {String(currentStreak)}
@@ -132,7 +192,7 @@ function HabitCard({ habit, now, onComplete, onUncomplete, onSetDay }: { habit: 
           aria-expanded={isOpen}
           aria-controls={recordId}
           aria-label={`Record of "${habit.title}"`}
-          className={`${isOpen ? 'ml-auto' : ''} grid size-6 shrink-0 place-items-center rounded-md text-neutral-400 outline-offset-2 after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-blue-500 md:hidden dark:text-neutral-500`}
+          className={`${isOpen && !timed ? 'ml-auto' : ''} grid size-6 shrink-0 place-items-center rounded-md text-neutral-400 outline-offset-2 after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-blue-500 md:hidden dark:text-neutral-500`}
         >
           <ChevronIcon className={`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>

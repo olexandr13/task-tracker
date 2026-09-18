@@ -82,13 +82,13 @@ changes shape.
   version did not know about. Today that covers data saved before repeats existed, before the trash
   existed, before a task could carry a description, before it could carry a checklist, before it
   had an order of its own, before it could be due on a day, before a repeating task kept the days
-  it was done on, before a task could carry tags, before it could carry a reward, and before there
-  were lists to file it under. The order step keeps each task where it was: the saved list was already in
+  it was done on, before a task could carry tags, before it could carry a reward, before there
+  were lists to file it under, and before a task could ask for time. The order step keeps each task where it was: the saved list was already in
   order. Tasks saved before due dates have no day. A repeating task saved before history was kept
   starts its history with the day of its last completion, the one day anything remembers. Tasks
   saved before tags have none, tasks saved before rewards have no reward, so none of what they
-  did before earns anything, and tasks saved before lists are in none — the Inbox, where a task
-  starts anyway (LST-2).
+  did before earns anything, tasks saved before lists are in none — the Inbox, where a task
+  starts anyway (LST-2) — and tasks saved before time goals have no goal and no time logged.
 - **STORE-7** Data in a version the app does not recognise, or that cannot be parsed at all, is
   **ignored with a warning** rather than crashing, and left as it is: a task the app cannot read is
   not shown, and never overwritten or deleted by it.

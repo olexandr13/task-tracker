@@ -51,3 +51,12 @@ const completionBox =
 export const completionBoxOn = `${completionBox} border-green-600 bg-green-600 text-white hover:border-green-700 hover:bg-green-700`
 
 export const completionBoxOff = `${completionBox} border-neutral-300 text-transparent hover:border-neutral-900 dark:border-neutral-600 dark:hover:border-neutral-300`
+
+/**
+ * Not done yet, but ready to be: the time it asks for is in. Green like a done
+ * box and hollow like an open one, so it reads as an invitation to tick it off.
+ */
+export const completionBoxReady = `${completionBox} border-green-600 text-green-600/60 hover:border-green-700 hover:text-green-700 dark:border-green-500 dark:text-green-500/60 dark:hover:border-green-400 dark:hover:text-green-400`
+
+/** A control's detail that has reached what it was after, such as time spent meeting its goal. */
+export const detailReached = 'text-green-700 dark:text-green-500'

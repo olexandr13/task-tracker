@@ -20,6 +20,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 | `tags` | The tags it carries, in the order they were put on, or empty. See [Tags](tags.md). |
 | `listId` | The list it is filed under, by id, or nothing for one in no list — the Inbox. One at a time. See [Lists](lists.md). |
 | `reward` | The points each completion earns, or nothing. What completions already earned is kept apart from the task. See [Rewards](rewards.md). |
+| `timeGoal` | The minutes the task asks for, or nothing. See [Time goals](time-goals.md). |
+| `timeLog` | The sessions of time logged, oldest first. Under a repeating task only the occurrence in play's count. See [Time goals](time-goals.md). |
 | `deletedAt` | When it went to the trash, or nothing while it is live. |
 | `order` | Where it sits in the list, as a number: lower comes first. |
 
@@ -126,6 +128,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-16** A done task reads greyed and struck through.
 - **TASK-31** A task carrying a checklist is done **exactly when every item on it is**, in both
   directions, and its own box ticks the whole list. See [Checklists](checklists.md).
+- **TASK-55** A task with a time goal is **not** finished by its time: once the time logged reaches
+  the goal the box invites a tick, and ticking it is still the owner's. See [Time goals](time-goals.md).
 
 ## The list
 
@@ -166,12 +170,12 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 
 - **TASK-51** **Duplicate**, in the menu a right-click on a row opens (UI-31), adds a copy of the
   task carrying what it says: the same title, description, repeat rule, due date, checklist
-  items, tags and reward.
+  items, tags, reward and time goal.
 - **TASK-52** The copy is a task of its own — its own id, stamped as created now — and each item on
   its checklist is its own too, so changing one never changes the other.
 - **TASK-53** It carries **none of what happened** to the original: it is not done, its checklist is
-  unticked, and a repeating one starts with no history of done days, so a duplicated habit starts
-  its streak afresh. A copy is another go at the same thing, not a second record of the first.
+  unticked, it has no time logged (TIME-9), and a repeating one starts with no history of done days,
+  so a duplicated habit starts its streak afresh. A copy is another go at the same thing, not a second record of the first.
 - **TASK-54** The copy goes **just below the original**, among the tasks still to do (TASK-17). The
   original is left exactly as it was.
 

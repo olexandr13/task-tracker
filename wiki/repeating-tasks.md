@@ -31,6 +31,8 @@ and whether it reads as done is derived from the occurrence currently in play ra
 - **RPT-10** A weekly task ticked off on Monday stays done until its next chosen day comes round,
   not until Tuesday.
 - **RPT-11** Un-completing undoes the occurrence in play only.
+- **RPT-32** Time logged against a repeating task counts for the occurrence in play too, and starts
+  from nothing when the next one arrives (TIME-7).
 
 ## Changing a rule
 

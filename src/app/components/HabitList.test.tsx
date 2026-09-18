@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { completeTask, createTask, type Task } from '../../core'
+import { completeTask, createTask, logTime, setTimeGoal, type Task } from '../../core'
 import { HabitList } from './HabitList'
 
 /* What the habits page shows and does. HAB ids refer to wiki/habits.md. */
@@ -16,6 +16,7 @@ function setup(habits: Task[]) {
   const onComplete = vi.fn()
   const onUncomplete = vi.fn()
   const onSetDay = vi.fn()
+  const onLogTime = vi.fn()
   render(
     <HabitList
       habits={habits}
@@ -23,9 +24,12 @@ function setup(habits: Task[]) {
       onComplete={onComplete}
       onUncomplete={onUncomplete}
       onSetDay={onSetDay}
+      onChangeTimeGoal={vi.fn()}
+      onLogTime={onLogTime}
+      onRemoveTimeEntry={vi.fn()}
     />,
   )
-  return { user, onComplete, onUncomplete, onSetDay }
+  return { user, onComplete, onUncomplete, onSetDay, onLogTime }
 }
 
 /** A daily habit done on Mon 14 and Tue 15, and still to do today, Wed 16. */
@@ -129,5 +133,25 @@ describe('HabitList', () => {
 
     await user.keyboard('{Enter}')
     expect(onSetDay).toHaveBeenLastCalledWith(habit.id, '2026-09-16', true)
+  })
+
+  it('has no clock on a habit without a time goal', () => {
+    setup([stretch()])
+
+    expect(screen.queryByRole('button', { name: /^Time for/ })).toBeNull()
+  })
+
+  it('puts the clock of a timed habit on its card, and invites a tick once the goal is reached (TIME-13)', async () => {
+    const sport = setTimeGoal(createTask('sport', { kind: 'daily' }, WED_16), 60)
+    const { user, onLogTime } = setup([logTime(sport, 60, WED_16), { ...sport, id: 'other', title: 'swim' }])
+
+    expect(screen.getByRole('button', { name: 'Mark "sport" as done today: its time goal is reached' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Mark "swim" as done today' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Time for "swim": 0m of 1h' }).textContent).toBe('0m of 1h')
+
+    await user.click(screen.getByRole('button', { name: 'Time for "swim": 0m of 1h' }))
+    await user.click(screen.getByRole('button', { name: 'Log 15m' }))
+
+    expect(onLogTime).toHaveBeenCalledWith('other', 15)
   })
 })

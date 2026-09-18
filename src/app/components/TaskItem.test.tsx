@@ -2,19 +2,56 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { addTag, createList, createSubtask, createTask, moveToList, type List, type ListId, type LocalDay, type Repeat } from '../../core'
+import {
+  addTag,
+  completeTask,
+  createList,
+  createSubtask,
+  createTask,
+  logTime,
+  moveToList,
+  setTimeGoal,
+  type List,
+  type ListId,
+  type LocalDay,
+  type Repeat,
+  type Task,
+} from '../../core'
 import { TaskItem } from './TaskItem'
 
 /*
  * What a task row shows at rest and once clicked into. RPT ids refer to
  * wiki/repeating-tasks.md, UI ids to wiki/interface.md, TASK ids to wiki/tasks.md,
  * DUE ids to wiki/due-dates.md, TAG ids to wiki/tags.md, RWD ids to wiki/rewards.md,
- * LST ids to wiki/lists.md.
+ * LST ids to wiki/lists.md, TIME ids to wiki/time-goals.md.
  */
 
 const NOW = new Date('2026-09-15T10:00:00.000Z')
 const TASK = 'stretch'
 const nothing = () => undefined
+
+/** Every handler a row takes, doing nothing. */
+const HANDLERS = {
+  onComplete: nothing,
+  onUncomplete: nothing,
+  onRename: nothing,
+  onChangeDescription: nothing,
+  onChangeDueDate: nothing,
+  onChangeRepeat: nothing,
+  onChangeReward: nothing,
+  onChangeTimeGoal: nothing,
+  onLogTime: nothing,
+  onRemoveTimeEntry: nothing,
+  onChangeList: nothing,
+  onAddTag: nothing,
+  onRemoveTag: nothing,
+  onRemove: nothing,
+  onDuplicate: nothing,
+  onAddSubtask: nothing,
+  onSetSubtaskDone: nothing,
+  onRenameSubtask: nothing,
+  onRemoveSubtask: nothing,
+}
 
 afterEach(cleanup)
 
@@ -47,6 +84,9 @@ function setup(
         onChangeDueDate={nothing}
         onChangeRepeat={nothing}
         onChangeReward={nothing}
+        onChangeTimeGoal={nothing}
+        onLogTime={nothing}
+        onRemoveTimeEntry={nothing}
         onChangeList={filing.onChangeList ?? nothing}
         onAddTag={nothing}
         onRemoveTag={nothing}
@@ -183,26 +223,11 @@ describe('the tags on a task row', () => {
     render(
       <ul>
         <TaskItem
+          {...HANDLERS}
           task={addTag(addTag(createTask(TASK, null, NOW), 'health'), 'morning')}
           now={NOW}
           knownTags={['health', 'morning']}
           lists={[]}
-          onComplete={nothing}
-          onUncomplete={nothing}
-          onRename={nothing}
-          onChangeDescription={nothing}
-          onChangeDueDate={nothing}
-          onChangeRepeat={nothing}
-          onChangeReward={nothing}
-          onChangeList={nothing}
-          onAddTag={nothing}
-          onRemoveTag={nothing}
-          onRemove={nothing}
-          onDuplicate={nothing}
-          onAddSubtask={nothing}
-          onSetSubtaskDone={nothing}
-          onRenameSubtask={nothing}
-          onRemoveSubtask={nothing}
         />
       </ul>,
     )
@@ -448,5 +473,139 @@ describe('the menu a right-click opens on a task row', () => {
 
       expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Duplicate' }))
     })
+  })
+})
+
+describe('the time on a task row', () => {
+  /** "1 hour of sport", with `minutes` logged this morning. */
+  function sport(minutes: number): Task {
+    const task = setTimeGoal(createTask('sport', { kind: 'daily' }, NOW), 60)
+    return minutes === 0 ? task : logTime(task, minutes, NOW)
+  }
+
+  function renderRow(task: Task, handlers: Partial<typeof HANDLERS> = {}) {
+    const user = userEvent.setup()
+    render(
+      <ul>
+        <TaskItem {...HANDLERS} {...handlers} task={task} now={NOW} knownTags={[]} lists={[]} />
+      </ul>,
+    )
+    return user
+  }
+
+  const box = () => screen.getByRole('button', { name: /^Mark "sport" as/ })
+  const clock = () => screen.getAllByRole('button', { name: /^Time for "sport":/ })[0]
+
+  it('names how the time stands on its clock (TIME-10)', () => {
+    renderRow(sport(20))
+
+    expect(clock()).toHaveProperty('ariaLabel', 'Time for "sport": 20m of 1h')
+  })
+
+  it('leaves the box plain until the goal is reached, then invites a tick (TIME-5)', () => {
+    renderRow(sport(40))
+    expect(box()).toHaveProperty('ariaLabel', 'Mark "sport" as done')
+    cleanup()
+
+    renderRow(sport(60))
+    expect(box()).toHaveProperty('ariaLabel', 'Mark "sport" as done: its time goal is reached')
+    expect(box().title).toBe('Time goal reached: ready to tick off')
+  })
+
+  it('does not invite a tick once the task is done', () => {
+    renderRow(completeTask(sport(60), NOW))
+
+    expect(box()).toHaveProperty('ariaLabel', 'Mark "sport" as not done')
+  })
+
+  it('spells the time out under the clock once woken (TIME-12)', async () => {
+    const user = renderRow(sport(20))
+    expect(screen.queryByText('20m/1h')).toBeNull()
+
+    await user.click(screen.getByRole('listitem'))
+
+    expect(screen.getByText('20m/1h')).toBeDefined()
+  })
+
+  it('logs a quick session, and one typed, keeping the panel open (TIME-3, TIME-11)', async () => {
+    const onLogTime = vi.fn()
+    const user = renderRow(sport(0), { onLogTime })
+
+    await user.click(clock())
+    await user.click(screen.getByRole('button', { name: 'Log 30m' }))
+    await user.type(screen.getByRole('textbox', { name: 'Time to log' }), '1h 15m{Enter}')
+
+    expect(onLogTime.mock.calls).toEqual([[expect.any(String), 30], [expect.any(String), 75]])
+    expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Time to log' }).value).toBe('')
+    expect(screen.getByRole('dialog', { name: 'Time for "sport"' })).toBeDefined()
+  })
+
+  it('refuses a session it cannot read, logging nothing', async () => {
+    const onLogTime = vi.fn()
+    const user = renderRow(sport(0), { onLogTime })
+
+    await user.click(clock())
+    await user.type(screen.getByRole('textbox', { name: 'Time to log' }), 'soon{Enter}')
+
+    expect(onLogTime).not.toHaveBeenCalled()
+    expect(screen.getByRole('textbox', { name: 'Time to log' }).getAttribute('aria-invalid')).toBe('true')
+  })
+
+  it('takes a session back (TIME-4)', async () => {
+    const onRemoveTimeEntry = vi.fn()
+    const task = sport(20)
+    const user = renderRow(task, { onRemoveTimeEntry })
+
+    await user.click(clock())
+    await user.click(screen.getByRole('button', { name: /^Remove 20m logged at/ }))
+
+    expect(onRemoveTimeEntry).toHaveBeenCalledWith(task.id, task.timeLog[0]?.id)
+  })
+
+  it('keeps the goal typed on Enter, and an empty one as none (TIME-1)', async () => {
+    const onChangeTimeGoal = vi.fn()
+    const user = renderRow(sport(0), { onChangeTimeGoal })
+
+    await user.click(clock())
+    const goal = screen.getByRole('textbox', { name: 'Goal' })
+    expect((goal as HTMLInputElement).value).toBe('1h')
+    await user.clear(goal)
+    await user.type(goal, '1h30{Enter}')
+    expect(onChangeTimeGoal).toHaveBeenLastCalledWith(expect.any(String), 90)
+
+    await user.click(clock())
+    await user.clear(screen.getByRole('textbox', { name: 'Goal' }))
+    await user.keyboard('{Enter}')
+    expect(onChangeTimeGoal).toHaveBeenLastCalledWith(expect.any(String), null)
+    expect(onChangeTimeGoal).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps the goal typed when a click outside closes the panel, and drops it on Escape', async () => {
+    const onChangeTimeGoal = vi.fn()
+    const user = renderRow(sport(0), { onChangeTimeGoal })
+
+    await user.click(clock())
+    await user.clear(screen.getByRole('textbox', { name: 'Goal' }))
+    await user.type(screen.getByRole('textbox', { name: 'Goal' }), '45m{Escape}')
+    expect(onChangeTimeGoal).not.toHaveBeenCalled()
+
+    await user.click(clock())
+    await user.clear(screen.getByRole('textbox', { name: 'Goal' }))
+    await user.type(screen.getByRole('textbox', { name: 'Goal' }), '45m')
+    await user.click(document.body)
+
+    expect(onChangeTimeGoal).toHaveBeenCalledWith(expect.any(String), 45)
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('leaves the goal as it was when what is typed is not one', async () => {
+    const onChangeTimeGoal = vi.fn()
+    const user = renderRow(sport(0), { onChangeTimeGoal })
+
+    await user.click(clock())
+    await user.clear(screen.getByRole('textbox', { name: 'Goal' }))
+    await user.type(screen.getByRole('textbox', { name: 'Goal' }), 'lots{Enter}')
+
+    expect(onChangeTimeGoal).not.toHaveBeenCalled()
   })
 })

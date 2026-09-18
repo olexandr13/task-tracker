@@ -23,6 +23,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Progress](progress.md) | The three bars: today, this week, this month |
 | [Habits](habits.md) | Daily tasks as habits: streaks, rates and the grid of days |
 | [Rewards](rewards.md) | Points a task earns on every completion, redeeming them, and the Rewards page |
+| [Time goals](time-goals.md) | A length of time a task asks for, sessions logged against it, and the hint to tick it off |
 | [Daily quote](daily-quote.md) | One quote a day, in two languages, with a fallback |
 | [Interface](interface.md) | Layout, navigation, popovers, phone behaviour, accessibility |
 | [Offline](offline.md) | Opening with no connection, changes kept and synced later, the sync notice, installing |

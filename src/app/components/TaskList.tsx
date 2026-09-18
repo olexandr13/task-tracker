@@ -7,6 +7,7 @@ import {
   type SubtaskId,
   type Task,
   type TaskId,
+  type TimeEntryId,
 } from '../../core'
 import { SortableTasks } from './SortableTasks'
 import { TaskItem } from './TaskItem'
@@ -30,6 +31,9 @@ interface TaskListProps {
   onChangeDueDate: (id: TaskId, dueDate: LocalDay | null) => void
   onChangeRepeat: (id: TaskId, repeat: Repeat | null) => void
   onChangeReward: (id: TaskId, reward: number | null) => void
+  onChangeTimeGoal: (id: TaskId, minutes: number | null) => void
+  onLogTime: (id: TaskId, minutes: number) => void
+  onRemoveTimeEntry: (id: TaskId, entryId: TimeEntryId) => void
   onChangeList: (id: TaskId, listId: ListId | null) => void
   onAddTag: (id: TaskId, name: string) => void
   onRemoveTag: (id: TaskId, name: string) => void
@@ -55,6 +59,9 @@ export function TaskList({
   onChangeDueDate,
   onChangeRepeat,
   onChangeReward,
+  onChangeTimeGoal,
+  onLogTime,
+  onRemoveTimeEntry,
   onChangeList,
   onAddTag,
   onRemoveTag,
@@ -96,6 +103,9 @@ export function TaskList({
               onChangeDueDate={onChangeDueDate}
               onChangeRepeat={onChangeRepeat}
               onChangeReward={onChangeReward}
+              onChangeTimeGoal={onChangeTimeGoal}
+              onLogTime={onLogTime}
+              onRemoveTimeEntry={onRemoveTimeEntry}
               onChangeList={onChangeList}
               onAddTag={onAddTag}
               onRemoveTag={onRemoveTag}

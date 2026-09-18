@@ -2,11 +2,13 @@ import { CSS } from '@dnd-kit/utilities'
 import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react'
 import {
   countSubtasks,
+  currentEntries,
   hasDescription,
   hasSubtasks,
   hasTags,
   isComplete,
   isOverdue,
+  isTimeGoalReached,
   listOf,
   sortLists,
   type List,
@@ -16,12 +18,23 @@ import {
   type SubtaskId,
   type Task,
   type TaskId,
+  type TimeEntryId,
 } from '../../core'
 import { describeDueDate } from '../dueLabels'
+import { describeTimeProgress } from '../durationLabels'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { describeRepeat } from '../repeatLabels'
 import { describeReward } from '../rewardLabels'
-import { completionBoxOff, completionBoxOn, controlOff, controlOn, deleteControl, rowControlIcon } from '../rowControls'
+import {
+  completionBoxOff,
+  completionBoxOn,
+  completionBoxReady,
+  controlOff,
+  controlOn,
+  deleteControl,
+  detailReached,
+  rowControlIcon,
+} from '../rowControls'
 import { isInTextEntry } from '../textEntry'
 import { textOffsetAtPoint } from '../textOffsetAtPoint'
 import { useSortableTask } from '../useSortableTask'
@@ -36,6 +49,7 @@ import { RewardPicker } from './RewardPicker'
 import { SubtaskList } from './SubtaskList'
 import { TagPicker } from './TagPicker'
 import { TaskDescription } from './TaskDescription'
+import { TimePicker } from './TimePicker'
 
 interface TaskItemProps {
   task: Task
@@ -51,6 +65,9 @@ interface TaskItemProps {
   onChangeDueDate: (id: TaskId, dueDate: LocalDay | null) => void
   onChangeRepeat: (id: TaskId, repeat: Repeat | null) => void
   onChangeReward: (id: TaskId, reward: number | null) => void
+  onChangeTimeGoal: (id: TaskId, minutes: number | null) => void
+  onLogTime: (id: TaskId, minutes: number) => void
+  onRemoveTimeEntry: (id: TaskId, entryId: TimeEntryId) => void
   onChangeList: (id: TaskId, listId: ListId | null) => void
   onAddTag: (id: TaskId, name: string) => void
   onRemoveTag: (id: TaskId, name: string) => void
@@ -81,15 +98,15 @@ const slot = 'flex w-6 shrink-0 items-center'
 
 /**
  * The columns of a task's line: the completion box, the title with its tags, the
- * date, repeat, checklist, tag and reward slots, the description and delete. The
- * slots are fixed, so what is spelled out under them can run wider without
- * widening them. A phone has no room for the tag and reward slots beside the
- * title; its tags and reward are set from the woken row instead. The list has no
- * slot anywhere: a task is filed from its menu (a right-click), or on a phone,
- * which has no right-click, from the woken row.
+ * date, repeat, checklist, time, tag and reward slots, the description and
+ * delete. The slots are fixed, so what is spelled out under them can run wider
+ * without widening them. A phone has no room for the time, tag and reward slots
+ * beside the title; its time, tags and reward are set from the woken row
+ * instead. The list has no slot anywhere: a task is filed from its menu (a
+ * right-click), or on a phone, which has no right-click, from the woken row.
  */
 const lineColumns =
-  'grid-cols-[auto_minmax(0,1fr)_repeat(3,--spacing(6))_auto_auto] md:grid-cols-[auto_minmax(0,1fr)_repeat(5,--spacing(6))_auto_auto]'
+  'grid-cols-[auto_minmax(0,1fr)_repeat(3,--spacing(6))_auto_auto] md:grid-cols-[auto_minmax(0,1fr)_repeat(6,--spacing(6))_auto_auto]'
 
 /**
  * A tag the task carries, beside its title. Quieter than the title and smaller,
@@ -119,6 +136,9 @@ export function TaskItem({
   onChangeDueDate,
   onChangeRepeat,
   onChangeReward,
+  onChangeTimeGoal,
+  onLogTime,
+  onRemoveTimeEntry,
   onChangeList,
   onAddTag,
   onRemoveTag,
@@ -131,6 +151,11 @@ export function TaskItem({
 }: TaskItemProps) {
   const done = isComplete(task, now)
   const checklist = countSubtasks(task, now)
+  // The time that counts for the occurrence in play; once it meets the goal the
+  // box invites a tick, and ticking it is still the owner's to do.
+  const sessions = currentEntries(task.timeLog, task.repeat, now)
+  const spent = sessions.reduce((total, entry) => total + entry.minutes, 0)
+  const ready = !done && isTimeGoalReached(task, now)
   // The picker edits a draft; every change is saved straight away, so there is
   // no separate confirm step and nothing to lose by closing the panel.
   const [draft, setDraft] = useState(() => toDraft(task.repeat, now))
@@ -156,11 +181,21 @@ export function TaskItem({
   const sortable = useSortableTask(task, now)
   const isEditing = editedTitle !== null
   // What the controls hold, spelled out on a second line under each: the date
-  // whenever there is one, the repeat rule, the checklist count and the reward once woken.
+  // whenever there is one, the repeat rule, the checklist count, the time and the reward once woken.
   const due = task.repeat === null && task.dueDate !== null ? describeDueDate(task.dueDate, now) : null
   const rule = isActive && task.repeat !== null ? describeRepeat(task.repeat) : null
   const count = isActive && hasSubtasks(task) ? `${String(checklist.done)}/${String(checklist.total)}` : null
+  const time = isActive && (task.timeGoal !== null || spent > 0) ? describeTimeProgress(spent, task.timeGoal) : null
   const points = isActive && task.reward !== null ? describeReward(task.reward) : null
+  const timePicker = {
+    goal: task.timeGoal,
+    sessions,
+    now,
+    onLog: (minutes: number) => { onLogTime(task.id, minutes) },
+    onRemove: (entryId: TimeEntryId) => { onRemoveTimeEntry(task.id, entryId) },
+    onChangeGoal: (minutes: number | null) => { onChangeTimeGoal(task.id, minutes) },
+    label: `Time for "${task.title}"`,
+  }
   // The list the task is filed under, or null in the Inbox.
   const filed = listOf(task, lists)
   const menuItems: ContextMenuEntry[] = [
@@ -372,8 +407,15 @@ export function TaskItem({
             else onComplete(task.id)
           }}
           aria-pressed={done}
-          aria-label={done ? `Mark "${task.title}" as not done` : `Mark "${task.title}" as done`}
-          className={done ? completionBoxOn : completionBoxOff}
+          aria-label={
+            done
+              ? `Mark "${task.title}" as not done`
+              : ready
+                ? `Mark "${task.title}" as done: its time goal is reached`
+                : `Mark "${task.title}" as done`
+          }
+          title={ready ? 'Time goal reached: ready to tick off' : undefined}
+          className={done ? completionBoxOn : ready ? completionBoxReady : completionBoxOff}
         >
           ✓
         </button>
@@ -469,6 +511,10 @@ export function TaskItem({
         </div>
 
         <div className={`${slot} max-md:hidden`}>
+          <TimePicker {...timePicker} />
+        </div>
+
+        <div className={`${slot} max-md:hidden`}>
           <TagPicker
             tags={task.tags}
             known={knownTags}
@@ -545,8 +591,21 @@ export function TaskItem({
 
         {count !== null && <p className={`${detail} col-start-5 justify-self-center`}>{count}</p>}
 
-        {/* Under the reward's slot, which a phone does not have: its woken row names the points instead. */}
-        {points !== null && <p className={`${detail} col-start-7 justify-self-center max-md:hidden`}>{points}</p>}
+        {/* Under the time's and the reward's slots, which a phone does not have: its woken row
+            names the time and the points instead. */}
+        {time !== null && (
+          <p
+            className={
+              ready
+                ? `${detail} col-start-6 justify-self-center max-md:hidden ${detailReached}`
+                : `${detail} col-start-6 justify-self-center max-md:hidden`
+            }
+          >
+            {time}
+          </p>
+        )}
+
+        {points !== null && <p className={`${detail} col-start-8 justify-self-center max-md:hidden`}>{points}</p>}
       </div>
 
       {/* Indented to start where the title does, so it reads as part of the same row. */}
@@ -578,9 +637,9 @@ export function TaskItem({
         </div>
       )}
 
-      {/* A phone's line has no tag or reward slot, and a phone has no right-click to reach the
-          task's menu, so the woken row carries the list, tag and reward controls instead, one
-          above the other so each panel opens from the left edge with room. */}
+      {/* A phone's line has no time, tag or reward slot, and a phone has no right-click to reach
+          the task's menu, so the woken row carries the list, time, tag and reward controls instead,
+          one above the other so each panel opens from the left edge with room. */}
       {isActive && (
         <div
           className={`flex flex-col items-start gap-0.5 border-t border-neutral-200 py-1 pr-2.5 ${indent} md:hidden dark:border-neutral-800`}
@@ -593,6 +652,7 @@ export function TaskItem({
             showName
             align="left"
           />
+          <TimePicker {...timePicker} showAmount align="left" />
           <TagPicker
             tags={task.tags}
             known={knownTags}

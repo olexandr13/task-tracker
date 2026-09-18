@@ -13,11 +13,13 @@ import {
   insertTask,
   isDeleted,
   liveTasks,
+  logTime,
   moveTask,
   moveToList,
   purgeExpired,
   removeSubtask,
   removeTag,
+  removeTimeEntry,
   renameSubtask,
   renameTask,
   restoreTask,
@@ -28,6 +30,7 @@ import {
   setRepeat,
   setReward,
   setSubtaskDone,
+  setTimeGoal,
   tagsInUse,
   uncompleteTask,
   type ListId,
@@ -38,6 +41,7 @@ import {
   type SubtaskId,
   type Task,
   type TaskId,
+  type TimeEntryId,
 } from '../core'
 import type { RewardRepository } from '../storage/rewardRepository'
 import { changesBetween, type TaskChanges, type TaskRepository } from '../storage/taskRepository'
@@ -173,6 +177,29 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
   const changeReward = useCallback(
     (id: TaskId, reward: number | null) => {
       apply((current) => current.map((task) => (task.id === id ? setReward(task, reward) : task)))
+    },
+    [apply],
+  )
+
+  /** Gives a task a time goal, changes it, or takes it away with null. */
+  const changeTimeGoal = useCallback(
+    (id: TaskId, minutes: number | null) => {
+      apply((current) => current.map((task) => (task.id === id ? setTimeGoal(task, minutes) : task)))
+    },
+    [apply],
+  )
+
+  /** Logs a session of time spent on a task. Whether the task is done is left to its box. */
+  const logTaskTime = useCallback(
+    (id: TaskId, minutes: number) => {
+      apply((current) => current.map((task) => (task.id === id ? logTime(task, minutes) : task)))
+    },
+    [apply],
+  )
+
+  const removeTaskTime = useCallback(
+    (id: TaskId, entryId: TimeEntryId) => {
+      apply((current) => current.map((task) => (task.id === id ? removeTimeEntry(task, entryId) : task)))
     },
     [apply],
   )
@@ -324,6 +351,9 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
     changeDueDate,
     changeRepeat,
     changeReward,
+    changeTimeGoal,
+    logTaskTime,
+    removeTaskTime,
     tag,
     untag,
     removeTagEverywhere,

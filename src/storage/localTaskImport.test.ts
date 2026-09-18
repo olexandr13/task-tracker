@@ -68,6 +68,17 @@ describe('importLocalTasks', () => {
     expect(imported).toEqual([{ ...savedAtV9, reward: null }])
   })
 
+  it('gives tasks saved before time goals existed none, and no time logged', async () => {
+    const { timeGoal, timeLog, ...savedAtV11 } = createTask('stretch', { kind: 'daily' }, NOW)
+    expect([timeGoal, timeLog]).toEqual([null, []])
+    localStorage.setItem(KEY, JSON.stringify({ version: 11, tasks: [savedAtV11] }))
+    const { repository, imported } = repositoryThat('accepts')
+
+    await importLocalTasks(repository)
+
+    expect(imported).toEqual([{ ...savedAtV11, timeGoal: null, timeLog: [] }])
+  })
+
   it('gives tasks saved before tags existed none', async () => {
     const { tags, reward, ...savedAtV8 } = createTask('file taxes', null, NOW)
     expect([tags, reward]).toEqual([[], null])
