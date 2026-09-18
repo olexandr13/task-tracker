@@ -1,7 +1,7 @@
 # Due dates
 
 The day a task is meant to be done on. A date is what puts a task in front of you on the right day
-instead of in a long list of everything — see [Lists](lists.md).
+instead of in a long list of everything — see [Views](views.md).
 
 ## The day
 
@@ -11,8 +11,8 @@ instead of in a long list of everything — see [Lists](lists.md).
   rule gives it — the occurrence in play, see [Repeating tasks](repeating-tasks.md) — so giving a
   task a rule clears its date, and a date cannot be set on a task that has one.
 - **DUE-3** A new task has no day unless one is chosen for it, except one added in the Today list,
-  which starts on today (LIST-6), in the Week list, which starts on this Sunday (LIST-14), or in the
-  Month list, which starts on the month's last day (LIST-19).
+  which starts on today (LIST-6), in Week, which starts on this Sunday (LIST-14), or in
+  Month, which starts on the month's last day (LIST-19).
 
 ## Setting it
 

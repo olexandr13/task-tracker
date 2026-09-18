@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
 import { completeTask, createTask, setDueDate, toLocalDay, type Task } from '../core'
+import { expectConsole } from '../test/consoleGuard'
 import { importLocalTasks } from './localTaskImport'
 import type { TaskRepository } from './taskRepository'
 
@@ -45,7 +46,8 @@ describe('importLocalTasks', () => {
     expect(localStorage.getItem(KEY)).toBe(saved)
   })
 
-  it('leaves data it cannot read where it is', async () => {
+  it('leaves data it cannot read where it is, saying so (STORE-7)', async () => {
+    expectConsole('Ignoring saved tasks: unexpected shape (version 99).')
     localStorage.setItem(KEY, JSON.stringify({ version: 99, tasks: [] }))
     const { repository, imported } = repositoryThat('accepts')
 

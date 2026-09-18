@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { distinctTags, isTagName, matchTags, sameTag } from '../../core'
 import { panelOption as option, panelOptionOff as optionOff, panelOptionOn as optionOn } from '../panelControls'
-import { controlOff, controlOn } from '../rowControls'
+import { controlOff, controlOn, rowControlIcon, rowControlLabel } from '../rowControls'
 import { TagIcon } from './TagIcon'
-
-const button = 'flex h-6 w-full items-center gap-1.5 rounded-lg px-2 text-sm leading-none transition-colors'
 
 const hint = 'px-2 py-1.5 text-xs text-neutral-400 dark:text-neutral-500'
 
@@ -68,6 +66,10 @@ export function TagPicker({
   const existing = all.find((tag) => sameTag(tag, typed))
   const canMake = typed !== '' && existing === undefined && isTagName(typed)
   const summary = tags.length === 0 ? 'No tags' : tags.join(', ')
+
+  // Only as wide as it needs to be: a square around the icon when the value is
+  // not spelled out beside it.
+  const button = `${showNames ? rowControlLabel : rowControlIcon} w-full`
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== 'Enter') return

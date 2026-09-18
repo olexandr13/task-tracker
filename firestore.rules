@@ -5,6 +5,8 @@ rules_version = '2';
 //
 // - Tasks: one document per task, stored as { version, task }
 //   (src/storage/firestoreTaskRepository.ts), always filed under the task's id.
+// - Lists: one document per list, stored as { version, list }
+//   (src/storage/firestoreListRepository.ts), always filed under the list's id.
 // - Points earned: one document per day, stored as { version, day, entries }
 //   (src/storage/firestoreRewardRepository.ts), always filed under its day.
 // - Points redeemed: one document per redemption, stored as { version, redemption },
@@ -18,6 +20,11 @@ service cloud.firestore {
     match /users/{accountId}/tasks/{taskId} {
       allow read, delete: if isOwner(accountId);
       allow create, update: if isOwner(accountId) && request.resource.data.task.id == taskId;
+    }
+
+    match /users/{accountId}/lists/{listId} {
+      allow read, delete: if isOwner(accountId);
+      allow create, update: if isOwner(accountId) && request.resource.data.list.id == listId;
     }
 
     match /users/{accountId}/rewardDays/{day} {

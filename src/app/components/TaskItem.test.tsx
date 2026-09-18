@@ -2,13 +2,14 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { addTag, createSubtask, createTask, type LocalDay, type Repeat } from '../../core'
+import { addTag, createList, createSubtask, createTask, moveToList, type List, type ListId, type LocalDay, type Repeat } from '../../core'
 import { TaskItem } from './TaskItem'
 
 /*
  * What a task row shows at rest and once clicked into. RPT ids refer to
  * wiki/repeating-tasks.md, UI ids to wiki/interface.md, TASK ids to wiki/tasks.md,
- * DUE ids to wiki/due-dates.md, TAG ids to wiki/tags.md, RWD ids to wiki/rewards.md.
+ * DUE ids to wiki/due-dates.md, TAG ids to wiki/tags.md, RWD ids to wiki/rewards.md,
+ * LST ids to wiki/lists.md.
  */
 
 const NOW = new Date('2026-09-15T10:00:00.000Z')
@@ -23,10 +24,11 @@ function setup(
   onDuplicate: (id: string) => void = () => undefined,
   dueDate: LocalDay | null = null,
   reward: number | null = null,
+  filing: { lists?: readonly List[]; listId?: ListId | null; onChangeList?: (id: string, listId: ListId | null) => void } = {},
 ) {
   const user = userEvent.setup()
   const task = {
-    ...createTask(TASK, repeat, NOW),
+    ...moveToList(createTask(TASK, repeat, NOW), filing.listId ?? null),
     dueDate,
     reward,
     subtasks: subtasks.map((title) => createSubtask(title, NOW)),
@@ -37,6 +39,7 @@ function setup(
         task={task}
         now={NOW}
         knownTags={[]}
+        lists={filing.lists ?? []}
         onComplete={nothing}
         onUncomplete={nothing}
         onRename={nothing}
@@ -44,6 +47,7 @@ function setup(
         onChangeDueDate={nothing}
         onChangeRepeat={nothing}
         onChangeReward={nothing}
+        onChangeList={filing.onChangeList ?? nothing}
         onAddTag={nothing}
         onRemoveTag={nothing}
         onRemove={nothing}
@@ -182,6 +186,7 @@ describe('the tags on a task row', () => {
           task={addTag(addTag(createTask(TASK, null, NOW), 'health'), 'morning')}
           now={NOW}
           knownTags={['health', 'morning']}
+          lists={[]}
           onComplete={nothing}
           onUncomplete={nothing}
           onRename={nothing}
@@ -189,6 +194,7 @@ describe('the tags on a task row', () => {
           onChangeDueDate={nothing}
           onChangeRepeat={nothing}
           onChangeReward={nothing}
+          onChangeList={nothing}
           onAddTag={nothing}
           onRemoveTag={nothing}
           onRemove={nothing}
@@ -365,5 +371,82 @@ describe('the menu a right-click opens on a task row', () => {
     await user.pointer({ keys: '[MouseRight]', target: titleBox() })
 
     expect(menu()).toBeNull()
+  })
+
+  describe('filing the task in a list', () => {
+    const WORK = createList('Work', new Date('2026-09-01T00:00:00.000Z'))
+    const HOME = createList('Home', new Date('2026-09-02T00:00:00.000Z'))
+
+    function group() {
+      return within(menu() as HTMLElement).queryByRole('group', { name: 'List' })
+    }
+
+    it('has no list button on the row (LST-14)', () => {
+      setup({ kind: 'daily' }, [], nothing, null, null, { lists: [WORK, HOME] })
+
+      expect(screen.queryByRole('button', { name: /^List for/ })).toBeNull()
+    })
+
+    it('offers the Inbox and then every list, the task\'s own checked (LST-14, LST-15)', async () => {
+      const user = setup({ kind: 'daily' }, [], nothing, null, null, { lists: [HOME, WORK], listId: HOME.id })
+
+      await user.pointer({ keys: '[MouseRight]', target: row() })
+
+      const choices = within(group() as HTMLElement).getAllByRole('menuitemradio')
+      // The mark is drawn for the eye; a screen reader hears the choice checked instead.
+      expect(choices.map((choice) => choice.textContent)).toEqual(['Inbox', 'Work', '✓Home'])
+      expect(choices.map((choice) => choice.getAttribute('aria-checked'))).toEqual(['false', 'false', 'true'])
+    })
+
+    it('checks the Inbox for a task in no list (LST-15)', async () => {
+      const user = setup({ kind: 'daily' }, [], nothing, null, null, { lists: [WORK] })
+
+      await user.pointer({ keys: '[MouseRight]', target: row() })
+
+      expect(within(group() as HTMLElement).getByRole('menuitemradio', { name: 'Inbox' }).getAttribute('aria-checked')).toBe('true')
+    })
+
+    it('files the task when a list is chosen, and closes (LST-14)', async () => {
+      const onChangeList = vi.fn()
+      const user = setup({ kind: 'daily' }, [], nothing, null, null, { lists: [WORK, HOME], onChangeList })
+
+      await user.pointer({ keys: '[MouseRight]', target: row() })
+      await user.click(screen.getByRole('menuitemradio', { name: 'Home' }))
+
+      expect(onChangeList).toHaveBeenCalledWith(expect.any(String), HOME.id)
+      expect(menu()).toBeNull()
+    })
+
+    it('takes the task back out of its list with the Inbox (LST-15)', async () => {
+      const onChangeList = vi.fn()
+      const user = setup({ kind: 'daily' }, [], nothing, null, null, { lists: [WORK], listId: WORK.id, onChangeList })
+
+      await user.pointer({ keys: '[MouseRight]', target: row() })
+      await user.click(screen.getByRole('menuitemradio', { name: 'Inbox' }))
+
+      expect(onChangeList).toHaveBeenCalledWith(expect.any(String), null)
+    })
+
+    it('is left out while there are no lists (LST-14)', async () => {
+      const user = setup()
+
+      await user.pointer({ keys: '[MouseRight]', target: row() })
+
+      expect(group()).toBeNull()
+      expect(screen.queryAllByRole('menuitemradio')).toEqual([])
+    })
+
+    it('is reached with the arrow keys, after Duplicate (UI-31)', async () => {
+      const user = setup({ kind: 'daily' }, [], nothing, null, null, { lists: [WORK] })
+
+      await user.pointer({ keys: '[MouseRight]', target: row() })
+      await user.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}')
+
+      expect(document.activeElement).toBe(screen.getByRole('menuitemradio', { name: 'Work' }))
+
+      await user.keyboard('{ArrowDown}')
+
+      expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Duplicate' }))
+    })
   })
 })

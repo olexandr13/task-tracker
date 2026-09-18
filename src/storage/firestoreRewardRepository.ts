@@ -1,5 +1,6 @@
-import { collection, deleteDoc, deleteField, doc, onSnapshot, setDoc, type Firestore, type WriteBatch } from 'firebase/firestore'
+import { deleteDoc, deleteField, doc, onSnapshot, setDoc, type Firestore, type WriteBatch } from 'firebase/firestore'
 import type { Redemption, RewardEntry } from '../core'
+import { accountCollection } from './firestoreAccount'
 import { commitInBatches } from './firestoreBatches'
 import type { RewardRepository } from './rewardRepository'
 import { readRedemption, readRewardDay, REWARD_SCHEMA_VERSION, toStoredRedemption } from './rewardSchema'
@@ -19,8 +20,8 @@ import { readRedemption, readRewardDay, REWARD_SCHEMA_VERSION, toStoredRedemptio
  * from the browser's copy and changes wait for a connection.
  */
 export function createFirestoreRewardRepository(firestore: Firestore, accountId: string): RewardRepository {
-  const days = collection(firestore, 'users', accountId, 'rewardDays')
-  const redemptions = collection(firestore, 'users', accountId, 'redemptions')
+  const days = accountCollection(firestore, accountId, 'rewardDays')
+  const redemptions = accountCollection(firestore, accountId, 'redemptions')
 
   return {
     subscribe(onLedger, onError) {

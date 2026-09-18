@@ -1,69 +1,130 @@
 # Lists
 
-Ways of looking at the tasks. A list is not somewhere a task is kept — every task is still one
-record — but a question asked of all of them, answered fresh on every render. There are
-**Today**, **Week** and **Month**.
+Somewhere to put a task. A list is a **record of its own** — Work, Home, Reading list — and a task
+is in **one** of them or in none. That is what makes a list a place rather than another label:
+[tags](tags.md) say what a task is about, and a task can carry any number of them; a list says
+where the task lives, and there is only ever one answer.
 
-- **LIST-1** The navigation carries **Today**, **Week** and **Month**, in that order, above
-  **Tasks**. Tasks is every live task; Today, Week and Month are the parts of it due today, this
-  week and this month. Each tag has a list of its own as well — see [Tags](tags.md). The app opens on **Today**, unless the address names another view (UI-36). On a phone Today, Week
-  and Month share one tab of the bottom bar (UI-33).
+Not to be confused with [Views](views.md) — Today, Week and Month — which are questions asked of
+all the tasks rather than places tasks are kept. That page holds the `LIST-` prefix for historical
+reasons; requirements here are `LST-`.
 
-## Today
+## The list
 
-- **LIST-2** A task still to do is in Today when it is **due today or overdue**. A day missed does
-  not let a task drop out of sight — it stays until it is done or moved.
-- **LIST-3** Repeating tasks are in on their days: a daily task every day, a weekly or monthly one
-  on its day and, if it went undone, every day after until it is done (DUE-11).
-- **LIST-4** A done task stays for the day it was due, and an overdue one finished today stays for
-  today, so ticking something off does not make it vanish. A task finished ahead of its day stays on
-  its own day.
-- **LIST-5** A task with no day is never in Today, however recently it was touched.
-- **LIST-6** A task added in Today is **due today**, unless another day or a repeat rule is chosen
-  for it before Enter.
-- **LIST-7** Otherwise Today is the same list as Tasks: the same rows, done tasks sinking to the
-  bottom, dragging to reorder — which moves the task in the full list too — and the same rail, whose
-  bars count every task rather than only today's.
-- **LIST-8** An empty Today greets a fresh day and says to add a task above. Once everything in it
-  is done, it praises the day's work instead (TASK-50).
-- **LIST-9** Nothing moves at midnight. What is in Today follows from the day it is, so a page left
-  open picks up the new day on its next render (PRIN-2).
+- **LST-1** A list is a record: it has a name and it **stays until it is deleted**, whether or not
+  anything is in it. An empty list is not a mistake — somewhere to put the next thing is the point
+  of it. This is the difference from a tag, which exists only as long as a task carries it (TAG-6).
+- **LST-2** A task is in **one list at a time**, or in none. A new task is in none — a title is
+  still all a task needs.
+- **LST-3** A list name may be **more than one word** and hold any punctuation: "Reading list" and
+  "Work / Home" are fair names. It is trimmed, the spaces inside it are squeezed to one, and it
+  must be something other than space, on one line, and at most 40 characters. The address names a
+  list by its id rather than its name (LST-8), so no character has to be kept free.
+- **LST-4** A list is made on the Lists page (LST-13), on purpose, rather than in passing from a
+  task. A list outlives the task that wanted it, so it is not something to create by accident.
+- **LST-5** **Case does not make another list**: there is no second list called `work` beside
+  `Work`. A name another list has already is refused, when making a list and when renaming one, and
+  the box it was typed in says so and keeps what was typed, to fix rather than type again.
+- **LST-6** A list can be **renamed** at any time. Its tasks are in it by its id, so renaming
+  touches the list alone: not one task is rewritten, and no address changes.
+- **LST-7** Giving up a rename with Escape leaves the list named as it was, as dropping a title
+  edit does (TASK-11).
+- **LST-12** A task naming a list that is **gone** — deleted on another device, say — reads as
+  being in the Inbox. Nothing is ever out of reach of every view at once.
 
-## Week
+## A list's tasks
 
-- **LIST-10** Week is Today stretched over this week, **Monday to Sunday** — the week the progress
-  bars count (PROG-2). A task still to do is in it when it is **due by Sunday**, overdue included, so
-  everything in Today is in Week too.
-- **LIST-11** Repeating tasks are in on their occurrence in play, as in Today (LIST-3): a daily task
-  every day, a Friday task from Friday. Ahead of its day the only occurrence there is to show is last
-  week's, so a repeat does not appear early.
-- **LIST-12** A done task stays when it was due this week, whenever it was finished, and an overdue
-  one stays when it was finished this week. A task finished ahead of a later week stays in that week.
-- **LIST-13** A task with no day is never in Week.
-- **LIST-14** A task added in Week is **due this Sunday**, the day the week closes, unless another
-  day or a repeat rule is chosen for it before Enter.
-- **LIST-15** Otherwise Week is the same list as Today (LIST-7): the same rows, order and rail. An
-  empty Week says nothing is due this week yet; once everything in it is done, it praises the week.
-- **LIST-16** Nothing moves at the turn of the week either: on Monday the list is the new week's on
-  its next render.
+- **LST-8** Every list has **a view of its own**, opened from the Lists page (LST-13): the live
+  tasks filed under it. It shows what Tasks shows otherwise (LIST-7) — the same rows, done tasks
+  sinking, dragging, the rail — and **Lists** stays marked in the sidebar while it is open. It is in
+  the address as `#/list/{id}` (UI-36), by the list's id, so a rename does not break a bookmark.
+- **LST-9** A task added in a list's view **goes into that list**, and has no day, as in Tasks.
+- **LST-10** An empty list says nothing is in it yet and to add a task above; once everything in it
+  is done, it praises the work (TASK-50).
 
-## Month
+## The Inbox
 
-- **LIST-17** Month is the same rule again over this calendar month, the one the progress bars count
-  (PROG-2). A task still to do is in it when it is **due by the month's last day**, overdue included,
-  so everything in Week is in Month too — bar the days of a week that run into next month.
-- **LIST-18** Repeating tasks, done tasks and tasks with no day go as in Week (LIST-11 – LIST-13),
-  over the month: a monthly task joins it on its day, a done task stays when it was due this month
-  or was overdue and finished this month.
-- **LIST-19** A task added in Month is **due on the month's last day**, unless another day or a
-  repeat rule is chosen for it before Enter.
-- **LIST-20** Otherwise Month is the same list as Today (LIST-7), says nothing is due this month yet
-  when empty and praises the month once everything in it is done. On the 1st the list is the new
-  month's on its next render.
+- **LST-11** The tasks in **no list** are the **Inbox**, which heads the Lists page and has a view
+  of its own at `#/inbox`. The Inbox is not a record — it is what "in no list" looks like — so it
+  is always there, cannot be renamed or deleted, and has no buttons of its own beside it. A task
+  added in the Inbox is in no list, as anywhere else but a list's own view.
+- **LST-20** Tasks is every live task whatever list it is in, so the Inbox is a part of Tasks and
+  not the same thing as it.
+
+## Filing a task
+
+- **LST-14** A task is filed from **its menu** — a right-click on the row (UI-31). Under
+  Duplicate, a **List** group offers the Inbox and then every list, the task's own **checked**.
+  Choosing one files the task and closes the menu — a task is in one list at a time, so choosing is
+  the whole of the job. The row itself has **no list button** and does not name its list: which list
+  a task is in is asked of the task when it matters, not repeated on every row. A list cannot be
+  made from here (LST-4); while there are no lists at all the menu has no List group, the Inbox
+  alone being no choice.
+- **LST-25** A task can be **dragged onto a list in the sidebar** — or onto the Inbox — to file it
+  there, from any view that shows tasks. While a task is carried, what moves with the pointer is
+  its **title**, just right of it, not the whole row, and the row stays in the list, faded, where
+  it would land; the list under the pointer is **lit** as it is reached. A list only counts with the
+  pointer on it, so moving a task among the rows never files it by accident, and filing a task
+  leaves its place in the order as it was. Dropping it anywhere but a list or a row does nothing.
+  Only a pointer does this: from the keyboard a task is filed from its menu (LST-14), and on a phone
+  — which has no sidebar — from the woken row (LST-23). A screen reader hears which list the task
+  is over and which it was dropped in.
+- **LST-15** The Inbox is first in the group and always offered, so there is always a way back out
+  of a list.
+- **LST-17** Filing a task changes that and nothing else — same id, same completion record, same
+  rule — and counts for nothing in any period's bar.
+
+## The Lists page
+
+- **LST-13** **Lists** has an entry of its own in the navigation, between Tasks and Habits (UI-30).
+  Its page is the Inbox (LST-11) and then every list, in the order they were made, each opening its
+  own view (LST-8). In the sidebar, Lists is **always open**: the Inbox and then every list, in the
+  same order, sit indented under it, each going straight to its view and marked while it is open
+  (UI-8). A long name is cut rather than widening the sidebar. Each is also somewhere to drop a
+  task (LST-25).
+- **LST-18** Beside each list is how many of its tasks are **still to do**, a repeating one for its
+  current occurrence. A list whose tasks are all done shows no number, and is still listed. The
+  Inbox carries its own count the same way.
+- **LST-19** Beside each list is a button that **renames** it in place (LST-6), and one that
+  **deletes** it, after asking. Deleting puts every task that was in it **back in the Inbox** —
+  tasks in the trash too, so restoring one does not file it under a list that has gone — and the
+  tasks themselves stay as they were otherwise. There is no undo. Deleting the list whose view is
+  open leaves that view for the Lists page.
+- **LST-21** A box at the top of the page makes a list (LST-4), on Enter or with its Add button, and
+  **opens the new list** so the next thing typed goes into it. The box is cleared for the next one.
+- **LST-22** The Lists page is not a list of tasks, so it has no box for adding one and no rail
+  (UI-2).
+
+## On a phone
+
+- **LST-23** A phone has no right-click to reach the task's menu, so there the **woken row** carries
+  a list button in the block under the description, above the tag and reward controls, naming the
+  task's list — or offering to file it. It opens a panel of the same choices as the menu (LST-14,
+  LST-15), the task's own marked, and closes on a choice or as the other pickers do (UI-9, UI-10);
+  with no lists yet, the panel says where to make one.
+- **LST-24** The Lists page is reached from a **Lists** button at the foot of Tasks, beside the Tags
+  and Trash buttons, and Tasks stays marked in the bottom bar while the Lists page, a list's view or
+  the Inbox is open (UI-34).
 
 ---
 
-**Where it lives:** `src/core/due.ts` (`isInPeriod`, `lastDayOf`), `src/app/view.ts` (the
-views, their names, empty lists, which tasks a list shows and the day it gives new ones),
-`src/app/TasksScreen.tsx`, `src/app/components/SideNav.tsx`, `src/app/components/BottomNav.tsx`.
-**Tested in:** `src/core/due.test.ts`, `src/app/components/AddTaskForm.test.tsx`.
+**Where it lives:** `src/core/list.ts` (the record, names, filing a task, emptying a list, the
+counts), `src/app/components/TaskItem.tsx` (the List group in a task's menu),
+`src/app/components/ContextMenu.tsx` (a menu's groups and checked choices),
+`src/app/components/SideNav.tsx` (the lists under Lists), `src/app/useListDropTarget.ts` (a list as a
+place to drop a task), `src/app/components/TaskDragAndDrop.tsx` and `src/app/taskDrop.ts` (carrying a
+task, and what dropping it does),
+`src/app/components/ListPicker.tsx` (the panel on a phone's woken row),
+`src/app/components/ListsPage.tsx` (the Lists page), `src/app/useLists.ts` (the lists on screen), `src/app/useTasks.ts` (filing a
+task, emptying a list), `src/app/view.ts` (the Lists page, a list's view and the Inbox, their
+addresses and what they say), `src/app/TasksScreen.tsx`, `src/app/components/SideNav.tsx`,
+`src/app/components/BottomNav.tsx`, `src/app/components/FolderIcon.tsx`,
+`src/app/components/InboxIcon.tsx`, `src/app/components/PencilIcon.tsx`.
+**Saved in:** `src/storage/listSchema.ts` and `src/storage/firestoreListRepository.ts` (one document
+per list), with `listId` on the task itself — see [Storage](storage.md).
+**Tested in:** `src/core/list.test.ts`, `src/app/components/TaskItem.test.tsx` (the task's menu),
+`src/app/taskDrop.test.ts` (dropping a task on a list),
+`src/app/components/ListPicker.test.tsx`,
+`src/app/components/ListsPage.test.tsx`, `src/app/components/SideNav.test.tsx`,
+`src/app/useView.test.ts` (the address), `src/storage/listRepository.test.ts`,
+`src/storage/listSchema.test.ts`.

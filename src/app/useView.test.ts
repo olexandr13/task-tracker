@@ -2,9 +2,10 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { useView } from './useView'
-import { tagView, viewFromHash, viewHash } from './view'
+import { oneListView, tagView, viewFromHash, viewHash } from './view'
 
-/* The view kept in the address. LIST and UI ids refer to wiki/lists.md and wiki/interface.md. */
+/* The view kept in the address. LIST ids refer to wiki/views.md, LST ids to wiki/lists.md,
+   UI ids to wiki/interface.md. */
 
 afterEach(() => {
   cleanup()
@@ -18,7 +19,20 @@ async function hashSettles() {
 
 describe('viewFromHash', () => {
   it('reads back every view it writes', () => {
-    for (const view of ['today', 'week', 'month', 'tasks', 'habits', 'rewards', 'tags', 'trash', 'settings'] as const) {
+    const views = [
+      'today',
+      'week',
+      'month',
+      'tasks',
+      'inbox',
+      'habits',
+      'rewards',
+      'lists',
+      'tags',
+      'trash',
+      'settings',
+    ] as const
+    for (const view of views) {
       expect(viewFromHash(viewHash(view))).toBe(view)
     }
   })
@@ -28,6 +42,18 @@ describe('viewFromHash', () => {
       expect(viewFromHash(viewHash(tagView(tag)))).toBe(tagView(tag))
     }
     expect(viewHash(tagView('дім'))).toBe('#/tag/%D0%B4%D1%96%D0%BC')
+  })
+
+  it('reads back one list\'s view, named by the list\'s id (LST-8)', () => {
+    const id = '6f1b2c3d-0f3a-4a1b-9c2e-8d7f6a5b4c3d'
+
+    expect(viewHash(oneListView(id))).toBe(`#/list/${id}`)
+    expect(viewFromHash(viewHash(oneListView(id)))).toBe(oneListView(id))
+  })
+
+  it('names no view for a list with no id', () => {
+    expect(viewFromHash('#/list/')).toBeNull()
+    expect(viewFromHash('#/list/%E0%A4%A')).toBeNull()
   })
 
   it('names no view for a tag no tag can be', () => {

@@ -7,6 +7,8 @@
  */
 
 import { InvalidDayError, isLocalDay, toLocalDay, type LocalDay } from './day'
+// Type-only: ./list reads the task's rules, so nothing is imported back from it.
+import type { ListId } from './list'
 import { assertValidRepeat, countsForCurrentOccurrence, currentOccurrence, type Repeat } from './repeat'
 import { createSubtask, isSubtaskComplete, type Subtask, type SubtaskId } from './subtask'
 import { normalizeTitle } from './title'
@@ -64,6 +66,13 @@ export interface Task {
    */
   readonly tags: readonly string[]
   /**
+   * The list the task is filed under, or null for one in no list — the Inbox.
+   * One at a time, unlike tags: a list is where a task lives rather than
+   * something it is about. Named by id, so renaming a list leaves its tasks
+   * alone. See ./list.
+   */
+  readonly listId: ListId | null
+  /**
    * The points each completion of the task earns, or null for a task that earns
    * none — which is every task until it is given some. Only the amount for the
    * next completion lives here; what completions already earned is kept apart
@@ -109,6 +118,7 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
     dueDate: null,
     subtasks: [],
     tags: [],
+    listId: null,
     reward: null,
     deletedAt: null,
     order: 0,

@@ -1,5 +1,4 @@
 import {
-  collection,
   doc,
   getDocsFromServer,
   onSnapshot,
@@ -8,6 +7,7 @@ import {
   type WriteBatch,
 } from 'firebase/firestore'
 import type { Task } from '../core'
+import { accountCollection } from './firestoreAccount'
 import { commitInBatches } from './firestoreBatches'
 import { migrateTasks, SCHEMA_VERSION } from './taskSchema'
 import type { TaskRepository } from './taskRepository'
@@ -42,7 +42,7 @@ function fromStored(id: string, data: DocumentData): Task[] {
  * devices change the same task, the later write wins.
  */
 export function createFirestoreTaskRepository(firestore: Firestore, accountId: string): TaskRepository {
-  const tasks = collection(firestore, 'users', accountId, 'tasks')
+  const tasks = accountCollection(firestore, accountId, 'tasks')
 
   return {
     subscribe(onTasks, onError) {

@@ -1,6 +1,9 @@
 /**
  * Lists inside a description: bulleted and numbered.
  *
+ * Not the Lists a task is filed under (./list) — these are the bullets and
+ * numbers written into one description's text.
+ *
  * Like emphasis (./emphasis), a list is written into the one plain string as
  * Markdown — a line starting `- ` is a bullet, one starting `1. ` is numbered —
  * and nobody is meant to see those markers. The box and the resting text both

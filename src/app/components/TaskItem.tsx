@@ -7,6 +7,10 @@ import {
   hasTags,
   isComplete,
   isOverdue,
+  listOf,
+  sortLists,
+  type List,
+  type ListId,
   type LocalDay,
   type Repeat,
   type SubtaskId,
@@ -17,14 +21,15 @@ import { describeDueDate } from '../dueLabels'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { describeRepeat } from '../repeatLabels'
 import { describeReward } from '../rewardLabels'
-import { completionBoxOff, completionBoxOn, controlOff, controlOn, deleteControl } from '../rowControls'
+import { completionBoxOff, completionBoxOn, controlOff, controlOn, deleteControl, rowControlIcon } from '../rowControls'
 import { isInTextEntry } from '../textEntry'
 import { textOffsetAtPoint } from '../textOffsetAtPoint'
 import { useSortableTask } from '../useSortableTask'
 import { ChecklistIcon } from './ChecklistIcon'
-import { ContextMenu } from './ContextMenu'
+import { ContextMenu, type ContextMenuEntry } from './ContextMenu'
 import { DuePicker } from './DuePicker'
 import { GripIcon } from './GripIcon'
+import { ListPicker } from './ListPicker'
 import { NoteIcon } from './NoteIcon'
 import { RepeatPicker } from './RepeatPicker'
 import { RewardPicker } from './RewardPicker'
@@ -37,6 +42,8 @@ interface TaskItemProps {
   now: Date
   /** Every tag in use, to offer when tagging this task. */
   knownTags: readonly string[]
+  /** Every list there is, to offer in the task's menu when filing it. */
+  lists: readonly List[]
   onComplete: (id: TaskId) => void
   onUncomplete: (id: TaskId) => void
   onRename: (id: TaskId, title: string) => void
@@ -44,6 +51,7 @@ interface TaskItemProps {
   onChangeDueDate: (id: TaskId, dueDate: LocalDay | null) => void
   onChangeRepeat: (id: TaskId, repeat: Repeat | null) => void
   onChangeReward: (id: TaskId, reward: number | null) => void
+  onChangeList: (id: TaskId, listId: ListId | null) => void
   onAddTag: (id: TaskId, name: string) => void
   onRemoveTag: (id: TaskId, name: string) => void
   onRemove: (id: TaskId) => void
@@ -64,20 +72,24 @@ const titleBox = 'min-w-0 text-left text-sm'
 const indent = 'pl-10'
 
 /**
- * Each control sits in a slot of one icon's width, so an icon is in the same
- * place on every row whatever its neighbours hold.
+ * Each control sits in a slot of one icon button's width, so an icon is in the
+ * same place on every row whatever its neighbours hold. The slot is the button
+ * and nothing more: the controls belong together, so only the line's gap is
+ * between them.
  */
-const slot = 'flex w-8 shrink-0 items-center'
+const slot = 'flex w-6 shrink-0 items-center'
 
 /**
  * The columns of a task's line: the completion box, the title with its tags, the
  * date, repeat, checklist, tag and reward slots, the description and delete. The
  * slots are fixed, so what is spelled out under them can run wider without
  * widening them. A phone has no room for the tag and reward slots beside the
- * title; its tags and reward are set from the woken row instead.
+ * title; its tags and reward are set from the woken row instead. The list has no
+ * slot anywhere: a task is filed from its menu (a right-click), or on a phone,
+ * which has no right-click, from the woken row.
  */
 const lineColumns =
-  'grid-cols-[auto_minmax(0,1fr)_repeat(3,--spacing(8))_auto_auto] md:grid-cols-[auto_minmax(0,1fr)_repeat(5,--spacing(8))_auto_auto]'
+  'grid-cols-[auto_minmax(0,1fr)_repeat(3,--spacing(6))_auto_auto] md:grid-cols-[auto_minmax(0,1fr)_repeat(5,--spacing(6))_auto_auto]'
 
 /**
  * A tag the task carries, beside its title. Quieter than the title and smaller,
@@ -89,8 +101,8 @@ const chip =
 /** What a control holds, on the second line under it. */
 const detail = 'row-start-2 pb-1 text-[10px] leading-3 whitespace-nowrap text-neutral-400 tabular-nums dark:text-neutral-500'
 
-/** Shares the shape of the repeat button beside them: small controls, not a row. */
-const rowButton = 'flex h-6 shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm leading-none transition-colors'
+/** Shares the shape of the pickers beside them: small controls, not a row. */
+const rowButton = `${rowControlIcon} shrink-0`
 /** Sits in the page's gutter, just left of the row's border. */
 const grip =
   'absolute top-1 -left-4 grid h-6 w-4 cursor-grab place-items-center rounded text-neutral-400 transition-opacity hover:text-neutral-900 active:cursor-grabbing dark:text-neutral-500 dark:hover:text-neutral-100'
@@ -99,6 +111,7 @@ export function TaskItem({
   task,
   now,
   knownTags,
+  lists,
   onComplete,
   onUncomplete,
   onRename,
@@ -106,6 +119,7 @@ export function TaskItem({
   onChangeDueDate,
   onChangeRepeat,
   onChangeReward,
+  onChangeList,
   onAddTag,
   onRemoveTag,
   onRemove,
@@ -147,6 +161,27 @@ export function TaskItem({
   const rule = isActive && task.repeat !== null ? describeRepeat(task.repeat) : null
   const count = isActive && hasSubtasks(task) ? `${String(checklist.done)}/${String(checklist.total)}` : null
   const points = isActive && task.reward !== null ? describeReward(task.reward) : null
+  // The list the task is filed under, or null in the Inbox.
+  const filed = listOf(task, lists)
+  const menuItems: ContextMenuEntry[] = [
+    { label: 'Duplicate', onSelect: () => { onDuplicate(task.id) } },
+    // Only once there is a list to choose: the Inbox alone is no choice at all.
+    ...(lists.length === 0
+      ? []
+      : [
+          {
+            group: 'List',
+            items: [
+              { label: 'Inbox', checked: filed === null, onSelect: () => { onChangeList(task.id, null) } },
+              ...sortLists(lists).map((list) => ({
+                label: list.name,
+                checked: list.id === filed?.id,
+                onSelect: () => { onChangeList(task.id, list.id) },
+              })),
+            ],
+          },
+        ]),
+  ]
 
   useEffect(() => {
     const element = input.current
@@ -300,7 +335,8 @@ export function TaskItem({
       }}
       className={
         sortable.isDragging
-          ? 'group relative z-10 rounded-xl border border-neutral-200 bg-white shadow-lg dark:border-neutral-800 dark:bg-neutral-900'
+          // Left in the list, faded, where it would land; its title is what the pointer carries (TaskDragAndDrop).
+          ? 'group relative rounded-xl border border-dashed border-neutral-300 bg-white opacity-50 dark:border-neutral-700 dark:bg-neutral-900'
           : menuAt !== null
             // Marked while its menu is open, so it is plain which task the menu is for.
             ? 'group relative rounded-xl border border-neutral-400 bg-white dark:border-neutral-600 dark:bg-neutral-900'
@@ -473,7 +509,7 @@ export function TaskItem({
             onRemove(task.id)
           }}
           aria-label={`Delete "${task.title}"`}
-          className={`flex h-6 shrink-0 items-center rounded-lg px-1.5 text-base leading-none ${deleteControl}`}
+          className={`flex h-6 shrink-0 items-center rounded-lg px-1 text-base leading-none ${deleteControl}`}
         >
           ×
         </button>
@@ -500,7 +536,7 @@ export function TaskItem({
             className={
               count === null
                 ? `${detail} col-start-4 justify-self-center`
-                : `${detail} col-start-2 col-end-5 min-w-8 justify-self-end text-center`
+                : `${detail} col-start-2 col-end-5 min-w-6 justify-self-end text-center`
             }
           >
             {rule}
@@ -542,12 +578,21 @@ export function TaskItem({
         </div>
       )}
 
-      {/* A phone's line has no tag or reward slot, so the woken row carries the controls
-          instead, one above the other so each panel opens from the left edge with room. */}
+      {/* A phone's line has no tag or reward slot, and a phone has no right-click to reach the
+          task's menu, so the woken row carries the list, tag and reward controls instead, one
+          above the other so each panel opens from the left edge with room. */}
       {isActive && (
         <div
           className={`flex flex-col items-start gap-0.5 border-t border-neutral-200 py-1 pr-2.5 ${indent} md:hidden dark:border-neutral-800`}
         >
+          <ListPicker
+            listId={task.listId}
+            lists={lists}
+            onChange={(listId) => { onChangeList(task.id, listId) }}
+            label={`List for "${task.title}"`}
+            showName
+            align="left"
+          />
           <TagPicker
             tags={task.tags}
             known={knownTags}
@@ -574,7 +619,7 @@ export function TaskItem({
           y={menuAt.y}
           label={`Actions for "${task.title}"`}
           fromKeyboard={menuAt.fromKeyboard}
-          items={[{ label: 'Duplicate', onSelect: () => { onDuplicate(task.id) } }]}
+          items={menuItems}
           onClose={() => { setMenuAt(null) }}
         />
       )}

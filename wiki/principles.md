@@ -34,8 +34,10 @@ these, so a feature page only mentions them where the feature bends them.
   over; the two actions that genuinely end a task say so, and so does deleting a redemption
   (RWD-18).
 - **PRIN-9** The app works offline. Signing in for the first time needs a connection; after that
-  the session is remembered (AUTH-7). The tasks open from the browser's copy and changes wait for
-  a connection (STORE-18). The daily quote falls back to a bundled pack rather than failing.
+  the session is remembered (AUTH-7). The app itself opens with no connection (OFF-1), the tasks
+  open from the browser's copy, and changes are kept and sent once there is a connection
+  (STORE-18, OFF-3), with a notice saying where they stand (OFF-4). The daily quote falls back to a
+  bundled pack rather than failing. See [Offline](offline.md).
 - **PRIN-10** Nothing is lost by a mis-click: an abandoned edit leaves no trace, and a deletion can
   be taken straight back.
 

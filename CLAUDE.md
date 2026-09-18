@@ -49,6 +49,10 @@ ceremony. If a native app ever happens, `src/core/` moves into a workspace packa
   day at `users/{uid}/rewardDays/{day}`, merged field by field per task, and one per redemption at
   `users/{uid}/redemptions/{id}`, with their own `REWARD_SCHEMA_VERSION` (`src/storage/rewardSchema.ts`).
   What a task change earns is derived in core (`rewardChanges`) and written from `useTasks`.
+- Every collection under an account is named in `ACCOUNT_COLLECTIONS` (`src/storage/firestoreAccount.ts`)
+  and reached through `accountCollection`, so the sync notice watches it along with the rest.
+- The built app is kept for offline by a service worker (`vite-plugin-pwa`, `vite.config.ts`).
+  `npm run dev` has none; try offline behaviour with `npm run build && npm run preview`.
 - Ids are `crypto.randomUUID()` and timestamps are ISO 8601, so records from two devices merge task
   by task.
 - Every call site talks to the `TaskRepository` and `RewardRepository` interfaces, never to
@@ -59,6 +63,10 @@ ceremony. If a native app ever happens, `src/core/` moves into a workspace packa
 - Rules are tested in `src/core/*.test.ts` (plain Node). Interaction a person could break — keys,
   focus, where the caret goes — is tested beside its component as `*.test.tsx`, with Testing Library
   and `user-event`; such a file starts with `// @vitest-environment jsdom` so core tests stay DOM-free.
+- **Any test that writes to the console fails** (`src/test/consoleGuard.ts`, loaded by `setupFiles`),
+  so React's own complaints and an error path firing unasked cannot pass quietly. A test that means
+  to cause output declares it with `expectConsole(...)`, and can read what was written back with
+  `consoleOutput()`.
 
 
 # TEMP

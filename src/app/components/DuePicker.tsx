@@ -2,10 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { isLocalDay, nextWeekDueDay, offsetDay, toLocalDay, type LocalDay } from '../../core'
 import { describeDueDate, describeWeekday } from '../dueLabels'
 import { panelOption as option, panelOptionOff as optionOff, panelOptionOn as optionOn } from '../panelControls'
-import { controlOff, controlOn } from '../rowControls'
+import { controlOff, controlOn, rowControlIcon, rowControlLabel } from '../rowControls'
 import { CalendarIcon } from './CalendarIcon'
 
-const button = 'flex h-6 w-full items-center gap-1.5 rounded-lg px-2 text-sm leading-none transition-colors'
 /** A day gone by with the task still open reads as a warning, not as information. */
 const buttonOverdue = 'bg-red-600/10 text-red-600 hover:bg-red-600/20 dark:text-red-400'
 
@@ -63,6 +62,11 @@ export function DuePicker({
   ]
   const summary = dueDate === null ? 'No date' : describeDueDate(dueDate, now)
 
+  // Only as wide as it needs to be: a square around the icon when the value is
+  // not spelled out beside it.
+  const named = dueDate !== null && showDate
+  const button = `${named ? rowControlLabel : rowControlIcon} w-full`
+
   function choose(day: LocalDay | null) {
     onChange(day)
     setIsOpen(false)
@@ -91,7 +95,7 @@ export function DuePicker({
         }
       >
         <CalendarIcon />
-        {dueDate !== null && showDate && <span className="whitespace-nowrap">{summary}</span>}
+        {named && <span className="whitespace-nowrap">{summary}</span>}
       </button>
 
       {isOpen && (

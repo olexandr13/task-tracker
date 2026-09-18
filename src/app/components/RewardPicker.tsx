@@ -2,10 +2,8 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { defaultReward, isRewardAmount, MAX_REWARD, MIN_REWARD, type Repeat } from '../../core'
 import { panelStep as stepButton } from '../panelControls'
 import { describePoints } from '../rewardLabels'
-import { controlOff, controlOn } from '../rowControls'
+import { controlOff, controlOn, rowControlIcon, rowControlLabel } from '../rowControls'
 import { StarIcon } from './StarIcon'
-
-const button = 'flex h-6 w-full items-center gap-1.5 rounded-lg px-2 text-sm leading-none transition-colors'
 
 /** What the box can hold: a reward, or 0 for none. */
 function isPoints(points: number): boolean {
@@ -68,6 +66,10 @@ export function RewardPicker({
   // Where the steps count from: what is typed while it is a number of points, and what it was otherwise.
   const base = isValid ? amount : settled
   const summary = reward === null ? 'No reward' : describePoints(reward)
+
+  // Only as wide as it needs to be: a square around the icon when the value is
+  // not spelled out beside it.
+  const button = `${showAmount ? rowControlLabel : rowControlIcon} w-full`
 
   function toggle() {
     if (isOpen) {

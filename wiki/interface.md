@@ -7,12 +7,15 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-1** The screen is three areas: **navigation** down the left, **the work** — the box for
   adding a task, then the list — in the middle, and a **rail** down the right of it holding the
   progress bars, with today's quote below them.
-- **UI-2** The rail belongs to the lists of tasks — Today, Week, Month, Tasks and each tag's — not to
-  the app: habits, rewards, the tags, the trash and settings do without it. The habits page is already a record of progress (HAB-15), and how much of
+- **UI-2** The rail belongs to the views that show tasks — Today, Week, Month, Tasks, the Inbox, each
+  list's and each tag's — not to
+  the app: habits, rewards, the lists, the tags, the trash and settings do without it. The habits page is already a record of progress (HAB-15), and how much of
   the week is cleared says nothing about what was thrown away. Nobody needs spurring on to empty a
   bin.
-- **UI-3** The heading names the view you are on. The signed-in account sits at its far end
-  (AUTH-9).
+- **UI-3** There is **no heading** over any of it. The navigation already marks which view you are
+  on (UI-8), so a title would say it twice and cost a strip of the screen to do it; the work starts
+  at the top of the page instead. The view's name is still there for a screen reader, as the page's
+  heading, unseen.
 
 ## On a phone
 
@@ -22,18 +25,24 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-5** Stacked, the rail comes **after** the work — the bars, then the quote at the very bottom
   of the page.
 - **UI-6** Nothing is reachable only on a wide screen. A row's details (UI-27) have a line of their
-  own under the task's, so a narrow screen keeps them too; so do the tag button (TAG-16), the
-  reward's star (RWD-8), and the Tags and Rewards pages (UI-34).
+  own under the task's, so a narrow screen keeps them too; so do the list button (LST-23), the tag
+  button (TAG-16), the
+  reward's star (RWD-8), and the Lists, Tags and Rewards pages (UI-34).
 
 ## Navigation
 
-- **UI-7** Nine views: **Today**, **Week**, **Month**, **Tasks**, **Habits**, **Rewards**, **Tags**,
-  **Trash** and **Settings**, and a list for each tag, opened from Tags. Each is named and carries an
-  icon — every tag's list the same `#` as Tags. See [Lists](lists.md), [Habits](habits.md),
+- **UI-7** Eleven views: **Today**, **Week**, **Month**, **Tasks**, **Inbox**, **Habits**,
+  **Rewards**, **Lists**, **Tags**,
+  **Trash** and **Settings**, and a view for each list, opened from Lists, and one for each tag,
+  opened from Tags. Each is named and carries an
+  icon — every tag's view the same `#` as Tags, and every list the same folder as Lists. See
+  [Views](views.md), [Lists](lists.md), [Habits](habits.md),
   [Rewards](rewards.md) and [Tags](tags.md).
 - **UI-30** In the sidebar the views come in four groups with a thin line between each: the period
-  lists (**Today**, **Week**, **Month**), then **Tasks**, **Habits**, **Rewards** and **Tags**, then **Trash**,
-  then **Settings**. A tag's list has no entry of its own; **Tags** stays marked while one is open.
+  views (**Today**, **Week**, **Month**), then **Tasks**, **Lists**, **Habits**, **Rewards** and **Tags**, then **Trash**,
+  then **Settings**. **Lists** is always open, with the **Inbox** and then every list under it,
+  indented (LST-13); the one open is marked itself, and Lists only on the Lists page. A tag's view
+  has no entry of its own: **Tags** stays marked while one is open.
 - **UI-8** The view you are on is marked, in the sidebar and in the bottom bar alike.
 - **UI-32** The bottom bar has four tabs, each an icon over its name: **the period** (UI-33),
   **Habits**, **Tasks** and **Settings**.
@@ -42,12 +51,14 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   Today, Week and Month; letting go does not also go to the tab. A right-click, the context-menu key
   or Shift+F10 open the same menu, from the keyboard starting on its first item. It closes as a
   task's menu does (UI-31).
-- **UI-34** The bar has no tab for the tags, the rewards or the trash. **Tasks** ends with a
-  **Tags**, a **Rewards** and a **Trash** button instead, and **Tasks** stays marked while any of
-  them is open, or a tag's list. The sidebar keeps its own entries, so the buttons are only on a
+- **UI-34** The bar has no tab for the lists, the tags, the rewards or the trash. **Tasks** ends with
+  a **Lists**, a **Tags**, a **Rewards** and a **Trash** button instead, and **Tasks** stays marked
+  while any of them is open, or one list, the Inbox or a tag's view. The sidebar keeps its own entries, so the buttons are only on a
   phone.
-- **UI-35** **Settings** has nothing in it yet and says so.
-- **UI-36** The view you are on is **in the address** — `#/week`, `#/habits`, `#/tag/work` — so reloading the page
+- **UI-35** **Settings** holds the signed-in account and the way out (AUTH-9), and says there is
+  nothing else to set yet.
+- **UI-36** The view you are on is **in the address** — `#/week`, `#/habits`, `#/inbox`,
+  `#/list/{id}`, `#/tag/work` — so reloading the page
   keeps you on it, and a bookmark or a link opens on it. An address naming no view opens on Today.
 - **UI-37** Each switch of view is a step in the browser's history: **back and forward** move
   between the views you went through.
@@ -81,7 +92,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   row wakes and rests.
 - **UI-27** The controls **line up down the list**: each is its icon alone, in a slot of its own
   that sits in the same place on every row, whatever the rows beside it hold; a repeating task keeps
-  the date's slot empty (DUE-6). On a phone the tag button and the reward's star have no slot on
+  the date's slot empty (DUE-6). A slot is **no wider than the button in it** — an icon with no words
+  beside it is padded to a square — so the controls sit close together and read as one group at the
+  end of the row rather than as buttons scattered along it. On a phone the tag button and the reward's star have no slot on
   the line, and are on the woken row instead (TAG-16, RWD-8). What a control holds — the due date
   (DUE-5), the repeat rule (RPT-17), the checklist count (CHK-5), the reward (RWD-7) — is not put
   beside its icon but on a **line of details under the task's line**, in muted small text, each
@@ -114,12 +127,14 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   closes it. Once open, the title's box takes the whole width, so there is room to type.
 - **UI-31** **Right-clicking a row opens the task's menu** at the pointer — on the other side of it
   where the window runs out — and marks the row's border while it is open, so it is plain which
-  task the menu is for. It holds **Duplicate** (TASK-51). The row stays as it was, at rest or awake:
+  task the menu is for. It holds **Duplicate** (TASK-51) and, once there are lists, a **List** group
+  to file the task in, its own checked (LST-14). A group has a small heading and a line above it;
+  a long menu scrolls rather than running off the window. The row stays as it was, at rest or awake:
   the menu is about the task as a whole, not working on it (as UI-19). Choosing an item, Escape, Tab,
   a click outside, scrolling or resizing the window closes it. Right-clicking text being typed in —
   an open title or description — keeps the browser's own menu, which is there for the text. From
   the keyboard, the context-menu key or Shift+F10 opens it under the task's line; the arrow keys,
-  Home and End move between items, and focus goes back where it was when it closes.
+  Home and End move between items — a group's too — and focus goes back where it was when it closes.
 
 ## Everywhere
 
@@ -141,14 +156,15 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   the trash countdown and the quote can never disagree about which day it is.
 - **UI-39** The app's icon, shown in the browser tab, is a **progress ring** about three-quarters full
   around a check, drawn in the app's blue on a dark tile, so it reads well on light and dark tab bars.
+  The same icon stands for the app once installed on a home screen or a desktop (OFF-10).
 
 ---
 
 **Where it lives:** `src/app/TasksScreen.tsx` (the three areas), `src/app/components/TaskItem.tsx` (the
 row at rest and awake), `src/app/components/ContextMenu.tsx` (a task's menu), `src/app/textOffsetAtPoint.ts` (which character a click landed on), `src/app/components/SideNav.tsx`,
 `src/app/components/BottomNav.tsx` (the phone's bar), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/useLongPress.ts` (a press told from a
-long press), `src/app/components/SettingsList.tsx`, `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
-view's icon), `src/app/rowControls.ts` (the tones a row's controls share), `src/app/panelControls.ts` (the size a panel's buttons share), `src/styles.css`,
-`public/favicon.svg` (the app's icon).
+long press), `src/app/components/SettingsList.tsx`, `src/app/components/AccountCard.tsx` (the account on it), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
+view's icon), `src/app/rowControls.ts` (the shape and tones a row's controls share), `src/app/panelControls.ts` (the size a panel's buttons share), `src/styles.css`,
+`public/favicon.svg` (the app's icon; the PNGs beside it are the same icon for installing).
 **Tested in:** `src/app/components/BottomNav.test.tsx` (the bottom bar), `src/app/components/SideNav.test.tsx` (the sidebar), `src/app/useView.test.ts` (the
 view in the address).

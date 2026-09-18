@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   addTag,
   appendTask,
+  clearList,
   completeTask,
   createTask,
   deleteTag,
@@ -13,6 +14,7 @@ import {
   isDeleted,
   liveTasks,
   moveTask,
+  moveToList,
   purgeExpired,
   removeSubtask,
   removeTag,
@@ -28,6 +30,7 @@ import {
   setSubtaskDone,
   tagsInUse,
   uncompleteTask,
+  type ListId,
   type LocalDay,
   type Placement,
   type Repeat,
@@ -99,10 +102,17 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
   )
 
   const addTask = useCallback(
-    (title: string, repeat: Repeat | null = null, dueDate: LocalDay | null = null, tags: readonly string[] = []) => {
+    (
+      title: string,
+      repeat: Repeat | null = null,
+      dueDate: LocalDay | null = null,
+      tags: readonly string[] = [],
+      listId: ListId | null = null,
+    ) => {
       apply((current) => {
         const known = tagsInUse(liveTasks(current))
-        const task = tags.reduce((tagged, tag) => addTag(tagged, tag, known), setDueDate(createTask(title, repeat), dueDate))
+        const started = moveToList(setDueDate(createTask(title, repeat), dueDate), listId)
+        const task = tags.reduce((tagged, tag) => addTag(tagged, tag, known), started)
         return appendTask(current, task)
       })
     },
@@ -192,6 +202,25 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
   const removeTagEverywhere = useCallback(
     (name: string) => {
       apply((current) => deleteTag(current, name))
+    },
+    [apply],
+  )
+
+  /** Files a task under a list, or in no list — the Inbox — with null. */
+  const changeList = useCallback(
+    (id: TaskId, listId: ListId | null) => {
+      apply((current) => current.map((task) => (task.id === id ? moveToList(task, listId) : task)))
+    },
+    [apply],
+  )
+
+  /**
+   * Empties a list: every task in it goes back to the Inbox, the tasks themselves
+   * staying. The list record is deleted separately (useLists).
+   */
+  const clearListEverywhere = useCallback(
+    (listId: ListId) => {
+      apply((current) => clearList(current, listId))
     },
     [apply],
   )
@@ -298,6 +327,8 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
     tag,
     untag,
     removeTagEverywhere,
+    changeList,
+    clearListEverywhere,
     setHabitDay,
     addChecklistItem,
     setChecklistItemDone,

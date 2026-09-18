@@ -5,10 +5,13 @@ import { ORDER_STEP, toLocalDay, type Task } from '../core'
  * changes, and add a step below: storing the version means old saved data can be
  * upgraded rather than silently breaking.
  */
-export const SCHEMA_VERSION = 10
+export const SCHEMA_VERSION = 11
+
+/** Version 10 had no lists: a task was filed nowhere, so every task was in the Inbox. */
+type TaskV10 = Omit<Task, 'listId'>
 
 /** Version 9 had no rewards: finishing a task earned nothing. */
-type TaskV9 = Omit<Task, 'reward'>
+type TaskV9 = Omit<TaskV10, 'reward'>
 
 /** Version 8 had no tags: a task belonged with no others. */
 type TaskV8 = Omit<TaskV9, 'tags'>
@@ -34,8 +37,12 @@ type TaskV2 = Omit<TaskV3, 'deletedAt'>
 /** Version 1 knew nothing about repeating either: every task happened once. */
 type TaskV1 = Omit<TaskV2, 'repeat'>
 
+function fromV10(task: TaskV10): Task {
+  return { ...task, listId: null }
+}
+
 function fromV9(task: TaskV9): Task {
-  return { ...task, reward: null }
+  return fromV10({ ...task, reward: null })
 }
 
 function fromV8(task: TaskV8): Task {
@@ -109,6 +116,8 @@ export function migrateTasks(version: unknown, tasks: unknown): Task[] | null {
       return (tasks as TaskV8[]).map(fromV8)
     case 9:
       return (tasks as TaskV9[]).map(fromV9)
+    case 10:
+      return (tasks as TaskV10[]).map(fromV10)
     case SCHEMA_VERSION:
       return tasks as Task[]
     default:

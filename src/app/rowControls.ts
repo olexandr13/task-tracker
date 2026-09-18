@@ -3,6 +3,24 @@
  * description, deleting — so they read as one set and change together.
  */
 
+/**
+ * The shape they share: a short pill holding an icon, and beside it the value
+ * spelled out when there is room for it. Whether the button is `w-full` in a
+ * slot or sized by its own content is the caller's, since that is about where
+ * it sits rather than what it is.
+ */
+const rowControl = 'flex h-6 items-center gap-1.5 rounded-lg text-sm leading-none transition-colors'
+
+/**
+ * An icon on its own, padded to a square. A line of these is read as one group
+ * of controls, so they are kept close: the padding is the only space between
+ * one icon and the next beyond the gap their slots leave.
+ */
+export const rowControlIcon = `${rowControl} px-1`
+
+/** An icon with words beside it, padded so the words are not against the edge. */
+export const rowControlLabel = `${rowControl} px-2`
+
 /** Nothing set: the control is only a way of setting it. */
 export const controlOff =
   'text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'

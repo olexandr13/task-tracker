@@ -18,6 +18,7 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 | `dueDate` | The local day a one-off is due, or nothing. Always nothing on a repeating task. See [Due dates](due-dates.md). |
 | `subtasks` | The checklist, in the order it was written, or empty. See [Checklists](checklists.md). |
 | `tags` | The tags it carries, in the order they were put on, or empty. See [Tags](tags.md). |
+| `listId` | The list it is filed under, by id, or nothing for one in no list — the Inbox. One at a time. See [Lists](lists.md). |
 | `reward` | The points each completion earns, or nothing. What completions already earned is kept apart from the task. See [Rewards](rewards.md). |
 | `deletedAt` | When it went to the trash, or nothing while it is live. |
 | `order` | Where it sits in the list, as a number: lower comes first. |
@@ -140,8 +141,10 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 
 ## Moving
 
-- **TASK-37** Tasks are put in a new order by dragging them. The other rows slide aside to show
-  where the dragged one will land, and the new order is saved when it is dropped.
+- **TASK-37** Tasks are put in a new order by dragging them. The task's title rides with the
+  pointer, and its row stays in the list, faded, while the other rows slide aside to show where it
+  will land; the new order is saved when it is dropped. A task can also be dropped on a list in the
+  sidebar to file it there (LST-25).
 - **TASK-38** A row can be picked up anywhere on it, or by the grip in the margin to its left. The
   grip shows when the pointer is over the row, and on a woken row. A press inside a text box being
   typed in selects text instead.
@@ -175,12 +178,13 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 ---
 
 **Where it lives:** `src/core/task.ts` (the rules), `src/core/due.ts` and `src/core/day.ts` (due dates), `src/core/emphasis.ts` (bold and italic, written
-down and read back), `src/core/lists.ts` (lists, the same), `src/app/components/AddTaskForm.tsx`,
+down and read back), `src/core/descriptionLists.ts` (lists, the same), `src/app/components/AddTaskForm.tsx`,
 `TaskList.tsx`, `TaskItem.tsx`, `ContextMenu.tsx` (a task's menu), `TaskDescription.tsx`, `src/app/descriptionBox.ts` (the box a
 description is written in), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx` (ordering), `src/core/order.ts`
-(where a task sits, moving it, and where a copy goes), `src/app/components/SortableTasks.tsx`,
-`src/app/useSortableTask.ts` and `src/app/dragSensors.ts` (dragging).
+(where a task sits, moving it, and where a copy goes), `src/app/components/TaskDragAndDrop.tsx`,
+`src/app/taskDrop.ts`, `src/app/components/SortableTasks.tsx`, `src/app/useSortableTask.ts` and
+`src/app/dragSensors.ts` (dragging).
 
-**Tested in:** `src/core/task.test.ts`, `src/core/emphasis.test.ts`, `src/core/lists.test.ts`,
-`src/core/order.test.ts`, `src/app/components/TaskList.test.tsx` (what a list says),
+**Tested in:** `src/core/task.test.ts`, `src/core/emphasis.test.ts`, `src/core/descriptionLists.test.ts`,
+`src/core/order.test.ts`, `src/app/taskDrop.test.ts` (what a drop does), `src/app/components/TaskList.test.tsx` (what a list says),
 `src/app/components/TaskItem.test.tsx` (the row, and its menu).

@@ -26,8 +26,9 @@ const pillOn = 'bg-neutral-200/80 dark:bg-neutral-800'
  *
  * Today, Week and Month share the first tab, which shows the one last chosen and
  * goes to it on a tap; holding it down opens a menu to switch. The rewards, the
- * tags and the trash have no tab — they are reached from the bottom of Tasks, so
- * Tasks stays marked while any of them is open, or a tag's list.
+ * lists, the tags and the trash have no tab — they are reached from the bottom of
+ * Tasks, so Tasks stays marked while any of them is open, or one list, the Inbox
+ * or a tag's tasks.
  */
 export function BottomNav({ view, onChange }: BottomNavProps) {
   // The period the first tab goes back to after leaving it: the last one on
@@ -68,7 +69,13 @@ export function BottomNav({ view, onChange }: BottomNavProps) {
           <li>
             <Tab
               value="tasks"
-              active={view === 'tasks' || view === 'rewards' || isUnder(view, 'trash') || isUnder(view, 'tags')}
+              active={
+                view === 'tasks' ||
+                view === 'rewards' ||
+                isUnder(view, 'trash') ||
+                isUnder(view, 'lists') ||
+                isUnder(view, 'tags')
+              }
               onClick={() => { onChange('tasks') }}
             />
           </li>

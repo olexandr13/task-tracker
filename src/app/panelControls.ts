@@ -1,7 +1,7 @@
 /**
  * The buttons inside panels that open in place — the date, repeat, tag and reward
- * pickers, a task's menu, the account menu, the tags offered while typing `#` — so
- * they share one compact size and change together. A panel is a quick aside, not a
+ * pickers, a task's menu, the tags offered while typing `#` — so they share one
+ * compact size and change together. A panel is a quick aside, not a
  * form: its buttons stay smaller than the screen's own.
  */
 

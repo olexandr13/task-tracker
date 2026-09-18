@@ -1,4 +1,13 @@
-import { isComplete, type LocalDay, type Placement, type Repeat, type SubtaskId, type Task, type TaskId } from '../../core'
+import {
+  isComplete,
+  type List,
+  type ListId,
+  type LocalDay,
+  type Repeat,
+  type SubtaskId,
+  type Task,
+  type TaskId,
+} from '../../core'
 import { SortableTasks } from './SortableTasks'
 import { TaskItem } from './TaskItem'
 
@@ -8,11 +17,12 @@ interface TaskListProps {
   now: Date
   /** Every tag in use, for a row to offer. */
   knownTags: readonly string[]
+  /** Every list there is, for a row to file its task under. */
+  lists: readonly List[]
   /** What an empty list says, pointing at the box above it. */
   emptyMessage: string
   /** What the list says above its tasks once every one of them is done. */
   allDoneMessage: string
-  onMove: (id: TaskId, targetId: TaskId, placement: Placement) => void
   onComplete: (id: TaskId) => void
   onUncomplete: (id: TaskId) => void
   onRename: (id: TaskId, title: string) => void
@@ -20,6 +30,7 @@ interface TaskListProps {
   onChangeDueDate: (id: TaskId, dueDate: LocalDay | null) => void
   onChangeRepeat: (id: TaskId, repeat: Repeat | null) => void
   onChangeReward: (id: TaskId, reward: number | null) => void
+  onChangeList: (id: TaskId, listId: ListId | null) => void
   onAddTag: (id: TaskId, name: string) => void
   onRemoveTag: (id: TaskId, name: string) => void
   onRemove: (id: TaskId) => void
@@ -34,9 +45,9 @@ export function TaskList({
   tasks,
   now,
   knownTags,
+  lists,
   emptyMessage,
   allDoneMessage,
-  onMove,
   onComplete,
   onUncomplete,
   onRename,
@@ -44,6 +55,7 @@ export function TaskList({
   onChangeDueDate,
   onChangeRepeat,
   onChangeReward,
+  onChangeList,
   onAddTag,
   onRemoveTag,
   onRemove,
@@ -69,13 +81,14 @@ export function TaskList({
         <p className="pt-4 pb-6 text-center text-green-700/70 dark:text-green-500/55">{allDoneMessage}</p>
       )}
       <ul className="flex flex-col gap-1">
-        <SortableTasks tasks={tasks} onMove={onMove}>
+        <SortableTasks tasks={tasks}>
           {tasks.map((task) => (
             <TaskItem
               key={task.id}
               task={task}
               now={now}
               knownTags={knownTags}
+              lists={lists}
               onComplete={onComplete}
               onUncomplete={onUncomplete}
               onRename={onRename}
@@ -83,6 +96,7 @@ export function TaskList({
               onChangeDueDate={onChangeDueDate}
               onChangeRepeat={onChangeRepeat}
               onChangeReward={onChangeReward}
+              onChangeList={onChangeList}
               onAddTag={onAddTag}
               onRemoveTag={onRemoveTag}
               onRemove={onRemove}

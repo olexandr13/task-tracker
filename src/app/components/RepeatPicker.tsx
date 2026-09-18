@@ -4,7 +4,7 @@ import type { RepeatDraft, RepeatKind } from '../repeatDraft'
 import { toRepeat } from '../repeatDraft'
 import { panelOption as option, panelOptionOff as optionOff, panelOptionOn as optionOn } from '../panelControls'
 import { WEEKDAYS, describeRepeat } from '../repeatLabels'
-import { controlOff, controlOn } from '../rowControls'
+import { controlOff, controlOn, rowControlIcon, rowControlLabel } from '../rowControls'
 import { RepeatIcon } from './RepeatIcon'
 
 const KINDS: readonly { readonly value: Exclude<RepeatKind, 'once'>; readonly label: string }[] = [
@@ -12,8 +12,6 @@ const KINDS: readonly { readonly value: Exclude<RepeatKind, 'once'>; readonly la
   { value: 'weekly', label: 'Weekly' },
   { value: 'monthly', label: 'Monthly' },
 ]
-
-const button = 'flex h-6 w-full items-center gap-1.5 rounded-lg px-2 text-sm leading-none transition-colors'
 
 const dayChip = 'size-6 rounded-full text-xs transition-colors'
 const dayChipOn = 'bg-blue-600 text-white hover:bg-blue-700'
@@ -69,6 +67,11 @@ export function RepeatPicker({ draft, onChange, label = 'Repeat', showRule = tru
   const rule = toRepeat(draft)
   const summary = rule === null ? 'Repeat' : describeRepeat(rule)
 
+  // Only as wide as it needs to be: a square around the icon when the value is
+  // not spelled out beside it.
+  const named = rule !== null && showRule
+  const button = `${named ? rowControlLabel : rowControlIcon} w-full`
+
   return (
     <div
       ref={root}
@@ -90,7 +93,7 @@ export function RepeatPicker({ draft, onChange, label = 'Repeat', showRule = tru
         className={rule === null ? `${button} ${controlOff}` : `${button} ${controlOn}`}
       >
         <RepeatIcon />
-        {rule !== null && showRule && <span className="max-w-28 truncate sm:max-w-48">{summary}</span>}
+        {named && <span className="max-w-28 truncate sm:max-w-48">{summary}</span>}
       </button>
 
       {isOpen && (

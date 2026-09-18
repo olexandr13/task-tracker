@@ -50,7 +50,7 @@ they are due. A tag is not a record of its own: it is a name written on the task
 ## A tag's list
 
 - **TAG-13** Every tag has **a list of its own**, opened from the Tags page (TAG-18): the live
-  tasks carrying it, in any case. It is the same list as Tasks otherwise (LIST-7) — the same rows,
+  tasks carrying it, in any case. It shows what Tasks shows otherwise (LIST-7) — the same rows,
   done tasks sinking, dragging, the rail — headed with the tag's name, and **Tags** stays marked in
   the sidebar while it is open. It is in the address as `#/tag/name` (UI-36), so it survives a
   reload even after the last task with the tag has gone, when it says there is nothing tagged yet.

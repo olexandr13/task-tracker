@@ -18,9 +18,9 @@ function setup(tasks: Task[]) {
       tasks={tasks}
       now={NOW}
       knownTags={[]}
+      lists={[]}
       emptyMessage={EMPTY}
       allDoneMessage={ALL_DONE}
-      onMove={vi.fn()}
       onComplete={vi.fn()}
       onUncomplete={vi.fn()}
       onRename={vi.fn()}
@@ -28,6 +28,7 @@ function setup(tasks: Task[]) {
       onChangeDueDate={vi.fn()}
       onChangeRepeat={vi.fn()}
       onChangeReward={vi.fn()}
+      onChangeList={vi.fn()}
       onAddTag={vi.fn()}
       onRemoveTag={vi.fn()}
       onRemove={vi.fn()}

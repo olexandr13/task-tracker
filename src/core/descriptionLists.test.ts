@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { EmphasisSpan } from './emphasis'
-import { listMarker, listStartedBy, parseDescription } from './lists'
+import { listMarker, listStartedBy, parseDescription } from './descriptionLists'
 
 function plain(text: string): EmphasisSpan {
   return { text, bold: false, italic: false }

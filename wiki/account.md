@@ -19,21 +19,24 @@ Who the app belongs to. Nothing is shown without an account, and the only way to
 ## Staying signed in
 
 - **AUTH-7** The browser remembers the session. A refresh, a closed tab or a restarted browser opens
-  straight onto the tasks, with or without a connection. Only signing in the first time needs one.
+  straight onto the tasks, with or without a connection. Only signing in the first time needs one —
+  including in an app added to an iPhone's home screen, which keeps its own session (OFF-11).
 - **AUTH-8** While the remembered session is being read back at start-up, the screen stays blank
   rather than flashing the sign-in screen at someone who is already signed in.
 
-## The account menu
+## The account on Settings
 
-- **AUTH-9** The signed-in account sits at the end of the heading as the mark of the service it
-  signed in through — Google's "G" on a white disc, the same mark as the sign-in button carries — on
-  every view, and on a phone as well, where the navigation is a bar of four tabs. Neither the Google
-  picture nor the name is shown there; the app does not keep the picture at all. A screen reader
-  hears it as the account, the name and the service.
-- **AUTH-10** Pressing it opens a panel with the name, the email address and **Sign out**. It closes
-  like any other panel: on a click outside or on Escape (UI-9, UI-10).
-- **AUTH-11** Signing out goes straight back to the sign-in screen without asking. Nothing is lost
-  by it.
+- **AUTH-9** The signed-in account is on the **Settings** page (UI-35), and nowhere else: the mark
+  of the service it signed in through — Google's "G" on a white disc, the same mark as the sign-in
+  button carries — then the name, the email address and which service it was. Neither the Google
+  picture nor the name of it is shown; the app does not keep the picture at all. A line the account
+  has not got is left out rather than left blank. Settings has a place in the sidebar and a tab in
+  the phone's bar alike, so the account is one tap away on a phone as well.
+- **AUTH-10** It is all on the page, not behind a button: a page of settings has the room to say it
+  outright, so there is no panel to open and nothing to close. The mark is decorative — the lines
+  beside it say who it is, so a screen reader hears it once.
+- **AUTH-11** **Sign out** sits beside them and goes straight back to the sign-in screen without
+  asking. Nothing is lost by it.
 
 ## Whose tasks
 
@@ -45,6 +48,6 @@ Who the app belongs to. Nothing is shown without an account, and the only way to
 **Where it lives:** `src/storage/authService.ts` (the interface), `firebaseAuthService.ts` and
 `firebaseApp.ts` (Google sign-in through Firebase, and the project it signs in to),
 `src/app/App.tsx` (nothing without an account), `src/app/useAuth.ts`,
-`src/app/components/SignInScreen.tsx`, `AccountMenu.tsx`. The project itself: `firebase.json`,
+`src/app/components/SignInScreen.tsx`, `AccountCard.tsx` (the account on Settings). The project itself: `firebase.json`,
 `.firebaserc`, `firestore.rules`; its settings: `.env.example`.
-**Tested in:** `src/app/components/SignInScreen.test.tsx`, `src/app/components/AccountMenu.test.tsx`.
+**Tested in:** `src/app/components/SignInScreen.test.tsx`, `src/app/components/AccountCard.test.tsx`.
