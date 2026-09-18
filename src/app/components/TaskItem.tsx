@@ -397,7 +397,9 @@ export function TaskItem({
 
       {/* Two lines sharing columns: the task's own, then what its controls hold, each
           detail under the column it belongs to. */}
-      <div ref={line} className={`grid ${lineColumns} items-center gap-x-2.5 px-2.5 py-1`}>
+      {/* The line's gap is the narrow one between the controls; the box and the title
+          each add to it, so the title stands apart from both. */}
+      <div ref={line} className={`grid ${lineColumns} items-center gap-x-1 px-2.5 py-1`}>
         <button
           type="button"
           onClick={(event) => {
@@ -415,7 +417,7 @@ export function TaskItem({
                 : `Mark "${task.title}" as done`
           }
           title={ready ? 'Time goal reached: ready to tick off' : undefined}
-          className={done ? completionBoxOn : ready ? completionBoxReady : completionBoxOff}
+          className={`${done ? completionBoxOn : ready ? completionBoxReady : completionBoxOff} mr-1.5`}
         >
           ✓
         </button>
@@ -424,7 +426,7 @@ export function TaskItem({
             rest of the line is the row to click, not the title. The box, once
             open, takes the whole of it to type into. The tags sit at the far end,
             and go under the title when there is no room beside it. */}
-        <div className="flex min-w-0 flex-wrap items-center gap-y-0.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-y-0.5 pr-1.5">
           {editedTitle === null ? (
             <>
               <button

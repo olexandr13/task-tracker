@@ -93,8 +93,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-27** The controls **line up down the list**: each is its icon alone, in a slot of its own
   that sits in the same place on every row, whatever the rows beside it hold; a repeating task keeps
   the date's slot empty (DUE-6). A slot is **no wider than the button in it** — an icon with no words
-  beside it is padded to a square — so the controls sit close together and read as one group at the
-  end of the row rather than as buttons scattered along it. On a phone the clock, the tag button and the reward's star have no slot on
+  beside it is padded to a square — and only a narrow gap is between one slot and the next, so the controls
+  sit close together and read as one group at the end of the row rather than as buttons scattered along it. On a phone the clock, the tag button and the reward's star have no slot on
   the line, and are on the woken row instead (TIME-10, TAG-16, RWD-8). What a control holds — the due date
   (DUE-5), the repeat rule (RPT-17), the checklist count (CHK-5), the time (TIME-12), the reward (RWD-7) — is not put
   beside its icon but on a **line of details under the task's line**, in muted small text, each
