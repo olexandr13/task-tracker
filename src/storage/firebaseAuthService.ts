@@ -1,5 +1,16 @@
 import { FirebaseError, type FirebaseApp } from 'firebase/app'
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, type User } from 'firebase/auth'
+import {
+  browserLocalPersistence,
+  browserPopupRedirectResolver,
+  browserSessionPersistence,
+  GoogleAuthProvider,
+  indexedDBLocalPersistence,
+  initializeAuth,
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut,
+  type User,
+} from 'firebase/auth'
 import type { Account, AuthService, SignInFailure } from './authService'
 
 /** Ways a sign-in ends that are the person changing their mind, not a fault. */
@@ -26,9 +37,18 @@ function toAccount(user: User): Account {
  * A popup rather than a redirect: a redirect back from the project's sign-in
  * domain relies on third-party storage that browsers now block, unless that
  * domain is proxied under the app's own — which this app has no server for.
+ *
+ * The popup's machinery — a script from Google and a hidden page from the
+ * project's sign-in domain — is loaded only when signing in, not at start-up.
+ * `getAuth` loads it at start-up on phones and holds back who is signed in
+ * until it has arrived, so a slow connection kept the app blank, and an
+ * installed app stuck on its splash screen (AUTH-14). The saved session is the
+ * same three places `getAuth` keeps it, so nobody already signed in is signed out.
  */
 export function createFirebaseAuthService(app: FirebaseApp): AuthService {
-  const auth = getAuth(app)
+  const auth = initializeAuth(app, {
+    persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+  })
   const google = new GoogleAuthProvider()
   // Always offer the account picker, so signing out is also the way to switch
   // to another Google account rather than being signed straight back into this one.
@@ -43,7 +63,7 @@ export function createFirebaseAuthService(app: FirebaseApp): AuthService {
 
     async signInWithGoogle() {
       try {
-        await signInWithPopup(auth, google)
+        await signInWithPopup(auth, google, browserPopupRedirectResolver)
         return null
       } catch (error: unknown) {
         const failure = failureOf(error)

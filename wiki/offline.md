@@ -10,8 +10,9 @@ reaches the account by itself once there is a connection again.
   code and icons — and the tasks come from the copy of the account the browser keeps (STORE-18).
   Signing in for the first time still needs a connection (AUTH-7).
 - **OFF-12** A new version of the app is fetched in the background whenever it is open with a
-  connection, and is what the **next** open or refresh gets. The page already open keeps the version
-  it loaded: it is never reloaded under the owner's hands, so nothing half-typed is lost to an update.
+  connection, and is what the **next** open or refresh gets — even while another tab or the
+  installed app is still open. The page already open keeps the version it loaded: it is never
+  reloaded under the owner's hands, so nothing half-typed is lost to an update.
 - **OFF-13** Only a build keeps the app offline — the hosted app (STORE-15) and `npm run preview`
   (`http://localhost:4173`, STORE-14). `npm run dev` does not, so what is being worked on is never
   served stale.

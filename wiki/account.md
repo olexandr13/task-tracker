@@ -23,6 +23,10 @@ Who the app belongs to. Nothing is shown without an account, and the only way to
   including in an app added to an iPhone's home screen, which keeps its own session (OFF-11).
 - **AUTH-8** While the remembered session is being read back at start-up, the screen stays blank
   rather than flashing the sign-in screen at someone who is already signed in.
+- **AUTH-14** Start-up never waits on the network: the session is read back from the device alone,
+  so the blank moment of AUTH-8 is gone at once on a slow or unreliable connection too, and an
+  installed app never sits on its splash screen. What Google's sign-in window needs is fetched only
+  when **Continue with Google** is pressed, which can make the window take a moment to open.
 
 ## The account on Settings
 

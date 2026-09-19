@@ -37,6 +37,12 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // What "takes over at once" above rests on. `autoUpdate` only turns these on
+        // with the default `injectRegister`; without them a new version waits until
+        // every open copy of the app is closed, which an installed app on a phone
+        // may never be.
+        skipWaiting: true,
+        clientsClaim: true,
         // Firebase's sign-in pages live under `/__/` when served from the app's own
         // domain; they must reach the network rather than get the app instead.
         navigateFallbackDenylist: [/^\/__\//],
