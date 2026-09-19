@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { skipOccurrence } from './due'
 import { periodRange, summarize } from './progress'
 import type { Repeat } from './repeat'
 import { addSubtask, completeTask, createTask, deleteTask, setDueDate, setSubtaskDone, type Task } from './task'
@@ -232,5 +233,26 @@ describe('a task with a checklist', () => {
     const partly = setSubtaskDone(listed, listed.subtasks[0].id, true, TUE_15)
 
     expect(summarize([partly], 'today', TUE_15).completed).toBe(0)
+  })
+})
+
+describe('summarize, with a skipped occurrence', () => {
+  it('leaves a skipped day out of the count, and the rest of the period in (RPT-34)', () => {
+    const skipped = skipOccurrence(task(DAILY), TUE_15)
+
+    expect(summarize([skipped], 'today', TUE_15).total).toBe(0)
+    expect(summarize([skipped], 'week', TUE_15).total).toBe(1)
+  })
+
+  it('leaves a week out whose only occurrence was skipped (RPT-34)', () => {
+    const skipped = skipOccurrence(task(MONDAYS), TUE_15)
+
+    expect(summarize([skipped], 'week', TUE_15).total).toBe(0)
+  })
+
+  it('counts it done once ticked off after all (RPT-36)', () => {
+    const done = completeTask(skipOccurrence(task(DAILY), TUE_15), TUE_15_EVENING)
+
+    expect(summarize([done], 'today', TUE_15_EVENING)).toMatchObject({ completed: 1, total: 1 })
   })
 })

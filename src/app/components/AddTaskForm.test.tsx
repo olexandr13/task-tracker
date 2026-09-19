@@ -19,7 +19,7 @@ function setup(defaultDueDate: LocalDay | null) {
 }
 
 const box = () => screen.getByRole('textbox', { name: 'Add task' })
-const dueButton = () => screen.queryByRole('button', { name: /^Due date:/ })
+const scheduleButton = () => screen.getByRole('button', { name: /^Schedule:/ })
 
 describe('AddTaskForm', () => {
   it('adds a task with no day in the full list (DUE-3)', async () => {
@@ -33,7 +33,7 @@ describe('AddTaskForm', () => {
   it('starts a task on the list’s own day, so one added in Today is due today (LIST-6)', async () => {
     const { user, onAdd } = setup('2026-09-16')
 
-    expect(dueButton()).toHaveProperty('ariaLabel', 'Due date: Today')
+    expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Today')
     await user.type(box(), 'file taxes{Enter}')
 
     expect(onAdd).toHaveBeenCalledWith('file taxes', null, '2026-09-16')
@@ -42,21 +42,22 @@ describe('AddTaskForm', () => {
   it('adds with the day chosen, then goes back to the list’s own day for the next task (DUE-4)', async () => {
     const { user, onAdd } = setup('2026-09-16')
 
-    await user.click(dueButton()!)
+    await user.click(scheduleButton())
     await user.click(screen.getByRole('button', { name: /^Tomorrow/ }))
     await user.type(box(), 'file taxes{Enter}')
 
     expect(onAdd).toHaveBeenLastCalledWith('file taxes', null, '2026-09-17')
-    expect(dueButton()).toHaveProperty('ariaLabel', 'Due date: Today')
+    expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Today')
   })
 
   it('gives way to a repeat rule, which says which days the task is due (DUE-6)', async () => {
     const { user, onAdd } = setup('2026-09-16')
 
-    await user.click(screen.getByRole('button', { name: /^Repeat:/ }))
+    await user.click(scheduleButton())
     await user.click(screen.getByRole('button', { name: 'Daily' }))
 
-    expect(dueButton()).toBeNull()
+    expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Daily')
+    expect(scheduleButton().textContent).toBe('Daily')
     await user.type(box(), 'stretch{Enter}')
     expect(onAdd).toHaveBeenCalledWith('stretch', { kind: 'daily' }, null)
   })

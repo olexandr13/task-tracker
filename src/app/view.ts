@@ -16,7 +16,8 @@ import {
  *
  * Most of them show tasks — the ones for today, this week and this month, every
  * task, the Inbox, one list's and the ones carrying a tag — and share everything
- * but which tasks they show and what a task added to them starts with. Habits,
+ * but which tasks they show, what a task added to them starts with and whether
+ * their done tasks are divided by when they were finished. Habits,
  * rewards, the lists, the tags, the trash and settings are screens of their own.
  *
  * "View" is this file's word for a screen. What the owner calls a **list** is
@@ -121,6 +122,15 @@ export function showsTask(view: TaskView, task: Task, now: Date, lists: readonly
   if (isOneListView(view)) return isInList(task, viewListId(view))
   if (isTagView(view)) return hasTag(task, viewTag(view))
   return isInPeriod(task, view, now)
+}
+
+/**
+ * Whether the view divides its done tasks by when they were finished. Tasks does:
+ * it holds every done task there is, however long ago, and one run of them would
+ * bury today's work under last month's. The others keep one run of done tasks.
+ */
+export function groupsDoneTasks(view: TaskView): boolean {
+  return view === 'tasks'
 }
 
 /** The day a task added to the view starts on: the last day of its period, if it has one. */

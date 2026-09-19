@@ -17,6 +17,7 @@ import {
   isRepeating,
   renameTask,
   restoreTask,
+  scheduleOnce,
   setDescription,
   setDueDate,
   setRepeat,
@@ -351,6 +352,23 @@ describe('setDueDate', () => {
     const dated = setDueDate(createTask('stretch', null, NOW), '2026-09-20')
 
     expect(setRepeat(dated, { kind: 'daily' }, NOW).dueDate).toBeNull()
+  })
+})
+
+describe('scheduleOnce', () => {
+  it('ends a repeating task\'s rule and gives it the day, as choosing Once then a day would', () => {
+    const daily = createTask('stretch', { kind: 'daily' }, NOW)
+    const once = scheduleOnce(daily, '2026-09-20', LATER)
+
+    expect(once).toEqual(setDueDate(setRepeat(daily, null, LATER), '2026-09-20'))
+    expect(once.repeat).toBeNull()
+    expect(once.dueDate).toBe('2026-09-20')
+  })
+
+  it('sets the day on a one-off and nothing else', () => {
+    const task = createTask('file taxes', null, NOW)
+
+    expect(scheduleOnce(task, '2026-09-20', LATER)).toEqual(setDueDate(task, '2026-09-20'))
   })
 })
 

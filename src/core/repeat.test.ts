@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { InvalidRepeatError, assertValidRepeat, currentOccurrence, repeatsEveryDay, type Repeat } from './repeat'
+import {
+  InvalidRepeatError,
+  assertValidRepeat,
+  currentOccurrence,
+  nextOccurrence,
+  repeatsEveryDay,
+  type Repeat,
+} from './repeat'
 
 // Local dates on purpose: occurrences are local days. September 2026 runs
 // Mon 14, Tue 15, Wed 16, Thu 17, Fri 18, Sat 19, Sun 20, Mon 21.
@@ -99,5 +106,20 @@ describe('repeatsEveryDay', () => {
     expect(repeatsEveryDay({ kind: 'weekly', weekdays: [1, 2, 3, 4, 5, 6] })).toBe(false)
     expect(repeatsEveryDay({ kind: 'weekly', weekdays: [1, 1, 2, 3, 4, 5, 6] })).toBe(false)
     expect(repeatsEveryDay({ kind: 'monthly', day: 1 })).toBe(false)
+  })
+})
+
+describe('nextOccurrence', () => {
+  it('is the next day the rule falls on, never the day itself', () => {
+    const wednesday = new Date(2026, 8, 16, 21, 0)
+
+    expect(nextOccurrence({ kind: 'daily' }, wednesday)).toEqual(new Date(2026, 8, 17))
+    expect(nextOccurrence({ kind: 'weekly', weekdays: [1, 3] }, wednesday)).toEqual(new Date(2026, 8, 21))
+    expect(nextOccurrence({ kind: 'monthly', day: 16 }, wednesday)).toEqual(new Date(2026, 9, 16))
+  })
+
+  it('lands a monthly 31st on the last day of a short month', () => {
+    expect(nextOccurrence({ kind: 'monthly', day: 31 }, new Date(2027, 0, 31))).toEqual(new Date(2027, 1, 28))
+    expect(nextOccurrence({ kind: 'monthly', day: 31 }, new Date(2027, 1, 28))).toEqual(new Date(2027, 2, 31))
   })
 })

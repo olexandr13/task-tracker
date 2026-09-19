@@ -1,5 +1,14 @@
-import { useEffect, useEffectEvent, useLayoutEffect, useRef, type KeyboardEvent, type SyntheticEvent } from 'react'
-import { panelItem, panelOptionOn } from '../panelControls'
+import { Fragment, type KeyboardEvent, type ReactNode } from 'react'
+import {
+  panelHeading as heading,
+  panelIcon,
+  panelIconOff,
+  panelIconOn,
+  panelIconRow,
+  panelItem,
+  panelOptionOn,
+} from '../panelControls'
+import { FloatingPanel } from './FloatingPanel'
 
 export interface ContextMenuItem {
   label: string
@@ -17,7 +26,24 @@ export interface ContextMenuGroup {
   items: readonly ContextMenuItem[]
 }
 
-export type ContextMenuEntry = ContextMenuItem | ContextMenuGroup
+/** An item drawn as an icon alone: its label is its name, and its tooltip unless it has a hint. */
+export interface ContextMenuIcon extends ContextMenuItem {
+  icon: ReactNode
+  /** The tooltip, where it says more than the label, such as the day a choice sets. */
+  hint?: string
+}
+
+/**
+ * Quick choices that belong together, laid out as one row of icons under a
+ * heading of their own — choices used often enough that a line of words each
+ * would crowd the rest of the menu out.
+ */
+export interface ContextMenuIconGroup {
+  group: string
+  icons: readonly ContextMenuIcon[]
+}
+
+export type ContextMenuEntry = ContextMenuItem | ContextMenuGroup | ContextMenuIconGroup
 
 interface ContextMenuProps {
   /** Where it was asked for, in window pixels. */
@@ -34,30 +60,28 @@ interface ContextMenuProps {
   onClose: () => void
 }
 
-/** How close to the window's edge the menu may come. */
-const margin = 8
-
 /** Every kind of item the arrow keys move between. */
 const ITEMS = '[role="menuitem"], [role="menuitemradio"]'
 
 const item = `${panelItem} whitespace-nowrap transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800`
 const itemOff =
   'text-neutral-700 hover:text-neutral-900 focus-visible:text-neutral-900 dark:text-neutral-200 dark:hover:text-neutral-100 dark:focus-visible:text-neutral-100'
+const iconItem = `${panelIcon} focus-visible:bg-neutral-100 focus-visible:outline-none dark:focus-visible:bg-neutral-800`
+const iconOff = `${panelIconOff} focus-visible:text-neutral-900 dark:focus-visible:text-neutral-100`
+const group = 'flex flex-col gap-0.5'
 
 /**
- * Nothing inside the menu reaches whatever holds it: a click on an item is not a
- * click on the row, and focus moving into the menu is not focus on the row.
+ * Which item a key moves to, round from the last to the first and back; null for
+ * a key that moves nothing. Left and right step along a row of icons, and are
+ * the same step as down and up everywhere else.
  */
-function keepInside(event: SyntheticEvent) {
-  event.stopPropagation()
-}
-
-/** Which item a key moves to, round from the last to the first and back; null for a key that moves nothing. */
 function nextOption(key: string, at: number, count: number): number | null {
   switch (key) {
     case 'ArrowDown':
+    case 'ArrowRight':
       return (at + 1) % count
     case 'ArrowUp':
+    case 'ArrowLeft':
       return at <= 0 ? count - 1 : at - 1
     case 'Home':
       return 0
@@ -70,71 +94,18 @@ function nextOption(key: string, at: number, count: number): number | null {
 
 /**
  * A menu of things to do, opened where the pointer was — what a right-click
- * brings up. It opens with its corner at the pointer, and on the other side of
- * it where the window runs out.
- *
- * It closes when an item is chosen, on Escape or Tab, on a click outside it, and
- * when the page scrolls or the window changes size, since it would then be left
- * floating away from what it was opened on. Focus goes back to where it was.
+ * brings up. It floats at the pointer and closes as a floating panel does
+ * (FloatingPanel), and also when an item is chosen or on Tab.
  */
 export function ContextMenu({ x, y, label, items, fromKeyboard = false, onClose }: ContextMenuProps) {
-  const root = useRef<HTMLDivElement>(null)
-  // The listeners below are set up once, not again on every render of whatever holds the menu.
-  const close = useEffectEvent(onClose)
-
-  useLayoutEffect(() => {
-    const menu = root.current
-    if (menu === null) return
-
-    const { width, height } = menu.getBoundingClientRect()
-    menu.style.left = `${String(x + width > window.innerWidth - margin ? Math.max(margin, x - width) : x)}px`
-    menu.style.top = `${String(y + height > window.innerHeight - margin ? Math.max(margin, y - height) : y)}px`
-  }, [x, y])
-
-  useLayoutEffect(() => {
-    const menu = root.current
-    const previous = document.activeElement
-    // Into the menu either way, so the arrow keys and Escape work straight away.
-    const start = fromKeyboard ? menu?.querySelector<HTMLElement>(ITEMS) : menu
-    start?.focus({ preventScroll: true })
-
-    return () => {
-      if (menu?.contains(document.activeElement) === true && previous instanceof HTMLElement) {
-        previous.focus({ preventScroll: true })
-      }
-    }
-  }, [fromKeyboard])
-
-  useEffect(() => {
-    function handlePointerDown(event: PointerEvent) {
-      if (!root.current?.contains(event.target as Node)) close()
-    }
-
-    function handleMove() {
-      close()
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    // Capturing, so a scroll inside any part of the page counts too.
-    window.addEventListener('scroll', handleMove, true)
-    window.addEventListener('resize', handleMove)
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown)
-      window.removeEventListener('scroll', handleMove, true)
-      window.removeEventListener('resize', handleMove)
-    }
-  }, [])
-
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    event.stopPropagation()
-
-    if (event.key === 'Escape' || event.key === 'Tab') {
+    if (event.key === 'Tab') {
       event.preventDefault()
       onClose()
       return
     }
 
-    const options = Array.from(root.current?.querySelectorAll<HTMLElement>(ITEMS) ?? [])
+    const options = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(ITEMS))
     const next = nextOption(event.key, options.indexOf(document.activeElement as HTMLElement), options.length)
     if (next === null) return
 
@@ -143,50 +114,65 @@ export function ContextMenu({ x, y, label, items, fromKeyboard = false, onClose 
   }
 
   return (
-    <div
-      ref={root}
+    <FloatingPanel
+      x={x}
+      y={y}
       role="menu"
-      aria-label={label}
-      tabIndex={-1}
-      style={{ left: x, top: y }}
+      label={label}
+      // Opened from the keyboard it starts on its first item; by a pointer nothing is
+      // picked out, and the arrow keys start from the top.
+      focusFirst={fromKeyboard ? ITEMS : undefined}
+      onClose={onClose}
       onKeyDown={handleKeyDown}
-      onClick={keepInside}
-      onMouseDown={keepInside}
-      onTouchStart={keepInside}
-      onFocus={keepInside}
-      onBlur={keepInside}
-      onContextMenu={(event) => {
-        event.preventDefault()
-        event.stopPropagation()
-      }}
-      // Never taller than the window: a long run of choices scrolls inside it instead.
-      className="fixed z-30 flex max-h-[calc(100dvh-16px)] max-w-72 min-w-40 flex-col gap-0.5 overflow-y-auto rounded-xl border border-neutral-200 bg-white p-1 shadow-xl focus:outline-none dark:border-neutral-700 dark:bg-neutral-900"
+      // A long run of choices scrolls inside it rather than running off the window.
+      className="max-w-72 min-w-40 overflow-y-auto"
     >
-      {items.map((entry, index) =>
-        'group' in entry ? (
-          <div
-            key={index}
-            role="group"
-            aria-label={entry.group}
-            className="flex flex-col gap-0.5 border-neutral-200 not-first:mt-0.5 not-first:border-t not-first:pt-1 dark:border-neutral-800"
-          >
-            {/* The group's name is its label already; this is the same words for the eye. */}
-            <p aria-hidden="true" className={heading}>
-              {entry.group}
-            </p>
-            {entry.items.map((choice, at) => (
-              <MenuItem key={at} {...choice} onClose={onClose} />
-            ))}
-          </div>
-        ) : (
-          <MenuItem key={index} {...entry} onClose={onClose} />
-        ),
-      )}
-    </div>
+      {items.map((entry, index) => (
+        <Fragment key={index}>
+          {/* A group is set off by a line from whatever is next to it, on either side. */}
+          {index > 0 && ('group' in entry || 'group' in items[index - 1]) && (
+            <div role="separator" className="my-0.5 border-t border-neutral-200 dark:border-neutral-800" />
+          )}
+          <MenuEntry entry={entry} onClose={onClose} />
+        </Fragment>
+      ))}
+    </FloatingPanel>
   )
 }
 
-const heading = 'px-2 pt-0.5 text-[11px] font-medium text-neutral-400 dark:text-neutral-500'
+/** One entry of the menu: an item, a group of them, or a row of icons. */
+function MenuEntry({ entry, onClose }: { entry: ContextMenuEntry; onClose: () => void }) {
+  if ('icons' in entry) {
+    return (
+      <div role="group" aria-label={entry.group} className={group}>
+        <p aria-hidden="true" className={heading}>
+          {entry.group}
+        </p>
+        <div className={panelIconRow}>
+          {entry.icons.map((choice, at) => (
+            <MenuIcon key={at} {...choice} onClose={onClose} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if ('group' in entry) {
+    return (
+      <div role="group" aria-label={entry.group} className={group}>
+        {/* The group's name is its label already; this is the same words for the eye. */}
+        <p aria-hidden="true" className={heading}>
+          {entry.group}
+        </p>
+        {entry.items.map((choice, at) => (
+          <MenuItem key={at} {...choice} onClose={onClose} />
+        ))}
+      </div>
+    )
+  }
+
+  return <MenuItem {...entry} onClose={onClose} />
+}
 
 function MenuItem({ label, onSelect, checked, onClose }: ContextMenuItem & { onClose: () => void }) {
   return (
@@ -206,6 +192,25 @@ function MenuItem({ label, onSelect, checked, onClose }: ContextMenuItem & { onC
         </span>
       )}
       <span className="min-w-0 truncate">{label}</span>
+    </button>
+  )
+}
+
+function MenuIcon({ label, hint, icon, onSelect, checked, onClose }: ContextMenuIcon & { onClose: () => void }) {
+  return (
+    <button
+      type="button"
+      role={checked === undefined ? 'menuitem' : 'menuitemradio'}
+      aria-checked={checked}
+      aria-label={label}
+      title={hint ?? label}
+      onClick={() => {
+        onClose()
+        onSelect()
+      }}
+      className={checked === true ? `${iconItem} ${panelIconOn}` : `${iconItem} ${iconOff}`}
+    >
+      {icon}
     </button>
   )
 }

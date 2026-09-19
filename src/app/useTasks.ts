@@ -24,6 +24,7 @@ import {
   renameTask,
   restoreTask,
   rewardChanges,
+  scheduleOnce,
   setDescription,
   setDoneOnDay,
   setDueDate,
@@ -31,6 +32,7 @@ import {
   setReward,
   setSubtaskDone,
   setTimeGoal,
+  skipOccurrence,
   tagsInUse,
   uncompleteTask,
   type ListId,
@@ -159,9 +161,22 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
     [apply],
   )
 
+  // A day picked for a repeating task ends its rule: only a one-off carries a date.
   const changeDueDate = useCallback(
     (id: TaskId, dueDate: LocalDay | null) => {
-      apply((current) => current.map((task) => (task.id === id ? setDueDate(task, dueDate) : task)))
+      apply((current) =>
+        current.map((task) =>
+          task.id !== id ? task : dueDate === null ? setDueDate(task, null) : scheduleOnce(task, dueDate),
+        ),
+      )
+    },
+    [apply],
+  )
+
+  /** Passes over a repeating task's occurrence, so it is due on the rule's next day. It earns nothing. */
+  const skip = useCallback(
+    (id: TaskId) => {
+      apply((current) => current.map((task) => (task.id === id ? skipOccurrence(task) : task)))
     },
     [apply],
   )
@@ -349,6 +364,7 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
     rename,
     changeDescription,
     changeDueDate,
+    skip,
     changeRepeat,
     changeReward,
     changeTimeGoal,

@@ -1,4 +1,4 @@
-/** The downward chevron that marks something folded away, turned over while it is open. */
+/** A downward chevron, marking something that folds away: each place turns it as it needs. */
 export function ChevronIcon({ className }: { className?: string }) {
   return (
     <svg

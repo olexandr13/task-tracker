@@ -142,6 +142,18 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   is open again, the praise goes.
 - **TASK-20** Until the saved tasks have loaded, the list area says it is loading rather than
   flashing an empty list.
+- **TASK-56** On **Tasks**, the done tasks are divided by when they were finished, each span under
+  a small, muted gray heading with its count, the spans set close together: **Done today**, **Done yesterday**, **Done in the last 7 days**, **Done
+  in the last 30 days** and **Done earlier**, most recent first. The spans count back in local days
+  and each leaves out the ones before it, so a task is under exactly one; a span with nothing in it
+  has no heading. Tasks still to do stay above, with no heading. Today, Week, Month, the Inbox, lists
+  and tags keep one run of done tasks.
+- **TASK-57** A repeating task is under the span of its latest completion while that completion
+  still covers the occurrence in play (TASK-18); once the next occurrence comes it is back among the
+  tasks to do. A completion stamped later than today, by a device whose clock ran ahead, counts as
+  today's.
+- **TASK-58** Nothing is rewritten when the day turns: what is under each heading follows from the
+  day it is, so a page left open moves yesterday's work along on its next render (PRIN-2).
 
 ## Moving
 
@@ -160,7 +172,9 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   position as it moves.
 - **TASK-41** A task moves only within its own group. A to-do task can't be dropped among done
   ones, or a done task among to-do ones. Completing a task, or un-completing it, is what moves it
-  between the two, and it goes back to its place in the order when it returns.
+  between the two, and it goes back to its place in the order when it returns. On Tasks a done task
+  moves only among those under its own heading (TASK-56): a drag never changes when a task was
+  finished.
 - **TASK-42** A task keeps its place while it is in the trash: restoring it puts it back where it
   was. New tasks still join the end (TASK-7).
 - **TASK-43** A move changes the moved task's `order` and nothing else, so it counts for nothing in
@@ -174,14 +188,15 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-52** The copy is a task of its own — its own id, stamped as created now — and each item on
   its checklist is its own too, so changing one never changes the other.
 - **TASK-53** It carries **none of what happened** to the original: it is not done, its checklist is
-  unticked, it has no time logged (TIME-9), and a repeating one starts with no history of done days,
-  so a duplicated habit starts its streak afresh. A copy is another go at the same thing, not a second record of the first.
+  unticked, it has no time logged (TIME-9), and a repeating one starts with no history of done days
+  and no skipped occurrences (RPT-34), so a duplicated habit starts its streak afresh. A copy is another go at the same thing, not a second record of the first.
 - **TASK-54** The copy goes **just below the original**, among the tasks still to do (TASK-17). The
   original is left exactly as it was.
 
 ---
 
-**Where it lives:** `src/core/task.ts` (the rules), `src/core/due.ts` and `src/core/day.ts` (due dates), `src/core/emphasis.ts` (bold and italic, written
+**Where it lives:** `src/core/task.ts` (the rules), `src/core/completed.ts` (the spans done tasks are
+divided into), `src/app/completionLabels.ts` (their headings), `src/core/due.ts` and `src/core/day.ts` (due dates), `src/core/emphasis.ts` (bold and italic, written
 down and read back), `src/core/descriptionLists.ts` (lists, the same), `src/app/components/AddTaskForm.tsx`,
 `TaskList.tsx`, `TaskItem.tsx`, `ContextMenu.tsx` (a task's menu), `TaskDescription.tsx`, `src/app/descriptionBox.ts` (the box a
 description is written in), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx` (ordering), `src/core/order.ts`
@@ -189,6 +204,6 @@ description is written in), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx` (or
 `src/app/taskDrop.ts`, `src/app/components/SortableTasks.tsx`, `src/app/useSortableTask.ts` and
 `src/app/dragSensors.ts` (dragging).
 
-**Tested in:** `src/core/task.test.ts`, `src/core/emphasis.test.ts`, `src/core/descriptionLists.test.ts`,
+**Tested in:** `src/core/task.test.ts`, `src/core/completed.test.ts`, `src/core/emphasis.test.ts`, `src/core/descriptionLists.test.ts`,
 `src/core/order.test.ts`, `src/app/taskDrop.test.ts` (what a drop does), `src/app/components/TaskList.test.tsx` (what a list says),
 `src/app/components/TaskItem.test.tsx` (the row, and its menu).

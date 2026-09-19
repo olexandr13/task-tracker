@@ -11,17 +11,13 @@ export function describeDueDate(day: LocalDay, now: Date): string {
   if (day === today) return 'Today'
   if (day === offsetDay(today, 1)) return 'Tomorrow'
   if (day === offsetDay(today, -1)) return 'Yesterday'
+  return describeShortDate(day, now)
+}
 
+/** A short date — "Sep 20" — with the year only when it is not this one: "Sep 20" is plainly this September. */
+export function describeShortDate(day: LocalDay, now: Date): string {
   const date = startOfLocalDay(day)
-  // The year only when it is not this one: "Sep 20" is plainly this September.
   return date.getFullYear() === now.getFullYear()
     ? new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' }).format(date)
     : new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
-}
-
-/** The day spelled out beside a quick choice, so "Next week" says which day that is. */
-export function describeWeekday(day: LocalDay): string {
-  return new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric' }).format(
-    startOfLocalDay(day),
-  )
 }

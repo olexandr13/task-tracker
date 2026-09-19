@@ -19,7 +19,8 @@ export function TagList({ tags, onOpen, onDelete }: TagListProps) {
   if (tags.length === 0) {
     return (
       <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">
-        No tags yet. Tag a task with its # button, or type # in its description.
+        No tags yet. Tag a task from its menu — right-click it, or open it on a phone — or type # in its
+        description.
       </p>
     )
   }

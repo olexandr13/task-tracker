@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   countInboxOpen,
+  groupByCompletion,
   habitTasks,
   isComplete,
   liveTasks,
@@ -19,6 +20,8 @@ import { createFirestoreRewardRepository } from '../storage/firestoreRewardRepos
 import { createFirestoreSyncMonitor } from '../storage/firestoreSyncMonitor'
 import { createFirestoreTaskRepository } from '../storage/firestoreTaskRepository'
 import { localStorageQuoteRepository } from '../storage/localStorageQuoteRepository'
+import { localStorageSideNavRepository } from '../storage/localStorageSideNavRepository'
+import { localStorageViewOptionsRepository } from '../storage/localStorageViewOptionsRepository'
 import { importLocalTasks } from '../storage/localTaskImport'
 import { quotableQuoteSource } from '../storage/quotableQuoteSource'
 import { AddTaskForm } from './components/AddTaskForm'
@@ -40,16 +43,20 @@ import { TaskList } from './components/TaskList'
 import { TrashIcon } from './components/TrashIcon'
 import { TrashList } from './components/TrashList'
 import { UndoToast } from './components/UndoToast'
+import { ViewOptionsMenu } from './components/ViewOptionsMenu'
 import { useLists } from './useLists'
 import { useQuote } from './useQuote'
 import { useRewards } from './useRewards'
+import { useSideNav } from './useSideNav'
 import { useSyncNotice } from './useSyncNotice'
 import { useTasks } from './useTasks'
 import { useUndoToast } from './useUndoToast'
 import { useView } from './useView'
+import { useViewOptions } from './useViewOptions'
 import {
   allDoneMessage,
   emptyMessage,
+  groupsDoneTasks,
   isTaskView,
   newTaskDueDay,
   newTaskListId,
@@ -116,6 +123,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     rename,
     changeDescription,
     changeDueDate,
+    skip,
     changeRepeat,
     changeReward,
     changeTimeGoal,
@@ -140,6 +148,10 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   const rewards = useRewards(rewardRepository)
   const lists = useLists(listRepository)
   const [view, setView] = useView()
+  // How the task views are shown: one set for all of them, kept on this device.
+  const [viewOptions, setViewOptions] = useViewOptions(localStorageViewOptionsRepository)
+  // Which of the sidebar's groups are folded away, kept on this device too.
+  const [sideNav, setSideNav] = useSideNav(localStorageSideNavRepository)
   const undo = useUndoToast()
   const syncNotice = useSyncNotice(syncMonitor)
 
@@ -154,9 +166,14 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   const tags = tagsInUse(live)
 
   // Done tasks sink to the bottom; sort is stable, so each group keeps the order
-  // it was given. A repeating task is only done for its current occurrence.
+  // it was given. A repeating task is only done for its current occurrence. A
+  // view dividing its done tasks by when they were finished puts the most recent
+  // first, the order its headings come in.
   const shown = isTaskView(view) ? live.filter((task) => showsTask(view, task, now, lists.lists)) : live
-  const ordered = sortByOrder(shown).sort((a, b) => Number(isComplete(a, now)) - Number(isComplete(b, now)))
+  const groupDone = isTaskView(view) && groupsDoneTasks(view)
+  const ordered = groupDone
+    ? groupByCompletion(sortByOrder(shown), now).flatMap((group) => group.tasks)
+    : sortByOrder(shown).sort((a, b) => Number(isComplete(a, now)) - Number(isComplete(b, now)))
 
   // The same `now` once more: which quote is today's is derived from the day it
   // falls in, so the quote and the bars can't disagree about which day it is.
@@ -206,7 +223,13 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
       {/* Around the navigation as well as the rows: a task can be dropped on a list in the sidebar to file it. */}
       <TaskDragAndDrop tasks={ordered} onMove={move} onFile={changeList}>
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-6">
-          <SideNav view={view} lists={lists.lists} onChange={setView} />
+          <SideNav
+            view={view}
+            lists={lists.lists}
+            listsOpen={sideNav.listsOpen}
+            onChange={setView}
+            onListsOpenChange={(listsOpen) => { setSideNav({ ...sideNav, listsOpen }) }}
+          />
 
           <div className="flex min-w-0 flex-1 flex-col gap-5">
             {view === 'settings' ? (
@@ -231,15 +254,23 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
               <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
             ) : isTaskView(view) ? (
               <>
-                {/* Keyed by the view, so switching views starts the box on that view's day. */}
-                <AddTaskForm
-                  key={view}
-                  now={now}
-                  defaultDueDate={newTaskDueDay(view, now)}
-                  onAdd={(title, repeat, dueDate) => {
-                    addTask(title, repeat, dueDate, newTaskTags(view), newTaskListId(view))
-                  }}
-                />
+                {/* The View button beside the box rather than in it: the box's own controls are
+                    for the task being added, the button is for how the tasks below are shown. */}
+                <div className="flex gap-2">
+                  <div className="min-w-0 flex-1">
+                    {/* Keyed by the view, so switching views starts the box on that view's day. */}
+                    <AddTaskForm
+                      key={view}
+                      now={now}
+                      defaultDueDate={newTaskDueDay(view, now)}
+                      onAdd={(title, repeat, dueDate) => {
+                        addTask(title, repeat, dueDate, newTaskTags(view), newTaskListId(view))
+                      }}
+                    />
+                  </div>
+
+                  <ViewOptionsMenu options={viewOptions} onChange={setViewOptions} />
+                </div>
 
                 <section aria-label={viewLabel(view, lists.lists)}>
                   <TaskList
@@ -247,6 +278,8 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     now={now}
                     knownTags={tags}
                     lists={lists.lists}
+                    showDetails={viewOptions.showDetails}
+                    groupDone={groupDone}
                     emptyMessage={emptyMessage(view, lists.lists)}
                     allDoneMessage={allDoneMessage(view, lists.lists)}
                     onComplete={complete}
@@ -254,6 +287,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     onRename={rename}
                     onChangeDescription={changeDescription}
                     onChangeDueDate={changeDueDate}
+                    onSkipOccurrence={skip}
                     onChangeRepeat={changeRepeat}
                     onChangeReward={changeReward}
                     onChangeTimeGoal={changeTimeGoal}

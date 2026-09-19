@@ -13,7 +13,9 @@ separately, on the [Rewards](rewards.md) page.
   "done at some point this week" is exactly what the saved data can answer — a daily task counts
   once towards the week, not seven times.
 - **PROG-4** A task belongs to a period when an occurrence of its rule falls inside that period,
-  when its due date does, or when it was completed inside it.
+  when its due date does, or when it was completed inside it. A **skipped** occurrence (RPT-34) asks
+  nothing of its day, so a daily task skipped today is out of today's count and still in the week's,
+  and a weekly task whose only occurrence this week was skipped is out of the week.
 - **PROG-5** A task that happens once with no due date sits in every period's count until it is
   done. One with a due date belongs to the period its day falls in and, while it is still to do, to
   every later period as well — letting it slip does not take it out of the count. Done, either kind

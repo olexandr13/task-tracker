@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { dueDay, isInPeriod, isOverdue, lastDayOf, nextWeekDueDay } from './due'
+import { canSkipOccurrence, dueDay, isInPeriod, isOverdue, lastDayOf, nextWeekDueDay, skipOccurrence } from './due'
 import type { Repeat } from './repeat'
-import { completeTask, createTask, deleteTask, setDueDate, type Task } from './task'
+import { completeTask, createTask, deleteTask, duplicateTask, setDueDate, uncompleteTask, type Task } from './task'
 
 // Local dates on purpose: due days are local days. September 2026 runs
 // Mon 14, Tue 15, Wed 16, Thu 17, Fri 18, and the week closes on Sun 20.
@@ -234,5 +234,65 @@ describe('nextWeekDueDay', () => {
 
   it('crosses the end of a month and a year', () => {
     expect(nextWeekDueDay(new Date(2026, 11, 30, 9, 0))).toBe('2027-01-10')
+  })
+})
+
+describe('skipOccurrence', () => {
+  it('moves a repeating task on to the rule\'s next day, not done (RPT-34)', () => {
+    const skipped = skipOccurrence(repeating(DAILY), WED_16)
+
+    expect(skipped.skippedDays).toEqual(['2026-09-16'])
+    expect(dueDay(skipped, WED_16)).toBe('2026-09-17')
+    expect(skipped.completedAt).toBeNull()
+    expect(skipped.doneDays).toEqual([])
+  })
+
+  it('passes over a missed occurrence, so it is no longer overdue (RPT-34)', () => {
+    const missed = repeating(MONDAYS)
+    expect(isOverdue(missed, WED_16)).toBe(true)
+
+    const skipped = skipOccurrence(missed, WED_16)
+
+    expect(dueDay(skipped, WED_16)).toBe('2026-09-21')
+    expect(isOverdue(skipped, WED_16)).toBe(false)
+    expect(isInWeek(skipped, WED_16)).toBe(false)
+  })
+
+  it('takes the task out of Today, and it comes back on its next day (RPT-34)', () => {
+    const skipped = skipOccurrence(repeating(DAILY), WED_16)
+
+    expect(isInToday(skipped, WED_16)).toBe(false)
+    expect(isInToday(skipped, new Date(2026, 8, 17, 9, 0))).toBe(true)
+  })
+
+  it('passes over the next one too when done again (RPT-35)', () => {
+    const twice = skipOccurrence(skipOccurrence(repeating(DAILY), WED_16), WED_16)
+
+    expect(twice.skippedDays).toEqual(['2026-09-16', '2026-09-17'])
+    expect(dueDay(twice, WED_16)).toBe('2026-09-18')
+  })
+
+  it('reads as done on the occurrence in play once ticked off after all, and skipped again once unticked (RPT-36)', () => {
+    const skipped = skipOccurrence(repeating(DAILY), WED_16)
+    const done = completeTask(skipped, WED_16_EVENING)
+
+    expect(dueDay(done, WED_16_EVENING)).toBe('2026-09-16')
+    expect(isInToday(done, WED_16_EVENING)).toBe(true)
+    expect(dueDay(uncompleteTask(done, WED_16_EVENING), WED_16_EVENING)).toBe('2026-09-17')
+  })
+
+  it('leaves alone a one-off, a done occurrence and one from before the task was written (RPT-34)', () => {
+    const oneOff = dueOn('2026-09-16')
+    const done = completeTask(repeating(DAILY), WED_16)
+    const writtenTuesday = repeating(MONDAYS, TUE_15)
+
+    for (const task of [oneOff, done, writtenTuesday]) {
+      expect(canSkipOccurrence(task, WED_16)).toBe(false)
+      expect(skipOccurrence(task, WED_16)).toBe(task)
+    }
+  })
+
+  it('is not carried over to a copy (TASK-51)', () => {
+    expect(duplicateTask(skipOccurrence(repeating(DAILY), WED_16), WED_16).skippedDays).toEqual([])
   })
 })

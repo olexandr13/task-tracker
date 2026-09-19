@@ -1,8 +1,7 @@
 import { useState, type KeyboardEvent } from 'react'
 import type { LocalDay, Repeat } from '../../core'
 import { emptyDraft, toRepeat } from '../repeatDraft'
-import { DuePicker } from './DuePicker'
-import { RepeatPicker } from './RepeatPicker'
+import { SchedulePicker } from './SchedulePicker'
 
 interface AddTaskFormProps {
   now: Date
@@ -52,10 +51,19 @@ export function AddTaskForm({ now, defaultDueDate, onAdd }: AddTaskFormProps) {
         className="min-w-0 flex-1 bg-transparent text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none dark:text-neutral-100 dark:placeholder:text-neutral-500"
       />
 
-      {/* A rule says which days the task is due, so the date gives way to it. */}
-      {repeat === null && <DuePicker dueDate={dueDate} now={now} onChange={setDueDate} />}
-
-      <RepeatPicker draft={draft} onChange={setDraft} />
+      {/* A rule says which days the task is due, so while there is one the date gives way
+          to it. A day picked ends the rule, as it does on a task row. */}
+      <SchedulePicker
+        dueDate={repeat === null ? dueDate : null}
+        draft={draft}
+        now={now}
+        onChangeDueDate={(day) => {
+          setDueDate(day)
+          if (day !== null) setDraft({ ...draft, kind: 'once' })
+        }}
+        onChangeRepeat={setDraft}
+        showSummary
+      />
     </div>
   )
 }

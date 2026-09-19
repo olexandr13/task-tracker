@@ -10,13 +10,18 @@ import {
   createTask,
   logTime,
   moveToList,
+  nextWeekDueDay,
+  offsetDay,
+  setDueDate,
   setTimeGoal,
+  toLocalDay,
   type List,
   type ListId,
   type LocalDay,
   type Repeat,
   type Task,
 } from '../../core'
+import { describeShortDate } from '../dueLabels'
 import { TaskItem } from './TaskItem'
 
 /*
@@ -37,6 +42,7 @@ const HANDLERS = {
   onRename: nothing,
   onChangeDescription: nothing,
   onChangeDueDate: nothing,
+  onSkipOccurrence: nothing,
   onChangeRepeat: nothing,
   onChangeReward: nothing,
   onChangeTimeGoal: nothing,
@@ -82,6 +88,7 @@ function setup(
         onRename={nothing}
         onChangeDescription={nothing}
         onChangeDueDate={nothing}
+        onSkipOccurrence={nothing}
         onChangeRepeat={nothing}
         onChangeReward={nothing}
         onChangeTimeGoal={nothing}
@@ -127,16 +134,18 @@ function titleBox() {
   return screen.getByRole<HTMLInputElement>('textbox', { name: `Title of "${TASK}"` })
 }
 
-function repeatButton() {
-  return screen.getByRole('button', { name: `Repeat for "${TASK}": Daily` })
+/** The one control for the date and the repeat rule (DUE-13). */
+function scheduleButton() {
+  return screen.getByRole('button', { name: new RegExp(`^Schedule for "${TASK}":`) })
 }
 
 describe('the repeat rule on a task row', () => {
-  it('shows only the icon at rest, still naming the rule (RPT-17)', () => {
+  it('shows only the icon at rest, one control for the rule and its day, naming both (RPT-17, DUE-13)', () => {
     setup()
 
-    expect(repeatButton()).toHaveProperty('textContent', '')
-    expect(repeatButton().getAttribute('title')).toBe('Daily')
+    expect(scheduleButton()).toHaveProperty('textContent', '')
+    expect(scheduleButton().getAttribute('title')).toBe('Daily · Today')
+    expect(screen.getAllByRole('button', { name: /^Schedule for/ })).toHaveLength(1)
   })
 
   it('spells the rule out under its button once the row is clicked into, the button staying an icon (RPT-17, UI-17)', async () => {
@@ -145,7 +154,7 @@ describe('the repeat rule on a task row', () => {
     await user.click(screen.getByRole('listitem'))
 
     expect(within(screen.getByRole('listitem')).getByText('Daily')).toBeDefined()
-    expect(repeatButton()).toHaveProperty('textContent', '')
+    expect(scheduleButton()).toHaveProperty('textContent', '')
   })
 
   it('stops spelling it out when a click outside rests the row (RPT-17)', async () => {
@@ -159,12 +168,82 @@ describe('the repeat rule on a task row', () => {
 })
 
 describe('the due date on a task row', () => {
-  it('is spelled out under its button at rest, the button staying an icon that names it (DUE-5, UI-27)', () => {
+  it('is not spelled out at rest, the button staying an icon that names it (DUE-5, UI-27)', () => {
     setup(null, [], undefined, '2026-09-16')
-    const dueButton = screen.getByRole('button', { name: `Due date for "${TASK}": Tomorrow` })
+    const dueButton = screen.getByRole('button', { name: `Schedule for "${TASK}": Tomorrow` })
 
     expect(dueButton).toHaveProperty('textContent', '')
-    expect(within(screen.getByRole('listitem')).getByText('Tomorrow')).toBeDefined()
+    expect(within(screen.getByRole('listitem')).queryByText('Tomorrow')).toBeNull()
+  })
+
+  it('is spelled out under its button once the row is clicked into (DUE-5, UI-27)', async () => {
+    const user = setup(null, [], undefined, '2026-09-16')
+
+    await user.click(screen.getByRole('listitem'))
+
+    expect(within(screen.getAllByRole('listitem')[0]).getByText('Tomorrow')).toBeDefined()
+  })
+})
+
+describe('the due date on a repeating task row', () => {
+  it('is on show, tinted and named with the occurrence in play (DUE-12, UI-18)', () => {
+    setup({ kind: 'daily' })
+
+    const dueButton = screen.getByRole('button', { name: `Schedule for "${TASK}": Daily · Today` })
+    expect(dueButton.className).toContain('text-blue-600')
+  })
+
+  it('makes the task a one-off on the day picked, the rule going to Once (DUE-12)', async () => {
+    const user = userEvent.setup()
+    const onChangeDueDate = vi.fn()
+    render(
+      <ul>
+        <TaskItem
+          {...HANDLERS}
+          task={createTask(TASK, { kind: 'daily' }, NOW)}
+          now={NOW}
+          knownTags={[]}
+          lists={[]}
+          onChangeDueDate={onChangeDueDate}
+        />
+      </ul>,
+    )
+
+    await user.click(scheduleButton())
+    await user.click(screen.getByRole('button', { name: /^Tomorrow/ }))
+
+    expect(onChangeDueDate).toHaveBeenCalledWith(expect.any(String), '2026-09-16')
+    // The rule is gone from the button at once; the day itself arrives with the saved task.
+    expect(scheduleButton().getAttribute('aria-label')).not.toContain('Daily')
+  })
+})
+
+describe('a task row with Show task details on', () => {
+  function renderRow(task: Task) {
+    render(
+      <ul>
+        <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={[]} lists={[]} showDetails />
+      </ul>,
+    )
+    return within(screen.getAllByRole('listitem')[0])
+  }
+
+  it('spells out the date and the checklist count at rest (UI-42)', () => {
+    const row = renderRow({
+      ...createTask(TASK, null, NOW),
+      dueDate: '2026-09-16',
+      subtasks: [createSubtask('one', NOW)],
+    })
+
+    expect(row.getByText('Tomorrow')).toBeDefined()
+    expect(row.getByText('0/1')).toBeDefined()
+  })
+
+  it('spells out the repeat rule at rest, and still opens nothing else (UI-42)', () => {
+    const row = renderRow(createTask(TASK, { kind: 'daily' }, NOW))
+
+    expect(row.getByText('Daily')).toBeDefined()
+    expect(screen.queryByRole('textbox')).toBeNull()
   })
 })
 
@@ -195,10 +274,8 @@ describe('the controls on a task row', () => {
   it('are all on show at rest, even with nothing set (UI-18)', () => {
     setup(null)
 
-    expect(screen.getByRole('button', { name: `Due date for "${TASK}": No date` })).toBeDefined()
-    expect(screen.getByRole('button', { name: `Repeat for "${TASK}": Repeat` })).toBeDefined()
+    expect(screen.getByRole('button', { name: `Schedule for "${TASK}": No date` })).toBeDefined()
     expect(screen.getByRole('button', { name: `Add a checklist to "${TASK}"` })).toBeDefined()
-    expect(screen.getByRole('button', { name: `Tags for "${TASK}": No tags` })).toBeDefined()
     expect(screen.getByRole('button', { name: `Reward for "${TASK}": No reward` })).toBeDefined()
     expect(screen.getByRole('button', { name: `Add a description to "${TASK}"` })).toBeDefined()
   })
@@ -219,7 +296,8 @@ describe('the reward on a task row', () => {
 })
 
 describe('the tags on a task row', () => {
-  it('are shown beside the title at rest (TAG-12)', () => {
+  /** A task tagged `health` then `morning`. */
+  function renderTagged(showDetails = false) {
     render(
       <ul>
         <TaskItem
@@ -228,13 +306,43 @@ describe('the tags on a task row', () => {
           now={NOW}
           knownTags={['health', 'morning']}
           lists={[]}
+          showDetails={showDetails}
         />
       </ul>,
     )
-    const chips = within(screen.getByRole('list', { name: 'Tags' })).getAllByRole('listitem')
+    return userEvent.setup()
+  }
 
-    expect(chips.map((chip) => chip.textContent)).toEqual(['health', 'morning'])
-    expect(screen.getByRole('button', { name: `Tags for "${TASK}": health, morning` })).toBeDefined()
+  function chips() {
+    return within(screen.getByRole('list', { name: 'Tags' }))
+      .getAllByRole('listitem')
+      .map((chip) => chip.textContent)
+  }
+
+  it('are not on a resting row (TAG-12)', () => {
+    renderTagged()
+
+    expect(screen.queryByRole('list', { name: 'Tags' })).toBeNull()
+  })
+
+  it('are shown on the line of details once the row is clicked into (TAG-12)', async () => {
+    const user = renderTagged()
+
+    await user.click(screen.getAllByRole('listitem')[0])
+
+    expect(chips()).toEqual(['health', 'morning'])
+  })
+
+  it('are shown at rest with Show task details on (TAG-12, UI-42)', () => {
+    renderTagged(true)
+
+    expect(chips()).toEqual(['health', 'morning'])
+  })
+
+  it('have no button on the row\'s line, being set from its menu (TAG-7)', () => {
+    setup(null)
+
+    expect(screen.queryByRole('button', { name: /^Tags for/ })).toBeNull()
   })
 })
 
@@ -372,7 +480,7 @@ describe('the menu a right-click opens on a task row', () => {
     // The context-menu key: a contextmenu event with no button pressed.
     fireEvent.contextMenu(grip)
 
-    expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Duplicate' }))
+    expect(document.activeElement).toBe(screen.getByRole('menuitemradio', { name: 'Today' }))
 
     await user.keyboard('{Escape}')
 
@@ -396,6 +504,149 @@ describe('the menu a right-click opens on a task row', () => {
     await user.pointer({ keys: '[MouseRight]', target: titleBox() })
 
     expect(menu()).toBeNull()
+  })
+
+  describe('the Date row', () => {
+    const TODAY = toLocalDay(NOW)
+    const TOMORROW = offsetDay(TODAY, 1)
+
+    function renderDated(task: Task, handlers: Partial<typeof HANDLERS> = {}) {
+      const user = userEvent.setup()
+      render(
+        <ul>
+          <TaskItem {...HANDLERS} {...handlers} task={task} now={NOW} knownTags={[]} lists={[]} />
+        </ul>,
+      )
+      return user
+    }
+
+    async function openMenu(user: ReturnType<typeof userEvent.setup>) {
+      await user.pointer({ keys: '[MouseRight]', target: row() })
+    }
+
+    function icons() {
+      const group = within(menu() as HTMLElement).getByRole('group', { name: 'Date' })
+      return Array.from(group.querySelectorAll('button'), (icon) => icon.getAttribute('aria-label'))
+    }
+
+    it('comes first, as icons named by their tooltips (DUE-14)', async () => {
+      const user = renderDated(setDueDate(createTask(TASK, null, NOW), TOMORROW))
+
+      await openMenu(user)
+
+      expect(icons()).toEqual(['Today', 'Tomorrow', 'Next week', 'Select date', 'Remove date'])
+      expect(screen.getByRole('menuitemradio', { name: 'Next week' }).title).toBe(
+        `Next week · ${describeShortDate(nextWeekDueDay(NOW), NOW)}`,
+      )
+      expect(screen.getByRole('menuitemradio', { name: 'Today' }).title).toBe('Today')
+    })
+
+    it('marks the one-off\'s own day as chosen (DUE-14)', async () => {
+      const user = renderDated(setDueDate(createTask(TASK, null, NOW), TOMORROW))
+
+      await openMenu(user)
+
+      expect(screen.getByRole('menuitemradio', { name: 'Tomorrow' }).getAttribute('aria-checked')).toBe('true')
+      expect(screen.getByRole('menuitemradio', { name: 'Today' }).getAttribute('aria-checked')).toBe('false')
+    })
+
+    it('sets the day chosen and closes (DUE-14)', async () => {
+      const onChangeDueDate = vi.fn()
+      const user = renderDated(createTask(TASK, null, NOW), { onChangeDueDate })
+
+      await openMenu(user)
+      await user.click(screen.getByRole('menuitemradio', { name: 'Next week' }))
+
+      expect(onChangeDueDate).toHaveBeenCalledWith(expect.any(String), nextWeekDueDay(NOW))
+      expect(menu()).toBeNull()
+    })
+
+    it('takes a one-off\'s day away, and offers that only once there is one (DUE-14)', async () => {
+      const onChangeDueDate = vi.fn()
+      const user = renderDated(createTask(TASK, null, NOW), { onChangeDueDate })
+
+      await openMenu(user)
+      expect(icons()).not.toContain('Remove date')
+      await user.keyboard('{Escape}')
+      cleanup()
+
+      const again = renderDated(setDueDate(createTask(TASK, null, NOW), TODAY), { onChangeDueDate })
+      await openMenu(again)
+      await again.click(screen.getByRole('menuitem', { name: 'Remove date' }))
+
+      expect(onChangeDueDate).toHaveBeenCalledWith(expect.any(String), null)
+    })
+
+    it('offers to skip a repeating task\'s occurrence, naming the day it moves to (DUE-14, RPT-34)', async () => {
+      const onSkipOccurrence = vi.fn()
+      const user = renderDated(createTask(TASK, { kind: 'daily' }, NOW), { onSkipOccurrence })
+
+      await openMenu(user)
+
+      expect(icons()).toEqual(['Today', 'Tomorrow', 'Next week', 'Skip occurrence', 'Select date'])
+      const skip = screen.getByRole('menuitem', { name: 'Skip occurrence' })
+      expect(skip.title).toBe(`Skip to ${describeShortDate(TOMORROW, NOW)}`)
+
+      await user.click(skip)
+
+      expect(onSkipOccurrence).toHaveBeenCalledTimes(1)
+    })
+
+    it('marks no day chosen on a repeating task, its day being the rule\'s (DUE-12, DUE-14)', async () => {
+      const user = renderDated(createTask(TASK, { kind: 'daily' }, NOW))
+
+      await openMenu(user)
+
+      expect(screen.getByRole('menuitemradio', { name: 'Today' }).getAttribute('aria-checked')).toBe('false')
+    })
+
+    it('is in the row\'s schedule panel too, skip and all (DUE-9, RPT-34)', async () => {
+      const onSkipOccurrence = vi.fn()
+      const user = renderDated(createTask(TASK, { kind: 'daily' }, NOW), { onSkipOccurrence })
+
+      await user.click(screen.getByRole('button', { name: /^Schedule for/ }))
+      await user.click(screen.getByRole('button', { name: 'Skip occurrence' }))
+
+      expect(onSkipOccurrence).toHaveBeenCalledTimes(1)
+    })
+
+    it('has no skip for a repeating task already done (RPT-34)', async () => {
+      const user = renderDated(completeTask(createTask(TASK, { kind: 'daily' }, NOW), NOW))
+
+      await openMenu(user)
+
+      expect(icons()).not.toContain('Skip occurrence')
+    })
+
+    it('opens the date panel where the menu was, its date field ready (DUE-14)', async () => {
+      const onChangeDueDate = vi.fn()
+      const user = renderDated(createTask(TASK, null, NOW), { onChangeDueDate })
+
+      await openMenu(user)
+      await user.click(screen.getByRole('menuitem', { name: 'Select date' }))
+
+      const panel = screen.getByRole('dialog', { name: `Date for "${TASK}"` })
+      const field = panel.querySelector('input[type="date"]') as HTMLInputElement
+      expect(menu()).toBeNull()
+      expect(document.activeElement).toBe(field)
+
+      fireEvent.change(field, { target: { value: '2026-10-02' } })
+
+      expect(onChangeDueDate).toHaveBeenCalledWith(expect.any(String), '2026-10-02')
+    })
+
+    it('is stepped along with the left and right keys too (UI-31)', async () => {
+      const user = renderDated(createTask(TASK, null, NOW))
+
+      await openMenu(user)
+      await user.keyboard('{ArrowRight}{ArrowRight}')
+
+      expect(document.activeElement).toBe(screen.getByRole('menuitemradio', { name: 'Tomorrow' }))
+
+      await user.keyboard('{ArrowLeft}')
+
+      expect(document.activeElement).toBe(screen.getByRole('menuitemradio', { name: 'Today' }))
+    })
   })
 
   describe('filing the task in a list', () => {
@@ -458,20 +709,113 @@ describe('the menu a right-click opens on a task row', () => {
       await user.pointer({ keys: '[MouseRight]', target: row() })
 
       expect(group()).toBeNull()
-      expect(screen.queryAllByRole('menuitemradio')).toEqual([])
+      expect(screen.queryByRole('menuitemradio', { name: 'Inbox' })).toBeNull()
     })
 
-    it('is reached with the arrow keys, after Duplicate (UI-31)', async () => {
-      const user = setup({ kind: 'daily' }, [], nothing, null, null, { lists: [WORK] })
+    it('is reached with the arrow keys, after the Date row, Duplicate and Tags (UI-31)', async () => {
+      // A one-off with no day: Today, Tomorrow, Next week and Select date, then Duplicate and Tags.
+      const user = setup(null, [], nothing, null, null, { lists: [WORK] })
 
       await user.pointer({ keys: '[MouseRight]', target: row() })
-      await user.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}')
+      await user.keyboard('{ArrowDown>8/}')
 
       expect(document.activeElement).toBe(screen.getByRole('menuitemradio', { name: 'Work' }))
 
       await user.keyboard('{ArrowDown}')
 
-      expect(document.activeElement).toBe(screen.getByRole('menuitem', { name: 'Duplicate' }))
+      expect(document.activeElement).toBe(screen.getByRole('menuitemradio', { name: 'Today' }))
+    })
+  })
+
+  describe('tagging the task', () => {
+    /** A one-off task tagged `health`, with `work` in use elsewhere. */
+    function renderTagged(handlers: { onAddTag?: () => void; onRemoveTag?: () => void } = {}) {
+      const user = userEvent.setup()
+      render(
+        <ul>
+          <TaskItem
+            {...HANDLERS}
+            {...handlers}
+            task={addTag(createTask(TASK, null, NOW), 'health')}
+            now={NOW}
+            knownTags={['health', 'work']}
+            lists={[]}
+          />
+        </ul>,
+      )
+      return user
+    }
+
+    function tagPanel() {
+      return screen.queryByRole('dialog', { name: `Tags for "${TASK}"` })
+    }
+
+    async function openTags(user: ReturnType<typeof userEvent.setup>) {
+      await user.pointer({ keys: '[MouseRight]', target: row() })
+      await user.click(screen.getByRole('menuitem', { name: 'Tags…' }))
+    }
+
+    it('opens the tag panel in the menu\'s place, the caret in its box and the task\'s own tags ticked (TAG-7)', async () => {
+      const user = renderTagged()
+
+      await openTags(user)
+
+      const panel = within(tagPanel() as HTMLElement)
+      expect(menu()).toBeNull()
+      expect(document.activeElement).toBe(panel.getByRole('textbox', { name: 'Tag name' }))
+      expect(panel.getByRole('button', { name: 'health' }).getAttribute('aria-pressed')).toBe('true')
+      expect(panel.getByRole('button', { name: 'work' }).getAttribute('aria-pressed')).toBe('false')
+    })
+
+    it('puts a tag on and takes one off as clicked, staying open and leaving the row at rest (TAG-7, UI-31)', async () => {
+      const onAddTag = vi.fn()
+      const onRemoveTag = vi.fn()
+      const user = renderTagged({ onAddTag, onRemoveTag })
+
+      await openTags(user)
+      await user.click(screen.getByRole('button', { name: 'work' }))
+      await user.click(screen.getByRole('button', { name: 'health' }))
+
+      expect(onAddTag).toHaveBeenCalledWith(expect.any(String), 'work')
+      expect(onRemoveTag).toHaveBeenCalledWith(expect.any(String), 'health')
+      expect(tagPanel()).not.toBeNull()
+      expect(screen.getByRole('button', { name: `Add a checklist to "${TASK}"` }).getAttribute('aria-expanded')).toBe('false')
+    })
+
+    it('makes a tag typed in its box on Enter (TAG-7)', async () => {
+      const onAddTag = vi.fn()
+      const user = renderTagged({ onAddTag })
+
+      await openTags(user)
+      await user.keyboard('trip{Enter}')
+
+      expect(onAddTag).toHaveBeenCalledWith(expect.any(String), 'trip')
+    })
+
+    it('closes on a click outside it (UI-9)', async () => {
+      const user = renderTagged()
+
+      await openTags(user)
+      await user.click(document.body)
+
+      expect(tagPanel()).toBeNull()
+    })
+
+    it('opened from the keyboard, closes on Escape and gives focus back (UI-10, UI-31)', async () => {
+      const user = renderTagged()
+      const grip = screen.getByRole('button', { name: `Move "${TASK}"` })
+
+      grip.focus()
+      fireEvent.contextMenu(grip)
+      // From Today, past the rest of the Date row and Duplicate.
+      await user.keyboard('{ArrowDown>5/}{Enter}')
+
+      expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Tag name' }))
+
+      await user.keyboard('{Escape}')
+
+      expect(tagPanel()).toBeNull()
+      expect(document.activeElement).toBe(grip)
     })
   })
 })

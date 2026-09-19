@@ -25,9 +25,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-5** Stacked, the rail comes **after** the work — the bars, then the quote at the very bottom
   of the page.
 - **UI-6** Nothing is reachable only on a wide screen. A row's details (UI-27) have a line of their
-  own under the task's, so a narrow screen keeps them too; so do the list button (LST-23), the
-  clock (TIME-10), the tag button (TAG-16), the
-  reward's star (RWD-8), and the Lists, Tags and Rewards pages (UI-34).
+  own under the task's, so a narrow screen keeps them too; so do the list and tag buttons (LST-23,
+  TAG-16), which a wide screen has in the task's menu, the clock (TIME-10), the reward's star
+  (RWD-8), and the Lists, Tags and Rewards pages (UI-34).
 
 ## Navigation
 
@@ -65,8 +65,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 ## Popovers
 
-- **UI-9** Panels that open in place — the date, repeat, time and tag pickers, a task's menu, the period
-  menu of the bottom bar — close on a click outside them or on Escape. The tags offered while typing
+- **UI-9** Panels that open in place — the schedule (date and repeat), time and tag pickers, a task's menu, the period
+  menu of the bottom bar, the View panel (UI-41) — close on a click outside them or on Escape. The tags offered while typing
   `#` in a description close on Escape too, but a click outside is leaving the description (TAG-9).
 - **UI-10** Escape inside an open panel closes the panel rather than reaching anything behind it.
 - **UI-40** A panel's buttons are **compact** and the same in every panel — its choices, its menu
@@ -82,25 +82,28 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 - **UI-17** A row at rest is the completion box, the title and its tags, its controls and the delete button.
   Clicking anywhere on the row **opens what the task holds** — its checklist and its description,
-  both at once — and spells its repeat rule and checklist count out under their buttons (UI-27). Clicking a task is asking to see the whole
+  both at once — and spells its date or repeat rule and its checklist count out under their buttons (UI-27). Clicking a task is asking to see the whole
   of it, not to be handed buttons to press. It all goes again when you click the row again (UI-28),
   click away, press Escape, or click into another row.
-- **UI-18** Every control is **on show at rest**, set or not — the due date (on a one-off task,
-  DUE-6), repeat, the checklist, the time (TIME-10), the tags, the reward (RWD-5), the description — so any of them is one click away
+- **UI-18** Every control is **on show at rest**, set or not — the schedule (the date, or the rule
+  on a repeating task, DUE-13), the checklist, the time (TIME-10), the reward (RWD-5), the description — so any of them is one click away
   on any row. Set ones are tinted (UI-26), empty ones muted, so what the task carries still reads at
   a glance. Deleting is always on show too, at the far end of the row, so it keeps its place as the
   row wakes and rests.
 - **UI-27** The controls **line up down the list**: each is its icon alone, in a slot of its own
-  that sits in the same place on every row, whatever the rows beside it hold; a repeating task keeps
-  the date's slot empty (DUE-6). A slot is **no wider than the button in it** — an icon with no words
-  beside it is padded to a square — and only a narrow gap is between one slot and the next, so the controls
-  sit close together and read as one group at the end of the row rather than as buttons scattered along it. On a phone the clock, the tag button and the reward's star have no slot on
-  the line, and are on the woken row instead (TIME-10, TAG-16, RWD-8). What a control holds — the due date
-  (DUE-5), the repeat rule (RPT-17), the checklist count (CHK-5), the time (TIME-12), the reward (RWD-7) — is not put
+  that sits in the same place on every row, whatever the rows beside it hold. A slot is **no wider than the button in it** — an icon with no words
+  beside it is padded to a square — and a small gap is between one slot and the next, enough that each icon
+  reads as its own button while the controls still sit together and read as one group at the end of the row rather than as buttons scattered along it. The list and the
+  tags have no slot at all: they are set from the task's menu (LST-14, TAG-7). On a phone the clock and the reward's star have no slot on
+  the line either, and are on the woken row instead, with the list and the tags (TIME-10, RWD-8, LST-23, TAG-16). What a control holds — the due date
+  (DUE-5) or the repeat rule (RPT-17), the checklist count (CHK-5), the time (TIME-12), the reward (RWD-7) — is not put
   beside its icon but on a **line of details under the task's line**, in muted small text, each
-  detail **under its own button**, centred on it and free to run wider than it. The date is there
-  whenever the task has one; the rule, the count, the time and the reward once the row is woken. A rule too long to centre beside a count ends under its button
-  instead, running left over the empty date slot, so the two never touch. A row with nothing to
+  detail **under its own button**, centred on it and free to run wider than it. The task's tags,
+  having no button, are on that line under the title, starting where it does (TAG-12). The line belongs
+  to the **woken row** only, unless **Show task details** is on (UI-42): at rest the tinted icons say
+  what is set, so every resting row is the same single line high, dated or not. The schedule's detail, the first,
+  ends under its button instead of centring on it and runs left over the title's column, the tags
+  there giving up room to it, so however long a rule is it never reaches the details beside it. A woken row with nothing to
   spell out has no such line. The line is part of the task's own line (UI-28).
 - **UI-26** A control with something set is **tinted quietly**, and brightens on hover. Every row
   can carry several, so a strong tint would turn the list into a column of highlights and drown the
@@ -127,14 +130,33 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   closes it. Once open, the title's box takes the whole width, so there is room to type.
 - **UI-31** **Right-clicking a row opens the task's menu** at the pointer — on the other side of it
   where the window runs out — and marks the row's border while it is open, so it is plain which
-  task the menu is for. It holds **Duplicate** (TASK-51) and, once there are lists, a **List** group
-  to file the task in, its own checked (LST-14). A group has a small heading and a line above it;
+  task the menu is for. It holds, first, the **Date** row of icons (DUE-14), then **Duplicate**
+  (TASK-51), **Tags…**, which opens the tag panel in the menu's place (TAG-7), and, once there are
+  lists, a **List** group to file the task in, its own checked (LST-14). A group has a small heading
+  and a line above it;
   a long menu scrolls rather than running off the window. The row stays as it was, at rest or awake:
   the menu is about the task as a whole, not working on it (as UI-19). Choosing an item, Escape, Tab,
-  a click outside, scrolling or resizing the window closes it. Right-clicking text being typed in —
+  a click outside, scrolling the page or resizing the window closes it; scrolling a long menu itself does not. Right-clicking text being typed in —
   an open title or description — keeps the browser's own menu, which is there for the text. From
   the keyboard, the context-menu key or Shift+F10 opens it under the task's line; the arrow keys,
-  Home and End move between items — a group's too — and focus goes back where it was when it closes.
+  Home and End move between items — a group's too, left and right stepping along a row of icons as
+  down and up do — and focus goes back where it was when it closes.
+
+## The View button
+
+- **UI-41** Every view that lists tasks has a **View** button beside the add box: a square as tall
+  as the box, marked with sliders, opening a panel of how the tasks are shown. The options hold for
+  **every** such view at once — Today, Week, Month, Tasks, the Inbox, each list and each tag — and
+  are kept on this device (STORE-30). Each option is a **switch**: the whole line is the switch —
+  an icon, its name, a line under the name saying what it does, and the track at the end, blue when
+  on, whose icon takes a set control's tint. Like the pickers there is nothing to confirm: a change
+  shows at once and the panel stays open for the next. The button lights up while its panel is open,
+  and is tinted while anything in it differs from how the app starts, as a set control is (UI-26).
+- **UI-42** **Show task details** puts the line of details (UI-27) under **every row**, at rest as
+  well as woken: the date or the repeat rule, the checklist count, the time, the reward and the tags. Nothing
+  else changes — a row's checklist and description still come up only when it is clicked into
+  (UI-17), and on a phone the time and the reward, having no slot on the line, are still named on
+  the woken row (UI-6). Off, which is how the app starts, the details are the woken row's alone.
 
 ## Everywhere
 
@@ -161,10 +183,11 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 ---
 
 **Where it lives:** `src/app/TasksScreen.tsx` (the three areas), `src/app/components/TaskItem.tsx` (the
-row at rest and awake), `src/app/components/ContextMenu.tsx` (a task's menu), `src/app/textOffsetAtPoint.ts` (which character a click landed on), `src/app/components/SideNav.tsx`,
-`src/app/components/BottomNav.tsx` (the phone's bar), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/useLongPress.ts` (a press told from a
+row at rest and awake), `src/app/components/ContextMenu.tsx` (a task's menu), `src/app/components/FloatingPanel.tsx` (a menu or panel floating where the pointer was), `src/app/textOffsetAtPoint.ts` (which character a click landed on), `src/app/components/SideNav.tsx`,
+`src/app/components/BottomNav.tsx` (the phone's bar), `src/app/components/ViewOptionsMenu.tsx` and `src/app/useViewOptions.ts` (the View button and its options), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/useLongPress.ts` (a press told from a
 long press), `src/app/components/SettingsList.tsx`, `src/app/components/AccountCard.tsx` (the account on it), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
 view's icon), `src/app/rowControls.ts` (the shape and tones a row's controls share), `src/app/panelControls.ts` (the size a panel's buttons share), `src/styles.css`,
 `public/favicon.svg` (the app's icon; the PNGs beside it are the same icon for installing).
 **Tested in:** `src/app/components/BottomNav.test.tsx` (the bottom bar), `src/app/components/SideNav.test.tsx` (the sidebar), `src/app/useView.test.ts` (the
-view in the address).
+view in the address), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel), `src/app/components/TaskItem.test.tsx`
+(a row with Show task details on).

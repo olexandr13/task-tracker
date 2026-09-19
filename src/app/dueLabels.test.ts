@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { describeDueDate, describeWeekday } from './dueLabels'
+import { describeDueDate, describeShortDate } from './dueLabels'
 
 const WED_16 = new Date(2026, 8, 16, 9, 0)
 
@@ -17,8 +17,9 @@ describe('describeDueDate', () => {
   })
 })
 
-describe('describeWeekday', () => {
-  it('names the weekday with the date', () => {
-    expect(describeWeekday('2026-09-23')).toBe('Wed, Sep 23')
+describe('describeShortDate', () => {
+  it('is a short date even for today and tomorrow', () => {
+    expect(describeShortDate('2026-09-16', WED_16)).toBe('Sep 16')
+    expect(describeShortDate('2027-01-02', WED_16)).toBe('Jan 2, 2027')
   })
 })

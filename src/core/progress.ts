@@ -12,7 +12,7 @@
  * occurrences needs a completion history, which is a step of its own.
  */
 
-import { startOfLocalDay } from './day'
+import { startOfLocalDay, toLocalDay, type LocalDay } from './day'
 import { occursOn, startOfDay, type Repeat } from './repeat'
 import { isComplete, isDeleted, type Task } from './task'
 
@@ -120,16 +120,18 @@ function inPlayDuring(task: Task, range: PeriodRange, now: Date): boolean {
     return task.dueDate === null || startOfLocalDay(task.dueDate) < range.end
   }
 
-  return occursWithin(task.repeat, range)
+  return occursWithin(task.repeat, task.skippedDays, range)
 }
 
-function occursWithin(repeat: Repeat, range: PeriodRange): boolean {
+/** Whether the rule falls on a day of the range that was not skipped: a skipped occurrence asks nothing of it. */
+function occursWithin(repeat: Repeat, skipped: readonly LocalDay[], range: PeriodRange): boolean {
   // Rounded because a day either side of a daylight saving change is 23 or 25
   // hours long, and the count of whole days is what matters here.
   const days = Math.round((range.end.getTime() - range.start.getTime()) / MS_PER_DAY)
 
   for (let offset = 0; offset < days; offset += 1) {
-    if (occursOn(repeat, dayAfter(range.start, offset))) {
+    const day = dayAfter(range.start, offset)
+    if (occursOn(repeat, day) && !skipped.includes(toLocalDay(day))) {
       return true
     }
   }

@@ -14,7 +14,7 @@
 
 import { offsetDay, toLocalDay, type LocalDay } from './day'
 import { periodRange, type Period } from './progress'
-import { currentOccurrence } from './repeat'
+import { currentOccurrence, nextOccurrence } from './repeat'
 import { isComplete, isDeleted, type Task } from './task'
 
 /**
@@ -23,14 +23,53 @@ import { isComplete, isDeleted, type Task } from './task'
  * A repeating task's occurrence from before the task existed asked nothing of
  * it: a weekly Monday task written on a Tuesday is next due on Monday, not
  * overdue from the day before it was thought of.
+ *
+ * A skipped occurrence hands the task on to the next one the rule gives, and
+ * that one on again while it was skipped too — unless the task was done after
+ * all, which reads as done on the occurrence in play.
  */
 export function dueDay(task: Task, now: Date = new Date()): LocalDay | null {
   if (task.repeat === null) {
     return task.dueDate
   }
 
-  const occurrence = toLocalDay(currentOccurrence(task.repeat, now))
-  return occurrence < toLocalDay(new Date(task.createdAt)) ? null : occurrence
+  let occurrence = currentOccurrence(task.repeat, now)
+  if (toLocalDay(occurrence) < toLocalDay(new Date(task.createdAt))) {
+    return null
+  }
+
+  if (!isComplete(task, now)) {
+    while (task.skippedDays.includes(toLocalDay(occurrence))) {
+      occurrence = nextOccurrence(task.repeat, occurrence)
+    }
+  }
+  return toLocalDay(occurrence)
+}
+
+/**
+ * Whether the task has an occurrence to pass over: it repeats, is still to do,
+ * and is due on a day. A one-off has no next day to move on to, and a done
+ * occurrence was not skipped.
+ */
+export function canSkipOccurrence(task: Task, now: Date = new Date()): boolean {
+  return task.repeat !== null && !isDeleted(task) && !isComplete(task, now) && dueDay(task, now) !== null
+}
+
+/**
+ * Passes over the occurrence the task is due on, so it is due on the rule's next
+ * day instead — without being done, so nothing is recorded or earned for it.
+ * Skipping again passes over that one too. Ticking the task off afterwards is
+ * doing the occurrence in play after all (see `Task.skippedDays`).
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function skipOccurrence(task: Task, now: Date = new Date()): Task {
+  const day = dueDay(task, now)
+  if (!canSkipOccurrence(task, now) || day === null) {
+    return task
+  }
+
+  return { ...task, skippedDays: [...task.skippedDays, day].sort() }
 }
 
 /** Due on a day already gone, and still not done. */

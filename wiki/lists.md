@@ -54,7 +54,7 @@ reasons; requirements here are `LST-`.
 ## Filing a task
 
 - **LST-14** A task is filed from **its menu** — a right-click on the row (UI-31). Under
-  Duplicate, a **List** group offers the Inbox and then every list, the task's own **checked**.
+  Duplicate and Tags…, a **List** group offers the Inbox and then every list, the task's own **checked**.
   Choosing one files the task and closes the menu — a task is in one list at a time, so choosing is
   the whole of the job. The row itself has **no list button** and does not name its list: which list
   a task is in is asked of the task when it matters, not repeated on every row. A list cannot be
@@ -78,10 +78,17 @@ reasons; requirements here are `LST-`.
 
 - **LST-13** **Lists** has an entry of its own in the navigation, between Tasks and Habits (UI-30).
   Its page is the Inbox (LST-11) and then every list, in the order they were made, each opening its
-  own view (LST-8). In the sidebar, Lists is **always open**: the Inbox and then every list, in the
-  same order, sit indented under it, each going straight to its view and marked while it is open
+  own view (LST-8). In the sidebar, Lists opens onto the Inbox and then every list, in the
+  same order, indented under it, each going straight to its view and marked while it is open
   (UI-8). A long name is cut rather than widening the sidebar. Each is also somewhere to drop a
-  task (LST-25).
+  task (LST-25). The lists can be folded away (LST-26).
+- **LST-26** A **chevron** at the end of Lists in the sidebar **folds** the Inbox and the lists
+  away, and unfolds them again; it points down while they are shown and right while they are
+  folded. Folding goes nowhere — Lists itself still opens its page. Lists starts **unfolded**, and
+  whichever way it was left is **kept on this device** (STORE-31), so it is the same after a reload.
+  While folded, **Lists is marked** whenever a list's view or the Inbox is open, as the entry that
+  would be marked is out of sight (UI-8), and no list is there to drop a task on (LST-25): unfold
+  them first.
 - **LST-18** Beside each list is how many of its tasks are **still to do**, a repeating one for its
   current occurrence. A list whose tasks are all done shows no number, and is still listed. The
   Inbox carries its own count the same way.
@@ -111,7 +118,8 @@ reasons; requirements here are `LST-`.
 **Where it lives:** `src/core/list.ts` (the record, names, filing a task, emptying a list, the
 counts), `src/app/components/TaskItem.tsx` (the List group in a task's menu),
 `src/app/components/ContextMenu.tsx` (a menu's groups and checked choices),
-`src/app/components/SideNav.tsx` (the lists under Lists), `src/app/useListDropTarget.ts` (a list as a
+`src/app/components/SideNav.tsx` (the lists under Lists, and folding them), `src/app/useSideNav.ts`
+(whether they are folded), `src/app/useListDropTarget.ts` (a list as a
 place to drop a task), `src/app/components/TaskDragAndDrop.tsx` and `src/app/taskDrop.ts` (carrying a
 task, and what dropping it does),
 `src/app/components/ListPicker.tsx` (the panel on a phone's woken row),
@@ -121,10 +129,11 @@ addresses and what they say), `src/app/TasksScreen.tsx`, `src/app/components/Sid
 `src/app/components/BottomNav.tsx`, `src/app/components/FolderIcon.tsx`,
 `src/app/components/InboxIcon.tsx`, `src/app/components/PencilIcon.tsx`.
 **Saved in:** `src/storage/listSchema.ts` and `src/storage/firestoreListRepository.ts` (one document
-per list), with `listId` on the task itself — see [Storage](storage.md).
+per list), with `listId` on the task itself; whether the sidebar's lists are folded in
+`src/storage/localStorageSideNavRepository.ts` — see [Storage](storage.md).
 **Tested in:** `src/core/list.test.ts`, `src/app/components/TaskItem.test.tsx` (the task's menu),
 `src/app/taskDrop.test.ts` (dropping a task on a list),
 `src/app/components/ListPicker.test.tsx`,
 `src/app/components/ListsPage.test.tsx`, `src/app/components/SideNav.test.tsx`,
 `src/app/useView.test.ts` (the address), `src/storage/listRepository.test.ts`,
-`src/storage/listSchema.test.ts`.
+`src/storage/listSchema.test.ts`, `src/storage/sideNavSchema.test.ts`.

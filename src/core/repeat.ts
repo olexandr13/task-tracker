@@ -118,6 +118,22 @@ export function occursOn(repeat: Repeat, day: Date): boolean {
   }
 }
 
+/**
+ * The start of the first day after `day` the rule falls on — where a skipped
+ * occurrence hands the task on to (see `dueDay` in ./due).
+ */
+export function nextOccurrence(repeat: Repeat, day: Date): Date {
+  // The widest gap any rule leaves is a monthly 31st's: Jan 31 to Feb 28 is 28
+  // days, Feb 28 to Mar 31 is 31. Two months' worth always lands.
+  for (let offset = 1; offset <= 62; offset += 1) {
+    const next = addDays(startOfDay(day), offset)
+    if (occursOn(repeat, next)) {
+      return next
+    }
+  }
+  throw new InvalidRepeatError('The rule never comes round.')
+}
+
 function addDays(day: Date, offset: number): Date {
   return new Date(day.getFullYear(), day.getMonth(), day.getDate() + offset)
 }

@@ -79,6 +79,17 @@ describe('importLocalTasks', () => {
     expect(imported).toEqual([{ ...savedAtV11, timeGoal: null, timeLog: [] }])
   })
 
+  it('gives tasks saved before skipping existed no skipped days', async () => {
+    const { skippedDays, ...savedAtV12 } = createTask('stretch', { kind: 'daily' }, NOW)
+    expect(skippedDays).toEqual([])
+    localStorage.setItem(KEY, JSON.stringify({ version: 12, tasks: [savedAtV12] }))
+    const { repository, imported } = repositoryThat('accepts')
+
+    await importLocalTasks(repository)
+
+    expect(imported).toEqual([{ ...savedAtV12, skippedDays: [] }])
+  })
+
   it('gives tasks saved before tags existed none', async () => {
     const { tags, reward, ...savedAtV8 } = createTask('file taxes', null, NOW)
     expect([tags, reward]).toEqual([[], null])

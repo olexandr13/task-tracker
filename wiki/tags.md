@@ -21,10 +21,14 @@ they are due. A tag is not a record of its own: it is a name written on the task
 
 ## Tagging a task
 
-- **TAG-7** The **tag button** on a row opens a panel: a box to find or add a tag, with the caret
+- **TAG-7** A task is tagged from **its menu** — a right-click on the row (UI-31). **Tags…**, under
+  Duplicate, opens the **tag panel** where the menu was: a box to find or add a tag, with the caret
   already in it, over every tag there is, the task's own ticked. Clicking a tag puts it on or takes
   it off. Enter in the box puts on the tag it names, making it first when there is none. The panel
-  stays open for the next one, and closes as the other pickers do (UI-9, UI-10).
+  stays open for the next one, and closes as the other pickers do (UI-9, UI-10), giving focus back
+  where it was. The row stays as it was, at rest or awake, and is marked while the panel is open,
+  as for the menu. The row's line has **no tag button**, and no tags either: they are spelled out
+  on its line of details (TAG-12).
 - **TAG-8** **Typing `#` in a description** offers tags at the caret, narrowed as a name is typed
   after it. The arrow keys move between them; Enter, Tab or a click chooses one. Choosing **takes
   the `#name` out of the text** and puts the tag on the task: a tag is something the task carries,
@@ -41,11 +45,12 @@ they are due. A tag is not a record of its own: it is a name written on the task
 
 ## On the row
 
-- **TAG-12** A task's tags show as **small labels at the far end of its line**, before the
-  controls, at rest and awake. They keep to one line, each giving up room when there is not enough,
-  and go under the title when there is no room beside it. On a done task they are dimmed with the
-  title. They are labels, not controls: a click on one is a click on the row (UI-28). While the
-  title is being edited they give it their room.
+- **TAG-12** A task's tags are **not on its line**: they show as **small labels on its line of
+  details** (UI-27), under the title and starting where it does — so on the woken row, or on every
+  row with Show task details on (UI-42), and never on a resting row otherwise. They keep to one
+  line, each giving up room when there is not enough, and give up room to a repeat rule running
+  left under the title (UI-27). They are labels, not controls: a click on one is a click on the
+  row (UI-28).
 
 ## A tag's list
 
@@ -64,8 +69,8 @@ they are due. A tag is not a record of its own: it is a name written on the task
   No single tag has an entry in the navigation.
 - **TAG-19** Beside each tag is how many of its tasks are **still to do**, a repeating one for its
   current occurrence. A tag whose tasks are all done shows no number, and is still listed.
-- **TAG-20** With no tags in use the page says so, and how to tag a task: its tag button (TAG-7), or
-  `#` in its description (TAG-8).
+- **TAG-20** With no tags in use the page says so, and how to tag a task: its menu (TAG-7, TAG-16),
+  or `#` in its description (TAG-8).
 - **TAG-21** The Tags page is not a list of tasks, so it has no box for adding one and no rail (UI-2).
 - **TAG-22** Beside each tag is a button that **deletes it**, after asking: the tag comes off every
   task carrying it — tasks in the trash too, so restoring one does not bring it back — and the tasks
@@ -73,21 +78,22 @@ they are due. A tag is not a record of its own: it is a name written on the task
 
 ## On a phone
 
-- **TAG-16** A row's line has no room for the tag button beside the others, so on a phone the woken
-  row has a line of its own under the description holding it, naming the task's tags — or offering
-  to add one — and opening the same panel (TAG-7).
+- **TAG-16** A phone has no right-click to reach the task's menu, so there the woken row has a
+  **tag button** on a line of its own under the description, naming the task's tags — or offering
+  to add one — and opening the same panel (TAG-7) under it.
 - **TAG-17** The Tags page is reached from a **Tags** button at the foot of Tasks, beside the Trash
   button, and Tasks stays marked in the bottom bar while the Tags page or a tag's list is open (UI-34).
 
 ---
 
 **Where it lives:** `src/core/tag.ts` (names, putting on and taking off, deleting, the tags in use, matching
-and suggesting, the tag being typed), `src/app/components/TagPicker.tsx` (the panel),
-`src/app/components/TaskDescription.tsx` and `src/app/descriptionBox.ts` (typing `#`),
-`src/app/components/TaskItem.tsx` (labels and the button on the row), `src/app/components/TagList.tsx`
+and suggesting, the tag being typed),
+`src/app/components/TagPanel.tsx` (the panel), `src/app/components/TagPicker.tsx` (the phone's
+button), `src/app/components/TaskDescription.tsx` and `src/app/descriptionBox.ts` (typing `#`),
+`src/app/components/TaskItem.tsx` (labels on the line of details, the menu's Tags… and the phone's button), `src/app/components/TagList.tsx`
 (the Tags page), `src/app/view.ts` (the Tags page and a tag's list, their addresses and what they say), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx`,
 `src/app/components/SideNav.tsx`, `src/app/components/BottomNav.tsx`, `src/app/components/TagIcon.tsx`.
 **Tested in:** `src/core/tag.test.ts`, `src/app/components/TagPicker.test.tsx`,
 `src/app/components/TaskDescription.test.tsx` (typing `#`), `src/app/components/TaskItem.test.tsx`
-(labels), `src/app/components/TagList.test.tsx` (the Tags page), `src/app/components/SideNav.test.tsx`,
+(labels on the line of details, tagging from the menu), `src/app/components/TagList.test.tsx` (the Tags page), `src/app/components/SideNav.test.tsx`,
 `src/app/useView.test.ts` (the address), `src/app/components/BottomNav.test.tsx`.

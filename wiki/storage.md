@@ -74,6 +74,20 @@ changes shape.
   its tasks only once the account holds them. A move that fails, offline say, is tried again next
   time. Browser data the app cannot read is left where it is.
 
+## Kept on this device
+
+- **STORE-30** How the task views are shown — the View options (UI-41) — is kept in this browser's
+  `localStorage`, **not in the account**: a phone and a desktop have different room, so each is set
+  its own way. The options are there the moment the app opens, offline too. They have **their own
+  version**, apart from everything else's. Options the app cannot read — an unknown version, or
+  anything not shaped as it should be — are ignored and the defaults used until they are set again;
+  like a cached quote (STORE-8) there is nothing in them worth carrying forward. A browser that
+  refuses storage keeps them for as long as the page is open.
+- **STORE-31** How the sidebar is laid out — whether the lists under Lists are folded (LST-26) — is
+  kept the same way, and for the same reasons: in this browser's `localStorage`, not in the
+  account, under a version of its own, read at once when the app opens, and back to the default —
+  unfolded — when it cannot be read.
+
 ## Migration
 
 - **STORE-5** Changing the saved shape means bumping the version and migrating on load — never
@@ -83,7 +97,7 @@ changes shape.
   existed, before a task could carry a description, before it could carry a checklist, before it
   had an order of its own, before it could be due on a day, before a repeating task kept the days
   it was done on, before a task could carry tags, before it could carry a reward, before there
-  were lists to file it under, and before a task could ask for time. The order step keeps each task where it was: the saved list was already in
+  were lists to file it under, before a task could ask for time, and before a repeating task's occurrence could be skipped. The order step keeps each task where it was: the saved list was already in
   order. Tasks saved before due dates have no day. A repeating task saved before history was kept
   starts its history with the day of its last completion, the one day anything remembers. Tasks
   saved before tags have none, tasks saved before rewards have no reward, so none of what they
@@ -126,9 +140,12 @@ copy), `taskSchema.ts` (versions and upgrades), `localTaskImport.ts` (tasks kept
 `firestoreBatches.ts` (writing in batches), `firestoreAccount.ts` (every collection an account keeps), `rewardRepository.ts`, `firestoreRewardRepository.ts` and
 `rewardSchema.ts` (the points ledger), `listRepository.ts`, `firestoreListRepository.ts` and
 `listSchema.ts` (the lists), `src/storage/quoteRepository.ts` and `localStorageQuoteRepository.ts`,
-`src/storage/quoteSource.ts` and `quotableQuoteSource.ts`, `src/app/useTasks.ts`, `src/app/useLists.ts`,
+`src/storage/quoteSource.ts` and `quotableQuoteSource.ts`, `src/storage/viewOptionsRepository.ts`,
+`viewOptionsSchema.ts` and `localStorageViewOptionsRepository.ts` (the View options), `src/storage/sideNavRepository.ts`,
+`sideNavSchema.ts` and `localStorageSideNavRepository.ts` (the sidebar's layout), `src/app/useTasks.ts`, `src/app/useLists.ts`,
 `src/app/TasksScreen.tsx` (the repository and the move). Who may read what: `firestore.rules`.
 **Tested in:** `src/storage/taskRepository.test.ts` (what a change writes),
 `src/storage/localTaskImport.test.ts` (the move, and upgrading older data), `src/storage/rewardSchema.test.ts`
 (reading the ledger back), `src/storage/listRepository.test.ts` and `src/storage/listSchema.test.ts`
-(what a change to the lists writes, and reading one back).
+(what a change to the lists writes, and reading one back), `src/storage/viewOptionsSchema.test.ts` (reading the
+View options back), `src/storage/sideNavSchema.test.ts` (reading the sidebar's layout back).

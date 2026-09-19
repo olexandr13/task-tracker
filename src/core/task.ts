@@ -49,6 +49,14 @@ export interface Task {
    */
   readonly doneDays: readonly LocalDay[]
   /**
+   * The local days of a repeating task's occurrences passed over without being
+   * done, oldest first — see `skipOccurrence` in ./due. A skipped occurrence
+   * hands the task on to its next one, so it is not due, overdue or counted on
+   * that day. Done wins: an occurrence ticked off after all reads as done, and
+   * the day stays here only so that taking the tick back skips it again.
+   */
+  readonly skippedDays: readonly LocalDay[]
+  /**
    * The local day a one-off is due, or null for one that has no day. Always null
    * on a repeating task: its rule is what says which days it falls on. See ./due.
    */
@@ -128,6 +136,7 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
     completedAt: null,
     repeat,
     doneDays: [],
+    skippedDays: [],
     dueDate: null,
     subtasks: [],
     tags: [],
@@ -160,6 +169,7 @@ export function duplicateTask(task: Task, now: Date = new Date()): Task {
     createdAt: at,
     completedAt: null,
     doneDays: [],
+    skippedDays: [],
     subtasks: task.subtasks.map((subtask) => ({ ...subtask, id: crypto.randomUUID(), createdAt: at, completedAt: null })),
     timeLog: [],
     deletedAt: null,
@@ -388,6 +398,17 @@ export function setDueDate(task: Task, dueDate: LocalDay | null): Task {
   }
 
   return { ...task, dueDate }
+}
+
+/**
+ * Makes the task a one-off due on `dueDate`. A repeating task's rule ends first,
+ * exactly as choosing Once would, since only a one-off carries a date of its
+ * own; a one-off just has its day set, as `setDueDate` does.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function scheduleOnce(task: Task, dueDate: LocalDay, now: Date = new Date()): Task {
+  return setDueDate(task.repeat === null ? task : setRepeat(task, null, now), dueDate)
 }
 
 /** Lets go of a tick that no longer counts, leaving live ones — and blanks — alone. */

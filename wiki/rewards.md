@@ -28,7 +28,7 @@ earned whatever becomes of the task afterwards.
   away**, and **−** stops there. A number that is neither 0 nor a reward is not saved, and the box goes
   back to what is saved on leaving it. Enter closes the panel, as do a click outside and Escape
   (UI-9, UI-10).
-- **RWD-7** The star sits in a slot of its own after the tag button (UI-27). A woken row spells the
+- **RWD-7** The star sits in a slot of its own after the clock (UI-27). A woken row spells the
   reward out under it: `+5`.
 - **RWD-8** On a phone the row's line has no room for the star, so the woken row has it on a line
   of its own below the tags (TAG-16). There it names the reward — `5 points` — or offers
