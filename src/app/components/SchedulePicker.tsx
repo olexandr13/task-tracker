@@ -45,7 +45,7 @@ interface SchedulePickerProps {
  * When a task is due: one small button for both the day and the repeat rule,
  * since a rule is what gives a repeating task its days. Its icon says which the
  * task has — the looping arrows for a rule, the calendar otherwise — and it
- * opens one panel with the date choices over the repeat ones.
+ * opens one panel with the date choices and a month calendar over the repeat ones.
  *
  * There is nothing to confirm: each choice is saved as it is made.
  */
@@ -118,7 +118,7 @@ export function SchedulePicker({
         <div
           role="dialog"
           aria-label={label}
-          className="absolute right-0 z-10 mt-1.5 flex w-56 flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1 shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
+          className="absolute right-0 z-10 mt-1.5 flex w-64 flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1 shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
         >
           <DueChoices
             dueDate={dueDate}

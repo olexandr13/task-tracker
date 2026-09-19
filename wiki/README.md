@@ -28,6 +28,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Interface](interface.md) | Layout, navigation, popovers, phone behaviour, accessibility |
 | [Offline](offline.md) | Opening with no connection, changes kept and synced later, the sync notice, installing |
 | [Storage](storage.md) | Where data lives, schema versions and migrations |
+| [Backup](backup.md) | Exporting the whole account to a file, and importing one back |
 
 ## How requirements are written
 

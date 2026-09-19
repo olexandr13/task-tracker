@@ -1,4 +1,5 @@
 import type { SideNavState } from './sideNavRepository'
+import { isRecord } from './plainData'
 
 /**
  * The saved shape of the sidebar's layout. Its own version, apart from
@@ -27,8 +28,4 @@ export function readSideNavState(data: unknown): SideNavState | null {
   if (typeof listsOpen !== 'boolean') return null
 
   return { listsOpen }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

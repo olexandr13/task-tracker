@@ -2,6 +2,7 @@ import {
   groupByCompletion,
   isComplete,
   type CompletionSpan,
+  type CompletionSpans,
   type List,
   type ListId,
   type LocalDay,
@@ -19,18 +20,18 @@ interface TaskListProps {
   tasks: Task[]
   /** The moment the list is drawn for; a repeating task is only done for its current occurrence. */
   now: Date
-  /** Every tag in use, for a row to offer. */
+  /** Every tag there is, for a row to offer. */
   knownTags: readonly string[]
   /** Every list there is, for a row to file its task under. */
   lists: readonly List[]
   /** Whether every row spells out what its controls hold, not only the woken one. */
   showDetails?: boolean
   /**
-   * Whether the done tasks are divided by when they were finished, each span under
-   * a heading. The tasks are then given in that order too: to do, then done today,
-   * yesterday and so on (`groupByCompletion`).
+   * The spans the done tasks are divided into by when they were finished, each
+   * under a heading, or null for one run of them. The tasks are then given in that
+   * order too: to do, then done today, yesterday and so on (`groupByCompletion`).
    */
-  groupDone?: boolean
+  doneSpans?: CompletionSpans | null
   /** What an empty list says, pointing at the box above it. */
   emptyMessage: string
   /** What the list says above its tasks once every one of them is done. */
@@ -63,7 +64,7 @@ export function TaskList({
   knownTags,
   lists,
   showDetails = false,
-  groupDone = false,
+  doneSpans = null,
   emptyMessage,
   allDoneMessage,
   onComplete,
@@ -137,10 +138,10 @@ export function TaskList({
       {allDone && (
         <p className="pt-4 pb-6 text-center text-green-700/70 dark:text-green-500/55">{allDoneMessage}</p>
       )}
-      {groupDone ? (
+      {doneSpans !== null ? (
         <div className="flex flex-col gap-3">
           <SortableTasks tasks={tasks}>
-            {groupByCompletion(tasks, now).map(({ span, tasks: group }) =>
+            {groupByCompletion(tasks, doneSpans, now).map(({ span, tasks: group }) =>
               span === null ? (
                 <ul key="todo" className="flex flex-col gap-1">
                   {group.map((task) => row(task))}

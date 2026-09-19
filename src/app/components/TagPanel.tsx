@@ -7,7 +7,7 @@ const hint = 'px-2 py-1.5 text-xs text-neutral-400 dark:text-neutral-500'
 interface TagPanelProps {
   /** The tags the task carries. */
   tags: readonly string[]
-  /** Every tag in use, to choose from. */
+  /** Every tag there is, to choose from. */
   known: readonly string[]
   onAdd: (name: string) => void
   onRemove: (name: string) => void

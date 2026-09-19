@@ -27,7 +27,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-6** Nothing is reachable only on a wide screen. A row's details (UI-27) have a line of their
   own under the task's, so a narrow screen keeps them too; so do the list and tag buttons (LST-23,
   TAG-16), which a wide screen has in the task's menu, the clock (TIME-10), the reward's star
-  (RWD-8), and the Lists, Tags and Rewards pages (UI-34).
+  (RWD-8), the Lists page (UI-34) and the Tags and Rewards pages (UI-45). The task's menu itself needs no
+  right-click: a finger opens it by holding a row or tapping an open one (UI-44).
 
 ## Navigation
 
@@ -44,29 +45,43 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   indented (LST-13); the one open is marked itself, and Lists only on the Lists page. A tag's view
   has no entry of its own: **Tags** stays marked while one is open.
 - **UI-8** The view you are on is marked, in the sidebar and in the bottom bar alike.
-- **UI-32** The bottom bar has four tabs, each an icon over its name: **the period** (UI-33),
-  **Habits**, **Tasks** and **Settings**.
+- **UI-32** The bottom bar has five tabs, each an icon over its name: **the period** (UI-33),
+  **Habits**, **Tasks**, **More** (UI-45) and **Settings**.
 - **UI-33** Today, Week and Month share the first tab. It shows the one last on screen — Today to
-  begin with — and a tap goes to it. **Holding it down** opens a menu above it to switch between
-  Today, Week and Month; letting go does not also go to the tab. A right-click, the context-menu key
-  or Shift+F10 open the same menu, from the keyboard starting on its first item. It closes as a
-  task's menu does (UI-31).
-- **UI-34** The bar has no tab for the lists, the tags, the rewards or the trash. **Tasks** ends with
-  a **Lists**, a **Tags**, a **Rewards** and a **Trash** button instead, and **Tasks** stays marked
-  while any of them is open, or one list, the Inbox or a tag's view. The sidebar keeps its own entries, so the buttons are only on a
-  phone.
-- **UI-35** **Settings** holds the signed-in account and the way out (AUTH-9), and says there is
-  nothing else to set yet.
+  begin with — and a tap goes to it. **Holding it down**, or **tapping it again** while Today, Week or
+  Month is on screen — so a double tap from anywhere — opens a menu above it to switch between
+  Today, Week and Month; letting go of a hold does not also go to the tab. A right-click, the
+  context-menu key or Shift+F10 open the same menu, and so does Enter on the tab while its period is
+  on screen, from the keyboard starting on its first item. It closes as a task's menu does (UI-31),
+  and on a tap on the tab while it is open, which does not open it again.
+- **UI-34** The bar has no tab for the lists or the trash. **Tasks** ends with a **Lists** and a
+  **Trash** button instead, the Tasks tab's menu has them too (UI-43), and **Tasks** stays marked
+  while either is open, or one list or the Inbox. The sidebar keeps its own entries, so the buttons
+  are only on a phone.
+- **UI-35** **Settings** holds the signed-in account and the way out (AUTH-9), and under it
+  **Backup**: exporting the account to a file and importing one back (BAK-1, BAK-4).
 - **UI-36** The view you are on is **in the address** — `#/week`, `#/habits`, `#/inbox`,
   `#/list/{id}`, `#/tag/work` — so reloading the page
   keeps you on it, and a bookmark or a link opens on it. An address naming no view opens on Today.
 - **UI-37** Each switch of view is a step in the browser's history: **back and forward** move
   between the views you went through.
+- **UI-43** The **Tasks** tab has a menu of its own, opened as the period tab's is (UI-33): held
+  down, or tapped again while Tasks is on screen, and closed by a tap on Tasks while open. It holds what the sidebar has in its place — **Lists**
+  and **Trash**, each with its icon, then a **Lists** group of the Inbox and every list in the
+  sidebar's order (UI-30) — so any list is two taps from anywhere, however long Tasks runs. Choosing
+  one goes there. From any other view, a list's included, a tap on Tasks goes to Tasks.
+- **UI-45** The bar has no tab for the tags or the rewards either: they are under **More**, marked
+  with three dots. More has no page of its own, so **a tap opens its menu** straight away — **Tags**
+  and **Rewards**, each with its icon — and so do holding it, a right-click, the context-menu key,
+  Shift+F10 and Enter; choosing one goes there. A tap on More while its menu is open closes it, and
+  a tap on it while another tab's menu is open closes that one and opens this. **More** stays
+  marked while the Tags page, a tag's view or the Rewards page is open. It is a phone's alone: the
+  sidebar has an entry for each (UI-30).
 
 ## Popovers
 
-- **UI-9** Panels that open in place — the schedule (date and repeat), time and tag pickers, a task's menu, the period
-  menu of the bottom bar, the View panel (UI-41) — close on a click outside them or on Escape. The tags offered while typing
+- **UI-9** Panels that open in place — the schedule (date and repeat), time and tag pickers, a task's menu, the menus
+  of the bottom bar's tabs, the View panel (UI-41) — close on a click outside them or on Escape. The tags offered while typing
   `#` in a description close on Escape too, but a click outside is leaving the description (TAG-9).
 - **UI-10** Escape inside an open panel closes the panel rather than reaching anything behind it.
 - **UI-40** A panel's buttons are **compact** and the same in every panel — its choices, its menu
@@ -123,6 +138,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   the same and none of it is padding.
 - **UI-28** Clicking a woken row **on the task's own line** — anywhere on it that is not the title,
   a control, or an open picker — puts it away again, so a row opens and closes from the same place.
+  A finger's tap there opens the task's menu instead (UI-44); a tap anywhere else puts the row away.
   Clicks inside its controls, pickers, checklist or description leave it awake: those are about the
   thing clicked, not the row.
 - **UI-29** The title takes **only the room its words need, plus 13 pixels past the end** — that
@@ -131,7 +147,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-31** **Right-clicking a row opens the task's menu** at the pointer — on the other side of it
   where the window runs out — and marks the row's border while it is open, so it is plain which
   task the menu is for. It holds, first, the **Date** row of icons (DUE-14), then **Duplicate**
-  (TASK-51), **Tags…**, which opens the tag panel in the menu's place (TAG-7), and, once there are
+  (TASK-51), **Tags**, which opens the tag panel in the menu's place (TAG-7) — each marked with a
+  small glyph before its name, two sheets and the `#` — and, once there are
   lists, a **List** group to file the task in, its own checked (LST-14). A group has a small heading
   and a line above it;
   a long menu scrolls rather than running off the window. The row stays as it was, at rest or awake:
@@ -141,6 +158,12 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   the keyboard, the context-menu key or Shift+F10 opens it under the task's line; the arrow keys,
   Home and End move between items — a group's too, left and right stepping along a row of icons as
   down and up do — and focus goes back where it was when it closes.
+- **UI-44** A finger has no right-click, so on a touch screen the task's menu (UI-31) opens at the
+  finger two other ways: **holding a row** until it is picked up (TASK-39) and letting go where it
+  was — moved first, it is a drag — or **tapping a woken row** on its own line (UI-28), so a double
+  tap opens it on any row. It is the same menu, the Date row, Duplicate, Tags and List alike, the row
+  staying as it was behind it, and letting go clicks nothing the menu opens over. A mouse keeps the
+  right-click.
 
 ## The View button
 
@@ -185,9 +208,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 **Where it lives:** `src/app/TasksScreen.tsx` (the three areas), `src/app/components/TaskItem.tsx` (the
 row at rest and awake), `src/app/components/ContextMenu.tsx` (a task's menu), `src/app/components/FloatingPanel.tsx` (a menu or panel floating where the pointer was), `src/app/textOffsetAtPoint.ts` (which character a click landed on), `src/app/components/SideNav.tsx`,
 `src/app/components/BottomNav.tsx` (the phone's bar), `src/app/components/ViewOptionsMenu.tsx` and `src/app/useViewOptions.ts` (the View button and its options), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/useLongPress.ts` (a press told from a
-long press), `src/app/components/SettingsList.tsx`, `src/app/components/AccountCard.tsx` (the account on it), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
+long press), `src/app/components/SettingsList.tsx`, `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
 view's icon), `src/app/rowControls.ts` (the shape and tones a row's controls share), `src/app/panelControls.ts` (the size a panel's buttons share), `src/styles.css`,
 `public/favicon.svg` (the app's icon; the PNGs beside it are the same icon for installing).
 **Tested in:** `src/app/components/BottomNav.test.tsx` (the bottom bar), `src/app/components/SideNav.test.tsx` (the sidebar), `src/app/useView.test.ts` (the
 view in the address), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel), `src/app/components/TaskItem.test.tsx`
-(a row with Show task details on).
+(a row with Show task details on, and a finger on a row).

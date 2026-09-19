@@ -1,4 +1,5 @@
 import { isListName, type List } from '../core'
+import { isRecord } from './plainData'
 
 /**
  * The saved shape of a list. Its own version, apart from the tasks' and the
@@ -40,8 +41,4 @@ export function readList(data: unknown): List | null {
   }
 
   return { id, name, createdAt, order }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

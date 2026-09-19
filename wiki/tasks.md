@@ -146,14 +146,21 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   a small, muted gray heading with its count, the spans set close together: **Done today**, **Done yesterday**, **Done in the last 7 days**, **Done
   in the last 30 days** and **Done earlier**, most recent first. The spans count back in local days
   and each leaves out the ones before it, so a task is under exactly one; a span with nothing in it
-  has no heading. Tasks still to do stay above, with no heading. Today, Week, Month, the Inbox, lists
-  and tags keep one run of done tasks.
+  has no heading. Tasks still to do stay above, with no heading. Week and Month divide theirs too, by
+  the calendar (TASK-59); Today, the Inbox, lists and tags keep one run of done tasks.
 - **TASK-57** A repeating task is under the span of its latest completion while that completion
   still covers the occurrence in play (TASK-18); once the next occurrence comes it is back among the
   tasks to do. A completion stamped later than today, by a device whose clock ran ahead, counts as
   today's.
 - **TASK-58** Nothing is rewritten when the day turns: what is under each heading follows from the
   day it is, so a page left open moves yesterday's work along on its next render (PRIN-2).
+- **TASK-59** **Week** and **Month** divide their done tasks the same way (TASK-56 – TASK-58), but
+  by the calendar rather than by rolling windows. Week: **Done today**, **Done yesterday**, **Done
+  this week** — from Monday, the week the bars count (PROG-2), not the last seven days — and **Done
+  earlier**. Month adds **Done this month**, from the 1st, after this week. A span that starts no
+  earlier than the one before it is simply empty: on a Monday or Tuesday nothing is under Done this
+  week, and yesterday can be last week's Sunday or last month's last day. Early in a month, this week
+  can reach back into the last one, and still reads as this week.
 
 ## Moving
 
@@ -165,15 +172,16 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   grip shows when the pointer is over the row, and on a woken row. A press inside a text box being
   typed in selects text instead.
 - **TASK-39** With a mouse, a drag starts only once the pointer has moved a few pixels, so a click
-  is still a click. With a finger, you hold for a moment first, so a swipe still scrolls the page.
+  is still a click. With a finger, you hold for a moment first, so a swipe still scrolls the page;
+  let go there without moving, and it opens the task's menu instead (UI-44).
   Letting go never opens the row or starts editing its title.
 - **TASK-40** From the keyboard, the grip picks the row up with Space or Enter. The arrow keys move
   it, Space or Enter drops it, and Escape puts it back. Screen readers hear the task's title and its
   position as it moves.
 - **TASK-41** A task moves only within its own group. A to-do task can't be dropped among done
   ones, or a done task among to-do ones. Completing a task, or un-completing it, is what moves it
-  between the two, and it goes back to its place in the order when it returns. On Tasks a done task
-  moves only among those under its own heading (TASK-56): a drag never changes when a task was
+  between the two, and it goes back to its place in the order when it returns. On Tasks, Week and Month
+  a done task moves only among those under its own heading (TASK-56, TASK-59): a drag never changes when a task was
   finished.
 - **TASK-42** A task keeps its place while it is in the trash: restoring it puts it back where it
   was. New tasks still join the end (TASK-7).
@@ -182,7 +190,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 
 ## Duplicating
 
-- **TASK-51** **Duplicate**, in the menu a right-click on a row opens (UI-31), adds a copy of the
+- **TASK-51** **Duplicate**, in the task's menu — a right-click on a row, or a finger's hold or
+  second tap (UI-31, UI-44) — adds a copy of the
   task carrying what it says: the same title, description, repeat rule, due date, checklist
   items, tags, reward and time goal.
 - **TASK-52** The copy is a task of its own — its own id, stamped as created now — and each item on

@@ -6,7 +6,7 @@ import { TagPanel } from './TagPanel'
 interface TagPickerProps {
   /** The tags the task carries. */
   tags: readonly string[]
-  /** Every tag in use, to choose from. */
+  /** Every tag there is, to choose from. */
   known: readonly string[]
   onAdd: (name: string) => void
   onRemove: (name: string) => void

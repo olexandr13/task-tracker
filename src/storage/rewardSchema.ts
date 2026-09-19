@@ -1,4 +1,5 @@
 import { isLocalDay, isRedemptionAmount, type LocalDay, type Redemption, type RewardEntry, type TaskId } from '../core'
+import { isRecord } from './plainData'
 
 /**
  * The saved shape of the points ledger. Its own version, apart from the tasks':
@@ -22,6 +23,17 @@ export interface StoredRewardDay {
 export interface StoredRedemption {
   version: number
   redemption: Redemption
+}
+
+/** The ledger's entries as the days that hold them, earliest day first. */
+export function toStoredRewardDays(entries: readonly RewardEntry[]): StoredRewardDay[] {
+  const days = new Map<LocalDay, StoredRewardDay>()
+  for (const { taskId, day, points } of entries) {
+    const stored = days.get(day) ?? { version: REWARD_SCHEMA_VERSION, day, entries: {} }
+    stored.entries[taskId] = { points }
+    days.set(day, stored)
+  }
+  return [...days.values()].sort((a, b) => a.day.localeCompare(b.day))
 }
 
 export function toStoredRedemption(redemption: Redemption): StoredRedemption {
@@ -64,8 +76,4 @@ export function readRedemption(data: unknown): Redemption | null {
   }
 
   return { id, points, note, redeemedAt }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

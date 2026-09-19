@@ -1,4 +1,5 @@
 import type { ViewOptions } from './viewOptionsRepository'
+import { isRecord } from './plainData'
 
 /**
  * The saved shape of the view options. Its own version, apart from the tasks'
@@ -27,8 +28,4 @@ export function readViewOptions(data: unknown): ViewOptions | null {
   if (typeof showDetails !== 'boolean') return null
 
   return { showDetails }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

@@ -50,7 +50,9 @@ ceremony. If a native app ever happens, `src/core/` moves into a workspace packa
   `users/{uid}/redemptions/{id}`, with their own `REWARD_SCHEMA_VERSION` (`src/storage/rewardSchema.ts`).
   What a task change earns is derived in core (`rewardChanges`) and written from `useTasks`.
 - Every collection under an account is named in `ACCOUNT_COLLECTIONS` (`src/storage/firestoreAccount.ts`)
-  and reached through `accountCollection`, so the sync notice watches it along with the rest.
+  and reached through `accountCollection`, so the sync notice watches it along with the rest. A new
+  one also goes into the backup (`AccountData` in `src/storage/backupRepository.ts`, `backupFile.ts`,
+  `firestoreBackupRepository.ts`), or it is left out of every export.
 - The built app is kept for offline by a service worker (`vite-plugin-pwa`, `vite.config.ts`).
   `npm run dev` has none; try offline behaviour with `npm run build && npm run preview`.
 - Ids are `crypto.randomUUID()` and timestamps are ISO 8601, so records from two devices merge task
@@ -67,8 +69,3 @@ ceremony. If a native app ever happens, `src/core/` moves into a workspace packa
   so React's own complaints and an error path firing unasked cannot pass quietly. A test that means
   to cause output declares it with `expectConsole(...)`, and can read what was written back with
   `consoleOutput()`.
-
-
-# TEMP
-
-Lets focus on web version only currently. Mobile will be the next step.

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { completeTask, createTask, type Task } from '../../core'
+import { completeTask, createTask, MONTH_SPANS, ROLLING_SPANS, WEEK_SPANS, type CompletionSpans, type Task } from '../../core'
 import { TaskList } from './TaskList'
 
 /* What a list says around its tasks. TASK ids refer to wiki/tasks.md. */
@@ -12,12 +12,12 @@ const ALL_DONE = 'Great work!'
 
 afterEach(cleanup)
 
-function setup(tasks: Task[], groupDone = false) {
+function setup(tasks: Task[], doneSpans: CompletionSpans | null = null) {
   render(
     <TaskList
       tasks={tasks}
       now={NOW}
-      groupDone={groupDone}
+      doneSpans={doneSpans}
       knownTags={[]}
       lists={[]}
       emptyMessage={EMPTY}
@@ -73,12 +73,31 @@ describe('TaskList', () => {
     const today = completeTask(createTask('read', null, NOW), NOW)
     const yesterday = completeTask(createTask('write', null, NOW), new Date(2026, 8, 16, 18, 0))
     const lastMonth = completeTask(createTask('file', null, NOW), new Date(2026, 7, 25, 12, 0))
-    setup([open, today, yesterday, lastMonth], true)
+    setup([open, today, yesterday, lastMonth], ROLLING_SPANS)
 
     const headings = screen.getAllByRole('heading').map((heading) => heading.textContent)
     expect(headings).toEqual(['Done today1', 'Done yesterday1', 'Done in the last 30 days1'])
     expect(within(screen.getByRole('region', { name: 'Done yesterday' })).getByText('write')).toBeTruthy()
     expect(within(screen.getByRole('region', { name: 'Done in the last 30 days' })).getByText('file')).toBeTruthy()
+  })
+
+  it('divides a week’s done tasks from Monday, and a month’s from the 1st (TASK-59)', () => {
+    // Thursday 17 September 2026: this week began on Monday the 14th.
+    const monday = completeTask(createTask('read', null, NOW), new Date(2026, 8, 14, 18, 0))
+    const lastWeek = completeTask(createTask('write', null, NOW), new Date(2026, 8, 11, 18, 0))
+    setup([monday, lastWeek], WEEK_SPANS)
+
+    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
+      'Done this week1',
+      'Done earlier1',
+    ])
+    cleanup()
+
+    setup([monday, lastWeek], MONTH_SPANS)
+    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
+      'Done this week1',
+      'Done this month1',
+    ])
   })
 
   it('keeps one run of done tasks where the view does not divide them (TASK-56)', () => {

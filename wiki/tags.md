@@ -1,7 +1,8 @@
 # Tags
 
 Short names a task carries, so tasks that belong together can be seen together, whatever day
-they are due. A tag is not a record of its own: it is a name written on the tasks that carry it.
+they are due. A task carries its tags by name; each tag is also kept on its own, so it lasts until
+it is deleted, whether or not a task carries it.
 
 ## The tag
 
@@ -15,14 +16,16 @@ they are due. A tag is not a record of its own: it is a name written on the task
   it was first given, and putting it on another task in any case uses that spelling.
 - **TAG-5** Tagging a task changes that and nothing else — same id, same completion record, same
   rule — and counts for nothing in any period's bar.
-- **TAG-6** The tags on offer are the ones **live tasks carry**, in alphabetical order. A tag comes
-  into being on the first task given it and goes with the last one, or when it is deleted (TAG-22). A tag carried only by tasks in
-  the trash is not offered anywhere, and comes back with its task.
+- **TAG-6** The tags on offer are **every tag there is**, in alphabetical order. A tag comes into
+  being when it is made on the Tags page (TAG-23) or first given to a task, and **stays until it is
+  deleted** (TAG-22): not when the last task carrying it loses it, goes to the trash or is purged.
+  A task tagged anywhere — another device too — keeps its tag this way (STORE-33).
 
 ## Tagging a task
 
-- **TAG-7** A task is tagged from **its menu** — a right-click on the row (UI-31). **Tags…**, under
-  Duplicate, opens the **tag panel** where the menu was: a box to find or add a tag, with the caret
+- **TAG-7** A task is tagged from **its menu** — a right-click on the row, or a finger's hold or
+  second tap (UI-31, UI-44). **Tags**, under
+  Duplicate and marked with the `#` glyph, opens the **tag panel** where the menu was: a box to find or add a tag, with the caret
   already in it, over every tag there is, the task's own ticked. Clicking a tag puts it on or takes
   it off. Enter in the box puts on the tag it names, making it first when there is none. The panel
   stays open for the next one, and closes as the other pickers do (UI-9, UI-10), giving focus back
@@ -58,42 +61,50 @@ they are due. A tag is not a record of its own: it is a name written on the task
   tasks carrying it, in any case. It shows what Tasks shows otherwise (LIST-7) — the same rows,
   done tasks sinking, dragging, the rail — headed with the tag's name, and **Tags** stays marked in
   the sidebar while it is open. It is in the address as `#/tag/name` (UI-36), so it survives a
-  reload even after the last task with the tag has gone, when it says there is nothing tagged yet.
+  reload even when no task carries the tag, when it says there is nothing tagged yet.
 - **TAG-14** A task added in a tag's list **carries that tag**, and has no day, as in Tasks.
 - **TAG-15** Once everything in a tag's list is done, it praises the work (TASK-50).
 
 ## The Tags page
 
 - **TAG-18** **Tags** has an entry of its own in the navigation, beside Tasks and Habits (UI-30). Its
-  page lists **every tag in use**, alphabetically (TAG-6), and clicking one opens its list (TAG-13).
+  page lists **every tag there is**, alphabetically (TAG-6), and clicking one opens its list (TAG-13).
   No single tag has an entry in the navigation.
 - **TAG-19** Beside each tag is how many of its tasks are **still to do**, a repeating one for its
-  current occurrence. A tag whose tasks are all done shows no number, and is still listed.
-- **TAG-20** With no tags in use the page says so, and how to tag a task: its menu (TAG-7, TAG-16),
-  or `#` in its description (TAG-8).
+  current occurrence. A tag whose tasks are all done, or that no task carries, shows no number, and
+  is still listed.
+- **TAG-20** With no tags yet the page says so, and how to make one: the box above (TAG-23), a task's
+  menu (TAG-7, TAG-16), or `#` in its description (TAG-8).
 - **TAG-21** The Tags page is not a list of tasks, so it has no box for adding one and no rail (UI-2).
+  Its box makes a tag instead (TAG-23).
 - **TAG-22** Beside each tag is a button that **deletes it**, after asking: the tag comes off every
-  task carrying it — tasks in the trash too, so restoring one does not bring it back — and the tasks
-  themselves stay as they were otherwise. There is no undo.
+  task carrying it — tasks in the trash too, so restoring one does not bring it back — the tasks
+  themselves stay as they were otherwise, and the tag is gone from everywhere it was offered. There
+  is no undo.
+- **TAG-23** A box at the top of the Tags page, **Add a tag**, makes a tag no task carries yet —
+  on Enter or its **Add** button, a `#` in front ignored (TAG-3). The new tag is listed at once, with
+  nothing to do, and the box empties, staying on the page for the next one. A name some tag has
+  already, in any case (TAG-4), makes nothing, and the box says so and keeps what was typed.
 
 ## On a phone
 
-- **TAG-16** A phone has no right-click to reach the task's menu, so there the woken row has a
-  **tag button** on a line of its own under the description, naming the task's tags — or offering
-  to add one — and opening the same panel (TAG-7) under it.
-- **TAG-17** The Tags page is reached from a **Tags** button at the foot of Tasks, beside the Trash
-  button, and Tasks stays marked in the bottom bar while the Tags page or a tag's list is open (UI-34).
+- **TAG-16** On a phone the woken row has a **tag button** as well, on a line of its own under the
+  description, naming the task's tags — or offering to add one — and opening the same panel (TAG-7)
+  under it, a tap away rather than a menu away (UI-44).
+- **TAG-17** On a phone the Tags page is reached from the **More** tab's menu (UI-45). More stays
+  marked in the bottom bar while the Tags page or a tag's list is open.
 
 ---
 
-**Where it lives:** `src/core/tag.ts` (names, putting on and taking off, deleting, the tags in use, matching
-and suggesting, the tag being typed),
+**Where it lives:** `src/core/tag.ts` (names, the kept tag, putting on and taking off, deleting,
+every tag there is, matching and suggesting, the tag being typed), `src/app/useTags.ts` (keeping tags,
+and keeping the ones tasks carry; saving: [Storage](storage.md)),
 `src/app/components/TagPanel.tsx` (the panel), `src/app/components/TagPicker.tsx` (the phone's
 button), `src/app/components/TaskDescription.tsx` and `src/app/descriptionBox.ts` (typing `#`),
-`src/app/components/TaskItem.tsx` (labels on the line of details, the menu's Tags… and the phone's button), `src/app/components/TagList.tsx`
-(the Tags page), `src/app/view.ts` (the Tags page and a tag's list, their addresses and what they say), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx`,
+`src/app/components/TaskItem.tsx` (labels on the line of details, the menu's Tags and the phone's button), `src/app/components/TagList.tsx`
+(the Tags page and its box), `src/app/view.ts` (the Tags page and a tag's list, their addresses and what they say), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx`,
 `src/app/components/SideNav.tsx`, `src/app/components/BottomNav.tsx`, `src/app/components/TagIcon.tsx`.
-**Tested in:** `src/core/tag.test.ts`, `src/app/components/TagPicker.test.tsx`,
+**Tested in:** `src/core/tag.test.ts`, `src/app/useTags.test.ts` (keeping tags), `src/app/components/TagPicker.test.tsx`,
 `src/app/components/TaskDescription.test.tsx` (typing `#`), `src/app/components/TaskItem.test.tsx`
-(labels on the line of details, tagging from the menu), `src/app/components/TagList.test.tsx` (the Tags page), `src/app/components/SideNav.test.tsx`,
+(labels on the line of details, tagging from the menu), `src/app/components/TagList.test.tsx` (the Tags page and its box), `src/app/components/SideNav.test.tsx`,
 `src/app/useView.test.ts` (the address), `src/app/components/BottomNav.test.tsx`.

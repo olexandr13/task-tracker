@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -22,6 +22,7 @@ import {
   type Task,
 } from '../../core'
 import { describeShortDate } from '../dueLabels'
+import { TaskDragAndDrop } from './TaskDragAndDrop'
 import { TaskItem } from './TaskItem'
 
 /*
@@ -378,6 +379,77 @@ describe('clicking a woken row', () => {
   })
 })
 
+describe('a finger on a task row, which has no right-click', () => {
+  const menu = () => screen.queryByRole('menu', { name: `Actions for "${TASK}"` })
+
+  it('opens the task\'s menu on a second tap, where a mouse click would put the row away (UI-44, UI-28)', async () => {
+    const user = setup()
+    const row = screen.getByRole('listitem')
+
+    await user.pointer({ keys: '[TouchA]', target: row })
+
+    expect(menu()).toBeNull()
+    expect(within(row).getByText('Daily')).toBeDefined()
+
+    await user.pointer({ keys: '[TouchA]', target: row })
+
+    expect(within(menu() as HTMLElement).getByRole('menuitem', { name: 'Duplicate' })).toBeDefined()
+    // The menu is about the task as a whole: the row stays open behind it.
+    expect(within(row).getByText('Daily')).toBeDefined()
+  })
+
+  it('opens the task\'s menu on a second tap only on the task\'s own line, not on its controls (UI-44)', async () => {
+    const user = setup()
+
+    await user.pointer({ keys: '[TouchA]', target: screen.getByRole('listitem') })
+    await user.pointer({ keys: '[TouchA]', target: screen.getByRole('button', { name: `Add a checklist to "${TASK}"` }) })
+
+    expect(menu()).toBeNull()
+  })
+
+  describe('held', () => {
+    // Picking a row up leaves listeners behind for a moment after it is let go; they go before the next test.
+    afterEach(() => {
+      act(() => { vi.runOnlyPendingTimers() })
+      vi.useRealTimers()
+    })
+
+    /** A row inside what picks rows up, as on screen, and a finger held on it and let go `drift` pixels on. */
+    function holdRow(drift: number) {
+      vi.useFakeTimers()
+      const task = createTask(TASK, { kind: 'daily' }, NOW)
+      render(
+        <TaskDragAndDrop tasks={[task]} onMove={nothing} onFile={nothing}>
+          <ul>
+            <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={[]} lists={[]} />
+          </ul>
+        </TaskDragAndDrop>,
+      )
+      const row = screen.getByRole('listitem')
+
+      fireEvent.touchStart(row, { touches: [{ clientX: 40, clientY: 10 }] })
+      act(() => { vi.advanceTimersByTime(300) })
+      const end = { clientX: 40 + drift, clientY: 10 }
+      fireEvent.touchMove(row, { touches: [end] })
+      return fireEvent.touchEnd(row, { touches: [], changedTouches: [end] })
+    }
+
+    it('until it is picked up and let go where it was, opens the task\'s menu (UI-44)', () => {
+      const clicked = holdRow(3)
+
+      expect(within(menu() as HTMLElement).getByRole('menuitem', { name: 'Duplicate' })).toBeDefined()
+      // Letting go clicks nothing the menu opened over.
+      expect(clicked).toBe(false)
+    })
+
+    it('and moved before it is let go, is a drag and opens nothing (UI-44, TASK-39)', () => {
+      holdRow(40)
+
+      expect(menu()).toBeNull()
+    })
+  })
+})
+
 describe('the caret in a title opened for editing', () => {
   it('goes where the title was clicked (TASK-8)', async () => {
     layOutTitle()
@@ -618,7 +690,7 @@ describe('the menu a right-click opens on a task row', () => {
       expect(icons()).not.toContain('Skip occurrence')
     })
 
-    it('opens the date panel where the menu was, its date field ready (DUE-14)', async () => {
+    it('opens the date panel where the menu was, its calendar ready for the keys (DUE-14)', async () => {
       const onChangeDueDate = vi.fn()
       const user = renderDated(createTask(TASK, null, NOW), { onChangeDueDate })
 
@@ -626,13 +698,14 @@ describe('the menu a right-click opens on a task row', () => {
       await user.click(screen.getByRole('menuitem', { name: 'Select date' }))
 
       const panel = screen.getByRole('dialog', { name: `Date for "${TASK}"` })
-      const field = panel.querySelector('input[type="date"]') as HTMLInputElement
       expect(menu()).toBeNull()
-      expect(document.activeElement).toBe(field)
+      expect(panel.contains(document.activeElement)).toBe(true)
+      expect(document.activeElement?.getAttribute('aria-current')).toBe('date')
 
-      fireEvent.change(field, { target: { value: '2026-10-02' } })
+      await user.keyboard('{ArrowDown}{Enter}')
 
-      expect(onChangeDueDate).toHaveBeenCalledWith(expect.any(String), '2026-10-02')
+      expect(onChangeDueDate).toHaveBeenCalledWith(expect.any(String), offsetDay(toLocalDay(NOW), 7))
+      expect(screen.queryByRole('dialog', { name: `Date for "${TASK}"` })).toBeNull()
     })
 
     it('is stepped along with the left and right keys too (UI-31)', async () => {
@@ -752,7 +825,7 @@ describe('the menu a right-click opens on a task row', () => {
 
     async function openTags(user: ReturnType<typeof userEvent.setup>) {
       await user.pointer({ keys: '[MouseRight]', target: row() })
-      await user.click(screen.getByRole('menuitem', { name: 'Tags…' }))
+      await user.click(screen.getByRole('menuitem', { name: 'Tags' }))
     }
 
     it('opens the tag panel in the menu\'s place, the caret in its box and the task\'s own tags ticked (TAG-7)', async () => {

@@ -1,10 +1,11 @@
 /**
  * Lists: the place a task is filed under.
  *
- * Unlike a tag (./tag), a list is **a record of its own**, and a task is in
- * **one** of them or in none. Being a record is what lets a list outlive its
- * tasks — an empty list is still somewhere to put the next thing — and lets it
- * be renamed without every task carrying it having to be rewritten. Being one
+ * A list is **a record of its own**, and a task is in **one** of them or in
+ * none. Being a record is what lets a list outlive its tasks — an empty list is
+ * still somewhere to put the next thing — and, since a task names it by id
+ * where a tag (./tag) is carried by name, lets it be renamed without every task
+ * in it having to be rewritten. Being one
  * at a time is what makes a list a place rather than another label: tags say
  * what a task is about, a list says where it lives.
  *

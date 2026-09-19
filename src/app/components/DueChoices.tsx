@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { isLocalDay, type LocalDay } from '../../core'
+import type { LocalDay } from '../../core'
 import { dateChoices, type SkipChoice } from '../dateChoices'
 import { panelHeading, panelIcon, panelIconOff, panelIconOn, panelIconRow } from '../panelControls'
+import { DateCalendar } from './DateCalendar'
 
 interface DueChoicesProps {
   dueDate: LocalDay | null
@@ -17,50 +17,18 @@ interface DueChoicesProps {
   onChange: (dueDate: LocalDay | null) => void
   /** Called once a choice has said everything, so the panel can close. */
   onDone: () => void
-  /**
-   * Whether the date field is on show and opens its calendar straight away: the
-   * panel was asked for to pick a date, so a click to open the calendar would be
-   * one too many.
-   */
-  openCalendar?: boolean
 }
 
 /**
  * The date half of the schedule panel: a row of quick choices as icons — the same
- * as a task's menu has (dateChoices) — and a date field for any other day. Each
- * choice is saved as it is made. A quick choice is done; the date field is not,
- * since a date is typed a part at a time and closing on the first part would take
- * the rest away.
+ * as a task's menu has (dateChoices), less Select date, which the calendar under
+ * them stands in for — and a month calendar for any other day. A choice, quick
+ * or from the calendar, is saved and done in one click.
  *
- * The field shows a one-off's own day. With none to show — no day yet, or a
- * repeating task's, which is the rule's — it is left out until Select date brings
- * it up, empty, with its calendar open.
+ * The calendar opens on the month of the task's day, a repeating task's being the
+ * rule's, and on today's without one. Only a one-off's own day is marked chosen.
  */
-export function DueChoices({ dueDate, now, repeats, skip, onChange, onDone, openCalendar = false }: DueChoicesProps) {
-  const field = useRef<HTMLInputElement>(null)
-  const [picking, setPicking] = useState(openCalendar)
-  const ownDay = repeats ? null : dueDate
-
-  // The field is only there to open once it is drawn, after the click that asked for it.
-  useEffect(() => {
-    if (picking) openPicker()
-  }, [picking])
-
-  function openPicker() {
-    field.current?.focus()
-    try {
-      field.current?.showPicker()
-    } catch {
-      // Not every browser has a calendar to open this way, or lets it open
-      // unasked; the field is still there to click.
-    }
-  }
-
-  function selectDate() {
-    if (field.current === null) setPicking(true)
-    else openPicker()
-  }
-
+export function DueChoices({ dueDate, now, repeats, skip, onChange, onDone }: DueChoicesProps) {
   function choose(day: LocalDay | null) {
     onChange(day)
     onDone()
@@ -81,7 +49,6 @@ export function DueChoices({ dueDate, now, repeats, skip, onChange, onDone, open
             },
           },
     onChange: choose,
-    onSelectDate: selectDate,
   })
 
   return (
@@ -115,24 +82,9 @@ export function DueChoices({ dueDate, now, repeats, skip, onChange, onDone, open
         </div>
       </div>
 
-      {(ownDay !== null || picking) && (
-        <label className="flex items-center gap-2 border-t border-neutral-200 px-2 pt-1.5 pb-1 text-sm text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
-          On
-          <input
-            ref={field}
-            type="date"
-            value={ownDay ?? ''}
-            onChange={(event) => {
-              const { value } = event.target
-              // Cleared with the field's own control is taking the day away;
-              // anything half-typed is not a day yet and waits.
-              if (value === '') onChange(null)
-              else if (isLocalDay(value)) onChange(value)
-            }}
-            className="min-w-0 flex-1 rounded-lg border border-neutral-300 bg-transparent px-2 py-1 text-neutral-900 focus:border-blue-500 focus:outline-none dark:border-neutral-700 dark:text-neutral-100 dark:[color-scheme:dark]"
-          />
-        </label>
-      )}
+      <div className="border-t border-neutral-200 px-0.5 pt-1.5 pb-1 dark:border-neutral-800">
+        <DateCalendar selected={repeats ? null : dueDate} opensOn={dueDate} now={now} onSelect={choose} />
+      </div>
     </>
   )
 }

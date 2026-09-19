@@ -9,27 +9,17 @@ import {
 import type { Task } from '../core'
 import { accountCollection } from './firestoreAccount'
 import { commitInBatches } from './firestoreBatches'
-import { migrateTasks, SCHEMA_VERSION } from './taskSchema'
 import type { TaskRepository } from './taskRepository'
-
-/** One task, under the version of the shape it was saved in. */
-interface StoredTask {
-  version: number
-  task: Task
-}
-
-function toStored(task: Task): StoredTask {
-  return { version: SCHEMA_VERSION, task }
-}
+import { readStoredTask, toStoredTask } from './taskSchema'
 
 /** The task in today's shape, or nothing when it can't be trusted — which is left unread, not deleted. */
 function fromStored(id: string, data: DocumentData): Task[] {
-  const tasks = migrateTasks(data.version, [data.task])
-  if (tasks === null) {
+  const task = readStoredTask(data)
+  if (task === null) {
     console.warn(`Ignoring saved task ${id}: unexpected shape (version ${String(data.version)}).`)
     return []
   }
-  return tasks
+  return [task]
 }
 
 /**
@@ -57,7 +47,7 @@ export function createFirestoreTaskRepository(firestore: Firestore, accountId: s
 
     save({ saved, removed }) {
       return commitInBatches(firestore, [
-        ...saved.map((task) => (batch: WriteBatch) => batch.set(doc(tasks, task.id), toStored(task))),
+        ...saved.map((task) => (batch: WriteBatch) => batch.set(doc(tasks, task.id), toStoredTask(task))),
         ...removed.map((id) => (batch: WriteBatch) => batch.delete(doc(tasks, id))),
       ])
     },
@@ -72,7 +62,7 @@ export function createFirestoreTaskRepository(firestore: Firestore, accountId: s
         firestore,
         incoming
           .filter((task) => !known.has(task.id))
-          .map((task) => (batch: WriteBatch) => batch.set(doc(tasks, task.id), toStored(task))),
+          .map((task) => (batch: WriteBatch) => batch.set(doc(tasks, task.id), toStoredTask(task))),
       )
     },
   }

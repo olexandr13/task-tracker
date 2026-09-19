@@ -4,11 +4,16 @@ import { useEffect, useRef, type MouseEvent, type PointerEvent } from 'react'
 export const LONG_PRESS_MS = 500
 
 /** How far a held pointer may drift, in pixels, and still be the same press. */
-const DRIFT = 10
+export const LONG_PRESS_DRIFT = 10
+
+/** Whether a press let go at `end` is still the one begun at `start`, rather than a drag. */
+export function isHeldInPlace(start: { x: number; y: number }, end: { x: number; y: number }): boolean {
+  return Math.hypot(end.x - start.x, end.y - start.y) <= LONG_PRESS_DRIFT
+}
 
 interface LongPressActions<T extends HTMLElement> {
-  /** A tap, a click, or Enter or Space. */
-  onPress: () => void
+  /** A tap, a click, or Enter or Space — `fromKeyboard` for the last two. */
+  onPress: (element: T, fromKeyboard: boolean) => void
   /**
    * A press held down, a right-click, or the context-menu key or Shift+F10 —
    * `fromKeyboard` for the last two, where no pointer says where it was.
@@ -59,7 +64,7 @@ export function useLongPress<T extends HTMLElement>({ onPress, onLongPress }: Lo
     },
     onPointerMove(event: PointerEvent<T>) {
       if (start.current === null) return
-      if (Math.hypot(event.clientX - start.current.x, event.clientY - start.current.y) > DRIFT) cancel()
+      if (!isHeldInPlace(start.current, { x: event.clientX, y: event.clientY })) cancel()
     },
     onPointerUp: cancel,
     onPointerLeave: cancel,
@@ -76,7 +81,7 @@ export function useLongPress<T extends HTMLElement>({ onPress, onLongPress }: Lo
       // right-click left behind cannot swallow the next Enter.
       const endsLongPress = didLongPress.current && event.detail !== 0
       didLongPress.current = false
-      if (!endsLongPress) onPress()
+      if (!endsLongPress) onPress(event.currentTarget, event.detail === 0)
     },
   }
 }

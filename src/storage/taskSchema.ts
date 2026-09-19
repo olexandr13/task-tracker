@@ -1,4 +1,5 @@
 import { ORDER_STEP, toLocalDay, type Task } from '../core'
+import { isRecord } from './plainData'
 
 /**
  * The saved shape of a task, wherever it is saved. Bump this whenever that shape
@@ -141,4 +142,25 @@ export function migrateTasks(version: unknown, tasks: unknown): Task[] | null {
     default:
       return null
   }
+}
+
+/** One task, under the version of the shape it was saved in: a record in the account, or in a backup. */
+export interface StoredTask {
+  version: number
+  task: Task
+}
+
+export function toStoredTask(task: Task): StoredTask {
+  return { version: SCHEMA_VERSION, task }
+}
+
+/**
+ * A saved task in today's shape, or null when it can't be trusted — an unknown
+ * version, or no task with an id to file it under. Anything past the id is
+ * trusted to be what its version says, as the app wrote it.
+ */
+export function readStoredTask(data: unknown): Task | null {
+  if (!isRecord(data) || !isRecord(data.task) || typeof data.task.id !== 'string' || data.task.id === '') return null
+
+  return migrateTasks(data.version, [data.task])?.[0] ?? null
 }

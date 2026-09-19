@@ -1,23 +1,26 @@
 import { useEffect, useState } from 'react'
 import {
+  allTags,
   countInboxOpen,
   groupByCompletion,
   habitTasks,
   isComplete,
   liveTasks,
+  sameTag,
   sortByOrder,
   summarizeLists,
   summarizeTags,
-  tagsInUse,
   trashedTasks,
   type ListId,
   type TaskId,
 } from '../core'
 import type { Account } from '../storage/authService'
 import { firestore } from '../storage/firebaseApp'
+import { createFirestoreBackupRepository } from '../storage/firestoreBackupRepository'
 import { createFirestoreListRepository } from '../storage/firestoreListRepository'
 import { createFirestoreRewardRepository } from '../storage/firestoreRewardRepository'
 import { createFirestoreSyncMonitor } from '../storage/firestoreSyncMonitor'
+import { createFirestoreTagRepository } from '../storage/firestoreTagRepository'
 import { createFirestoreTaskRepository } from '../storage/firestoreTaskRepository'
 import { localStorageQuoteRepository } from '../storage/localStorageQuoteRepository'
 import { localStorageSideNavRepository } from '../storage/localStorageSideNavRepository'
@@ -34,9 +37,7 @@ import { QuoteCard } from './components/QuoteCard'
 import { RewardsPage } from './components/RewardsPage'
 import { SettingsList } from './components/SettingsList'
 import { SideNav } from './components/SideNav'
-import { StarIcon } from './components/StarIcon'
 import { SyncBadge } from './components/SyncBadge'
-import { TagIcon } from './components/TagIcon'
 import { TagList } from './components/TagList'
 import { TaskDragAndDrop } from './components/TaskDragAndDrop'
 import { TaskList } from './components/TaskList'
@@ -44,11 +45,13 @@ import { TrashIcon } from './components/TrashIcon'
 import { TrashList } from './components/TrashList'
 import { UndoToast } from './components/UndoToast'
 import { ViewOptionsMenu } from './components/ViewOptionsMenu'
+import { useBackup } from './useBackup'
 import { useLists } from './useLists'
 import { useQuote } from './useQuote'
 import { useRewards } from './useRewards'
 import { useSideNav } from './useSideNav'
 import { useSyncNotice } from './useSyncNotice'
+import { useTags } from './useTags'
 import { useTasks } from './useTasks'
 import { useUndoToast } from './useUndoToast'
 import { useView } from './useView'
@@ -56,7 +59,7 @@ import { useViewOptions } from './useViewOptions'
 import {
   allDoneMessage,
   emptyMessage,
-  groupsDoneTasks,
+  doneSpans,
   isTaskView,
   newTaskDueDay,
   newTaskListId,
@@ -103,7 +106,9 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   const [repository] = useState(() => createFirestoreTaskRepository(firestore, account.id))
   const [rewardRepository] = useState(() => createFirestoreRewardRepository(firestore, account.id))
   const [listRepository] = useState(() => createFirestoreListRepository(firestore, account.id))
+  const [tagRepository] = useState(() => createFirestoreTagRepository(firestore, account.id))
   const [syncMonitor] = useState(() => createFirestoreSyncMonitor(firestore, account.id))
+  const [backupRepository] = useState(() => createFirestoreBackupRepository(firestore, account.id))
 
   // Tasks kept in this browser from before they belonged to the account join it
   // the first time it is open here with a connection.
@@ -147,6 +152,8 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   } = useTasks(repository, rewardRepository)
   const rewards = useRewards(rewardRepository)
   const lists = useLists(listRepository)
+  const savedTags = useTags(tagRepository, isLoading ? null : tasks)
+  const backup = useBackup(backupRepository)
   const [view, setView] = useView()
   // How the task views are shown: one set for all of them, kept on this device.
   const [viewOptions, setViewOptions] = useViewOptions(localStorageViewOptionsRepository)
@@ -161,18 +168,18 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   const now = new Date()
   const live = liveTasks(tasks)
   const trashed = trashedTasks(tasks, now)
-  // The tags there are are the ones live tasks carry: one in the trash alone is
-  // not offered, and comes back with its task.
-  const tags = tagsInUse(live)
+  // Every tag there is: the kept ones, whether or not a task carries them, and
+  // any a live task carries that is not kept yet.
+  const tags = allTags(savedTags.tags, live)
 
   // Done tasks sink to the bottom; sort is stable, so each group keeps the order
   // it was given. A repeating task is only done for its current occurrence. A
   // view dividing its done tasks by when they were finished puts the most recent
   // first, the order its headings come in.
   const shown = isTaskView(view) ? live.filter((task) => showsTask(view, task, now, lists.lists)) : live
-  const groupDone = isTaskView(view) && groupsDoneTasks(view)
-  const ordered = groupDone
-    ? groupByCompletion(sortByOrder(shown), now).flatMap((group) => group.tasks)
+  const spans = isTaskView(view) ? doneSpans(view) : null
+  const ordered = spans !== null
+    ? groupByCompletion(sortByOrder(shown), spans, now).flatMap((group) => group.tasks)
     : sortByOrder(shown).sort((a, b) => Number(isComplete(a, now)) - Number(isComplete(b, now)))
 
   // The same `now` once more: which quote is today's is derived from the day it
@@ -205,6 +212,21 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     if (view === oneListView(id)) setView('lists')
   }
 
+  /**
+   * Deleting a tag is two changes, as deleting a list is: off every task, then
+   * no longer kept. The tasks go first, so a tag no record keeps is never left on
+   * a task to be kept all over again.
+   */
+  function handleDeleteTag(name: string) {
+    removeTagEverywhere(name)
+    savedTags.remove(name)
+  }
+
+  /** Makes a tag no task carries yet, unless there is one of that name already. */
+  function handleAddTag(name: string): boolean {
+    return !tags.some((tag) => sameTag(tag, name)) && savedTags.add(name) !== null
+  }
+
   /** Makes a list and opens it, so the next thing typed goes into it. */
   function handleAddList(name: string): boolean {
     const made = lists.add(name)
@@ -234,7 +256,13 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
           <div className="flex min-w-0 flex-1 flex-col gap-5">
             {view === 'settings' ? (
               <section aria-label="Settings">
-                <SettingsList account={account} onSignOut={onSignOut} />
+                <SettingsList
+                  account={account}
+                  onSignOut={onSignOut}
+                  backup={backup.status}
+                  onExport={() => { void backup.exportAll() }}
+                  onImport={(file) => { void backup.importFile(file) }}
+                />
               </section>
             ) : view === 'rewards' ? (
               <section aria-label="Rewards">
@@ -279,7 +307,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     knownTags={tags}
                     lists={lists.lists}
                     showDetails={viewOptions.showDetails}
-                    groupDone={groupDone}
+                    doneSpans={spans}
                     emptyMessage={emptyMessage(view, lists.lists)}
                     allDoneMessage={allDoneMessage(view, lists.lists)}
                     onComplete={complete}
@@ -294,7 +322,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     onLogTime={logTaskTime}
                     onRemoveTimeEntry={removeTaskTime}
                     onChangeList={changeList}
-                    onAddTag={tag}
+                    onAddTag={(id, name) => { tag(id, name, tags) }}
                     onRemoveTag={untag}
                     onRemove={handleRemove}
                     onDuplicate={duplicate}
@@ -305,21 +333,13 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                   />
                 </section>
 
-                {/* A phone's bar has no room for the lists, the tags, the rewards or the
-                    trash, so they are kept at the foot of every task. */}
+                {/* A phone's bar has no room for the lists or the trash, so they are kept at
+                    the foot of every task. The tags and the rewards are under its More tab. */}
                 {view === 'tasks' && (
-                  <nav aria-label="More" className="flex flex-wrap gap-1 md:hidden">
+                  <nav aria-label="Under Tasks" className="flex flex-wrap gap-1 md:hidden">
                     <button type="button" onClick={() => { setView('lists') }} className={footLink}>
                       <FolderIcon />
                       {VIEW_LABELS.lists}
-                    </button>
-                    <button type="button" onClick={() => { setView('tags') }} className={footLink}>
-                      <TagIcon />
-                      {VIEW_LABELS.tags}
-                    </button>
-                    <button type="button" onClick={() => { setView('rewards') }} className={footLink}>
-                      <StarIcon />
-                      {VIEW_LABELS.rewards}
                     </button>
                     <button type="button" onClick={() => { setView('trash') }} className={footLink}>
                       <TrashIcon />
@@ -346,11 +366,16 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
               </section>
             ) : view === 'tags' ? (
               <section aria-label="Tags">
-                <TagList
-                  tags={summarizeTags(live, now)}
-                  onOpen={(name) => { setView(tagView(name)) }}
-                  onDelete={removeTagEverywhere}
-                />
+                {savedTags.isLoading ? (
+                  <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                ) : (
+                  <TagList
+                    tags={summarizeTags(tags, live, now)}
+                    onOpen={(name) => { setView(tagView(name)) }}
+                    onAdd={handleAddTag}
+                    onDelete={handleDeleteTag}
+                  />
+                )}
               </section>
             ) : view === 'habits' ? (
               <section aria-label="Habits">
@@ -389,7 +414,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
         </div>
       </TaskDragAndDrop>
 
-      <BottomNav view={view} onChange={setView} />
+      <BottomNav view={view} lists={lists.lists} onChange={setView} />
 
       {/* What the screen has to say, stacked: above a phone's navigation bar, at the foot of the window where there is none. */}
       <div className="pointer-events-none fixed inset-x-0 bottom-20 z-30 flex flex-col items-center gap-2 px-4 md:bottom-4">

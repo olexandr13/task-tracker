@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -91,15 +91,15 @@ describe('SchedulePicker', () => {
     expect(screen.getByRole('button', { name: /^Tomorrow/ })).toHaveProperty('ariaPressed', 'false')
   })
 
-  it('takes any other day from the date field, and stays open while it is typed (DUE-9)', async () => {
+  it('picks any other day from the calendar in one click, and closes (DUE-9, DUE-15)', async () => {
     const user = setup()
 
     await user.click(trigger())
-    await user.click(screen.getByRole('button', { name: 'Select date' }))
-    fireEvent.change(screen.getByLabelText('On'), { target: { value: '2026-10-01' } })
+    await user.click(screen.getByRole('button', { name: 'Next month' }))
+    await user.click(screen.getByRole('button', { name: 'Thursday, October 1, 2026' }))
 
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Oct 1')
-    expect(panel()).not.toBeNull()
+    expect(panel()).toBeNull()
   })
 
   it('takes the day away with Remove date, which is only offered when there is one (DUE-9)', async () => {
@@ -113,7 +113,7 @@ describe('SchedulePicker', () => {
     expect(screen.queryByRole('button', { name: 'Remove date' })).toBeNull()
   })
 
-  it('has the menu\'s quick choices as a row of icons named by their tooltips (DUE-9, DUE-14)', async () => {
+  it('has the menu\'s quick choices as a row of icons named by their tooltips, less Select date (DUE-9, DUE-14)', async () => {
     const user = setup({ initial: '2026-09-17' })
 
     await user.click(trigger())
@@ -123,31 +123,27 @@ describe('SchedulePicker', () => {
       'Today',
       'Tomorrow',
       'Next week',
-      'Select date',
       'Remove date',
     ])
     expect(screen.getByRole('button', { name: 'Tomorrow' }).title).toBe('Tomorrow')
   })
 
-  it('shows the date field only once there is a day, or Select date asks for it (DUE-9)', async () => {
+  it('opens the calendar on today\'s month with no day, nothing marked chosen (DUE-15)', async () => {
     const user = setup()
 
     await user.click(trigger())
-    expect(screen.queryByLabelText('On')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: /^Tomorrow/ }))
-    await user.click(trigger())
-    expect(screen.getByLabelText('On')).toHaveProperty('value', '2026-09-17')
+    expect(screen.getByRole('grid', { name: 'September 2026' })).toBeDefined()
+    expect(screen.queryAllByRole('gridcell', { selected: true })).toEqual([])
   })
 
-  it('puts the caret in the date field with Select date, and stays open (DUE-9)', async () => {
-    const user = setup()
+  it('opens the calendar on the month of the task\'s day, marking it chosen (DUE-15)', async () => {
+    const user = setup({ initial: '2026-11-05' })
 
     await user.click(trigger())
-    await user.click(screen.getByRole('button', { name: 'Select date' }))
 
-    expect(document.activeElement).toBe(screen.getByLabelText('On'))
-    expect(panel()).not.toBeNull()
+    expect(screen.getByRole('grid', { name: 'November 2026' })).toBeDefined()
+    expect(screen.getByRole('gridcell', { selected: true }).textContent).toBe('5')
   })
 
   it('skips a repeating task\'s occurrence where it has one, and closes (RPT-34)', async () => {
@@ -251,18 +247,14 @@ describe('SchedulePicker, repeating', () => {
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Tomorrow')
   })
 
-  it('leaves out the date field, the day being the rule\'s, until Select date brings it up empty (DUE-12)', async () => {
+  it('marks no day in the calendar, the day being the rule\'s, and a day picked there ends the rule (DUE-12)', async () => {
     const user = setup({ initial: '2026-09-16', initialDraft: { ...emptyDraft(WED_16), kind: 'daily' } })
 
     await user.click(trigger())
-    expect(screen.queryByLabelText('On')).toBeNull()
+    expect(screen.queryAllByRole('gridcell', { selected: true })).toEqual([])
 
-    await user.click(screen.getByRole('button', { name: 'Select date' }))
-    expect(screen.getByLabelText('On')).toHaveProperty('value', '')
-
-    fireEvent.change(screen.getByLabelText('On'), { target: { value: '2026-10-01' } })
-    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Oct 1')
-    expect(screen.getByLabelText('On')).toHaveProperty('value', '2026-10-01')
+    await user.click(screen.getByRole('button', { name: 'Friday, September 25, 2026' }))
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Sep 25')
   })
 
   it('closes on Daily, having nothing more to ask, and stays open for Weekly and Monthly (RPT-22)', async () => {

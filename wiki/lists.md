@@ -53,8 +53,9 @@ reasons; requirements here are `LST-`.
 
 ## Filing a task
 
-- **LST-14** A task is filed from **its menu** — a right-click on the row (UI-31). Under
-  Duplicate and Tags…, a **List** group offers the Inbox and then every list, the task's own **checked**.
+- **LST-14** A task is filed from **its menu** — a right-click on the row, or a finger's hold or
+  second tap (UI-31, UI-44). Under
+  Duplicate and Tags, a **List** group offers the Inbox and then every list, the task's own **checked**.
   Choosing one files the task and closes the menu — a task is in one list at a time, so choosing is
   the whole of the job. The row itself has **no list button** and does not name its list: which list
   a task is in is asked of the task when it matters, not repeated on every row. A list cannot be
@@ -67,7 +68,7 @@ reasons; requirements here are `LST-`.
   pointer on it, so moving a task among the rows never files it by accident, and filing a task
   leaves its place in the order as it was. Dropping it anywhere but a list or a row does nothing.
   Only a pointer does this: from the keyboard a task is filed from its menu (LST-14), and on a phone
-  — which has no sidebar — from the woken row (LST-23). A screen reader hears which list the task
+  — which has no sidebar — from its menu or the woken row (LST-23). A screen reader hears which list the task
   is over and which it was dropped in.
 - **LST-15** The Inbox is first in the group and always offered, so there is always a way back out
   of a list.
@@ -104,14 +105,15 @@ reasons; requirements here are `LST-`.
 
 ## On a phone
 
-- **LST-23** A phone has no right-click to reach the task's menu, so there the **woken row** carries
-  a list button in the block under the description, above the tag and reward controls, naming the
-  task's list — or offering to file it. It opens a panel of the same choices as the menu (LST-14,
+- **LST-23** On a phone the **woken row** carries a list button as well, in the block under the
+  description, above the tag and reward controls, naming the task's list — or offering to file it —
+  so filing is a tap away rather than a menu away (UI-44). It opens a panel of the same choices as the menu (LST-14,
   LST-15), the task's own marked, and closes on a choice or as the other pickers do (UI-9, UI-10);
   with no lists yet, the panel says where to make one.
-- **LST-24** The Lists page is reached from a **Lists** button at the foot of Tasks, beside the Tags
-  and Trash buttons, and Tasks stays marked in the bottom bar while the Lists page, a list's view or
-  the Inbox is open (UI-34).
+- **LST-24** The Lists page is reached from a **Lists** button at the foot of Tasks, beside the Trash
+  button, and from the Tasks tab's menu, which offers the Inbox and every list as well
+  (UI-43). Tasks stays marked in the bottom bar while the Lists page, a list's view or the Inbox is
+  open (UI-34).
 
 ---
 

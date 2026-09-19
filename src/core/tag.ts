@@ -2,11 +2,13 @@
  * Tags: short names a task carries, any number of them, so tasks that belong
  * together can be seen together wherever they are due.
  *
- * A tag is not a record of its own. It is a name written on the tasks that
- * carry it, and the tags there are are the names the tasks carry — so a tag
- * comes into being on the first task given it and goes with the last. Anything
- * a tag later needs of its own, a colour say, can be kept beside the tasks by
- * name without changing what a task holds.
+ * A task carries its tags **by name**, not by any id: the name is the tag, and
+ * it is written on the tasks that carry it. Beside them each tag is also kept
+ * as **a record of its own** (`Tag`), so a tag outlives its tasks — made on the
+ * Tags page before any task has it, or left when the last task carrying it
+ * loses it — and goes only when it is deleted. Anything a tag later needs of
+ * its own, a colour say, belongs on that record without changing what a task
+ * holds.
  */
 
 import { isComplete, type Task } from './task'
@@ -20,6 +22,22 @@ const NOT_IN_A_TAG = /[\s\\/"#:*?<>|,]/u
 
 /** A `#` starting a word, and the name typed after it so far, up to the caret. */
 const TYPED_TAG = /(?:^|\s)#([^\s\\/"#:*?<>|,]*)$/u
+
+export type TagId = string
+
+/**
+ * A tag kept for its own sake, so it stays whether or not a task carries it.
+ * Found by its name, whatever the case, rather than by its id — the id only
+ * files the record. Two devices keeping the same tag at once leave two records
+ * of one name, which read as one tag (`allTags`) and are deleted together.
+ */
+export interface Tag {
+  readonly id: TagId
+  /** Spelled as it was first given (TAG-4). */
+  readonly name: string
+  /** ISO 8601 timestamp. */
+  readonly createdAt: string
+}
 
 export class InvalidTagError extends Error {
   constructor(name: string) {
@@ -44,6 +62,11 @@ export function normalizeTag(name: string): string {
   }
 
   return bare
+}
+
+/** A record keeping the tag of this name. */
+export function createTag(name: string, now: Date = new Date()): Tag {
+  return { id: crypto.randomUUID(), name: normalizeTag(name), createdAt: now.toISOString() }
 }
 
 /**
@@ -104,6 +127,29 @@ export function tagsInUse(tasks: readonly Task[]): string[] {
   return distinctTags(tasks.flatMap((task) => task.tags))
 }
 
+/**
+ * Every tag there is, once each, in alphabetical order: the ones kept, whether
+ * or not a task carries them, and any a task carries that is not kept yet — one
+ * given a moment ago, say, before its record is written. A tag is spelled as
+ * its record has it, however a task writes it (TAG-4).
+ */
+export function allTags(saved: readonly Tag[], tasks: readonly Task[]): string[] {
+  return distinctTags([...saved.map((tag) => tag.name), ...unsavedTags(saved, tasks)])
+}
+
+/**
+ * The tags the tasks carry that no record keeps, once each: what has to be kept
+ * so that a tag stays when its last task loses it.
+ */
+export function unsavedTags(saved: readonly Tag[], tasks: readonly Task[]): string[] {
+  return tagsInUse(tasks).filter((name) => !isTagSaved(saved, name))
+}
+
+/** Whether any record keeps the tag of this name, whatever its case. */
+export function isTagSaved(saved: readonly Tag[], name: string): boolean {
+  return saved.some((tag) => sameTag(tag.name, name))
+}
+
 export interface TagSummary {
   readonly name: string
   /** How many of the tasks carrying it are still to do. */
@@ -111,11 +157,12 @@ export interface TagSummary {
 }
 
 /**
- * Every tag the tasks carry, as `tagsInUse` has them, with how many of its tasks
- * are still to do as of `now` — a repeating one for its current occurrence.
+ * The tags named, in the order given, each with how many of the tasks carrying
+ * it are still to do as of `now` — a repeating one for its current occurrence.
+ * A tag no task carries is there all the same, with nothing to do.
  */
-export function summarizeTags(tasks: readonly Task[], now: Date = new Date()): TagSummary[] {
-  return tagsInUse(tasks).map((name) => ({
+export function summarizeTags(names: readonly string[], tasks: readonly Task[], now: Date = new Date()): TagSummary[] {
+  return names.map((name) => ({
     name,
     open: tasks.filter((task) => hasTag(task, name) && !isComplete(task, now)).length,
   }))

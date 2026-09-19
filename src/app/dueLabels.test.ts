@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { describeDueDate, describeShortDate } from './dueLabels'
+import { describeDueDate, describeFullDate, describeMonth, describeShortDate } from './dueLabels'
 
 const WED_16 = new Date(2026, 8, 16, 9, 0)
 
@@ -14,6 +14,18 @@ describe('describeDueDate', () => {
     expect(describeDueDate('2026-09-20', WED_16)).toBe('Sep 20')
     expect(describeDueDate('2026-01-02', WED_16)).toBe('Jan 2')
     expect(describeDueDate('2027-01-02', WED_16)).toBe('Jan 2, 2027')
+  })
+})
+
+describe('describeMonth', () => {
+  it('names the month and its year, as a calendar is headed', () => {
+    expect(describeMonth('2026-09-01')).toBe('September 2026')
+  })
+})
+
+describe('describeFullDate', () => {
+  it('spells the day out in full, weekday and year included', () => {
+    expect(describeFullDate('2026-10-01')).toBe('Thursday, October 1, 2026')
   })
 })
 

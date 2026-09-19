@@ -18,6 +18,8 @@ export interface ContextMenuItem {
    * marked and heard as a choice rather than an action. Left out for an action.
    */
   checked?: boolean
+  /** A glyph drawn before the label, for an action found at a glance. */
+  icon?: ReactNode
 }
 
 /** Items that belong together, under a heading of their own and set off from the rest by a line. */
@@ -174,7 +176,7 @@ function MenuEntry({ entry, onClose }: { entry: ContextMenuEntry; onClose: () =>
   return <MenuItem {...entry} onClose={onClose} />
 }
 
-function MenuItem({ label, onSelect, checked, onClose }: ContextMenuItem & { onClose: () => void }) {
+function MenuItem({ label, onSelect, checked, icon, onClose }: ContextMenuItem & { onClose: () => void }) {
   return (
     <button
       type="button"
@@ -189,6 +191,11 @@ function MenuItem({ label, onSelect, checked, onClose }: ContextMenuItem & { onC
       {checked !== undefined && (
         <span aria-hidden="true" className="w-3 shrink-0">
           {checked ? '✓' : ''}
+        </span>
+      )}
+      {icon !== undefined && (
+        <span aria-hidden="true" className="grid shrink-0 place-items-center text-neutral-400 dark:text-neutral-500">
+          {icon}
         </span>
       )}
       <span className="min-w-0 truncate">{label}</span>

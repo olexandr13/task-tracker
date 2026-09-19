@@ -220,14 +220,15 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
   )
 
   /**
-   * Puts a tag on a task, spelled the way the tag already is wherever another
-   * live task carries it, so one tag is never written two ways.
+   * Puts a tag on a task, spelled the way the tag already is — in `known`, every
+   * tag there is, or wherever another live task carries it — so one tag is never
+   * written two ways.
    */
   const tag = useCallback(
-    (id: TaskId, name: string) => {
+    (id: TaskId, name: string, known: readonly string[] = []) => {
       apply((current) => {
-        const known = tagsInUse(liveTasks(current))
-        return current.map((task) => (task.id === id ? addTag(task, name, known) : task))
+        const spellings = [...known, ...tagsInUse(liveTasks(current))]
+        return current.map((task) => (task.id === id ? addTag(task, name, spellings) : task))
       })
     },
     [apply],

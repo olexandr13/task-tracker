@@ -59,7 +59,7 @@ interface TaskDescriptionProps {
   title: string
   /** The tags the task carries, which typing `#` does not offer again. */
   tags: readonly string[]
-  /** Every tag in use, which typing `#` offers. */
+  /** Every tag there is, which typing `#` offers. */
   knownTags: readonly string[]
   onChange: (description: string) => void
   /** Puts a tag chosen after typing `#` on the task. */

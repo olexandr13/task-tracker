@@ -7,7 +7,9 @@ import type { CompletionSpan } from '../core'
 export const COMPLETION_SPAN_LABELS: Record<CompletionSpan, string> = {
   today: 'Done today',
   yesterday: 'Done yesterday',
+  thisWeek: 'Done this week',
   last7Days: 'Done in the last 7 days',
+  thisMonth: 'Done this month',
   last30Days: 'Done in the last 30 days',
   earlier: 'Done earlier',
 }

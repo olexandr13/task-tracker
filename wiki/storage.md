@@ -63,6 +63,22 @@ changes shape.
   and the tasks go first. If the second is lost, a task naming a list that is gone reads as being in
   the Inbox anyway (LST-12), so no task is ever stranded.
 
+## Tags
+
+- **STORE-33** Each tag is kept in the account as **its own record**, beside the tasks, inside a
+  versioned envelope like a task's (STORE-4). A task still carries its tags **by name**, so making a
+  tag writes no task; the record is what lets a tag outlive its tasks (TAG-6). A tag a task carries
+  with no record — just given, given on a device running an older app, or given before tags were
+  kept — is given one as soon as the tasks and the tags have both loaded. Two devices doing that at
+  once leave two records of one name, which read as one tag.
+- **STORE-34** The tags have **their own version**, apart from everything else's. A tag in a version
+  the app does not recognise, or not shaped as it should be, is ignored with a warning and left as
+  it is (STORE-7). Changes are written **tag by tag**, as with the lists (STORE-28); the tags are
+  readable and writable by the account alone (STORE-17), open offline and wait for a connection
+  like the tasks (STORE-18).
+- **STORE-35** Deleting a tag is two changes — off every task, then every record of that name — and
+  the tasks go first, so a tag is never left on a task with no record, to be kept all over again.
+
 ## Tasks kept in the browser
 
 - **STORE-19** Tasks saved before they belonged to the account were kept in the browser's
@@ -87,6 +103,13 @@ changes shape.
   kept the same way, and for the same reasons: in this browser's `localStorage`, not in the
   account, under a version of its own, read at once when the app opens, and back to the default —
   unfolded — when it cannot be read.
+
+## A copy outside the account
+
+- **STORE-32** Everything the account keeps can be **exported to a file and imported back**; see
+  [Backup](backup.md). The file is not another place the data lives: nothing reads it but an import,
+  and an import only ever adds to the account. A new kind of record kept in the account is added to
+  the file too, or it is left out of every backup.
 
 ## Migration
 
@@ -139,13 +162,17 @@ changes shape.
 copy), `taskSchema.ts` (versions and upgrades), `localTaskImport.ts` (tasks kept in the browser),
 `firestoreBatches.ts` (writing in batches), `firestoreAccount.ts` (every collection an account keeps), `rewardRepository.ts`, `firestoreRewardRepository.ts` and
 `rewardSchema.ts` (the points ledger), `listRepository.ts`, `firestoreListRepository.ts` and
-`listSchema.ts` (the lists), `src/storage/quoteRepository.ts` and `localStorageQuoteRepository.ts`,
+`listSchema.ts` (the lists), `tagRepository.ts`, `firestoreTagRepository.ts` and `tagSchema.ts`
+(the kept tags), `src/storage/quoteRepository.ts` and `localStorageQuoteRepository.ts`,
 `src/storage/quoteSource.ts` and `quotableQuoteSource.ts`, `src/storage/viewOptionsRepository.ts`,
 `viewOptionsSchema.ts` and `localStorageViewOptionsRepository.ts` (the View options), `src/storage/sideNavRepository.ts`,
 `sideNavSchema.ts` and `localStorageSideNavRepository.ts` (the sidebar's layout), `src/app/useTasks.ts`, `src/app/useLists.ts`,
+`src/app/useTags.ts` (keeping the tags tasks carry),
 `src/app/TasksScreen.tsx` (the repository and the move). Who may read what: `firestore.rules`.
 **Tested in:** `src/storage/taskRepository.test.ts` (what a change writes),
 `src/storage/localTaskImport.test.ts` (the move, and upgrading older data), `src/storage/rewardSchema.test.ts`
 (reading the ledger back), `src/storage/listRepository.test.ts` and `src/storage/listSchema.test.ts`
-(what a change to the lists writes, and reading one back), `src/storage/viewOptionsSchema.test.ts` (reading the
+(what a change to the lists writes, and reading one back), `src/storage/tagRepository.test.ts`,
+`src/storage/tagSchema.test.ts` and `src/app/useTags.test.ts` (the same for the tags, and keeping the
+ones tasks carry), `src/storage/viewOptionsSchema.test.ts` (reading the
 View options back), `src/storage/sideNavSchema.test.ts` (reading the sidebar's layout back).

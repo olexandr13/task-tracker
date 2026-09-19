@@ -37,16 +37,16 @@ interface DateChoicesOptions {
   /** Left out where there is no occurrence to skip. */
   skip?: SkipChoice
   onChange: (dueDate: LocalDay | null) => void
-  /** Asking for any other day than the quick ones. */
-  onSelectDate: () => void
+  /** Asking for any other day than the quick ones. Left out where a calendar is on show already. */
+  onSelectDate?: () => void
 }
 
 /**
  * The quick date choices, the same wherever a day is set — a task's menu and the
  * date panel: today, tomorrow, next week, skipping a repeating task's occurrence,
- * any other day, and taking a one-off's day away. A tooltip is a few words: the
- * day is spelled out only where the name does not already say it, and that a day
- * ends a rule is left to the panel's note.
+ * any other day where there is no calendar beside them, and taking a one-off's
+ * day away. A tooltip is a few words: the day is spelled out only where the name
+ * does not already say it, and that a day ends a rule is left to the panel's note.
  */
 export function dateChoices({ dueDate, now, repeats, skip, onChange, onSelectDate }: DateChoicesOptions): DateChoice[] {
   const today = toLocalDay(now)
@@ -73,7 +73,9 @@ export function dateChoices({ dueDate, now, repeats, skip, onChange, onSelectDat
             onSelect: skip.onSkip,
           },
         ]),
-    { label: 'Select date', icon: <CalendarPickIcon />, onSelect: onSelectDate },
+    ...(onSelectDate === undefined
+      ? []
+      : [{ label: 'Select date', icon: <CalendarPickIcon />, onSelect: onSelectDate }]),
     ...(repeats || dueDate === null
       ? []
       : [{ label: 'Remove date', icon: <CalendarRemoveIcon />, onSelect: () => { onChange(null) } }]),

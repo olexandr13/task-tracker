@@ -1,5 +1,5 @@
 import { CSS } from '@dnd-kit/utilities'
-import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent } from 'react'
+import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type TouchEvent } from 'react'
 import {
   canSkipOccurrence,
   countSubtasks,
@@ -41,10 +41,12 @@ import {
 } from '../rowControls'
 import { isInTextEntry } from '../textEntry'
 import { textOffsetAtPoint } from '../textOffsetAtPoint'
+import { isHeldInPlace } from '../useLongPress'
 import { useSortableTask } from '../useSortableTask'
 import { ChecklistIcon } from './ChecklistIcon'
 import { ContextMenu, type ContextMenuEntry } from './ContextMenu'
 import { DueChoices } from './DueChoices'
+import { DuplicateIcon } from './DuplicateIcon'
 import { FloatingPanel } from './FloatingPanel'
 import { GripIcon } from './GripIcon'
 import { ListPicker } from './ListPicker'
@@ -52,6 +54,7 @@ import { NoteIcon } from './NoteIcon'
 import { RewardPicker } from './RewardPicker'
 import { SchedulePicker } from './SchedulePicker'
 import { SubtaskList } from './SubtaskList'
+import { TagIcon } from './TagIcon'
 import { TagPanel } from './TagPanel'
 import { TagPicker } from './TagPicker'
 import { TaskDescription } from './TaskDescription'
@@ -60,7 +63,7 @@ import { TimePicker } from './TimePicker'
 interface TaskItemProps {
   task: Task
   now: Date
-  /** Every tag in use, to offer in the task's menu when tagging it. */
+  /** Every tag there is, to offer in the task's menu when tagging it. */
   knownTags: readonly string[]
   /** Every list there is, to offer in the task's menu when filing it. */
   lists: readonly List[]
@@ -115,8 +118,8 @@ const slot = 'flex w-6 shrink-0 items-center'
  * The slots are fixed, so what is spelled out under them can run wider without
  * widening them. A phone has no room for the time and reward slots beside the
  * title; its time and reward are set from the woken row instead. The list and
- * the tags have no slot anywhere: a task is filed and tagged from its menu (a
- * right-click), or on a phone, which has no right-click, from the woken row.
+ * the tags have no slot anywhere: a task is filed and tagged from its menu, or on
+ * a phone from the woken row as well.
  */
 const lineColumns =
   'grid-cols-[auto_minmax(0,1fr)_repeat(2,--spacing(6))_auto_auto] md:grid-cols-[auto_minmax(0,1fr)_repeat(4,--spacing(6))_auto_auto]'
@@ -191,6 +194,10 @@ export function TaskItem({
   const caret = useRef<number | null>(null)
   // Where the task's menu was opened, while it is open.
   const [menuAt, setMenuAt] = useState<{ x: number; y: number; fromKeyboard: boolean } | null>(null)
+  // What last pressed on the row, a mouse or a finger, which a click does not say
+  // everywhere; and where a finger went down, to tell holding it from dragging it.
+  const pointer = useRef('mouse')
+  const touchedAt = useRef<{ x: number; y: number } | null>(null)
   // Where the tag panel opens from the menu: where the menu was, while it is open.
   const [tagsAt, setTagsAt] = useState<{ x: number; y: number } | null>(null)
   // Where the date panel opens from the menu, the same way.
@@ -245,7 +252,7 @@ export function TaskItem({
   const skipTo = canSkipOccurrence(task, now) ? dueDay(skipOccurrence(task, now), now) : null
   const skip = skipTo === null ? undefined : { to: skipTo, onSkip: () => { onSkipOccurrence(task.id) } }
   const menuItems: ContextMenuEntry[] = [
-    // The same quick choices as the date panel; Select date opens that panel where the menu was.
+    // The same quick choices as the date panel; Select date opens that panel, calendar and all, where the menu was.
     {
       group: 'Date',
       icons: dateChoices({
@@ -257,9 +264,9 @@ export function TaskItem({
         onSelectDate: () => { setDateAt(menuAt) },
       }),
     },
-    { label: 'Duplicate', onSelect: () => { onDuplicate(task.id) } },
+    { label: 'Duplicate', icon: <DuplicateIcon />, onSelect: () => { onDuplicate(task.id) } },
     // A panel of its own rather than a group, since it takes typing and more than one choice.
-    { label: 'Tags…', onSelect: () => { setTagsAt(menuAt) } },
+    { label: 'Tags', icon: <TagIcon />, onSelect: () => { setTagsAt(menuAt) } },
     // Only once there is a list to choose: the Inbox alone is no choice at all.
     ...(lists.length === 0
       ? []
@@ -320,9 +327,12 @@ export function TaskItem({
 
   /**
    * A click on a resting row wakes it. On a woken row only a click on the task's
-   * own line, clear of everything on it that does something, rests it again:
-   * a click inside a control, a picker or a panel is about that, and a button
-   * that closes one of those is not undone by the same click reaching the row.
+   * own line, clear of everything on it that does something, does anything more:
+   * a mouse's rests it again, and a finger's opens the task's menu where it
+   * landed — a finger has no right-click, and a tap anywhere else rests the row.
+   * So a double tap opens the menu. A click inside a control, a picker or a panel
+   * is about that, and a button that closes one of those is not undone by the
+   * same click reaching the row.
    */
   function handleClick(event: MouseEvent<HTMLLIElement>) {
     if (!isActive) {
@@ -332,7 +342,28 @@ export function TaskItem({
 
     const target = event.target as Element
     const onLine = target === event.currentTarget || line.current?.contains(target) === true
-    if (onLine && target.closest('button, input, [role="dialog"]') === null) rest()
+    if (!onLine || target.closest('button, input, [role="dialog"]') !== null) return
+
+    if (pointer.current === 'mouse') rest()
+    else setMenuAt({ x: event.clientX, y: event.clientY, fromKeyboard: false })
+  }
+
+  /**
+   * A finger held on the row until it is picked up (TaskDragAndDrop) and let go
+   * where it went down opens the task's menu there, as a right-click would; moved,
+   * it was a drag. Letting go is kept from also clicking what the menu opens over.
+   */
+  function handleTouchEnd(event: TouchEvent<HTMLLIElement>) {
+    const start = touchedAt.current
+    const end = event.changedTouches[0]
+    touchedAt.current = null
+    if (!sortable.isDragging || start === null || end === undefined) return
+
+    const at = { x: end.clientX, y: end.clientY }
+    if (!isHeldInPlace(start, at)) return
+
+    event.preventDefault()
+    setMenuAt({ ...at, fromKeyboard: false })
   }
 
   /** The title opens as a box, caret where it was clicked; from the keyboard, at the end. */
@@ -427,6 +458,13 @@ export function TaskItem({
       // On the click rather than the press: waking the row moves the buttons
       // along, and a press that moves what is under it never becomes a click.
       onClick={handleClick}
+      onPointerDown={(event) => { pointer.current = event.pointerType }}
+      onTouchStart={(event) => {
+        sortable.listeners?.onTouchStart?.(event)
+        const touch = event.touches[0]
+        touchedAt.current = touch === undefined ? null : { x: touch.clientX, y: touch.clientY }
+      }}
+      onTouchEnd={handleTouchEnd}
       onFocus={handleFocus}
       onBlur={handleBlur}
       onContextMenu={handleContextMenu}
@@ -440,11 +478,11 @@ export function TaskItem({
       className={
         sortable.isDragging
           // Left in the list, faded, where it would land; its title is what the pointer carries (TaskDragAndDrop).
-          ? 'group relative rounded-xl border border-dashed border-neutral-300 bg-white opacity-50 dark:border-neutral-700 dark:bg-neutral-900'
+          ? 'group relative touch-manipulation rounded-xl border border-dashed border-neutral-300 bg-white opacity-50 dark:border-neutral-700 dark:bg-neutral-900'
           : menuAt !== null || tagsAt !== null || dateAt !== null
             // Marked while its menu is open, so it is plain which task the menu is for.
-            ? 'group relative rounded-xl border border-neutral-400 bg-white dark:border-neutral-600 dark:bg-neutral-900'
-            : 'group relative rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+            ? 'group relative touch-manipulation rounded-xl border border-neutral-400 bg-white dark:border-neutral-600 dark:bg-neutral-900'
+            : 'group relative touch-manipulation rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
       }
     >
       {/* In the gutter left of the row, so it takes nothing from the row itself.
@@ -669,9 +707,9 @@ export function TaskItem({
         </div>
       )}
 
-      {/* A phone has no right-click to reach the task's menu, and its line has no time or reward
-          slot, so the woken row carries the list, time, tag and reward controls instead, one above
-          the other so each panel opens from the left edge with room. */}
+      {/* A phone's line has no time or reward slot, so the woken row carries them, and the list and
+          the tags beside them, a tap away rather than a menu away — one above the other so each
+          panel opens from the left edge with room. */}
       {isActive && (
         <div
           className={`flex flex-col items-start gap-0.5 border-t border-neutral-200 py-1 pr-2.5 ${indent} md:hidden dark:border-neutral-800`}
@@ -722,10 +760,10 @@ export function TaskItem({
           y={dateAt.y}
           role="dialog"
           label={`Date for "${task.title}"`}
-          // Opening it is asking to pick a day, so the date field has the focus and opens its calendar.
-          focusFirst='input[type="date"]'
+          // Opening it is asking to pick a day, so the calendar has the focus, on the day it opens on.
+          focusFirst='[role="grid"] [tabindex="0"]'
           onClose={() => { setDateAt(null) }}
-          className="w-56"
+          className="w-64"
         >
           <DueChoices
             dueDate={dueDay(task, now)}
@@ -734,7 +772,6 @@ export function TaskItem({
             skip={skip}
             onChange={changeDueDate}
             onDone={() => { setDateAt(null) }}
-            openCalendar
           />
         </FloatingPanel>
       )}

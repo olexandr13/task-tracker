@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
   addTag,
+  allTags,
+  createTag,
   deleteTag,
   hasTag,
   InvalidTagError,
   isTagName,
+  isTagSaved,
   matchTags,
   normalizeTag,
   removeTag,
@@ -12,6 +15,7 @@ import {
   suggestTags,
   tagsInUse,
   typedTag,
+  unsavedTags,
 } from './tag'
 import { completeTask, createTask, deleteTask } from './task'
 
@@ -113,18 +117,54 @@ describe('tagsInUse', () => {
   })
 })
 
+describe('kept tags', () => {
+  it('are made from a tag name, # and all (TAG-3, TAG-23)', () => {
+    const tag = createTag('#work', NOW)
+
+    expect(tag.name).toBe('work')
+    expect(tag.createdAt).toBe(NOW.toISOString())
+    expect(() => createTag('two words', NOW)).toThrow(InvalidTagError)
+  })
+
+  it('are every tag there is, with those only tasks carry so far, once each (TAG-6)', () => {
+    const saved = [createTag('home', NOW), createTag('Work', NOW)]
+
+    expect(allTags(saved, [tagged('work', 'errands')])).toEqual(['errands', 'home', 'Work'])
+    // Kept twice by two devices at once, it is still one tag.
+    expect(allTags([...saved, createTag('work', NOW)], [])).toHaveLength(2)
+  })
+
+  it('stay when no task carries them any longer (TAG-6)', () => {
+    expect(allTags([createTag('work', NOW)], [tagged()])).toEqual(['work'])
+  })
+
+  it('leave to be kept only the tags a task carries and no record has, in any case', () => {
+    const saved = [createTag('Work', NOW)]
+
+    expect(unsavedTags(saved, [tagged('work', 'home'), deleteTask(tagged('errands'), NOW)])).toEqual([
+      'errands',
+      'home',
+    ])
+    expect(isTagSaved(saved, 'WORK')).toBe(true)
+    expect(isTagSaved(saved, 'home')).toBe(false)
+  })
+})
+
 describe('summarizeTags', () => {
   it('counts the tasks still to do under each tag, in any case (TAG-19)', () => {
     const done = completeTask(tagged('work'), NOW)
 
-    expect(summarizeTags([tagged('Work', 'home'), tagged('work'), done], NOW)).toEqual([
+    expect(summarizeTags(['home', 'work'], [tagged('Work', 'home'), tagged('work'), done], NOW)).toEqual([
       { name: 'home', open: 1 },
       { name: 'work', open: 2 },
     ])
   })
 
-  it('keeps a tag whose tasks are all done, with nothing open', () => {
-    expect(summarizeTags([completeTask(tagged('work'), NOW)], NOW)).toEqual([{ name: 'work', open: 0 }])
+  it('keeps a tag whose tasks are all done, or that no task carries, with nothing open (TAG-19)', () => {
+    expect(summarizeTags(['work', 'home'], [completeTask(tagged('work'), NOW)], NOW)).toEqual([
+      { name: 'work', open: 0 },
+      { name: 'home', open: 0 },
+    ])
   })
 })
 

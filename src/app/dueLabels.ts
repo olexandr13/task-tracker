@@ -14,6 +14,18 @@ export function describeDueDate(day: LocalDay, now: Date): string {
   return describeShortDate(day, now)
 }
 
+/** A month and its year, as a calendar is headed: "September 2026". */
+export function describeMonth(month: LocalDay): string {
+  return new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric' }).format(startOfLocalDay(month))
+}
+
+/** A day in full, as a screen reader hears a calendar's day: "Thursday, October 1, 2026". */
+export function describeFullDate(day: LocalDay): string {
+  return new Intl.DateTimeFormat('en', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(
+    startOfLocalDay(day),
+  )
+}
+
 /** A short date — "Sep 20" — with the year only when it is not this one: "Sep 20" is plainly this September. */
 export function describeShortDate(day: LocalDay, now: Date): string {
   const date = startOfLocalDay(day)

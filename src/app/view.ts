@@ -5,6 +5,10 @@ import {
   isInInbox,
   isTagName,
   lastDayOf,
+  MONTH_SPANS,
+  ROLLING_SPANS,
+  WEEK_SPANS,
+  type CompletionSpans,
   type List,
   type ListId,
   type LocalDay,
@@ -125,12 +129,17 @@ export function showsTask(view: TaskView, task: Task, now: Date, lists: readonly
 }
 
 /**
- * Whether the view divides its done tasks by when they were finished. Tasks does:
- * it holds every done task there is, however long ago, and one run of them would
- * bury today's work under last month's. The others keep one run of done tasks.
+ * How the view divides its done tasks by when they were finished, or null for
+ * one run of them. Tasks holds every done task there is, however long ago, and
+ * one run of them would bury today's work under last month's, so it counts back
+ * in rolling windows. Week and Month count their own calendar period, from
+ * Monday and from the 1st. The others keep one run.
  */
-export function groupsDoneTasks(view: TaskView): boolean {
-  return view === 'tasks'
+export function doneSpans(view: TaskView): CompletionSpans | null {
+  if (view === 'tasks') return ROLLING_SPANS
+  if (view === 'week') return WEEK_SPANS
+  if (view === 'month') return MONTH_SPANS
+  return null
 }
 
 /** The day a task added to the view starts on: the last day of its period, if it has one. */

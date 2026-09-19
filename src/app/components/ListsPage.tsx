@@ -35,9 +35,9 @@ interface ListsPageProps {
  * it. Beside each, how many of those are still to do — nothing once they are all
  * done, the list being no less a list for it — and buttons to rename and delete.
  *
- * A box on top makes a list. Unlike a tag, a list is a record of its own, so it
- * is made here on purpose rather than in passing on a task, and an empty one
- * stays: somewhere to put the next thing is the point of it.
+ * A box on top makes a list. A list is a record of its own, so it is made here
+ * on purpose rather than in passing on a task, and an empty one stays:
+ * somewhere to put the next thing is the point of it.
  *
  * The Inbox heads the page and has no buttons of its own. It is not a record —
  * it is what "in no list" looks like — so there is nothing to rename or delete,
