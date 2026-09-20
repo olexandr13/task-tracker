@@ -7,10 +7,11 @@ these, so a feature page only mentions them where the feature bends them.
 
 - **PRIN-1** Days are **local** days — the owner's today, not UTC's. A day starts at local
   midnight, and a task ticked off at 23:59 belongs to the day it was ticked off in.
-- **PRIN-2** Nothing runs on a timer to change what is true. Whether a repeating task is due,
-  whether a deleted task has expired, and which quote is today's are all **derived** from the
-  moment being asked about. A page left open across midnight picks the new day up on its next
-  render; nothing has to rewrite the saved data at midnight for it to be right.
+- **PRIN-2** Nothing runs on a timer to change what is true. Whether a repeating task is due and
+  whether a deleted task has expired are **derived** from the moment being asked about, and today's
+  quote is asked for once and kept for the day the moment falls in. A page left open across midnight
+  picks the new day up on its next render; nothing has to rewrite the saved data at midnight for it
+  to be right.
 - **PRIN-3** One moment per render. The list order, each row, the three bars, the trash countdown
   and the quote all answer to the same `now`, so they can never disagree about which day it is.
 
@@ -37,8 +38,9 @@ these, so a feature page only mentions them where the feature bends them.
 - **PRIN-9** The app works offline. Signing in for the first time needs a connection; after that
   the session is remembered (AUTH-7). The app itself opens with no connection (OFF-1), the tasks
   open from the browser's copy, and changes are kept and sent once there is a connection
-  (STORE-18, OFF-3), with a notice saying where they stand (OFF-4). The daily quote falls back to a
-  bundled pack rather than failing. See [Offline](offline.md).
+  (STORE-18, OFF-3), with a notice saying where they stand (OFF-4). The daily quote is whatever was
+  already cached for today, or nothing at all — it is never an error (QUOTE-7). See
+  [Offline](offline.md).
 - **PRIN-10** Nothing is lost by a mis-click: an abandoned edit leaves no trace, and a deletion can
   be taken straight back.
 
@@ -48,7 +50,7 @@ these, so a feature page only mentions them where the feature bends them.
   navigation moves to a bar along the bottom; nothing is only reachable on a wide screen.
 - **PRIN-12** Dark mode follows the system; there is no theme switch.
 - **PRIN-13** Every control carries a name for a screen reader, toggles report whether they are on,
-  the current view is marked, and the quote says which language it is in.
+  and the current view is marked.
 
 ## Code
 

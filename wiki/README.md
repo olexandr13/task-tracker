@@ -24,7 +24,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Habits](habits.md) | Daily tasks as habits: streaks, rates and the grid of days |
 | [Rewards](rewards.md) | Points a task earns on every completion, redeeming them, and the Rewards page |
 | [Time goals](time-goals.md) | A length of time a task asks for, sessions logged against it, and the hint to tick it off |
-| [Daily quote](daily-quote.md) | One quote a day, in two languages, with a fallback |
+| [Daily quote](daily-quote.md) | One quote a day, from the quote service, cached for the day |
 | [Interface](interface.md) | Layout, navigation, popovers, phone behaviour, accessibility |
 | [Offline](offline.md) | Opening with no connection, changes kept and synced later, the sync notice, installing |
 | [Storage](storage.md) | Where data lives, schema versions and migrations |

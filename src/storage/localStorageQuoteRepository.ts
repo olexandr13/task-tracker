@@ -7,7 +7,7 @@ const STORAGE_KEY = 'task-tracker/quote'
  * as the tasks. Kept under its own key and its own version, because a quote and
  * a task list have no reason to change shape together.
  */
-const SCHEMA_VERSION = 2
+const SCHEMA_VERSION = 3
 
 interface StoredQuote {
   version: number
@@ -16,9 +16,10 @@ interface StoredQuote {
 
 /** Returns the cached quote in today's shape, or null if the data can't be trusted. */
 function migrate(stored: StoredQuote): DailyQuote | null {
-  // Nothing older is migrated — version 1 predates a quote knowing which
-  // language it is in. A cached quote is a day old at most and the service can
-  // simply be asked again, so there is nothing here worth carrying forward.
+  // Nothing older is migrated — version 2 and before carried the language a
+  // quote was written in, from when there were Ukrainian days. A cached quote is
+  // a day old at most and the service can simply be asked again, so there is
+  // nothing here worth carrying forward.
   if (stored.version !== SCHEMA_VERSION) {
     return null
   }
@@ -33,16 +34,12 @@ function migrate(stored: StoredQuote): DailyQuote | null {
     return null
   }
 
-  const { text, author, language } = quote as { text: unknown; author: unknown; language: unknown }
+  const { text, author } = quote as { text: unknown; author: unknown }
   if (typeof text !== 'string' || typeof author !== 'string') {
     return null
   }
 
-  if (language !== 'en' && language !== 'uk') {
-    return null
-  }
-
-  return { day, quote: { text, author, language } }
+  return { day, quote: { text, author } }
 }
 
 export const localStorageQuoteRepository: QuoteRepository = {

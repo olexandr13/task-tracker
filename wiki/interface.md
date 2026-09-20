@@ -66,10 +66,12 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-37** Each switch of view is a step in the browser's history: **back and forward** move
   between the views you went through.
 - **UI-43** The **Tasks** tab has a menu of its own, opened as the period tab's is (UI-33): held
-  down, or tapped again while Tasks is on screen, and closed by a tap on Tasks while open. It holds what the sidebar has in its place — **Lists**
-  and **Trash**, each with its icon, then a **Lists** group of the Inbox and every list in the
-  sidebar's order (UI-30) — so any list is two taps from anywhere, however long Tasks runs. Choosing
-  one goes there. From any other view, a list's included, a tap on Tasks goes to Tasks.
+  down, or tapped again while Tasks is on screen, and closed by a tap on Tasks while open. It holds
+  what the sidebar has in its place, laid out as the sidebar lays it out (UI-30) — **Lists**, with
+  the **Inbox** and every list **indented under it** in the sidebar's order, then a line and
+  **Trash**, each entry with its icon — so any list is two taps from anywhere, however long Tasks
+  runs, and no heading repeats the name of the entry above it. Choosing one goes there. From any
+  other view, a list's included, a tap on Tasks goes to Tasks.
 - **UI-45** The bar has no tab for the tags or the rewards either: they are under **More**, marked
   with three dots. More has no page of its own, so **a tap opens its menu** straight away — **Tags**
   and **Rewards**, each with its icon — and so do holding it, a right-click, the context-menu key,

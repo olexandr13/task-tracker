@@ -8,6 +8,12 @@
 /** One line to choose, as every panel lists them. Tone is added by the caller. */
 export const panelItem = 'flex w-full min-w-0 items-center gap-1.5 rounded-lg px-2 py-1 text-left text-sm'
 
+/**
+ * A line under another, indented to start where the line above it starts its
+ * name, as the sidebar indents a list under Lists.
+ */
+export const panelSubItem = 'flex w-full min-w-0 items-center gap-1.5 rounded-lg py-1 pr-2 pl-[1.875rem] text-left text-sm'
+
 /** The name over a group of items, for the eye; the group carries it for a screen reader. */
 export const panelHeading = 'px-2 pt-0.5 text-[11px] font-medium text-neutral-400 dark:text-neutral-500'
 

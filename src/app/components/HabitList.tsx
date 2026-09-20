@@ -74,7 +74,6 @@ export function HabitList({
           Tasks that repeat every day.{' '}
           {/* On a phone the days are folded away until a habit is opened (HAB-21). */}
           <span className="md:hidden">Tap a habit to see its days, and a day to mark it done or take it back.</span>
-          <span className="hidden md:inline">Click a day to mark it done, or to take it back.</span>
         </p>
 
         <ul aria-label="Legend" className="flex items-center gap-3">

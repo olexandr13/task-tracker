@@ -48,7 +48,8 @@ both directions, and nothing can leave a task reading done with an item still op
 
 - **CHK-9** Ticking the last open item completes the task, stamped at that moment.
 - **CHK-10** Taking back any tick puts the task back to todo — and leaves the other items alone.
-  Unticking one of five is not unticking the task.
+  Unticking one of five is not unticking the task. Reopening a repeating task this way passes over
+  an occurrence that has gone by, as its own box does (RPT-38).
 - **CHK-11** Ticking the **task's own box** ticks every item with it. That box speaks for the whole
   thing, so it cannot finish the task while leaving parts open. A tick already there keeps its own
   time rather than being restamped.

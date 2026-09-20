@@ -87,7 +87,9 @@ instead of in a long list of everything — see [Views](views.md).
   red, and a screen reader hears that it is overdue. Done, however late, it is not overdue.
 - **DUE-11** A repeating task is overdue when the occurrence in play went by undone — a Monday task
   on the Tuesday. An occurrence from before the task was written does not count: a Monday task
-  written on a Tuesday is next due on Monday, not overdue from the day before it existed.
+  written on a Tuesday is next due on Monday, not overdue from the day before it existed. Ticking
+  such a task off clears the red, and taking that tick back does not bring it back: the missed
+  occurrence is passed over and the task moves to its next day (RPT-38).
 
 ## On a repeating task
 

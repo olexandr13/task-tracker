@@ -12,6 +12,8 @@ interface FloatingPanelProps {
   /** Where it was asked for, in window pixels. */
   x: number
   y: number
+  /** Which edge of the panel sits at x: its left, or its right. */
+  align?: 'left' | 'right'
   role: 'menu' | 'dialog'
   /** What the panel is for, when there could be more than one on screen. */
   label: string
@@ -48,6 +50,7 @@ function keepInside(event: SyntheticEvent) {
 export function FloatingPanel({
   x,
   y,
+  align = 'left',
   role,
   label,
   focusFirst,
@@ -65,9 +68,12 @@ export function FloatingPanel({
     if (panel === null) return
 
     const { width, height } = panel.getBoundingClientRect()
-    panel.style.left = `${String(x + width > window.innerWidth - margin ? Math.max(margin, x - width) : x)}px`
+    panel.style.left =
+      align === 'right'
+        ? `${String(Math.max(margin, Math.min(x - width, window.innerWidth - margin - width)))}px`
+        : `${String(x + width > window.innerWidth - margin ? Math.max(margin, x - width) : x)}px`
     panel.style.top = `${String(y + height > window.innerHeight - margin ? Math.max(margin, y - height) : y)}px`
-  }, [x, y])
+  }, [x, y, align])
 
   useLayoutEffect(() => {
     const panel = root.current

@@ -8,6 +8,7 @@ import {
   createList,
   createSubtask,
   createTask,
+  uncompleteTask,
   logTime,
   moveToList,
   nextWeekDueDay,
@@ -192,6 +193,26 @@ describe('the due date on a repeating task row', () => {
 
     const dueButton = screen.getByRole('button', { name: `Schedule for "${TASK}": Daily · Today` })
     expect(dueButton.className).toContain('text-blue-600')
+  })
+
+  it('reads red on an occurrence that went by undone, and not again once the tick is taken back (DUE-10, RPT-38)', () => {
+    // Written the Monday before, so the Monday it missed is one it existed for (DUE-11).
+    const mondays: Repeat = { kind: 'weekly', weekdays: [1] }
+    const missed = createTask(TASK, mondays, new Date('2026-09-07T10:00:00.000Z'))
+    const row = (task: Task) => (
+      <ul>
+        <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={[]} lists={[]} />
+      </ul>
+    )
+
+    const { rerender } = render(row(missed))
+    expect(scheduleButton().className).toContain('text-red-600')
+    expect(scheduleButton().getAttribute('aria-label')).toContain('overdue')
+
+    rerender(row(uncompleteTask(completeTask(missed, NOW), NOW)))
+
+    expect(scheduleButton().className).not.toContain('text-red-600')
+    expect(scheduleButton().getAttribute('aria-label')).not.toContain('overdue')
   })
 
   it('makes the task a one-off on the day picked, the rule going to Once (DUE-12)', async () => {

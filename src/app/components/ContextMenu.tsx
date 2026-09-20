@@ -7,6 +7,7 @@ import {
   panelIconRow,
   panelItem,
   panelOptionOn,
+  panelSubItem,
 } from '../panelControls'
 import { FloatingPanel } from './FloatingPanel'
 
@@ -28,6 +29,16 @@ export interface ContextMenuGroup {
   items: readonly ContextMenuItem[]
 }
 
+/**
+ * An item and the items under it, as the sidebar has the Inbox and the lists
+ * under Lists: the head is a choice of its own, what belongs to it is indented
+ * beneath, and the whole is set off by a line — so the head names the group
+ * rather than a heading repeating its words.
+ */
+export interface ContextMenuSection extends ContextMenuItem {
+  under: readonly ContextMenuItem[]
+}
+
 /** An item drawn as an icon alone: its label is its name, and its tooltip unless it has a hint. */
 export interface ContextMenuIcon extends ContextMenuItem {
   icon: ReactNode
@@ -45,12 +56,19 @@ export interface ContextMenuIconGroup {
   icons: readonly ContextMenuIcon[]
 }
 
-export type ContextMenuEntry = ContextMenuItem | ContextMenuGroup | ContextMenuIconGroup
+export type ContextMenuEntry = ContextMenuItem | ContextMenuSection | ContextMenuGroup | ContextMenuIconGroup
+
+/** Whether an entry stands apart from its neighbours, and so is set off by a line. */
+function isGrouped(entry: ContextMenuEntry): boolean {
+  return 'group' in entry || 'under' in entry
+}
 
 interface ContextMenuProps {
   /** Where it was asked for, in window pixels. */
   x: number
   y: number
+  /** Which edge of the menu sits at x: its left, or its right. */
+  align?: 'left' | 'right'
   /** What the menu is for, when there could be more than one on screen. */
   label: string
   items: readonly ContextMenuEntry[]
@@ -65,7 +83,9 @@ interface ContextMenuProps {
 /** Every kind of item the arrow keys move between. */
 const ITEMS = '[role="menuitem"], [role="menuitemradio"]'
 
-const item = `${panelItem} whitespace-nowrap transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800`
+const itemLook = 'group whitespace-nowrap transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800'
+const item = `${panelItem} ${itemLook}`
+const subItem = `${panelSubItem} ${itemLook}`
 const itemOff =
   'text-neutral-700 hover:text-neutral-900 focus-visible:text-neutral-900 dark:text-neutral-200 dark:hover:text-neutral-100 dark:focus-visible:text-neutral-100'
 const iconItem = `${panelIcon} focus-visible:bg-neutral-100 focus-visible:outline-none dark:focus-visible:bg-neutral-800`
@@ -99,7 +119,7 @@ function nextOption(key: string, at: number, count: number): number | null {
  * brings up. It floats at the pointer and closes as a floating panel does
  * (FloatingPanel), and also when an item is chosen or on Tab.
  */
-export function ContextMenu({ x, y, label, items, fromKeyboard = false, onClose }: ContextMenuProps) {
+export function ContextMenu({ x, y, align = 'left', label, items, fromKeyboard = false, onClose }: ContextMenuProps) {
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === 'Tab') {
       event.preventDefault()
@@ -119,6 +139,7 @@ export function ContextMenu({ x, y, label, items, fromKeyboard = false, onClose 
     <FloatingPanel
       x={x}
       y={y}
+      align={align}
       role="menu"
       label={label}
       // Opened from the keyboard it starts on its first item; by a pointer nothing is
@@ -132,7 +153,7 @@ export function ContextMenu({ x, y, label, items, fromKeyboard = false, onClose 
       {items.map((entry, index) => (
         <Fragment key={index}>
           {/* A group is set off by a line from whatever is next to it, on either side. */}
-          {index > 0 && ('group' in entry || 'group' in items[index - 1]) && (
+          {index > 0 && (isGrouped(entry) || isGrouped(items[index - 1])) && (
             <div role="separator" className="my-0.5 border-t border-neutral-200 dark:border-neutral-800" />
           )}
           <MenuEntry entry={entry} onClose={onClose} />
@@ -142,7 +163,7 @@ export function ContextMenu({ x, y, label, items, fromKeyboard = false, onClose 
   )
 }
 
-/** One entry of the menu: an item, a group of them, or a row of icons. */
+/** One entry of the menu: an item, one with items under it, a group of them, or a row of icons. */
 function MenuEntry({ entry, onClose }: { entry: ContextMenuEntry; onClose: () => void }) {
   if ('icons' in entry) {
     return (
@@ -155,6 +176,19 @@ function MenuEntry({ entry, onClose }: { entry: ContextMenuEntry; onClose: () =>
             <MenuIcon key={at} {...choice} onClose={onClose} />
           ))}
         </div>
+      </div>
+    )
+  }
+
+  if ('under' in entry) {
+    const { under, ...head } = entry
+    return (
+      <div role="group" aria-label={entry.label} className={group}>
+        {/* The head names the group already; it is a choice of its own all the same. */}
+        <MenuItem {...head} onClose={onClose} />
+        {under.map((choice, at) => (
+          <MenuItem key={at} {...choice} indented onClose={onClose} />
+        ))}
       </div>
     )
   }
@@ -176,7 +210,15 @@ function MenuEntry({ entry, onClose }: { entry: ContextMenuEntry; onClose: () =>
   return <MenuItem {...entry} onClose={onClose} />
 }
 
-function MenuItem({ label, onSelect, checked, icon, onClose }: ContextMenuItem & { onClose: () => void }) {
+function MenuItem({
+  label,
+  onSelect,
+  checked,
+  icon,
+  indented = false,
+  onClose,
+}: ContextMenuItem & { indented?: boolean; onClose: () => void }) {
+  const look = indented ? subItem : item
   return (
     <button
       type="button"
@@ -186,7 +228,7 @@ function MenuItem({ label, onSelect, checked, icon, onClose }: ContextMenuItem &
         onClose()
         onSelect()
       }}
-      className={checked === true ? `${item} ${panelOptionOn}` : `${item} ${itemOff}`}
+      className={checked === true ? `${look} ${panelOptionOn}` : `${look} ${itemOff}`}
     >
       {checked !== undefined && (
         <span aria-hidden="true" className="w-3 shrink-0">
@@ -194,7 +236,10 @@ function MenuItem({ label, onSelect, checked, icon, onClose }: ContextMenuItem &
         </span>
       )}
       {icon !== undefined && (
-        <span aria-hidden="true" className="grid shrink-0 place-items-center text-neutral-400 dark:text-neutral-500">
+        <span
+          aria-hidden="true"
+          className="grid shrink-0 place-items-center text-neutral-400 transition-colors group-hover:text-neutral-600 group-focus-visible:text-neutral-600 dark:text-neutral-500 dark:group-hover:text-neutral-300 dark:group-focus-visible:text-neutral-300"
+        >
           {icon}
         </span>
       )}

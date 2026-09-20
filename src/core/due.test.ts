@@ -296,3 +296,40 @@ describe('skipOccurrence', () => {
     expect(duplicateTask(skipOccurrence(repeating(DAILY), WED_16), WED_16).skippedDays).toEqual([])
   })
 })
+
+describe('reopening a missed occurrence', () => {
+  it('passes the missed day over, so it is no longer overdue (RPT-38)', () => {
+    const done = completeTask(repeating(MONDAYS), WED_16)
+    expect(isOverdue(done, WED_16)).toBe(false)
+
+    const reopened = uncompleteTask(done, WED_16)
+
+    expect(reopened.skippedDays).toEqual(['2026-09-14'])
+    expect(dueDay(reopened, WED_16)).toBe('2026-09-21')
+    expect(isOverdue(reopened, WED_16)).toBe(false)
+    expect(isInWeek(reopened, WED_16)).toBe(false)
+  })
+
+  it('brings the missed day back when the task is ticked off again (RPT-36)', () => {
+    const again = completeTask(uncompleteTask(completeTask(repeating(MONDAYS), WED_16), WED_16), WED_16)
+
+    expect(dueDay(again, WED_16)).toBe('2026-09-14')
+    expect(isInToday(again, WED_16)).toBe(true)
+  })
+
+  it('leaves a task whose occurrence is still in play on its day (RPT-38)', () => {
+    const reopened = uncompleteTask(completeTask(repeating(DAILY), WED_16), WED_16)
+
+    expect(reopened.skippedDays).toEqual([])
+    expect(dueDay(reopened, WED_16)).toBe('2026-09-16')
+    expect(isInToday(reopened, WED_16)).toBe(true)
+  })
+
+  it('passes over nothing from before the task was written (DUE-11)', () => {
+    const writtenTuesday = repeating(MONDAYS, TUE_15)
+    const reopened = uncompleteTask(completeTask(writtenTuesday, WED_16), WED_16)
+
+    expect(reopened.skippedDays).toEqual([])
+    expect(dueDay(reopened, WED_16)).toBeNull()
+  })
+})

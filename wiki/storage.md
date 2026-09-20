@@ -130,8 +130,8 @@ changes shape.
   **ignored with a warning** rather than crashing, and left as it is: a task the app cannot read is
   not shown, and never overwritten or deleted by it.
 - **STORE-8** A cached quote is not migrated. It is a day old at most and the service can simply be
-  asked again, so anything unexpected is dropped and refetched. A cached quote is also checked
-  field by field before it is trusted.
+  asked again, so anything unexpected — including a shape from before Ukrainian days went — is
+  dropped and refetched. A cached quote is also checked field by field before it is trusted.
 
 ## When writing happens
 

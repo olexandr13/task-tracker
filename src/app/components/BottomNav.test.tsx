@@ -217,13 +217,20 @@ describe('the Tasks tab', () => {
     }
   })
 
-  it('opens its menu on a tap once Tasks is on screen: the pages under it, then the Inbox and every list (UI-43)', async () => {
+  it('opens its menu on a tap once Tasks is on screen: Lists with the Inbox and every list under it, then Trash (UI-43)', async () => {
     const { user, onChange } = setup('tasks', LISTS)
 
     await user.click(tasksTab())
 
     const items = within(tasksMenu() as HTMLElement).getAllByRole('menuitem').map((item) => item.textContent)
-    expect(items).toEqual(['Lists', 'Trash', 'Inbox', 'Work', 'Home'])
+    expect(items).toEqual(['Lists', 'Inbox', 'Work', 'Home', 'Trash'])
+    const under = within(tasksMenu() as HTMLElement).getByRole('group', { name: 'Lists' })
+    expect(within(under).getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Lists',
+      'Inbox',
+      'Work',
+      'Home',
+    ])
     expect(onChange).not.toHaveBeenCalled()
   })
 

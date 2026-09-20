@@ -30,9 +30,19 @@ and whether it reads as done is derived from the occurrence currently in play ra
   play, and as todo once the next occurrence arrives — without anything rewriting it at midnight.
 - **RPT-10** A weekly task ticked off on Monday stays done until its next chosen day comes round,
   not until Tuesday.
-- **RPT-11** Un-completing undoes the occurrence in play only.
+- **RPT-11** Un-completing undoes the occurrence in play only, and where that occurrence has gone
+  by it passes it over rather than leaving the task on it (RPT-38).
 - **RPT-32** Time logged against a repeating task counts for the occurrence in play too, and starts
   from nothing when the next one arrives (TIME-7).
+- **RPT-38** Taking the tick back off a task whose occurrence **has gone by** passes that occurrence
+  over, exactly as skipping it would (RPT-34): the task is due on the rule's next day, is no longer
+  overdue and is out of Today and this week (LIST-2, LIST-3, LIST-11), rather than dropping back
+  onto a day nothing can be done about any more. A task whose occurrence is still in play — every
+  daily one, and a weekly one on its own day — simply goes back to to do on that day. It is the
+  reopening that does this, so it is the same from the task's own box and from unticking a checklist
+  item or adding one to a finished task (CHK-10, CHK-13). Nothing is earned or taken back by the
+  passing over itself (RWD-11 covers the tick), and ticking the task off again does that occurrence
+  after all (RPT-36).
 
 ## Changing a rule
 
@@ -100,7 +110,9 @@ and whether it reads as done is derived from the occurrence currently in play ra
   (DUE-11), can skip; a one-off has no next day to move on to.
 - **RPT-35** Skipping again passes over the next occurrence too.
 - **RPT-36** **Done wins**: ticking a skipped task off does the occurrence in play after all — it
-  reads as done on that day, as it would have without the skip. Taking the tick back skips it again.
+  reads as done on that day, as it would have without the skip. Taking the tick back skips it again,
+  which is what reopening does with any occurrence gone by (RPT-38); a day is passed over once,
+  however often it is ticked and unticked.
 - **RPT-37** The days skipped are kept on the task beside the days done, oldest first. The Habits
   page does not read them yet: a skipped day on a habit shows, and counts, as missed (HAB-5, HAB-10).
 
@@ -110,7 +122,8 @@ and whether it reads as done is derived from the occurrence currently in play ra
   day at most once. This is what [Habits](habits.md) read from.
 - **RPT-28** The history always agrees with the task's box. Completing a task, whether from its own
   box or by its checklist's last tick, adds the day. Taking the completion back, from the box or by
-  unticking an item, removes the days of the occurrence in play, and only those (RPT-11). Ticking
+  unticking an item, removes the days of the occurrence in play, and only those (RPT-11), and
+  passes that occurrence over where it has gone by (RPT-38). Ticking
   and unticking never touch days from earlier occurrences. Only the Habits page changes those, one
   day at a time (HAB-16).
 - **RPT-29** Completing, reopening and ticking the same day again and again leaves one day, not many.
@@ -123,7 +136,8 @@ and whether it reads as done is derived from the occurrence currently in play ra
 ---
 
 **Where it lives:** `src/core/repeat.ts` (the rules, and `nextOccurrence`), `src/core/task.ts` (`isComplete`,
-`setRepeat`, `doneDays`, `skippedDays` and `settleHistory`), `src/core/due.ts` (`skipOccurrence`), `src/app/repeatDraft.ts` (what the picker holds while choosing),
+`setRepeat`, `doneDays`, `skippedDays`, `settleHistory` and `passOverMissedOccurrence`),
+`src/core/due.ts` (`skipOccurrence`), `src/app/repeatDraft.ts` (what the picker holds while choosing),
 `src/app/repeatLabels.ts` (wording), `src/app/components/RepeatChoices.tsx` (the repeat half of
 `SchedulePicker.tsx`).
 **Tested in:** `src/core/repeat.test.ts`, `src/core/task.test.ts`, `src/core/due.test.ts` (skipping),

@@ -124,7 +124,9 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-14** Completing stamps the time. Completing something already done changes nothing — the
   first completion time stands.
 - **TASK-15** Un-completing puts the task back to todo and forgets when it was done. For a
-  repeating task that undoes the occurrence in play, which is all there is to undo.
+  repeating task that undoes the occurrence in play, which is all there is to undo — and where that
+  occurrence has gone by, hands the task on to its next day instead of leaving it on the day it
+  missed (RPT-38).
 - **TASK-16** A done task reads greyed and struck through.
 - **TASK-31** A task carrying a checklist is done **exactly when every item on it is**, in both
   directions, and its own box ticks the whole list. See [Checklists](checklists.md).

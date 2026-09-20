@@ -1,7 +1,17 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { completeTask, createTask, setReward, type RewardChanges, type Task } from '../core'
+import {
+  completeTask,
+  createTask,
+  dueDay,
+  isComplete,
+  isOverdue,
+  setReward,
+  type Repeat,
+  type RewardChanges,
+  type Task,
+} from '../core'
 import type { RewardRepository } from '../storage/rewardRepository'
 import type { TaskRepository } from '../storage/taskRepository'
 import { useTasks } from './useTasks'
@@ -109,5 +119,57 @@ describe('useTasks, recording rewards', () => {
     arrive([completeTask(task)])
 
     expect(recorded).toEqual([])
+  })
+})
+
+/*
+ * The reported case, through the same callbacks a row's checkbox calls: a weekly task whose
+ * Monday went by undone reads red, and taking the tick back off it must not put it back there.
+ */
+describe('useTasks, reopening a missed occurrence', () => {
+  const MONDAYS: Repeat = { kind: 'weekly', weekdays: [1] }
+  /** Written the Monday before, so the occurrence it missed is one it existed for (DUE-11). */
+  const MON_7 = new Date(2026, 8, 7, 9, 0)
+
+  it('passes the missed occurrence over instead of dropping the task back on it (RPT-38)', () => {
+    const task = createTask('weekly review', MONDAYS, MON_7)
+    const { result } = setUp([task])
+
+    expect(dueDay(result.current.tasks[0])).toBe('2026-09-14')
+    expect(isOverdue(result.current.tasks[0])).toBe(true)
+
+    act(() => { result.current.complete(task.id) })
+    expect(isComplete(result.current.tasks[0])).toBe(true)
+    expect(isOverdue(result.current.tasks[0])).toBe(false)
+
+    act(() => { result.current.uncomplete(task.id) })
+
+    expect(isComplete(result.current.tasks[0])).toBe(false)
+    expect(isOverdue(result.current.tasks[0])).toBe(false)
+    expect(dueDay(result.current.tasks[0])).toBe('2026-09-21')
+  })
+
+  it('leaves a daily task on today, which is not a day gone by (RPT-38)', () => {
+    const task = createTask('stretch', { kind: 'daily' }, MON_7)
+    const { result } = setUp([task])
+
+    act(() => { result.current.complete(task.id) })
+    act(() => { result.current.uncomplete(task.id) })
+
+    expect(result.current.tasks[0].skippedDays).toEqual([])
+    expect(dueDay(result.current.tasks[0])).toBe('2026-09-17')
+  })
+
+  it('still takes back what the missed occurrence earned (RWD-11)', () => {
+    const task = setReward(createTask('weekly review', MONDAYS, MON_7), 5)
+    const { result, recorded } = setUp([task])
+
+    act(() => { result.current.complete(task.id) })
+    act(() => { result.current.uncomplete(task.id) })
+
+    expect(recorded).toEqual([
+      { earned: [{ taskId: task.id, day: '2026-09-17', points: 5 }], revoked: [] },
+      { earned: [], revoked: [{ taskId: task.id, day: '2026-09-17' }] },
+    ])
   })
 })

@@ -52,8 +52,10 @@ export interface Task {
    * The local days of a repeating task's occurrences passed over without being
    * done, oldest first — see `skipOccurrence` in ./due. A skipped occurrence
    * hands the task on to its next one, so it is not due, overdue or counted on
-   * that day. Done wins: an occurrence ticked off after all reads as done, and
-   * the day stays here only so that taking the tick back skips it again.
+   * that day. A day is passed over by being skipped outright, or by reopening a
+   * task whose occurrence has gone by (`passOverMissedOccurrence`). Done wins:
+   * an occurrence ticked off after all reads as done, and the day stays here
+   * only so that taking the tick back passes it over again.
    */
   readonly skippedDays: readonly LocalDay[]
   /**
@@ -244,16 +246,18 @@ export function completeTask(task: Task, now: Date = new Date()): Task {
 /**
  * The inverse of completing: the task goes back to todo and forgets when it was
  * done, and its checklist is cleared with it for the same reason completing
- * ticked it. For a repeating task that undoes the current occurrence only —
- * there is nothing else stored to undo. Returns a new task; the one passed in is
- * never modified.
+ * ticked it. For a repeating task that undoes the occurrence in play, and where
+ * that occurrence has gone by, hands the task on to the rule's next day rather
+ * than back onto a day it can no longer do anything about (RPT-38).
+ *
+ * Returns a new task; the one passed in is never modified.
  */
 export function uncompleteTask(task: Task, now: Date = new Date()): Task {
   if (!isComplete(task, now)) {
     return task
   }
 
-  return settleHistory(
+  return reopen(
     {
       ...task,
       status: 'todo',
@@ -308,6 +312,42 @@ function settleHistory(task: Task, now: Date): Task {
   const occurrence = toLocalDay(currentOccurrence(task.repeat, now))
   const kept = task.doneDays.filter((day) => day < occurrence)
   return kept.length === task.doneDays.length ? task : { ...task, doneDays: kept }
+}
+
+/**
+ * What every way of reopening a task ends with: its history settled behind it,
+ * and an occurrence that has gone by passed over rather than left sitting on a
+ * day already missed.
+ */
+function reopen(task: Task, now: Date): Task {
+  return passOverMissedOccurrence(settleHistory(task, now), now)
+}
+
+/**
+ * Hands a reopened repeating task on to the rule's next day where the occurrence
+ * in play has gone by, so taking a tick back cannot drop it onto a day that is
+ * already missed (RPT-38). The day is only ever recorded, never taken away:
+ * ticking the task off again does that occurrence after all (RPT-36).
+ *
+ * The three guards are exactly what `isOverdue` in ./due reads as missed — the
+ * occurrence has gone by, the task already existed on it, and it was not passed
+ * over already — so nothing is ever skipped that was not. This writes the same
+ * record `skipOccurrence` there does; it cannot call it, since ./due is the
+ * layer above this one.
+ */
+function passOverMissedOccurrence(task: Task, now: Date): Task {
+  if (task.repeat === null) {
+    return task
+  }
+
+  const occurrence = toLocalDay(currentOccurrence(task.repeat, now))
+  if (occurrence >= toLocalDay(now) || occurrence < toLocalDay(new Date(task.createdAt))) {
+    return task
+  }
+
+  return task.skippedDays.includes(occurrence)
+    ? task
+    : { ...task, skippedDays: [...task.skippedDays, occurrence].sort() }
 }
 
 /**
@@ -448,12 +488,9 @@ function syncWithSubtasks(task: Task, now: Date): Task {
     return task
   }
 
-  return settleHistory(
-    allDone
-      ? { ...task, status: 'done', completedAt: now.toISOString() }
-      : { ...task, status: 'todo', completedAt: null },
-    now,
-  )
+  return allDone
+    ? settleHistory({ ...task, status: 'done', completedAt: now.toISOString() }, now)
+    : reopen({ ...task, status: 'todo', completedAt: null }, now)
 }
 
 /**

@@ -491,6 +491,53 @@ describe('doneDays', () => {
   })
 })
 
+describe('reopening a missed occurrence', () => {
+  it('passes the occurrence over when the tick is taken back after its day (RPT-38)', () => {
+    const done = completeTask(createTask('review', MONDAYS, MON_14), WED_16)
+
+    expect(uncompleteTask(done, WED_16).skippedDays).toEqual(['2026-09-14'])
+  })
+
+  it('leaves a daily task where it is: today is in play, so nothing was missed (RPT-38)', () => {
+    const done = completeTask(createTask('stretch', DAILY, MON_14), MON_14)
+
+    expect(uncompleteTask(done, MON_14).skippedDays).toEqual([])
+  })
+
+  it('passes a day over once, however often it is ticked and unticked (RPT-38)', () => {
+    const done = completeTask(createTask('review', MONDAYS, MON_14), WED_16)
+    const again = uncompleteTask(completeTask(uncompleteTask(done, WED_16), WED_16), WED_16)
+
+    expect(again.skippedDays).toEqual(['2026-09-14'])
+  })
+
+  it('passes over nothing from before the task was written (DUE-11)', () => {
+    const done = completeTask(createTask('review', MONDAYS, TUE_15), WED_16)
+
+    expect(uncompleteTask(done, WED_16).skippedDays).toEqual([])
+  })
+
+  it('does the same when unticking a checklist item reopens the task (CHK-10)', () => {
+    const task = addSubtask(createTask('weekly review', MONDAYS, MON_14), 'read notes', MON_14)
+    const itemId = task.subtasks[0].id
+    const finished = setSubtaskDone(task, itemId, true, WED_16)
+
+    expect(setSubtaskDone(finished, itemId, false, WED_16).skippedDays).toEqual(['2026-09-14'])
+  })
+
+  it('does the same when a fresh item reopens a finished task (CHK-13)', () => {
+    const done = completeTask(createTask('weekly review', MONDAYS, MON_14), WED_16)
+
+    expect(addSubtask(done, 'read notes', WED_16).skippedDays).toEqual(['2026-09-14'])
+  })
+
+  it('keeps a task that happens once out of it', () => {
+    const done = completeTask(setDueDate(createTask('buy milk', null, MON_14), '2026-09-14'), WED_16)
+
+    expect(uncompleteTask(done, WED_16).skippedDays).toEqual([])
+  })
+})
+
 describe('duplicateTask', () => {
   it('copies what the task says: title, description, rule, due date, checklist, tags and reward (TASK-51)', () => {
     const task = setReward(

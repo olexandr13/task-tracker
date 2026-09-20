@@ -12,10 +12,7 @@ export function QuoteCard({ quote }: QuoteCardProps) {
   }
 
   return (
-    <figure
-      lang={quote.language}
-      className="flex flex-col gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3.5 dark:border-neutral-800 dark:bg-neutral-900"
-    >
+    <figure className="flex flex-col gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3.5 dark:border-neutral-800 dark:bg-neutral-900">
       <blockquote className="text-sm leading-relaxed text-balance text-neutral-700 dark:text-neutral-300">
         {quote.text}
       </blockquote>

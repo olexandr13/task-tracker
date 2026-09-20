@@ -21,7 +21,7 @@ const TAGS = 'Motivational|Inspirational|Success'
 /** Long quotes turn the card into a wall of text; this keeps them to a few lines. */
 const MAX_LENGTH = 130
 
-/** A quote is decoration: better to fall back to the bundled pack than to hang on a dead socket. */
+/** A quote is decoration: better to end up with none than to hang on a dead socket. */
 const TIMEOUT_MS = 8000
 
 interface QuotableResponse {
@@ -74,6 +74,6 @@ export const quotableQuoteSource: QuoteSource = {
       throw new Error('The quote service answered in a shape this app does not know.')
     }
 
-    return { text: body.quote.content, author: body.quote.author.name, language: 'en' }
+    return { text: body.quote.content, author: body.quote.author.name }
   },
 }
