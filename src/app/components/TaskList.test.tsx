@@ -12,12 +12,14 @@ const ALL_DONE = 'Great work!'
 
 afterEach(cleanup)
 
-function setup(tasks: Task[], doneSpans: CompletionSpans | null = null) {
+function setup(tasks: Task[], doneSpans: CompletionSpans | null = null, focusId: string | null = null, dimAll = false) {
   render(
     <TaskList
       tasks={tasks}
       now={NOW}
       doneSpans={doneSpans}
+      focusId={focusId}
+      dimAll={dimAll}
       knownTags={[]}
       lists={[]}
       emptyMessage={EMPTY}
@@ -58,7 +60,8 @@ describe('TaskList', () => {
   it('praises the work once every task is done (TASK-50)', () => {
     setup([completeTask(createTask('read', null, NOW), NOW), completeTask(createTask('write', null, NOW), NOW)])
 
-    expect(screen.getByText(ALL_DONE)).toBeTruthy()
+    const praise = screen.getByRole('status')
+    expect(within(praise).getByText(ALL_DONE)).toBeTruthy()
     expect(screen.queryByText(EMPTY)).toBeNull()
   })
 
@@ -99,5 +102,24 @@ describe('TaskList', () => {
     setup([completeTask(createTask('read', null, NOW), NOW), createTask('write', null, NOW)])
 
     expect(screen.queryAllByRole('heading')).toEqual([])
+  })
+
+  it('dims every row but the focused one (JUST-5)', () => {
+    const focus = createTask('focus', null, NOW)
+    const other = createTask('other', null, NOW)
+    setup([focus, other], null, focus.id)
+
+    const focused = screen.getByText('focus').closest('li')
+    const dimmed = screen.getByText('other').closest('li')
+    expect(focused?.className).not.toMatch(/opacity-25/)
+    expect(focused?.className).toMatch(/my-3/)
+    expect(dimmed?.className).toMatch(/opacity-25/)
+  })
+
+  it('dims every row while Procrastination mode is idle after Rest (JUST-5)', () => {
+    const open = createTask('open', null, NOW)
+    setup([open], null, null, true)
+
+    expect(screen.getByText('open').closest('li')?.className).toMatch(/opacity-25/)
   })
 })

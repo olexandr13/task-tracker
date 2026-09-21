@@ -12,18 +12,12 @@ interface RedemptionListProps {
 
 /**
  * What points went on: each redemption's day, what it was for and how many
- * points, with a button deleting it.
+ * points, with a button deleting it. Deleting asks nothing: the screen offers
+ * to undo for a few seconds.
  */
 export function RedemptionList({ redemptions, now, onRemove }: RedemptionListProps) {
   if (redemptions.length === 0) {
     return <p className="py-6 text-center text-sm text-neutral-400 dark:text-neutral-600">Nothing redeemed yet.</p>
-  }
-
-  function handleRemove({ id, note, points }: Redemption) {
-    // The record goes for good, so it asks first.
-    if (window.confirm(`Delete "${note}"? Its ${describePoints(points)} go back to the balance.`)) {
-      onRemove(id)
-    }
   }
 
   return (
@@ -45,7 +39,7 @@ export function RedemptionList({ redemptions, now, onRemove }: RedemptionListPro
           </span>
           <button
             type="button"
-            onClick={() => { handleRemove(redemption) }}
+            onClick={() => { onRemove(redemption.id) }}
             aria-label={`Delete the redemption "${redemption.note}"`}
             title="Delete redemption"
             className={`flex h-6 shrink-0 items-center rounded-lg px-1.5 text-base leading-none ${deleteControl}`}

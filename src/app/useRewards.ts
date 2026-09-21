@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { createRedemption, pointsBalance, type RedemptionId } from '../core'
+import { createRedemption, pointsBalance, type Redemption, type RedemptionId, type RewardEntry, type RewardKey } from '../core'
 import type { PointsLedger, RewardRepository } from '../storage/rewardRepository'
 
 const EMPTY: PointsLedger = { entries: [], redemptions: [] }
@@ -7,7 +7,7 @@ const EMPTY: PointsLedger = { entries: [], redemptions: [] }
 /**
  * Holds the points ledger on screen: what completions earned and what was
  * redeemed. What completions earn is written as tasks change (useTasks); this
- * reads it back, and redeems.
+ * reads it back, redeems, and can take an earning or a redemption off the ledger.
  *
  * Nothing is put on screen ahead of the repository: Firestore hands a write
  * made here straight back through the subscription, offline too, so the ledger
@@ -42,15 +42,69 @@ export function useRewards(repository: RewardRepository) {
     [repository, balance],
   )
 
-  /** Deletes a redemption, giving its points back. */
+  /**
+   * Deletes a redemption, giving its points back, and hands it back so the
+   * caller can offer to undo. Null when there was nothing there to delete.
+   */
   const removeRedemption = useCallback(
-    (id: RedemptionId) => {
+    (id: RedemptionId): Redemption | null => {
+      const target = ledger.redemptions.find((redemption) => redemption.id === id)
+      if (target === undefined) return null
+
       repository.removeRedemption(id).catch((error: unknown) => {
         console.error('Could not delete the redemption.', error)
+      })
+      return target
+    },
+    [repository, ledger.redemptions],
+  )
+
+  /** Puts a deleted redemption back, same id and day. */
+  const restoreRedemption = useCallback(
+    (redemption: Redemption) => {
+      repository.redeem(redemption).catch((error: unknown) => {
+        console.error('Could not restore the redemption.', error)
       })
     },
     [repository],
   )
 
-  return { ...ledger, balance, isLoading, redeem, removeRedemption }
+  /**
+   * Takes an earning off the ledger and hands it back so the caller can offer
+   * to undo. Does not reopen the task: undoing the completion is how that is
+   * done; this only corrects the points. Null when there was nothing to delete.
+   */
+  const removeEarning = useCallback(
+    (key: RewardKey): RewardEntry | null => {
+      const target = ledger.entries.find((entry) => entry.taskId === key.taskId && entry.day === key.day)
+      if (target === undefined) return null
+
+      repository.save({ earned: [], revoked: [key] }).catch((error: unknown) => {
+        console.error('Could not delete the earning.', error)
+      })
+      return target
+    },
+    [repository, ledger.entries],
+  )
+
+  /** Puts a deleted earning back on the ledger. */
+  const restoreEarning = useCallback(
+    (entry: RewardEntry) => {
+      repository.save({ earned: [entry], revoked: [] }).catch((error: unknown) => {
+        console.error('Could not restore the earning.', error)
+      })
+    },
+    [repository],
+  )
+
+  return {
+    ...ledger,
+    balance,
+    isLoading,
+    redeem,
+    removeRedemption,
+    restoreRedemption,
+    removeEarning,
+    restoreEarning,
+  }
 }

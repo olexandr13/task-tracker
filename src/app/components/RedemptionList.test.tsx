@@ -41,16 +41,11 @@ describe('RedemptionList', () => {
     expect(screen.getByText('Nothing redeemed yet.')).toBeDefined()
   })
 
-  it('deletes a redemption only once that is confirmed (RWD-18, UI-38)', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
+  it('deletes a redemption at once (RWD-18, UI-38)', async () => {
     const { user, onRemove } = setup([COFFEE])
     const remove = screen.getByRole('button', { name: 'Delete the redemption "coffee"' })
 
     await user.click(remove)
-    expect(onRemove).not.toHaveBeenCalled()
-
-    await user.click(remove)
-    expect(confirm).toHaveBeenLastCalledWith('Delete "coffee"? Its 3 points go back to the balance.')
     expect(onRemove).toHaveBeenCalledWith('coffee')
   })
 })

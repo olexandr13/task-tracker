@@ -14,11 +14,18 @@ afterEach(cleanup)
 const WORK = createList('Work', new Date('2026-09-01T00:00:00.000Z'))
 const HOME = createList('Home', new Date('2026-09-02T00:00:00.000Z'))
 
-function setup(view: View, lists: readonly List[] = [], listsOpen = true) {
+function setup(view: View, lists: readonly List[] = [], listsOpen = true, dimmed = false) {
   const onChange = vi.fn()
   const onListsOpenChange = vi.fn()
   render(
-    <SideNav view={view} lists={lists} listsOpen={listsOpen} onChange={onChange} onListsOpenChange={onListsOpenChange} />,
+    <SideNav
+      view={view}
+      lists={lists}
+      listsOpen={listsOpen}
+      dimmed={dimmed}
+      onChange={onChange}
+      onListsOpenChange={onListsOpenChange}
+    />,
   )
   return { user: userEvent.setup(), onChange, onListsOpenChange }
 }
@@ -161,5 +168,11 @@ describe('SideNav', () => {
 
     setup('inbox', [WORK], false)
     expect(marked().map((button) => button.textContent)).toEqual(['Lists'])
+  })
+
+  it('dims while Procrastination mode is on (JUST-5)', () => {
+    setup('today', [], true, true)
+
+    expect(screen.getByRole('navigation', { name: 'Views' }).className).toMatch(/opacity-25/)
   })
 })

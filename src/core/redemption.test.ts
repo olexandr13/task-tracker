@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   createRedemption,
+  earningHistory,
   InvalidRedemptionError,
   MAX_REDEMPTION_NOTE,
   NotEnoughPointsError,
@@ -110,5 +111,15 @@ describe('redemptionHistory (RWD-18)', () => {
     const newer = redeemed(new Date(2026, 8, 16), 1, 'newer')
 
     expect(redemptionHistory([older, newer]).map((redemption) => redemption.note)).toEqual(['newer', 'older'])
+  })
+})
+
+describe('earningHistory (RWD-23)', () => {
+  it('lists the most recent day first, and same day by task id', () => {
+    const older = entry('2026-09-14', 5, 'run')
+    const newerA = entry('2026-09-17', 2, 'read')
+    const newerB = entry('2026-09-17', 1, 'write')
+
+    expect(earningHistory([older, newerB, newerA]).map((e) => e.taskId)).toEqual(['read', 'write', 'run'])
   })
 })

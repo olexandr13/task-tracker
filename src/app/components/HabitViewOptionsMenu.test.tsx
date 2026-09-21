@@ -15,7 +15,7 @@ function setup(options: HabitViewOptions = { showDetails: false }, onChange = vi
   return { user, onChange }
 }
 
-const viewButton = () => screen.getByRole('button', { name: 'View' })
+const viewButton = () => screen.getByRole('button', { name: 'View settings' })
 const detailsSwitch = () => screen.getByRole('switch', { name: 'Show habit details by default' })
 
 describe('the Habits View button', () => {
@@ -26,7 +26,7 @@ describe('the Habits View button', () => {
     await user.click(viewButton())
 
     expect(viewButton().getAttribute('aria-expanded')).toBe('true')
-    expect(screen.getByRole('dialog', { name: 'View' })).toBeDefined()
+    expect(screen.getByRole('dialog', { name: 'View settings' })).toBeDefined()
     expect(detailsSwitch().getAttribute('aria-checked')).toBe('true')
   })
 
@@ -37,7 +37,7 @@ describe('the Habits View button', () => {
     await user.click(detailsSwitch())
 
     expect(onChange).toHaveBeenCalledWith({ showDetails: true })
-    expect(screen.getByRole('dialog', { name: 'View' })).toBeDefined()
+    expect(screen.getByRole('dialog', { name: 'View settings' })).toBeDefined()
   })
 
   it('says what the option does (HAB-23)', async () => {

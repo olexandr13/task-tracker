@@ -33,8 +33,8 @@ these, so a feature page only mentions them where the feature bends them.
 ## Behaviour
 
 - **PRIN-8** Destructive actions are reversible, or they ask first. Deleting is reversible twice
-  over; the two actions that genuinely end a task say so, and so does deleting a redemption
-  (RWD-18).
+  over; the two actions that genuinely end a task say so. Deleting an earning or a redemption is
+  reversible for a few seconds (RWD-18, RWD-23).
 - **PRIN-9** The app works offline. Signing in for the first time needs a connection; after that
   the session is remembered (AUTH-7). The app itself opens with no connection (OFF-1), the tasks
   open from the browser's copy, and changes are kept and sent once there is a connection

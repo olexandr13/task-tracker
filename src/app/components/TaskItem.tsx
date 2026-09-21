@@ -5,6 +5,7 @@ import {
   countSubtasks,
   currentEntries,
   dueDay,
+  elapsedSeconds,
   hasDescription,
   hasSubtasks,
   hasTags,
@@ -25,7 +26,7 @@ import {
 } from '../../core'
 import { dateChoices } from '../dateChoices'
 import { describeDueDate } from '../dueLabels'
-import { describeTimeProgress } from '../durationLabels'
+import { describeTimeProgress, describeTimerRunning } from '../durationLabels'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { describeRepeatBriefly } from '../repeatLabels'
 import { describeReward } from '../rewardLabels'
@@ -35,18 +36,19 @@ import {
   completionBoxReady,
   controlMarker,
   controlMarkerOverdue,
+  controlMarkerRunning,
   controlOff,
   controlOn,
   deleteControl,
   detailReached,
   rowControlIcon,
-  rowControlLabel,
 } from '../rowControls'
 import { isInTextEntry } from '../textEntry'
 import { textOffsetAtPoint } from '../textOffsetAtPoint'
 import { isHeldInPlace } from '../useLongPress'
 import { usePhoneLayout } from '../usePhoneLayout'
 import { useSortableTask } from '../useSortableTask'
+import type { TaskTimer } from '../useTaskTimer'
 import { CalendarIcon } from './CalendarIcon'
 import { ChecklistIcon } from './ChecklistIcon'
 import { ClockIcon } from './ClockIcon'
@@ -55,7 +57,9 @@ import { DueChoices } from './DueChoices'
 import { DuplicateIcon } from './DuplicateIcon'
 import { FlagIcon } from './FlagIcon'
 import { FloatingPanel } from './FloatingPanel'
+import { FolderIcon } from './FolderIcon'
 import { GripIcon } from './GripIcon'
+import { InboxIcon } from './InboxIcon'
 import { ListPicker } from './ListPicker'
 import { NoteIcon } from './NoteIcon'
 import { RepeatIcon } from './RepeatIcon'
@@ -80,6 +84,10 @@ interface TaskItemProps {
   lists: readonly List[]
   /** Whether the row spells out what its controls hold at rest too, not only once woken. */
   showDetails?: boolean
+  /** Soften the row while Procrastination mode has another task in focus (JUST-5). */
+  dimmed?: boolean
+  /** Give the focused row extra space from its neighbours (JUST-5). */
+  emphasized?: boolean
   /** The rows this one can be dragged among, when the list divides them further than to-do and done. */
   dragGroup?: string
   onComplete: (id: TaskId) => void
@@ -104,6 +112,8 @@ interface TaskItemProps {
   onSetSubtaskDone: (id: TaskId, subtaskId: SubtaskId, done: boolean) => void
   onRenameSubtask: (id: TaskId, subtaskId: SubtaskId, title: string) => void
   onRemoveSubtask: (id: TaskId, subtaskId: SubtaskId) => void
+  /** The screen's timer, when one is offered for logging time by running a clock. */
+  timer?: Pick<TaskTimer, 'clock' | 'start' | 'stop' | 'isRunningFor' | 'state'>
 }
 
 /** The title and the box that replaces it start in the same place, so nothing shifts. */
@@ -161,6 +171,8 @@ export function TaskItem({
   knownTags,
   lists,
   showDetails = false,
+  dimmed = false,
+  emphasized = false,
   dragGroup,
   onComplete,
   onUncomplete,
@@ -183,6 +195,7 @@ export function TaskItem({
   onSetSubtaskDone,
   onRenameSubtask,
   onRemoveSubtask,
+  timer,
 }: TaskItemProps) {
   const phone = usePhoneLayout()
   const done = isComplete(task, now)
@@ -192,6 +205,15 @@ export function TaskItem({
   // box invites a tick, and ticking it is still the owner's to do.
   const sessions = currentEntries(task.timeLog, task.repeat, now)
   const spent = sessions.reduce((total, entry) => total + entry.minutes, 0)
+  const timerRunning = timer?.isRunningFor(task.id) ?? false
+  const timerStartedAt =
+    timerRunning && timer !== undefined && timer.state.status === 'running'
+      ? timer.state.startedAt
+      : null
+  const liveSeconds =
+    timerRunning && timerStartedAt !== null && timer !== undefined
+      ? elapsedSeconds(timerStartedAt, timer.clock)
+      : 0
   const ready = !done && isTimeGoalReached(task, now)
   // The picker edits a draft; every change is saved straight away, so there is
   // no separate confirm step and nothing to lose by closing the panel.
@@ -237,7 +259,7 @@ export function TaskItem({
   const detailed = phone ? showDetails : isActive || showDetails
   const day = dueDay(task, now)
   const scheduled = task.repeat !== null || day !== null
-  const timed = task.timeGoal !== null || spent > 0
+  const timed = task.timeGoal !== null || spent > 0 || timerRunning
   const rewarded = task.reward !== null
   const checklisted = hasSubtasks(task)
   const described = hasDescription(task)
@@ -263,11 +285,24 @@ export function TaskItem({
         ? describeDueDate(task.dueDate, now)
         : null
   const count = detailed && checklisted ? `${String(checklist.done)}/${String(checklist.total)}` : null
-  const time = detailed && timed ? describeTimeProgress(spent, task.timeGoal) : null
+  const timeProgress = describeTimeProgress(spent, task.timeGoal)
+  const time =
+    detailed && timed
+      ? timerRunning
+        ? spent > 0 || task.timeGoal !== null
+          ? `${timeProgress} · ${describeTimerRunning(liveSeconds)}`
+          : describeTimerRunning(liveSeconds)
+        : timeProgress
+      : null
   const points = detailed && task.reward !== null ? describeReward(task.reward) : null
   const urgentLabel = detailed && task.urgent ? 'Urgent' : null
   // On a phone, marks for what the task carries — set ones only, not buttons.
   // A tap on them is a tap on the row and opens the sheet.
+  const timeMarkLabel = timerRunning
+    ? spent > 0 || task.timeGoal !== null
+      ? `${timeProgress}, ${describeTimerRunning(liveSeconds)}`
+      : describeTimerRunning(liveSeconds)
+    : timeProgress
   const marks =
     phone && (scheduled || timed || rewarded || checklisted || described || tagged)
       ? {
@@ -280,7 +315,7 @@ export function TaskItem({
                   : null
               : null,
             checklisted ? `Checklist ${String(checklist.done)} of ${String(checklist.total)}` : null,
-            timed ? describeTimeProgress(spent, task.timeGoal) : null,
+            timed ? timeMarkLabel : null,
             rewarded && task.reward !== null ? describeReward(task.reward) : null,
             described ? 'Description' : null,
             tagged ? `Tags ${task.tags.join(', ')}` : null,
@@ -298,6 +333,16 @@ export function TaskItem({
     onRemove: (entryId: TimeEntryId) => { onRemoveTimeEntry(task.id, entryId) },
     onChangeGoal: (minutes: number | null) => { onChangeTimeGoal(task.id, minutes) },
     label: `Time for "${task.title}"`,
+    timer:
+      timer === undefined
+        ? undefined
+        : {
+            running: timerRunning,
+            startedAt: timerStartedAt,
+            clock: timer.clock,
+            onStart: () => { timer.start(task.id) },
+            onStop: () => { timer.stop() },
+          },
   }
   // The list the task is filed under, or null in the Inbox.
   const filed = listOf(task, lists)
@@ -333,9 +378,15 @@ export function TaskItem({
           {
             group: 'List',
             items: [
-              { label: 'Inbox', checked: filed === null, onSelect: () => { onChangeList(task.id, null) } },
+              {
+                label: 'Inbox',
+                icon: <InboxIcon />,
+                checked: filed === null,
+                onSelect: () => { onChangeList(task.id, null) },
+              },
               ...sortLists(lists).map((list) => ({
                 label: list.name,
+                icon: <FolderIcon />,
                 checked: list.id === filed?.id,
                 onSelect: () => { onChangeList(task.id, list.id) },
               })),
@@ -585,8 +636,8 @@ export function TaskItem({
           ? 'group relative touch-manipulation rounded-xl border border-dashed border-neutral-300 bg-white opacity-50 dark:border-neutral-700 dark:bg-neutral-900'
           : menuAt !== null || tagsAt !== null || dateAt !== null || (phone && isActive)
             // Marked while its menu or sheet is open, so it is plain which task that is for.
-            ? `group relative touch-manipulation rounded-xl border border-neutral-400 bg-white dark:border-neutral-600 dark:bg-neutral-900${urgent ? ' shadow-[inset_3px_0_0_rgb(217_119_6_/_0.55)] dark:shadow-[inset_3px_0_0_rgb(251_191_36_/_0.45)]' : ''}`
-            : `group relative touch-manipulation rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900${urgent ? ' shadow-[inset_3px_0_0_rgb(217_119_6_/_0.55)] dark:shadow-[inset_3px_0_0_rgb(251_191_36_/_0.45)]' : ''}`
+            ? `group relative touch-manipulation rounded-xl border border-neutral-400 bg-white dark:border-neutral-600 dark:bg-neutral-900${urgent ? ' shadow-[inset_3px_0_0_rgb(217_119_6_/_0.55)] dark:shadow-[inset_3px_0_0_rgb(251_191_36_/_0.45)]' : ''}${dimmed ? ' opacity-25' : ''}${emphasized ? ' my-3' : ''}`
+            : `group relative touch-manipulation rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900${urgent ? ' shadow-[inset_3px_0_0_rgb(217_119_6_/_0.55)] dark:shadow-[inset_3px_0_0_rgb(251_191_36_/_0.45)]' : ''}${dimmed ? ' opacity-25' : ''}${emphasized ? ' my-3' : ''}`
       }
       title={urgent ? 'Urgent' : undefined}
     >
@@ -690,7 +741,15 @@ export function TaskItem({
               </span>
             )}
             {timed && (
-              <span className={ready ? `${controlMarker} ${detailReached}` : controlMarker}>
+              <span
+                className={
+                  timerRunning
+                    ? controlMarkerRunning
+                    : ready
+                      ? `${controlMarker} ${detailReached}`
+                      : controlMarker
+                }
+              >
                 <ClockIcon />
               </span>
             )}
@@ -883,10 +942,9 @@ export function TaskItem({
             onClick={() => { onDuplicate(task.id) }}
             aria-label={`Duplicate "${task.title}"`}
             title="Duplicate"
-            className={`${rowControlLabel} ${controlOff}`}
+            className={`${rowControlIcon} ${controlOff}`}
           >
             <DuplicateIcon />
-            Duplicate
           </button>
         </div>
       )}
@@ -949,6 +1007,7 @@ export function TaskItem({
           onSetSubtaskDone={onSetSubtaskDone}
           onRenameSubtask={onRenameSubtask}
           onRemoveSubtask={onRemoveSubtask}
+          timer={timer}
         />
       )}
 

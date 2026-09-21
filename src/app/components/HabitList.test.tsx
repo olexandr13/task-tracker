@@ -160,6 +160,7 @@ describe('HabitList', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     expect(toggle.parentElement?.className).toContain('ml-auto')
     expect(screen.getByText('Current streak:').parentElement?.textContent).toBe('Current streak: 2')
+    expect(screen.queryByRole('list', { name: 'Legend' })).toBeNull()
     const record = document.getElementById(toggle.getAttribute('aria-controls') ?? '')
     expect(record?.className).toContain('hidden')
     expect(record?.contains(screen.getByRole('group', { name: /Last 52 weeks/ }))).toBe(true)
@@ -174,10 +175,16 @@ describe('HabitList', () => {
     expect(record?.className).toContain('flex')
     // The streak is in the record now, so the line no longer repeats it.
     expect(screen.queryByText('Current streak:')).toBeNull()
+    // The legend names the grid's shades once a card is open (HAB-10).
+    const legend = screen.getByRole('list', { name: 'Legend' })
+    expect(legend.textContent).toBe('DoneMissedNot tracked')
+    expect(record).toBeTruthy()
+    expect(record!.compareDocumentPosition(legend) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
     await user.click(toggle)
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     expect(record?.className).toContain('hidden')
+    expect(screen.queryByRole('list', { name: 'Legend' })).toBeNull()
   })
 
   it('starts each card open when Show habit details by default is on (HAB-23)', () => {
@@ -185,6 +192,7 @@ describe('HabitList', () => {
 
     expect(screen.getByRole('button', { name: 'Record of "stretch"' }).getAttribute('aria-expanded')).toBe('true')
     expect(screen.queryByText('Current streak:')).toBeNull()
+    expect(screen.getByRole('list', { name: 'Legend' })).toBeTruthy()
   })
 
   it('resets the cards when the default changes (HAB-23)', async () => {
@@ -194,12 +202,15 @@ describe('HabitList', () => {
 
     await user.click(screen.getByRole('button', { name: 'Record of "stretch"' }))
     expect(screen.getByRole('button', { name: 'Record of "stretch"' }).getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('list', { name: 'Legend' })).toBeTruthy()
 
     rerender(<HabitList {...props} showDetails={true} />)
     expect(screen.getByRole('button', { name: 'Record of "stretch"' }).getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('list', { name: 'Legend' })).toBeTruthy()
 
     rerender(<HabitList {...props} showDetails={false} />)
     expect(screen.getByRole('button', { name: 'Record of "stretch"' }).getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('list', { name: 'Legend' })).toBeNull()
   })
 
   it('offers no day after today (HAB-18)', () => {

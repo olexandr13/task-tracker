@@ -21,7 +21,7 @@ function isChanged(options: HabitViewOptions): boolean {
  */
 export function HabitViewOptionsMenu({ options, onChange }: HabitViewOptionsMenuProps) {
   return (
-    <ViewMenu label="View" changed={isChanged(options)}>
+    <ViewMenu label="View settings" changed={isChanged(options)}>
       <OptionSwitch
         icon={<ChevronIcon />}
         label="Show habit details by default"

@@ -28,6 +28,7 @@ import { HabitGrid } from './HabitGrid'
 import { MoreVerticalIcon } from './MoreVerticalIcon'
 import { TaskSheet } from './TaskSheet'
 import { TimePicker } from './TimePicker'
+import type { TaskTimer } from '../useTaskTimer'
 
 interface HabitListProps {
   /** Already chosen and ordered by `habitTasks`. */
@@ -63,6 +64,7 @@ interface HabitListProps {
   onSetSubtaskDone: (id: TaskId, subtaskId: SubtaskId, done: boolean) => void
   onRenameSubtask: (id: TaskId, subtaskId: SubtaskId, title: string) => void
   onRemoveSubtask: (id: TaskId, subtaskId: SubtaskId) => void
+  timer?: Pick<TaskTimer, 'clock' | 'start' | 'stop' | 'isRunningFor' | 'state'>
 }
 
 const LEGEND: readonly HabitDayState[] = ['done', 'missed', 'untracked']
@@ -111,7 +113,31 @@ export function HabitList({
   onSetSubtaskDone,
   onRenameSubtask,
   onRemoveSubtask,
+  timer,
 }: HabitListProps) {
+  // Per-card folds override the page default; clearing them when the default
+  // changes is what "every card resets" means (HAB-23). The legend sits under
+  // the list and only while at least one grid is open — it names shades that
+  // otherwise are not on the page.
+  const [openOverrides, setOpenOverrides] = useState<ReadonlyMap<TaskId, boolean>>(() => new Map())
+  const [appliedDefault, setAppliedDefault] = useState(showDetails)
+  if (appliedDefault !== showDetails) {
+    setAppliedDefault(showDetails)
+    setOpenOverrides(new Map())
+  }
+
+  function isOpen(id: TaskId): boolean {
+    return openOverrides.get(id) ?? showDetails
+  }
+
+  function toggleOpen(id: TaskId) {
+    setOpenOverrides((prev) => {
+      const next = new Map(prev)
+      next.set(id, !(prev.get(id) ?? showDetails))
+      return next
+    })
+  }
+
   if (habits.length === 0) {
     return (
       <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">
@@ -120,27 +146,18 @@ export function HabitList({
     )
   }
 
+  const anyOpen = habits.some((habit) => isOpen(habit.id))
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-2">
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          Tasks that repeat every day.{' '}
-        </p>
-
-        <ul aria-label="Legend" className="flex items-center gap-3 self-end">
-          {LEGEND.map((state) => (
-            <li key={state} className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-              <span className={`size-3 rounded-[3px] ring-1 ring-neutral-900/5 ring-inset dark:ring-white/5 ${HABIT_DAY_TONES[state]}`} />
-              {HABIT_DAY_LABELS[state]}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        Tasks that repeat every day.{' '}
+      </p>
 
       <ul className="flex flex-col gap-3">
         {habits.map((habit) => (
           <HabitCard
-            key={`${habit.id}:${showDetails ? 'open' : 'folded'}`}
+            key={habit.id}
             habit={habit}
             now={now}
             knownTags={knownTags}
@@ -167,10 +184,23 @@ export function HabitList({
             onSetSubtaskDone={onSetSubtaskDone}
             onRenameSubtask={onRenameSubtask}
             onRemoveSubtask={onRemoveSubtask}
-            showDetails={showDetails}
+            timer={timer}
+            isOpen={isOpen(habit.id)}
+            onToggleOpen={() => { toggleOpen(habit.id) }}
           />
         ))}
       </ul>
+
+      {anyOpen && (
+        <ul aria-label="Legend" className="flex items-center gap-3 self-end">
+          {LEGEND.map((state) => (
+            <li key={state} className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+              <span className={`size-3 rounded-[3px] ring-1 ring-neutral-900/5 ring-inset dark:ring-white/5 ${HABIT_DAY_TONES[state]}`} />
+              {HABIT_DAY_LABELS[state]}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
@@ -192,7 +222,8 @@ export function HabitList({
 function HabitCard({
   habit,
   now,
-  showDetails,
+  isOpen,
+  onToggleOpen,
   knownTags,
   lists,
   onComplete,
@@ -217,12 +248,21 @@ function HabitCard({
   onSetSubtaskDone,
   onRenameSubtask,
   onRemoveSubtask,
-}: { habit: Task } & Omit<HabitListProps, 'habits'>) {
+  timer,
+}: {
+  habit: Task
+  isOpen: boolean
+  onToggleOpen: () => void
+} & Omit<HabitListProps, 'habits' | 'showDetails'>) {
   const done = isComplete(habit, now)
-  const timed = hasTimeGoal(habit)
+  const timerRunning = timer?.isRunningFor(habit.id) ?? false
+  const timerStartedAt =
+    timerRunning && timer !== undefined && timer.state.status === 'running'
+      ? timer.state.startedAt
+      : null
+  const timed = hasTimeGoal(habit) || timerRunning
   const ready = !done && isTimeGoalReached(habit, now)
   const { currentStreak, bestStreak } = habitStats(habit, now)
-  const [isOpen, setIsOpen] = useState(() => showDetails)
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(() => toDraft(habit.repeat, now))
   const [editedTitle, setEditedTitle] = useState<string | null>(null)
@@ -350,6 +390,17 @@ function HabitCard({
                 onChangeGoal={(minutes) => { onChangeTimeGoal(habit.id, minutes) }}
                 label={`Time for "${habit.title}"`}
                 showAmount
+                timer={
+                  timer === undefined
+                    ? undefined
+                    : {
+                        running: timerRunning,
+                        startedAt: timerStartedAt,
+                        clock: timer.clock,
+                        onStart: () => { timer.start(habit.id) },
+                        onStop: () => { timer.stop() },
+                      }
+                }
               />
             </div>
           )}
@@ -370,7 +421,7 @@ function HabitCard({
 
           <button
             type="button"
-            onClick={() => { setIsOpen(!isOpen) }}
+            onClick={onToggleOpen}
             aria-expanded={isOpen}
             aria-controls={recordId}
             aria-label={`Record of "${habit.title}"`}
@@ -435,6 +486,7 @@ function HabitCard({
           onSetSubtaskDone={onSetSubtaskDone}
           onRenameSubtask={onRenameSubtask}
           onRemoveSubtask={onRemoveSubtask}
+          timer={timer}
         />
       )}
     </li>

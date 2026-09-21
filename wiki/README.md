@@ -18,6 +18,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Tags](tags.md) | Names a task carries, tagging by picker or by typing `#`, the Tags page and each tag's list |
 | [Lists](lists.md) | Somewhere to put a task: one list at a time, the Inbox, and the Lists page |
 | [Views](views.md) | Views of the tasks — Today, Week and Month, and what belongs in them |
+| [Just one](just-one.md) | Procrastination mode on Today: one task, a win, then rest or the next |
 | [Repeating tasks](repeating-tasks.md) | Daily, weekly and monthly rules, and how a repeat reads as done |
 | [Trash](trash.md) | Deleting, the undo window, retention and purging |
 | [Progress](progress.md) | The three bars: today, this week, this month |

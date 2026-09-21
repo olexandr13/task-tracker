@@ -33,11 +33,21 @@ export const controlOn =
   'bg-blue-600/5 text-blue-600/70 hover:bg-blue-600/10 hover:text-blue-600 dark:bg-blue-400/5 dark:text-blue-300/55 dark:hover:bg-blue-400/10 dark:hover:text-blue-300/90'
 
 /**
+ * A timer is running against this task. Stronger than a set control, and a
+ * quiet pulse so it stays noticeable while the panel is closed.
+ */
+export const controlRunning =
+  'task-timer-running bg-blue-600/15 text-blue-600 hover:bg-blue-600/20 hover:text-blue-700 dark:bg-blue-400/15 dark:text-blue-300 dark:hover:bg-blue-400/25 dark:hover:text-blue-200'
+
+/**
  * Something set, shown as a mark rather than a control — a phone's resting row,
  * where the tinted icons say what the task carries but do not open anything.
  * Same quiet tint as a set control, without the hover that invites a click.
  */
 export const controlMarker = 'text-blue-600/70 dark:text-blue-300/55'
+
+/** A timer running, as a phone mark: the same pulse as the control. */
+export const controlMarkerRunning = 'task-timer-running text-blue-600 dark:text-blue-300'
 
 /** A due day already gone, as a mark: the same warning red as an overdue control. */
 export const controlMarkerOverdue = 'text-red-600 dark:text-red-400'

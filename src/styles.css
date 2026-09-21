@@ -3,3 +3,47 @@
 body {
   @apply min-h-dvh bg-neutral-50 text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100;
 }
+
+@keyframes procrastination-win-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.4rem) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes procrastination-win-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.02);
+  }
+}
+
+.procrastination-win {
+  animation: procrastination-win-in 0.45s ease-out both;
+}
+
+.procrastination-win-burst {
+  animation: procrastination-win-pulse 0.7s ease-out 0.15s both;
+}
+
+@keyframes task-timer-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+.task-timer-running {
+  animation: task-timer-pulse 1.6s ease-in-out infinite;
+}
+

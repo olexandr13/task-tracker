@@ -36,6 +36,8 @@ requirements were written with, so older references to them still mean what they
   is done, it praises the day's work instead (TASK-50).
 - **LIST-9** Nothing moves at midnight. What is in Today follows from the day it is, so a page left
   open picks up the new day on its next render (PRIN-2).
+- **LIST-21** Today can enter **Procrastination mode** — one open task in focus, the rest faded —
+  see [Just one](just-one.md).
 
 ## Week
 
@@ -74,4 +76,5 @@ requirements were written with, so older references to them still mean what they
 **Where it lives:** `src/core/due.ts` (`isInPeriod`, `lastDayOf`), `src/app/view.ts` (the
 views, their names, what each says when empty, which tasks it shows and the day it gives new ones),
 `src/app/TasksScreen.tsx`, `src/app/components/SideNav.tsx`, `src/app/components/BottomNav.tsx`.
+Procrastination mode on Today is [Just one](just-one.md).
 **Tested in:** `src/core/due.test.ts`, `src/app/components/AddTaskForm.test.tsx`.

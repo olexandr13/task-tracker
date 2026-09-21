@@ -23,7 +23,7 @@ function isChanged(options: ViewOptions): boolean {
  */
 export function ViewOptionsMenu({ options, onChange }: ViewOptionsMenuProps) {
   return (
-    <ViewMenu label="View" changed={isChanged(options)}>
+    <ViewMenu label="View settings" changed={isChanged(options)}>
       <OptionSwitch
         icon={<DetailsIcon />}
         label="Show task details"

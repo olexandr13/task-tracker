@@ -1,11 +1,15 @@
 import {
+  earningHistory,
   pointsBalance,
   redemptionHistory,
   rewardTotals,
   type Redemption,
   type RedemptionId,
   type RewardEntry,
+  type RewardKey,
+  type TaskId,
 } from '../../core'
+import { EarningList } from './EarningList'
 import { RedeemForm } from './RedeemForm'
 import { RedemptionList } from './RedemptionList'
 import { RewardTotals } from './RewardTotals'
@@ -14,9 +18,12 @@ import { StarIcon } from './StarIcon'
 interface RewardsPageProps {
   entries: readonly RewardEntry[]
   redemptions: readonly Redemption[]
+  /** Titles of tasks that still exist, including those in the trash. */
+  taskTitles: ReadonlyMap<TaskId, string>
   /** The moment the totals are counted for: which day, week, month and year it is. */
   now: Date
   onRedeem: (points: number, note: string) => void
+  onRemoveEarning: (key: RewardKey) => void
   onRemoveRedemption: (id: RedemptionId) => void
 }
 
@@ -24,9 +31,18 @@ const heading = 'text-sm font-medium text-neutral-700 dark:text-neutral-300'
 
 /**
  * The points: how many there are to spend and a way to spend them, how many were
- * earned and redeemed in each period, and what they went on.
+ * earned and redeemed in each period, what each completion earned, and what
+ * points went on.
  */
-export function RewardsPage({ entries, redemptions, now, onRedeem, onRemoveRedemption }: RewardsPageProps) {
+export function RewardsPage({
+  entries,
+  redemptions,
+  taskTitles,
+  now,
+  onRedeem,
+  onRemoveEarning,
+  onRemoveRedemption,
+}: RewardsPageProps) {
   const balance = pointsBalance(entries, redemptions)
 
   return (
@@ -52,6 +68,12 @@ export function RewardsPage({ entries, redemptions, now, onRedeem, onRemoveRedem
       <section aria-label="Earned" className="flex flex-col gap-2">
         <h2 className={heading}>Earned</h2>
         <RewardTotals totals={rewardTotals(entries, redemptions, now)} />
+        <EarningList
+          entries={earningHistory(entries)}
+          taskTitles={taskTitles}
+          now={now}
+          onRemove={onRemoveEarning}
+        />
       </section>
 
       <section aria-label="Redeemed" className="flex flex-col gap-2">

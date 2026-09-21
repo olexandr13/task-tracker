@@ -115,11 +115,43 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
       dueDate: LocalDay | null = null,
       tags: readonly string[] = [],
       listId: ListId | null = null,
+      details: {
+        description?: string
+        reward?: number | null
+        urgent?: boolean
+        timeGoal?: number | null
+        timeLogMinutes?: readonly number[]
+        subtasks?: readonly { title: string; done: boolean }[]
+      } = {},
     ) => {
       apply((current) => {
         const known = tagsInUse(liveTasks(current))
-        const started = moveToList(setDueDate(createTask(title, repeat), dueDate), listId)
-        const task = tags.reduce((tagged, tag) => addTag(tagged, tag, known), started)
+        let task = moveToList(setDueDate(createTask(title, repeat), dueDate), listId)
+        task = tags.reduce((tagged, tag) => addTag(tagged, tag, known), task)
+        if (details.description !== undefined && details.description.length > 0) {
+          task = setDescription(task, details.description)
+        }
+        if (details.reward !== undefined) {
+          task = setReward(task, details.reward)
+        }
+        if (details.urgent === true) {
+          task = setUrgent(task, true)
+        }
+        if (details.timeGoal !== undefined) {
+          task = setTimeGoal(task, details.timeGoal)
+        }
+        for (const minutes of details.timeLogMinutes ?? []) {
+          task = logTime(task, minutes)
+        }
+        for (const item of details.subtasks ?? []) {
+          task = insertSubtask(task, task.subtasks.length, item.title)
+          if (item.done) {
+            const added = task.subtasks[task.subtasks.length - 1]
+            if (added !== undefined) {
+              task = setSubtaskDone(task, added.id, true)
+            }
+          }
+        }
         return appendTask(current, task)
       })
     },

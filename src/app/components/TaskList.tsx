@@ -13,8 +13,10 @@ import {
   type TimeEntryId,
 } from '../../core'
 import { COMPLETION_SPAN_LABELS } from '../completionLabels'
+import { CelebrateIcon } from './CelebrateIcon'
 import { SortableTasks } from './SortableTasks'
 import { TaskItem } from './TaskItem'
+import type { TaskTimer } from '../useTaskTimer'
 
 /** A phone leaves room between rows so a tap aimed at one does not catch the next. */
 const rows = 'flex flex-col gap-2 md:gap-1'
@@ -47,6 +49,16 @@ interface TaskListProps {
   /** Whether every row spells out what its controls hold, not only the woken one. */
   showDetails?: boolean
   /**
+   * The open task Procrastination mode is focusing on. Every other row is dimmed;
+   * null leaves the list at full strength unless `dimAll` is set.
+   */
+  focusId?: TaskId | null
+  /**
+   * Dim every row — Procrastination mode is on but idle after Rest, so nothing is
+   * selected yet (JUST-5).
+   */
+  dimAll?: boolean
+  /**
    * The spans the done tasks are divided into by when they were finished, each
    * under a heading, or null for one run of them. The tasks are then given in that
    * order too: to do, then done today, yesterday and so on (`groupByCompletion`).
@@ -77,6 +89,7 @@ interface TaskListProps {
   onSetSubtaskDone: (id: TaskId, subtaskId: SubtaskId, done: boolean) => void
   onRenameSubtask: (id: TaskId, subtaskId: SubtaskId, title: string) => void
   onRemoveSubtask: (id: TaskId, subtaskId: SubtaskId) => void
+  timer?: Pick<TaskTimer, 'clock' | 'start' | 'stop' | 'isRunningFor' | 'state'>
 }
 
 export function TaskList({
@@ -85,6 +98,8 @@ export function TaskList({
   knownTags,
   lists,
   showDetails = false,
+  focusId = null,
+  dimAll = false,
   doneSpans = null,
   emptyMessage,
   allDoneMessage,
@@ -109,6 +124,7 @@ export function TaskList({
   onSetSubtaskDone,
   onRenameSubtask,
   onRemoveSubtask,
+  timer,
 }: TaskListProps) {
   if (tasks.length === 0) {
     return (
@@ -130,6 +146,8 @@ export function TaskList({
         knownTags={knownTags}
         lists={lists}
         showDetails={showDetails}
+        dimmed={dimAll || (focusId !== null && focusId !== task.id)}
+        emphasized={!dimAll && focusId !== null && focusId === task.id}
         dragGroup={span === undefined ? undefined : `done:${span}`}
         onComplete={onComplete}
         onUncomplete={onUncomplete}
@@ -152,6 +170,7 @@ export function TaskList({
         onSetSubtaskDone={onSetSubtaskDone}
         onRenameSubtask={onRenameSubtask}
         onRemoveSubtask={onRemoveSubtask}
+        timer={timer}
       />
     )
   }
@@ -159,7 +178,13 @@ export function TaskList({
   return (
     <>
       {allDone && (
-        <p className="pt-4 pb-6 text-center text-green-700/70 dark:text-green-500/55">{allDoneMessage}</p>
+        <div
+          role="status"
+          className="mb-3 flex items-center justify-center gap-2 rounded-xl border border-green-300/70 bg-green-50 px-4 py-3 dark:border-green-500/35 dark:bg-green-950/50"
+        >
+          <CelebrateIcon className="size-5 text-amber-500 dark:text-amber-300" />
+          <p className="text-sm font-medium text-green-900 dark:text-green-100">{allDoneMessage}</p>
+        </div>
       )}
       {doneSpans !== null ? (
         <div className="flex flex-col gap-3">

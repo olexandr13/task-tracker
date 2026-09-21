@@ -56,7 +56,8 @@ reasons; requirements here are `LST-`.
 - **LST-14** A task is filed from **its menu** — a right-click on the row, or a finger's hold or
   second tap (UI-31, UI-44) — and from a **list button on the woken wide-screen row** once there
   is a list to choose (UI-53). Under
-  Duplicate and Tags, a **List** group offers the Inbox and then every list, the task's own **checked**.
+  Duplicate and Tags, a **List** group offers the Inbox and then every list — the Inbox with its
+  tray icon and each list with a folder, as in the sidebar — the task's own **checked**.
   Choosing one files the task and closes the menu — a task is in one list at a time, so choosing is
   the whole of the job. The resting row itself has **no list button** and does not name its list:
   which list a task is in is asked of the task when it matters, not repeated on every resting row.

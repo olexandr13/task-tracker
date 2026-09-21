@@ -40,6 +40,11 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-6** After adding, the box clears, the repeat choice goes back to "once" and the date to the
   list's own day, so the next task never inherits a rule or a date unnoticed.
 - **TASK-7** New tasks join the end of the list.
+- **TASK-66** A **Plus** button opens a **sheet** for adding with every field the edit sheet has —
+  title, schedule, list, time, tags, urgent, reward, checklist and description (UI-54). Pressing **N**
+  opens the same sheet from the keyboard on a task page (UI-55). The one-line box still adds a title
+  in a hurry (TASK-4). The sheet needs a title before it will add; closing it without adding keeps
+  nothing. A habit is added with **H** instead (UI-56, HAB-24).
 
 ## Renaming
 
@@ -146,8 +151,9 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-18** A repeating task is only at the bottom while its current occurrence is done; it comes
   back up on its own when the next one arrives.
 - **TASK-19** An empty list encourages a start and points at the box above it.
-- **TASK-50** A list whose tasks are all done praises the work, above the done tasks. The moment one
-  is open again, the praise goes.
+- **TASK-50** A list whose tasks are all done shows a praise banner above the done tasks: a soft
+  green panel with a spark icon and clear, high-contrast praise. The moment one is open again, the
+  praise goes.
 - **TASK-20** Until the saved tasks have loaded, the list area says it is loading rather than
   flashing an empty list.
 - **TASK-56** On **Tasks**, the done tasks are divided by when they were finished, each span under
@@ -234,6 +240,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 **Where it lives:** `src/core/task.ts` (the rules), `src/core/urgent.ts` (the mark), `src/core/completed.ts` (the spans done tasks are
 divided into), `src/app/completionLabels.ts` (their headings), `src/core/due.ts` and `src/core/day.ts` (due dates), `src/core/emphasis.ts` (bold and italic, written
 down and read back), `src/core/descriptionLists.ts` (lists, the same), `src/app/components/AddTaskForm.tsx`,
+`src/app/components/AddTaskSheet.tsx` (the detailed add sheet),
+`src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet),
 `TaskList.tsx`, `TaskItem.tsx`, `TaskSheet.tsx` (a phone's look at a task), `UrgentToggle.tsx`, `ContextMenu.tsx` (a task's menu), `TaskDescription.tsx`, `src/app/descriptionBox.ts` (the box a
 description is written in), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx` (ordering), `src/core/order.ts`
 (where a task sits, moving it, where a copy goes, and `sortForDisplay` — urgent above, overdue next, done below),
@@ -243,4 +251,6 @@ description is written in), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx` (or
 
 **Tested in:** `src/core/task.test.ts`, `src/core/urgent.test.ts`, `src/core/completed.test.ts`, `src/core/emphasis.test.ts`, `src/core/descriptionLists.test.ts`,
 `src/core/order.test.ts`, `src/app/taskDrop.test.ts` (what a drop does), `src/app/components/TaskList.test.tsx` (what a list says),
-`src/app/components/TaskItem.test.tsx` (the row, and its menu), `src/app/components/UrgentToggle.test.tsx`.
+`src/app/components/TaskItem.test.tsx` (the row, and its menu), `src/app/components/UrgentToggle.test.tsx`,
+`src/app/components/AddTaskForm.test.tsx` (the one-line box and the detailed sheet),
+`src/app/letterShortcut.test.ts` and `src/app/useLetterShortcut.test.ts` (`N` and `H` open the sheet).

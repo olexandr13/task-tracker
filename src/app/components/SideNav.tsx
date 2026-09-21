@@ -44,6 +44,8 @@ interface SideNavProps {
   lists: readonly List[]
   /** Whether the lists are shown under Lists, or folded away. */
   listsOpen: boolean
+  /** Soften the sidebar while Procrastination mode is on (JUST-5). */
+  dimmed?: boolean
   onChange: (view: View) => void
   onListsOpenChange: (open: boolean) => void
 }
@@ -56,11 +58,14 @@ interface SideNavProps {
  * folded away. Tags stays marked while a tag's tasks are open, being where
  * they were opened from.
  */
-export function SideNav({ view, lists, listsOpen, onChange, onListsOpenChange }: SideNavProps) {
+export function SideNav({ view, lists, listsOpen, dimmed = false, onChange, onListsOpenChange }: SideNavProps) {
   const listsId = useId()
 
   return (
-    <nav aria-label="Views" className="hidden md:block md:w-44 md:shrink-0">
+    <nav
+      aria-label="Views"
+      className={`hidden md:block md:w-44 md:shrink-0${dimmed ? ' opacity-25' : ''}`}
+    >
       <AppLogo className="mb-3 flex items-center gap-2.5 px-3" />
       <ul className="flex flex-col gap-0.5">
         {VIEW_GROUPS.map((group, index) => (

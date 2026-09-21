@@ -68,37 +68,48 @@ earned whatever becomes of the task afterwards.
   completion whose points were already spent can take it **below zero**, and it is shown as it is.
   What was spent is not rewritten.
 - **RWD-18** Redemptions are listed **most recent first**. Each row shows its day (Today, Yesterday
-  or a short date), what it was for and its points. The **×** beside one deletes it **after asking**,
-  and its points go back to the balance (UI-38).
+  or a short date), what it was for and its points. The **×** beside one deletes it **at once**, and
+  its points go back to the balance; for a few seconds a toast offers to undo (UI-38, TRASH-3).
 
 ## The Rewards page
 
 - **RWD-19** **Rewards** has an entry in the sidebar, between Habits and Tags (UI-30). On a phone
   it is reached from the **More** page's list (UI-45), and More stays marked while it is open.
-  Its address is `#/rewards` (UI-36).
+  Its address is `#/rewards` (UI-36). Pressing **R** opens it from anywhere (UI-57).
 - **RWD-20** The page is, top to bottom: a line on how points are earned; the **balance** with the
-  **redeem form** (RWD-15); what was **earned** in each period (RWD-21); and what was **redeemed**
-  (RWD-18). It has no box for adding a task and no rail (UI-2).
+  **redeem form** (RWD-15); what was **earned** in each period and the **accrual history** (RWD-21,
+  RWD-23); and what was **redeemed** (RWD-18). It has no box for adding a task and no rail (UI-2).
 - **RWD-21** Points **earned** are shown for **today**, **this week** (Monday to Sunday, PROG-2),
   **this month**, **this year** and **all time**, one tile each. Underneath is what was redeemed in
   that period, when anything was. A completion counts on the day it was done for, so an earlier
   day marked on the Habits page counts on that day. A redemption counts on the local day it was
   made. Completions of deleted tasks still count (RWD-13).
 - **RWD-22** Until the ledger has loaded, the page says it is loading rather than showing zeros.
+- **RWD-23** Completions that earned points are listed **most recent day first**, under the period
+  tiles. Each row shows its day (Today, Yesterday or a short date), the task's title and its
+  points. A task that has been purged still shows as **Deleted task** — earned stays earned
+  (RWD-13). The **×** beside one deletes it **at once**, and its points leave the balance; for a few
+  seconds a toast offers to undo (UI-38, TRASH-3). That does not reopen the task: undoing the
+  completion is how that is done.
 
 ---
 
 **Where it lives:** `src/core/reward.ts` (a task's reward, its starting amount, what a change earns
-and takes back), `src/core/redemption.ts` (redeeming, the balance and the totals),
+and takes back), `src/core/redemption.ts` (redeeming, the balance, the totals and the histories),
 `src/app/components/RewardPicker.tsx` (the panel), `src/app/components/TaskItem.tsx` (the star on the
 row), `src/app/components/RewardsPage.tsx`, `RedeemForm.tsx`, `RewardTotals.tsx`,
-`RedemptionList.tsx`, `StarIcon.tsx`, `src/app/rewardLabels.ts` (wording), `src/app/useTasks.ts`
-(recording what a change earns), `src/app/useRewards.ts`, `src/app/TasksScreen.tsx`,
+`EarningList.tsx`, `RedemptionList.tsx`, `StarIcon.tsx`, `src/app/rewardLabels.ts` (wording), `src/app/useTasks.ts`
+(recording what a change earns), `src/app/useRewards.ts`, `src/app/useUndoToast.ts` (undo after deleting an
+earning or a redemption), `src/app/TasksScreen.tsx`,
+`src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`R` opens Rewards),
 `src/storage/rewardRepository.ts`, `firestoreRewardRepository.ts`, `rewardSchema.ts` — see
 [Storage](storage.md).
 **Tested in:** `src/core/reward.test.ts`, `src/core/redemption.test.ts`, `src/core/task.test.ts`,
 `src/storage/rewardSchema.test.ts`, `src/app/useTasks.test.ts` (what a change records),
+`src/app/useRewards.test.ts`,
 `src/app/components/RewardPicker.test.tsx`,
-`src/app/components/RedeemForm.test.tsx`, `src/app/components/RedemptionList.test.tsx`,
+`src/app/components/RedeemForm.test.tsx`, `src/app/components/EarningList.test.tsx`,
+`src/app/components/RedemptionList.test.tsx`,
 `src/app/components/TaskItem.test.tsx`, `src/app/components/SideNav.test.tsx`,
-`src/app/components/BottomNav.test.tsx`.
+`src/app/components/BottomNav.test.tsx`, `src/app/letterShortcut.test.ts` and
+`src/app/useLetterShortcut.test.ts` (`R` opens Rewards).

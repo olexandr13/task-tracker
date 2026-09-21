@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { describeDuration, describeLoggedAt, describeTimeProgress, describeTimeSummary, parseDuration } from './durationLabels'
+import { describeDuration, describeElapsedClock, describeLoggedAt, describeTimeProgress, describeTimeSummary, describeTimerRunning, parseDuration } from './durationLabels'
 
 /* TIME ids refer to wiki/time-goals.md. */
 
@@ -48,6 +48,14 @@ describe('the wording', () => {
     expect(describeTimeSummary(20, 60)).toBe('20m of 1h')
     expect(describeTimeSummary(20, null)).toBe('20m spent')
     expect(describeTimeSummary(0, null)).toBe('No time goal')
+  })
+
+  it('spells a live run as a clock and as a running detail', () => {
+    expect(describeElapsedClock(45)).toBe('0:45')
+    expect(describeElapsedClock(125)).toBe('2:05')
+    expect(describeElapsedClock(3723)).toBe('1:02:03')
+    expect(describeTimerRunning(125)).toBe('2m running')
+    expect(describeTimerRunning(45)).toBe('0m running')
   })
 
   it('gives a session its time today, and its day before that', () => {

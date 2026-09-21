@@ -72,7 +72,7 @@ export function ViewMenu({ label, changed, children }: ViewMenuProps) {
         <div
           role="dialog"
           aria-label={label}
-          className="absolute top-full right-0 z-10 mt-1.5 flex w-72 flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
+          className="absolute top-full right-0 z-30 mt-1.5 flex w-72 flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
         >
           {/* The panel's name is its label already; this is the same word for the eye. */}
           <p aria-hidden="true" className={`${panelHeading} pb-1`}>

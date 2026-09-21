@@ -35,6 +35,7 @@ import { TagPicker } from './TagPicker'
 import { TaskDescription } from './TaskDescription'
 import { TimePicker } from './TimePicker'
 import { UrgentToggle } from './UrgentToggle'
+import type { TaskTimer } from '../useTaskTimer'
 
 interface TaskSheetProps {
   task: Task
@@ -65,6 +66,8 @@ interface TaskSheetProps {
   onSetSubtaskDone: (id: TaskId, subtaskId: SubtaskId, done: boolean) => void
   onRenameSubtask: (id: TaskId, subtaskId: SubtaskId, title: string) => void
   onRemoveSubtask: (id: TaskId, subtaskId: SubtaskId) => void
+  /** The screen's timer, when one is offered for logging time by running a clock. */
+  timer?: Pick<TaskTimer, 'clock' | 'start' | 'stop' | 'isRunningFor' | 'state'>
 }
 
 const action = 'flex min-h-11 w-full min-w-0 items-center'
@@ -101,11 +104,17 @@ export function TaskSheet({
   onSetSubtaskDone,
   onRenameSubtask,
   onRemoveSubtask,
+  timer,
 }: TaskSheetProps) {
   const done = isComplete(task, now)
   const ready = !done && isTimeGoalReached(task, now)
   const overdue = isOverdue(task, now)
   const sessions = currentEntries(task.timeLog, task.repeat, now)
+  const timerRunning = timer?.isRunningFor(task.id) ?? false
+  const timerStartedAt =
+    timerRunning && timer !== undefined && timer.state.status === 'running'
+      ? timer.state.startedAt
+      : null
   const skipTo = canSkipOccurrence(task, now) ? dueDay(skipOccurrence(task, now), now) : null
   const skip: SkipChoice | undefined =
     skipTo === null ? undefined : { to: skipTo, onSkip: () => { onSkipOccurrence(task.id) } }
@@ -172,6 +181,17 @@ export function TaskSheet({
               label={`Time for "${task.title}"`}
               showAmount
               align="left"
+              timer={
+                timer === undefined
+                  ? undefined
+                  : {
+                      running: timerRunning,
+                      startedAt: timerStartedAt,
+                      clock: timer.clock,
+                      onStart: () => { timer.start(task.id) },
+                      onStop: () => { timer.stop() },
+                    }
+              }
             />
           </div>
           <div className={action}>

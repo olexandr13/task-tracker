@@ -7,7 +7,8 @@ interface UndoToastProps {
 
 /**
  * The few seconds after a deletion in which it can be taken straight back.
- * Letting it lapse loses nothing — the task is in the trash either way.
+ * For a task, letting it lapse loses nothing — it is in the trash either way.
+ * For an earning or a redemption, this is the only chance to put it back.
  */
 export function UndoToast({ title, onUndo, onDismiss }: UndoToastProps) {
   return (

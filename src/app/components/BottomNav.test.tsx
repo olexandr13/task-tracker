@@ -20,12 +20,23 @@ const NOW = new Date('2026-09-15T10:00:00.000Z')
 const LISTS = [createList('Work', NOW), createList('Home', new Date(NOW.getTime() + 1000))]
 
 /** The bar over a view that follows it, as the screen holding it does. */
-function Harness({ initial, lists, onChange }: { initial: View; lists: readonly List[]; onChange: (view: View) => void }) {
+function Harness({
+  initial,
+  lists,
+  dimmed = false,
+  onChange,
+}: {
+  initial: View
+  lists: readonly List[]
+  dimmed?: boolean
+  onChange: (view: View) => void
+}) {
   const [view, setView] = useState(initial)
   return (
     <BottomNav
       view={view}
       lists={lists}
+      dimmed={dimmed}
       onChange={(next) => {
         onChange(next)
         setView(next)
@@ -34,12 +45,12 @@ function Harness({ initial, lists, onChange }: { initial: View; lists: readonly 
   )
 }
 
-function setup(initial: View = 'today', lists: readonly List[] = []) {
+function setup(initial: View = 'today', lists: readonly List[] = [], dimmed = false) {
   // Advancing on its own as well, so Testing Library's own waits still end.
   vi.useFakeTimers({ shouldAdvanceTime: true })
   const user = userEvent.setup({ advanceTimers: (ms) => { vi.advanceTimersByTime(ms) } })
   const onChange = vi.fn()
-  render(<Harness initial={initial} lists={lists} onChange={onChange} />)
+  render(<Harness initial={initial} lists={lists} dimmed={dimmed} onChange={onChange} />)
   return { user, onChange }
 }
 
@@ -305,5 +316,11 @@ describe('the More tab', () => {
     setup('more')
 
     expect(moreTab().getAttribute('aria-current')).toBe('page')
+  })
+
+  it('dims while Procrastination mode is on (JUST-5)', () => {
+    setup('today', [], true)
+
+    expect(screen.getByRole('navigation', { name: 'Views' }).className).toMatch(/opacity-25/)
   })
 })

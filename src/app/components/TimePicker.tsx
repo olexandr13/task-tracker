@@ -1,12 +1,18 @@
 import { useEffect, useEffectEvent, useRef, useState, type KeyboardEvent } from 'react'
-import { isSessionLength, isTimeGoal, type TimeEntry, type TimeEntryId } from '../../core'
-import { describeDuration, describeLoggedAt, describeTimeSummary, parseDuration } from '../durationLabels'
+import { elapsedMinutesFloor, elapsedSeconds, isSessionLength, isTimeGoal, type TimeEntry, type TimeEntryId } from '../../core'
+import {
+  describeDuration,
+  describeElapsedClock,
+  describeLoggedAt,
+  describeTimeSummary,
+  parseDuration,
+} from '../durationLabels'
 import { panelStep } from '../panelControls'
-import { controlOff, controlOn, deleteControl, detailReached, rowControlIcon, rowControlLabel } from '../rowControls'
+import { controlOff, controlOn, controlRunning, deleteControl, detailReached, rowControlIcon, rowControlLabel } from '../rowControls'
 import { ClockIcon } from './ClockIcon'
 
 /** The sessions offered at a click, being the lengths most often logged. */
-const QUICK_SESSIONS: readonly number[] = [15, 30, 60]
+const QUICK_SESSIONS: readonly number[] = [5, 15, 30, 60]
 
 /** A quick session: a panel's step button, widened to hold its words. */
 const quickButton = `${panelStep} w-auto px-1.5 text-xs tabular-nums`
@@ -30,6 +36,18 @@ interface TimePickerProps {
   showAmount?: boolean
   /** Which edge of the button the panel lines up with: the one nearer the middle of the screen. */
   align?: 'left' | 'right'
+  /**
+   * A live timer for this task, when the screen offers one. Without it the
+   * panel only logs sessions by hand (as when adding a task that has no id yet).
+   */
+  timer?: {
+    readonly running: boolean
+    readonly startedAt: string | null
+    /** Wall clock while the timer ticks; ignored when not running. */
+    readonly clock: Date
+    readonly onStart: () => void
+    readonly onStop: () => void
+  }
 }
 
 /**
@@ -39,7 +57,7 @@ interface TimePickerProps {
  * Like the other pickers there is nothing to confirm. A quick session is logged
  * as it is clicked, and one typed — `25m`, `1h`, `1:30` — on Enter. The goal is
  * kept on Enter or on leaving the panel, and an empty goal is none; Escape drops
- * a goal half-typed.
+ * a goal half-typed. Start/Stop runs a timer that becomes a session on Stop.
  */
 export function TimePicker({
   goal,
@@ -51,6 +69,7 @@ export function TimePicker({
   label = 'Time',
   showAmount = false,
   align = 'right',
+  timer,
 }: TimePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   // What is typed into each box. The goal's starts as the goal, and is only
@@ -61,15 +80,25 @@ export function TimePicker({
   const root = useRef<HTMLDivElement>(null)
 
   const spent = sessions.reduce((total, entry) => total + entry.minutes, 0)
-  const reached = goal !== null && spent >= goal
-  const summary = describeTimeSummary(spent, goal)
-  const isSet = goal !== null || spent > 0
+  const liveSeconds =
+    timer?.running === true && timer.startedAt !== null
+      ? elapsedSeconds(timer.startedAt, timer.clock)
+      : 0
+  const liveMinutes = timer?.running === true && timer.startedAt !== null
+    ? elapsedMinutesFloor(timer.startedAt, timer.clock)
+    : 0
+  const shownSpent = spent + liveMinutes
+  const reached = goal !== null && shownSpent >= goal
+  const summary = describeTimeSummary(shownSpent, goal)
+  const isSet = goal !== null || spent > 0 || (timer?.running ?? false)
   const typedGoal = goalText.trim() === '' ? null : parseDuration(goalText)
   const isGoalInvalid = goalText.trim() !== '' && (typedGoal === null || !isTimeGoal(typedGoal))
+  const running = timer?.running === true
 
   // Only as wide as it needs to be: a square around the icon when the value is
   // not spelled out beside it.
   const button = `${showAmount ? rowControlLabel : rowControlIcon} w-full`
+  const buttonTone = running ? controlRunning : isSet ? controlOn : controlOff
 
   /** Keeps the goal typed, when it is one; anything else goes back to what is saved. */
   function commitGoal() {
@@ -130,6 +159,10 @@ export function TimePicker({
     close()
   }
 
+  const amountLabel = running
+    ? `${summary}, timer running ${describeElapsedClock(liveSeconds)}`
+    : summary
+
   return (
     <div
       ref={root}
@@ -147,14 +180,14 @@ export function TimePicker({
         onClick={toggle}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        aria-label={`${label}: ${summary}`}
-        title={isSet ? summary : 'Log time'}
-        className={isSet ? `${button} ${controlOn}` : `${button} ${controlOff}`}
+        aria-label={`${label}: ${amountLabel}`}
+        title={isSet ? amountLabel : 'Log time'}
+        className={`${button} ${buttonTone}`}
       >
         <ClockIcon />
         {showAmount && (
           <span className={reached ? `min-w-0 truncate ${detailReached}` : 'min-w-0 truncate'}>
-            {isSet ? summary : 'Log time'}
+            {isSet ? (running ? describeElapsedClock(liveSeconds) : summary) : 'Log time'}
           </span>
         )}
       </button>
@@ -171,7 +204,7 @@ export function TimePicker({
               aria-live="polite"
               className={`text-sm tabular-nums ${reached ? detailReached : 'text-neutral-900 dark:text-neutral-100'}`}
             >
-              {goal === null ? describeDuration(spent) : summary}
+              {goal === null ? describeDuration(shownSpent) : summary}
             </p>
           </div>
 
@@ -181,18 +214,48 @@ export function TimePicker({
               aria-label="Toward the goal"
               aria-valuemin={0}
               aria-valuemax={goal}
-              aria-valuenow={Math.min(spent, goal)}
+              aria-valuenow={Math.min(shownSpent, goal)}
               aria-valuetext={summary}
               className="mx-1 h-1.5 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800"
             >
               <div
                 className={`h-full rounded-full transition-[width] ${reached ? 'bg-green-600 dark:bg-green-500' : 'bg-blue-600 dark:bg-blue-400'}`}
-                style={{ width: `${String(Math.min(100, (spent / goal) * 100))}%` }}
+                style={{ width: `${String(Math.min(100, (shownSpent / goal) * 100))}%` }}
               />
             </div>
           )}
 
           {reached && <p className={`px-1 text-xs ${detailReached}`}>Goal reached. Ready to tick off.</p>}
+
+          {timer !== undefined && (
+            <div role="group" aria-label="Timer" className="flex items-center gap-1 px-0.5">
+              {running ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => { timer.onStop() }}
+                    className={`${quickButton} text-red-600 dark:text-red-400`}
+                  >
+                    Stop
+                  </button>
+                  <p
+                    aria-live="polite"
+                    className="ml-auto px-1 text-sm tabular-nums text-neutral-900 dark:text-neutral-100"
+                  >
+                    {describeElapsedClock(liveSeconds)}
+                  </p>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { timer.onStart() }}
+                  className={quickButton}
+                >
+                  Start
+                </button>
+              )}
+            </div>
+          )}
 
           <div role="group" aria-label="Log time" className="flex items-center gap-1">
             {QUICK_SESSIONS.map((minutes) => (

@@ -24,7 +24,9 @@ export function UrgentToggle({
   label = 'Urgent',
   showName = false,
 }: UrgentToggleProps) {
-  const button = `${showName ? rowControlLabel : rowControlIcon} w-full`
+  // Icon-only stays content-sized so a woken strip can keep list, tags, urgent
+  // and Duplicate on one row; a named sheet button fills its slot.
+  const button = showName ? `${rowControlLabel} w-full` : rowControlIcon
 
   return (
     <button

@@ -34,7 +34,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   about four months.
 - **HAB-10** A day in the grid is **done** (green), **missed** (a darker gap), **not tracked** (a
   pale square, before the task was created) or **today still to do** (an outlined square). Days after
-  today are left empty. A legend below the explanatory line at the top of the page names the shades.
+  today are left empty. A legend at the bottom of the page names the shades, and only while any
+  habit's card is open (HAB-21) — folded cards show no grid, so the legend has nothing to name.
   A day can be clicked (on a folded card: that a habit is tapped to see its days, HAB-21). Pointing at a day shows its date and what it was: `Wed, Sep 16 · Done`.
 - **HAB-11** A screen reader hears the numbers as text, and the grid as a group of day buttons,
   named for how many days of the year shown were done. Each day is heard by its date and what it
@@ -93,7 +94,10 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   grid (HAB-21). Off, every card starts folded. The change is shown at once — every card resets to
   the default — and is kept on this device (STORE-36). Off is how the page starts.
 - **HAB-24** The Habits page has the add box, starting on a **daily** rule, so a habit can be made
-  there. Enter adds it unless another rule is chosen first. After adding, the box is daily again.
+  there. Its hint reads **Add habit**. Enter adds it unless another rule is chosen first. After
+  adding, the box is daily again. The Plus — and pressing **H** from anywhere (UI-56) — opens the
+  same detailed sheet as elsewhere (TASK-66), also starting daily and named for a habit. From a page
+  that is not Habits, **H** opens Habits first, then the sheet.
 - **HAB-25** Each habit has a **⋮** on its line that opens the same sheet a phone uses for a task
   (UI-48): title, schedule, list, tags, checklist, description, reward, urgent, duplicate and
   delete. Editing stays on Habits; a change that stops the task being a habit (HAB-1) takes it off
@@ -106,9 +110,11 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 `src/core/task.ts` (`doneDays`, kept in step by `settleHistory`), `src/app/components/HabitList.tsx`
 (the page and its cards, and a timed habit's clock — see [Time goals](time-goals.md)), `src/app/components/HabitGrid.tsx`, `src/app/components/ChevronIcon.tsx`, `src/app/components/MoreVerticalIcon.tsx`, `src/app/components/TaskSheet.tsx` (editing a habit), `src/app/habitLabels.ts` (wording),
 `src/app/habitTones.ts` (the shades), `src/app/components/FlameIcon.tsx`, `src/app/useTasks.ts`
-(`setHabitDay`), `src/app/components/AddTaskForm.tsx` (the add box, starting daily),
+(`setHabitDay`), `src/app/components/AddTaskForm.tsx` (the add box), `src/app/components/AddTaskSheet.tsx` (the detailed
+sheet, starting daily), `src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`H` opens it),
 `src/app/components/HabitViewOptionsMenu.tsx` and `src/app/useHabitViewOptions.ts`
 (the View button and whether cards start folded).
 **Tested in:** `src/core/habit.test.ts`, `src/core/task.test.ts`,
 `src/app/components/HabitList.test.tsx`, `src/app/components/HabitViewOptionsMenu.test.tsx`,
-`src/app/components/AddTaskForm.test.tsx`.
+`src/app/components/AddTaskForm.test.tsx`, `src/app/letterShortcut.test.ts` and
+`src/app/useLetterShortcut.test.ts` (`H` opens the sheet).

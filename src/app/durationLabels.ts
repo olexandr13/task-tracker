@@ -30,6 +30,26 @@ export function describeTimeSummary(spent: number, goal: number | null): string 
   return `${describeDuration(spent)} of ${describeDuration(goal)}`
 }
 
+/**
+ * A live run as a clock: `0:45`, `12:05`, `1:02:03`. Seconds always show so a
+ * short run is still visibly moving.
+ */
+export function describeElapsedClock(totalSeconds: number): string {
+  const seconds = Math.max(0, Math.floor(totalSeconds))
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const rest = seconds % 60
+  const mm = String(minutes).padStart(hours > 0 ? 2 : 1, '0')
+  const ss = String(rest).padStart(2, '0')
+  return hours > 0 ? `${String(hours)}:${mm}:${ss}` : `${String(minutes)}:${ss}`
+}
+
+/** What a row says while a timer is running: `12m running`. */
+export function describeTimerRunning(elapsedSeconds: number): string {
+  const minutes = Math.floor(elapsedSeconds / 60)
+  return `${describeDurationShort(minutes)} running`
+}
+
 /** When a session was logged: its time today, or the day and time before that. */
 export function describeLoggedAt(loggedAt: string, now: Date): string {
   const at = new Date(loggedAt)

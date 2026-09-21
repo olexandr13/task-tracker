@@ -1,16 +1,24 @@
 import { useEffect, useState } from 'react'
 import {
   allTags,
+  completionDays,
   countInboxOpen,
+  currentEntries,
   groupByCompletion,
   habitTasks,
+  isComplete,
   liveTasks,
+  pickJustOne,
+  pinFocusedFirst,
   sameTag,
   sortForDisplay,
   summarizeLists,
   summarizeTags,
+  toLocalDay,
   trashedTasks,
   type ListId,
+  type RedemptionId,
+  type RewardKey,
   type TaskId,
 } from '../core'
 import type { Account } from '../storage/authService'
@@ -21,6 +29,8 @@ import { createFirestoreRewardRepository } from '../storage/firestoreRewardRepos
 import { createFirestoreSyncMonitor } from '../storage/firestoreSyncMonitor'
 import { createFirestoreTagRepository } from '../storage/firestoreTagRepository'
 import { createFirestoreTaskRepository } from '../storage/firestoreTaskRepository'
+import { localStorageProcrastinationRepository } from '../storage/localStorageProcrastinationRepository'
+import { localStorageTaskTimerRepository } from '../storage/localStorageTaskTimerRepository'
 import { localStorageHabitViewOptionsRepository } from '../storage/localStorageHabitViewOptionsRepository'
 import { localStorageQuoteRepository } from '../storage/localStorageQuoteRepository'
 import { localStorageSideNavRepository } from '../storage/localStorageSideNavRepository'
@@ -28,10 +38,16 @@ import { localStorageViewOptionsRepository } from '../storage/localStorageViewOp
 import { importLocalTasks } from '../storage/localTaskImport'
 import { quotableQuoteSource } from '../storage/quotableQuoteSource'
 import { AddTaskForm } from './components/AddTaskForm'
+import { AddTaskSheet } from './components/AddTaskSheet'
 import { BottomNav } from './components/BottomNav'
 import { FolderIcon } from './components/FolderIcon'
 import { HabitList } from './components/HabitList'
 import { HabitViewOptionsMenu } from './components/HabitViewOptionsMenu'
+import {
+  ProcrastinationEntryButton,
+  ProcrastinationPanel,
+  type ProcrastinationPhase,
+} from './components/ProcrastinationMode'
 import { ListsPage } from './components/ListsPage'
 import { MorePage } from './components/MorePage'
 import { ProgressPanel } from './components/ProgressPanel'
@@ -40,6 +56,8 @@ import { RewardsPage } from './components/RewardsPage'
 import { SettingsList } from './components/SettingsList'
 import { SideNav } from './components/SideNav'
 import { SyncBadge } from './components/SyncBadge'
+import { RunningTimerChip } from './components/RunningTimerChip'
+import { GoalNoticeToast } from './components/GoalNoticeToast'
 import { TagList } from './components/TagList'
 import { TaskDragAndDrop } from './components/TaskDragAndDrop'
 import { TaskList } from './components/TaskList'
@@ -47,15 +65,18 @@ import { TrashIcon } from './components/TrashIcon'
 import { TrashList } from './components/TrashList'
 import { UndoToast } from './components/UndoToast'
 import { ViewOptionsMenu } from './components/ViewOptionsMenu'
+import { useLetterShortcut } from './useLetterShortcut'
 import { useBackup } from './useBackup'
 import { useLists } from './useLists'
+import { useProcrastination } from './useProcrastination'
 import { useQuote } from './useQuote'
 import { useRewards } from './useRewards'
 import { useSideNav } from './useSideNav'
 import { useSyncNotice } from './useSyncNotice'
 import { useTags } from './useTags'
 import { useTasks } from './useTasks'
-import { useUndoToast } from './useUndoToast'
+import { useTaskTimer } from './useTaskTimer'
+import { undoTitle, useUndoToast } from './useUndoToast'
 import { useView } from './useView'
 import { useHabitViewOptions } from './useHabitViewOptions'
 import { useViewOptions } from './useViewOptions'
@@ -160,6 +181,20 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   const savedTags = useTags(tagRepository, isLoading ? null : tasks)
   const backup = useBackup(backupRepository)
   const [view, setView] = useView()
+  // The detailed add sheet (UI-54): open from the Plus, from `N` on a task page
+  // (UI-55), or from `H` for a habit (UI-56) — which opens Habits first if needed.
+  // `R` opens Rewards (UI-57).
+  const [adding, setAdding] = useState(false)
+  const [confirmingLeave, setConfirmingLeave] = useState(false)
+  useLetterShortcut('n', isTaskView(view) && !adding, () => { setAdding(true) })
+  useLetterShortcut('h', !adding, () => {
+    if (view !== 'habits') setView('habits')
+    setAdding(true)
+  })
+  useLetterShortcut('r', true, () => {
+    setAdding(false)
+    if (view !== 'rewards') setView('rewards')
+  })
   // How the task views are shown: one set for all of them, kept on this device.
   const [viewOptions, setViewOptions] = useViewOptions(localStorageViewOptionsRepository)
   // How the habits view is shown, kept on this device too, apart from the task views'.
@@ -173,8 +208,39 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   // draws, which period each bar counts and how long the trash has left all
   // agree with one another.
   const now = new Date()
+  // Procrastination mode: kept on this device for today, restored on refresh, off tomorrow.
+  const [procrastination, setProcrastination] = useProcrastination(
+    localStorageProcrastinationRepository,
+    now,
+  )
   const live = liveTasks(tasks)
   const trashed = trashedTasks(tasks, now)
+  const taskTimer = useTaskTimer(
+    localStorageTaskTimerRepository,
+    (taskId) => {
+      const task = live.find((candidate) => candidate.id === taskId)
+      if (task === undefined) return null
+      const spent = currentEntries(task.timeLog, task.repeat, now).reduce(
+        (total, entry) => total + entry.minutes,
+        0,
+      )
+      return { title: task.title, goal: task.timeGoal, spent }
+    },
+    logTaskTime,
+  )
+  const runningTimerTaskId = taskTimer.state.status === 'running' ? taskTimer.state.taskId : null
+  const runningTimerTask =
+    runningTimerTaskId === null
+      ? null
+      : live.find((task) => task.id === runningTimerTaskId) ?? null
+  const { stop: stopTaskTimer } = taskTimer
+  // A timer whose task was deleted cannot be shown; stop it so it does not linger.
+  useEffect(() => {
+    if (isLoading) return
+    if (runningTimerTaskId !== null && runningTimerTask === null) {
+      stopTaskTimer()
+    }
+  }, [isLoading, runningTimerTaskId, runningTimerTask, stopTaskTimer])
   // Every tag there is: the kept ones, whether or not a task carries them, and
   // any a live task carries that is not kept yet.
   const tags = allTags(savedTags.tags, live)
@@ -189,6 +255,117 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     ? groupByCompletion(sortForDisplay(shown, now), spans, now).flatMap((group) => group.tasks)
     : sortForDisplay(shown, now)
 
+  // Focus dims every other row; a win keeps the finished task highlighted until Rest / next.
+  const procrastinationPhase: ProcrastinationPhase = procrastination.phase
+  const procrastinationTaskId =
+    procrastination.phase === 'focus' || procrastination.phase === 'won'
+      ? procrastination.taskId
+      : null
+  const focusId =
+    view === 'today' &&
+    procrastination.phase === 'focus' &&
+    procrastinationTaskId !== null &&
+    ordered.some((task) => task.id === procrastinationTaskId && !isComplete(task, now))
+      ? procrastinationTaskId
+      : view === 'today' && procrastination.phase === 'won' && procrastinationTaskId !== null
+        ? procrastinationTaskId
+        : null
+  // A finished focused task would sink with done work; keep it above the dimmed rows.
+  const listed = pinFocusedFirst(ordered, focusId)
+  // Wait until tasks are loaded: on refresh the list is empty first, and clearing
+  // then would wipe the saved mode (JUST-10). After load, a missing focus becomes
+  // idle (mode stays on); a completed focus becomes a win.
+  if (
+    !isLoading &&
+    view === 'today' &&
+    procrastination.phase === 'focus' &&
+    procrastinationTaskId !== null
+  ) {
+    const focused = ordered.find((task) => task.id === procrastinationTaskId)
+    if (focused === undefined) {
+      setProcrastination({ phase: 'idle' })
+      setConfirmingLeave(false)
+    } else if (isComplete(focused, now)) {
+      setProcrastination({ phase: 'won', taskId: focused.id })
+      setConfirmingLeave(false)
+    }
+  }
+  // Same for a win whose task has gone: stay in mode, rest.
+  if (
+    !isLoading &&
+    view === 'today' &&
+    procrastination.phase === 'won' &&
+    procrastinationTaskId !== null &&
+    !ordered.some((task) => task.id === procrastinationTaskId)
+  ) {
+    setProcrastination({ phase: 'idle' })
+    setConfirmingLeave(false)
+  }
+  const canPickOpen = view === 'today' && ordered.some((task) => !isComplete(task, now))
+  const showProcrastination =
+    view === 'today' && (canPickOpen || procrastination.phase !== 'off')
+  const dimChrome = procrastinationPhase !== 'off'
+  const wonTask =
+    procrastination.phase === 'won'
+      ? ordered.find((task) => task.id === procrastination.taskId) ?? null
+      : null
+  const winDay =
+    wonTask !== null
+      ? (completionDays(wonTask).at(-1) ?? toLocalDay(now))
+      : null
+  const pointsEarned =
+    wonTask !== null && winDay !== null
+      ? (rewards.entries.find((entry) => entry.taskId === wonTask.id && entry.day === winDay)?.points ?? 0)
+      : 0
+
+  function startProcrastination() {
+    const picked = pickJustOne(ordered, now)
+    if (picked !== null) {
+      setConfirmingLeave(false)
+      setProcrastination({ phase: 'focus', taskId: picked.id })
+    }
+  }
+
+  function pickNextProcrastination(excludeId: TaskId | null = null) {
+    // Prefer the live Today set so a just-finished task is already complete and
+    // the next open one is focused in one step (no idle + second click).
+    const candidates = live.filter((task) => showsTask('today', task, now, lists.lists))
+    const picked = pickJustOne(candidates, now, excludeId)
+    if (picked !== null) {
+      setConfirmingLeave(false)
+      setProcrastination({ phase: 'focus', taskId: picked.id })
+      return
+    }
+    setConfirmingLeave(false)
+    setProcrastination({ phase: 'idle' })
+  }
+
+  function endProcrastination() {
+    setConfirmingLeave(false)
+    setProcrastination({ phase: 'off' })
+  }
+
+  function restProcrastination() {
+    setConfirmingLeave(false)
+    setProcrastination({ phase: 'idle' })
+  }
+
+  function grantWinPoints(total: number) {
+    if (procrastination.phase !== 'won' || winDay === null) return
+    void rewardRepository.save({
+      earned: [{ taskId: procrastination.taskId, day: winDay, points: total }],
+      revoked: [],
+    })
+  }
+
+  function handleComplete(id: TaskId) {
+    complete(id)
+    if (procrastination.phase === 'focus' && procrastination.taskId === id) {
+      setConfirmingLeave(false)
+      setProcrastination({ phase: 'won', taskId: id })
+    }
+  }
+
   // The same `now` once more: which quote is today's is derived from the day it
   // falls in, so the quote and the bars can't disagree about which day it is.
   const quote = useQuote(quotableQuoteSource, localStorageQuoteRepository, now)
@@ -196,13 +373,37 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   function handleRemove(id: TaskId) {
     const deleted = remove(id)
     if (deleted !== null) {
-      undo.show(deleted)
+      undo.show({ kind: 'task', task: deleted })
+    }
+  }
+
+  function handleRemoveEarning(key: RewardKey) {
+    const deleted = rewards.removeEarning(key)
+    if (deleted === null) return
+    const title = tasks.find((task) => task.id === deleted.taskId)?.title ?? 'Deleted task'
+    undo.show({ kind: 'earning', entry: deleted, title })
+  }
+
+  function handleRemoveRedemption(id: RedemptionId) {
+    const deleted = rewards.removeRedemption(id)
+    if (deleted !== null) {
+      undo.show({ kind: 'redemption', redemption: deleted })
     }
   }
 
   function handleUndo() {
     if (undo.pending === null) return
-    restore(undo.pending.id)
+    switch (undo.pending.kind) {
+      case 'task':
+        restore(undo.pending.task.id)
+        break
+      case 'earning':
+        rewards.restoreEarning(undo.pending.entry)
+        break
+      case 'redemption':
+        rewards.restoreRedemption(undo.pending.redemption)
+        break
+    }
     undo.dismiss()
   }
 
@@ -256,6 +457,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
             view={view}
             lists={lists.lists}
             listsOpen={sideNav.listsOpen}
+            dimmed={dimChrome}
             onChange={setView}
             onListsOpenChange={(listsOpen) => { setSideNav({ ...sideNav, listsOpen }) }}
           />
@@ -283,9 +485,11 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                   <RewardsPage
                     entries={rewards.entries}
                     redemptions={rewards.redemptions}
+                    taskTitles={new Map(tasks.map((task) => [task.id, task.title]))}
                     now={now}
                     onRedeem={rewards.redeem}
-                    onRemoveRedemption={rewards.removeRedemption}
+                    onRemoveEarning={handleRemoveEarning}
+                    onRemoveRedemption={handleRemoveRedemption}
                   />
                 )}
               </section>
@@ -302,26 +506,58 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                       key={view}
                       now={now}
                       defaultDueDate={newTaskDueDay(view, now)}
+                      onOpenSheet={() => { setAdding(true) }}
                       onAdd={(title, repeat, dueDate) => {
                         addTask(title, repeat, dueDate, newTaskTags(view), newTaskListId(view))
                       }}
                     />
                   </div>
 
-                  <ViewOptionsMenu options={viewOptions} onChange={setViewOptions} />
+                  <div className="flex shrink-0 gap-2">
+                    {showProcrastination && (
+                      <ProcrastinationEntryButton
+                        phase={procrastinationPhase}
+                        onStart={startProcrastination}
+                        onRequestLeave={() => { setConfirmingLeave(true) }}
+                      />
+                    )}
+                    <ViewOptionsMenu options={viewOptions} onChange={setViewOptions} />
+                  </div>
                 </div>
+
+                {showProcrastination && (
+                  <ProcrastinationPanel
+                    phase={procrastinationPhase}
+                    confirmingLeave={confirmingLeave}
+                    wonTask={wonTask}
+                    canPick={canPickOpen}
+                    pointsEarned={pointsEarned}
+                    onOtherTask={() => { pickNextProcrastination(focusId) }}
+                    onCancelLeave={() => { setConfirmingLeave(false) }}
+                    onWalkAway={endProcrastination}
+                    onRest={restProcrastination}
+                    onGetOneMore={() => {
+                      pickNextProcrastination(
+                        procrastination.phase === 'won' ? procrastination.taskId : null,
+                      )
+                    }}
+                    onGrantPoints={grantWinPoints}
+                  />
+                )}
 
                 <section aria-label={viewLabel(view, lists.lists)}>
                   <TaskList
-                    tasks={ordered}
+                    tasks={listed}
                     now={now}
                     knownTags={tags}
                     lists={lists.lists}
                     showDetails={viewOptions.showDetails}
+                    focusId={focusId}
+                    dimAll={procrastinationPhase === 'idle'}
                     doneSpans={spans}
                     emptyMessage={emptyMessage(view, lists.lists)}
                     allDoneMessage={allDoneMessage(view, lists.lists)}
-                    onComplete={complete}
+                    onComplete={handleComplete}
                     onUncomplete={uncomplete}
                     onRename={rename}
                     onChangeDescription={changeDescription}
@@ -342,6 +578,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     onSetSubtaskDone={setChecklistItemDone}
                     onRenameSubtask={renameChecklistItem}
                     onRemoveSubtask={removeChecklistItem}
+                    timer={taskTimer}
                   />
                 </section>
 
@@ -399,6 +636,8 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                       now={now}
                       defaultDueDate={null}
                       defaultRepeat={{ kind: 'daily' }}
+                      label="Add habit"
+                      onOpenSheet={() => { setAdding(true) }}
                       onAdd={(title, repeat, dueDate) => {
                         addTask(title, repeat ?? { kind: 'daily' }, dueDate, [], null)
                       }}
@@ -437,6 +676,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     onSetSubtaskDone={setChecklistItemDone}
                     onRenameSubtask={renameChecklistItem}
                     onRemoveSubtask={removeChecklistItem}
+                    timer={taskTimer}
                   />
                 </section>
               </>
@@ -455,7 +695,9 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
           {/* The bars above the quote everywhere: on a phone the rail follows the work and the quote ends the page. */}
           {isTaskView(view) && (
             <div className="flex flex-col gap-5 md:w-64 md:shrink-0">
-              <aside aria-label="Progress">{!isLoading && <ProgressPanel tasks={live} now={now} />}</aside>
+              <aside aria-label="Progress">
+                {!isLoading && <ProgressPanel tasks={live} now={now} dimmed={dimChrome} />}
+              </aside>
 
               <QuoteCard quote={quote} />
             </div>
@@ -463,13 +705,46 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
         </div>
       </TaskDragAndDrop>
 
-      <BottomNav view={view} lists={lists.lists} onChange={setView} />
+      <BottomNav view={view} lists={lists.lists} dimmed={dimChrome} onChange={setView} />
+
+      {adding && (isTaskView(view) || view === 'habits') && (
+        <AddTaskSheet
+          key={view}
+          now={now}
+          label={view === 'habits' ? 'Add habit' : 'Add task'}
+          defaultDueDate={isTaskView(view) ? newTaskDueDay(view, now) : null}
+          defaultRepeat={view === 'habits' ? { kind: 'daily' } : undefined}
+          defaultTags={isTaskView(view) ? newTaskTags(view) : []}
+          defaultListId={isTaskView(view) ? newTaskListId(view) : null}
+          knownTags={tags}
+          lists={lists.lists}
+          onClose={() => { setAdding(false) }}
+          onAdd={(title, repeat, dueDate, taskTags, listId, details) => {
+            addTask(title, repeat, dueDate, taskTags, listId, details)
+            setAdding(false)
+          }}
+        />
+      )}
 
       {/* What the screen has to say, stacked: above a phone's navigation bar, at the foot of the window where there is none. */}
       <div className="pointer-events-none fixed inset-x-0 bottom-20 z-30 flex flex-col items-center gap-2 px-4 md:bottom-4">
         {syncNotice !== null && <SyncBadge notice={syncNotice} />}
+        {runningTimerTask !== null && taskTimer.state.status === 'running' && (
+          <RunningTimerChip
+            title={runningTimerTask.title}
+            startedAt={taskTimer.state.startedAt}
+            clock={taskTimer.clock}
+            onStop={taskTimer.stop}
+          />
+        )}
+        {taskTimer.goalNotice !== null && (
+          <GoalNoticeToast
+            title={taskTimer.goalNotice.title}
+            onDismiss={taskTimer.dismissGoalNotice}
+          />
+        )}
         {undo.pending !== null && (
-          <UndoToast title={undo.pending.title} onUndo={handleUndo} onDismiss={undo.dismiss} />
+          <UndoToast title={undoTitle(undo.pending)} onUndo={handleUndo} onDismiss={undo.dismiss} />
         )}
       </div>
     </main>

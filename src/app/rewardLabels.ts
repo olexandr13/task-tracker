@@ -1,4 +1,4 @@
-import { toLocalDay } from '../core'
+import { toLocalDay, type LocalDay } from '../core'
 import { describeDueDate } from './dueLabels'
 
 /**
@@ -19,4 +19,9 @@ export function describeReward(points: number): string {
 /** The day something was redeemed: Today, Yesterday, or a short date, as a due date reads. */
 export function describeRedeemedAt(redeemedAt: string, now: Date): string {
   return describeDueDate(toLocalDay(new Date(redeemedAt)), now)
+}
+
+/** The day a completion earned its points: Today, Yesterday, or a short date. */
+export function describeEarnedOn(day: LocalDay, now: Date): string {
+  return describeDueDate(day, now)
 }

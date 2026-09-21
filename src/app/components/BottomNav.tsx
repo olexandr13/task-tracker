@@ -18,6 +18,8 @@ interface BottomNavProps {
   view: View
   /** Every list there is, to go to from the Tasks tab's menu. */
   lists: readonly List[]
+  /** Soften the bar while Procrastination mode is on (JUST-5). */
+  dimmed?: boolean
   onChange: (view: View) => void
 }
 
@@ -57,7 +59,7 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * closes it. A tab stays marked while its menu is open, so it is plain which tab
  * the menu belongs to.
  */
-export function BottomNav({ view, lists, onChange }: BottomNavProps) {
+export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavProps) {
   // The period the first tab goes back to after leaving it: the last one on
   // screen, Today to begin with.
   const [period, setPeriod] = useState<PeriodView>(isPeriodView(view) ? view : 'today')
@@ -155,7 +157,7 @@ export function BottomNav({ view, lists, onChange }: BottomNavProps) {
     <>
       <nav
         aria-label="Views"
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-neutral-200 bg-white/95 backdrop-blur md:hidden dark:border-neutral-800 dark:bg-neutral-900/95"
+        className={`fixed inset-x-0 bottom-0 z-20 border-t border-neutral-200 bg-white/95 backdrop-blur md:hidden dark:border-neutral-800 dark:bg-neutral-900/95${dimmed ? ' opacity-25' : ''}`}
       >
         <ul className="mx-auto grid max-w-md grid-cols-5">
           <li>

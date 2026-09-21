@@ -120,6 +120,18 @@ export function redemptionHistory(redemptions: readonly Redemption[]): Redemptio
   return [...redemptions].sort((a, b) => new Date(b.redeemedAt).getTime() - new Date(a.redeemedAt).getTime())
 }
 
+/**
+ * Completions that earned points, most recent day first. Same day keeps a
+ * stable order by task id. Entries whose tasks are gone still belong here:
+ * earned stays earned.
+ */
+export function earningHistory(entries: readonly RewardEntry[]): RewardEntry[] {
+  return [...entries].sort((a, b) => {
+    if (a.day !== b.day) return a.day < b.day ? 1 : -1
+    return a.taskId < b.taskId ? -1 : a.taskId > b.taskId ? 1 : 0
+  })
+}
+
 /** A period as local days: `from` included, `to` not. Days sort as text in date order. */
 interface DayRange {
   readonly from: LocalDay

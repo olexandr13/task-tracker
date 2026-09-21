@@ -16,10 +16,10 @@ ticked off. The tick itself stays the owner's.
 
 ## Logging
 
-- **TIME-3** Time is logged in **sessions**, from the clock's panel: **+15m**, **+30m** and **+1h**
-  log at a click, and any other length is typed and logged with Enter. A session is a whole number
-  of minutes from 1 minute to 24 hours. The panel stays open after logging, so the new total is in
-  view. Time can be logged on a task without a goal too; it is then just time spent.
+- **TIME-3** Time is logged in **sessions**, from the clock's panel: **+5m**, **+15m**, **+30m** and
+  **+1h** log at a click, and any other length is typed and logged with Enter. A session is a whole
+  number of minutes from 1 minute to 24 hours. The panel stays open after logging, so the new total
+  is in view. Time can be logged on a task without a goal too; it is then just time spent.
 - **TIME-4** The panel lists the sessions that count (TIME-7), each with when it was logged — its
   time today, its date and time before that — and its length. The **×** beside one takes it back
   (UI-38), for a session logged by mistake.
@@ -65,14 +65,37 @@ ticked off. The tick itself stays the owner's.
 - **TIME-14** Time earns nothing and counts for nothing in any period's bar. Points come from
   completing (RWD-9) and the bars count tasks (PROG-3); a goal only says when completing is due.
 
+## Timer
+
+- **TIME-15** The clock's panel offers **Start** and **Stop** beside logging by hand. Start begins
+  a timer for that task; Stop ends it and logs the whole minutes that passed as one session
+  (TIME-3). Under a minute logs nothing. The panel can stay closed while the timer runs.
+- **TIME-16** Only **one timer runs on this device** at a time. Starting on another task stops the
+  one that was running and logs it first, then starts the new one.
+- **TIME-17** The timer is kept **on this device** (not in the account): a refresh or closing the
+  panel leaves it running. Elapsed time is read from when it was started; nothing rewrites the
+  task until Stop.
+- **TIME-18** While a timer is running it cannot be missed: the task's clock is marked as running
+  (and pulses), its detail names the live run, and a chip at the foot of the screen names the
+  task, shows the live clock and offers **Stop** — on a wide window and on a phone alike.
+- **TIME-19** When logged time plus the live run **reaches the goal**, the app notices once for
+  that run — an on-screen toast, and a browser notification when permission was given — and **does
+  not stop the timer**. Starting on a task whose logged time already meets the goal notices at
+  once. A task with no goal never notices this way.
+
 ---
 
 **Where it lives:** `src/core/timeLog.ts` (the goal, sessions, which of them count, and whether the
-goal is reached), `src/core/task.ts` (the fields, and letting go of stale sessions when a rule is
+goal is reached), `src/core/taskTimer.ts` (elapsed time and whether a run has reached the goal),
+`src/core/task.ts` (the fields, and letting go of stale sessions when a rule is
 dropped), `src/app/components/TimePicker.tsx` (the clock and its panel), `src/app/components/TaskItem.tsx`
 (the slot, the detail and the box's hint), `src/app/components/HabitList.tsx` (the habit card),
+`src/app/components/RunningTimerChip.tsx`, `src/app/components/GoalNoticeToast.tsx`,
 `src/app/components/ClockIcon.tsx`, `src/app/durationLabels.ts` (wording, and reading typed lengths),
-`src/app/rowControls.ts` (the ready box), `src/app/useTasks.ts`.
-**Tested in:** `src/core/timeLog.test.ts`, `src/app/durationLabels.test.ts`,
+`src/app/rowControls.ts` (the ready box), `src/app/useTasks.ts`, `src/app/useTaskTimer.ts`,
+`src/storage/taskTimerRepository.ts`, `src/storage/localStorageTaskTimerRepository.ts`.
+**Tested in:** `src/core/timeLog.test.ts`, `src/core/taskTimer.test.ts`, `src/app/durationLabels.test.ts`,
+`src/app/useTaskTimer.test.ts`, `src/app/components/TimePicker.test.tsx`,
 `src/app/components/TaskItem.test.tsx`, `src/app/components/HabitList.test.tsx`,
-`src/storage/localTaskImport.test.ts` (tasks saved before time goals).
+`src/storage/localStorageTaskTimerRepository.test.ts`, `src/storage/localTaskImport.test.ts`
+(tasks saved before time goals).

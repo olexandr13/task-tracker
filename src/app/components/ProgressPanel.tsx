@@ -4,6 +4,8 @@ interface ProgressPanelProps {
   tasks: Task[]
   /** The moment the bars are drawn for; which period a task falls in depends on it. */
   now: Date
+  /** Soften the bars while Procrastination mode is on (JUST-5). */
+  dimmed?: boolean
 }
 
 const PERIODS: readonly { readonly period: Period; readonly label: string }[] = [
@@ -13,9 +15,11 @@ const PERIODS: readonly { readonly period: Period; readonly label: string }[] = 
 ]
 
 /** How today, this week and this month are going, one bar each. */
-export function ProgressPanel({ tasks, now }: ProgressPanelProps) {
+export function ProgressPanel({ tasks, now, dimmed = false }: ProgressPanelProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3.5 dark:border-neutral-800 dark:bg-neutral-900">
+    <div
+      className={`flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3.5 dark:border-neutral-800 dark:bg-neutral-900${dimmed ? ' opacity-25' : ''}`}
+    >
       {PERIODS.map(({ period, label }) => (
         <ProgressBar key={period} label={label} progress={summarize(tasks, period, now)} />
       ))}

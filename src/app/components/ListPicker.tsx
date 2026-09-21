@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { sortLists, type List, type ListId } from '../../core'
 import { panelOption as option, panelOptionOff as optionOff, panelOptionOn as optionOn } from '../panelControls'
 import { controlOff, controlOn, rowControlIcon, rowControlLabel } from '../rowControls'
 import { FolderIcon } from './FolderIcon'
+import { InboxIcon } from './InboxIcon'
 
 const hint = 'px-2 py-1.5 text-xs text-neutral-400 dark:text-neutral-500'
 
@@ -89,11 +90,11 @@ export function ListPicker({
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-label={`${label}: ${summary}`}
-        title={filed === null ? 'File in a list' : summary}
+        title={filed === null ? 'Select list' : summary}
         className={filed === null ? `${button} ${controlOff}` : `${button} ${controlOn}`}
       >
         <FolderIcon />
-        {showName && <span className="min-w-0 truncate">{filed === null ? 'File in a list' : summary}</span>}
+        {showName && <span className="min-w-0 truncate">{filed === null ? 'Select list' : summary}</span>}
       </button>
 
       {isOpen && (
@@ -103,11 +104,17 @@ export function ListPicker({
           className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-56 flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1 shadow-xl dark:border-neutral-700 dark:bg-neutral-900`}
         >
           <div role="group" aria-label="Lists" className="flex max-h-60 flex-col overflow-y-auto">
-            <Choice name="Inbox" chosen={filed === null} onSelect={() => { choose(null) }} />
+            <Choice
+              name="Inbox"
+              icon={<InboxIcon />}
+              chosen={filed === null}
+              onSelect={() => { choose(null) }}
+            />
             {shown.map((list) => (
               <Choice
                 key={list.id}
                 name={list.name}
+                icon={<FolderIcon />}
                 chosen={list.id === filed?.id}
                 onSelect={() => { choose(list.id) }}
               />
@@ -121,7 +128,17 @@ export function ListPicker({
   )
 }
 
-function Choice({ name, chosen, onSelect }: { name: string; chosen: boolean; onSelect: () => void }) {
+function Choice({
+  name,
+  icon,
+  chosen,
+  onSelect,
+}: {
+  name: string
+  icon: ReactNode
+  chosen: boolean
+  onSelect: () => void
+}) {
   return (
     <button
       type="button"
@@ -131,6 +148,12 @@ function Choice({ name, chosen, onSelect }: { name: string; chosen: boolean; onS
     >
       <span aria-hidden="true" className="w-3 shrink-0">
         {chosen ? '✓' : ''}
+      </span>
+      <span
+        aria-hidden="true"
+        className="grid shrink-0 place-items-center text-neutral-400 [&>svg]:size-4 dark:text-neutral-500"
+      >
+        {icon}
       </span>
       <span className="min-w-0 truncate">{name}</span>
     </button>
