@@ -42,7 +42,7 @@ function fetchWithTimeout(
   const controller = new AbortController()
   const timer = setTimeout(() => { controller.abort() }, ms)
   const existing = init?.signal
-  if (existing !== undefined) {
+  if (existing != null) {
     if (existing.aborted) controller.abort()
     else existing.addEventListener('abort', () => { controller.abort() }, { once: true })
   }

@@ -21,7 +21,7 @@ function setOnline(value: boolean): void {
 function hangingFetch(_input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   return new Promise((_, reject) => {
     const signal = init?.signal
-    if (signal === undefined) return
+    if (signal == null) return
     const fail = () => { reject(new DOMException('Aborted', 'AbortError')) }
     if (signal.aborted) fail()
     else signal.addEventListener('abort', fail, { once: true })
