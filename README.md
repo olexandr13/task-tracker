@@ -45,6 +45,9 @@ npm run lint    # lint, including the layer boundary check
 npm run build   # type-check + production build
 ```
 
+Pull requests into `main` run `npm test` and `npm run build` via GitHub Actions
+(`.github/workflows/ci.yml`).
+
 ## Hosting
 
 Live at https://task-tracker-pi-virid-63.vercel.app (Vercel project `task-tracker`, team
