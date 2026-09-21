@@ -9,6 +9,9 @@ routine: a long series of small steps, not one big build.
 - Think about architecture and long-term support, this project is long-term and will evolve over time, thus need to be designed for that.
 - Be concise in your output of what was done.
 - When implement something, update `wiki` accordingly.
+- Bump `package.json` **version** (`MAJOR.MINOR.PATCH`) with each change to the app: **patch** for a
+  small fix, **minor** for a feature, **major** when something breaks for the person using it.
+  Settings shows that number (UI-35).
 
 ## Wiki
 

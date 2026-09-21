@@ -77,28 +77,34 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 ## The record
 
 - **HAB-21** A card starts **folded**, unless Show habit details by default is on (HAB-23): the box
-  for today (HAB-4), the title, a timed habit's clock (TIME-13), and the current streak as a flame
-  and a number. **Tapping the card's line** — anywhere on it but the box and the clock — unfolds the
-  numbers (HAB-5 to HAB-8) and the grid (HAB-9) beneath it, and tapping it again folds them away. A
-  chevron at the end of the line points down while folded and up while open. Open, the line drops
-  its streak, which the numbers below already give. A list of year-long grids is a long way to
-  scroll for a box to tick, and ticking is what the page is visited for.
-- **HAB-22** Ticking the box never unfolds a card. Each card folds on its own, so opening one never
-  moves one being reached for, and a card starts in the default again when the page is next opened.
-  A screen reader hears the fold as a button named for its habit (`Record of "stretch"`), reporting
-  whether it is open.
+  for today (HAB-4), the title, a timed habit's clock (TIME-13), a ⋮ to edit the task (HAB-25), and
+  the current streak as a flame and a number. **Tapping the card's line** — anywhere on it but the
+  box, the clock and the ⋮ — unfolds the numbers (HAB-5 to HAB-8) and the grid (HAB-9) beneath it,
+  and tapping it again folds them away. A chevron at the end of the line points down while folded
+  and up while open. Open, the line drops its streak, which the numbers below already give. A list
+  of year-long grids is a long way to scroll for a box to tick, and ticking is what the page is
+  visited for.
+- **HAB-22** Ticking the box never unfolds a card, and neither does opening the edit sheet (HAB-25).
+  Each card folds on its own, so opening one never moves one being reached for, and a card starts
+  in the default again when the page is next opened. A screen reader hears the fold as a button
+  named for its habit (`Record of "stretch"`), reporting whether it is open.
 - **HAB-23** Habits has a **View** button beside the add box, the same shape as the task views'
   (UI-41, UI-46). **Show habit details by default** starts each card open, showing its numbers and
   grid (HAB-21). Off, every card starts folded. The change is shown at once — every card resets to
   the default — and is kept on this device (STORE-36). Off is how the page starts.
 - **HAB-24** The Habits page has the add box, starting on a **daily** rule, so a habit can be made
   there. Enter adds it unless another rule is chosen first. After adding, the box is daily again.
+- **HAB-25** Each habit has a **⋮** on its line that opens the same sheet a phone uses for a task
+  (UI-48): title, schedule, list, tags, checklist, description, reward, urgent, duplicate and
+  delete. Editing stays on Habits; a change that stops the task being a habit (HAB-1) takes it off
+  the page. Closing the sheet, or deleting the task from it, puts the card away again. A screen
+  reader hears the ⋮ as `Edit "stretch"`.
 
 ---
 
 **Where it lives:** `src/core/habit.ts` (what a habit is, streaks, rates, the weeks, `setDoneOnDay`),
 `src/core/task.ts` (`doneDays`, kept in step by `settleHistory`), `src/app/components/HabitList.tsx`
-(the page and its cards, and a timed habit's clock — see [Time goals](time-goals.md)), `src/app/components/HabitGrid.tsx`, `src/app/components/ChevronIcon.tsx`, `src/app/habitLabels.ts` (wording),
+(the page and its cards, and a timed habit's clock — see [Time goals](time-goals.md)), `src/app/components/HabitGrid.tsx`, `src/app/components/ChevronIcon.tsx`, `src/app/components/MoreVerticalIcon.tsx`, `src/app/components/TaskSheet.tsx` (editing a habit), `src/app/habitLabels.ts` (wording),
 `src/app/habitTones.ts` (the shades), `src/app/components/FlameIcon.tsx`, `src/app/useTasks.ts`
 (`setHabitDay`), `src/app/components/AddTaskForm.tsx` (the add box, starting daily),
 `src/app/components/HabitViewOptionsMenu.tsx` and `src/app/useHabitViewOptions.ts`

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { completeTask, createTask, logTime, setTimeGoal, type Task } from '../../core'
@@ -11,26 +11,95 @@ const WED_16 = new Date(2026, 8, 16, 9, 0)
 
 afterEach(cleanup)
 
+/**
+ * jsdom lays nothing out, so the title is given a layout of its own: one line,
+ * each character 10px wide and 20px high, starting at the left edge.
+ */
+function layOutTitle() {
+  Object.defineProperty(Range.prototype, 'getBoundingClientRect', {
+    configurable: true,
+    value(this: Range) {
+      const left = this.startOffset * 10
+      const width = (this.endOffset - this.startOffset) * 10
+      return { left, right: left + width, width, top: 0, bottom: 20, height: 20, x: left, y: 0 }
+    },
+  })
+}
+
+afterEach(() => { Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect') })
+
 function setup(habits: Task[], showDetails = false) {
   const user = userEvent.setup()
   const onComplete = vi.fn()
   const onUncomplete = vi.fn()
   const onSetDay = vi.fn()
   const onLogTime = vi.fn()
+  const onRename = vi.fn()
+  const onRemove = vi.fn()
   const view = render(
     <HabitList
       habits={habits}
       now={WED_16}
       showDetails={showDetails}
+      knownTags={[]}
+      lists={[]}
       onComplete={onComplete}
       onUncomplete={onUncomplete}
       onSetDay={onSetDay}
+      onRename={onRename}
+      onChangeDescription={vi.fn()}
+      onChangeDueDate={vi.fn()}
+      onSkipOccurrence={vi.fn()}
+      onChangeRepeat={vi.fn()}
+      onChangeReward={vi.fn()}
+      onChangeUrgent={vi.fn()}
       onChangeTimeGoal={vi.fn()}
       onLogTime={onLogTime}
       onRemoveTimeEntry={vi.fn()}
+      onChangeList={vi.fn()}
+      onAddTag={vi.fn()}
+      onRemoveTag={vi.fn()}
+      onRemove={onRemove}
+      onDuplicate={vi.fn()}
+      onAddSubtask={vi.fn()}
+      onSetSubtaskDone={vi.fn()}
+      onRenameSubtask={vi.fn()}
+      onRemoveSubtask={vi.fn()}
     />,
   )
-  return { user, onComplete, onUncomplete, onSetDay, onLogTime, rerender: view.rerender }
+  return { user, onComplete, onUncomplete, onSetDay, onLogTime, onRename, onRemove, rerender: view.rerender }
+}
+
+/** Props shared when a test re-renders the list after the default changes. */
+function listProps(habits: Task[]) {
+  return {
+    habits,
+    now: WED_16,
+    knownTags: [] as const,
+    lists: [] as const,
+    onComplete: vi.fn(),
+    onUncomplete: vi.fn(),
+    onSetDay: vi.fn(),
+    onRename: vi.fn(),
+    onChangeDescription: vi.fn(),
+    onChangeDueDate: vi.fn(),
+    onSkipOccurrence: vi.fn(),
+    onChangeRepeat: vi.fn(),
+    onChangeReward: vi.fn(),
+    onChangeUrgent: vi.fn(),
+    onChangeTimeGoal: vi.fn(),
+    onLogTime: vi.fn(),
+    onRemoveTimeEntry: vi.fn(),
+    onChangeList: vi.fn(),
+    onAddTag: vi.fn(),
+    onRemoveTag: vi.fn(),
+    onRemove: vi.fn(),
+    onDuplicate: vi.fn(),
+    onAddSubtask: vi.fn(),
+    onSetSubtaskDone: vi.fn(),
+    onRenameSubtask: vi.fn(),
+    onRemoveSubtask: vi.fn(),
+  }
 }
 
 /** A daily habit done on Mon 14 and Tue 15, and still to do today, Wed 16. */
@@ -121,16 +190,7 @@ describe('HabitList', () => {
   it('resets the cards when the default changes (HAB-23)', async () => {
     const habit = stretch()
     const { user, rerender } = setup([habit])
-    const props = {
-      habits: [habit],
-      now: WED_16,
-      onComplete: vi.fn(),
-      onUncomplete: vi.fn(),
-      onSetDay: vi.fn(),
-      onChangeTimeGoal: vi.fn(),
-      onLogTime: vi.fn(),
-      onRemoveTimeEntry: vi.fn(),
-    }
+    const props = listProps([habit])
 
     await user.click(screen.getByRole('button', { name: 'Record of "stretch"' }))
     expect(screen.getByRole('button', { name: 'Record of "stretch"' }).getAttribute('aria-expanded')).toBe('true')
@@ -184,13 +244,38 @@ describe('HabitList', () => {
     expect(screen.getByRole('button', { name: 'Mark "sport" as done today: its time goal is reached' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'Mark "swim" as done today' })).toBeDefined()
     const time = screen.getByRole('button', { name: 'Time for "swim": 0m of 1h' })
+    const edit = screen.getByRole('button', { name: 'Edit "swim"' })
     const expand = screen.getByRole('button', { name: 'Record of "swim"' })
     expect(time.textContent).toBe('0m of 1h')
-    expect(time.compareDocumentPosition(expand) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(time.compareDocumentPosition(edit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(edit.compareDocumentPosition(expand) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Time for "swim": 0m of 1h' }))
     await user.click(screen.getByRole('button', { name: 'Log 15m' }))
 
     expect(onLogTime).toHaveBeenCalledWith('other', 15)
+  })
+
+  it('opens the task sheet from the ⋮ without unfolding the card (HAB-25, HAB-22)', async () => {
+    layOutTitle()
+    const habit = stretch()
+    const { user, onRename } = setup([habit])
+    const edit = screen.getByRole('button', { name: 'Edit "stretch"' })
+    const toggle = screen.getByRole('button', { name: 'Record of "stretch"' })
+
+    expect(edit.getAttribute('aria-haspopup')).toBe('dialog')
+    expect(edit.getAttribute('aria-expanded')).toBe('false')
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+
+    await user.click(edit)
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+
+    const sheet = screen.getByRole('dialog', { name: 'Details of "stretch"' })
+    expect(edit.getAttribute('aria-hidden')).toBe('true')
+    await user.click(within(sheet).getByRole('button', { name: 'Edit "stretch"' }))
+    const box = screen.getByRole<HTMLInputElement>('textbox', { name: 'Title of "stretch"' })
+    await user.clear(box)
+    await user.type(box, 'breathe{Enter}')
+    expect(onRename).toHaveBeenCalledWith(habit.id, 'breathe')
   })
 })

@@ -229,6 +229,7 @@ function HabitCard({
   const caret = useRef<number | null>(null)
   const input = useRef<HTMLInputElement>(null)
   const recordId = useId()
+  const isTitleEditing = editedTitle !== null
 
   useEffect(() => {
     const element = input.current
@@ -237,7 +238,7 @@ function HabitCard({
     element.focus()
     const at = Math.min(caret.current ?? element.value.length, element.value.length)
     element.setSelectionRange(at, at)
-  }, [editedTitle !== null])
+  }, [isTitleEditing])
 
   function closeEdit() {
     if (editedTitle !== null) {
@@ -358,6 +359,8 @@ function HabitCard({
             onClick={() => { setIsEditing(true) }}
             aria-haspopup="dialog"
             aria-expanded={isEditing}
+            aria-hidden={isEditing ? true : undefined}
+            tabIndex={isEditing ? -1 : undefined}
             aria-label={`Edit "${habit.title}"`}
             title="Edit"
             className="relative z-20 grid size-6 shrink-0 place-items-center rounded-md text-neutral-400 outline-offset-2 focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-neutral-500"

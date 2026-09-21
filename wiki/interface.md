@@ -81,7 +81,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   are only on a phone.
 - **UI-35** **Settings** holds the signed-in account and the way out (AUTH-9), and under it
   **Backup**: exporting the account to a file and importing one back (BAK-1, BAK-4). Under
-  those, the **version** of the app that is open, taken from the build.
+  those, the **version** of the app that is open — `MAJOR.MINOR.PATCH` from `package.json`,
+  baked in when the app is built. The number is bumped with each change to the app (patch for a
+  small fix, minor for a feature, major when something breaks for the person using it).
 - **UI-36** The view you are on is **in the address** — `#/week`, `#/habits`, `#/inbox`,
   `#/list/{id}`, `#/tag/work` — so reloading the page
   keeps you on it, and a bookmark or a link opens on it. An address naming no view opens on Today.

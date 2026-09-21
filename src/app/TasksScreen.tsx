@@ -413,12 +413,30 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     habits={habitTasks(tasks)}
                     now={now}
                     showDetails={habitViewOptions.showDetails}
+                    knownTags={tags}
+                    lists={lists.lists}
                     onComplete={complete}
                     onUncomplete={uncomplete}
                     onSetDay={setHabitDay}
+                    onRename={rename}
+                    onChangeDescription={changeDescription}
+                    onChangeDueDate={changeDueDate}
+                    onSkipOccurrence={skip}
+                    onChangeRepeat={changeRepeat}
+                    onChangeReward={changeReward}
+                    onChangeUrgent={changeUrgent}
                     onChangeTimeGoal={changeTimeGoal}
                     onLogTime={logTaskTime}
                     onRemoveTimeEntry={removeTaskTime}
+                    onChangeList={changeList}
+                    onAddTag={(id, name) => { tag(id, name, tags) }}
+                    onRemoveTag={untag}
+                    onRemove={handleRemove}
+                    onDuplicate={duplicate}
+                    onAddSubtask={addChecklistItem}
+                    onSetSubtaskDone={setChecklistItemDone}
+                    onRenameSubtask={renameChecklistItem}
+                    onRemoveSubtask={removeChecklistItem}
                   />
                 </section>
               </>

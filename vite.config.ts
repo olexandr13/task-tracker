@@ -8,7 +8,7 @@ const { version } = JSON.parse(readFileSync('./package.json', 'utf8')) as { vers
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Baked in at build time from package.json, so Settings can show which build is open.
+  // Baked in from package.json (MAJOR.MINOR.PATCH), so Settings can show which build is open.
   define: {
     __APP_VERSION__: JSON.stringify(version),
   },
