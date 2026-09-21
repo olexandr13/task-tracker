@@ -24,8 +24,8 @@ export function UrgentToggle({
   label = 'Urgent',
   showName = false,
 }: UrgentToggleProps) {
-  // Icon-only stays content-sized so a woken strip can keep list, tags, urgent
-  // and Duplicate on one row; a named sheet button fills its slot.
+  // Named (sheet) fills its row so the whole line is the hit target (UI-59);
+  // icon-only stays content-sized for a woken strip.
   const button = showName ? `${rowControlLabel} w-full` : rowControlIcon
 
   return (

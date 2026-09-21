@@ -86,15 +86,16 @@ export function SchedulePicker({
   const summary = summarize(describeRepeat)
   const scheduled = rule !== null || dueDate !== null
 
-  // Only as wide as it needs to be: a square around the icon when the value is
-  // not spelled out beside it.
+  // Named (sheet) fills its row so the whole line is the hit target (UI-59);
+  // icon-only stays content-sized for a woken strip.
   const named = scheduled && showSummary
-  const button = `${named ? rowControlLabel : rowControlIcon} w-full`
+  const button = `${showSummary ? rowControlLabel : rowControlIcon} w-full`
+  const rootClass = showSummary ? 'relative min-w-0 w-full' : 'relative min-w-0 shrink'
 
   return (
     <div
       ref={root}
-      className="relative min-w-0 shrink"
+      className={rootClass}
       onKeyDown={(event) => {
         if (event.key === 'Escape' && isOpen) {
           event.stopPropagation()
@@ -114,14 +115,18 @@ export function SchedulePicker({
         }
       >
         {rule === null ? <CalendarIcon /> : <RepeatIcon />}
-        {named && <span className="max-w-28 truncate sm:max-w-48">{summarize(describeRepeatBriefly)}</span>}
+        {showSummary && (
+          <span className="min-w-0 truncate">
+            {named ? summarize(describeRepeatBriefly) : 'No date'}
+          </span>
+        )}
       </button>
 
       {isOpen && (
         <div
           role="dialog"
           aria-label={label}
-          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-64 flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1 shadow-xl dark:border-neutral-700 dark:bg-neutral-900`}
+          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl md:w-64 md:p-1 dark:border-neutral-700 dark:bg-neutral-900`}
         >
           <DueChoices
             dueDate={dueDate}

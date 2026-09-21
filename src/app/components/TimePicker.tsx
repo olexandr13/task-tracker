@@ -15,10 +15,10 @@ import { ClockIcon } from './ClockIcon'
 const QUICK_SESSIONS: readonly number[] = [5, 15, 30, 60]
 
 /** A quick session: a panel's step button, widened to hold its words. */
-const quickButton = `${panelStep} w-auto px-1.5 text-xs tabular-nums`
+const quickButton = `${panelStep} w-auto px-2 text-sm tabular-nums md:px-1.5 md:text-xs`
 
 const field =
-  'min-w-0 rounded-lg border border-neutral-300 bg-transparent px-2 py-1 text-sm text-neutral-900 tabular-nums placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none aria-invalid:border-red-500 dark:border-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-500'
+  'min-w-0 rounded-xl border border-neutral-300 bg-transparent px-2.5 py-2 text-base text-neutral-900 tabular-nums placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none aria-invalid:border-red-500 md:rounded-lg md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-500'
 
 interface TimePickerProps {
   /** The minutes the task asks for, or null for none. */
@@ -95,10 +95,11 @@ export function TimePicker({
   const isGoalInvalid = goalText.trim() !== '' && (typedGoal === null || !isTimeGoal(typedGoal))
   const running = timer?.running === true
 
-  // Only as wide as it needs to be: a square around the icon when the value is
-  // not spelled out beside it.
+  // Named (sheet) fills its row so the whole line is the hit target (UI-59);
+  // icon-only stays content-sized for a woken strip.
   const button = `${showAmount ? rowControlLabel : rowControlIcon} w-full`
   const buttonTone = running ? controlRunning : isSet ? controlOn : controlOff
+  const rootClass = showAmount ? 'relative min-w-0 w-full' : 'relative min-w-0 shrink'
 
   /** Keeps the goal typed, when it is one; anything else goes back to what is saved. */
   function commitGoal() {
@@ -166,7 +167,7 @@ export function TimePicker({
   return (
     <div
       ref={root}
-      className="relative min-w-0 shrink"
+      className={rootClass}
       onKeyDown={(event) => {
         if (event.key === 'Escape' && isOpen) {
           // Escape drops the goal half-typed rather than keeping it.
@@ -196,13 +197,13 @@ export function TimePicker({
         <div
           role="dialog"
           aria-label={label}
-          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-60 flex-col gap-1.5 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl dark:border-neutral-700 dark:bg-neutral-900`}
+          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-[min(19rem,calc(100vw-2rem))] flex-col gap-2 rounded-xl border border-neutral-200 bg-white p-2 shadow-xl md:w-60 md:gap-1.5 md:p-1.5 dark:border-neutral-700 dark:bg-neutral-900`}
         >
           <div className="flex items-baseline justify-between gap-2 px-1 pt-0.5">
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">Time spent</p>
+            <p className="text-sm text-neutral-500 md:text-xs dark:text-neutral-400">Time spent</p>
             <p
               aria-live="polite"
-              className={`text-sm tabular-nums ${reached ? detailReached : 'text-neutral-900 dark:text-neutral-100'}`}
+              className={`text-base tabular-nums md:text-sm ${reached ? detailReached : 'text-neutral-900 dark:text-neutral-100'}`}
             >
               {goal === null ? describeDuration(shownSpent) : summary}
             </p>
@@ -216,7 +217,7 @@ export function TimePicker({
               aria-valuemax={goal}
               aria-valuenow={Math.min(shownSpent, goal)}
               aria-valuetext={summary}
-              className="mx-1 h-1.5 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800"
+              className="mx-1 h-2 overflow-hidden rounded-full bg-neutral-100 md:h-1.5 dark:bg-neutral-800"
             >
               <div
                 className={`h-full rounded-full transition-[width] ${reached ? 'bg-green-600 dark:bg-green-500' : 'bg-blue-600 dark:bg-blue-400'}`}
@@ -225,14 +226,14 @@ export function TimePicker({
             </div>
           )}
 
-          {reached && <p className={`px-1 text-xs ${detailReached}`}>Goal reached. Ready to tick off.</p>}
+          {reached && <p className={`px-1 text-sm md:text-xs ${detailReached}`}>Goal reached. Ready to tick off.</p>}
 
           {timer !== undefined && (
             <div role="group" aria-label="Timer" className="flex items-center justify-end gap-2 px-0.5">
               {running && (
                 <p
                   aria-live="polite"
-                  className="text-xs tabular-nums text-blue-700 dark:text-blue-300"
+                  className="text-sm tabular-nums text-blue-700 md:text-xs dark:text-blue-300"
                 >
                   {describeElapsedClock(liveSeconds)}
                 </p>
@@ -241,7 +242,7 @@ export function TimePicker({
                 <button
                   type="button"
                   onClick={() => { timer.onStop() }}
-                  className="shrink-0 rounded-md bg-red-600/90 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-red-700 dark:bg-red-500/90 dark:hover:bg-red-400"
+                  className="shrink-0 rounded-lg bg-red-600/90 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-700 md:rounded-md md:px-2 md:py-0.5 md:text-xs dark:bg-red-500/90 dark:hover:bg-red-400"
                 >
                   Stop
                 </button>
@@ -249,7 +250,7 @@ export function TimePicker({
                 <button
                   type="button"
                   onClick={() => { timer.onStart() }}
-                  className="shrink-0 rounded-md bg-blue-600/90 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 dark:bg-blue-500/90 dark:hover:bg-blue-400"
+                  className="shrink-0 rounded-lg bg-blue-600/90 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 md:rounded-md md:px-2 md:py-0.5 md:text-xs dark:bg-blue-500/90 dark:hover:bg-blue-400"
                 >
                   Start timer
                 </button>
@@ -257,7 +258,7 @@ export function TimePicker({
             </div>
           )}
 
-          <div role="group" aria-label="Log time" className="flex items-center gap-1">
+          <div role="group" aria-label="Log time" className="flex flex-wrap items-center gap-1.5 md:gap-1">
             {QUICK_SESSIONS.map((minutes) => (
               <button
                 key={minutes}
@@ -290,12 +291,12 @@ export function TimePicker({
           {sessions.length > 0 && (
             <ul
               aria-label="Sessions"
-              className="flex flex-col border-t border-neutral-200 pt-1 dark:border-neutral-800"
+              className="flex flex-col border-t border-neutral-200 pt-1.5 md:pt-1 dark:border-neutral-800"
             >
               {sessions.map((entry) => {
                 const at = describeLoggedAt(entry.loggedAt, now)
                 return (
-                  <li key={entry.id} className="flex items-center gap-2 pl-1 text-xs">
+                  <li key={entry.id} className="flex items-center gap-2 py-1 pl-1 text-sm md:py-0 md:text-xs">
                     <span className="text-neutral-500 tabular-nums dark:text-neutral-400">{at}</span>
                     <span className="ml-auto text-neutral-900 tabular-nums dark:text-neutral-100">
                       {describeDuration(entry.minutes)}
@@ -304,7 +305,7 @@ export function TimePicker({
                       type="button"
                       onClick={() => { onRemove(entry.id) }}
                       aria-label={`Remove ${describeDuration(entry.minutes)} logged at ${at}`}
-                      className={`grid size-5 shrink-0 place-items-center rounded-md text-sm leading-none ${deleteControl}`}
+                      className={`grid size-8 shrink-0 place-items-center rounded-lg text-base leading-none md:size-5 md:rounded-md md:text-sm ${deleteControl}`}
                     >
                       ×
                     </button>
@@ -314,7 +315,7 @@ export function TimePicker({
             </ul>
           )}
 
-          <label className="flex items-center gap-2 border-t border-neutral-200 px-1 pt-1.5 text-xs text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
+          <label className="flex items-center gap-2 border-t border-neutral-200 px-1 pt-2 text-sm text-neutral-500 md:pt-1.5 md:text-xs dark:border-neutral-800 dark:text-neutral-400">
             Goal
             <input
               type="text"
@@ -326,7 +327,7 @@ export function TimePicker({
               title="How long it takes, such as 1h. Empty for none."
               autoComplete="off"
               enterKeyHint="done"
-              className={`${field} ml-auto w-24 text-right`}
+              className={`${field} ml-auto w-28 text-right md:w-24`}
             />
           </label>
         </div>

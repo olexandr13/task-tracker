@@ -53,7 +53,7 @@ interface AddTaskSheetProps {
   ) => void
 }
 
-const action = 'flex min-h-11 w-full min-w-0 items-center'
+const action = 'flex min-h-12 w-full min-w-0 items-center md:min-h-11'
 
 const titleBox =
   'min-w-0 flex-1 bg-transparent text-lg text-neutral-900 placeholder:text-neutral-400 focus:outline-none dark:text-neutral-100 dark:placeholder:text-neutral-500'
@@ -145,7 +145,7 @@ export function AddTaskSheet({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        <div className="flex flex-col items-stretch gap-0.5 border-t border-neutral-200 px-4 py-2 dark:border-neutral-800">
+        <div className="flex flex-col items-stretch gap-1 border-t border-neutral-200 px-4 py-2 md:gap-0.5 dark:border-neutral-800">
           <div className={action}>
             <SchedulePicker
               dueDate={repeat === null ? dueDate : null}

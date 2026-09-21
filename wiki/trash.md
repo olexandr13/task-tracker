@@ -6,7 +6,8 @@ in which it can be fetched out of the trash.
 ## Deleting
 
 - **TRASH-1** Deleting never removes a task on the spot. It is **stamped** with when it was deleted
-  and moved to the trash, which is what makes every step after this possible.
+  and moved to the trash, which is what makes every step after this possible. On a phone a swipe
+  left deletes the same way (UI-60).
 - **TRASH-2** A deleted task leaves the task list at once, and belongs to no period's count from
   that moment — the bars drop it immediately.
 - **TRASH-3** For a few seconds afterwards a toast names the task and offers to undo the deletion

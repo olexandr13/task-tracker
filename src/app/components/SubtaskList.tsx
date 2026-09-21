@@ -151,7 +151,7 @@ export function SubtaskList({
       )}
 
       <div className={subtaskRow}>
-        <span aria-hidden="true" className="w-6 shrink-0 text-center text-sm leading-none text-neutral-400 md:w-5 dark:text-neutral-500">
+        <span aria-hidden="true" className="w-7 shrink-0 text-center text-base leading-none text-neutral-400 md:w-5 md:text-sm dark:text-neutral-500">
           +
         </span>
 
@@ -165,7 +165,7 @@ export function SubtaskList({
           aria-label={`Add a subtask to "${taskTitle}"`}
           autoComplete="off"
           enterKeyHint="done"
-          className="min-w-0 flex-1 bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none dark:text-neutral-100 dark:placeholder:text-neutral-500"
+          className="min-w-0 flex-1 bg-transparent text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none md:text-sm dark:text-neutral-100 dark:placeholder:text-neutral-500"
         />
       </div>
     </div>

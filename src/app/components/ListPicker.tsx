@@ -64,9 +64,10 @@ export function ListPicker({
   const filed = listId === null ? null : (shown.find((list) => list.id === listId) ?? null)
   const summary = filed?.name ?? 'Inbox'
 
-  // Only as wide as it needs to be: a square around the icon when the value is
-  // not spelled out beside it.
+  // Named (sheet) fills its row so the whole line is the hit target (UI-59);
+  // icon-only stays content-sized for a woken strip.
   const button = `${showName ? rowControlLabel : rowControlIcon} w-full`
+  const rootClass = showName ? 'relative min-w-0 w-full' : 'relative min-w-0 shrink'
 
   function choose(next: ListId | null) {
     onChange(next)
@@ -76,7 +77,7 @@ export function ListPicker({
   return (
     <div
       ref={root}
-      className="relative min-w-0 shrink"
+      className={rootClass}
       onKeyDown={(event) => {
         if (event.key === 'Escape' && isOpen) {
           event.stopPropagation()
@@ -101,7 +102,7 @@ export function ListPicker({
         <div
           role="dialog"
           aria-label={label}
-          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-56 flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1 shadow-xl dark:border-neutral-700 dark:bg-neutral-900`}
+          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-64 flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl md:w-56 md:p-1 dark:border-neutral-700 dark:bg-neutral-900`}
         >
           <div role="group" aria-label="Lists" className="flex max-h-60 flex-col overflow-y-auto">
             <Choice
@@ -146,12 +147,12 @@ function Choice({
       onClick={onSelect}
       className={chosen ? `${option} ${optionOn}` : `${option} ${optionOff}`}
     >
-      <span aria-hidden="true" className="w-3 shrink-0">
+      <span aria-hidden="true" className="w-5 shrink-0 md:w-3">
         {chosen ? '✓' : ''}
       </span>
       <span
         aria-hidden="true"
-        className="grid shrink-0 place-items-center text-neutral-400 [&>svg]:size-4 dark:text-neutral-500"
+        className="grid shrink-0 place-items-center text-neutral-400 [&>svg]:size-5 md:[&>svg]:size-4 dark:text-neutral-500"
       >
         {icon}
       </span>

@@ -51,14 +51,15 @@ export function TagPicker({
 
   const summary = tags.length === 0 ? 'No tags' : tags.join(', ')
 
-  // Only as wide as it needs to be: a square around the icon when the value is
-  // not spelled out beside it.
+  // Named (sheet) fills its row so the whole line is the hit target (UI-59);
+  // icon-only stays content-sized for a woken strip.
   const button = `${showNames ? rowControlLabel : rowControlIcon} w-full`
+  const rootClass = showNames ? 'relative min-w-0 w-full' : 'relative min-w-0 shrink'
 
   return (
     <div
       ref={root}
-      className="relative min-w-0 shrink"
+      className={rootClass}
       onKeyDown={(event) => {
         if (event.key === 'Escape' && isOpen) {
           event.stopPropagation()
@@ -83,7 +84,7 @@ export function TagPicker({
         <div
           role="dialog"
           aria-label={label}
-          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-56 flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1 shadow-xl dark:border-neutral-700 dark:bg-neutral-900`}
+          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-64 flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl md:w-56 md:p-1 dark:border-neutral-700 dark:bg-neutral-900`}
         >
           <TagPanel tags={tags} known={known} onAdd={onAdd} onRemove={onRemove} autoFocus />
         </div>

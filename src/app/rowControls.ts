@@ -8,18 +8,23 @@
  * spelled out when there is room for it. Whether the button is `w-full` in a
  * slot or sized by its own content is the caller's, since that is about where
  * it sits rather than what it is.
+ *
+ * On a phone they are a step larger — type, icon and height — so a finger can
+ * hit them in the sheet (UI-59); on a wide screen they stay compact with the
+ * row (UI-23).
  */
-const rowControl = 'flex h-6 items-center gap-1.5 rounded-lg text-sm leading-none transition-colors'
+const rowControl =
+  'flex h-9 items-center gap-2 rounded-lg text-base leading-none transition-colors [&>svg]:size-5 md:h-6 md:gap-1.5 md:text-sm md:[&>svg]:size-4'
 
 /**
  * An icon on its own, padded to a square. A line of these is read as one group
  * of controls, so they are kept close: the padding is the only space between
  * one icon and the next beyond the gap their slots leave.
  */
-export const rowControlIcon = `${rowControl} px-1`
+export const rowControlIcon = `${rowControl} px-1.5 md:px-1`
 
 /** An icon with words beside it, padded so the words are not against the edge. */
-export const rowControlLabel = `${rowControl} px-2`
+export const rowControlLabel = `${rowControl} px-2.5 md:px-2`
 
 /** Nothing set: the control is only a way of setting it. */
 export const controlOff =

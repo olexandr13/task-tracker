@@ -27,7 +27,7 @@ import { panelItem } from '../panelControls'
  * something about the task rather than the task. The same on both sides — the
  * text must not brighten just because it is being edited.
  */
-const descriptionText = 'text-sm text-neutral-500 dark:text-neutral-400'
+const descriptionText = 'text-base text-neutral-500 md:text-sm dark:text-neutral-400'
 
 /**
  * Lists read the same on both sides too: the bullet or number sits outside the

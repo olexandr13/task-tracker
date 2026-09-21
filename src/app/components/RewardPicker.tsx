@@ -67,9 +67,10 @@ export function RewardPicker({
   const base = isValid ? amount : settled
   const summary = reward === null ? 'No reward' : describePoints(reward)
 
-  // Only as wide as it needs to be: a square around the icon when the value is
-  // not spelled out beside it.
+  // Named (sheet) fills its row so the whole line is the hit target (UI-59);
+  // icon-only stays content-sized for a woken strip.
   const button = `${showAmount ? rowControlLabel : rowControlIcon} w-full`
+  const rootClass = showAmount ? 'relative min-w-0 w-full' : 'relative min-w-0 shrink'
 
   function toggle() {
     if (isOpen) {
@@ -108,7 +109,7 @@ export function RewardPicker({
   return (
     <div
       ref={root}
-      className="relative min-w-0 shrink"
+      className={rootClass}
       onKeyDown={(event) => {
         if (event.key === 'Escape' && isOpen) {
           event.stopPropagation()
@@ -133,11 +134,11 @@ export function RewardPicker({
         <div
           role="dialog"
           aria-label={label}
-          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-52 flex-col gap-1 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl dark:border-neutral-700 dark:bg-neutral-900`}
+          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-60 flex-col gap-1.5 rounded-xl border border-neutral-200 bg-white p-2 shadow-xl md:w-52 md:gap-1 md:p-1.5 dark:border-neutral-700 dark:bg-neutral-900`}
         >
-          <p className="px-1 pt-0.5 text-xs text-neutral-500 dark:text-neutral-400">Points each time it is done</p>
+          <p className="px-1 pt-0.5 text-sm text-neutral-500 md:text-xs dark:text-neutral-400">Points each time it is done</p>
 
-          <div role="group" aria-label="Points" className="flex items-center justify-center gap-1">
+          <div role="group" aria-label="Points" className="flex items-center justify-center gap-1.5 md:gap-1">
             <button
               type="button"
               onClick={() => { choose(base - 1) }}
@@ -160,7 +161,7 @@ export function RewardPicker({
               onBlur={() => { if (!isValid) setTyped(String(settled)) }}
               aria-label="Points"
               enterKeyHint="done"
-              className="w-14 [appearance:textfield] rounded-lg border border-neutral-300 bg-transparent px-2 py-1 text-center text-sm text-neutral-900 tabular-nums focus:border-blue-500 focus:outline-none dark:border-neutral-700 dark:text-neutral-100 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="w-16 [appearance:textfield] rounded-xl border border-neutral-300 bg-transparent px-2.5 py-2 text-center text-base tabular-nums text-neutral-900 focus:border-blue-500 focus:outline-none md:w-14 md:rounded-lg md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             <button
               type="button"

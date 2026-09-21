@@ -24,11 +24,11 @@ interface SubtaskItemProps {
 
 /** Smaller than the task's own box, so the two never read as the same rank. */
 export const subtaskCheckbox =
-  'grid size-6 shrink-0 place-items-center rounded-md border-2 text-xs leading-none transition-colors md:size-5 md:rounded'
+  'grid size-7 shrink-0 place-items-center rounded-md border-2 text-sm leading-none transition-colors md:size-5 md:text-xs md:rounded'
 
-export const subtaskRow = 'flex items-center gap-2.5 py-1.5 md:py-1'
+export const subtaskRow = 'flex items-center gap-2.5 py-2 md:py-1'
 
-export const subtaskTitleBox = 'min-w-0 flex-1 text-left text-sm'
+export const subtaskTitleBox = 'min-w-0 flex-1 text-left text-base md:text-sm'
 
 /**
  * One item on a checklist: tick it, rename it in place, take it off the list.

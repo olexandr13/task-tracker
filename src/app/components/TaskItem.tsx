@@ -47,6 +47,7 @@ import { isInTextEntry } from '../textEntry'
 import { textOffsetAtPoint } from '../textOffsetAtPoint'
 import { isHeldInPlace } from '../useLongPress'
 import { usePhoneLayout } from '../usePhoneLayout'
+import { useRowSwipe } from '../useRowSwipe'
 import { useSortableTask } from '../useSortableTask'
 import type { TaskTimer } from '../useTaskTimer'
 import { CalendarIcon } from './CalendarIcon'
@@ -246,6 +247,15 @@ export function TaskItem({
   const row = useRef<HTMLLIElement>(null)
   const line = useRef<HTMLDivElement>(null)
   const sortable = useSortableTask(task, now, dragGroup)
+  // Right completes (or takes back), left deletes — phone only, and not while the
+  // sheet is open or the row is being dragged to a new place.
+  const swipe = useRowSwipe(phone && !isActive && !sortable.isDragging, row, {
+    onComplete: () => {
+      if (done) onUncomplete(task.id)
+      else onComplete(task.id)
+    },
+    onDelete: () => { onRemove(task.id) },
+  })
   const isEditing = editedTitle !== null
   // What the controls hold, spelled out on a second line under each once woken, or
   // at rest too when the view asks for it: the date or the repeat rule, the checklist
@@ -600,6 +610,15 @@ export function TaskItem({
       />
     )
 
+  // The card surface: dashed and faded while dragged; marked while its menu or
+  // sheet is open. On a phone the same classes ride the sliding face so a swipe
+  // can reveal complete and delete underneath.
+  const surface = sortable.isDragging
+    ? 'rounded-xl border border-dashed border-neutral-300 bg-white opacity-50 dark:border-neutral-700 dark:bg-neutral-900'
+    : menuAt !== null || tagsAt !== null || dateAt !== null || (phone && isActive)
+      ? `rounded-xl border border-neutral-400 bg-white dark:border-neutral-600 dark:bg-neutral-900${urgent ? ' shadow-[inset_3px_0_0_rgb(217_119_6_/_0.55)] dark:shadow-[inset_3px_0_0_rgb(251_191_36_/_0.45)]' : ''}${dimmed ? ' opacity-25' : ''}`
+      : `rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900${urgent ? ' shadow-[inset_3px_0_0_rgb(217_119_6_/_0.55)] dark:shadow-[inset_3px_0_0_rgb(251_191_36_/_0.45)]' : ''}${dimmed ? ' opacity-25' : ''}`
+
   return (
     <li
       ref={(element) => {
@@ -613,13 +632,19 @@ export function TaskItem({
       // On the click rather than the press: waking the row moves the buttons
       // along, and a press that moves what is under it never becomes a click.
       onClick={handleClick}
+      onClickCapture={swipe.onClickCapture}
       onPointerDown={(event) => { pointer.current = event.pointerType }}
       onTouchStart={(event) => {
         sortable.listeners?.onTouchStart?.(event)
+        swipe.onTouchStart(event)
         const touch = event.touches[0]
         touchedAt.current = touch === undefined ? null : { x: touch.clientX, y: touch.clientY }
       }}
-      onTouchEnd={handleTouchEnd}
+      onTouchEnd={(event) => {
+        swipe.onTouchEnd(event)
+        handleTouchEnd(event)
+      }}
+      onTouchCancel={swipe.onTouchCancel}
       onFocus={handleFocus}
       onBlur={handleBlur}
       onContextMenu={handleContextMenu}
@@ -631,13 +656,9 @@ export function TaskItem({
         if (event.key === 'Escape' && !sortable.isDragging) rest()
       }}
       className={
-        sortable.isDragging
-          // Left in the list, faded, where it would land; its title is what the pointer carries (TaskDragAndDrop).
-          ? 'group relative touch-manipulation rounded-xl border border-dashed border-neutral-300 bg-white opacity-50 dark:border-neutral-700 dark:bg-neutral-900'
-          : menuAt !== null || tagsAt !== null || dateAt !== null || (phone && isActive)
-            // Marked while its menu or sheet is open, so it is plain which task that is for.
-            ? `group relative touch-manipulation rounded-xl border border-neutral-400 bg-white dark:border-neutral-600 dark:bg-neutral-900${urgent ? ' shadow-[inset_3px_0_0_rgb(217_119_6_/_0.55)] dark:shadow-[inset_3px_0_0_rgb(251_191_36_/_0.45)]' : ''}${dimmed ? ' opacity-25' : ''}${emphasized ? ' my-3' : ''}`
-            : `group relative touch-manipulation rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900${urgent ? ' shadow-[inset_3px_0_0_rgb(217_119_6_/_0.55)] dark:shadow-[inset_3px_0_0_rgb(251_191_36_/_0.45)]' : ''}${dimmed ? ' opacity-25' : ''}${emphasized ? ' my-3' : ''}`
+        phone
+          ? `group relative touch-manipulation overflow-hidden rounded-xl${emphasized ? ' my-3' : ''}`
+          : `group relative touch-manipulation ${surface}${emphasized ? ' my-3' : ''}`
       }
       title={urgent ? 'Urgent' : undefined}
     >
@@ -658,6 +679,38 @@ export function TaskItem({
         <GripIcon className="size-3.5" />
       </button>
 
+      {/* Under the sliding face on a phone: green to the right (complete), red to
+          the left (delete). Covered at rest; a swipe peels the face back. */}
+      {phone && (
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div
+            className={`absolute inset-0 flex items-center bg-green-600 pl-5 text-lg text-white dark:bg-green-700 ${
+              swipe.offset > 0 ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            ✓
+          </div>
+          <div
+            className={`absolute inset-0 flex items-center justify-end bg-red-600 pr-5 text-lg text-white dark:bg-red-700 ${
+              swipe.offset < 0 ? 'opacity-100' : 'opacity-0'
+            }`}
+          >
+            ×
+          </div>
+        </div>
+      )}
+
+      <div
+        className={phone ? `relative ${surface}` : undefined}
+        style={
+          phone
+            ? {
+                transform: swipe.offset === 0 ? undefined : `translate3d(${swipe.offset}px, 0, 0)`,
+                transition: swipe.dragging ? 'none' : 'transform 150ms ease-out',
+              }
+            : undefined
+        }
+      >
       {/* Two lines sharing columns: the task's own, then what its controls hold, each
           detail under the column it belongs to. */}
       {/* The line's gap is the one between the controls; the title adds to it, so it
@@ -977,6 +1030,7 @@ export function TaskItem({
           />
         </div>
       )}
+      </div>
 
       {phone && isActive && (
         <TaskSheet

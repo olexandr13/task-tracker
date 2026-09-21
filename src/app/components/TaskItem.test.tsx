@@ -1318,4 +1318,81 @@ describe('on a phone, tapping a task', () => {
 
     expect(screen.queryByRole('group', { name: /Daily|Checklist|Description|Tags/ })).toBeNull()
   })
+
+  describe('swiping a row (UI-60)', () => {
+    function swipe(row: HTMLElement, dx: number) {
+      fireEvent.touchStart(row, { touches: [{ clientX: 100, clientY: 40 }] })
+      fireEvent.touchMove(row, { touches: [{ clientX: 100 + dx, clientY: 40 }] })
+      fireEvent.touchEnd(row, { touches: [], changedTouches: [{ clientX: 100 + dx, clientY: 40 }] })
+    }
+
+    it('completes on a swipe right', () => {
+      const onComplete = vi.fn()
+      const task = createTask(TASK, null, NOW)
+      render(
+        <ul>
+          <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={[]} lists={[]} onComplete={onComplete} />
+        </ul>,
+      )
+
+      swipe(screen.getByRole('listitem'), 80)
+
+      expect(onComplete).toHaveBeenCalledWith(task.id)
+      expect(screen.queryByRole('dialog', { name: `Details of "${TASK}"` })).toBeNull()
+    })
+
+    it('takes a done task back on a swipe right', () => {
+      const onUncomplete = vi.fn()
+      const task = completeTask(createTask(TASK, null, NOW), NOW)
+      render(
+        <ul>
+          <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={[]} lists={[]} onUncomplete={onUncomplete} />
+        </ul>,
+      )
+
+      swipe(screen.getByRole('listitem'), 80)
+
+      expect(onUncomplete).toHaveBeenCalledWith(task.id)
+    })
+
+    it('deletes on a swipe left', () => {
+      const onRemove = vi.fn()
+      const task = createTask(TASK, null, NOW)
+      render(
+        <ul>
+          <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={[]} lists={[]} onRemove={onRemove} />
+        </ul>,
+      )
+
+      swipe(screen.getByRole('listitem'), -80)
+
+      expect(onRemove).toHaveBeenCalledWith(task.id)
+      expect(screen.queryByRole('dialog', { name: `Details of "${TASK}"` })).toBeNull()
+    })
+
+    it('snaps back without acting on a short swipe', () => {
+      const onComplete = vi.fn()
+      const onRemove = vi.fn()
+      const task = createTask(TASK, null, NOW)
+      render(
+        <ul>
+          <TaskItem
+            {...HANDLERS}
+            task={task}
+            now={NOW}
+            knownTags={[]}
+            lists={[]}
+            onComplete={onComplete}
+            onRemove={onRemove}
+          />
+        </ul>,
+      )
+
+      swipe(screen.getByRole('listitem'), 40)
+
+      expect(onComplete).not.toHaveBeenCalled()
+      expect(onRemove).not.toHaveBeenCalled()
+      expect(screen.queryByRole('dialog', { name: `Details of "${TASK}"` })).toBeNull()
+    })
+  })
 })

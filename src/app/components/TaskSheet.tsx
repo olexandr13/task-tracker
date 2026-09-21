@@ -70,7 +70,7 @@ interface TaskSheetProps {
   timer?: Pick<TaskTimer, 'clock' | 'start' | 'stop' | 'isRunningFor' | 'state'>
 }
 
-const action = 'flex min-h-11 w-full min-w-0 items-center'
+const action = 'flex min-h-12 w-full min-w-0 items-center md:min-h-11'
 
 /**
  * A phone's look at a task: the title to edit, what the task holds, and the
@@ -145,7 +145,7 @@ export function TaskSheet({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        <div className="flex flex-col items-stretch gap-0.5 border-t border-neutral-200 px-4 py-2 dark:border-neutral-800">
+        <div className="flex flex-col items-stretch gap-1 border-t border-neutral-200 px-4 py-2 md:gap-0.5 dark:border-neutral-800">
           <div className={action}>
             <SchedulePicker
               dueDate={dueDay(task, now)}
@@ -253,7 +253,7 @@ export function TaskSheet({
           <button
             type="button"
             onClick={() => { onDuplicate(task.id) }}
-            className={`${rowControlLabel} min-h-11 ${controlOff}`}
+            className={`${rowControlLabel} min-h-12 md:min-h-11 ${controlOff}`}
           >
             <DuplicateIcon />
             Duplicate
@@ -262,7 +262,7 @@ export function TaskSheet({
             type="button"
             onClick={() => { onRemove(task.id) }}
             aria-label={`Delete "${task.title}"`}
-            className={`${rowControlLabel} min-h-11 ${deleteControl}`}
+            className={`${rowControlLabel} min-h-12 md:min-h-11 ${deleteControl}`}
           >
             × Delete
           </button>

@@ -48,14 +48,20 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   which is the only place a title is edited (TASK-8), the checklist and the description, and the
   action buttons: the schedule, the list, the time, the tags, urgent, the reward, Duplicate and Delete. The
   row behind it stays a single line. The sheet closes on a tap on the dimmed page or on Escape
-  (UI-9, UI-10). Opening it never takes the caret (UI-22).
+  (UI-9, UI-10). Opening it never takes the caret (UI-22). Its controls and the panels they open are
+  sized for a thumb (UI-59).
+- **UI-59** On a phone the **task sheet's action rows** (UI-48) — and the same rows on the add sheet
+  (UI-54) — are large enough for a thumb: taller controls, larger type and icons, and each **whole
+  row** opens its picker, not only the pill of text. The panels those rows open (schedule, list,
+  time, tags, reward) grow with them, as menus do (UI-49). On a wide screen the same controls stay
+  compact on the woken strip (UI-53, UI-40).
 - **UI-54** Every page with the add box also has a **Plus** button in the bottom-right corner — above
   the bar on a phone (UI-4), and in the same corner on a wide screen. A tap opens a **sheet** for
   adding a task with the same fields the edit sheet has (TASK-66), so more than a title can be set
   before it is saved. The one-line box at the top still adds a title on Enter (TASK-4). In the sheet,
   Enter in the title — including the phone keyboard's Done/Return — adds the same way (TASK-66).
   Closing the sheet without adding keeps nothing. Procrastination mode is started from **More**
-  (JUST-1), not from beside the Plus.
+  (JUST-1), not from beside the Plus. The sheet's action rows follow UI-59.
 - **UI-55** On every page that lists tasks, pressing **N** opens the add sheet too, so a keyboard
   reaches it without Tabbing to the Plus. Typing in a box, or holding a modifier, leaves `N` alone —
   it is a letter then, not a shortcut. Habits has **H** instead (UI-56).
@@ -68,6 +74,11 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   offer it (JUST-1), and ends it while the mode is on (JUST-8). Elsewhere, or when the control is
   gone, `P` does nothing. Typing in a box, or holding a modifier, leaves `P` alone, as with the
   other letter shortcuts (UI-55, UI-56, UI-57).
+- **UI-60** On a phone, **swiping a task row** is a shortcut to finish or remove it: **right**
+  completes it (or takes a done one back), **left** deletes it the same way the sheet's Delete does
+  — into the trash, with the undo toast (TRASH-1, TRASH-3). A short swipe snaps back and does
+  nothing. Vertical still scrolls the list, and a hold still picks the row up to move it (TASK-39).
+  The box and the sheet keep doing the same jobs; the swipe is the thumb's way on a resting row.
 
 ## Navigation
 
@@ -297,15 +308,19 @@ links and Procrastination), `src/app/components/ViewMenu.tsx` (the View
 button and its panel), `src/app/components/ViewOptionsMenu.tsx` and `src/app/useViewOptions.ts` (the
 task views' options), `src/app/components/HabitViewOptionsMenu.tsx` and `src/app/useHabitViewOptions.ts`
 (Habits'), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/useLongPress.ts` (a press told from a
-long press), `src/app/components/SettingsList.tsx` (and the version on it, from `package.json` via
+long press), `src/app/useRowSwipe.ts` and `src/app/rowSwipe.ts` (a phone's swipe to complete or
+delete), `src/app/components/SettingsList.tsx` (and the version on it, from `package.json` via
 `vite.config.ts`), `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
-view's icon), `src/app/rowControls.ts` (the shape and tones a row's controls share), `src/app/panelControls.ts` (the size a panel's buttons share), `src/styles.css`,
+view's icon), `src/app/rowControls.ts` (the shape and tones a row's controls share — larger on a phone for the
+sheet, UI-59), `src/app/panelControls.ts` (the size a panel's buttons share — larger on a phone with
+the sheet's pickers), `src/styles.css`,
 `public/favicon.svg` (the app's icon; the PNGs beside it are the same icon for installing),
 `src/app/components/AppLogo.tsx` (the mark in the sidebar).
 **Tested in:** `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
 items are large enough for a finger), `src/app/components/MorePage.test.tsx` (More's links), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
 view in the address), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel), `src/app/components/HabitViewOptionsMenu.test.tsx`
 (Habits'), `src/app/components/SettingsList.test.tsx` (the version on Settings), `src/app/components/TaskItem.test.tsx`
-(a row with Show task details on, a finger on a row, and a phone's sheet),
+(a row with Show task details on, a finger on a row, a phone's sheet, and a swipe to complete or
+delete), `src/app/rowSwipe.test.ts` (how far a swipe must travel),
 `src/app/components/AddTaskForm.test.tsx` (the one-line box, the Plus and the detailed sheet),
 `src/app/letterShortcut.test.ts` and `src/app/useLetterShortcut.test.ts` (`N`, `H`, `R` and `P`).

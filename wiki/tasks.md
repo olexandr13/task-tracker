@@ -131,12 +131,13 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 ## Completing
 
 - **TASK-13** The round box at the head of the row toggles the task between done and not done.
+  On a phone a swipe right does the same (UI-60).
 - **TASK-14** Completing stamps the time. Completing something already done changes nothing — the
   first completion time stands.
 - **TASK-15** Un-completing puts the task back to todo and forgets when it was done. For a
   repeating task that undoes the occurrence in play, which is all there is to undo — and where that
   occurrence has gone by, hands the task on to its next day instead of leaving it on the day it
-  missed (RPT-38).
+  missed (RPT-38). On a phone a swipe right on a done task takes it back too (UI-60).
 - **TASK-16** A done task reads greyed and struck through.
 - **TASK-31** A task carrying a checklist is done **exactly when every item on it is**, in both
   directions, and its own box ticks the whole list. See [Checklists](checklists.md).
@@ -183,8 +184,9 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   grip shows when the pointer is over the row, and on a woken row. A press inside a text box being
   typed in selects text instead.
 - **TASK-39** With a mouse, a drag starts only once the pointer has moved a few pixels, so a click
-  is still a click. With a finger, you hold for a moment first, so a swipe still scrolls the page;
-  let go there without moving, and it opens the task's menu instead (UI-44).
+  is still a click. With a finger, you hold for a moment first, so a vertical swipe still scrolls
+  the page and a horizontal one can complete or delete the task (UI-60); let go there without
+  moving, and it opens the task's menu instead (UI-44).
   Letting go never opens the row, the sheet, or starts editing its title.
 - **TASK-40** From the keyboard, the grip picks the row up with Space or Enter. The arrow keys move
   it, Space or Enter drops it, and Escape puts it back. Screen readers hear the task's title and its
