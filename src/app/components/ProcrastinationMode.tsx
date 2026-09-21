@@ -39,18 +39,18 @@ const pointsChip =
 
 export type ProcrastinationPhase = 'off' | 'idle' | 'focus' | 'won'
 
-/** Melting-face FAB near Plus — starts mode, or asks to walk away while it is on. */
+/** Melting-face FAB near Plus — starts mode, or ends it while it is on. */
 export function ProcrastinationEntryButton({
   phase,
   disabled,
   onStart,
-  onRequestLeave,
+  onEnd,
 }: {
   phase: ProcrastinationPhase
   disabled?: boolean
   onStart: () => void
-  /** While mode is on: begin the walk-away confirm (gamified exit). */
-  onRequestLeave: () => void
+  /** While mode is on: turn it off immediately (JUST-8). */
+  onEnd: () => void
 }) {
   const active = phase !== 'off'
 
@@ -59,7 +59,7 @@ export function ProcrastinationEntryButton({
       type="button"
       onClick={() => {
         if (phase === 'off') onStart()
-        else onRequestLeave()
+        else onEnd()
       }}
       disabled={disabled}
       aria-pressed={active}
@@ -74,8 +74,6 @@ export function ProcrastinationEntryButton({
 
 interface ProcrastinationPanelProps {
   phase: ProcrastinationPhase
-  /** Walk-away confirm is open (from the FAB or End mode). */
-  confirmingLeave: boolean
   wonTask: Task | null
   canPick: boolean
   /** Another open Today task exists to switch to (JUST-6). */
@@ -85,10 +83,8 @@ interface ProcrastinationPanelProps {
   onOtherTask: () => void
   /** Only open task in play: open the add-task sheet (JUST-6). */
   onCreateTask: () => void
-  /** Begin the walk-away confirm (FAB or End mode). */
-  onRequestLeave: () => void
-  onCancelLeave: () => void
-  onWalkAway: () => void
+  /** Turn the mode off immediately (JUST-8). */
+  onEnd: () => void
   /** Dismiss the win card but keep the mode on (idle). */
   onRest: () => void
   /** Pick and focus another open task immediately. */
@@ -98,51 +94,23 @@ interface ProcrastinationPanelProps {
 }
 
 /**
- * Banner while in mode, idle rest, walk-away confirm, and the win card after a
- * focused task is completed.
+ * Banner while in mode, idle rest, and the win card after a focused task is
+ * completed.
  */
 export function ProcrastinationPanel({
   phase,
-  confirmingLeave,
   wonTask,
   canPick,
   hasOtherTask,
   pointsEarned,
   onOtherTask,
   onCreateTask,
-  onRequestLeave,
-  onCancelLeave,
-  onWalkAway,
+  onEnd,
   onRest,
   onGetOneMore,
   onGrantPoints,
 }: ProcrastinationPanelProps) {
   if (phase === 'off') return null
-
-  if (confirmingLeave) {
-    return (
-      <div
-        role="dialog"
-        aria-label="End procrastination mode"
-        className="flex flex-col gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-3 dark:border-neutral-700 dark:bg-neutral-900"
-      >
-        <p className="text-sm text-neutral-800 dark:text-neutral-200">
-          End Procrastination mode?
-        </p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          Tasks go back to normal. You can start the mode again later today.
-        </p>
-        <div className="mt-1 flex flex-wrap gap-2">
-          <button type="button" onClick={onCancelLeave} className={actionPrimary}>
-            Stay in mode
-          </button>
-          <button type="button" onClick={onWalkAway} className={action}>
-            End mode
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   if (phase === 'idle') {
     return (
@@ -161,7 +129,7 @@ export function ProcrastinationPanel({
                 Choose another task
               </button>
             )}
-            <button type="button" onClick={onRequestLeave} className={actionSmall}>
+            <button type="button" onClick={onEnd} className={actionSmall}>
               End mode
             </button>
           </div>
@@ -188,7 +156,7 @@ export function ProcrastinationPanel({
                 Create task
               </button>
             )}
-            <button type="button" onClick={onRequestLeave} className={actionSmall}>
+            <button type="button" onClick={onEnd} className={actionSmall}>
               End mode
             </button>
           </div>
@@ -206,7 +174,7 @@ export function ProcrastinationPanel({
       onRest={onRest}
       onGetOneMore={onGetOneMore}
       onGrantPoints={onGrantPoints}
-      onRequestLeave={onRequestLeave}
+      onEnd={onEnd}
     />
   )
 }
@@ -217,14 +185,14 @@ function ProcrastinationWin({
   onRest,
   onGetOneMore,
   onGrantPoints,
-  onRequestLeave,
+  onEnd,
 }: {
   canPick: boolean
   pointsEarned: number
   onRest: () => void
   onGetOneMore: () => void
   onGrantPoints: (total: number) => void
-  onRequestLeave: () => void
+  onEnd: () => void
 }) {
   const [tip, setTip] = useState<string | null>(null)
 
@@ -245,7 +213,7 @@ function ProcrastinationWin({
         <p className="min-w-0 flex-1 text-sm font-medium text-green-900 dark:text-green-100">
           Well done!
         </p>
-        <button type="button" onClick={onRequestLeave} className={`shrink-0 ${actionSmall}`}>
+        <button type="button" onClick={onEnd} className={`shrink-0 ${actionSmall}`}>
           End mode
         </button>
       </div>
