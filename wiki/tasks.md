@@ -134,10 +134,16 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   On a phone a swipe right does the same (UI-60).
 - **TASK-14** Completing stamps the time. Completing something already done changes nothing — the
   first completion time stands.
+- **TASK-67** For a few seconds after a completion a toast offers to undo it — **only an arrow
+  button**, named Undo for a screen reader and as its tooltip, with **no title** of what was done
+  (the tick already said that). Completing by ticking the last checklist item (CHK-9) offers the
+  same. A second completion, or a deletion's undo toast (TRASH-3), replaces it rather than stacking.
+  Letting it lapse leaves the task done.
 - **TASK-15** Un-completing puts the task back to todo and forgets when it was done. For a
   repeating task that undoes the occurrence in play, which is all there is to undo — and where that
   occurrence has gone by, hands the task on to its next day instead of leaving it on the day it
-  missed (RPT-38). On a phone a swipe right on a done task takes it back too (UI-60).
+  missed (RPT-38). On a phone a swipe right on a done task takes it back too (UI-60). The completion
+  undo toast (TASK-67) does the same for a moment after a tick.
 - **TASK-16** A done task reads greyed and struck through.
 - **TASK-31** A task carrying a checklist is done **exactly when every item on it is**, in both
   directions, and its own box ticks the whole list. See [Checklists](checklists.md).
@@ -246,7 +252,8 @@ down and read back), `src/core/descriptionLists.ts` (lists, the same), `src/app/
 `src/app/components/AddTaskSheet.tsx` (the detailed add sheet),
 `src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet),
 `TaskList.tsx`, `TaskItem.tsx`, `TaskSheet.tsx` (a phone's look at a task), `UrgentToggle.tsx`, `ContextMenu.tsx` (a task's menu), `TaskDescription.tsx`, `src/app/descriptionBox.ts` (the box a
-description is written in), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx` (ordering), `src/core/order.ts`
+description is written in), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx` (ordering), `src/app/useUndoToast.ts`
+and `UndoToast.tsx` (undo after a completion or a deletion), `src/core/order.ts`
 (where a task sits, moving it, where a copy goes, and `sortForDisplay` — urgent above, overdue next, done below),
 `src/app/components/TaskDragAndDrop.tsx`,
 `src/app/taskDrop.ts`, `src/app/components/SortableTasks.tsx`, `src/app/useSortableTask.ts` and

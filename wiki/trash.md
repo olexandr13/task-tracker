@@ -11,11 +11,12 @@ in which it can be fetched out of the trash.
 - **TRASH-2** A deleted task leaves the task list at once, and belongs to no period's count from
   that moment — the bars drop it immediately.
 - **TRASH-3** For a few seconds afterwards a toast names the task and offers to undo the deletion
-  outright. It can also be dismissed.
+  outright. It can also be dismissed. Completing a task uses the same toast slot with only an arrow
+  (TASK-67), so one replaces the other.
 - **TRASH-4** Letting the offer lapse loses nothing: the task is in the trash either way. The toast
   only saves the trip there for the mis-click noticed at once.
 - **TRASH-5** Deleting a second task replaces the toast rather than stacking another on top, so the
-  offer always points at the task just deleted.
+  offer always points at the task just deleted. A completion's undo (TASK-67) does the same.
 
 ## The trash
 

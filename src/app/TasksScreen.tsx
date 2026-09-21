@@ -11,6 +11,7 @@ import {
   pickJustOne,
   pinFocusedFirst,
   sameTag,
+  setSubtaskDone,
   sortForDisplay,
   summarizeLists,
   summarizeTags,
@@ -19,6 +20,7 @@ import {
   type ListId,
   type RedemptionId,
   type RewardKey,
+  type SubtaskId,
   type TaskId,
 } from '../core'
 import type { Account } from '../storage/authService'
@@ -75,7 +77,7 @@ import { useSyncNotice } from './useSyncNotice'
 import { useTags } from './useTags'
 import { useTasks } from './useTasks'
 import { useTaskTimer } from './useTaskTimer'
-import { undoTitle, useUndoToast } from './useUndoToast'
+import { useUndoToast } from './useUndoToast'
 import { useView } from './useView'
 import { useHabitViewOptions } from './useHabitViewOptions'
 import { useViewOptions } from './useViewOptions'
@@ -363,9 +365,27 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   }
 
   function handleComplete(id: TaskId) {
+    const task = tasks.find((candidate) => candidate.id === id)
+    const wasDone = task !== undefined && isComplete(task, now)
     complete(id)
+    if (task !== undefined && !wasDone) {
+      undo.show({ kind: 'completion', taskId: id })
+    }
     if (procrastination.phase === 'focus' && procrastination.taskId === id) {
       setProcrastination({ phase: 'won', taskId: id })
+    }
+  }
+
+  /**
+   * Ticking a checklist item can finish the task (CHK-9). When it does, offer
+   * the same completion undo as the box — without naming the task.
+   */
+  function handleSetChecklistItemDone(id: TaskId, subtaskId: SubtaskId, done: boolean) {
+    const task = tasks.find((candidate) => candidate.id === id)
+    const wasDone = task !== undefined && isComplete(task, now)
+    setChecklistItemDone(id, subtaskId, done)
+    if (task !== undefined && !wasDone && done && isComplete(setSubtaskDone(task, subtaskId, true, now), now)) {
+      undo.show({ kind: 'completion', taskId: id })
     }
   }
 
@@ -405,6 +425,9 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
         break
       case 'redemption':
         rewards.restoreRedemption(undo.pending.redemption)
+        break
+      case 'completion':
+        uncomplete(undo.pending.taskId)
         break
     }
     undo.dismiss()
@@ -580,7 +603,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     onRemove={handleRemove}
                     onDuplicate={duplicate}
                     onAddSubtask={addChecklistItem}
-                    onSetSubtaskDone={setChecklistItemDone}
+                    onSetSubtaskDone={handleSetChecklistItemDone}
                     onRenameSubtask={renameChecklistItem}
                     onRemoveSubtask={removeChecklistItem}
                     timer={taskTimer}
@@ -659,7 +682,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     showDetails={habitViewOptions.showDetails}
                     knownTags={tags}
                     lists={lists.lists}
-                    onComplete={complete}
+                    onComplete={handleComplete}
                     onUncomplete={uncomplete}
                     onSetDay={setHabitDay}
                     onRename={rename}
@@ -678,7 +701,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     onRemove={handleRemove}
                     onDuplicate={duplicate}
                     onAddSubtask={addChecklistItem}
-                    onSetSubtaskDone={setChecklistItemDone}
+                    onSetSubtaskDone={handleSetChecklistItemDone}
                     onRenameSubtask={renameChecklistItem}
                     onRemoveSubtask={removeChecklistItem}
                     timer={taskTimer}
@@ -749,7 +772,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
           />
         )}
         {undo.pending !== null && (
-          <UndoToast title={undoTitle(undo.pending)} onUndo={handleUndo} onDismiss={undo.dismiss} />
+          <UndoToast pending={undo.pending} onUndo={handleUndo} onDismiss={undo.dismiss} />
         )}
       </div>
     </main>
