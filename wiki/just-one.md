@@ -39,7 +39,8 @@ task to do, fade the rest, and earn a rest by finishing it.
   (JUST-8). The mode banner uses a calm sky tint, not a warning colour. Nothing is hidden or
   filtered.
 - **JUST-6** **Other task** (a smaller control) picks again among open Today tasks, skipping the
-  current one when there is another to choose.
+  current one when there is another to choose. When only one open Today task is left, the same
+  control becomes **Create task** and opens the add-task sheet (UI-54) instead.
 - **JUST-7** Completing the focused task does **not** turn the mode off: it opens the win card
   (JUST-9) and the 🫠 control stays active. **Rest** leaves the mode on and goes to idle
   (**Choose another task**, optional). The mode ends when the focused task is deleted or no

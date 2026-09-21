@@ -301,7 +301,9 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     setProcrastination({ phase: 'idle' })
     setConfirmingLeave(false)
   }
-  const canPickOpen = view === 'today' && ordered.some((task) => !isComplete(task, now))
+  const openTodayCount = ordered.filter((task) => !isComplete(task, now)).length
+  const canPickOpen = view === 'today' && openTodayCount > 0
+  const hasOtherProcrastinationTask = openTodayCount > 1
   const showProcrastination =
     view === 'today' && (canPickOpen || procrastination.phase !== 'off')
   const dimChrome = procrastinationPhase !== 'off'
@@ -532,8 +534,10 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     confirmingLeave={confirmingLeave}
                     wonTask={wonTask}
                     canPick={canPickOpen}
+                    hasOtherTask={hasOtherProcrastinationTask}
                     pointsEarned={pointsEarned}
                     onOtherTask={() => { pickNextProcrastination(focusId) }}
+                    onCreateTask={() => { setAdding(true) }}
                     onRequestLeave={() => { setConfirmingLeave(true) }}
                     onCancelLeave={() => { setConfirmingLeave(false) }}
                     onWalkAway={endProcrastination}

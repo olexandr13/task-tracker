@@ -78,9 +78,13 @@ interface ProcrastinationPanelProps {
   confirmingLeave: boolean
   wonTask: Task | null
   canPick: boolean
+  /** Another open Today task exists to switch to (JUST-6). */
+  hasOtherTask: boolean
   /** Points already on the ledger for this completion, or 0. */
   pointsEarned: number
   onOtherTask: () => void
+  /** Only open task in play: open the add-task sheet (JUST-6). */
+  onCreateTask: () => void
   /** Begin the walk-away confirm (FAB or End mode). */
   onRequestLeave: () => void
   onCancelLeave: () => void
@@ -102,8 +106,10 @@ export function ProcrastinationPanel({
   confirmingLeave,
   wonTask,
   canPick,
+  hasOtherTask,
   pointsEarned,
   onOtherTask,
+  onCreateTask,
   onRequestLeave,
   onCancelLeave,
   onWalkAway,
@@ -173,9 +179,15 @@ export function ProcrastinationPanel({
             <p className={modeHint}>Some functionality dimmed to prevent distraction. Do just one highlighted task</p>
           </div>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-            <button type="button" onClick={onOtherTask} className={actionSmall}>
-              Other task
-            </button>
+            {hasOtherTask ? (
+              <button type="button" onClick={onOtherTask} className={actionSmall}>
+                Other task
+              </button>
+            ) : (
+              <button type="button" onClick={onCreateTask} className={actionSmall}>
+                Create task
+              </button>
+            )}
             <button type="button" onClick={onRequestLeave} className={actionSmall}>
               End mode
             </button>

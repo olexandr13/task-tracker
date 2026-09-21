@@ -11,8 +11,10 @@ const panel = {
   confirmingLeave: false,
   wonTask: null,
   canPick: true,
+  hasOtherTask: true,
   pointsEarned: 0,
   onOtherTask: vi.fn(),
+  onCreateTask: vi.fn(),
   onRequestLeave: vi.fn(),
   onCancelLeave: vi.fn(),
   onWalkAway: vi.fn(),
@@ -55,6 +57,22 @@ describe('ProcrastinationPanel', () => {
     expect(screen.getByText('Some functionality dimmed to prevent distraction. Do just one highlighted task')).toBeDefined()
     expect(screen.getByRole('button', { name: 'Other task' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'End mode' })).toBeDefined()
+  })
+
+  it('offers Create task when only one open task is left (JUST-6)', async () => {
+    const onCreateTask = vi.fn()
+    render(
+      <ProcrastinationPanel
+        phase="focus"
+        {...panel}
+        hasOtherTask={false}
+        onCreateTask={onCreateTask}
+      />,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Other task' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Create task' }))
+    expect(onCreateTask).toHaveBeenCalledOnce()
   })
 
   it('offers a quiet rest after a win, with an optional next task (JUST-9)', () => {
