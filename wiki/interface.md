@@ -52,9 +52,10 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-54** Every page with the add box also has a **Plus** button in the bottom-right corner — above
   the bar on a phone (UI-4), and in the same corner on a wide screen. A tap opens a **sheet** for
   adding a task with the same fields the edit sheet has (TASK-66), so more than a title can be set
-  before it is saved. The one-line box at the top still adds a title on Enter (TASK-4). Closing the
-  sheet without adding keeps nothing. Procrastination mode is started from **More** (JUST-1), not
-  from beside the Plus.
+  before it is saved. The one-line box at the top still adds a title on Enter (TASK-4). In the sheet,
+  Enter in the title — including the phone keyboard's Done/Return — adds the same way (TASK-66).
+  Closing the sheet without adding keeps nothing. Procrastination mode is started from **More**
+  (JUST-1), not from beside the Plus.
 - **UI-55** On every page that lists tasks, pressing **N** opens the add sheet too, so a keyboard
   reaches it without Tabbing to the Plus. Typing in a box, or holding a modifier, leaves `N` alone —
   it is a letter then, not a shortcut. Habits has **H** instead (UI-56).

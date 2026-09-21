@@ -141,12 +141,31 @@ describe('AddTaskSheet', () => {
     )
   })
 
+  it('adds on Enter in the title when there is one (TASK-66, UI-54)', async () => {
+    const { user, onAdd } = setupSheet()
+    const sheet = within(screen.getByRole('dialog', { name: 'Add task' }))
+
+    await user.type(sheet.getByRole('textbox', { name: 'Add task' }), 'file taxes{Enter}')
+
+    expect(onAdd).toHaveBeenCalledWith(
+      'file taxes',
+      null,
+      '2026-09-16',
+      [],
+      null,
+      expect.objectContaining({ description: '', reward: null, urgent: false }),
+    )
+  })
+
   it('does not add without a title (TASK-2, TASK-66)', async () => {
     const { user, onAdd } = setupSheet()
     const sheet = within(screen.getByRole('dialog', { name: 'Add task' }))
 
     expect(sheet.getByRole('button', { name: 'Add task' })).toHaveProperty('disabled', true)
     await user.click(sheet.getByRole('button', { name: 'Add task' }))
+    expect(onAdd).not.toHaveBeenCalled()
+
+    await user.type(sheet.getByRole('textbox', { name: 'Add task' }), '{Enter}')
     expect(onAdd).not.toHaveBeenCalled()
   })
 

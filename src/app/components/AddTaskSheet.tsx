@@ -114,10 +114,10 @@ export function AddTaskSheet({
   }
 
   function handleTitleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    // Enter alone does not add: the sheet is for filling more than a title, and
-    // the Add button is the one path that saves. Cmd/Ctrl+Enter still adds when
-    // the title is ready, for a keyboard that is done.
-    if (event.key !== 'Enter' || !(event.metaKey || event.ctrlKey)) return
+    // Enter (and the phone keyboard's Done/Return with enterKeyHint="done")
+    // adds when the title is ready, same as the one-line box (TASK-4). The Add
+    // button remains for when more fields were filled first.
+    if (event.key !== 'Enter') return
     event.preventDefault()
     commit()
   }

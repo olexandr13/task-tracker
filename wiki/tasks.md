@@ -43,8 +43,9 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-66** A **Plus** button opens a **sheet** for adding with every field the edit sheet has —
   title, schedule, list, time, tags, urgent, reward, checklist and description (UI-54). Pressing **N**
   opens the same sheet from the keyboard on a task page (UI-55). The one-line box still adds a title
-  in a hurry (TASK-4). The sheet needs a title before it will add; closing it without adding keeps
-  nothing. A habit is added with **H** instead (UI-56, HAB-24).
+  in a hurry (TASK-4). In the sheet, **Enter** in the title (or the phone keyboard's Done/Return)
+  adds when there is a title, as does the Add button; without a title neither does. Closing the
+  sheet without adding keeps nothing. A habit is added with **H** instead (UI-56, HAB-24).
 
 ## Renaming
 
