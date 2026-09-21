@@ -80,7 +80,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   while either is open, or one list or the Inbox. The sidebar keeps its own entries, so the buttons
   are only on a phone.
 - **UI-35** **Settings** holds the signed-in account and the way out (AUTH-9), and under it
-  **Backup**: exporting the account to a file and importing one back (BAK-1, BAK-4).
+  **Backup**: exporting the account to a file and importing one back (BAK-1, BAK-4). Under
+  those, the **version** of the app that is open, taken from the build.
 - **UI-36** The view you are on is **in the address** — `#/week`, `#/habits`, `#/inbox`,
   `#/list/{id}`, `#/tag/work` — so reloading the page
   keeps you on it, and a bookmark or a link opens on it. An address naming no view opens on Today.
@@ -267,12 +268,13 @@ links), `src/app/components/ViewMenu.tsx` (the View
 button and its panel), `src/app/components/ViewOptionsMenu.tsx` and `src/app/useViewOptions.ts` (the
 task views' options), `src/app/components/HabitViewOptionsMenu.tsx` and `src/app/useHabitViewOptions.ts`
 (Habits'), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/useLongPress.ts` (a press told from a
-long press), `src/app/components/SettingsList.tsx`, `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
+long press), `src/app/components/SettingsList.tsx` (and the version on it, from `package.json` via
+`vite.config.ts`), `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
 view's icon), `src/app/rowControls.ts` (the shape and tones a row's controls share), `src/app/panelControls.ts` (the size a panel's buttons share), `src/styles.css`,
 `public/favicon.svg` (the app's icon; the PNGs beside it are the same icon for installing),
 `src/app/components/AppLogo.tsx` (the mark in the sidebar).
 **Tested in:** `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
 items are large enough for a finger), `src/app/components/MorePage.test.tsx` (More's links), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
 view in the address), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel), `src/app/components/HabitViewOptionsMenu.test.tsx`
-(Habits'), `src/app/components/TaskItem.test.tsx`
+(Habits'), `src/app/components/SettingsList.test.tsx` (the version on Settings), `src/app/components/TaskItem.test.tsx`
 (a row with Show task details on, a finger on a row, and a phone's sheet).

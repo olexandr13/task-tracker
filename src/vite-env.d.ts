@@ -1,5 +1,8 @@
 /// <reference types="vite/client" />
 
+/** The app's version from `package.json`, set by Vite at build time. */
+declare const __APP_VERSION__: string
+
 /** Settings read from `.env.local` (or the host's environment) at build time. */
 interface ImportMetaEnv {
   readonly VITE_FIREBASE_API_KEY?: string
