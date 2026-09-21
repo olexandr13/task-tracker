@@ -16,6 +16,26 @@ import { COMPLETION_SPAN_LABELS } from '../completionLabels'
 import { SortableTasks } from './SortableTasks'
 import { TaskItem } from './TaskItem'
 
+/** A phone leaves room between rows so a tap aimed at one does not catch the next. */
+const rows = 'flex flex-col gap-2 md:gap-1'
+
+/**
+ * Older done work fades further back: yesterday still near full, last week and
+ * last month progressively softer. Today and earlier stay at full strength.
+ */
+function doneSpanClass(span: CompletionSpan): string {
+  switch (span) {
+    case 'yesterday':
+      return 'opacity-80'
+    case 'last7Days':
+      return 'opacity-60'
+    case 'last30Days':
+      return 'opacity-40'
+    default:
+      return ''
+  }
+}
+
 interface TaskListProps {
   tasks: Task[]
   /** The moment the list is drawn for; a repeating task is only done for its current occurrence. */
@@ -44,6 +64,7 @@ interface TaskListProps {
   onSkipOccurrence: (id: TaskId) => void
   onChangeRepeat: (id: TaskId, repeat: Repeat | null) => void
   onChangeReward: (id: TaskId, reward: number | null) => void
+  onChangeUrgent: (id: TaskId, urgent: boolean) => void
   onChangeTimeGoal: (id: TaskId, minutes: number | null) => void
   onLogTime: (id: TaskId, minutes: number) => void
   onRemoveTimeEntry: (id: TaskId, entryId: TimeEntryId) => void
@@ -75,6 +96,7 @@ export function TaskList({
   onSkipOccurrence,
   onChangeRepeat,
   onChangeReward,
+  onChangeUrgent,
   onChangeTimeGoal,
   onLogTime,
   onRemoveTimeEntry,
@@ -117,6 +139,7 @@ export function TaskList({
         onSkipOccurrence={onSkipOccurrence}
         onChangeRepeat={onChangeRepeat}
         onChangeReward={onChangeReward}
+        onChangeUrgent={onChangeUrgent}
         onChangeTimeGoal={onChangeTimeGoal}
         onLogTime={onLogTime}
         onRemoveTimeEntry={onRemoveTimeEntry}
@@ -143,23 +166,27 @@ export function TaskList({
           <SortableTasks tasks={tasks}>
             {groupByCompletion(tasks, doneSpans, now).map(({ span, tasks: group }) =>
               span === null ? (
-                <ul key="todo" className="flex flex-col gap-1">
+                <ul key="todo" className={rows}>
                   {group.map((task) => row(task))}
                 </ul>
               ) : (
-                <section key={span} aria-label={COMPLETION_SPAN_LABELS[span]} className="flex flex-col gap-1.5">
+                <section
+                  key={span}
+                  aria-label={COMPLETION_SPAN_LABELS[span]}
+                  className={['flex flex-col gap-1.5', doneSpanClass(span)].filter(Boolean).join(' ')}
+                >
                   <h2 className="flex items-baseline gap-2 px-1 text-xs font-medium text-neutral-400 dark:text-neutral-500">
                     {COMPLETION_SPAN_LABELS[span]}
                     <span className="font-normal text-neutral-300 tabular-nums dark:text-neutral-600">{group.length}</span>
                   </h2>
-                  <ul className="flex flex-col gap-1">{group.map((task) => row(task, span))}</ul>
+                  <ul className={rows}>{group.map((task) => row(task, span))}</ul>
                 </section>
               ),
             )}
           </SortableTasks>
         </div>
       ) : (
-        <ul className="flex flex-col gap-1">
+        <ul className={rows}>
           <SortableTasks tasks={tasks}>{tasks.map((task) => row(task))}</SortableTasks>
         </ul>
       )}

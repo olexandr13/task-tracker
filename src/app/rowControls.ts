@@ -33,6 +33,15 @@ export const controlOn =
   'bg-blue-600/5 text-blue-600/70 hover:bg-blue-600/10 hover:text-blue-600 dark:bg-blue-400/5 dark:text-blue-300/55 dark:hover:bg-blue-400/10 dark:hover:text-blue-300/90'
 
 /**
+ * Something set, shown as a mark rather than a control — a phone's resting row,
+ * where the tinted icons say what the task carries but do not open anything.
+ * Same quiet tint as a set control, without the hover that invites a click.
+ */
+export const controlMarker = 'text-blue-600/70 dark:text-blue-300/55'
+
+/** A due day already gone, as a mark: the same warning red as an overdue control. */
+export const controlMarkerOverdue = 'text-red-600 dark:text-red-400'
+/**
  * A control that deletes or removes something, wherever it is: a task, a checklist
  * item, a task in the trash, a tag. Muted at rest like any other, so a list is not
  * lined with red, and red under the pointer, so what a click would do is plain
@@ -44,9 +53,11 @@ export const deleteControl =
 /**
  * The box that ticks a task off, wherever a task can be ticked off — a row, a
  * habit's card — so finishing something looks and feels the same everywhere.
+ * On a phone it is larger, so a finger can hit it; on a wide screen it stays
+ * small with the rest of the row.
  */
 const completionBox =
-  'grid size-5 shrink-0 place-items-center rounded-md border-2 text-xs leading-none transition-colors'
+  'grid size-8 shrink-0 place-items-center rounded-lg border-2 text-sm leading-none transition-colors md:size-5 md:rounded-md md:text-xs'
 
 export const completionBoxOn = `${completionBox} border-green-600 bg-green-600 text-white hover:border-green-700 hover:bg-green-700`
 

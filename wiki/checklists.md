@@ -27,11 +27,13 @@ count.
 - **CHK-4** The checklist **comes up with the row**: clicking into a task shows it under the
   title, above the description. The button beside the description one puts it away again without
   leaving the row, and brings it back. A row at rest shows no checklist, so the list stays
-  something you can run your eye down.
+  something you can run your eye down. On a phone it comes up in the sheet (UI-48).
 - **CHK-5** That button shows whether there is a checklist: marked when there is, muted when there
   is not, and on show at rest either way (UI-18). The button is the **icon alone**. How it stands —
   `2/5` — is spelled out on the line of details, **under the button**, once the row is clicked into, on every
-  screen width (UI-27); a screen reader is told the full count at rest too.
+  screen width (UI-27); a screen reader is told the full count at rest too. On a phone the button is
+  not on the rest row — the checklist is in the sheet (UI-48) — but a resting row still shows the
+  checklist as a mark when there is one (UI-50).
 - **CHK-6** Items are added on one line at the foot of the list: type and press Enter. There is no
   Add button, and Enter on an empty box does nothing.
 - **CHK-7** The box **keeps its focus** after each Enter, so a checklist can be typed straight down

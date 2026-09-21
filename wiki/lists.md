@@ -35,8 +35,8 @@ reasons; requirements here are `LST-`.
 ## A list's tasks
 
 - **LST-8** Every list has **a view of its own**, opened from the Lists page (LST-13): the live
-  tasks filed under it. It shows what Tasks shows otherwise (LIST-7) — the same rows, done tasks
-  sinking, dragging, the rail — and **Lists** stays marked in the sidebar while it is open. It is in
+  tasks filed under it. It shows what Tasks shows otherwise (LIST-7) — the same rows, overdue
+  floating, done sinking, dragging, the rail — and **Lists** stays marked in the sidebar while it is open. It is in
   the address as `#/list/{id}` (UI-36), by the list's id, so a rename does not break a bookmark.
 - **LST-9** A task added in a list's view **goes into that list**, and has no day, as in Tasks.
 - **LST-10** An empty list says nothing is in it yet and to add a task above; once everything in it
@@ -54,13 +54,14 @@ reasons; requirements here are `LST-`.
 ## Filing a task
 
 - **LST-14** A task is filed from **its menu** — a right-click on the row, or a finger's hold or
-  second tap (UI-31, UI-44). Under
+  second tap (UI-31, UI-44) — and from a **list button on the woken wide-screen row** once there
+  is a list to choose (UI-53). Under
   Duplicate and Tags, a **List** group offers the Inbox and then every list, the task's own **checked**.
   Choosing one files the task and closes the menu — a task is in one list at a time, so choosing is
-  the whole of the job. The row itself has **no list button** and does not name its list: which list
-  a task is in is asked of the task when it matters, not repeated on every row. A list cannot be
-  made from here (LST-4); while there are no lists at all the menu has no List group, the Inbox
-  alone being no choice.
+  the whole of the job. The resting row itself has **no list button** and does not name its list:
+  which list a task is in is asked of the task when it matters, not repeated on every resting row.
+  A list cannot be made from here (LST-4); while there are no lists at all the menu has no List
+  group and the woken strip has no list button, the Inbox alone being no choice.
 - **LST-25** A task can be **dragged onto a list in the sidebar** — or onto the Inbox — to file it
   there, from any view that shows tasks. While a task is carried, what moves with the pointer is
   its **title**, just right of it, not the whole row, and the row stays in the list, faded, where
@@ -68,7 +69,7 @@ reasons; requirements here are `LST-`.
   pointer on it, so moving a task among the rows never files it by accident, and filing a task
   leaves its place in the order as it was. Dropping it anywhere but a list or a row does nothing.
   Only a pointer does this: from the keyboard a task is filed from its menu (LST-14), and on a phone
-  — which has no sidebar — from its menu or the woken row (LST-23). A screen reader hears which list the task
+  — which has no sidebar — from its menu or the sheet (LST-23). A screen reader hears which list the task
   is over and which it was dropped in.
 - **LST-15** The Inbox is first in the group and always offered, so there is always a way back out
   of a list.
@@ -105,11 +106,11 @@ reasons; requirements here are `LST-`.
 
 ## On a phone
 
-- **LST-23** On a phone the **woken row** carries a list button as well, in the block under the
-  description, above the tag and reward controls, naming the task's list — or offering to file it —
-  so filing is a tap away rather than a menu away (UI-44). It opens a panel of the same choices as the menu (LST-14,
-  LST-15), the task's own marked, and closes on a choice or as the other pickers do (UI-9, UI-10);
-  with no lists yet, the panel says where to make one.
+- **LST-23** On a phone the **sheet** a tap opens (UI-48) carries a list button, naming the task's
+  list — or offering to file it — so filing is a tap away rather than a menu away (UI-44). It opens
+  a panel of the same choices as the menu (LST-14, LST-15), the task's own marked, and closes on a
+  choice or as the other pickers do (UI-9, UI-10); with no lists yet, the panel says where to make
+  one.
 - **LST-24** The Lists page is reached from a **Lists** button at the foot of Tasks, beside the Trash
   button, and from the Tasks tab's menu, which offers the Inbox and every list as well
   (UI-43). Tasks stays marked in the bottom bar while the Lists page, a list's view or the Inbox is
@@ -124,7 +125,7 @@ counts), `src/app/components/TaskItem.tsx` (the List group in a task's menu),
 (whether they are folded), `src/app/useListDropTarget.ts` (a list as a
 place to drop a task), `src/app/components/TaskDragAndDrop.tsx` and `src/app/taskDrop.ts` (carrying a
 task, and what dropping it does),
-`src/app/components/ListPicker.tsx` (the panel on a phone's woken row),
+`src/app/components/ListPicker.tsx` (the panel on a woken row and a phone's task sheet),
 `src/app/components/ListsPage.tsx` (the Lists page), `src/app/useLists.ts` (the lists on screen), `src/app/useTasks.ts` (filing a
 task, emptying a list), `src/app/view.ts` (the Lists page, a list's view and the Inbox, their
 addresses and what they say), `src/app/TasksScreen.tsx`, `src/app/components/SideNav.tsx`,

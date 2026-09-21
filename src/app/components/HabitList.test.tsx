@@ -11,16 +11,17 @@ const WED_16 = new Date(2026, 8, 16, 9, 0)
 
 afterEach(cleanup)
 
-function setup(habits: Task[]) {
+function setup(habits: Task[], showDetails = false) {
   const user = userEvent.setup()
   const onComplete = vi.fn()
   const onUncomplete = vi.fn()
   const onSetDay = vi.fn()
   const onLogTime = vi.fn()
-  render(
+  const view = render(
     <HabitList
       habits={habits}
       now={WED_16}
+      showDetails={showDetails}
       onComplete={onComplete}
       onUncomplete={onUncomplete}
       onSetDay={onSetDay}
@@ -29,7 +30,7 @@ function setup(habits: Task[]) {
       onRemoveTimeEntry={vi.fn()}
     />,
   )
-  return { user, onComplete, onUncomplete, onSetDay, onLogTime }
+  return { user, onComplete, onUncomplete, onSetDay, onLogTime, rerender: view.rerender }
 }
 
 /** A daily habit done on Mon 14 and Tue 15, and still to do today, Wed 16. */
@@ -83,13 +84,15 @@ describe('HabitList', () => {
     expect(onSetDay).toHaveBeenLastCalledWith(habit.id, '2026-09-14', false)
   })
 
-  it('on a phone, folds a card to its streak and unfolds its record on a tap (HAB-21, HAB-22)', async () => {
+  it('folds a card to its streak and unfolds its record on a tap (HAB-21, HAB-22)', async () => {
     const { user, onComplete } = setup([stretch()])
     const toggle = screen.getByRole('button', { name: 'Record of "stretch"' })
 
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    expect(toggle.parentElement?.className).toContain('ml-auto')
     expect(screen.getByText('Current streak:').parentElement?.textContent).toBe('Current streak: 2')
     const record = document.getElementById(toggle.getAttribute('aria-controls') ?? '')
+    expect(record?.className).toContain('hidden')
     expect(record?.contains(screen.getByRole('group', { name: /Last 52 weeks/ }))).toBe(true)
 
     // Ticking off is not asking for the record.
@@ -99,11 +102,44 @@ describe('HabitList', () => {
 
     await user.click(toggle)
     expect(toggle.getAttribute('aria-expanded')).toBe('true')
+    expect(record?.className).toContain('flex')
     // The streak is in the record now, so the line no longer repeats it.
     expect(screen.queryByText('Current streak:')).toBeNull()
 
     await user.click(toggle)
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    expect(record?.className).toContain('hidden')
+  })
+
+  it('starts each card open when Show habit details by default is on (HAB-23)', () => {
+    setup([stretch()], true)
+
+    expect(screen.getByRole('button', { name: 'Record of "stretch"' }).getAttribute('aria-expanded')).toBe('true')
+    expect(screen.queryByText('Current streak:')).toBeNull()
+  })
+
+  it('resets the cards when the default changes (HAB-23)', async () => {
+    const habit = stretch()
+    const { user, rerender } = setup([habit])
+    const props = {
+      habits: [habit],
+      now: WED_16,
+      onComplete: vi.fn(),
+      onUncomplete: vi.fn(),
+      onSetDay: vi.fn(),
+      onChangeTimeGoal: vi.fn(),
+      onLogTime: vi.fn(),
+      onRemoveTimeEntry: vi.fn(),
+    }
+
+    await user.click(screen.getByRole('button', { name: 'Record of "stretch"' }))
+    expect(screen.getByRole('button', { name: 'Record of "stretch"' }).getAttribute('aria-expanded')).toBe('true')
+
+    rerender(<HabitList {...props} showDetails={true} />)
+    expect(screen.getByRole('button', { name: 'Record of "stretch"' }).getAttribute('aria-expanded')).toBe('true')
+
+    rerender(<HabitList {...props} showDetails={false} />)
+    expect(screen.getByRole('button', { name: 'Record of "stretch"' }).getAttribute('aria-expanded')).toBe('false')
   })
 
   it('offers no day after today (HAB-18)', () => {
@@ -147,7 +183,10 @@ describe('HabitList', () => {
 
     expect(screen.getByRole('button', { name: 'Mark "sport" as done today: its time goal is reached' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'Mark "swim" as done today' })).toBeDefined()
-    expect(screen.getByRole('button', { name: 'Time for "swim": 0m of 1h' }).textContent).toBe('0m of 1h')
+    const time = screen.getByRole('button', { name: 'Time for "swim": 0m of 1h' })
+    const expand = screen.getByRole('button', { name: 'Record of "swim"' })
+    expect(time.textContent).toBe('0m of 1h')
+    expect(time.compareDocumentPosition(expand) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Time for "swim": 0m of 1h' }))
     await user.click(screen.getByRole('button', { name: 'Log 15m' }))

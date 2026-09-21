@@ -12,6 +12,7 @@ import {
   type User,
 } from 'firebase/auth'
 import type { Account, AuthService, SignInFailure } from './authService'
+import { installFailFastAuthFetch } from './failFastAuthFetch'
 
 /** Ways a sign-in ends that are the person changing their mind, not a fault. */
 const CANCELLED = new Set(['auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/user-cancelled'])
@@ -44,8 +45,14 @@ function toAccount(user: User): Account {
  * until it has arrived, so a slow connection kept the app blank, and an
  * installed app stuck on its splash screen (AUTH-14). The saved session is the
  * same three places `getAuth` keeps it, so nobody already signed in is signed out.
+ *
+ * Auth still reloads that session from Google before it will say who is signed
+ * in. Offline that reload does not fail on a phone — it waits — which is the
+ * same hang. `failFastAuthFetch` makes it fail at once so the cached session
+ * is what start-up uses (AUTH-14).
  */
 export function createFirebaseAuthService(app: FirebaseApp): AuthService {
+  installFailFastAuthFetch()
   const auth = initializeAuth(app, {
     persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
   })

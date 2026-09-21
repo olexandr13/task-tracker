@@ -1,4 +1,4 @@
-# Task Tracker
+# PickMe
 
 A personal task tracker that fights procrastination through gamification.
 

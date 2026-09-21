@@ -46,7 +46,7 @@ describe('the View button', () => {
     await user.click(viewButton())
 
     expect(detailsSwitch().getAttribute('aria-describedby')).not.toBeNull()
-    expect(screen.getByText('Date, reward, time goal and other details under every task')).toBeDefined()
+    expect(screen.getByText('Date, reward, time goal, urgent and other details under every task')).toBeDefined()
   })
 
   it('closes on Escape and on a click outside (UI-9)', async () => {

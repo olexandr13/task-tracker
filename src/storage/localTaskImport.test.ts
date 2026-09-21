@@ -23,7 +23,10 @@ function repositoryThat(outcome: 'accepts' | 'fails') {
   return { repository, imported }
 }
 
-afterEach(() => { localStorage.clear() })
+afterEach(() => {
+  localStorage.clear()
+  Object.defineProperty(navigator, 'onLine', { configurable: true, value: true })
+})
 
 describe('importLocalTasks', () => {
   it('moves the tasks kept in the browser into the account, then forgets them here', async () => {
@@ -35,6 +38,18 @@ describe('importLocalTasks', () => {
 
     expect(imported).toEqual([task])
     expect(localStorage.getItem(KEY)).toBeNull()
+  })
+
+  it('leaves them in the browser when there is no connection, rather than waiting on the server (STORE-19)', async () => {
+    const saved = JSON.stringify({ version: 9, tasks: [createTask('file taxes', null, NOW)] })
+    localStorage.setItem(KEY, saved)
+    Object.defineProperty(navigator, 'onLine', { configurable: true, value: false })
+    const { repository, imported } = repositoryThat('accepts')
+
+    await importLocalTasks(repository)
+
+    expect(imported).toEqual([])
+    expect(localStorage.getItem(KEY)).toBe(saved)
   })
 
   it('keeps them in the browser when the account could not take them', async () => {

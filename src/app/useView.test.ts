@@ -29,6 +29,7 @@ describe('viewFromHash', () => {
       'rewards',
       'lists',
       'tags',
+      'more',
       'trash',
       'settings',
     ] as const

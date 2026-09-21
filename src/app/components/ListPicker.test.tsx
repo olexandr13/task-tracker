@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { appendList, createList, type List, type ListId } from '../../core'
 import { ListPicker } from './ListPicker'
 
-/* Filing a task from a phone's woken row, which has no right-click to reach the task's menu.
+/* Filing a task from a woken row or a phone's task sheet, which has no right-click to reach the task's menu.
    LST ids refer to wiki/lists.md. */
 
 const AT = new Date(2026, 8, 17, 9, 0)
@@ -24,7 +24,7 @@ function setup(listId: ListId | null = null, lists: readonly List[] = LISTS) {
 
 const panel = () => screen.queryByRole('dialog', { name: 'List' })
 
-describe('the list button on a phone\'s woken row', () => {
+describe('the list button on a phone\'s task sheet', () => {
   it('names the Inbox for a task in no list (LST-2)', () => {
     setup(null)
 

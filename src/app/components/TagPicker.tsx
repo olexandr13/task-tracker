@@ -20,6 +20,8 @@ interface TagPickerProps {
 
 /**
  * A task's tags: a small button that opens the tag panel (TagPanel) under it.
+ * On a wide screen it sits on the woken row (and the task's menu still opens
+ * the same panel); on a phone it is on the sheet.
  *
  * The same shape as the other pickers, and like them there is nothing to
  * confirm. The panel stays open throughout, since a task often takes more than one.

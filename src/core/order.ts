@@ -6,9 +6,14 @@
  * takes a number between its new neighbours — so records from two devices could
  * still be merged one by one, the same reason ids are UUIDs. Numbers are handed
  * out with gaps, so there is room to move into.
+ *
+ * The number is only half of what the screen shows: urgent tasks float to the
+ * top, overdue next, and done ones sink to the bottom (`sortForDisplay`), each
+ * band keeping this order inside it.
  */
 
-import type { Task, TaskId } from './task'
+import { isOverdue } from './due'
+import { isComplete, type Task, type TaskId } from './task'
 
 /** The gap left between neighbours whenever numbers are handed out. */
 export const ORDER_STEP = 1024
@@ -30,6 +35,32 @@ export function compareOrder(a: Task, b: Task): number {
 /** Returns a new list in order; the one passed in is never modified. */
 export function sortByOrder(tasks: readonly Task[]): Task[] {
   return [...tasks].sort(compareOrder)
+}
+
+/**
+ * The order a list draws: urgent still to do, then overdue still to do, then the
+ * rest still to do, then done. Within each band the stored order is kept. Sort
+ * is stable, so completing one, marking one urgent, or a day turning overdue
+ * does not shuffle the others inside their band.
+ *
+ * Returns a new list; the one passed in is never modified.
+ */
+export function sortForDisplay(tasks: readonly Task[], now: Date = new Date()): Task[] {
+  return sortByOrder(tasks).sort((a, b) => {
+    const aDone = isComplete(a, now)
+    const bDone = isComplete(b, now)
+    if (aDone !== bDone) return Number(aDone) - Number(bDone)
+
+    if (!aDone) {
+      if (a.urgent !== b.urgent) return Number(b.urgent) - Number(a.urgent)
+
+      const aOverdue = isOverdue(a, now)
+      const bOverdue = isOverdue(b, now)
+      if (aOverdue !== bOverdue) return Number(bOverdue) - Number(aOverdue)
+    }
+
+    return 0
+  })
 }
 
 /**

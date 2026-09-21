@@ -1,7 +1,7 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
 import type { Subtask, SubtaskId, Repeat } from '../../core'
 import { SubtaskDraft } from './SubtaskDraft'
-import { SubtaskItem } from './SubtaskItem'
+import { SubtaskItem, subtaskRow } from './SubtaskItem'
 
 interface SubtaskListProps {
   subtasks: readonly Subtask[]
@@ -150,8 +150,8 @@ export function SubtaskList({
         </ul>
       )}
 
-      <div className="flex items-center gap-2.5 py-1">
-        <span aria-hidden="true" className="w-5 shrink-0 text-center text-sm leading-none text-neutral-400 dark:text-neutral-500">
+      <div className={subtaskRow}>
+        <span aria-hidden="true" className="w-6 shrink-0 text-center text-sm leading-none text-neutral-400 md:w-5 dark:text-neutral-500">
           +
         </span>
 

@@ -5,9 +5,7 @@ import {
   isInInbox,
   isTagName,
   lastDayOf,
-  MONTH_SPANS,
   ROLLING_SPANS,
-  WEEK_SPANS,
   type CompletionSpans,
   type List,
   type ListId,
@@ -22,7 +20,7 @@ import {
  * task, the Inbox, one list's and the ones carrying a tag — and share everything
  * but which tasks they show, what a task added to them starts with and whether
  * their done tasks are divided by when they were finished. Habits,
- * rewards, the lists, the tags, the trash and settings are screens of their own.
+ * rewards, More, the lists, the tags, the trash and settings are screens of their own.
  *
  * "View" is this file's word for a screen. What the owner calls a **list** is
  * somewhere tasks are filed (`../core/list`), which is a different thing: Today
@@ -38,6 +36,7 @@ export type FixedView =
   | 'rewards'
   | 'lists'
   | 'tags'
+  | 'more'
   | 'trash'
   | 'settings'
 
@@ -59,7 +58,13 @@ export type TagView = `tag/${string}`
 export type View = FixedView | OneListView | TagView
 
 /** The views that show tasks: the box to add one, the rows, and the rail beside them. */
-export type TaskView = Exclude<View, 'habits' | 'rewards' | 'lists' | 'tags' | 'trash' | 'settings'>
+export type TaskView = Exclude<View, 'habits' | 'rewards' | 'lists' | 'tags' | 'more' | 'trash' | 'settings'>
+
+/**
+ * Pages reached from the phone's More tab, listed on More's own page. The sidebar
+ * still has an entry for each; More itself is a phone's alone.
+ */
+export const UNDER_MORE = ['tags', 'rewards'] as const satisfies readonly FixedView[]
 
 /** The views named after a period, which a phone keeps behind a single tab. */
 export type PeriodView = 'today' | 'week' | 'month'
@@ -93,12 +98,16 @@ export function tagView(tag: string): TagView {
 /**
  * Whether being on `view` is being somewhere under `menu` in the navigation: on
  * it, or on one of the screens opened from it — a list or the Inbox under Lists,
- * a tag's tasks under Tags.
+ * a tag's tasks under Tags, or Tags and Rewards under More.
  */
 export function isUnder(view: View, menu: View): boolean {
   if (view === menu) return true
   if (menu === 'lists') return isOneListView(view) || view === 'inbox'
-  return menu === 'tags' && isTagView(view)
+  if (menu === 'tags') return isTagView(view)
+  if (menu === 'more') {
+    return (UNDER_MORE as readonly View[]).includes(view) || isTagView(view)
+  }
+  return false
 }
 
 /** The list one list's view is of. */
@@ -132,14 +141,10 @@ export function showsTask(view: TaskView, task: Task, now: Date, lists: readonly
  * How the view divides its done tasks by when they were finished, or null for
  * one run of them. Tasks holds every done task there is, however long ago, and
  * one run of them would bury today's work under last month's, so it counts back
- * in rolling windows. Week and Month count their own calendar period, from
- * Monday and from the 1st. The others keep one run.
+ * in rolling windows. Everywhere else keeps one run.
  */
 export function doneSpans(view: TaskView): CompletionSpans | null {
-  if (view === 'tasks') return ROLLING_SPANS
-  if (view === 'week') return WEEK_SPANS
-  if (view === 'month') return MONTH_SPANS
-  return null
+  return view === 'tasks' ? ROLLING_SPANS : null
 }
 
 /** The day a task added to the view starts on: the last day of its period, if it has one. */
@@ -170,6 +175,7 @@ export const VIEW_LABELS: Record<FixedView, string> = {
   rewards: 'Rewards',
   lists: 'Lists',
   tags: 'Tags',
+  more: 'More',
   trash: 'Trash',
   settings: 'Settings',
 }

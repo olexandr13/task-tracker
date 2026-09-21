@@ -1,13 +1,10 @@
 import type { Task, TaskId } from '../../core'
 import { deleteControl } from '../rowControls'
-import { describeTimeLeft } from '../trashLabels'
 import { TrashIcon } from './TrashIcon'
 
 interface TrashListProps {
   /** Already filtered and ordered by `trashedTasks`: newest deletion first. */
   tasks: Task[]
-  /** The moment the list is drawn for; how long each task has left depends on it. */
-  now: Date
   onRestore: (id: TaskId) => void
   onPurge: (id: TaskId) => void
   onEmpty: () => void
@@ -19,7 +16,7 @@ const action = 'shrink-0 rounded-lg px-2 py-1 text-xs transition-colors'
  * What has been deleted and has not yet been cleared out. Everything here is
  * still recoverable, so the only irreversible controls are the two that say so.
  */
-export function TrashList({ tasks, now, onRestore, onPurge, onEmpty }: TrashListProps) {
+export function TrashList({ tasks, onRestore, onPurge, onEmpty }: TrashListProps) {
   if (tasks.length === 0) {
     return (
       <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">
@@ -57,10 +54,7 @@ export function TrashList({ tasks, now, onRestore, onPurge, onEmpty }: TrashList
           >
             <TrashIcon className="size-4 shrink-0 text-neutral-300 dark:text-neutral-600" />
 
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-neutral-500 dark:text-neutral-400">{task.title}</p>
-              <p className="text-xs text-neutral-400 dark:text-neutral-600">{describeTimeLeft(task, now)}</p>
-            </div>
+            <p className="min-w-0 flex-1 truncate text-neutral-500 dark:text-neutral-400">{task.title}</p>
 
             <button
               type="button"

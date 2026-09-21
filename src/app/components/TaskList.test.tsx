@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { completeTask, createTask, MONTH_SPANS, ROLLING_SPANS, WEEK_SPANS, type CompletionSpans, type Task } from '../../core'
+import { completeTask, createTask, ROLLING_SPANS, type CompletionSpans, type Task } from '../../core'
 import { TaskList } from './TaskList'
 
 /* What a list says around its tasks. TASK ids refer to wiki/tasks.md. */
@@ -30,6 +30,7 @@ function setup(tasks: Task[], doneSpans: CompletionSpans | null = null) {
       onSkipOccurrence={vi.fn()}
       onChangeRepeat={vi.fn()}
       onChangeReward={vi.fn()}
+      onChangeUrgent={vi.fn()}
       onChangeTimeGoal={vi.fn()}
       onLogTime={vi.fn()}
       onRemoveTimeEntry={vi.fn()}
@@ -81,23 +82,17 @@ describe('TaskList', () => {
     expect(within(screen.getByRole('region', { name: 'Done in the last 30 days' })).getByText('file')).toBeTruthy()
   })
 
-  it('divides a week’s done tasks from Monday, and a month’s from the 1st (TASK-59)', () => {
-    // Thursday 17 September 2026: this week began on Monday the 14th.
-    const monday = completeTask(createTask('read', null, NOW), new Date(2026, 8, 14, 18, 0))
-    const lastWeek = completeTask(createTask('write', null, NOW), new Date(2026, 8, 11, 18, 0))
-    setup([monday, lastWeek], WEEK_SPANS)
+  it('fades older done spans further back (TASK-65)', () => {
+    const today = completeTask(createTask('read', null, NOW), NOW)
+    const yesterday = completeTask(createTask('write', null, NOW), new Date(2026, 8, 16, 18, 0))
+    const lastWeek = completeTask(createTask('call', null, NOW), new Date(2026, 8, 12, 12, 0))
+    const lastMonth = completeTask(createTask('file', null, NOW), new Date(2026, 7, 25, 12, 0))
+    setup([today, yesterday, lastWeek, lastMonth], ROLLING_SPANS)
 
-    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
-      'Done this week1',
-      'Done earlier1',
-    ])
-    cleanup()
-
-    setup([monday, lastWeek], MONTH_SPANS)
-    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
-      'Done this week1',
-      'Done this month1',
-    ])
+    expect(screen.getByRole('region', { name: 'Done today' }).className).not.toMatch(/opacity-/)
+    expect(screen.getByRole('region', { name: 'Done yesterday' }).className).toMatch(/opacity-80/)
+    expect(screen.getByRole('region', { name: 'Done in the last 7 days' }).className).toMatch(/opacity-60/)
+    expect(screen.getByRole('region', { name: 'Done in the last 30 days' }).className).toMatch(/opacity-40/)
   })
 
   it('keeps one run of done tasks where the view does not divide them (TASK-56)', () => {

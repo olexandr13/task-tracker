@@ -14,7 +14,7 @@ export const IMPORT_OFFLINE = 'Importing needs a connection. Try again once you�
 export const IMPORT_FAILED = 'Couldn’t finish importing. Try again — anything already imported is left as it is.'
 
 export const BACKUP_FAILURES: Record<BackupFailure, string> = {
-  'not-a-backup': 'That file isn’t a Task Tracker backup.',
+  'not-a-backup': 'That file isn’t a PickMe backup.',
   'newer-version': 'That backup was made by a newer version of the app. Reload the page to update it, then try again.',
 }
 

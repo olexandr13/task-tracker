@@ -41,7 +41,7 @@ in. Both are on **Settings**, under the account (UI-35).
   saved data is (STORE-6). A record in the file the app cannot read is left out and counted; the
   rest are still imported.
 - **BAK-9** A file that is not a backup — not JSON, not marked as a backup of this app, or missing a
-  kind of record — is turned away with **That file isn’t a Task Tracker backup.**, and nothing is
+  kind of record — is turned away with **That file isn’t a PickMe backup.**, and nothing is
   changed. A backup made by a **newer** version of the app is turned away too, saying to reload the
   page to update and try again.
 - **BAK-10** Afterwards the page says what came of it: what was imported, how many records were

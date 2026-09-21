@@ -24,14 +24,14 @@ it is deleted, whether or not a task carries it.
 ## Tagging a task
 
 - **TAG-7** A task is tagged from **its menu** — a right-click on the row, or a finger's hold or
-  second tap (UI-31, UI-44). **Tags**, under
-  Duplicate and marked with the `#` glyph, opens the **tag panel** where the menu was: a box to find or add a tag, with the caret
-  already in it, over every tag there is, the task's own ticked. Clicking a tag puts it on or takes
-  it off. Enter in the box puts on the tag it names, making it first when there is none. The panel
-  stays open for the next one, and closes as the other pickers do (UI-9, UI-10), giving focus back
-  where it was. The row stays as it was, at rest or awake, and is marked while the panel is open,
-  as for the menu. The row's line has **no tag button**, and no tags either: they are spelled out
-  on its line of details (TAG-12).
+  second tap (UI-31, UI-44) — and from a **tag button on the woken wide-screen row** (UI-53).
+  **Tags**, under Duplicate and marked with the `#` glyph, opens the **tag panel** where the menu
+  was: a box to find or add a tag, with the caret already in it, over every tag there is, the
+  task's own ticked. Clicking a tag puts it on or takes it off. Enter in the box puts on the tag
+  it names, making it first when there is none. The panel stays open for the next one, and closes
+  as the other pickers do (UI-9, UI-10), giving focus back where it was. The row stays as it was,
+  at rest or awake, and is marked while the panel is open, as for the menu. The resting row's line
+  has **no tag button**, and no tags either: they are spelled out on its line of details (TAG-12).
 - **TAG-8** **Typing `#` in a description** offers tags at the caret, narrowed as a name is typed
   after it. The arrow keys move between them; Enter, Tab or a click chooses one. Choosing **takes
   the `#name` out of the text** and puts the tag on the task: a tag is something the task carries,
@@ -59,7 +59,7 @@ it is deleted, whether or not a task carries it.
 
 - **TAG-13** Every tag has **a list of its own**, opened from the Tags page (TAG-18): the live
   tasks carrying it, in any case. It shows what Tasks shows otherwise (LIST-7) — the same rows,
-  done tasks sinking, dragging, the rail — headed with the tag's name, and **Tags** stays marked in
+  urgent floating, overdue next, done sinking, dragging, the rail — headed with the tag's name, and **Tags** stays marked in
   the sidebar while it is open. It is in the address as `#/tag/name` (UI-36), so it survives a
   reload even when no task carries the tag, when it says there is nothing tagged yet.
 - **TAG-14** A task added in a tag's list **carries that tag**, and has no day, as in Tasks.
@@ -88,10 +88,10 @@ it is deleted, whether or not a task carries it.
 
 ## On a phone
 
-- **TAG-16** On a phone the woken row has a **tag button** as well, on a line of its own under the
-  description, naming the task's tags — or offering to add one — and opening the same panel (TAG-7)
-  under it, a tap away rather than a menu away (UI-44).
-- **TAG-17** On a phone the Tags page is reached from the **More** tab's menu (UI-45). More stays
+- **TAG-16** On a phone the sheet a tap opens (UI-48) has a **tag button**, naming the task's tags
+  — or offering to add one — and opening the same panel (TAG-7) under it, a tap away rather than a
+  menu away (UI-44). A resting row still shows the tag mark when the task carries any (UI-50).
+- **TAG-17** On a phone the Tags page is reached from the **More** page's list (UI-45). More stays
   marked in the bottom bar while the Tags page or a tag's list is open.
 
 ---
@@ -99,9 +99,9 @@ it is deleted, whether or not a task carries it.
 **Where it lives:** `src/core/tag.ts` (names, the kept tag, putting on and taking off, deleting,
 every tag there is, matching and suggesting, the tag being typed), `src/app/useTags.ts` (keeping tags,
 and keeping the ones tasks carry; saving: [Storage](storage.md)),
-`src/app/components/TagPanel.tsx` (the panel), `src/app/components/TagPicker.tsx` (the phone's
-button), `src/app/components/TaskDescription.tsx` and `src/app/descriptionBox.ts` (typing `#`),
-`src/app/components/TaskItem.tsx` (labels on the line of details, the menu's Tags and the phone's button), `src/app/components/TagList.tsx`
+`src/app/components/TagPanel.tsx` (the panel), `src/app/components/TagPicker.tsx` (the woken row's
+and the phone's button), `src/app/components/TaskDescription.tsx` and `src/app/descriptionBox.ts` (typing `#`),
+`src/app/components/TaskItem.tsx` (labels on the line of details, the menu's Tags, the woken strip and the phone's sheet), `src/app/components/TaskSheet.tsx`, `src/app/components/TagList.tsx`
 (the Tags page and its box), `src/app/view.ts` (the Tags page and a tag's list, their addresses and what they say), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx`,
 `src/app/components/SideNav.tsx`, `src/app/components/BottomNav.tsx`, `src/app/components/TagIcon.tsx`.
 **Tested in:** `src/core/tag.test.ts`, `src/app/useTags.test.ts` (keeping tags), `src/app/components/TagPicker.test.tsx`,

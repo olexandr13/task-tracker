@@ -98,7 +98,7 @@ export function TagList({ tags, onOpen, onAdd, onDelete }: TagListProps) {
 
       {tags.length === 0 ? (
         <p className="py-6 text-center text-neutral-400 dark:text-neutral-600">
-          No tags yet. Name one above, tag a task from its menu — right-click it, or open it on a phone — or type #
+          No tags yet. Name one above, tag a task from its menu — right-click it, or open its sheet on a phone — or type #
           in its description.
         </p>
       ) : (

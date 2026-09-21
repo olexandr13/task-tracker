@@ -16,9 +16,9 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 ## A habit's card
 
 - **HAB-4** Each habit has a box to tick **today** off, and to take today back. It is the task's
-  own box, so it does the same as ticking the task off in a list, checklist and all (CHK), and
-  the lists show the change. A habit with a time goal has its clock on the card's line too, and its
-  box invites a tick once today's time is in (TIME-13).
+  own box (UI-47), so it does the same as ticking the task off in a list, checklist and all (CHK),
+  and the lists show the change. A habit with a time goal has its clock on the card's line too, and
+  its box invites a tick once today's time is in (TIME-13).
 - **HAB-5** **Current streak**: the days in a row it was done, counting back from today. While
   today is still to do, the count starts from yesterday instead: today is still in play until it
   is over, so it breaks nothing yet. A day that went by without it ends the streak. The flame
@@ -34,8 +34,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   about four months.
 - **HAB-10** A day in the grid is **done** (green), **missed** (a darker gap), **not tracked** (a
   pale square, before the task was created) or **today still to do** (an outlined square). Days after
-  today are left empty. A legend at the top of the page names the shades, beside a line saying a day
-  can be clicked (on a phone: that a habit is tapped to see its days, HAB-21). Pointing at a day shows its date and what it was: `Wed, Sep 16 · Done`.
+  today are left empty. A legend below the explanatory line at the top of the page names the shades.
+  A day can be clicked (on a folded card: that a habit is tapped to see its days, HAB-21). Pointing at a day shows its date and what it was: `Wed, Sep 16 · Done`.
 - **HAB-11** A screen reader hears the numbers as text, and the grid as a group of day buttons,
   named for how many days of the year shown were done. Each day is heard by its date and what it
   was, and as pressed when it was done.
@@ -74,18 +74,25 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   becomes the completion, stamped at the start of that day. Taking back the day of the last
   completion falls back to the latest day before it, or to no completion if none is left.
 
-## On a phone
+## The record
 
-- **HAB-21** Below `md` (UI-4) a card starts **folded**: the box for today (HAB-4), the title, a
-  timed habit's clock (TIME-13), and the current streak as a flame and a number. **Tapping the
-  card's line** — anywhere on it but the box and the clock — unfolds the numbers (HAB-5 to HAB-8) and the grid (HAB-9) beneath it, and tapping it again
-  folds them away. A chevron at the end of the line points down while folded and up while open.
-  Open, the line drops its streak, which the numbers below already give. A list of year-long grids
-  is a long way to scroll for a box to tick, and ticking is what the page is visited for.
+- **HAB-21** A card starts **folded**, unless Show habit details by default is on (HAB-23): the box
+  for today (HAB-4), the title, a timed habit's clock (TIME-13), and the current streak as a flame
+  and a number. **Tapping the card's line** — anywhere on it but the box and the clock — unfolds the
+  numbers (HAB-5 to HAB-8) and the grid (HAB-9) beneath it, and tapping it again folds them away. A
+  chevron at the end of the line points down while folded and up while open. Open, the line drops
+  its streak, which the numbers below already give. A list of year-long grids is a long way to
+  scroll for a box to tick, and ticking is what the page is visited for.
 - **HAB-22** Ticking the box never unfolds a card. Each card folds on its own, so opening one never
-  moves one being reached for, and a card starts folded again when the page is next opened. A screen
-  reader hears the fold as a button named for its habit (`Record of "stretch"`), reporting whether
-  it is open. On a wide screen every card is always open, and there is nothing to fold.
+  moves one being reached for, and a card starts in the default again when the page is next opened.
+  A screen reader hears the fold as a button named for its habit (`Record of "stretch"`), reporting
+  whether it is open.
+- **HAB-23** Habits has a **View** button beside the add box, the same shape as the task views'
+  (UI-41, UI-46). **Show habit details by default** starts each card open, showing its numbers and
+  grid (HAB-21). Off, every card starts folded. The change is shown at once — every card resets to
+  the default — and is kept on this device (STORE-36). Off is how the page starts.
+- **HAB-24** The Habits page has the add box, starting on a **daily** rule, so a habit can be made
+  there. Enter adds it unless another rule is chosen first. After adding, the box is daily again.
 
 ---
 
@@ -93,6 +100,9 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 `src/core/task.ts` (`doneDays`, kept in step by `settleHistory`), `src/app/components/HabitList.tsx`
 (the page and its cards, and a timed habit's clock — see [Time goals](time-goals.md)), `src/app/components/HabitGrid.tsx`, `src/app/components/ChevronIcon.tsx`, `src/app/habitLabels.ts` (wording),
 `src/app/habitTones.ts` (the shades), `src/app/components/FlameIcon.tsx`, `src/app/useTasks.ts`
-(`setHabitDay`).
+(`setHabitDay`), `src/app/components/AddTaskForm.tsx` (the add box, starting daily),
+`src/app/components/HabitViewOptionsMenu.tsx` and `src/app/useHabitViewOptions.ts`
+(the View button and whether cards start folded).
 **Tested in:** `src/core/habit.test.ts`, `src/core/task.test.ts`,
-`src/app/components/HabitList.test.tsx`.
+`src/app/components/HabitList.test.tsx`, `src/app/components/HabitViewOptionsMenu.test.tsx`,
+`src/app/components/AddTaskForm.test.tsx`.

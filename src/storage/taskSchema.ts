@@ -6,10 +6,19 @@ import { isRecord } from './plainData'
  * changes, and add a step below: storing the version means old saved data can be
  * upgraded rather than silently breaking.
  */
-export const SCHEMA_VERSION = 13
+export const SCHEMA_VERSION = 15
+
+/**
+ * Version 14 ranked urgency as low, medium or high (or none). Today's shape is a
+ * single urgent mark: high becomes urgent, everything else does not.
+ */
+type TaskV14 = Omit<Task, 'urgent'> & { readonly priority: 'low' | 'medium' | 'high' | null }
+
+/** Version 13 had no priority and no urgent mark: a task was no more urgent than any other. */
+type TaskV13 = Omit<TaskV14, 'priority'>
 
 /** Version 12 had no skipping: an occurrence was done or missed, nothing between. */
-type TaskV12 = Omit<Task, 'skippedDays'>
+type TaskV12 = Omit<TaskV13, 'skippedDays'>
 
 /** Version 11 had no time goals: a task was done or not, however long it took. */
 type TaskV11 = Omit<TaskV12, 'timeGoal' | 'timeLog'>
@@ -44,8 +53,17 @@ type TaskV2 = Omit<TaskV3, 'deletedAt'>
 /** Version 1 knew nothing about repeating either: every task happened once. */
 type TaskV1 = Omit<TaskV2, 'repeat'>
 
+function fromV14(task: TaskV14): Task {
+  const { priority, ...rest } = task
+  return { ...rest, urgent: priority === 'high' }
+}
+
+function fromV13(task: TaskV13): Task {
+  return fromV14({ ...task, priority: null })
+}
+
 function fromV12(task: TaskV12): Task {
-  return { ...task, skippedDays: [] }
+  return fromV13({ ...task, skippedDays: [] })
 }
 
 function fromV11(task: TaskV11): Task {
@@ -137,6 +155,10 @@ export function migrateTasks(version: unknown, tasks: unknown): Task[] | null {
       return (tasks as TaskV11[]).map(fromV11)
     case 12:
       return (tasks as TaskV12[]).map(fromV12)
+    case 13:
+      return (tasks as TaskV13[]).map(fromV13)
+    case 14:
+      return (tasks as TaskV14[]).map(fromV14)
     case SCHEMA_VERSION:
       return tasks as Task[]
     default:

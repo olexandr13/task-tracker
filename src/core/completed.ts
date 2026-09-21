@@ -4,20 +4,17 @@
  * the owner's calendar the way due dates do — and a page left open overnight
  * moves yesterday's work along on its next render without anything rewriting it.
  *
- * Which spans a list is divided into is the list's to choose: rolling ones for
- * every done task there is, calendar ones for a week's or a month's.
+ * Tasks uses these; other views keep one run of done work.
  */
 
 import { offsetDay, toLocalDay, type LocalDay } from './day'
-import { periodRange } from './progress'
 import { isComplete, type Task } from './task'
 
 /**
- * Today, yesterday, the rest of this week (from Monday) or of the seven days to
- * today, the rest of this month (from the 1st) or of the thirty days, and
- * anything before.
+ * Today, yesterday, the rest of the seven days to today, the rest of the thirty
+ * days, and anything before.
  */
-export type CompletionSpan = 'today' | 'yesterday' | 'thisWeek' | 'last7Days' | 'thisMonth' | 'last30Days' | 'earlier'
+export type CompletionSpan = 'today' | 'yesterday' | 'last7Days' | 'last30Days' | 'earlier'
 
 /** A span with a first day. `earlier` has none: it holds whatever the others leave. */
 export type BoundedSpan = Exclude<CompletionSpan, 'earlier'>
@@ -31,12 +28,6 @@ export type CompletionSpans = readonly BoundedSpan[]
 
 /** For every done task there is: windows rolling back from today. */
 export const ROLLING_SPANS: CompletionSpans = ['today', 'yesterday', 'last7Days', 'last30Days']
-
-/** For this week's done tasks: the calendar week, Monday to Sunday, as the bars count it. */
-export const WEEK_SPANS: CompletionSpans = ['today', 'yesterday', 'thisWeek']
-
-/** For this month's done tasks: this week, then the calendar month from the 1st. */
-export const MONTH_SPANS: CompletionSpans = ['today', 'yesterday', 'thisWeek', 'thisMonth']
 
 /**
  * Which of `spans` the task was finished in — `earlier` when before all of them —
@@ -55,11 +46,7 @@ export function completionSpan(task: Task, spans: CompletionSpans, now: Date = n
   return spans.find((span) => day >= firstDayOf(span, now)) ?? 'earlier'
 }
 
-/**
- * The day a span starts on. A calendar span can start before the one after it
- * in a list — on a Tuesday, yesterday is this week's Monday; early in a month,
- * this week began in the last one — and is then simply empty.
- */
+/** The day a span starts on. */
 function firstDayOf(span: BoundedSpan, now: Date): LocalDay {
   const today = toLocalDay(now)
 
@@ -68,12 +55,8 @@ function firstDayOf(span: BoundedSpan, now: Date): LocalDay {
       return today
     case 'yesterday':
       return offsetDay(today, -1)
-    case 'thisWeek':
-      return toLocalDay(periodRange('week', now).start)
     case 'last7Days':
       return offsetDay(today, -6)
-    case 'thisMonth':
-      return toLocalDay(periodRange('month', now).start)
     case 'last30Days':
       return offsetDay(today, -29)
   }

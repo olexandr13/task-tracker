@@ -49,7 +49,6 @@ const menu = () => screen.queryByRole('menu', { name: 'Period' })
 const tasksTab = () => screen.getByRole('button', { name: 'Tasks' })
 const tasksMenu = () => screen.queryByRole('menu', { name: 'Tasks' })
 const moreTab = () => screen.getByRole('button', { name: 'More' })
-const moreMenu = () => screen.queryByRole('menu', { name: 'More' })
 
 async function hold(user: ReturnType<typeof userEvent.setup>, target: HTMLElement, ms: number) {
   await user.pointer({ keys: '[TouchA>]', target })
@@ -234,6 +233,19 @@ describe('the Tasks tab', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
+  it('makes its menu items large enough for a finger, the lists under Lists included (UI-49)', async () => {
+    const { user } = setup('tasks', LISTS)
+
+    await user.click(tasksTab())
+
+    const lists = screen.getByRole('menuitem', { name: 'Lists' })
+    const inbox = screen.getByRole('menuitem', { name: 'Inbox' })
+    expect(lists.className).toContain('min-h-14')
+    expect(lists.className).toContain('text-lg')
+    expect(inbox.className).toContain('min-h-14')
+    expect(inbox.className).toContain('pl-[3.125rem]')
+  })
+
   it('closes its menu on a tap on Tasks, from anywhere it was opened (UI-43)', async () => {
     const { user, onChange } = setup('habits')
 
@@ -280,59 +292,18 @@ describe('the Tasks tab', () => {
 })
 
 describe('the More tab', () => {
-  it('opens its menu on a tap from anywhere, having no page of its own: the tags and the rewards (UI-45)', async () => {
-    for (const view of ['today', 'tags'] as const) {
+  it('goes to More on a tap from anywhere, Tags and Rewards included (UI-45)', async () => {
+    for (const view of ['today', 'tags', 'rewards'] as const) {
       const { user, onChange } = setup(view)
-
       await user.click(moreTab())
-
-      const items = within(moreMenu() as HTMLElement).getAllByRole('menuitem').map((item) => item.textContent)
-      expect(items).toEqual(['Tags', 'Rewards'])
-      expect(onChange).not.toHaveBeenCalled()
+      expect(onChange).toHaveBeenCalledExactlyOnceWith('more')
       cleanup()
     }
   })
 
-  it('closes its menu on a tap on More, rather than opening it again (UI-45)', async () => {
-    const { user } = setup('habits')
+  it('keeps More marked while its own page is open (UI-45)', () => {
+    setup('more')
 
-    await user.click(moreTab())
-    await user.click(moreTab())
-
-    expect(moreMenu()).toBeNull()
-  })
-
-  it('opens its menu when held (UI-45)', async () => {
-    const { user, onChange } = setup('habits')
-
-    await hold(user, moreTab(), LONG_PRESS_MS)
-
-    expect(moreMenu()).not.toBeNull()
-    expect(onChange).not.toHaveBeenCalled()
-  })
-
-  it('opens its menu on a tap on More while the Tasks menu is open, closing that one (UI-45)', async () => {
-    const { user } = setup('tasks')
-
-    await user.click(tasksTab())
-    await user.click(moreTab())
-
-    expect(tasksMenu()).toBeNull()
-    expect(moreMenu()).not.toBeNull()
-  })
-
-  it('goes where the menu says and closes it (UI-45)', async () => {
-    const { user, onChange } = setup('today')
-
-    await user.click(moreTab())
-    await user.click(screen.getByRole('menuitem', { name: 'Tags' }))
-
-    expect(onChange).toHaveBeenCalledExactlyOnceWith('tags')
-    expect(moreMenu()).toBeNull()
-
-    await user.click(moreTab())
-    await user.click(screen.getByRole('menuitem', { name: 'Rewards' }))
-
-    expect(onChange).toHaveBeenLastCalledWith('rewards')
+    expect(moreTab().getAttribute('aria-current')).toBe('page')
   })
 })

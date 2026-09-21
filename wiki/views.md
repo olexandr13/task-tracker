@@ -28,10 +28,10 @@ requirements were written with, so older references to them still mean what they
 - **LIST-5** A task with no day is never in Today, however recently it was touched.
 - **LIST-6** A task added in Today is **due today**, unless another day or a repeat rule is chosen
   for it before Enter.
-- **LIST-7** Otherwise Today shows what Tasks shows: the same rows, done tasks sinking to the
-  bottom — in one run, where Tasks, Week and Month divide them by when they were finished (TASK-56,
-  TASK-59) — dragging to reorder — which moves the task everywhere else too — and the same rail, whose
-  bars count every task rather than only today's.
+- **LIST-7** Otherwise Today shows what Tasks shows: the same rows, urgent floating to the top,
+  overdue next, and done sinking to the bottom (TASK-17) — in one run, where Tasks divides them by when they were
+  finished (TASK-56) — dragging to reorder — which moves the task everywhere else too — and the
+  same rail, whose bars count every task rather than only today's.
 - **LIST-8** An empty Today greets a fresh day and says to add a task above. Once everything in it
   is done, it praises the day's work instead (TASK-50).
 - **LIST-9** Nothing moves at midnight. What is in Today follows from the day it is, so a page left
@@ -50,8 +50,8 @@ requirements were written with, so older references to them still mean what they
 - **LIST-13** A task with no day is never in Week.
 - **LIST-14** A task added in Week is **due this Sunday**, the day the week closes, unless another
   day or a repeat rule is chosen for it before Enter.
-- **LIST-15** Otherwise Week is the same list as Today (LIST-7): the same rows, order and rail, bar
-  its done tasks, divided into done today, yesterday and this week (TASK-59). An empty Week says nothing is due this week yet; once everything in it is done, it praises the week.
+- **LIST-15** Otherwise Week is the same list as Today (LIST-7): the same rows, order and rail. An
+  empty Week says nothing is due this week yet; once everything in it is done, it praises the week.
 - **LIST-16** Nothing moves at the turn of the week either: on Monday the list is the new week's on
   its next render.
 
@@ -65,15 +65,13 @@ requirements were written with, so older references to them still mean what they
   or was overdue and finished this month.
 - **LIST-19** A task added in Month is **due on the month's last day**, unless another day or a
   repeat rule is chosen for it before Enter.
-- **LIST-20** Otherwise Month is the same list as Today (LIST-7), its done tasks divided as Week's
-  plus done this month (TASK-59), says nothing is due this month yet
+- **LIST-20** Otherwise Month is the same list as Today (LIST-7), says nothing is due this month yet
   when empty and praises the month once everything in it is done. On the 1st the list is the new
   month's on its next render.
 
 ---
 
 **Where it lives:** `src/core/due.ts` (`isInPeriod`, `lastDayOf`), `src/app/view.ts` (the
-views, their names, what each says when empty, which tasks it shows, how it divides its done ones and
-the day it gives new ones),
+views, their names, what each says when empty, which tasks it shows and the day it gives new ones),
 `src/app/TasksScreen.tsx`, `src/app/components/SideNav.tsx`, `src/app/components/BottomNav.tsx`.
 **Tested in:** `src/core/due.test.ts`, `src/app/components/AddTaskForm.test.tsx`.

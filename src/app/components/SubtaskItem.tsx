@@ -24,7 +24,9 @@ interface SubtaskItemProps {
 
 /** Smaller than the task's own box, so the two never read as the same rank. */
 export const subtaskCheckbox =
-  'grid size-5 shrink-0 place-items-center rounded border-2 text-xs leading-none transition-colors'
+  'grid size-6 shrink-0 place-items-center rounded-md border-2 text-xs leading-none transition-colors md:size-5 md:rounded'
+
+export const subtaskRow = 'flex items-center gap-2.5 py-1.5 md:py-1'
 
 export const subtaskTitleBox = 'min-w-0 flex-1 text-left text-sm'
 
@@ -101,7 +103,7 @@ export function SubtaskItem({
   }
 
   return (
-    <li className="flex items-center gap-2.5 py-1">
+    <li className={subtaskRow}>
       <button
         type="button"
         onClick={() => { onSetDone(subtask.id, !done) }}

@@ -46,6 +46,9 @@ export async function importLocalTasks(repository: TaskRepository): Promise<void
   }
 
   if (tasks.length > 0) {
+    // Asking the account what it already has needs the server (STORE-19). Offline
+    // that wait is a hang; leave them here for the next open with a connection.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return
     await repository.importTasks(tasks)
   }
   localStorage.removeItem(STORAGE_KEY)

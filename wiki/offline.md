@@ -50,7 +50,7 @@ reaches the account by itself once there is a connection again.
 - **OFF-10** The app can be **installed**: added to a phone's home screen (Share → Add to Home
   Screen on an iPhone, the install prompt or menu item on Android), or installed from a desktop
   browser. Installed, it opens in a window of its own without the browser's address bar, under the
-  name **Tasks**, with the progress-ring icon (UI-39) — its dark tile filling whatever shape the
+  name **PickMe**, with the progress-ring icon (UI-39) — its dark tile filling whatever shape the
   phone gives icons. The bar at the top of the screen matches the page, light or dark (UI-11).
 - **OFF-11** On an iPhone, an app added to the home screen keeps its **own** session and offline
   copy, apart from Safari's. It needs signing into once, with a connection, like a new device.
@@ -60,8 +60,9 @@ reaches the account by itself once there is a connection again.
 **Where it lives:** `vite.config.ts` (the service worker that keeps the app, and the install
 manifest), `index.html` (the phone icon and the top bar's colour), `public/` (the icons),
 `src/storage/syncMonitor.ts` (the interface), `firestoreSyncMonitor.ts` (reading it from Firestore),
-`firestoreAccount.ts` (every collection the account keeps), `src/app/syncNotice.ts` (what is said
-when), `src/app/useSyncNotice.ts` (its clocks), `src/app/components/SyncBadge.tsx`,
-`src/app/TasksScreen.tsx` (where it sits).
+`firestoreAccount.ts` (every collection the account keeps), `firebaseApp.ts` (the copy of the
+account the browser keeps), `failFastAuthFetch.ts` (so start-up does not wait on Google),
+`src/app/syncNotice.ts` (what is said when), `src/app/useSyncNotice.ts` (its clocks),
+`src/app/components/SyncBadge.tsx`, `src/app/TasksScreen.tsx` (where it sits).
 **Tested in:** `src/app/syncNotice.test.ts` (what is said when), `src/app/useSyncNotice.test.ts` (the
-two clocks).
+two clocks), `src/storage/failFastAuthFetch.test.ts`.

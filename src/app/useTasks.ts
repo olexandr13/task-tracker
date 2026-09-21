@@ -32,6 +32,7 @@ import {
   setReward,
   setSubtaskDone,
   setTimeGoal,
+  setUrgent,
   skipOccurrence,
   tagsInUse,
   uncompleteTask,
@@ -192,6 +193,14 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
   const changeReward = useCallback(
     (id: TaskId, reward: number | null) => {
       apply((current) => current.map((task) => (task.id === id ? setReward(task, reward) : task)))
+    },
+    [apply],
+  )
+
+  /** Marks a task urgent, or clears the mark. */
+  const changeUrgent = useCallback(
+    (id: TaskId, urgent: boolean) => {
+      apply((current) => current.map((task) => (task.id === id ? setUrgent(task, urgent) : task)))
     },
     [apply],
   )
@@ -368,6 +377,7 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
     skip,
     changeRepeat,
     changeReward,
+    changeUrgent,
     changeTimeGoal,
     logTaskTime,
     removeTaskTime,

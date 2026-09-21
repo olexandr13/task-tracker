@@ -91,6 +91,12 @@ export interface Task {
    */
   readonly reward: number | null
   /**
+   * Whether the task is marked urgent. False for every task until it is marked.
+   * An open urgent task floats to the top of the list; see ./urgent and
+   * `sortForDisplay` in ./order.
+   */
+  readonly urgent: boolean
+  /**
    * The minutes the task asks for, or null for a task that is not an amount of
    * time — which is most of them. Reaching it says the task is ready to be
    * ticked off; it never ticks it. See ./timeLog.
@@ -109,8 +115,9 @@ export interface Task {
    */
   readonly deletedAt: string | null
   /**
-   * Where the task sits in the list: lower comes first. Done tasks still sink
-   * below the rest; this orders each group. See ./order.
+   * Where the task sits in the list: lower comes first. Overdue tasks still
+   * float above the rest and done ones sink below; this orders each band. See
+   * ./order.
    */
   readonly order: number
 }
@@ -144,6 +151,7 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
     tags: [],
     listId: null,
     reward: null,
+    urgent: false,
     timeGoal: null,
     timeLog: [],
     deletedAt: null,
@@ -153,10 +161,10 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
 
 /**
  * A new task carrying what this one says — title, description, rule, due date,
- * checklist, tags, reward, time goal — and none of what has happened to it. It
- * is not done, its checklist is unticked, it has no time logged, a repeating one
- * has no history, and it is not in the trash: a copy is another go at the same
- * thing, not a second record of the first.
+ * checklist, tags, reward, urgent, time goal — and none of what has happened
+ * to it. It is not done, its checklist is unticked, it has no time logged, a
+ * repeating one has no history, and it is not in the trash: a copy is another go
+ * at the same thing, not a second record of the first.
  *
  * Its place in the list is the caller's to give, as with `createTask`; see
  * `insertTask` in ./order. Returns a new task; the one passed in is never modified.

@@ -28,6 +28,12 @@ const foldButton = () => screen.getByRole('button', { name: 'Show lists' })
 const marked = () => screen.getAllByRole('button').filter((button) => button.getAttribute('aria-current') === 'page')
 
 describe('SideNav', () => {
+  it('opens with the app\'s mark above the views (UI-52)', () => {
+    setup('today')
+
+    expect(screen.getByText('PickMe')).toBeTruthy()
+  })
+
   it('carries Lists, Rewards and Tags beside Tasks and Habits, and no entry for any one tag (UI-30, TAG-18, RWD-19, LST-13)', () => {
     setup('today')
 

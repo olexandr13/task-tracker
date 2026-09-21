@@ -21,13 +21,16 @@ in which it can be fetched out of the trash.
 - **TRASH-6** The trash is its own view, reached from the navigation — on a phone, from the foot
   of Tasks or the Tasks tab's menu (UI-34, UI-43) — listing what has been deleted
   and not yet cleared out — most recently deleted first.
-- **TRASH-7** Each row shows the title and how long the task has left before it goes for good.
+- **TRASH-7** Each row shows the title, with Restore and a way to delete it for good. It does not
+  count down how long the task has left: the page already says deleted tasks are kept for a day
+  (TRASH-11, TRASH-12).
 - **TRASH-8** **Restore** takes the task back out, exactly as it was — same id, same completion
   record, and a repeating task comes back on the same occurrence it left on.
 - **TRASH-9** A single task can be deleted for good from its row, with nothing left to restore.
 - **TRASH-10** **Empty trash** clears everything at once, and asks first: it is the one action that
   cannot be undone from the screen it happens on.
-- **TRASH-11** An empty trash says so, and says how long deleted tasks are kept.
+- **TRASH-11** The trash says deleted tasks are kept for a day — at the top while there are any, and
+  in the empty state when there are none.
 
 ## Retention
 
@@ -36,13 +39,10 @@ in which it can be fetched out of the trash.
   deleted and the moment being asked about, the same trick the repeat rules use.
 - **TRASH-14** An expired task stops appearing the moment it is out of date, even where storage
   still holds it, and leaves storage the next time the list is loaded or written.
-- **TRASH-15** Time left reads in whole hours while there is more than one to go and in minutes
-  below that — never "0 minutes" while there is time left, and "Going now" once there is not. An
-  exact countdown would be noise on something that lasts a day.
 
 ---
 
 **Where it lives:** `src/core/trash.ts` (retention and expiry), `src/core/task.ts` (`deleteTask`,
-`restoreTask`), `src/app/trashLabels.ts` (wording), `src/app/components/TrashList.tsx`,
+`restoreTask`), `src/app/components/TrashList.tsx`,
 `UndoToast.tsx`, `src/app/useUndoToast.ts`, `src/app/useTasks.ts` (purging on load and on write).
 **Tested in:** `src/core/trash.test.ts`, `src/core/task.test.ts`.

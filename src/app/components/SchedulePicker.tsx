@@ -39,6 +39,8 @@ interface SchedulePickerProps {
    * is the icon alone, still tinted, with them as its name and tooltip.
    */
   showSummary?: boolean
+  /** Which edge of the button the panel lines up with: the one nearer the middle of the screen. */
+  align?: 'left' | 'right'
 }
 
 /**
@@ -59,6 +61,7 @@ export function SchedulePicker({
   overdue = false,
   label = 'Schedule',
   showSummary = false,
+  align = 'right',
 }: SchedulePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -118,7 +121,7 @@ export function SchedulePicker({
         <div
           role="dialog"
           aria-label={label}
-          className="absolute right-0 z-10 mt-1.5 flex w-64 flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1 shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
+          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-64 flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1 shadow-xl dark:border-neutral-700 dark:bg-neutral-900`}
         >
           <DueChoices
             dueDate={dueDate}

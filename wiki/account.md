@@ -24,9 +24,11 @@ Who the app belongs to. Nothing is shown without an account, and the only way to
 - **AUTH-8** While the remembered session is being read back at start-up, the screen stays blank
   rather than flashing the sign-in screen at someone who is already signed in.
 - **AUTH-14** Start-up never waits on the network: the session is read back from the device alone,
-  so the blank moment of AUTH-8 is gone at once on a slow or unreliable connection too, and an
-  installed app never sits on its splash screen. What Google's sign-in window needs is fetched only
-  when **Continue with Google** is pressed, which can make the window take a moment to open.
+  so the blank moment of AUTH-8 is gone at once with no connection, on a slow one, or on an
+  unreliable one, and an installed app never sits on its splash screen. Google is asked in the
+  background whether the session is still valid; if there is no answer the saved session is used.
+  What Google's sign-in window needs is fetched only when **Continue with Google** is pressed, which
+  can make the window take a moment to open.
 
 ## The account on Settings
 
@@ -51,7 +53,9 @@ Who the app belongs to. Nothing is shown without an account, and the only way to
 
 **Where it lives:** `src/storage/authService.ts` (the interface), `firebaseAuthService.ts` and
 `firebaseApp.ts` (Google sign-in through Firebase, and the project it signs in to),
+`failFastAuthFetch.ts` (so start-up does not wait on Google when there is no connection),
 `src/app/App.tsx` (nothing without an account), `src/app/useAuth.ts`,
 `src/app/components/SignInScreen.tsx`, `AccountCard.tsx` (the account on Settings). The project itself: `firebase.json`,
 `.firebaserc`, `firestore.rules`; its settings: `.env.example`.
-**Tested in:** `src/app/components/SignInScreen.test.tsx`, `src/app/components/AccountCard.test.tsx`.
+**Tested in:** `src/app/useAuth.test.ts`, `src/app/components/SignInScreen.test.tsx`,
+`src/app/components/AccountCard.test.tsx`, `src/storage/failFastAuthFetch.test.ts`.

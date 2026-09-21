@@ -58,6 +58,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
     },
 
     async importAll(incoming, now) {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new NeedsConnectionError()
       const [savedTasks, savedLists, savedDays, savedRedemptions] = await fromServer([tasks, lists, days, redemptions])
       const known: KnownRecords = {
         taskIds: ids(savedTasks),

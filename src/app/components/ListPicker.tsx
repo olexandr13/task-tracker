@@ -21,9 +21,10 @@ interface ListPickerProps {
 }
 
 /**
- * Where a task is filed, on a phone: a small button on the woken row that opens
- * a panel listing the Inbox and every list, the task's own marked. A wide screen
- * files a task from its menu instead (TaskItem), a phone having no right-click.
+ * Where a task is filed: a small button that opens a panel listing the Inbox
+ * and every list, the task's own marked. On a wide screen it sits on the woken
+ * row (and the task's menu still files the same way); on a phone it is on the
+ * sheet, a phone having no right-click.
  *
  * The same shape as the pickers beside it, and like them there is nothing to
  * confirm. Unlike the tag picker it **closes on a choice**: a task is in one

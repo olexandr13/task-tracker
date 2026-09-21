@@ -1,4 +1,4 @@
-/** Three dots: the phone bar's More tab, holding the pages it has no tab of their own for. */
+/** Three dots: the phone bar's More tab and its page of screens with no tab of their own. */
 export function MoreIcon({ className }: { className?: string }) {
   return (
     <svg

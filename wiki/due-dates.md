@@ -24,7 +24,9 @@ instead of in a long list of everything — see [Views](views.md).
   a repeating task, whose rule has set its day (DUE-12) — red when overdue (DUE-10), the date being
   its name and tooltip. The date itself is spelled out **under the button**
   only on the woken row, like the other details (UI-27), so a dated row at rest is no taller than
-  any other — or under every row once **Show task details** is on (UI-42). A change is saved straight away.
+  any other — or under every row once **Show task details** is on (UI-42). On a phone the schedule
+  *button* is in the sheet (UI-48); a resting row still shows its icon as a mark when set (UI-50).
+  A change is saved straight away.
 - **DUE-6** While a repeat rule is chosen in the add row its schedule button reads the rule, not
   the day: the rule says which days the task will be due, so the task goes without the list's day.
   A day picked there ends the rule, as it does on a task row (DUE-12).

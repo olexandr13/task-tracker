@@ -1,19 +1,21 @@
 import { useState, type KeyboardEvent } from 'react'
 import type { LocalDay, Repeat } from '../../core'
-import { emptyDraft, toRepeat } from '../repeatDraft'
+import { emptyDraft, toDraft, toRepeat } from '../repeatDraft'
 import { SchedulePicker } from './SchedulePicker'
 
 interface AddTaskFormProps {
   now: Date
   /** The day a new task starts with — today in the Today list, none in the full one. */
   defaultDueDate: LocalDay | null
+  /** A default repeat rule, so a habit form starts with daily enabled. */
+  defaultRepeat?: Repeat | null
   /** `dueDate` is always null alongside a rule, which says which days the task is due itself. */
   onAdd: (title: string, repeat: Repeat | null, dueDate: LocalDay | null) => void
 }
 
-export function AddTaskForm({ now, defaultDueDate, onAdd }: AddTaskFormProps) {
+export function AddTaskForm({ now, defaultDueDate, defaultRepeat, onAdd }: AddTaskFormProps) {
   const [title, setTitle] = useState('')
-  const [draft, setDraft] = useState(emptyDraft)
+  const [draft, setDraft] = useState(() => defaultRepeat !== undefined ? toDraft(defaultRepeat ?? null, now) : emptyDraft(now))
   const [dueDate, setDueDate] = useState(defaultDueDate)
   const repeat = toRepeat(draft)
 
@@ -27,9 +29,8 @@ export function AddTaskForm({ now, defaultDueDate, onAdd }: AddTaskFormProps) {
     if (trimmed.length === 0) return
     onAdd(trimmed, repeat, repeat === null ? dueDate : null)
     setTitle('')
-    // Back to a one-off on the list's own day, so neither a repeat nor a date
-    // picked for one task is inherited by the next unnoticed.
-    setDraft(emptyDraft())
+    // Back to the default state: daily for habits, once for tasks.
+    setDraft(defaultRepeat !== undefined ? toDraft(defaultRepeat ?? null, now) : emptyDraft(now))
     setDueDate(defaultDueDate)
   }
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   addTag,
   completeTask,
@@ -23,6 +23,7 @@ import {
   type Task,
 } from '../../core'
 import { describeShortDate } from '../dueLabels'
+import { PHONE_QUERY } from '../usePhoneLayout'
 import { TaskDragAndDrop } from './TaskDragAndDrop'
 import { TaskItem } from './TaskItem'
 
@@ -47,6 +48,7 @@ const HANDLERS = {
   onSkipOccurrence: nothing,
   onChangeRepeat: nothing,
   onChangeReward: nothing,
+  onChangeUrgent: nothing,
   onChangeTimeGoal: nothing,
   onLogTime: nothing,
   onRemoveTimeEntry: nothing,
@@ -93,6 +95,7 @@ function setup(
         onSkipOccurrence={nothing}
         onChangeRepeat={nothing}
         onChangeReward={nothing}
+        onChangeUrgent={nothing}
         onChangeTimeGoal={nothing}
         onLogTime={nothing}
         onRemoveTimeEntry={nothing}
@@ -267,6 +270,138 @@ describe('a task row with Show task details on', () => {
     expect(row.getByText('Daily')).toBeDefined()
     expect(screen.queryByRole('textbox')).toBeNull()
   })
+
+  it('spells out Urgent at rest when the mark is on (TASK-62)', () => {
+    const row = renderRow({ ...createTask(TASK, null, NOW), urgent: true })
+
+    expect(row.getByText('Urgent')).toBeDefined()
+  })
+})
+
+describe('task urgent', () => {
+  it('is set from the menu (TASK-63)', async () => {
+    const onChangeUrgent = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <ul>
+        <TaskItem {...HANDLERS} task={createTask(TASK, null, NOW)} now={NOW} knownTags={[]} lists={[]} onChangeUrgent={onChangeUrgent} />
+      </ul>,
+    )
+
+    await user.pointer({ keys: '[MouseRight]', target: screen.getByRole('listitem') })
+    await user.click(screen.getByRole('menuitemradio', { name: 'Urgent' }))
+
+    expect(onChangeUrgent).toHaveBeenCalledWith(expect.any(String), true)
+  })
+
+  it('is set from the woken row (TASK-63)', async () => {
+    const onChangeUrgent = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <ul>
+        <TaskItem {...HANDLERS} task={createTask(TASK, null, NOW)} now={NOW} knownTags={[]} lists={[]} onChangeUrgent={onChangeUrgent} />
+      </ul>,
+    )
+
+    await user.click(screen.getByRole('listitem'))
+    await user.click(screen.getByRole('button', { name: `Urgent for "${TASK}"` }))
+
+    expect(onChangeUrgent).toHaveBeenCalledWith(expect.any(String), true)
+  })
+
+  it('does not show its label on a resting row (TASK-62)', () => {
+    render(
+      <ul>
+        <TaskItem
+          {...HANDLERS}
+          task={{ ...createTask(TASK, null, NOW), urgent: true }}
+          now={NOW}
+          knownTags={[]}
+          lists={[]}
+        />
+      </ul>,
+    )
+
+    expect(screen.queryByText('Urgent')).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Urgent for/ })).toBeNull()
+  })
+
+  it('marks an urgent open task on the row itself (TASK-64, UI-51)', () => {
+    const { rerender } = render(
+      <ul>
+        <TaskItem
+          {...HANDLERS}
+          task={{ ...createTask(TASK, null, NOW), urgent: true }}
+          now={NOW}
+          knownTags={[]}
+          lists={[]}
+        />
+      </ul>,
+    )
+
+    expect(screen.getByRole('listitem').getAttribute('title')).toBe('Urgent')
+
+    rerender(
+      <ul>
+        <TaskItem
+          {...HANDLERS}
+          task={completeTask({ ...createTask(TASK, null, NOW), urgent: true }, NOW)}
+          now={NOW}
+          knownTags={[]}
+          lists={[]}
+        />
+      </ul>,
+    )
+
+    expect(screen.getByRole('listitem').getAttribute('title')).toBeNull()
+  })
+})
+
+describe('the menu actions on a woken row', () => {
+  it('offers tags, urgent and duplicate once the row is opened (UI-53)', async () => {
+    const user = setup(null)
+
+    expect(screen.queryByRole('button', { name: /^Tags for/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Urgent for/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: `Duplicate "${TASK}"` })).toBeNull()
+
+    await user.click(screen.getByRole('listitem'))
+
+    expect(screen.getByRole('button', { name: `Tags for "${TASK}": No tags` })).toBeDefined()
+    expect(screen.getByRole('button', { name: `Urgent for "${TASK}"` })).toBeDefined()
+    expect(screen.getByRole('button', { name: `Duplicate "${TASK}"` })).toBeDefined()
+  })
+
+  it('offers a list button once there is a list to choose (UI-53, LST-14)', async () => {
+    const work = createList('Work', NOW)
+    const user = userEvent.setup()
+    render(
+      <ul>
+        <TaskItem {...HANDLERS} task={createTask(TASK, null, NOW)} now={NOW} knownTags={[]} lists={[work]} />
+      </ul>,
+    )
+
+    expect(screen.queryByRole('button', { name: /^List for/ })).toBeNull()
+
+    await user.click(screen.getByRole('listitem'))
+
+    expect(screen.getByRole('button', { name: `List for "${TASK}": Inbox` })).toBeDefined()
+  })
+
+  it('duplicates from the woken strip (TASK-51)', async () => {
+    const onDuplicate = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <ul>
+        <TaskItem {...HANDLERS} task={createTask(TASK, null, NOW)} now={NOW} knownTags={[]} lists={[]} onDuplicate={onDuplicate} />
+      </ul>,
+    )
+
+    await user.click(screen.getByRole('listitem'))
+    await user.click(screen.getByRole('button', { name: `Duplicate "${TASK}"` }))
+
+    expect(onDuplicate).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('the checklist count on a task row', () => {
@@ -300,11 +435,12 @@ describe('the controls on a task row', () => {
     expect(screen.getByRole('button', { name: `Add a checklist to "${TASK}"` })).toBeDefined()
     expect(screen.getByRole('button', { name: `Reward for "${TASK}": No reward` })).toBeDefined()
     expect(screen.getByRole('button', { name: `Add a description to "${TASK}"` })).toBeDefined()
+    expect(screen.queryByRole('button', { name: /^Urgent for/ })).toBeNull()
   })
 })
 
 describe('the reward on a task row', () => {
-  it('is spelled out under its star once the row is clicked into, and named on the phone\'s line (RWD-7, RWD-8)', async () => {
+  it('is spelled out under its star once the row is clicked into (RWD-7)', async () => {
     const user = setup({ kind: 'daily' }, [], () => undefined, null, 5)
     const row = () => within(screen.getByRole('listitem'))
 
@@ -313,7 +449,6 @@ describe('the reward on a task row', () => {
     await user.click(screen.getByRole('listitem'))
 
     expect(row().getByText('+5')).toBeDefined()
-    expect(row().getByText('5 points')).toBeDefined()
   })
 })
 
@@ -806,12 +941,13 @@ describe('the menu a right-click opens on a task row', () => {
       expect(screen.queryByRole('menuitemradio', { name: 'Inbox' })).toBeNull()
     })
 
-    it('is reached with the arrow keys, after the Date row, Duplicate and Tags (UI-31)', async () => {
-      // A one-off with no day: Today, Tomorrow, Next week and Select date, then Duplicate and Tags.
+    it('is reached with the arrow keys, after the Date row, Urgent, Duplicate and Tags (UI-31)', async () => {
+      // A one-off with no day: Today, Tomorrow, Next week and Select date, then
+      // Urgent, Duplicate and Tags, then Inbox and Work.
       const user = setup(null, [], nothing, null, null, { lists: [WORK] })
 
       await user.pointer({ keys: '[MouseRight]', target: row() })
-      await user.keyboard('{ArrowDown>8/}')
+      await user.keyboard('{ArrowDown>9/}')
 
       expect(document.activeElement).toBe(screen.getByRole('menuitemradio', { name: 'Work' }))
 
@@ -901,8 +1037,8 @@ describe('the menu a right-click opens on a task row', () => {
 
       grip.focus()
       fireEvent.contextMenu(grip)
-      // From Today, past the rest of the Date row and Duplicate.
-      await user.keyboard('{ArrowDown>5/}{Enter}')
+      // From Today, past the rest of the Date row, Urgent, and Duplicate.
+      await user.keyboard('{ArrowDown>6/}{Enter}')
 
       expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Tag name' }))
 
@@ -1045,5 +1181,141 @@ describe('the time on a task row', () => {
     await user.type(screen.getByRole('textbox', { name: 'Goal' }), 'lots{Enter}')
 
     expect(onChangeTimeGoal).not.toHaveBeenCalled()
+  })
+})
+
+describe('on a phone, tapping a task', () => {
+  const originalMatchMedia = window.matchMedia
+
+  beforeEach(() => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: (query: string) => ({
+        matches: query === PHONE_QUERY,
+        media: query,
+        addEventListener() {},
+        removeEventListener() {},
+        addListener() {},
+        removeListener() {},
+        dispatchEvent() { return false },
+        onchange: null,
+      }),
+    })
+  })
+
+  afterEach(() => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: originalMatchMedia,
+    })
+  })
+
+  function sheet() {
+    return screen.getByRole('dialog', { name: `Details of "${TASK}"` })
+  }
+
+  it('opens a sheet from the bottom with the details and the action buttons (UI-48)', async () => {
+    const user = setup(null, ['one'])
+
+    expect(screen.queryByRole('dialog', { name: `Details of "${TASK}"` })).toBeNull()
+    expect(screen.queryByRole('button', { name: `Edit "${TASK}"` })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Schedule for/ })).toBeNull()
+
+    await user.click(screen.getByRole('listitem'))
+
+    const open = within(sheet())
+    expect(sheet().parentElement?.className).toContain('z-40')
+    expect(open.getByRole('button', { name: `Edit "${TASK}"` })).toBeDefined()
+    expect(open.getByRole('button', { name: /^Schedule for/ })).toBeDefined()
+    expect(open.getByRole('button', { name: /^List for/ })).toBeDefined()
+    expect(open.getByRole('button', { name: /^Time for/ })).toBeDefined()
+    expect(open.getByRole('button', { name: /^Tags for/ })).toBeDefined()
+    expect(open.getByRole('button', { name: /^Reward for/ })).toBeDefined()
+    expect(open.getByRole('button', { name: /^Urgent for/ })).toBeDefined()
+    expect(open.getByRole('button', { name: 'Duplicate' })).toBeDefined()
+    expect(open.getByRole('button', { name: `Delete "${TASK}"` })).toBeDefined()
+    expect(open.getByRole('list', { name: `Checklist for "${TASK}"` })).toBeDefined()
+    expect(open.getByText('one')).toBeDefined()
+  })
+
+  it('edits the title only from the sheet (TASK-8, UI-48)', async () => {
+    layOutTitle()
+    const onRename = vi.fn()
+    const user = userEvent.setup()
+    const task = createTask(TASK, null, NOW)
+    render(
+      <ul>
+        <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={[]} lists={[]} onRename={onRename} />
+      </ul>,
+    )
+
+    await user.click(screen.getByRole('listitem'))
+    expect(screen.queryByRole('textbox', { name: `Title of "${TASK}"` })).toBeNull()
+
+    await user.click(within(sheet()).getByRole('button', { name: `Edit "${TASK}"` }))
+    const box = screen.getByRole<HTMLInputElement>('textbox', { name: `Title of "${TASK}"` })
+    await user.clear(box)
+    await user.type(box, 'walk{Enter}')
+
+    expect(onRename).toHaveBeenCalledWith(task.id, 'walk')
+  })
+
+  it('closes on a tap on the dimmed page and on Escape (UI-9, UI-10, UI-48)', async () => {
+    const user = setup()
+
+    await user.click(screen.getByRole('listitem'))
+    expect(sheet()).toBeDefined()
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: `Details of "${TASK}"` })).toBeNull()
+
+    await user.click(screen.getByRole('listitem'))
+    await user.click(sheet().previousElementSibling as HTMLElement)
+    expect(screen.queryByRole('dialog', { name: `Details of "${TASK}"` })).toBeNull()
+  })
+
+  it('does not open from ticking the box (UI-19)', async () => {
+    const user = setup()
+
+    await user.click(screen.getByRole('button', { name: `Mark "${TASK}" as done` }))
+
+    expect(screen.queryByRole('dialog', { name: `Details of "${TASK}"` })).toBeNull()
+  })
+
+  it('names the reward on the sheet (RWD-8)', async () => {
+    const user = setup({ kind: 'daily' }, [], () => undefined, null, 5)
+
+    expect(screen.queryByText('5 points')).toBeNull()
+    await user.click(screen.getByRole('listitem'))
+    expect(within(sheet()).getByText('5 points')).toBeDefined()
+  })
+
+  it('marks what is set on the rest row, without controls (UI-50)', async () => {
+    const user = userEvent.setup()
+    let task = setTimeGoal(createTask(TASK, { kind: 'daily' }, NOW), 30)
+    task = { ...task, reward: 5, description: 'notes', tags: ['home'] }
+    task = { ...task, subtasks: [createSubtask('one', NOW)] }
+    render(
+      <ul>
+        <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={['home']} lists={[]} />
+      </ul>,
+    )
+
+    const marks = screen.getByRole('group', {
+      name: 'Daily, Checklist 0 of 1, 0m/30m, +5, Description, Tags home',
+    })
+    expect(within(marks).queryAllByRole('button')).toHaveLength(0)
+    expect(screen.queryByRole('button', { name: /^Schedule for/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Reward for/ })).toBeNull()
+
+    await user.click(marks)
+    expect(sheet()).toBeDefined()
+  })
+
+  it('shows no marks on a bare task (UI-50)', () => {
+    setup(null)
+
+    expect(screen.queryByRole('group', { name: /Daily|Checklist|Description|Tags/ })).toBeNull()
   })
 })

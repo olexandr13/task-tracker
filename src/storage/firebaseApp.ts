@@ -1,5 +1,10 @@
 import { initializeApp } from 'firebase/app'
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  persistentSingleTabManager,
+} from 'firebase/firestore'
 
 /**
  * The Firebase project behind the app: project `task-tracker-a6e9e`, web app
@@ -36,11 +41,34 @@ export const firebaseApp = initializeApp({
 })
 
 /**
+ * An iPhone or iPad, including iPadOS that reports itself as a Mac. A phone is
+ * one tab: sharing the cache across tabs uses Web Locks that Safari can hold
+ * after the previous open was killed, and the next open then waits forever —
+ * which with no connection looks like a hang. `forceOwnership` takes the lock
+ * so this open can read the copy the browser already has.
+ */
+function isAppleTouchDevice(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+}
+
+function firestoreCache() {
+  if (isAppleTouchDevice()) {
+    return persistentLocalCache({ tabManager: persistentSingleTabManager({ forceOwnership: true }) })
+  }
+  return persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+}
+
+/**
  * The database, with a copy of what it holds kept in the browser and shared by
  * every open tab: the tasks open offline, and changes made offline are sent once
  * there is a connection. Set up here, once, because Firestore can only be set up
  * once per page.
+ *
+ * On an iPhone, long-polling is forced: the default stream can wait on a dead
+ * radio instead of reading the copy already in the browser.
  */
 export const firestore = initializeFirestore(firebaseApp, {
-  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  localCache: firestoreCache(),
+  ...(isAppleTouchDevice() ? { experimentalForceLongPolling: true } : {}),
 })

@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from 'react'
-import { subtaskCheckbox, subtaskTitleBox } from './SubtaskItem'
+import { subtaskCheckbox, subtaskRow, subtaskTitleBox } from './SubtaskItem'
 
 interface SubtaskDraftProps {
   taskTitle: string
@@ -57,7 +57,7 @@ export function SubtaskDraft({ taskTitle, onAdd, onClose, onBackspaceWhenEmpty }
   }
 
   return (
-    <li className="flex items-center gap-2.5 py-1">
+    <li className={subtaskRow}>
       <span aria-hidden="true" className={`${subtaskCheckbox} border-neutral-300 dark:border-neutral-600`} />
 
       <input

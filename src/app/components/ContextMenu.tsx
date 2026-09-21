@@ -5,9 +5,7 @@ import {
   panelIconOff,
   panelIconOn,
   panelIconRow,
-  panelItem,
   panelOptionOn,
-  panelSubItem,
 } from '../panelControls'
 import { FloatingPanel } from './FloatingPanel'
 
@@ -83,14 +81,29 @@ interface ContextMenuProps {
 /** Every kind of item the arrow keys move between. */
 const ITEMS = '[role="menuitem"], [role="menuitemradio"]'
 
-const itemLook = 'group whitespace-nowrap transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800'
-const item = `${panelItem} ${itemLook}`
-const subItem = `${panelSubItem} ${itemLook}`
+const itemLook =
+  'group touch-manipulation whitespace-nowrap transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800'
+
+/**
+ * Compact on a wide screen, as every panel is (UI-40). On a phone tall and
+ * wide enough for a thumb, so the bottom bar's menus and a task's menu are not
+ * a precise tap (UI-49).
+ */
+const item =
+  `flex min-h-14 w-full min-w-0 items-center gap-3 rounded-xl px-3.5 py-3.5 text-left text-lg md:min-h-0 md:gap-1.5 md:rounded-lg md:px-2 md:py-1 md:text-sm ${itemLook}`
+
+/**
+ * Indented to start where the line above it starts its name, as the sidebar
+ * indents a list under Lists — the extra left padding matching the icon and
+ * gap of the line above, at both sizes.
+ */
+const subItem =
+  `flex min-h-14 w-full min-w-0 items-center gap-3 rounded-xl py-3.5 pr-3.5 pl-[3.125rem] text-left text-lg md:min-h-0 md:gap-1.5 md:rounded-lg md:py-1 md:pr-2 md:pl-[1.875rem] md:text-sm ${itemLook}`
 const itemOff =
   'text-neutral-700 hover:text-neutral-900 focus-visible:text-neutral-900 dark:text-neutral-200 dark:hover:text-neutral-100 dark:focus-visible:text-neutral-100'
 const iconItem = `${panelIcon} focus-visible:bg-neutral-100 focus-visible:outline-none dark:focus-visible:bg-neutral-800`
 const iconOff = `${panelIconOff} focus-visible:text-neutral-900 dark:focus-visible:text-neutral-100`
-const group = 'flex flex-col gap-0.5'
+const group = 'flex flex-col gap-1 md:gap-0.5'
 
 /**
  * Which item a key moves to, round from the last to the first and back; null for
@@ -148,7 +161,8 @@ export function ContextMenu({ x, y, align = 'left', label, items, fromKeyboard =
       onClose={onClose}
       onKeyDown={handleKeyDown}
       // A long run of choices scrolls inside it rather than running off the window.
-      className="max-w-72 min-w-40 overflow-y-auto"
+      // On a phone it is wider, so the larger items (UI-49) have room for their names.
+      className="max-w-[min(22rem,calc(100vw-1.5rem))] min-w-64 overflow-y-auto md:max-w-72 md:min-w-40"
     >
       {items.map((entry, index) => (
         <Fragment key={index}>
@@ -231,14 +245,14 @@ function MenuItem({
       className={checked === true ? `${look} ${panelOptionOn}` : `${look} ${itemOff}`}
     >
       {checked !== undefined && (
-        <span aria-hidden="true" className="w-3 shrink-0">
+        <span aria-hidden="true" className="w-5 shrink-0 md:w-3">
           {checked ? '✓' : ''}
         </span>
       )}
       {icon !== undefined && (
         <span
           aria-hidden="true"
-          className="grid shrink-0 place-items-center text-neutral-400 transition-colors group-hover:text-neutral-600 group-focus-visible:text-neutral-600 dark:text-neutral-500 dark:group-hover:text-neutral-300 dark:group-focus-visible:text-neutral-300"
+          className="grid shrink-0 place-items-center text-neutral-400 transition-colors group-hover:text-neutral-600 group-focus-visible:text-neutral-600 [&>svg]:size-6 md:[&>svg]:size-4 dark:text-neutral-500 dark:group-hover:text-neutral-300 dark:group-focus-visible:text-neutral-300"
         >
           {icon}
         </span>

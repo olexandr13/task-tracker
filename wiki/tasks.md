@@ -20,6 +20,7 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 | `tags` | The tags it carries, in the order they were put on, or empty. See [Tags](tags.md). |
 | `listId` | The list it is filed under, by id, or nothing for one in no list — the Inbox. One at a time. See [Lists](lists.md). |
 | `reward` | The points each completion earns, or nothing. What completions already earned is kept apart from the task. See [Rewards](rewards.md). |
+| `urgent` | Whether it is marked urgent. An open urgent task floats to the top of the list. |
 | `timeGoal` | The minutes the task asks for, or nothing. See [Time goals](time-goals.md). |
 | `timeLog` | The sessions of time logged, oldest first. Under a repeating task only the occurrence in play's count. See [Time goals](time-goals.md). |
 | `deletedAt` | When it went to the trash, or nothing while it is live. |
@@ -46,7 +47,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   clicked or tapped** — between the two characters nearest the pointer, or at the end when the click
   is just past the last word. Nothing is selected: an edit is usually a tweak, not a rewrite. Opened
   from the keyboard, the caret goes to the end. The part of the row that edits the title is the
-  words themselves and 13 pixels past them (UI-29).
+  words themselves and 13 pixels past them (UI-29). On a phone the title on the row is not an edit:
+  a tap opens the sheet, and the title is edited there the same way (UI-48).
 - **TASK-9** Enter, or clicking away, keeps the new title. Escape drops the edit.
 - **TASK-10** An empty box counts as an abandoned edit rather than a request for a nameless task:
   the old title stays.
@@ -60,9 +62,11 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-22** The description **comes up with the row**: clicking into a task shows it under the
   title, alongside the checklist. The button beside the repeat one puts it away again without
   leaving the row, and brings it back. A row at rest shows no description, so the list stays
-  something you can run your eye down.
+  something you can run your eye down. On a phone it comes up in the sheet (UI-48).
 - **TASK-23** That button shows whether there is anything written: marked when there is, muted when
-  there is not. It is on the row at rest either way — see [Interface](interface.md).
+  there is not. It is on the row at rest either way — see [Interface](interface.md). On a phone it
+  is in the sheet, the rest row having no description button (UI-48) but still a mark when
+  there is a description (UI-50).
 - **TASK-24** It opens as text either way, a blank one reading as the line that invites you to
   write. Clicking that text turns it into a box in place, as a title does. Opening a row does
   **not** take the caret: the description comes up on every click into a task, and one that grabbed
@@ -135,8 +139,10 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 
 ## The list
 
-- **TASK-17** Done tasks sink to the bottom. Otherwise tasks keep the order they were put in —
-  the order they were added, until one is moved — and completing one does not shuffle the rest.
+- **TASK-17** Urgent tasks float to the top, overdue next, and done tasks sink to the bottom.
+  Otherwise tasks keep the order they were put in — the order they were added, until one is moved —
+  and completing one, marking one urgent, or a day turning overdue, does not shuffle the rest inside
+  their band.
 - **TASK-18** A repeating task is only at the bottom while its current occurrence is done; it comes
   back up on its own when the next one arrives.
 - **TASK-19** An empty list encourages a start and points at the box above it.
@@ -148,21 +154,17 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   a small, muted gray heading with its count, the spans set close together: **Done today**, **Done yesterday**, **Done in the last 7 days**, **Done
   in the last 30 days** and **Done earlier**, most recent first. The spans count back in local days
   and each leaves out the ones before it, so a task is under exactly one; a span with nothing in it
-  has no heading. Tasks still to do stay above, with no heading. Week and Month divide theirs too, by
-  the calendar (TASK-59); Today, the Inbox, lists and tags keep one run of done tasks.
+  has no heading. Tasks still to do stay above, with no heading. Today, Week, Month, the Inbox, lists
+  and tags keep one run of done tasks.
 - **TASK-57** A repeating task is under the span of its latest completion while that completion
   still covers the occurrence in play (TASK-18); once the next occurrence comes it is back among the
   tasks to do. A completion stamped later than today, by a device whose clock ran ahead, counts as
   today's.
 - **TASK-58** Nothing is rewritten when the day turns: what is under each heading follows from the
   day it is, so a page left open moves yesterday's work along on its next render (PRIN-2).
-- **TASK-59** **Week** and **Month** divide their done tasks the same way (TASK-56 – TASK-58), but
-  by the calendar rather than by rolling windows. Week: **Done today**, **Done yesterday**, **Done
-  this week** — from Monday, the week the bars count (PROG-2), not the last seven days — and **Done
-  earlier**. Month adds **Done this month**, from the 1st, after this week. A span that starts no
-  earlier than the one before it is simply empty: on a Monday or Tuesday nothing is under Done this
-  week, and yesterday can be last week's Sunday or last month's last day. Early in a month, this week
-  can reach back into the last one, and still reads as this week.
+- **TASK-65** On **Tasks**, older done spans fade: **Done yesterday** at 80% opacity, **Done in the
+  last 7 days** at 60%, and **Done in the last 30 days** at 40%. **Done today** and **Done earlier**
+  stay at full strength.
 
 ## Moving
 
@@ -176,15 +178,17 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-39** With a mouse, a drag starts only once the pointer has moved a few pixels, so a click
   is still a click. With a finger, you hold for a moment first, so a swipe still scrolls the page;
   let go there without moving, and it opens the task's menu instead (UI-44).
-  Letting go never opens the row or starts editing its title.
+  Letting go never opens the row, the sheet, or starts editing its title.
 - **TASK-40** From the keyboard, the grip picks the row up with Space or Enter. The arrow keys move
   it, Space or Enter drops it, and Escape puts it back. Screen readers hear the task's title and its
   position as it moves.
-- **TASK-41** A task moves only within its own group. A to-do task can't be dropped among done
-  ones, or a done task among to-do ones. Completing a task, or un-completing it, is what moves it
-  between the two, and it goes back to its place in the order when it returns. On Tasks, Week and Month
-  a done task moves only among those under its own heading (TASK-56, TASK-59): a drag never changes when a task was
-  finished.
+- **TASK-41** A task moves only within its own group. An urgent task can't be dropped among overdue
+  or other to-dos or among done ones, an overdue task can't among urgent, other to-dos or done, a
+  to-do that is neither can't among urgent, overdue or done, and a done task can't among the open
+  groups. Completing a task, un-completing it, marking it urgent (or clearing the mark), or a day
+  turning overdue (or a date moving so it is no longer) is what moves it between them, and it goes
+  back to its place in the order when it returns. On Tasks a done task moves only among those under
+  its own heading (TASK-56): a drag never changes when a task was finished.
 - **TASK-42** A task keeps its place while it is in the trash: restoring it puts it back where it
   was. New tasks still join the end (TASK-7).
 - **TASK-43** A move changes the moved task's `order` and nothing else, so it counts for nothing in
@@ -192,10 +196,11 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 
 ## Duplicating
 
-- **TASK-51** **Duplicate**, in the task's menu — a right-click on a row, or a finger's hold or
-  second tap (UI-31, UI-44) — adds a copy of the
+- **TASK-51** **Duplicate**, in the task's menu — a right-click on a row, or a finger's hold
+  (UI-31, UI-44) — on a woken wide-screen row (UI-53), and on a phone in the sheet as well
+  (UI-48), adds a copy of the
   task carrying what it says: the same title, description, repeat rule, due date, checklist
-  items, tags, reward and time goal.
+  items, tags, reward, urgent and time goal.
 - **TASK-52** The copy is a task of its own — its own id, stamped as created now — and each item on
   its checklist is its own too, so changing one never changes the other.
 - **TASK-53** It carries **none of what happened** to the original: it is not done, its checklist is
@@ -204,17 +209,38 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-54** The copy goes **just below the original**, among the tasks still to do (TASK-17). The
   original is left exactly as it was.
 
+## Urgent
+
+- **TASK-60** A task can be marked **urgent**. It is a label, not a ranking: the task is urgent or
+  it is not. Marking it floats it to the top of the list among tasks still to do (TASK-17) — above
+  overdue ones — and changing it changes that field alone — same id, same completion record, same
+  stored order — and counts for nothing in any period's bar.
+- **TASK-61** A new task is **not urgent**. Most tasks need no mark until one is given. Clearing the
+  mark puts it back.
+- **TASK-62** Urgent is **shown only in details** — on the woken row's line of details, under every
+  row once **Show task details** is on (UI-42), and in a phone's sheet (UI-48). A resting row without
+  that option shows **no Urgent label**, and there is **no urgent control** on the row at rest
+  (unlike the date, checklist, time and reward). The one exception is an urgent task still to do,
+  which is marked out quietly on the row itself (TASK-64).
+- **TASK-63** Urgent is set from the **task's menu** — a single Urgent choice that toggles the mark —
+  from a **flag on the woken wide-screen row** (UI-53), and on a phone from the sheet as well, as a
+  flag that toggles the same way. Every choice is saved as it is made; there is nothing to confirm.
+- **TASK-64** A task still to do marked **urgent** is highlighted by a **thin amber bar on the left
+  of its row** — enough to catch the eye when scanning, not enough to turn the list into a column of
+  warnings. Done tasks lose the highlight.
+
 ---
 
-**Where it lives:** `src/core/task.ts` (the rules), `src/core/completed.ts` (the spans done tasks are
+**Where it lives:** `src/core/task.ts` (the rules), `src/core/urgent.ts` (the mark), `src/core/completed.ts` (the spans done tasks are
 divided into), `src/app/completionLabels.ts` (their headings), `src/core/due.ts` and `src/core/day.ts` (due dates), `src/core/emphasis.ts` (bold and italic, written
 down and read back), `src/core/descriptionLists.ts` (lists, the same), `src/app/components/AddTaskForm.tsx`,
-`TaskList.tsx`, `TaskItem.tsx`, `ContextMenu.tsx` (a task's menu), `TaskDescription.tsx`, `src/app/descriptionBox.ts` (the box a
+`TaskList.tsx`, `TaskItem.tsx`, `TaskSheet.tsx` (a phone's look at a task), `UrgentToggle.tsx`, `ContextMenu.tsx` (a task's menu), `TaskDescription.tsx`, `src/app/descriptionBox.ts` (the box a
 description is written in), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx` (ordering), `src/core/order.ts`
-(where a task sits, moving it, and where a copy goes), `src/app/components/TaskDragAndDrop.tsx`,
+(where a task sits, moving it, where a copy goes, and `sortForDisplay` — urgent above, overdue next, done below),
+`src/app/components/TaskDragAndDrop.tsx`,
 `src/app/taskDrop.ts`, `src/app/components/SortableTasks.tsx`, `src/app/useSortableTask.ts` and
 `src/app/dragSensors.ts` (dragging).
 
-**Tested in:** `src/core/task.test.ts`, `src/core/completed.test.ts`, `src/core/emphasis.test.ts`, `src/core/descriptionLists.test.ts`,
+**Tested in:** `src/core/task.test.ts`, `src/core/urgent.test.ts`, `src/core/completed.test.ts`, `src/core/emphasis.test.ts`, `src/core/descriptionLists.test.ts`,
 `src/core/order.test.ts`, `src/app/taskDrop.test.ts` (what a drop does), `src/app/components/TaskList.test.tsx` (what a list says),
-`src/app/components/TaskItem.test.tsx` (the row, and its menu).
+`src/app/components/TaskItem.test.tsx` (the row, and its menu), `src/app/components/UrgentToggle.test.tsx`.

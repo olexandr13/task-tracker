@@ -5,6 +5,7 @@ import { FolderIcon } from './components/FolderIcon'
 import { InboxIcon } from './components/InboxIcon'
 import { ListIcon } from './components/ListIcon'
 import { MonthIcon } from './components/MonthIcon'
+import { MoreIcon } from './components/MoreIcon'
 import { SettingsIcon } from './components/SettingsIcon'
 import { StarIcon } from './components/StarIcon'
 import { TagIcon } from './components/TagIcon'
@@ -17,7 +18,7 @@ export type ViewIcon = (props: { className?: string }) => ReactElement
 /**
  * The glyph each view carries, wherever it is navigated to from: the sidebar or a
  * phone's bar. Every tag's view carries the same glyph as Tags, and every list's
- * the same as Lists.
+ * the same as Lists. More is a phone's alone.
  */
 export const VIEW_ICONS: Record<FixedView, ViewIcon> = {
   today: CalendarIcon,
@@ -29,6 +30,7 @@ export const VIEW_ICONS: Record<FixedView, ViewIcon> = {
   rewards: StarIcon,
   lists: FolderIcon,
   tags: TagIcon,
+  more: MoreIcon,
   trash: TrashIcon,
   settings: SettingsIcon,
 }

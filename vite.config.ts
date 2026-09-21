@@ -21,8 +21,8 @@ export default defineConfig({
       injectRegister: 'script-defer',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Tasks',
-        short_name: 'Tasks',
+        name: 'PickMe',
+        short_name: 'PickMe',
         description: 'A task tracker that turns getting things done into a game.',
         start_url: '/',
         scope: '/',

@@ -61,4 +61,15 @@ describe('AddTaskForm', () => {
     await user.type(box(), 'stretch{Enter}')
     expect(onAdd).toHaveBeenCalledWith('stretch', { kind: 'daily' }, null)
   })
+
+  it('starts a habit on a daily rule, and goes back to daily after adding (HAB-24)', async () => {
+    const user = userEvent.setup()
+    const onAdd = vi.fn()
+    render(<AddTaskForm now={WED_16} defaultDueDate={null} defaultRepeat={{ kind: 'daily' }} onAdd={onAdd} />)
+
+    expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Daily')
+    await user.type(box(), 'stretch{Enter}')
+    expect(onAdd).toHaveBeenCalledWith('stretch', { kind: 'daily' }, null)
+    expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Daily')
+  })
 })

@@ -30,9 +30,9 @@ earned whatever becomes of the task afterwards.
   (UI-9, UI-10).
 - **RWD-7** The star sits in a slot of its own after the clock (UI-27). A woken row spells the
   reward out under it: `+5`.
-- **RWD-8** On a phone the row's line has no room for the star, so the woken row has it on a line
-  of its own below the tags (TAG-16). There it names the reward — `5 points` — or offers
-  **Add reward**, and opens the same panel.
+- **RWD-8** On a phone the row's line has no room for the star *button*, so the sheet a tap opens
+  (UI-48) has it, naming the reward — `5 points` — or offering **Add reward**, and opens the same
+  panel; a resting row still shows the star as a mark when a reward is set (UI-50).
 
 ## Earning
 
@@ -74,7 +74,7 @@ earned whatever becomes of the task afterwards.
 ## The Rewards page
 
 - **RWD-19** **Rewards** has an entry in the sidebar, between Habits and Tags (UI-30). On a phone
-  it is reached from the **More** tab's menu (UI-45), and More stays marked while it is open.
+  it is reached from the **More** page's list (UI-45), and More stays marked while it is open.
   Its address is `#/rewards` (UI-36).
 - **RWD-20** The page is, top to bottom: a line on how points are earned; the **balance** with the
   **redeem form** (RWD-15); what was **earned** in each period (RWD-21); and what was **redeemed**

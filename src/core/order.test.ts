@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { appendTask, compareOrder, insertTask, moveTask, ORDER_STEP, sortByOrder } from './order'
-import { createTask, deleteTask, type Task } from './task'
+import { appendTask, compareOrder, insertTask, moveTask, ORDER_STEP, sortByOrder, sortForDisplay } from './order'
+import { completeTask, createTask, deleteTask, setDueDate, type Task } from './task'
 
-const NOW = new Date('2026-09-16T10:00:00.000Z')
+// Local noon so due days match the calendar day of NOW without UTC drift.
+const NOW = new Date(2026, 8, 16, 12, 0)
 
 /** A list built the way the app builds one: each task added at the end. */
 function listOf(...titles: string[]): Task[] {
@@ -11,6 +12,10 @@ function listOf(...titles: string[]): Task[] {
 
 function titles(tasks: readonly Task[]): string[] {
   return sortByOrder(tasks).map((task) => task.title)
+}
+
+function displayTitles(tasks: readonly Task[]): string[] {
+  return sortForDisplay(tasks, NOW).map((task) => task.title)
 }
 
 function idOf(tasks: readonly Task[], title: string): string {
@@ -41,11 +46,51 @@ describe('appendTask', () => {
 
 describe('compareOrder', () => {
   it('breaks a tie by age, then by id, so the order is never left to chance', () => {
-    const older = { ...createTask('older', null, new Date('2026-09-15T10:00:00.000Z')), order: 5 }
+    const older = { ...createTask('older', null, new Date(2026, 8, 15, 10, 0)), order: 5 }
     const newer = { ...createTask('newer', null, NOW), order: 5 }
 
     expect(sortByOrder([newer, older]).map((task) => task.title)).toEqual(['older', 'newer'])
     expect(compareOrder(older, older)).toBe(0)
+  })
+})
+
+describe('sortForDisplay', () => {
+  it('floats overdue tasks to the top and sinks done ones to the bottom (TASK-17)', () => {
+    const [open, overdue, done, later] = listOf('open', 'overdue', 'done', 'later')
+    const tasks = [
+      open,
+      setDueDate(overdue, '2026-09-14'),
+      completeTask(done, NOW),
+      setDueDate(later, '2026-09-20'),
+    ]
+
+    expect(displayTitles(tasks)).toEqual(['overdue', 'open', 'later', 'done'])
+  })
+
+  it('floats urgent tasks above overdue ones (TASK-60)', () => {
+    const [open, overdue, urgent, done] = listOf('open', 'overdue', 'urgent', 'done')
+    const tasks = [
+      open,
+      setDueDate(overdue, '2026-09-14'),
+      { ...urgent, urgent: true },
+      completeTask(done, NOW),
+    ]
+
+    expect(displayTitles(tasks)).toEqual(['urgent', 'overdue', 'open', 'done'])
+  })
+
+  it('keeps stored order inside each band, so completing one does not shuffle the rest (TASK-17)', () => {
+    const [a, b, c] = listOf('a', 'b', 'c')
+    const tasks = [setDueDate(a, '2026-09-10'), setDueDate(c, '2026-09-12'), b]
+
+    expect(displayTitles(tasks)).toEqual(['a', 'c', 'b'])
+  })
+
+  it('never modifies the list it is given', () => {
+    const tasks = listOf('a', 'b')
+    sortForDisplay(tasks, NOW)
+
+    expect(tasks.map((task) => task.title)).toEqual(['a', 'b'])
   })
 })
 

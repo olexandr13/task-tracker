@@ -13,7 +13,6 @@ import {
 } from '../view'
 import { VIEW_ICONS, type ViewIcon } from '../viewIcons'
 import { ContextMenu, type ContextMenuEntry, type ContextMenuItem } from './ContextMenu'
-import { MoreIcon } from './MoreIcon'
 
 interface BottomNavProps {
   view: View
@@ -26,11 +25,6 @@ interface BottomNavProps {
 const MENU_INSET = 8
 const MENU_GAP = 4
 
-/** The pages under More: a tab for what has none of its own, and no page of its own either. */
-const UNDER_MORE = ['tags', 'rewards'] as const satisfies readonly FixedView[]
-
-const MORE_LABEL = 'More'
-
 const tab =
   'flex w-full touch-manipulation flex-col items-center gap-1 pt-2 pb-2.5 text-[11px] leading-none transition-colors select-none [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none]'
 const tabOn = 'font-medium text-neutral-900 dark:text-neutral-100'
@@ -40,7 +34,7 @@ const pillOn = 'bg-neutral-200/80 dark:bg-neutral-800'
 const pillOff = 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
 
 /** The tabs that open a menu of their own. */
-type TabMenu = 'period' | 'tasks' | 'more'
+type TabMenu = 'period' | 'tasks'
 
 type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
 
@@ -51,17 +45,17 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * Today, Week and Month share the first tab, which shows the one last chosen and
  * goes to it on a tap. The lists and the trash have no tab — they are reached from
  * Tasks, so Tasks stays marked while either is open, or one list or the Inbox. The
- * tags and the rewards have none either: they are under More, which stays marked
- * while they are open, or a tag's tasks.
+ * tags and the rewards have none either: they are under More, which goes to its
+ * own page on a tap and stays marked while that page, the Tags page, a tag's
+ * tasks or the Rewards page is open.
  *
  * The period tab and Tasks each have a menu of what the sidebar has in their
  * place: the three periods, and Lists with the Inbox and every list indented
  * under it, then the trash. Holding the tab opens it, and so does tapping it
  * again once its page is on screen, a tap there having nowhere further to go —
- * so a double tap opens it from anywhere. More has no page to go to, so a tap
- * opens its menu straight away. A tap on a tab while its menu is open closes it.
- * A tab stays marked while its menu is open, so it is plain which tab the menu
- * belongs to.
+ * so a double tap opens it from anywhere. A tap on a tab while its menu is open
+ * closes it. A tab stays marked while its menu is open, so it is plain which tab
+ * the menu belongs to.
  */
 export function BottomNav({ view, lists, onChange }: BottomNavProps) {
   // The period the first tab goes back to after leaving it: the last one on
@@ -80,15 +74,8 @@ export function BottomNav({ view, lists, onChange }: BottomNavProps) {
   } | null>(null)
 
   function openMenu(of: TabMenu, button: HTMLElement, fromKeyboard: boolean) {
-    const { left, right, top } = button.getBoundingClientRect()
-    // The tabs on the left open their menu at its left edge; More, near the
-    // window's right edge, opens its at its right, so the menu lands above
-    // its own tab rather than spilling left over the neighbouring ones.
-    if (of === 'more') {
-      setMenu({ of, x: right - MENU_INSET, y: top - MENU_GAP, align: 'right', fromKeyboard })
-    } else {
-      setMenu({ of, x: left + MENU_INSET, y: top - MENU_GAP, align: 'left', fromKeyboard })
-    }
+    const { left, top } = button.getBoundingClientRect()
+    setMenu({ of, x: left + MENU_INSET, y: top - MENU_GAP, align: 'left', fromKeyboard })
   }
 
   // The menu that was open as a pointer came down on a tab. Coming down outside it
@@ -129,14 +116,6 @@ export function BottomNav({ view, lists, onChange }: BottomNavProps) {
     onLongPress: (button, fromKeyboard) => { openMenu('tasks', button, fromKeyboard) },
   })
 
-  const morePress = useLongPress<HTMLButtonElement>({
-    onPress: (button, fromKeyboard) => {
-      if (closesMenu('more', fromKeyboard)) return
-      openMenu('more', button, fromKeyboard)
-    },
-    onLongPress: (button, fromKeyboard) => { openMenu('more', button, fromKeyboard) },
-  })
-
   const periodItems: ContextMenuEntry[] = PERIOD_VIEWS.map((value) => ({
     label: VIEW_LABELS[value],
     onSelect: () => { onChange(value) },
@@ -167,12 +146,9 @@ export function BottomNav({ view, lists, onChange }: BottomNavProps) {
     pageItem('trash'),
   ]
 
-  const moreItems: ContextMenuEntry[] = UNDER_MORE.map(pageItem)
-
   const menus: Record<TabMenu, { label: string; items: ContextMenuEntry[] }> = {
     period: { label: 'Period', items: periodItems },
     tasks: { label: VIEW_LABELS.tasks, items: tasksItems },
-    more: { label: MORE_LABEL, items: moreItems },
   }
 
   return (
@@ -210,11 +186,10 @@ export function BottomNav({ view, lists, onChange }: BottomNavProps) {
           </li>
           <li>
             <Tab
-              label={MORE_LABEL}
-              icon={MoreIcon}
-              active={UNDER_MORE.some((value) => isUnder(view, value)) || menu?.of === 'more'}
-              description="The tags and the rewards"
-              {...noticingMenu(morePress)}
+              label={VIEW_LABELS.more}
+              icon={VIEW_ICONS.more}
+              active={isUnder(view, 'more')}
+              onClick={() => { onChange('more') }}
             />
           </li>
           <li>

@@ -1,5 +1,5 @@
 import { CSS } from '@dnd-kit/utilities'
-import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type TouchEvent } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type TouchEvent } from 'react'
 import {
   canSkipOccurrence,
   countSubtasks,
@@ -33,32 +33,43 @@ import {
   completionBoxOff,
   completionBoxOn,
   completionBoxReady,
+  controlMarker,
+  controlMarkerOverdue,
   controlOff,
   controlOn,
   deleteControl,
   detailReached,
   rowControlIcon,
+  rowControlLabel,
 } from '../rowControls'
 import { isInTextEntry } from '../textEntry'
 import { textOffsetAtPoint } from '../textOffsetAtPoint'
 import { isHeldInPlace } from '../useLongPress'
+import { usePhoneLayout } from '../usePhoneLayout'
 import { useSortableTask } from '../useSortableTask'
+import { CalendarIcon } from './CalendarIcon'
 import { ChecklistIcon } from './ChecklistIcon'
+import { ClockIcon } from './ClockIcon'
 import { ContextMenu, type ContextMenuEntry } from './ContextMenu'
 import { DueChoices } from './DueChoices'
 import { DuplicateIcon } from './DuplicateIcon'
+import { FlagIcon } from './FlagIcon'
 import { FloatingPanel } from './FloatingPanel'
 import { GripIcon } from './GripIcon'
 import { ListPicker } from './ListPicker'
 import { NoteIcon } from './NoteIcon'
+import { RepeatIcon } from './RepeatIcon'
 import { RewardPicker } from './RewardPicker'
 import { SchedulePicker } from './SchedulePicker'
+import { StarIcon } from './StarIcon'
 import { SubtaskList } from './SubtaskList'
 import { TagIcon } from './TagIcon'
 import { TagPanel } from './TagPanel'
 import { TagPicker } from './TagPicker'
 import { TaskDescription } from './TaskDescription'
+import { TaskSheet } from './TaskSheet'
 import { TimePicker } from './TimePicker'
+import { UrgentToggle } from './UrgentToggle'
 
 interface TaskItemProps {
   task: Task
@@ -80,6 +91,7 @@ interface TaskItemProps {
   onSkipOccurrence: (id: TaskId) => void
   onChangeRepeat: (id: TaskId, repeat: Repeat | null) => void
   onChangeReward: (id: TaskId, reward: number | null) => void
+  onChangeUrgent: (id: TaskId, urgent: boolean) => void
   onChangeTimeGoal: (id: TaskId, minutes: number | null) => void
   onLogTime: (id: TaskId, minutes: number) => void
   onRemoveTimeEntry: (id: TaskId, entryId: TimeEntryId) => void
@@ -99,9 +111,10 @@ const titleBox = 'min-w-0 text-left text-sm'
 
 /**
  * Where the title starts, and so where everything the row holds lines up: the
- * row's own padding, the completion box, and the gap between them.
+ * row's own padding, the completion box, and the gap between them. A phone's
+ * box is larger, so the indent is too.
  */
-const indent = 'pl-10'
+const indent = 'pl-12 md:pl-10'
 
 /**
  * Each control sits in a slot of one icon button's width, so an icon is in the
@@ -116,10 +129,12 @@ const slot = 'flex w-6 shrink-0 items-center'
  * date or the repeat rule), checklist, time and reward slots, the description and
  * delete.
  * The slots are fixed, so what is spelled out under them can run wider without
- * widening them. A phone has no room for the time and reward slots beside the
- * title; its time and reward are set from the woken row instead. The list and
- * the tags have no slot anywhere: a task is filed and tagged from its menu, or on
- * a phone from the woken row as well.
+ * widening them. A phone has no room for the time and reward *controls* beside the
+ * title; its time and reward are set from the sheet a tap opens instead, and the
+ * rest row shows tinted marks for what is set (UI-50). The list
+ * and the tags have no slot anywhere: a task is filed and tagged from its menu,
+ * or on a phone from that sheet as well. Urgent is the same: set from the menu
+ * or the sheet, never a control on the resting row (TASK-62).
  */
 const lineColumns =
   'grid-cols-[auto_minmax(0,1fr)_repeat(2,--spacing(6))_auto_auto] md:grid-cols-[auto_minmax(0,1fr)_repeat(4,--spacing(6))_auto_auto]'
@@ -155,6 +170,7 @@ export function TaskItem({
   onSkipOccurrence,
   onChangeRepeat,
   onChangeReward,
+  onChangeUrgent,
   onChangeTimeGoal,
   onLogTime,
   onRemoveTimeEntry,
@@ -168,7 +184,9 @@ export function TaskItem({
   onRenameSubtask,
   onRemoveSubtask,
 }: TaskItemProps) {
+  const phone = usePhoneLayout()
   const done = isComplete(task, now)
+  const urgent = !done && task.urgent
   const checklist = countSubtasks(task, now)
   // The time that counts for the occurrence in play; once it meets the goal the
   // box invites a tick, and ticking it is still the owner's to do.
@@ -213,11 +231,21 @@ export function TaskItem({
   // icons say what is set, so every resting row is one line high. A repeating task's
   // day is its rule's, and the rule is what is spelled out, so the date is a one-off's
   // alone here.
-  const detailed = isActive || showDetails
+  // On a phone the sheet holds the details and the action buttons; the rest row still
+  // shows tinted marks for what is set (UI-50), and spells the words out under the
+  // title only when the view asks for details on every row.
+  const detailed = phone ? showDetails : isActive || showDetails
+  const day = dueDay(task, now)
+  const scheduled = task.repeat !== null || day !== null
+  const timed = task.timeGoal !== null || spent > 0
+  const rewarded = task.reward !== null
+  const checklisted = hasSubtasks(task)
+  const described = hasDescription(task)
+  const tagged = hasTags(task)
   // Labels, not controls: a click on one is a click on the row. One line of them,
   // each giving up room to the rest when there is not enough.
   const tags =
-    detailed && hasTags(task) ? (
+    detailed && tagged ? (
       <ul aria-label="Tags" className="flex min-w-0 gap-1 overflow-hidden">
         {task.tags.map((tag) => (
           <li key={tag} className={chip}>
@@ -234,9 +262,34 @@ export function TaskItem({
       : task.dueDate !== null
         ? describeDueDate(task.dueDate, now)
         : null
-  const count = detailed && hasSubtasks(task) ? `${String(checklist.done)}/${String(checklist.total)}` : null
-  const time = detailed && (task.timeGoal !== null || spent > 0) ? describeTimeProgress(spent, task.timeGoal) : null
+  const count = detailed && checklisted ? `${String(checklist.done)}/${String(checklist.total)}` : null
+  const time = detailed && timed ? describeTimeProgress(spent, task.timeGoal) : null
   const points = detailed && task.reward !== null ? describeReward(task.reward) : null
+  const urgentLabel = detailed && task.urgent ? 'Urgent' : null
+  // On a phone, marks for what the task carries — set ones only, not buttons.
+  // A tap on them is a tap on the row and opens the sheet.
+  const marks =
+    phone && (scheduled || timed || rewarded || checklisted || described || tagged)
+      ? {
+          label: [
+            scheduled
+              ? task.repeat !== null
+                ? describeRepeatBriefly(task.repeat)
+                : day !== null
+                  ? describeDueDate(day, now)
+                  : null
+              : null,
+            checklisted ? `Checklist ${String(checklist.done)} of ${String(checklist.total)}` : null,
+            timed ? describeTimeProgress(spent, task.timeGoal) : null,
+            rewarded && task.reward !== null ? describeReward(task.reward) : null,
+            described ? 'Description' : null,
+            tagged ? `Tags ${task.tags.join(', ')}` : null,
+          ]
+            .filter((part): part is string => part !== null)
+            .join(', '),
+          overdue: scheduled && task.repeat === null && overdue,
+        }
+      : null
   const timePicker = {
     goal: task.timeGoal,
     sessions,
@@ -263,6 +316,12 @@ export function TaskItem({
         onChange: changeDueDate,
         onSelectDate: () => { setDateAt(menuAt) },
       }),
+    },
+    {
+      label: 'Urgent',
+      icon: <FlagIcon />,
+      checked: task.urgent,
+      onSelect: () => { onChangeUrgent(task.id, !task.urgent) },
     },
     { label: 'Duplicate', icon: <DuplicateIcon />, onSelect: () => { onDuplicate(task.id) } },
     // A panel of its own rather than a group, since it takes typing and more than one choice.
@@ -296,16 +355,19 @@ export function TaskItem({
     element.setSelectionRange(at, at)
   }, [isEditing])
 
+  const putAway = useEffectEvent(rest)
+
   useEffect(() => {
-    if (!isActive) return
+    // A phone's sheet lives outside the row and closes itself.
+    if (!isActive || phone) return
 
     function handlePointerDown(event: PointerEvent) {
-      if (!row.current?.contains(event.target as Node)) rest()
+      if (!row.current?.contains(event.target as Node)) putAway()
     }
 
     document.addEventListener('pointerdown', handlePointerDown)
     return () => { document.removeEventListener('pointerdown', handlePointerDown) }
-  }, [isActive])
+  }, [isActive, phone])
 
   /**
    * Opening the row: it shows what it holds. A row already awake is left as it
@@ -314,31 +376,43 @@ export function TaskItem({
   function wake() {
     if (isActive) return
     setIsActive(true)
-    setIsChecklistOpen(true)
-    setIsDescriptionOpen(true)
+    // On a phone the sheet always shows both; the toggles are a wide screen's.
+    if (!phone) {
+      setIsChecklistOpen(true)
+      setIsDescriptionOpen(true)
+    }
   }
 
   /** Letting it rest again, and putting away what it was showing. */
   function rest() {
+    if (phone && editedTitle !== null) {
+      const trimmed = editedTitle.trim()
+      if (trimmed.length > 0) onRename(task.id, trimmed)
+      setEditedTitle(null)
+    }
     setIsActive(false)
     setIsChecklistOpen(false)
     setIsDescriptionOpen(false)
   }
 
   /**
-   * A click on a resting row wakes it. On a woken row only a click on the task's
-   * own line, clear of everything on it that does something, does anything more:
-   * a mouse's rests it again, and a finger's opens the task's menu where it
-   * landed — a finger has no right-click, and a tap anywhere else rests the row.
-   * So a double tap opens the menu. A click inside a control, a picker or a panel
-   * is about that, and a button that closes one of those is not undone by the
-   * same click reaching the row.
+   * A click on a resting row wakes it. On a phone that is the sheet, and a
+   * further click on the row does nothing — the dimmed page closes it. On a
+   * wide screen only a click on the task's own line, clear of everything on it
+   * that does something, does anything more: a mouse's rests it again, and a
+   * finger's opens the task's menu where it landed — a finger has no
+   * right-click, and a tap anywhere else rests the row. So a double tap opens
+   * the menu. A click inside a control, a picker or a panel is about that, and
+   * a button that closes one of those is not undone by the same click reaching
+   * the row.
    */
   function handleClick(event: MouseEvent<HTMLLIElement>) {
     if (!isActive) {
       wake()
       return
     }
+
+    if (phone) return
 
     const target = event.target as Element
     const onLine = target === event.currentTarget || line.current?.contains(target) === true
@@ -379,11 +453,13 @@ export function TaskItem({
    * completion box.
    */
   function handleFocus(event: FocusEvent<HTMLElement>) {
-    if (event.target.matches(':focus-visible')) wake()
+    // On a phone the controls live in the sheet; focusing the box must not open it.
+    if (!phone && event.target.matches(':focus-visible')) wake()
   }
 
   /** Tabbing out rests the row; moving between its own controls does not. */
   function handleBlur(event: FocusEvent<HTMLLIElement>) {
+    if (phone) return
     if (event.relatedTarget !== null && !event.currentTarget.contains(event.relatedTarget)) {
       rest()
     }
@@ -445,6 +521,34 @@ export function TaskItem({
     }
   }
 
+  const titleClass = done
+    ? `${titleBox} cursor-text pr-[13px] break-words text-neutral-400 line-through dark:text-neutral-600`
+    : `${titleBox} cursor-text pr-[13px] break-words text-neutral-900 dark:text-neutral-100`
+  const titleEditor =
+    editedTitle === null ? (
+      <button
+        type="button"
+        onClick={startEdit}
+        aria-label={`Edit "${task.title}"`}
+        className={phone ? `${titleClass} text-lg` : titleClass}
+      >
+        {task.title}
+      </button>
+    ) : (
+      <input
+        ref={input}
+        type="text"
+        value={editedTitle}
+        onChange={(event) => { setEditedTitle(event.target.value) }}
+        onKeyDown={handleKeyDown}
+        onBlur={commitEdit}
+        aria-label={`Title of "${task.title}"`}
+        autoComplete="off"
+        enterKeyHint="done"
+        className={`${titleBox} ${phone ? 'text-lg' : ''} flex-1 bg-transparent text-neutral-900 focus:outline-none dark:text-neutral-100`}
+      />
+    )
+
   return (
     <li
       ref={(element) => {
@@ -479,11 +583,12 @@ export function TaskItem({
         sortable.isDragging
           // Left in the list, faded, where it would land; its title is what the pointer carries (TaskDragAndDrop).
           ? 'group relative touch-manipulation rounded-xl border border-dashed border-neutral-300 bg-white opacity-50 dark:border-neutral-700 dark:bg-neutral-900'
-          : menuAt !== null || tagsAt !== null || dateAt !== null
-            // Marked while its menu is open, so it is plain which task the menu is for.
-            ? 'group relative touch-manipulation rounded-xl border border-neutral-400 bg-white dark:border-neutral-600 dark:bg-neutral-900'
-            : 'group relative touch-manipulation rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+          : menuAt !== null || tagsAt !== null || dateAt !== null || (phone && isActive)
+            // Marked while its menu or sheet is open, so it is plain which task that is for.
+            ? `group relative touch-manipulation rounded-xl border border-neutral-400 bg-white dark:border-neutral-600 dark:bg-neutral-900${urgent ? ' shadow-[inset_3px_0_0_rgb(217_119_6_/_0.55)] dark:shadow-[inset_3px_0_0_rgb(251_191_36_/_0.45)]' : ''}`
+            : `group relative touch-manipulation rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900${urgent ? ' shadow-[inset_3px_0_0_rgb(217_119_6_/_0.55)] dark:shadow-[inset_3px_0_0_rgb(251_191_36_/_0.45)]' : ''}`
       }
+      title={urgent ? 'Urgent' : undefined}
     >
       {/* In the gutter left of the row, so it takes nothing from the row itself.
           Shown on hover and on the woken row, where the keyboard reaches it. */}
@@ -506,7 +611,14 @@ export function TaskItem({
           detail under the column it belongs to. */}
       {/* The line's gap is the one between the controls; the title adds to it, so it
           stands apart from them. The box adds only what keeps the title at the indent. */}
-      <div ref={line} className={`grid ${lineColumns} items-center gap-x-2 px-2.5 py-1`}>
+      <div
+        ref={line}
+        className={
+          phone
+            ? 'flex items-center gap-2 px-2 py-1.5'
+            : `grid ${lineColumns} items-center gap-x-2 px-2 py-1.5 md:px-2.5 md:py-1`
+        }
+      >
         <button
           type="button"
           onClick={(event) => {
@@ -524,163 +636,264 @@ export function TaskItem({
                 : `Mark "${task.title}" as done`
           }
           title={ready ? 'Time goal reached: ready to tick off' : undefined}
-          className={`${done ? completionBoxOn : ready ? completionBoxReady : completionBoxOff} mr-0.5`}
+          className={`${done ? completionBoxOn : ready ? completionBoxReady : completionBoxOff} md:mr-0.5`}
+          aria-hidden={phone && isActive ? true : undefined}
+          tabIndex={phone && isActive ? -1 : undefined}
         >
           ✓
         </button>
 
-        {/* The title is only as wide as its words and a little past them, so the
-            rest of the line is the row to click, not the title. The box, once
-            open, takes the whole of it to type into. */}
-        <div className="flex min-w-0 items-center pr-1.5">
-          {editedTitle === null ? (
+        {/* On a phone the title is part of the tap that opens the sheet, not an
+            edit. The words plus a little past them are the edit on a wide screen. */}
+        <div className={phone ? 'flex min-w-0 flex-1 items-center pr-1.5' : 'flex min-w-0 items-center pr-1.5'}>
+          {phone ? (
             <button
               type="button"
-              onClick={startEdit}
-              aria-label={`Edit "${task.title}"`}
+              onClick={(event) => {
+                event.stopPropagation()
+                wake()
+              }}
+              aria-haspopup="dialog"
+              aria-expanded={isActive}
+              aria-hidden={isActive ? true : undefined}
+              tabIndex={isActive ? -1 : undefined}
               className={
                 done
-                  ? `${titleBox} cursor-text pr-[13px] break-words text-neutral-400 line-through dark:text-neutral-600`
-                  : `${titleBox} cursor-text pr-[13px] break-words text-neutral-900 dark:text-neutral-100`
+                  ? `${titleBox} break-words text-neutral-400 line-through dark:text-neutral-600`
+                  : `${titleBox} break-words text-neutral-900 dark:text-neutral-100`
               }
             >
               {task.title}
             </button>
           ) : (
-            <input
-              ref={input}
-              type="text"
-              value={editedTitle}
-              onChange={(event) => { setEditedTitle(event.target.value) }}
-              onKeyDown={handleKeyDown}
-              onBlur={commitEdit}
-              aria-label={`Title of "${task.title}"`}
-              autoComplete="off"
-              enterKeyHint="done"
-              className={`${titleBox} flex-1 bg-transparent text-neutral-900 focus:outline-none dark:text-neutral-100`}
-            />
+            titleEditor
           )}
         </div>
 
-        {/* On every row: the date and the repeat rule are one control, since a rule is
-            what gives a repeating task its days. Its name carries the occurrence in play,
-            and a day picked there makes the task a one-off. */}
-        <div className={slot}>
-          <SchedulePicker
-            dueDate={dueDay(task, now)}
-            draft={draft}
-            now={now}
-            overdue={overdue}
-            onChangeDueDate={changeDueDate}
-            onChangeRepeat={handleRepeatChange}
-            skip={skip}
-            label={`Schedule for "${task.title}"`}
-          />
-        </div>
-
-        <div className={slot}>
-          <button
-            type="button"
-            onClick={() => { setIsChecklistOpen(!isChecklistOpen) }}
-            aria-expanded={isChecklistOpen}
-            aria-label={
-              hasSubtasks(task)
-                ? `Checklist for "${task.title}": ${String(checklist.done)} of ${String(checklist.total)} done`
-                : `Add a checklist to "${task.title}"`
-            }
-            title={hasSubtasks(task) ? `${String(checklist.done)}/${String(checklist.total)} done` : 'Add a checklist'}
-            className={hasSubtasks(task) ? `${rowButton} ${controlOn}` : `${rowButton} ${controlOff}`}
+        {/* On a phone: tinted marks for what is set, not controls — a tap still
+            opens the sheet. Empty ones stay off, so a bare task stays one title. */}
+        {marks !== null && (
+          <div
+            role="group"
+            aria-label={marks.label}
+            aria-hidden={phone && isActive ? true : undefined}
+            className="flex shrink-0 items-center gap-0.5"
           >
-            <ChecklistIcon />
-          </button>
-        </div>
-
-        <div className={`${slot} max-md:hidden`}>
-          <TimePicker {...timePicker} />
-        </div>
-
-        <div className={`${slot} max-md:hidden`}>
-          <RewardPicker
-            reward={task.reward}
-            repeat={task.repeat}
-            onChange={(reward) => { onChangeReward(task.id, reward) }}
-            label={`Reward for "${task.title}"`}
-          />
-        </div>
-
-        <button
-          type="button"
-          onClick={() => { setIsDescriptionOpen(!isDescriptionOpen) }}
-          aria-expanded={isDescriptionOpen}
-          aria-label={
-            hasDescription(task) ? `Description of "${task.title}"` : `Add a description to "${task.title}"`
-          }
-          title={hasDescription(task) ? 'Description' : 'Add a description'}
-          className={hasDescription(task) ? `${rowButton} ${controlOn}` : `${rowButton} ${controlOff}`}
-        >
-          <NoteIcon />
-        </button>
-
-        {/* Always on show, and last, so it keeps its place as the row wakes and rests. */}
-        <button
-          type="button"
-          onClick={(event) => {
-            // Deleting is not engaging with the task either: the row is on its way out.
-            event.stopPropagation()
-            onRemove(task.id)
-          }}
-          aria-label={`Delete "${task.title}"`}
-          className={`flex h-6 shrink-0 items-center rounded-lg px-1 text-base leading-none ${deleteControl}`}
-        >
-          ×
-        </button>
-
-        {/* The second line is part of the task's line too, so a click on it rests a woken
-            row as the line does. Each detail is centred under its control and free to run
-            wider than it. Whether the task is done is the box's to say. */}
-        {/* The tags are under the title, from where it starts. A long rule centred on its
-            button would run into the details beside it, so the schedule's detail ends under
-            its button instead and runs left over the title's column, sharing that with the
-            tags, which give up room to it. An overdue date is red; a rule is no day, so not. */}
-        {(tags !== null || schedule !== null) && (
-          <div className={`${detail} col-start-2 col-end-4 flex min-w-0 gap-2`}>
-            {tags}
-            {schedule !== null && (
-              <p
-                className={
-                  task.repeat === null && overdue
-                    ? 'ml-auto min-w-6 shrink-0 text-center text-red-600 dark:text-red-400'
-                    : 'ml-auto min-w-6 shrink-0 text-center'
-                }
-              >
-                {schedule}
-              </p>
+            {scheduled && (
+              <span className={marks.overdue ? controlMarkerOverdue : controlMarker}>
+                {task.repeat === null ? <CalendarIcon /> : <RepeatIcon />}
+              </span>
+            )}
+            {checklisted && (
+              <span className={controlMarker}>
+                <ChecklistIcon />
+              </span>
+            )}
+            {timed && (
+              <span className={ready ? `${controlMarker} ${detailReached}` : controlMarker}>
+                <ClockIcon />
+              </span>
+            )}
+            {rewarded && (
+              <span className={controlMarker}>
+                <StarIcon />
+              </span>
+            )}
+            {described && (
+              <span className={controlMarker}>
+                <NoteIcon />
+              </span>
+            )}
+            {tagged && (
+              <span className={controlMarker}>
+                <TagIcon />
+              </span>
             )}
           </div>
         )}
 
-        {count !== null && <p className={`${detail} col-start-4 justify-self-center`}>{count}</p>}
+        {!phone && (
+          <>
+            {/* On every row: the date and the repeat rule are one control, since a rule is
+                what gives a repeating task its days. Its name carries the occurrence in play,
+                and a day picked there makes the task a one-off. */}
+            <div className={slot}>
+              <SchedulePicker
+                dueDate={dueDay(task, now)}
+                draft={draft}
+                now={now}
+                overdue={overdue}
+                onChangeDueDate={changeDueDate}
+                onChangeRepeat={handleRepeatChange}
+                skip={skip}
+                label={`Schedule for "${task.title}"`}
+              />
+            </div>
 
-        {/* Under the time's and the reward's slots, which a phone does not have: its woken row
-            names the time and the points instead. */}
-        {time !== null && (
-          <p
-            className={
-              ready
-                ? `${detail} col-start-5 justify-self-center max-md:hidden ${detailReached}`
-                : `${detail} col-start-5 justify-self-center max-md:hidden`
-            }
-          >
-            {time}
-          </p>
+            <div className={slot}>
+              <button
+                type="button"
+                onClick={() => { setIsChecklistOpen(!isChecklistOpen) }}
+                aria-expanded={isChecklistOpen}
+                aria-label={
+                  hasSubtasks(task)
+                    ? `Checklist for "${task.title}": ${String(checklist.done)} of ${String(checklist.total)} done`
+                    : `Add a checklist to "${task.title}"`
+                }
+                title={hasSubtasks(task) ? `${String(checklist.done)}/${String(checklist.total)} done` : 'Add a checklist'}
+                className={hasSubtasks(task) ? `${rowButton} ${controlOn}` : `${rowButton} ${controlOff}`}
+              >
+                <ChecklistIcon />
+              </button>
+            </div>
+
+            <div className={slot}>
+              <TimePicker {...timePicker} />
+            </div>
+
+            <div className={slot}>
+              <RewardPicker
+                reward={task.reward}
+                repeat={task.repeat}
+                onChange={(reward) => { onChangeReward(task.id, reward) }}
+                label={`Reward for "${task.title}"`}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => { setIsDescriptionOpen(!isDescriptionOpen) }}
+              aria-expanded={isDescriptionOpen}
+              aria-label={
+                hasDescription(task) ? `Description of "${task.title}"` : `Add a description to "${task.title}"`
+              }
+              title={hasDescription(task) ? 'Description' : 'Add a description'}
+              className={hasDescription(task) ? `${rowButton} ${controlOn}` : `${rowButton} ${controlOff}`}
+            >
+              <NoteIcon />
+            </button>
+
+            {/* Always on show, and last, so it keeps its place as the row wakes and rests. */}
+            <button
+              type="button"
+              onClick={(event) => {
+                // Deleting is not engaging with the task either: the row is on its way out.
+                event.stopPropagation()
+                onRemove(task.id)
+              }}
+              aria-label={`Delete "${task.title}"`}
+              className={`flex h-6 shrink-0 items-center rounded-lg px-1 text-base leading-none ${deleteControl}`}
+            >
+              ×
+            </button>
+          </>
         )}
 
-        {points !== null && <p className={`${detail} col-start-6 justify-self-center max-md:hidden`}>{points}</p>}
+        {!phone && (
+          <>
+            {/* The second line is part of the task's line too, so a click on it rests a woken
+                row as the line does. Each detail is centred under its control and free to run
+                wider than it. Whether the task is done is the box's to say. */}
+            {/* The tags are under the title, from where it starts. A long rule centred on its
+                button would run into the details beside it, so the schedule's detail ends under
+                its button instead and runs left over the title's column, sharing that with the
+                tags, which give up room to it. An overdue date is red; a rule is no day, so not. */}
+            {(tags !== null || urgentLabel !== null || schedule !== null) && (
+              <div className={`${detail} col-start-2 col-end-4 flex min-w-0 gap-2`}>
+                {tags}
+                {urgentLabel !== null && <p className="shrink-0">{urgentLabel}</p>}
+                {schedule !== null && (
+                  <p
+                    className={
+                      task.repeat === null && overdue
+                        ? 'ml-auto min-w-6 shrink-0 text-center text-red-600 dark:text-red-400'
+                        : 'ml-auto min-w-6 shrink-0 text-center'
+                    }
+                  >
+                    {schedule}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {count !== null && <p className={`${detail} col-start-4 justify-self-center`}>{count}</p>}
+
+            {time !== null && (
+              <p
+                className={
+                  ready
+                    ? `${detail} col-start-5 justify-self-center ${detailReached}`
+                    : `${detail} col-start-5 justify-self-center`
+                }
+              >
+                {time}
+              </p>
+            )}
+
+            {points !== null && <p className={`${detail} col-start-6 justify-self-center`}>{points}</p>}
+          </>
+        )}
       </div>
 
+      {phone && detailed && (tags !== null || urgentLabel !== null || schedule !== null || count !== null || time !== null || points !== null) && (
+        <div className={`${detail} flex min-w-0 flex-wrap items-center gap-x-2 px-2 pb-1.5 ${indent}`}>
+          {tags}
+          {urgentLabel !== null && <p>{urgentLabel}</p>}
+          {schedule !== null && (
+            <p className={task.repeat === null && overdue ? 'text-red-600 dark:text-red-400' : undefined}>
+              {schedule}
+            </p>
+          )}
+          {count !== null && <p>{count}</p>}
+          {time !== null && <p className={ready ? detailReached : undefined}>{time}</p>}
+          {points !== null && <p>{points}</p>}
+        </div>
+      )}
+
+      {/* The menu's actions, once the row is open — list, tags, urgent, duplicate —
+          so a wide screen need not right-click for what a phone's sheet already has. */}
+      {!phone && isActive && (
+        <div
+          className={`flex flex-wrap items-center gap-1 border-t border-neutral-200 py-1 pr-2 md:pr-2.5 ${indent} dark:border-neutral-800`}
+        >
+          {lists.length > 0 && (
+            <ListPicker
+              listId={task.listId}
+              lists={lists}
+              onChange={(listId) => { onChangeList(task.id, listId) }}
+              label={`List for "${task.title}"`}
+              align="left"
+            />
+          )}
+          <TagPicker
+            tags={task.tags}
+            known={knownTags}
+            onAdd={(name) => { onAddTag(task.id, name) }}
+            onRemove={(name) => { onRemoveTag(task.id, name) }}
+            label={`Tags for "${task.title}"`}
+            align="left"
+          />
+          <UrgentToggle
+            urgent={task.urgent}
+            onChange={(next) => { onChangeUrgent(task.id, next) }}
+            label={`Urgent for "${task.title}"`}
+          />
+          <button
+            type="button"
+            onClick={() => { onDuplicate(task.id) }}
+            aria-label={`Duplicate "${task.title}"`}
+            title="Duplicate"
+            className={`${rowControlLabel} ${controlOff}`}
+          >
+            <DuplicateIcon />
+            Duplicate
+          </button>
+        </div>
+      )}
+
       {/* Indented to start where the title does, so it reads as part of the same row. */}
-      {isChecklistOpen && (
-        <div className={`border-t border-neutral-200 py-1 pr-2.5 ${indent} dark:border-neutral-800`}>
+      {!phone && isChecklistOpen && (
+        <div className={`border-t border-neutral-200 py-1 pr-2 md:pr-2.5 ${indent} dark:border-neutral-800`}>
           <SubtaskList
             subtasks={task.subtasks}
             repeat={task.repeat}
@@ -694,8 +907,8 @@ export function TaskItem({
         </div>
       )}
 
-      {isDescriptionOpen && (
-        <div className={`border-t border-neutral-200 py-1.5 pr-2.5 ${indent} dark:border-neutral-800`}>
+      {!phone && isDescriptionOpen && (
+        <div className={`border-t border-neutral-200 py-1.5 pr-2 md:pr-2.5 ${indent} dark:border-neutral-800`}>
           <TaskDescription
             description={task.description}
             title={task.title}
@@ -707,40 +920,36 @@ export function TaskItem({
         </div>
       )}
 
-      {/* A phone's line has no time or reward slot, so the woken row carries them, and the list and
-          the tags beside them, a tap away rather than a menu away — one above the other so each
-          panel opens from the left edge with room. */}
-      {isActive && (
-        <div
-          className={`flex flex-col items-start gap-0.5 border-t border-neutral-200 py-1 pr-2.5 ${indent} md:hidden dark:border-neutral-800`}
-        >
-          <ListPicker
-            listId={task.listId}
-            lists={lists}
-            onChange={(listId) => { onChangeList(task.id, listId) }}
-            label={`List for "${task.title}"`}
-            showName
-            align="left"
-          />
-          <TimePicker {...timePicker} showAmount align="left" />
-          <TagPicker
-            tags={task.tags}
-            known={knownTags}
-            onAdd={(name) => { onAddTag(task.id, name) }}
-            onRemove={(name) => { onRemoveTag(task.id, name) }}
-            label={`Tags for "${task.title}"`}
-            showNames
-            align="left"
-          />
-          <RewardPicker
-            reward={task.reward}
-            repeat={task.repeat}
-            onChange={(reward) => { onChangeReward(task.id, reward) }}
-            label={`Reward for "${task.title}"`}
-            showAmount
-            align="left"
-          />
-        </div>
+      {phone && isActive && (
+        <TaskSheet
+          task={task}
+          now={now}
+          knownTags={knownTags}
+          lists={lists}
+          draft={draft}
+          title={titleEditor}
+          onClose={rest}
+          onComplete={onComplete}
+          onUncomplete={onUncomplete}
+          onChangeDescription={onChangeDescription}
+          onChangeDueDate={changeDueDate}
+          onSkipOccurrence={onSkipOccurrence}
+          onChangeRepeat={handleRepeatChange}
+          onChangeReward={onChangeReward}
+          onChangeUrgent={onChangeUrgent}
+          onChangeTimeGoal={onChangeTimeGoal}
+          onLogTime={onLogTime}
+          onRemoveTimeEntry={onRemoveTimeEntry}
+          onChangeList={onChangeList}
+          onAddTag={onAddTag}
+          onRemoveTag={onRemoveTag}
+          onRemove={onRemove}
+          onDuplicate={onDuplicate}
+          onAddSubtask={onAddSubtask}
+          onSetSubtaskDone={onSetSubtaskDone}
+          onRenameSubtask={onRenameSubtask}
+          onRemoveSubtask={onRemoveSubtask}
+        />
       )}
 
       {menuAt !== null && (

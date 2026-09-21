@@ -3,6 +3,7 @@ import { sortLists, type List, type ListId } from '../../core'
 import { useListDropTarget } from '../useListDropTarget'
 import { isUnder, oneListView, VIEW_LABELS, type FixedView, type View } from '../view'
 import { VIEW_ICONS } from '../viewIcons'
+import { AppLogo } from './AppLogo'
 import { ChevronIcon } from './ChevronIcon'
 import { FolderIcon } from './FolderIcon'
 import { InboxIcon } from './InboxIcon'
@@ -48,17 +49,19 @@ interface SideNavProps {
 }
 
 /**
- * Which screen you are on: a plain list down the left. Only where there is room
- * for one — a phone gets the bar along the bottom instead (BottomNav). The one
- * you are on is marked, a list under Lists included — or Lists itself while the
- * lists are folded away. Tags stays marked while a tag's tasks are open, being
- * where they were opened from.
+ * Which screen you are on: a plain list down the left, under the app's mark.
+ * Only where there is room for one — a phone gets the bar along the bottom
+ * instead (BottomNav), and no mark above the work. The one you are on is
+ * marked, a list under Lists included — or Lists itself while the lists are
+ * folded away. Tags stays marked while a tag's tasks are open, being where
+ * they were opened from.
  */
 export function SideNav({ view, lists, listsOpen, onChange, onListsOpenChange }: SideNavProps) {
   const listsId = useId()
 
   return (
     <nav aria-label="Views" className="hidden md:block md:w-44 md:shrink-0">
+      <AppLogo className="mb-3 flex items-center gap-2.5 px-3" />
       <ul className="flex flex-col gap-0.5">
         {VIEW_GROUPS.map((group, index) => (
           <Fragment key={group[0]}>

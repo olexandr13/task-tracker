@@ -103,6 +103,10 @@ changes shape.
   kept the same way, and for the same reasons: in this browser's `localStorage`, not in the
   account, under a version of its own, read at once when the app opens, and back to the default —
   unfolded — when it cannot be read.
+- **STORE-36** How the habits view is shown — whether cards start open (HAB-23) — is kept the same
+  way again, under a version of its own, apart from the task View options (STORE-30). A phone and a
+  desktop have different room, so each is set its own way. Options the app cannot read fall back to
+  the default: folded.
 
 ## A copy outside the account
 
@@ -120,12 +124,16 @@ changes shape.
   existed, before a task could carry a description, before it could carry a checklist, before it
   had an order of its own, before it could be due on a day, before a repeating task kept the days
   it was done on, before a task could carry tags, before it could carry a reward, before there
-  were lists to file it under, before a task could ask for time, and before a repeating task's occurrence could be skipped. The order step keeps each task where it was: the saved list was already in
+  were lists to file it under, before a task could ask for time, before a repeating task's occurrence
+  could be skipped, before a task could carry a priority, and before priority became a single urgent
+  mark. The order step keeps each task where it was: the saved list was already in
   order. Tasks saved before due dates have no day. A repeating task saved before history was kept
   starts its history with the day of its last completion, the one day anything remembers. Tasks
   saved before tags have none, tasks saved before rewards have no reward, so none of what they
   did before earns anything, tasks saved before lists are in none — the Inbox, where a task
-  starts anyway (LST-2) — and tasks saved before time goals have no goal and no time logged.
+  starts anyway (LST-2) — tasks saved before time goals have no goal and no time logged,
+  tasks saved before priority have no urgent mark, and a high priority from the ranked shape
+  becomes urgent; low and medium do not.
 - **STORE-7** Data in a version the app does not recognise, or that cannot be parsed at all, is
   **ignored with a warning** rather than crashing, and left as it is: a task the app cannot read is
   not shown, and never overwritten or deleted by it.
@@ -159,13 +167,15 @@ changes shape.
 
 **Where it lives:** `src/storage/taskRepository.ts` (the interface, and what a change comes to),
 `firestoreTaskRepository.ts` (the account's tasks), `firebaseApp.ts` (the database and its offline
-copy), `taskSchema.ts` (versions and upgrades), `localTaskImport.ts` (tasks kept in the browser),
+copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgrades), `localTaskImport.ts` (tasks kept in the browser),
 `firestoreBatches.ts` (writing in batches), `firestoreAccount.ts` (every collection an account keeps), `rewardRepository.ts`, `firestoreRewardRepository.ts` and
 `rewardSchema.ts` (the points ledger), `listRepository.ts`, `firestoreListRepository.ts` and
 `listSchema.ts` (the lists), `tagRepository.ts`, `firestoreTagRepository.ts` and `tagSchema.ts`
 (the kept tags), `src/storage/quoteRepository.ts` and `localStorageQuoteRepository.ts`,
 `src/storage/quoteSource.ts` and `quotableQuoteSource.ts`, `src/storage/viewOptionsRepository.ts`,
-`viewOptionsSchema.ts` and `localStorageViewOptionsRepository.ts` (the View options), `src/storage/sideNavRepository.ts`,
+`viewOptionsSchema.ts` and `localStorageViewOptionsRepository.ts` (the View options),
+`src/storage/habitViewOptionsRepository.ts`, `habitViewOptionsSchema.ts` and
+`localStorageHabitViewOptionsRepository.ts` (Habits'), `src/storage/sideNavRepository.ts`,
 `sideNavSchema.ts` and `localStorageSideNavRepository.ts` (the sidebar's layout), `src/app/useTasks.ts`, `src/app/useLists.ts`,
 `src/app/useTags.ts` (keeping the tags tasks carry),
 `src/app/TasksScreen.tsx` (the repository and the move). Who may read what: `firestore.rules`.
@@ -175,4 +185,5 @@ copy), `taskSchema.ts` (versions and upgrades), `localTaskImport.ts` (tasks kept
 (what a change to the lists writes, and reading one back), `src/storage/tagRepository.test.ts`,
 `src/storage/tagSchema.test.ts` and `src/app/useTags.test.ts` (the same for the tags, and keeping the
 ones tasks carry), `src/storage/viewOptionsSchema.test.ts` (reading the
-View options back), `src/storage/sideNavSchema.test.ts` (reading the sidebar's layout back).
+View options back), `src/storage/habitViewOptionsSchema.test.ts` (reading Habits' back),
+`src/storage/sideNavSchema.test.ts` (reading the sidebar's layout back).

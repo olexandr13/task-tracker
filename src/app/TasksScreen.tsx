@@ -4,10 +4,9 @@ import {
   countInboxOpen,
   groupByCompletion,
   habitTasks,
-  isComplete,
   liveTasks,
   sameTag,
-  sortByOrder,
+  sortForDisplay,
   summarizeLists,
   summarizeTags,
   trashedTasks,
@@ -22,6 +21,7 @@ import { createFirestoreRewardRepository } from '../storage/firestoreRewardRepos
 import { createFirestoreSyncMonitor } from '../storage/firestoreSyncMonitor'
 import { createFirestoreTagRepository } from '../storage/firestoreTagRepository'
 import { createFirestoreTaskRepository } from '../storage/firestoreTaskRepository'
+import { localStorageHabitViewOptionsRepository } from '../storage/localStorageHabitViewOptionsRepository'
 import { localStorageQuoteRepository } from '../storage/localStorageQuoteRepository'
 import { localStorageSideNavRepository } from '../storage/localStorageSideNavRepository'
 import { localStorageViewOptionsRepository } from '../storage/localStorageViewOptionsRepository'
@@ -31,7 +31,9 @@ import { AddTaskForm } from './components/AddTaskForm'
 import { BottomNav } from './components/BottomNav'
 import { FolderIcon } from './components/FolderIcon'
 import { HabitList } from './components/HabitList'
+import { HabitViewOptionsMenu } from './components/HabitViewOptionsMenu'
 import { ListsPage } from './components/ListsPage'
+import { MorePage } from './components/MorePage'
 import { ProgressPanel } from './components/ProgressPanel'
 import { QuoteCard } from './components/QuoteCard'
 import { RewardsPage } from './components/RewardsPage'
@@ -55,6 +57,7 @@ import { useTags } from './useTags'
 import { useTasks } from './useTasks'
 import { useUndoToast } from './useUndoToast'
 import { useView } from './useView'
+import { useHabitViewOptions } from './useHabitViewOptions'
 import { useViewOptions } from './useViewOptions'
 import {
   allDoneMessage,
@@ -83,7 +86,7 @@ const footLink =
  * navigation moved to a bar along the bottom of the screen.
  *
  * The rail belongs to the views that show tasks, not to the app, so habits,
- * rewards, the lists, the tags, the trash and settings do without it. The habits page is a record of progress already,
+ * rewards, More, the lists, the tags, the trash and settings do without it. The habits page is a record of progress already,
  * and how much of the week is cleared says nothing about what was thrown away —
  * nobody needs spurring on to empty a bin.
  *
@@ -93,10 +96,11 @@ const footLink =
  * carrying a tag. The bars count every live task whichever it is, being about
  * the periods rather than about what is on screen.
  *
- * There is no heading over any of it: the navigation already marks which view you
- * are on, so a title would say it twice and cost a strip of the screen to do it.
- * The account lives on Settings, which has a place in the sidebar and a tab in the
- * phone's bar alike.
+ * There is no view heading over the work: the navigation already marks which view
+ * you are on, so a title would say it twice and cost a strip of the screen to do
+ * it. The app's mark sits at the top of the sidebar on a wide screen; a phone
+ * has none. The account lives on Settings, which has a place in the sidebar and
+ * a tab in the phone's bar alike.
  *
  * The tasks, the lists they are filed under and the points they earn are the
  * account's. The screen is remade for each account (App), so one repository of
@@ -131,6 +135,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     skip,
     changeRepeat,
     changeReward,
+    changeUrgent,
     changeTimeGoal,
     logTaskTime,
     removeTaskTime,
@@ -157,6 +162,8 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   const [view, setView] = useView()
   // How the task views are shown: one set for all of them, kept on this device.
   const [viewOptions, setViewOptions] = useViewOptions(localStorageViewOptionsRepository)
+  // How the habits view is shown, kept on this device too, apart from the task views'.
+  const [habitViewOptions, setHabitViewOptions] = useHabitViewOptions(localStorageHabitViewOptionsRepository)
   // Which of the sidebar's groups are folded away, kept on this device too.
   const [sideNav, setSideNav] = useSideNav(localStorageSideNavRepository)
   const undo = useUndoToast()
@@ -172,15 +179,15 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   // any a live task carries that is not kept yet.
   const tags = allTags(savedTags.tags, live)
 
-  // Done tasks sink to the bottom; sort is stable, so each group keeps the order
-  // it was given. A repeating task is only done for its current occurrence. A
-  // view dividing its done tasks by when they were finished puts the most recent
-  // first, the order its headings come in.
+  // Overdue float to the top and done sink to the bottom; sort is stable, so
+  // each band keeps the order it was given. A repeating task is only done for
+  // its current occurrence. A view dividing its done tasks by when they were
+  // finished puts the most recent first, the order its headings come in.
   const shown = isTaskView(view) ? live.filter((task) => showsTask(view, task, now, lists.lists)) : live
   const spans = isTaskView(view) ? doneSpans(view) : null
   const ordered = spans !== null
-    ? groupByCompletion(sortByOrder(shown), spans, now).flatMap((group) => group.tasks)
-    : sortByOrder(shown).sort((a, b) => Number(isComplete(a, now)) - Number(isComplete(b, now)))
+    ? groupByCompletion(sortForDisplay(shown, now), spans, now).flatMap((group) => group.tasks)
+    : sortForDisplay(shown, now)
 
   // The same `now` once more: which quote is today's is derived from the day it
   // falls in, so the quote and the bars can't disagree about which day it is.
@@ -264,6 +271,10 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                   onImport={(file) => { void backup.importFile(file) }}
                 />
               </section>
+            ) : view === 'more' ? (
+              <section aria-label="More">
+                <MorePage onOpen={setView} />
+              </section>
             ) : view === 'rewards' ? (
               <section aria-label="Rewards">
                 {rewards.isLoading ? (
@@ -318,6 +329,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     onSkipOccurrence={skip}
                     onChangeRepeat={changeRepeat}
                     onChangeReward={changeReward}
+                    onChangeUrgent={changeUrgent}
                     onChangeTimeGoal={changeTimeGoal}
                     onLogTime={logTaskTime}
                     onRemoveTimeEntry={removeTaskTime}
@@ -334,7 +346,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                 </section>
 
                 {/* A phone's bar has no room for the lists or the trash, so they are kept at
-                    the foot of every task. The tags and the rewards are under its More tab. */}
+                    the foot of every task. The tags and the rewards are on its More page. */}
                 {view === 'tasks' && (
                   <nav aria-label="Under Tasks" className="flex flex-wrap gap-1 md:hidden">
                     <button type="button" onClick={() => { setView('lists') }} className={footLink}>
@@ -378,23 +390,42 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                 )}
               </section>
             ) : view === 'habits' ? (
-              <section aria-label="Habits">
-                <HabitList
-                  habits={habitTasks(tasks)}
-                  now={now}
-                  onComplete={complete}
-                  onUncomplete={uncomplete}
-                  onSetDay={setHabitDay}
-                  onChangeTimeGoal={changeTimeGoal}
-                  onLogTime={logTaskTime}
-                  onRemoveTimeEntry={removeTaskTime}
-                />
-              </section>
+              <>
+                {/* The View button beside the box, as on the task views: the box is for a
+                    new habit, the button is for how the cards below are shown. */}
+                <div className="flex gap-2">
+                  <div className="min-w-0 flex-1">
+                    <AddTaskForm
+                      now={now}
+                      defaultDueDate={null}
+                      defaultRepeat={{ kind: 'daily' }}
+                      onAdd={(title, repeat, dueDate) => {
+                        addTask(title, repeat ?? { kind: 'daily' }, dueDate, [], null)
+                      }}
+                    />
+                  </div>
+
+                  <HabitViewOptionsMenu options={habitViewOptions} onChange={setHabitViewOptions} />
+                </div>
+
+                <section aria-label="Habits">
+                  <HabitList
+                    habits={habitTasks(tasks)}
+                    now={now}
+                    showDetails={habitViewOptions.showDetails}
+                    onComplete={complete}
+                    onUncomplete={uncomplete}
+                    onSetDay={setHabitDay}
+                    onChangeTimeGoal={changeTimeGoal}
+                    onLogTime={logTaskTime}
+                    onRemoveTimeEntry={removeTaskTime}
+                  />
+                </section>
+              </>
             ) : (
               <section aria-label="Trash">
                 <TrashList
                   tasks={trashed}
-                  now={now}
                   onRestore={restore}
                   onPurge={purge}
                   onEmpty={emptyTrash}

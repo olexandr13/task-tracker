@@ -26,6 +26,8 @@ interface HabitListProps {
   habits: Task[]
   /** The moment the record is read for: which day is today, and whether it is done. */
   now: Date
+  /** Whether each card starts open; changing it resets the cards to that default. */
+  showDetails: boolean
   onComplete: (id: TaskId) => void
   onUncomplete: (id: TaskId) => void
   /** Marks a day up to today done, or not done: what clicking a day in the grid asks for. */
@@ -52,6 +54,7 @@ const RATE_WINDOWS: readonly (readonly [days: number, label: string])[] = [
 export function HabitList({
   habits,
   now,
+  showDetails,
   onComplete,
   onUncomplete,
   onSetDay,
@@ -69,14 +72,12 @@ export function HabitList({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+      <div className="flex flex-col gap-2">
         <p className="text-xs text-neutral-500 dark:text-neutral-400">
           Tasks that repeat every day.{' '}
-          {/* On a phone the days are folded away until a habit is opened (HAB-21). */}
-          <span className="md:hidden">Tap a habit to see its days, and a day to mark it done or take it back.</span>
         </p>
 
-        <ul aria-label="Legend" className="flex items-center gap-3">
+        <ul aria-label="Legend" className="flex items-center gap-3 self-end">
           {LEGEND.map((state) => (
             <li key={state} className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
               <span className={`size-3 rounded-[3px] ring-1 ring-neutral-900/5 ring-inset dark:ring-white/5 ${HABIT_DAY_TONES[state]}`} />
@@ -89,7 +90,7 @@ export function HabitList({
       <ul className="flex flex-col gap-3">
         {habits.map((habit) => (
           <HabitCard
-            key={habit.id}
+            key={`${habit.id}:${showDetails ? 'open' : 'folded'}`}
             habit={habit}
             now={now}
             onComplete={onComplete}
@@ -98,6 +99,7 @@ export function HabitList({
             onChangeTimeGoal={onChangeTimeGoal}
             onLogTime={onLogTime}
             onRemoveTimeEntry={onRemoveTimeEntry}
+            showDetails={showDetails}
           />
         ))}
       </ul>
@@ -106,14 +108,14 @@ export function HabitList({
 }
 
 /**
- * One habit. On a wide screen the whole record is on show. On a phone a list of
- * year-long grids is a long way to scroll for a box to tick, so a card starts
- * folded to the box, the title and the streak, and a tap on its line unfolds
- * the numbers and the days. Each card folds on its own, so opening one never
- * moves the one being reached for.
+ * One habit. A list of year-long grids is a long way to scroll for a box to
+ * tick, so a card starts folded to the box, the title and the streak, and a tap
+ * on its line unfolds the numbers and the days. Each card folds on its own, so
+ * opening one never moves the one being reached for.
  *
- * Folding is only drawn on a phone: the toggle is hidden on a wide screen, and
- * its hit area — stretched over the card's line — goes with it.
+ * The toggle and its hit area are always available; the hit area is stretched
+ * over the card's line so ticking the box or changing the time goal does not
+ * unfold the card.
  *
  * A habit that asks for an amount of time has its clock on the card's line, so
  * the time is logged where the habit is ticked off.
@@ -121,6 +123,7 @@ export function HabitList({
 function HabitCard({
   habit,
   now,
+  showDetails,
   onComplete,
   onUncomplete,
   onSetDay,
@@ -132,7 +135,7 @@ function HabitCard({
   const timed = hasTimeGoal(habit)
   const ready = !done && isTimeGoalReached(habit, now)
   const { currentStreak, bestStreak } = habitStats(habit, now)
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(() => showDetails)
   const recordId = useId()
 
   return (
@@ -158,26 +161,9 @@ function HabitCard({
 
         <h2 className="min-w-0 truncate text-sm font-medium">{habit.title}</h2>
 
-        {/* Above the toggle's hit area like the box, and above the next card's box, which
-            its panel can open over. */}
-        {timed && (
-          <div className="relative z-20 ml-auto shrink-0">
-            <TimePicker
-              goal={habit.timeGoal}
-              sessions={currentEntries(habit.timeLog, habit.repeat, now)}
-              now={now}
-              onLog={(minutes) => { onLogTime(habit.id, minutes) }}
-              onRemove={(entryId) => { onRemoveTimeEntry(habit.id, entryId) }}
-              onChangeGoal={(minutes) => { onChangeTimeGoal(habit.id, minutes) }}
-              label={`Time for "${habit.title}"`}
-              showAmount
-            />
-          </div>
-        )}
-
         {!isOpen && (
           <span
-            className={`${timed ? '' : 'ml-auto'} flex shrink-0 items-center gap-1 text-sm font-medium tabular-nums md:hidden`}
+            className={`${timed ? '' : 'ml-auto'} flex shrink-0 items-center gap-1 text-sm font-medium tabular-nums`}
           >
             <Flame streak={currentStreak} />
             <span className="sr-only">Current streak: </span>
@@ -185,21 +171,38 @@ function HabitCard({
           </span>
         )}
 
-        <button
-          type="button"
-          onClick={() => { setIsOpen(!isOpen) }}
-          aria-expanded={isOpen}
-          aria-controls={recordId}
-          aria-label={`Record of "${habit.title}"`}
-          className={`${isOpen && !timed ? 'ml-auto' : ''} grid size-6 shrink-0 place-items-center rounded-md text-neutral-400 outline-offset-2 after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-blue-500 md:hidden dark:text-neutral-500`}
-        >
-          <ChevronIcon className={`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+        <div className="relative z-20 ml-auto flex shrink-0 items-center gap-2.5">
+          {timed && (
+            <div className="shrink-0">
+              <TimePicker
+                goal={habit.timeGoal}
+                sessions={currentEntries(habit.timeLog, habit.repeat, now)}
+                now={now}
+                onLog={(minutes) => { onLogTime(habit.id, minutes) }}
+                onRemove={(entryId) => { onRemoveTimeEntry(habit.id, entryId) }}
+                onChangeGoal={(minutes) => { onChangeTimeGoal(habit.id, minutes) }}
+                label={`Time for "${habit.title}"`}
+                showAmount
+              />
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => { setIsOpen(!isOpen) }}
+            aria-expanded={isOpen}
+            aria-controls={recordId}
+            aria-label={`Record of "${habit.title}"`}
+            className="grid size-6 shrink-0 place-items-center rounded-md text-neutral-400 outline-offset-2 after:absolute after:inset-0 after:content-[''] focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-neutral-500"
+          >
+            <ChevronIcon className={`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
       </div>
 
       <div
         id={recordId}
-        className={`${isOpen ? 'flex' : 'hidden'} @container flex-col gap-4 px-4 pt-0.5 pb-3.5 md:flex`}
+        className={`${isOpen ? 'flex' : 'hidden'} @container flex-col gap-4 px-4 pt-0.5 pb-3.5`}
       >
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 @xs:grid-cols-3 @lg:grid-cols-5">
           <Stat label="Current streak">

@@ -51,9 +51,9 @@ ticked off. The tick itself stays the owner's.
 
 - **TIME-10** The **clock** sits in a slot of its own after the checklist button (UI-27). It is
   tinted while the task has a goal or time counting (UI-26), and a screen reader hears how the time
-  stands: `Time for "sport": 20m of 1h`. On a phone the line has no room for it, so the woken row
-  has it on a line of its own, between the list and the tags, spelling the time out — `20m of 1h` —
-  or offering **Log time**.
+  stands: `Time for "sport": 20m of 1h`. On a phone the line has no room for the *control*, so the
+  sheet a tap opens (UI-48) has it, spelling the time out — `20m of 1h` — or offering **Log time**;
+  a resting row still shows the clock as a mark when time is set (UI-50).
 - **TIME-11** A length is typed the ways it is written: a bare number is minutes (`45`), and `25m`,
   `1h`, `1.5h`, `1h30`, `1h 30m` and `1:30` all read as expected. A session that cannot be read is
   not logged, and its box is marked until it is changed.

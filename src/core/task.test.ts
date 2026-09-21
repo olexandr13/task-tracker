@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { InvalidDayError } from './day'
 import { InvalidRepeatError, type Repeat } from './repeat'
 import { setReward } from './reward'
+import { setUrgent } from './urgent'
 import { addTag } from './tag'
 import { EmptyTitleError } from './title'
 import {
@@ -539,13 +540,16 @@ describe('reopening a missed occurrence', () => {
 })
 
 describe('duplicateTask', () => {
-  it('copies what the task says: title, description, rule, due date, checklist, tags and reward (TASK-51)', () => {
-    const task = setReward(
-      addTag(
-        setDueDate(addSubtask(setDescription(createTask('pack', null, NOW), 'for the trip'), 'socks', NOW), '2026-09-20'),
-        'travel',
+  it('copies what the task says: title, description, rule, due date, checklist, tags, reward and urgent (TASK-51)', () => {
+    const task = setUrgent(
+      setReward(
+        addTag(
+          setDueDate(addSubtask(setDescription(createTask('pack', null, NOW), 'for the trip'), 'socks', NOW), '2026-09-20'),
+          'travel',
+        ),
+        3,
       ),
-      3,
+      true,
     )
     const copy = duplicateTask(task, LATER)
 
@@ -555,6 +559,7 @@ describe('duplicateTask', () => {
     expect(copy.subtasks.map((subtask) => subtask.title)).toEqual(['socks'])
     expect(copy.tags).toEqual(['travel'])
     expect(copy.reward).toBe(3)
+    expect(copy.urgent).toBe(true)
     expect(duplicateTask(createTask('stretch', DAILY, MON_14), TUE_15).repeat).toEqual(DAILY)
   })
 

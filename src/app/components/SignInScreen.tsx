@@ -40,7 +40,7 @@ export function SignInScreen({ onSignIn }: SignInScreenProps) {
     <main className="flex min-h-dvh items-center justify-center px-4 py-8">
       <div className="flex w-full max-w-sm flex-col items-center gap-6 rounded-2xl border border-neutral-200 bg-white px-6 py-10 text-center dark:border-neutral-800 dark:bg-neutral-900">
         <div className="flex flex-col gap-1.5">
-          <h1 className="text-2xl font-semibold tracking-tight">Task Tracker</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">PickMe</h1>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">Sign in to get to your tasks.</p>
         </div>
 

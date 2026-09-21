@@ -71,9 +71,9 @@ describe('BackupCard', () => {
   })
 
   it('says what went wrong out loud (BAK-9, BAK-11)', () => {
-    setup({ state: 'failed', message: 'That file isn’t a Task Tracker backup.' })
+    setup({ state: 'failed', message: 'That file isn’t a PickMe backup.' })
 
-    expect(screen.getByRole('alert').textContent).toBe('That file isn’t a Task Tracker backup.')
+    expect(screen.getByRole('alert').textContent).toBe('That file isn’t a PickMe backup.')
     expect(screen.getByRole('status').textContent).toBe('')
   })
 })
