@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MorePage } from './MorePage'
 
-/* The phone's More page. UI ids refer to wiki/interface.md. */
+/* More's page. UI ids refer to wiki/interface.md; JUST ids to wiki/just-one.md. */
 
 afterEach(cleanup)
 
@@ -25,5 +25,60 @@ describe('MorePage', () => {
 
     await user.click(rewards)
     expect(onOpen).toHaveBeenLastCalledWith('rewards')
+  })
+
+  it('offers Procrastination when available, and starts the mode (JUST-1)', async () => {
+    const onStart = vi.fn()
+    render(
+      <MorePage
+        onOpen={vi.fn()}
+        procrastination={{
+          phase: 'off',
+          available: true,
+          onStart,
+          onEnd: vi.fn(),
+        }}
+      />,
+    )
+
+    const control = screen.getByRole('button', { name: 'Procrastination mode' })
+    expect(control.textContent).toContain('Procrastination')
+    await userEvent.click(control)
+    expect(onStart).toHaveBeenCalledOnce()
+  })
+
+  it('ends Procrastination mode when pressed again while on (JUST-8)', async () => {
+    const onEnd = vi.fn()
+    render(
+      <MorePage
+        onOpen={vi.fn()}
+        procrastination={{
+          phase: 'focus',
+          available: true,
+          onStart: vi.fn(),
+          onEnd,
+        }}
+      />,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Procrastination mode on' }))
+    expect(onEnd).toHaveBeenCalledOnce()
+  })
+
+  it('hides Procrastination when it is not available (JUST-2)', () => {
+    render(
+      <MorePage
+        onOpen={vi.fn()}
+        procrastination={{
+          phase: 'off',
+          available: false,
+          onStart: vi.fn(),
+          onEnd: vi.fn(),
+        }}
+      />,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Procrastination mode' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Tags' })).toBeDefined()
   })
 })

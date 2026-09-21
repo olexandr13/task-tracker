@@ -5,12 +5,11 @@ task to do, fade the rest, and earn a rest by finishing it.
 
 ## When it is there
 
-- **JUST-1** On **Today**, while any task in that view is still to do, a **🫠** control sits
-  near the **Plus** in the bottom-right corner (to its left). It starts Procrastination mode. It
-  is not on Week, Month or any other view. Pressing **P** does the same from the keyboard
-  (UI-58).
-- **JUST-2** Once everything in Today is done and the mode is off, the control is gone — there is
-  nothing to focus on. After a win with no open tasks left, the win card stays until **Rest**.
+- **JUST-1** While any Today task is still to do, **More** offers a **Procrastination** control
+  (🫠). It starts Procrastination mode and opens **Today**. It is not offered on Week, Month or any
+  other period. Pressing **P** on Today does the same from the keyboard (UI-58).
+- **JUST-2** Once everything in Today is done and the mode is off, the control is gone from More —
+  there is nothing to focus on. After a win with no open tasks left, the win card stays until **Rest**.
 - **JUST-10** The mode is kept on **this device** for the **local day** it was started: a refresh
   keeps it (including while tasks are still loading). It ends automatically at the next local
   midnight (PRIN-2), or when the person ends the mode (JUST-8).
@@ -40,19 +39,19 @@ task to do, fade the rest, and earn a rest by finishing it.
   filtered.
 - **JUST-6** **Other task** (a smaller control) picks again among open Today tasks, skipping the
   current one when there is another to choose. When only one open Today task is left, the same
-  control becomes **Create task** and opens the add-task sheet (UI-54) instead.
+  control becomes **Create new task** and opens the add-task sheet (UI-54) instead.
 - **JUST-7** Completing the focused task does **not** turn the mode off: it opens the win card
-  (JUST-9) and the 🫠 control stays active. **Rest** leaves the mode on and goes to idle
+  (JUST-9) and More's Procrastination control stays active. **Rest** leaves the mode on and goes to idle
   (**Choose another task**, optional). The mode ends when the focused task is deleted or no
   longer in Today while still focusing, when they end the mode (JUST-8), or when the day rolls
   over (JUST-10).
 
 ## Leaving without a win
 
-- **JUST-8** There is no free **Show all**. Pressing the 🫠 again while the mode is on, pressing
-  **P** again (UI-58), or **End mode** on the focus or idle banner or the win card, asks **End
-  Procrastination mode?** — **Stay in mode** keeps it; **End mode** turns it off and brings the
-  list back to normal. The mode can be started again later the same day.
+- **JUST-8** There is no free **Show all**. Pressing **Procrastination** on More again while the
+  mode is on, pressing **P** again on Today (UI-58), or **End mode** on the focus or idle banner or
+  the win card, turns the mode off at once and brings the list back to normal — no confirm. The mode
+  can be started again later the same day.
 
 ## After a win
 
@@ -69,9 +68,9 @@ task to do, fade the rest, and earn a rest by finishing it.
 **Where it lives:** `src/core/justOne.ts` (the pick), `src/app/components/ProcrastinationMode.tsx`,
 `src/app/components/ProcrastinationIcon.tsx`, `src/app/components/RestingIcon.tsx`, `src/app/components/CelebrateIcon.tsx`,
 `src/app/useProcrastination.ts`, `src/storage/localStorageProcrastinationRepository.ts`,
-`src/app/components/TaskList.tsx` / `TaskItem.tsx` (dimming), `src/app/components/SideNav.tsx`,
-`src/app/components/BottomNav.tsx`, `src/app/components/ProgressPanel.tsx`, `src/app/TasksScreen.tsx`,
-`src/styles.css` (win animation).
+`src/app/components/MorePage.tsx` (the entry control), `src/app/components/TaskList.tsx` / `TaskItem.tsx` (dimming),
+`src/app/components/SideNav.tsx`, `src/app/components/BottomNav.tsx`, `src/app/components/ProgressPanel.tsx`,
+`src/app/TasksScreen.tsx`, `src/styles.css` (win animation).
 **Tested in:** `src/core/justOne.test.ts`, `src/app/useProcrastination.test.ts`,
-`src/app/components/ProcrastinationMode.test.tsx`, `src/app/components/TaskList.test.tsx`,
-`src/app/components/SideNav.test.tsx`, `src/app/components/BottomNav.test.tsx`.
+`src/app/components/ProcrastinationMode.test.tsx`, `src/app/components/MorePage.test.tsx`,
+`src/app/components/TaskList.test.tsx`, `src/app/components/SideNav.test.tsx`, `src/app/components/BottomNav.test.tsx`.

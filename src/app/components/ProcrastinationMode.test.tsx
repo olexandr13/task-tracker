@@ -3,51 +3,22 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createTask } from '../../core'
-import { ProcrastinationEntryButton, ProcrastinationPanel } from './ProcrastinationMode'
+import { ProcrastinationPanel } from './ProcrastinationMode'
 
 afterEach(cleanup)
 
 const panel = {
-  confirmingLeave: false,
   wonTask: null,
   canPick: true,
   hasOtherTask: true,
   pointsEarned: 0,
   onOtherTask: vi.fn(),
   onCreateTask: vi.fn(),
-  onRequestLeave: vi.fn(),
-  onCancelLeave: vi.fn(),
-  onWalkAway: vi.fn(),
+  onEnd: vi.fn(),
   onRest: vi.fn(),
   onGetOneMore: vi.fn(),
   onGrantPoints: vi.fn(),
 }
-
-describe('ProcrastinationEntryButton', () => {
-  it('starts mode from the melting-face control near Plus (JUST-1)', async () => {
-    const onStart = vi.fn()
-    render(
-      <ProcrastinationEntryButton phase="off" onStart={onStart} onRequestLeave={vi.fn()} />,
-    )
-
-    await userEvent.click(screen.getByRole('button', { name: 'Procrastination mode' }))
-    expect(onStart).toHaveBeenCalledOnce()
-  })
-
-  it('asks to leave when pressed again while focused (JUST-8)', async () => {
-    const onRequestLeave = vi.fn()
-    render(
-      <ProcrastinationEntryButton
-        phase="focus"
-        onStart={vi.fn()}
-        onRequestLeave={onRequestLeave}
-      />,
-    )
-
-    await userEvent.click(screen.getByRole('button', { name: 'Procrastination mode on' }))
-    expect(onRequestLeave).toHaveBeenCalledOnce()
-  })
-})
 
 describe('ProcrastinationPanel', () => {
   it('explains the mode and offers Other task while focused (JUST-5, JUST-6)', () => {
@@ -71,7 +42,7 @@ describe('ProcrastinationPanel', () => {
     )
 
     expect(screen.queryByRole('button', { name: 'Other task' })).toBeNull()
-    await userEvent.click(screen.getByRole('button', { name: 'Create task' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Create new task' }))
     expect(onCreateTask).toHaveBeenCalledOnce()
   })
 
@@ -85,31 +56,19 @@ describe('ProcrastinationPanel', () => {
     expect(screen.getByRole('button', { name: 'End mode' })).toBeDefined()
   })
 
-  it('End mode on the banner asks to leave (JUST-8)', async () => {
-    const onRequestLeave = vi.fn()
-    render(<ProcrastinationPanel phase="focus" {...panel} onRequestLeave={onRequestLeave} />)
+  it('End mode on the banner turns the mode off (JUST-8)', async () => {
+    const onEnd = vi.fn()
+    render(<ProcrastinationPanel phase="focus" {...panel} onEnd={onEnd} />)
 
     await userEvent.click(screen.getByRole('button', { name: 'End mode' }))
-    expect(onRequestLeave).toHaveBeenCalledOnce()
-  })
-
-  it('asks clearly to end the mode (JUST-8)', async () => {
-    const onWalkAway = vi.fn()
-    render(
-      <ProcrastinationPanel phase="focus" {...panel} confirmingLeave onWalkAway={onWalkAway} />,
-    )
-
-    expect(screen.getByText('End Procrastination mode?')).toBeDefined()
-    expect(screen.getByText(/Tasks go back to normal/)).toBeDefined()
-    await userEvent.click(screen.getByRole('button', { name: 'End mode' }))
-    expect(onWalkAway).toHaveBeenCalledOnce()
+    expect(onEnd).toHaveBeenCalledOnce()
   })
 
   it('praises a win with Reward +1 and Get one more task (JUST-9)', async () => {
     const task = createTask('stretch', null, new Date(2026, 8, 16, 9, 0))
     const onGrantPoints = vi.fn()
     const onGetOneMore = vi.fn()
-    const onRequestLeave = vi.fn()
+    const onEnd = vi.fn()
     render(
       <ProcrastinationPanel
         phase="won"
@@ -118,7 +77,7 @@ describe('ProcrastinationPanel', () => {
         pointsEarned={2}
         onGrantPoints={onGrantPoints}
         onGetOneMore={onGetOneMore}
-        onRequestLeave={onRequestLeave}
+        onEnd={onEnd}
       />,
     )
 
@@ -135,6 +94,6 @@ describe('ProcrastinationPanel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Get one more task' }))
     expect(onGetOneMore).toHaveBeenCalledOnce()
     await userEvent.click(screen.getByRole('button', { name: 'End mode' }))
-    expect(onRequestLeave).toHaveBeenCalledOnce()
+    expect(onEnd).toHaveBeenCalledOnce()
   })
 })

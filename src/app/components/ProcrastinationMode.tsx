@@ -2,21 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Task } from '../../core'
 import { describePoints, describeReward } from '../rewardLabels'
 import { CelebrateIcon } from './CelebrateIcon'
-import { ProcrastinationIcon } from './ProcrastinationIcon'
 import { RestingIcon } from './RestingIcon'
-
-/**
- * Same corner and size family as the Plus (UI-54), sitting to its left so a
- * thumb reaches both. Bottom matches the Plus; right clears size-14 + gap.
- */
-const fab =
-  'fixed right-[calc(1rem+3.5rem+0.75rem)] bottom-[max(5.5rem,calc(4.25rem+env(safe-area-inset-bottom)))] z-30 grid size-14 place-items-center rounded-full border text-2xl leading-none shadow-lg outline-offset-2 transition-colors focus-visible:outline-2 focus-visible:outline-blue-500 md:right-[calc(1.5rem+3.5rem+0.75rem)] md:bottom-6'
-
-const fabOff =
-  'border-neutral-300 bg-white text-neutral-500 hover:border-neutral-400 hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
-
-const fabOn =
-  'border-sky-400/60 bg-sky-50 text-sky-700 dark:border-sky-500/40 dark:bg-sky-950/50 dark:text-sky-200'
 
 const action =
   'rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
@@ -38,39 +24,6 @@ const pointsChip =
   'rounded-lg border border-green-400/50 bg-white px-2.5 py-1 text-sm tabular-nums text-green-800 transition-colors hover:bg-green-50 dark:border-green-500/40 dark:bg-green-950/40 dark:text-green-100 dark:hover:bg-green-950'
 
 export type ProcrastinationPhase = 'off' | 'idle' | 'focus' | 'won'
-
-/** Melting-face FAB near Plus — starts mode, or ends it while it is on. */
-export function ProcrastinationEntryButton({
-  phase,
-  disabled,
-  onStart,
-  onEnd,
-}: {
-  phase: ProcrastinationPhase
-  disabled?: boolean
-  onStart: () => void
-  /** While mode is on: turn it off immediately (JUST-8). */
-  onEnd: () => void
-}) {
-  const active = phase !== 'off'
-
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        if (phase === 'off') onStart()
-        else onEnd()
-      }}
-      disabled={disabled}
-      aria-pressed={active}
-      aria-label={active ? 'Procrastination mode on' : 'Procrastination mode'}
-      title={active ? 'Procrastination mode on' : 'Procrastination mode'}
-      className={`${fab} ${active ? fabOn : fabOff} disabled:pointer-events-none disabled:opacity-50`}
-    >
-      <ProcrastinationIcon className="inline-flex size-6 shrink-0 items-center justify-center text-2xl leading-none" />
-    </button>
-  )
-}
 
 interface ProcrastinationPanelProps {
   phase: ProcrastinationPhase
@@ -153,7 +106,7 @@ export function ProcrastinationPanel({
               </button>
             ) : (
               <button type="button" onClick={onCreateTask} className={actionSmall}>
-                Create task
+                Create new task
               </button>
             )}
             <button type="button" onClick={onEnd} className={actionSmall}>

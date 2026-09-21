@@ -53,8 +53,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   the bar on a phone (UI-4), and in the same corner on a wide screen. A tap opens a **sheet** for
   adding a task with the same fields the edit sheet has (TASK-66), so more than a title can be set
   before it is saved. The one-line box at the top still adds a title on Enter (TASK-4). Closing the
-  sheet without adding keeps nothing. On **Today**, when Procrastination mode is available, a **🫠**
-  control of the same size sits to the left of the Plus (JUST-1).
+  sheet without adding keeps nothing. Procrastination mode is started from **More** (JUST-1), not
+  from beside the Plus.
 - **UI-55** On every page that lists tasks, pressing **N** opens the add sheet too, so a keyboard
   reaches it without Tabbing to the Plus. Typing in a box, or holding a modifier, leaves `N` alone —
   it is a letter then, not a shortcut. Habits has **H** instead (UI-56).
@@ -63,8 +63,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   modifier, leaves `H` alone, as with `N` (UI-55).
 - **UI-57** Pressing **R** opens **Rewards** (RWD-19). From anywhere in the app; typing in a box, or
   holding a modifier, leaves `R` alone, as with the other letter shortcuts (UI-55, UI-56).
-- **UI-58** Pressing **P** starts **Procrastination mode** on Today when the 🫠 control is there
-  (JUST-1), and asks to end it while the mode is on (JUST-8). Elsewhere, or when the control is
+- **UI-58** Pressing **P** on **Today** starts **Procrastination mode** when More's control would
+  offer it (JUST-1), and ends it while the mode is on (JUST-8). Elsewhere, or when the control is
   gone, `P` does nothing. Typing in a box, or holding a modifier, leaves `P` alone, as with the
   other letter shortcuts (UI-55, UI-56, UI-57).
 
@@ -74,15 +74,16 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   **Rewards**, **Lists**, **Tags**, **More**,
   **Trash** and **Settings**, and a view for each list, opened from Lists, and one for each tag,
   opened from Tags. Each is named and carries an
-  icon — every tag's view the same `#` as Tags, and every list the same folder as Lists. **More** is
-  a phone's alone (UI-45); the sidebar has Tags and Rewards of their own (UI-30). See
+  icon — every tag's view the same `#` as Tags, and every list the same folder as Lists. **Tags**,
+  **Rewards** and **Procrastination** are reached from **More** (UI-45); the sidebar and the phone
+  bar both have a **More** entry. See
   [Views](views.md), [Lists](lists.md), [Habits](habits.md),
   [Rewards](rewards.md) and [Tags](tags.md).
 - **UI-30** In the sidebar the views come in four groups with a thin line between each: the period
-  views (**Today**, **Week**, **Month**), then **Tasks**, **Lists**, **Habits**, **Rewards** and **Tags**, then **Trash**,
+  views (**Today**, **Week**, **Month**), then **Habits**, **Tasks**, **Lists** and **More**, then **Trash**,
   then **Settings**. **Lists** is always open, with the **Inbox** and then every list under it,
   indented (LST-13); the one open is marked itself, and Lists only on the Lists page. A tag's view
-  has no entry of its own: **Tags** stays marked while one is open.
+  has no entry of its own: **More** stays marked while Tags, Rewards or a tag's tasks are open.
 - **UI-8** The view you are on is marked, in the sidebar and in the bottom bar alike.
 - **UI-32** The bottom bar has five tabs, each an icon over its name: **the period** (UI-33),
   **Tasks**, **Habits**, **More** (UI-45) and **Settings**.
@@ -114,11 +115,12 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   **Trash**, each entry with its icon — so any list is two taps from anywhere, however long Tasks
   runs, and no heading repeats the name of the entry above it. Choosing one goes there. From any
   other view, a list's included, a tap on Tasks goes to Tasks.
-- **UI-45** The bar has no tab for the tags or the rewards either: they are under **More**, marked
-  with three dots. **A tap opens More's page** — a list of links to **Tags** and **Rewards**, each
-  with its icon, large enough for a thumb (UI-49) — and choosing one goes there. **More** stays
-  marked while its own page, the Tags page, a tag's view or the Rewards page is open. Its address is
-  `#/more` (UI-36). It is a phone's alone: the sidebar has an entry for each (UI-30).
+- **UI-45** The bar and the sidebar have no entry for the tags or the rewards: they are under
+  **More**, marked with three dots. **A tap opens More's page** — a list of links to **Tags** and
+  **Rewards**, each with its icon, large enough for a thumb (UI-49) — and **Procrastination** when
+  it is available (JUST-1). Choosing Tags or Rewards goes there; choosing Procrastination starts (or
+  ends) the mode and opens Today. **More** stays marked while its own page, the Tags page, a tag's
+  view or the Rewards page is open. Its address is `#/more` (UI-36).
 
 ## Popovers
 
@@ -290,7 +292,7 @@ phone's look at a task), `src/app/usePhoneLayout.ts` (whether the screen is a ph
 add box and the Plus), `src/app/components/AddTaskSheet.tsx` (the detailed add sheet), `src/app/letterShortcut.ts`
 and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet, `R` opens Rewards, `P` toggles
 Procrastination mode), `src/app/components/MorePage.tsx` (More's list of
-links), `src/app/components/ViewMenu.tsx` (the View
+links and Procrastination), `src/app/components/ViewMenu.tsx` (the View
 button and its panel), `src/app/components/ViewOptionsMenu.tsx` and `src/app/useViewOptions.ts` (the
 task views' options), `src/app/components/HabitViewOptionsMenu.tsx` and `src/app/useHabitViewOptions.ts`
 (Habits'), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/useLongPress.ts` (a press told from a

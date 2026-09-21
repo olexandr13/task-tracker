@@ -41,7 +41,7 @@ describe('SideNav', () => {
     expect(screen.getByText('PickMe')).toBeTruthy()
   })
 
-  it('carries Lists, Rewards and Tags beside Tasks and Habits, and no entry for any one tag (UI-30, TAG-18, RWD-19, LST-13)', () => {
+  it('carries Lists and More beside Tasks and Habits, and no entry for Tags, Rewards or any one tag (UI-30, UI-45, TAG-18, RWD-19, LST-13)', () => {
     setup('today')
 
     const entries = screen.getAllByRole('button').filter((button) => button !== foldButton())
@@ -49,12 +49,11 @@ describe('SideNav', () => {
       'Today',
       'Week',
       'Month',
+      'Habits',
       'Tasks',
       'Lists',
       'Inbox',
-      'Habits',
-      'Rewards',
-      'Tags',
+      'More',
       'Trash',
       'Settings',
     ])
@@ -68,26 +67,25 @@ describe('SideNav', () => {
     expect(onChange).toHaveBeenCalledWith('lists')
   })
 
-  it('goes to the Tags page (TAG-18)', async () => {
+  it('goes to More (UI-45)', async () => {
     const { user, onChange } = setup('today')
 
-    await user.click(screen.getByRole('button', { name: 'Tags' }))
+    await user.click(screen.getByRole('button', { name: 'More' }))
 
-    expect(onChange).toHaveBeenCalledWith('tags')
+    expect(onChange).toHaveBeenCalledWith('more')
   })
 
-  it('goes to the Rewards page (RWD-19)', async () => {
-    const { user, onChange } = setup('today')
+  it('keeps More marked while Tags, Rewards or a tag\'s tasks are open (UI-8, UI-45, TAG-17, RWD-19)', () => {
+    setup('tags')
+    expect(marked().map((button) => button.textContent)).toEqual(['More'])
+    cleanup()
 
-    await user.click(screen.getByRole('button', { name: 'Rewards' }))
+    setup('rewards')
+    expect(marked().map((button) => button.textContent)).toEqual(['More'])
+    cleanup()
 
-    expect(onChange).toHaveBeenCalledWith('rewards')
-  })
-
-  it('keeps Tags marked while a tag\'s tasks are open (UI-8, TAG-13)', () => {
     setup('tag/work')
-
-    expect(marked().map((button) => button.textContent)).toEqual(['Tags'])
+    expect(marked().map((button) => button.textContent)).toEqual(['More'])
   })
 
   it('keeps Lists open, with the Inbox and then every list under it (LST-13)', () => {

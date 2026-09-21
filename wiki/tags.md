@@ -67,7 +67,7 @@ it is deleted, whether or not a task carries it.
 
 ## The Tags page
 
-- **TAG-18** **Tags** has an entry of its own in the navigation, beside Tasks and Habits (UI-30). Its
+- **TAG-18** **Tags** is reached from **More** (UI-45, UI-30). Its
   page lists **every tag there is**, alphabetically (TAG-6), and clicking one opens its list (TAG-13).
   No single tag has an entry in the navigation.
 - **TAG-19** Beside each tag is how many of its tasks are **still to do**, a repeating one for its
@@ -91,8 +91,8 @@ it is deleted, whether or not a task carries it.
 - **TAG-16** On a phone the sheet a tap opens (UI-48) has a **tag button**, naming the task's tags
   — or offering to add one — and opening the same panel (TAG-7) under it, a tap away rather than a
   menu away (UI-44). A resting row still shows the tag mark when the task carries any (UI-50).
-- **TAG-17** On a phone the Tags page is reached from the **More** page's list (UI-45). More stays
-  marked in the bottom bar while the Tags page or a tag's list is open.
+- **TAG-17** The Tags page is reached from the **More** page's list (UI-45). More stays
+  marked in the navigation while the Tags page or a tag's list is open.
 
 ---
 

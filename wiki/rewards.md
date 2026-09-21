@@ -73,9 +73,8 @@ earned whatever becomes of the task afterwards.
 
 ## The Rewards page
 
-- **RWD-19** **Rewards** has an entry in the sidebar, between Habits and Tags (UI-30). On a phone
-  it is reached from the **More** page's list (UI-45), and More stays marked while it is open.
-  Its address is `#/rewards` (UI-36). Pressing **R** opens it from anywhere (UI-57).
+- **RWD-19** **Rewards** is reached from the **More** page's list (UI-45, UI-30). More stays marked
+  while it is open. Its address is `#/rewards` (UI-36). Pressing **R** opens it from anywhere (UI-57).
 - **RWD-20** The page is, top to bottom: a line on how points are earned; the **balance** with the
   **redeem form** (RWD-15); what was **earned** in each period and the **accrual history** (RWD-21,
   RWD-23); and what was **redeemed** (RWD-18). It has no box for adding a task and no rail (UI-2).

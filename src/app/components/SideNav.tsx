@@ -9,16 +9,16 @@ import { FolderIcon } from './FolderIcon'
 import { InboxIcon } from './InboxIcon'
 
 /**
- * The views, grouped: the ones named after a period, then every task, the lists,
- * the habits, the rewards and the tags, then the trash, then settings. A thin
- * line is drawn between groups. Lists opens onto the Inbox and every list under
- * it, so a list is one click away and a task can be dropped on one to file it,
- * and folds them away when they are not wanted. A tag's tasks have no entry:
- * those are reached from Tags.
+ * The views, grouped: the ones named after a period, then the habits, every
+ * task, the lists and More, then the trash, then settings. A thin line is drawn
+ * between groups. Lists opens onto the Inbox and every list under it, so a list
+ * is one click away and a task can be dropped on one to file it, and folds them
+ * away when they are not wanted. Tags, Rewards and Procrastination live under
+ * More; a tag's tasks have no entry of their own.
  */
 const VIEW_GROUPS: readonly (readonly FixedView[])[] = [
   ['today', 'week', 'month'],
-  ['tasks', 'lists', 'habits', 'rewards', 'tags'],
+  ['habits', 'tasks', 'lists', 'more'],
   ['trash'],
   ['settings'],
 ]
@@ -55,8 +55,7 @@ interface SideNavProps {
  * Only where there is room for one — a phone gets the bar along the bottom
  * instead (BottomNav), and no mark above the work. The one you are on is
  * marked, a list under Lists included — or Lists itself while the lists are
- * folded away. Tags stays marked while a tag's tasks are open, being where
- * they were opened from.
+ * folded away. More stays marked while Tags, Rewards or a tag's tasks are open.
  */
 export function SideNav({ view, lists, listsOpen, dimmed = false, onChange, onListsOpenChange }: SideNavProps) {
   const listsId = useId()

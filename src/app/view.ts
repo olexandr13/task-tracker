@@ -61,8 +61,8 @@ export type View = FixedView | OneListView | TagView
 export type TaskView = Exclude<View, 'habits' | 'rewards' | 'lists' | 'tags' | 'more' | 'trash' | 'settings'>
 
 /**
- * Pages reached from the phone's More tab, listed on More's own page. The sidebar
- * still has an entry for each; More itself is a phone's alone.
+ * Pages reached from More, listed on More's own page — Tags and Rewards.
+ * Procrastination is an action on that page too, not a view of its own.
  */
 export const UNDER_MORE = ['tags', 'rewards'] as const satisfies readonly FixedView[]
 

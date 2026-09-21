@@ -79,7 +79,7 @@ reasons; requirements here are `LST-`.
 
 ## The Lists page
 
-- **LST-13** **Lists** has an entry of its own in the navigation, between Tasks and Habits (UI-30).
+- **LST-13** **Lists** has an entry of its own in the navigation, between Tasks and More (UI-30).
   Its page is the Inbox (LST-11) and then every list, in the order they were made, each opening its
   own view (LST-8). In the sidebar, Lists opens onto the Inbox and then every list, in the
   same order, indented under it, each going straight to its view and marked while it is open

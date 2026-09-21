@@ -44,7 +44,6 @@ import { FolderIcon } from './components/FolderIcon'
 import { HabitList } from './components/HabitList'
 import { HabitViewOptionsMenu } from './components/HabitViewOptionsMenu'
 import {
-  ProcrastinationEntryButton,
   ProcrastinationPanel,
   type ProcrastinationPhase,
 } from './components/ProcrastinationMode'
@@ -183,9 +182,8 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   const [view, setView] = useView()
   // The detailed add sheet (UI-54): open from the Plus, from `N` on a task page
   // (UI-55), or from `H` for a habit (UI-56) — which opens Habits first if needed.
-  // `R` opens Rewards (UI-57). `P` starts or asks to leave Procrastination mode (UI-58).
+  // `R` opens Rewards (UI-57). `P` starts or ends Procrastination mode (UI-58).
   const [adding, setAdding] = useState(false)
-  const [confirmingLeave, setConfirmingLeave] = useState(false)
   useLetterShortcut('n', isTaskView(view) && !adding, () => { setAdding(true) })
   useLetterShortcut('h', !adding, () => {
     if (view !== 'habits') setView('habits')
@@ -284,10 +282,8 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     const focused = ordered.find((task) => task.id === procrastinationTaskId)
     if (focused === undefined) {
       setProcrastination({ phase: 'idle' })
-      setConfirmingLeave(false)
     } else if (isComplete(focused, now)) {
       setProcrastination({ phase: 'won', taskId: focused.id })
-      setConfirmingLeave(false)
     }
   }
   // Same for a win whose task has gone: stay in mode, rest.
@@ -299,13 +295,14 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     !ordered.some((task) => task.id === procrastinationTaskId)
   ) {
     setProcrastination({ phase: 'idle' })
-    setConfirmingLeave(false)
   }
-  const openTodayCount = ordered.filter((task) => !isComplete(task, now)).length
-  const canPickOpen = view === 'today' && openTodayCount > 0
+  const todayTasks = live.filter((task) => showsTask('today', task, now, lists.lists))
+  const openTodayCount = todayTasks.filter((task) => !isComplete(task, now)).length
+  const canPickOpen = openTodayCount > 0
   const hasOtherProcrastinationTask = openTodayCount > 1
-  const showProcrastination =
-    view === 'today' && (canPickOpen || procrastination.phase !== 'off')
+  const procrastinationAvailable = canPickOpen || procrastination.phase !== 'off'
+  const showProcrastinationShortcut =
+    view === 'today' && procrastinationAvailable
   const dimChrome = procrastinationPhase !== 'off'
   const wonTask =
     procrastination.phase === 'won'
@@ -321,9 +318,8 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
       : 0
 
   function startProcrastination() {
-    const picked = pickJustOne(ordered, now)
+    const picked = pickJustOne(todayTasks, now)
     if (picked !== null) {
-      setConfirmingLeave(false)
       setProcrastination({ phase: 'focus', taskId: picked.id })
     }
   }
@@ -334,31 +330,27 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     const candidates = live.filter((task) => showsTask('today', task, now, lists.lists))
     const picked = pickJustOne(candidates, now, excludeId)
     if (picked !== null) {
-      setConfirmingLeave(false)
       setProcrastination({ phase: 'focus', taskId: picked.id })
       return
     }
-    setConfirmingLeave(false)
     setProcrastination({ phase: 'idle' })
   }
 
   function endProcrastination() {
-    setConfirmingLeave(false)
     setProcrastination({ phase: 'off' })
   }
 
   function restProcrastination() {
-    setConfirmingLeave(false)
     setProcrastination({ phase: 'idle' })
   }
 
-  // Same as the 🫠 FAB (JUST-1, JUST-8): start when off, ask to leave when on.
+  // Same as More's Procrastination control (JUST-1, JUST-8): start when off, end when on.
   useLetterShortcut(
     'p',
-    showProcrastination && !adding && !confirmingLeave,
+    showProcrastinationShortcut && !adding,
     () => {
       if (procrastination.phase === 'off') startProcrastination()
-      else setConfirmingLeave(true)
+      else endProcrastination()
     },
   )
 
@@ -373,7 +365,6 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   function handleComplete(id: TaskId) {
     complete(id)
     if (procrastination.phase === 'focus' && procrastination.taskId === id) {
-      setConfirmingLeave(false)
       setProcrastination({ phase: 'won', taskId: id })
     }
   }
@@ -487,7 +478,18 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
               </section>
             ) : view === 'more' ? (
               <section aria-label="More">
-                <MorePage onOpen={setView} />
+                <MorePage
+                  onOpen={setView}
+                  procrastination={{
+                    phase: procrastinationPhase,
+                    available: procrastinationAvailable,
+                    onStart: () => {
+                      startProcrastination()
+                      setView('today')
+                    },
+                    onEnd: endProcrastination,
+                  }}
+                />
               </section>
             ) : view === 'rewards' ? (
               <section aria-label="Rewards">
@@ -528,19 +530,16 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                   <ViewOptionsMenu options={viewOptions} onChange={setViewOptions} />
                 </div>
 
-                {showProcrastination && (
+                {view === 'today' && procrastinationPhase !== 'off' && (
                   <ProcrastinationPanel
                     phase={procrastinationPhase}
-                    confirmingLeave={confirmingLeave}
                     wonTask={wonTask}
                     canPick={canPickOpen}
                     hasOtherTask={hasOtherProcrastinationTask}
                     pointsEarned={pointsEarned}
                     onOtherTask={() => { pickNextProcrastination(focusId) }}
                     onCreateTask={() => { setAdding(true) }}
-                    onRequestLeave={() => { setConfirmingLeave(true) }}
-                    onCancelLeave={() => { setConfirmingLeave(false) }}
-                    onWalkAway={endProcrastination}
+                    onEnd={endProcrastination}
                     onRest={restProcrastination}
                     onGetOneMore={() => {
                       pickNextProcrastination(
@@ -712,14 +711,6 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
       </TaskDragAndDrop>
 
       <BottomNav view={view} lists={lists.lists} dimmed={dimChrome} onChange={setView} />
-
-      {showProcrastination && (
-        <ProcrastinationEntryButton
-          phase={procrastinationPhase}
-          onStart={startProcrastination}
-          onRequestLeave={() => { setConfirmingLeave(true) }}
-        />
-      )}
 
       {adding && (isTaskView(view) || view === 'habits') && (
         <AddTaskSheet

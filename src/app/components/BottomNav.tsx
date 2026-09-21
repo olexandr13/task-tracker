@@ -49,7 +49,7 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * Tasks, so Tasks stays marked while either is open, or one list or the Inbox. The
  * tags and the rewards have none either: they are under More, which goes to its
  * own page on a tap and stays marked while that page, the Tags page, a tag's
- * tasks or the Rewards page is open.
+ * tasks or the Rewards page is open. The sidebar has the same More entry.
  *
  * The period tab and Tasks each have a menu of what the sidebar has in their
  * place: the three periods, and Lists with the Inbox and every list indented
