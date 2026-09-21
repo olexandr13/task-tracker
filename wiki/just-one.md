@@ -6,8 +6,9 @@ task to do, fade the rest, and earn a rest by finishing it.
 ## When it is there
 
 - **JUST-1** On **Today**, while any task in that view is still to do, a **🫠** control sits
-  beside the View button. It starts Procrastination mode. It is not on Week, Month or any other
-  view.
+  near the **Plus** in the bottom-right corner (to its left). It starts Procrastination mode. It
+  is not on Week, Month or any other view. Pressing **P** does the same from the keyboard
+  (UI-58).
 - **JUST-2** Once everything in Today is done and the mode is off, the control is gone — there is
   nothing to focus on. After a win with no open tasks left, the win card stays until **Rest**.
 - **JUST-10** The mode is kept on **this device** for the **local day** it was started: a refresh
@@ -34,8 +35,9 @@ task to do, fade the rest, and earn a rest by finishing it.
   (sidebar or phone bar) and the progress bars are dimmed the same way, so attention stays on the
   one task. After **Rest**, the banner becomes **Resting** (😌) with a calm note (**No rush —
   pick another only if you want to**) and an optional **Choose another task**; every row stays
-  dimmed, and so do the navigation and the bars. The mode banner uses a calm sky tint, not a
-  warning colour. Nothing is hidden or filtered.
+  dimmed, and so do the navigation and the bars. Focus and idle banners also offer **End mode**
+  (JUST-8). The mode banner uses a calm sky tint, not a warning colour. Nothing is hidden or
+  filtered.
 - **JUST-6** **Other task** (a smaller control) picks again among open Today tasks, skipping the
   current one when there is another to choose.
 - **JUST-7** Completing the focused task does **not** turn the mode off: it opens the win card
@@ -46,19 +48,20 @@ task to do, fade the rest, and earn a rest by finishing it.
 
 ## Leaving without a win
 
-- **JUST-8** There is no free **Show all**. Pressing the 🫠 again while the mode is on asks
-  **End Procrastination mode?** — **Stay in mode** keeps it; **End mode** turns it off and brings
-  the list back to normal. The mode can be started again later the same day.
+- **JUST-8** There is no free **Show all**. Pressing the 🫠 again while the mode is on, pressing
+  **P** again (UI-58), or **End mode** on the focus or idle banner or the win card, asks **End
+  Procrastination mode?** — **Stay in mode** keeps it; **End mode** turns it off and brings the
+  list back to normal. The mode can be started again later the same day.
 
 ## After a win
 
 - **JUST-9** Completing the focused task shows a spark burst and **Well done!** Mode stays on.
-  The win card’s actions share one full-width row, in this order: **⭐ Reward +1** (adds one point
-  to this completion each click; once any points are on it, the button also shows the total as
-  **· N points**, and a short tip shows the new total after each click), **➕ Get one more task**
-  (immediately focuses another open Today task), then **😌 Rest** (goes to idle without ending
-  the mode and without pushing for more work). Idle offers **Choose another task** only as an
-  option.
+  **End mode** sits as a smaller control beside the title (JUST-8). The win card’s main actions
+  share one full-width row, in this order: **⭐ Reward +1** (adds one point to this completion
+  each click; once any points are on it, the button also shows the total as **· N points**, and a
+  short tip shows the new total after each click), **➕ Get one more task** (immediately focuses
+  another open Today task), then **😌 Rest** (goes to idle without ending the mode and without
+  pushing for more work). Idle offers **Choose another task** only as an option.
 
 ---
 

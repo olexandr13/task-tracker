@@ -53,7 +53,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   the bar on a phone (UI-4), and in the same corner on a wide screen. A tap opens a **sheet** for
   adding a task with the same fields the edit sheet has (TASK-66), so more than a title can be set
   before it is saved. The one-line box at the top still adds a title on Enter (TASK-4). Closing the
-  sheet without adding keeps nothing.
+  sheet without adding keeps nothing. On **Today**, when Procrastination mode is available, a **🫠**
+  control of the same size sits to the left of the Plus (JUST-1).
 - **UI-55** On every page that lists tasks, pressing **N** opens the add sheet too, so a keyboard
   reaches it without Tabbing to the Plus. Typing in a box, or holding a modifier, leaves `N` alone —
   it is a letter then, not a shortcut. Habits has **H** instead (UI-56).
@@ -62,6 +63,10 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   modifier, leaves `H` alone, as with `N` (UI-55).
 - **UI-57** Pressing **R** opens **Rewards** (RWD-19). From anywhere in the app; typing in a box, or
   holding a modifier, leaves `R` alone, as with the other letter shortcuts (UI-55, UI-56).
+- **UI-58** Pressing **P** starts **Procrastination mode** on Today when the 🫠 control is there
+  (JUST-1), and asks to end it while the mode is on (JUST-8). Elsewhere, or when the control is
+  gone, `P` does nothing. Typing in a box, or holding a modifier, leaves `P` alone, as with the
+  other letter shortcuts (UI-55, UI-56, UI-57).
 
 ## Navigation
 
@@ -283,7 +288,8 @@ row at rest and awake), `src/app/components/TaskSheet.tsx` and `src/app/componen
 phone's look at a task), `src/app/usePhoneLayout.ts` (whether the screen is a phone's), `src/app/components/TaskList.tsx` (the room between rows), `src/app/components/ContextMenu.tsx` (a task's menu), `src/app/components/FloatingPanel.tsx` (a menu or panel floating where the pointer was), `src/app/textOffsetAtPoint.ts` (which character a click landed on), `src/app/components/SideNav.tsx`,
 `src/app/components/BottomNav.tsx` (the phone's bar), `src/app/components/AddTaskForm.tsx` (the one-line
 add box and the Plus), `src/app/components/AddTaskSheet.tsx` (the detailed add sheet), `src/app/letterShortcut.ts`
-and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet, `R` opens Rewards), `src/app/components/MorePage.tsx` (More's list of
+and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet, `R` opens Rewards, `P` toggles
+Procrastination mode), `src/app/components/MorePage.tsx` (More's list of
 links), `src/app/components/ViewMenu.tsx` (the View
 button and its panel), `src/app/components/ViewOptionsMenu.tsx` and `src/app/useViewOptions.ts` (the
 task views' options), `src/app/components/HabitViewOptionsMenu.tsx` and `src/app/useHabitViewOptions.ts`
@@ -299,4 +305,4 @@ view in the address), `src/app/components/ViewOptionsMenu.test.tsx` (the View pa
 (Habits'), `src/app/components/SettingsList.test.tsx` (the version on Settings), `src/app/components/TaskItem.test.tsx`
 (a row with Show task details on, a finger on a row, and a phone's sheet),
 `src/app/components/AddTaskForm.test.tsx` (the one-line box, the Plus and the detailed sheet),
-`src/app/letterShortcut.test.ts` and `src/app/useLetterShortcut.test.ts` (`N`, `H` and `R`).
+`src/app/letterShortcut.test.ts` and `src/app/useLetterShortcut.test.ts` (`N`, `H`, `R` and `P`).

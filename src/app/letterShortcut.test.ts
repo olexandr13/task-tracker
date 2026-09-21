@@ -17,13 +17,15 @@ function keyEvent(key: string, extras: Partial<KeyboardEvent> = {}): KeyboardEve
 }
 
 describe('isLetterShortcut', () => {
-  it('matches a lone letter case-insensitively (UI-55, UI-56, UI-57)', () => {
+  it('matches a lone letter case-insensitively (UI-55, UI-56, UI-57, UI-58)', () => {
     expect(isLetterShortcut(keyEvent('n'), 'n')).toBe(true)
     expect(isLetterShortcut(keyEvent('N'), 'n')).toBe(true)
     expect(isLetterShortcut(keyEvent('h'), 'h')).toBe(true)
     expect(isLetterShortcut(keyEvent('H'), 'h')).toBe(true)
     expect(isLetterShortcut(keyEvent('r'), 'r')).toBe(true)
     expect(isLetterShortcut(keyEvent('R'), 'r')).toBe(true)
+    expect(isLetterShortcut(keyEvent('p'), 'p')).toBe(true)
+    expect(isLetterShortcut(keyEvent('P'), 'p')).toBe(true)
   })
 
   it('does nothing with a modifier', () => {

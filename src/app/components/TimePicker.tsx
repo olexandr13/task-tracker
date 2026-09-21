@@ -228,30 +228,30 @@ export function TimePicker({
           {reached && <p className={`px-1 text-xs ${detailReached}`}>Goal reached. Ready to tick off.</p>}
 
           {timer !== undefined && (
-            <div role="group" aria-label="Timer" className="flex items-center gap-1 px-0.5">
+            <div role="group" aria-label="Timer" className="flex items-center justify-end gap-2 px-0.5">
+              {running && (
+                <p
+                  aria-live="polite"
+                  className="text-xs tabular-nums text-blue-700 dark:text-blue-300"
+                >
+                  {describeElapsedClock(liveSeconds)}
+                </p>
+              )}
               {running ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => { timer.onStop() }}
-                    className={`${quickButton} text-red-600 dark:text-red-400`}
-                  >
-                    Stop
-                  </button>
-                  <p
-                    aria-live="polite"
-                    className="ml-auto px-1 text-sm tabular-nums text-neutral-900 dark:text-neutral-100"
-                  >
-                    {describeElapsedClock(liveSeconds)}
-                  </p>
-                </>
+                <button
+                  type="button"
+                  onClick={() => { timer.onStop() }}
+                  className="shrink-0 rounded-md bg-red-600/90 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-red-700 dark:bg-red-500/90 dark:hover:bg-red-400"
+                >
+                  Stop
+                </button>
               ) : (
                 <button
                   type="button"
                   onClick={() => { timer.onStart() }}
-                  className={quickButton}
+                  className="shrink-0 rounded-md bg-blue-600/90 px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 dark:bg-blue-500/90 dark:hover:bg-blue-400"
                 >
-                  Start
+                  Start timer
                 </button>
               )}
             </div>

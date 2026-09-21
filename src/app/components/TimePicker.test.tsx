@@ -29,7 +29,7 @@ describe('TimePicker timer', () => {
     )
 
     await user.click(screen.getByRole('button', { name: /Time:/ }))
-    await user.click(screen.getByRole('button', { name: 'Start' }))
+    await user.click(screen.getByRole('button', { name: 'Start timer' }))
     expect(onStart).toHaveBeenCalledTimes(1)
   })
 

@@ -6,16 +6,17 @@ import { ProcrastinationIcon } from './ProcrastinationIcon'
 import { RestingIcon } from './RestingIcon'
 
 /**
- * As tall as the add box beside it (View menu), padded to a square.
+ * Same corner and size family as the Plus (UI-54), sitting to its left so a
+ * thumb reaches both. Bottom matches the Plus; right clears size-14 + gap.
  */
-const iconButton =
-  'grid place-items-center rounded-lg border px-3.5 outline-offset-2 transition-colors focus-visible:outline-2 focus-visible:outline-blue-500'
+const fab =
+  'fixed right-[calc(1rem+3.5rem+0.75rem)] bottom-[max(5.5rem,calc(4.25rem+env(safe-area-inset-bottom)))] z-30 grid size-14 place-items-center rounded-full border text-2xl leading-none shadow-lg outline-offset-2 transition-colors focus-visible:outline-2 focus-visible:outline-blue-500 md:right-[calc(1.5rem+3.5rem+0.75rem)] md:bottom-6'
 
-const iconOff =
-  'border-neutral-300 bg-white text-neutral-400 hover:border-neutral-400 hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-500 dark:hover:border-neutral-600 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100'
+const fabOff =
+  'border-neutral-300 bg-white text-neutral-500 hover:border-neutral-400 hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
 
-const iconOn =
-  'border-sky-400/60 bg-sky-50 text-sky-700 dark:border-sky-500/40 dark:bg-sky-950/40 dark:text-sky-200'
+const fabOn =
+  'border-sky-400/60 bg-sky-50 text-sky-700 dark:border-sky-500/40 dark:bg-sky-950/50 dark:text-sky-200'
 
 const action =
   'rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
@@ -38,7 +39,7 @@ const pointsChip =
 
 export type ProcrastinationPhase = 'off' | 'idle' | 'focus' | 'won'
 
-/** Melting-face control beside View — starts mode, or asks to walk away while it is on. */
+/** Melting-face FAB near Plus — starts mode, or asks to walk away while it is on. */
 export function ProcrastinationEntryButton({
   phase,
   disabled,
@@ -64,22 +65,24 @@ export function ProcrastinationEntryButton({
       aria-pressed={active}
       aria-label={active ? 'Procrastination mode on' : 'Procrastination mode'}
       title={active ? 'Procrastination mode on' : 'Procrastination mode'}
-      className={`${iconButton} ${active ? iconOn : iconOff} disabled:pointer-events-none disabled:opacity-50`}
+      className={`${fab} ${active ? fabOn : fabOff} disabled:pointer-events-none disabled:opacity-50`}
     >
-      <ProcrastinationIcon />
+      <ProcrastinationIcon className="inline-flex size-6 shrink-0 items-center justify-center text-2xl leading-none" />
     </button>
   )
 }
 
 interface ProcrastinationPanelProps {
   phase: ProcrastinationPhase
-  /** Walk-away confirm is open (from the mode button). */
+  /** Walk-away confirm is open (from the FAB or End mode). */
   confirmingLeave: boolean
   wonTask: Task | null
   canPick: boolean
   /** Points already on the ledger for this completion, or 0. */
   pointsEarned: number
   onOtherTask: () => void
+  /** Begin the walk-away confirm (FAB or End mode). */
+  onRequestLeave: () => void
   onCancelLeave: () => void
   onWalkAway: () => void
   /** Dismiss the win card but keep the mode on (idle). */
@@ -101,6 +104,7 @@ export function ProcrastinationPanel({
   canPick,
   pointsEarned,
   onOtherTask,
+  onRequestLeave,
   onCancelLeave,
   onWalkAway,
   onRest,
@@ -145,11 +149,16 @@ export function ProcrastinationPanel({
               No rush — pick another only if you want to.
             </p>
           </div>
-          {canPick && (
-            <button type="button" onClick={onGetOneMore} className={`shrink-0 ${actionSmall}`}>
-              Choose another task
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+            {canPick && (
+              <button type="button" onClick={onGetOneMore} className={actionSmall}>
+                Choose another task
+              </button>
+            )}
+            <button type="button" onClick={onRequestLeave} className={actionSmall}>
+              End mode
             </button>
-          )}
+          </div>
         </div>
       </div>
     )
@@ -163,9 +172,14 @@ export function ProcrastinationPanel({
             <p className={modeTitle}>Procrastination mode</p>
             <p className={modeHint}>Some functionality dimmed to prevent distraction. Do just one highlighted task</p>
           </div>
-          <button type="button" onClick={onOtherTask} className={`shrink-0 ${actionSmall}`}>
-            Other task
-          </button>
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+            <button type="button" onClick={onOtherTask} className={actionSmall}>
+              Other task
+            </button>
+            <button type="button" onClick={onRequestLeave} className={actionSmall}>
+              End mode
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -180,6 +194,7 @@ export function ProcrastinationPanel({
       onRest={onRest}
       onGetOneMore={onGetOneMore}
       onGrantPoints={onGrantPoints}
+      onRequestLeave={onRequestLeave}
     />
   )
 }
@@ -190,12 +205,14 @@ function ProcrastinationWin({
   onRest,
   onGetOneMore,
   onGrantPoints,
+  onRequestLeave,
 }: {
   canPick: boolean
   pointsEarned: number
   onRest: () => void
   onGetOneMore: () => void
   onGrantPoints: (total: number) => void
+  onRequestLeave: () => void
 }) {
   const [tip, setTip] = useState<string | null>(null)
 
@@ -212,8 +229,13 @@ function ProcrastinationWin({
       className="procrastination-win flex flex-col gap-3 rounded-xl border border-green-300/60 bg-green-50/90 px-4 py-4 dark:border-green-500/30 dark:bg-green-950/40"
     >
       <div className="procrastination-win-burst flex items-center gap-2">
-        <CelebrateIcon className="size-6 text-amber-500 dark:text-amber-300" />
-        <p className="text-sm font-medium text-green-900 dark:text-green-100">Well done!</p>
+        <CelebrateIcon className="size-6 shrink-0 text-amber-500 dark:text-amber-300" />
+        <p className="min-w-0 flex-1 text-sm font-medium text-green-900 dark:text-green-100">
+          Well done!
+        </p>
+        <button type="button" onClick={onRequestLeave} className={`shrink-0 ${actionSmall}`}>
+          End mode
+        </button>
       </div>
 
       <div className="relative flex w-full items-stretch gap-2">
@@ -251,11 +273,11 @@ function ProcrastinationWin({
           <button
             type="button"
             onClick={onGetOneMore}
-            className={`inline-flex flex-1 items-center justify-center gap-1.5 ${action}`}
+            className={`inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 ${action}`}
             aria-label="Get one more task"
           >
             <span aria-hidden="true">➕</span>
-            Get one more task
+            <span className="truncate">Get one more task</span>
           </button>
         )}
         <button

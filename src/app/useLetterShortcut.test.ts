@@ -35,6 +35,15 @@ describe('useLetterShortcut', () => {
     expect(onPress).toHaveBeenCalledOnce()
   })
 
+  it('calls onPress for P while enabled (UI-58)', () => {
+    const onPress = vi.fn()
+    renderHook(() => { useLetterShortcut('p', true, onPress) })
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p' }))
+
+    expect(onPress).toHaveBeenCalledOnce()
+  })
+
   it('does nothing while disabled', () => {
     const onPress = vi.fn()
     renderHook(() => { useLetterShortcut('h', false, onPress) })

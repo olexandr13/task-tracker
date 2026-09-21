@@ -183,7 +183,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
   const [view, setView] = useView()
   // The detailed add sheet (UI-54): open from the Plus, from `N` on a task page
   // (UI-55), or from `H` for a habit (UI-56) — which opens Habits first if needed.
-  // `R` opens Rewards (UI-57).
+  // `R` opens Rewards (UI-57). `P` starts or asks to leave Procrastination mode (UI-58).
   const [adding, setAdding] = useState(false)
   const [confirmingLeave, setConfirmingLeave] = useState(false)
   useLetterShortcut('n', isTaskView(view) && !adding, () => { setAdding(true) })
@@ -350,6 +350,16 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     setProcrastination({ phase: 'idle' })
   }
 
+  // Same as the 🫠 FAB (JUST-1, JUST-8): start when off, ask to leave when on.
+  useLetterShortcut(
+    'p',
+    showProcrastination && !adding && !confirmingLeave,
+    () => {
+      if (procrastination.phase === 'off') startProcrastination()
+      else setConfirmingLeave(true)
+    },
+  )
+
   function grantWinPoints(total: number) {
     if (procrastination.phase !== 'won' || winDay === null) return
     void rewardRepository.save({
@@ -513,16 +523,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     />
                   </div>
 
-                  <div className="flex shrink-0 gap-2">
-                    {showProcrastination && (
-                      <ProcrastinationEntryButton
-                        phase={procrastinationPhase}
-                        onStart={startProcrastination}
-                        onRequestLeave={() => { setConfirmingLeave(true) }}
-                      />
-                    )}
-                    <ViewOptionsMenu options={viewOptions} onChange={setViewOptions} />
-                  </div>
+                  <ViewOptionsMenu options={viewOptions} onChange={setViewOptions} />
                 </div>
 
                 {showProcrastination && (
@@ -533,6 +534,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     canPick={canPickOpen}
                     pointsEarned={pointsEarned}
                     onOtherTask={() => { pickNextProcrastination(focusId) }}
+                    onRequestLeave={() => { setConfirmingLeave(true) }}
                     onCancelLeave={() => { setConfirmingLeave(false) }}
                     onWalkAway={endProcrastination}
                     onRest={restProcrastination}
@@ -706,6 +708,14 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
       </TaskDragAndDrop>
 
       <BottomNav view={view} lists={lists.lists} dimmed={dimChrome} onChange={setView} />
+
+      {showProcrastination && (
+        <ProcrastinationEntryButton
+          phase={procrastinationPhase}
+          onStart={startProcrastination}
+          onRequestLeave={() => { setConfirmingLeave(true) }}
+        />
+      )}
 
       {adding && (isTaskView(view) || view === 'habits') && (
         <AddTaskSheet

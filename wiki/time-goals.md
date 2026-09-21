@@ -67,9 +67,10 @@ ticked off. The tick itself stays the owner's.
 
 ## Timer
 
-- **TIME-15** The clock's panel offers **Start** and **Stop** beside logging by hand. Start begins
-  a timer for that task; Stop ends it and logs the whole minutes that passed as one session
-  (TIME-3). Under a minute logs nothing. The panel can stay closed while the timer runs.
+- **TIME-15** The clock's panel has a clear **Start timer** button (and **Stop** while it runs),
+  above logging by hand. Start begins a timer for that task; Stop ends it and logs the whole minutes
+  that passed as one session (TIME-3). Under a minute logs nothing. The panel can stay closed while
+  the timer runs.
 - **TIME-16** Only **one timer runs on this device** at a time. Starting on another task stops the
   one that was running and logs it first, then starts the new one.
 - **TIME-17** The timer is kept **on this device** (not in the account): a refresh or closing the

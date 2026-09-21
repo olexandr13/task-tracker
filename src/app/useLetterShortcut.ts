@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react'
 import { isLetterShortcut } from './letterShortcut'
 
 /**
- * Runs `onPress` when a lone letter is pressed (UI-55, UI-56, UI-57). Only while
- * `enabled` — pages that do not use the shortcut leave it off.
+ * Runs `onPress` when a lone letter is pressed (UI-55, UI-56, UI-57, UI-58). Only
+ * while `enabled` — pages that do not use the shortcut leave it off.
  */
 export function useLetterShortcut(letter: string, enabled: boolean, onPress: () => void): void {
   const onPressRef = useRef(onPress)
