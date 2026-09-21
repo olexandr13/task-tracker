@@ -14,13 +14,15 @@ const MESSAGES: Record<ReportedFailure, string> = {
 interface SignInScreenProps {
   /** Resolves with null once signed in, or with why not. */
   onSignIn: () => Promise<SignInFailure | null>
+  /** Opens the app with everything kept on this device. */
+  onContinueAsGuest: () => void
 }
 
 /**
- * The way in. There is one way to sign in, so there is one button: no form,
- * nothing to fill in.
+ * The way in: Google for tasks that follow the account, or guest for tasks that
+ * stay on this device alone.
  */
-export function SignInScreen({ onSignIn }: SignInScreenProps) {
+export function SignInScreen({ onSignIn, onContinueAsGuest }: SignInScreenProps) {
   const [isPending, setIsPending] = useState(false)
   const [failure, setFailure] = useState<ReportedFailure | null>(null)
 
@@ -41,19 +43,34 @@ export function SignInScreen({ onSignIn }: SignInScreenProps) {
       <div className="flex w-full max-w-sm flex-col items-center gap-6 rounded-2xl border border-neutral-200 bg-white px-6 py-10 text-center dark:border-neutral-800 dark:bg-neutral-900">
         <div className="flex flex-col gap-1.5">
           <h1 className="text-2xl font-semibold tracking-tight">PickMe</h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">Sign in to get to your tasks.</p>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            Sign in to sync across devices, or continue as guest on this one.
+          </p>
         </div>
 
-        {/* Drawn to Google's own button guidelines, the only styling a Google sign-in button may have. */}
-        <button
-          type="button"
-          onClick={() => { void signIn() }}
-          disabled={isPending}
-          className="flex h-10 items-center gap-2.5 rounded-full border border-[#747775] bg-white px-4 text-sm font-medium text-[#1f1f1f] transition-colors hover:bg-[#f2f2f2] disabled:cursor-default disabled:opacity-60 dark:border-[#8e918f] dark:bg-[#131314] dark:text-[#e3e3e3] dark:hover:bg-[#1f1f20]"
-        >
-          <GoogleLogo />
-          {isPending ? 'Signing in…' : 'Continue with Google'}
-        </button>
+        <div className="flex w-full flex-col items-center gap-3">
+          {/* Drawn to Google's own button guidelines, the only styling a Google sign-in button may have. */}
+          <button
+            type="button"
+            onClick={() => {
+              void signIn()
+            }}
+            disabled={isPending}
+            className="flex h-10 items-center gap-2.5 rounded-full border border-[#747775] bg-white px-4 text-sm font-medium text-[#1f1f1f] transition-colors hover:bg-[#f2f2f2] disabled:cursor-default disabled:opacity-60 dark:border-[#8e918f] dark:bg-[#131314] dark:text-[#e3e3e3] dark:hover:bg-[#1f1f20]"
+          >
+            <GoogleLogo />
+            {isPending ? 'Signing in…' : 'Continue with Google'}
+          </button>
+
+          <button
+            type="button"
+            onClick={onContinueAsGuest}
+            disabled={isPending}
+            className="text-sm text-neutral-500 transition-colors hover:text-neutral-800 disabled:cursor-default disabled:opacity-60 dark:text-neutral-400 dark:hover:text-neutral-200"
+          >
+            Continue as guest
+          </button>
+        </div>
 
         {failure !== null && (
           <p role="alert" className="text-sm text-red-600 dark:text-red-400">

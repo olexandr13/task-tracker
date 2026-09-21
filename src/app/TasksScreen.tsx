@@ -31,6 +31,13 @@ import { createFirestoreRewardRepository } from '../storage/firestoreRewardRepos
 import { createFirestoreSyncMonitor } from '../storage/firestoreSyncMonitor'
 import { createFirestoreTagRepository } from '../storage/firestoreTagRepository'
 import { createFirestoreTaskRepository } from '../storage/firestoreTaskRepository'
+import { importGuestAccount } from '../storage/guestImport'
+import { createLocalBackupRepository } from '../storage/localBackupRepository'
+import { createLocalListRepository } from '../storage/localListRepository'
+import { createLocalRewardRepository } from '../storage/localRewardRepository'
+import { createLocalSyncMonitor } from '../storage/localSyncMonitor'
+import { createLocalTagRepository } from '../storage/localTagRepository'
+import { createLocalTaskRepository } from '../storage/localTaskRepository'
 import { localStorageProcrastinationRepository } from '../storage/localStorageProcrastinationRepository'
 import { localStorageTaskTimerRepository } from '../storage/localStorageTaskTimerRepository'
 import { localStorageHabitViewOptionsRepository } from '../storage/localStorageHabitViewOptionsRepository'
@@ -125,25 +132,41 @@ const footLink =
  * a tab in the phone's bar alike.
  *
  * The tasks, the lists they are filed under and the points they earn are the
- * account's. The screen is remade for each account (App), so one repository of
- * each serves it for as long as it is up.
+ * account's — or, as guest, this browser's alone. The screen is remade for each
+ * account (App), so one repository of each serves it for as long as it is up.
  */
 export function TasksScreen({ account, onSignOut }: { account: Account; onSignOut: () => void }) {
-  const [repository] = useState(() => createFirestoreTaskRepository(firestore, account.id))
-  const [rewardRepository] = useState(() => createFirestoreRewardRepository(firestore, account.id))
-  const [listRepository] = useState(() => createFirestoreListRepository(firestore, account.id))
-  const [tagRepository] = useState(() => createFirestoreTagRepository(firestore, account.id))
-  const [syncMonitor] = useState(() => createFirestoreSyncMonitor(firestore, account.id))
-  const [backupRepository] = useState(() => createFirestoreBackupRepository(firestore, account.id))
+  const guest = account.provider === 'guest'
+  const [repository] = useState(() =>
+    guest ? createLocalTaskRepository() : createFirestoreTaskRepository(firestore, account.id),
+  )
+  const [rewardRepository] = useState(() =>
+    guest ? createLocalRewardRepository() : createFirestoreRewardRepository(firestore, account.id),
+  )
+  const [listRepository] = useState(() =>
+    guest ? createLocalListRepository() : createFirestoreListRepository(firestore, account.id),
+  )
+  const [tagRepository] = useState(() =>
+    guest ? createLocalTagRepository() : createFirestoreTagRepository(firestore, account.id),
+  )
+  const [syncMonitor] = useState(() =>
+    guest ? createLocalSyncMonitor() : createFirestoreSyncMonitor(firestore, account.id),
+  )
+  const [backupRepository] = useState(() =>
+    guest ? createLocalBackupRepository() : createFirestoreBackupRepository(firestore, account.id),
+  )
 
-  // Tasks kept in this browser from before they belonged to the account join it
-  // the first time it is open here with a connection.
+  // Tasks and other records kept as guest — or from before they belonged to an
+  // account — join a signed-in account the first time it is open here online.
   useEffect(() => {
+    if (guest) return
     importLocalTasks(repository).catch((error: unknown) => {
       console.warn('Could not move the tasks kept in this browser into the account; will try again next time.', error)
     })
-  }, [repository])
-
+    importGuestAccount(repository, listRepository, tagRepository, rewardRepository).catch((error: unknown) => {
+      console.warn('Could not move the guest data into the account; will try again next time.', error)
+    })
+  }, [guest, repository, listRepository, tagRepository, rewardRepository])
   const {
     tasks,
     isLoading,

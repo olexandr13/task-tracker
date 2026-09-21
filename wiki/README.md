@@ -10,7 +10,7 @@ lets this be read as a description of the app rather than a wish list.
 
 | Page | What it covers |
 |---|---|
-| [Account](account.md) | Signing in with Google, staying signed in, signing out |
+| [Account](account.md) | Signing in with Google, continuing as guest, staying signed in, signing out |
 | [Principles](principles.md) | The rules that hold everywhere: local days, derived time, what is saved, what is not |
 | [Tasks](tasks.md) | The record itself — adding, renaming, completing, ordering |
 | [Checklists](checklists.md) | Subtasks: ticking them off, and the rule that finishes the task |

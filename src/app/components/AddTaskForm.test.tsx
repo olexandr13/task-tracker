@@ -94,6 +94,13 @@ describe('AddTaskForm', () => {
     expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Daily')
   })
 
+  it('keeps the schedule button content-sized beside the title (DUE-4)', () => {
+    setupForm('2026-09-16')
+
+    expect(scheduleButton().className).not.toMatch(/\bw-full\b/)
+    expect(scheduleButton().textContent).toBe('Today')
+  })
+
   it('opens the detailed sheet from the Plus (UI-54)', async () => {
     const { user, onOpenSheet } = setupForm(null)
 

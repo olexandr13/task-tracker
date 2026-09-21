@@ -199,6 +199,23 @@ describe('SchedulePicker', () => {
     )
 
     expect(trigger().textContent).toBe('Today')
+    expect(trigger().className).not.toMatch(/\bw-full\b/)
+  })
+
+  it('fills its row when asked to (UI-59)', () => {
+    render(
+      <SchedulePicker
+        dueDate="2026-09-16"
+        draft={emptyDraft(WED_16)}
+        now={WED_16}
+        onChangeDueDate={vi.fn()}
+        onChangeRepeat={vi.fn()}
+        showSummary
+        fill
+      />,
+    )
+
+    expect(trigger().className).toMatch(/\bw-full\b/)
   })
 })
 

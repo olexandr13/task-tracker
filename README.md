@@ -21,7 +21,8 @@ The backend is Firebase project `task-tracker-a6e9e`
 
 - **Authentication** — Google sign-in, enabled in the console. Sign-in works only from the domains
   listed under **Authentication → Settings → Authorized domains**: `localhost` and the Vercel
-  address must both be there.
+  address must both be there. The app can also be used as a guest with data kept only in the
+  browser.
 - **Firestore** — the `(default)` database, Standard edition, in `eur3`, with delete protection on.
   Tasks live at `users/{uid}/tasks/{taskId}`, readable only by that account. `firebase.json` points
   at `firestore.rules` and `firestore.indexes.json`; deploy the rules after changing them.

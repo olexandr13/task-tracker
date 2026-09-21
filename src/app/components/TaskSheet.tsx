@@ -157,6 +157,7 @@ export function TaskSheet({
               skip={skip}
               label={`Schedule for "${task.title}"`}
               showSummary
+              fill
               align="left"
             />
           </div>

@@ -19,57 +19,71 @@ function setup() {
         finish = resolve
       }),
   )
-  render(<SignInScreen onSignIn={onSignIn} />)
+  const onContinueAsGuest = vi.fn()
+  render(<SignInScreen onSignIn={onSignIn} onContinueAsGuest={onContinueAsGuest} />)
 
   return {
     user,
     onSignIn,
+    onContinueAsGuest,
     finish: (result: SignInFailure | null) => act(async () => { finish(result) }),
   }
 }
 
-const button = () => screen.getByRole('button')
+const googleButton = () => screen.getByRole('button', { name: /Continue with Google|Signing in/ })
+const guestButton = () => screen.getByRole('button', { name: 'Continue as guest' })
 const alert = () => screen.queryByRole('alert')
 
 describe('SignInScreen', () => {
-  it('offers one way in, with Google (AUTH-2)', async () => {
+  it('offers Google and guest (AUTH-2, AUTH-15)', async () => {
     const { user, onSignIn } = setup()
 
-    expect(screen.getAllByRole('button')).toHaveLength(1)
-    expect(button().textContent).toBe('Continue with Google')
+    expect(screen.getAllByRole('button')).toHaveLength(2)
+    expect(googleButton().textContent).toBe('Continue with Google')
+    expect(guestButton().textContent).toBe('Continue as guest')
 
-    await user.click(button())
+    await user.click(googleButton())
     expect(onSignIn).toHaveBeenCalledOnce()
   })
 
-  it('holds the button while the sign-in window is open (AUTH-4)', async () => {
+  it('continues as guest without opening Google (AUTH-15)', async () => {
+    const { user, onContinueAsGuest, onSignIn } = setup()
+
+    await user.click(guestButton())
+
+    expect(onContinueAsGuest).toHaveBeenCalledOnce()
+    expect(onSignIn).not.toHaveBeenCalled()
+  })
+
+  it('holds the Google button while the sign-in window is open (AUTH-4)', async () => {
     const { user } = setup()
 
-    await user.click(button())
+    await user.click(googleButton())
 
-    expect(button().textContent).toBe('Signing in…')
-    expect(button()).toHaveProperty('disabled', true)
+    expect(googleButton().textContent).toBe('Signing in…')
+    expect(googleButton()).toHaveProperty('disabled', true)
+    expect(guestButton()).toHaveProperty('disabled', true)
   })
 
   it('says nothing when the window is closed without picking an account (AUTH-5)', async () => {
     const { user, finish } = setup()
 
-    await user.click(button())
+    await user.click(googleButton())
     await finish('cancelled')
 
     expect(alert()).toBeNull()
-    expect(button().textContent).toBe('Continue with Google')
-    expect(button()).toHaveProperty('disabled', false)
+    expect(googleButton().textContent).toBe('Continue with Google')
+    expect(googleButton()).toHaveProperty('disabled', false)
   })
 
   it('says why a sign-in failed, and clears it on the next try (AUTH-6)', async () => {
     const { user, finish } = setup()
 
-    await user.click(button())
+    await user.click(googleButton())
     await finish('popup-blocked')
     expect(alert()?.textContent).toMatch(/blocked the sign-in window/)
 
-    await user.click(button())
+    await user.click(googleButton())
     expect(alert()).toBeNull()
 
     await finish('offline')

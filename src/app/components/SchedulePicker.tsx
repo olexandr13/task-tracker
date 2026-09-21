@@ -39,6 +39,12 @@ interface SchedulePickerProps {
    * is the icon alone, still tinted, with them as its name and tooltip.
    */
   showSummary?: boolean
+  /**
+   * Whether a named button fills its row so the whole line is the hit target
+   * (sheet action rows, UI-59). Off in the one-line add box, where the date
+   * sits beside the title and must stay content-sized (DUE-4).
+   */
+  fill?: boolean
   /** Which edge of the button the panel lines up with: the one nearer the middle of the screen. */
   align?: 'left' | 'right'
 }
@@ -61,6 +67,7 @@ export function SchedulePicker({
   overdue = false,
   label = 'Schedule',
   showSummary = false,
+  fill = false,
   align = 'right',
 }: SchedulePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -86,11 +93,11 @@ export function SchedulePicker({
   const summary = summarize(describeRepeat)
   const scheduled = rule !== null || dueDate !== null
 
-  // Named (sheet) fills its row so the whole line is the hit target (UI-59);
-  // icon-only stays content-sized for a woken strip.
+  // Filling the row is the caller's (fill), not showSummary's: the add box spells
+  // the day out without taking the title's space (DUE-4, rowControls).
   const named = scheduled && showSummary
-  const button = `${showSummary ? rowControlLabel : rowControlIcon} w-full`
-  const rootClass = showSummary ? 'relative min-w-0 w-full' : 'relative min-w-0 shrink'
+  const button = `${showSummary ? rowControlLabel : rowControlIcon}${fill ? ' w-full' : ''}`
+  const rootClass = fill ? 'relative min-w-0 w-full' : 'relative min-w-0 shrink'
 
   return (
     <div

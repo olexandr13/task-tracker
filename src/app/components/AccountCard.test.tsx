@@ -54,6 +54,22 @@ describe('AccountCard', () => {
     expect(onSignOut).toHaveBeenCalledOnce()
   })
 
+  it('names a guest and says the data stays on this device (AUTH-16)', () => {
+    setup({ id: 'guest', name: 'Guest', email: null, provider: 'guest' })
+
+    expect(card().textContent).toContain('Guest')
+    expect(card().textContent).toContain('Saved on this device only')
+    expect(card().textContent).not.toContain('Signed in with')
+  })
+
+  it('leaves guest mode without asking (AUTH-16)', async () => {
+    const { user, onSignOut } = setup({ id: 'guest', name: 'Guest', email: null, provider: 'guest' })
+
+    await user.click(screen.getByRole('button', { name: 'Leave' }))
+
+    expect(onSignOut).toHaveBeenCalledOnce()
+  })
+
   it('leaves out a line the account has not got (AUTH-9)', () => {
     setup({ ...ADA, name: null })
 

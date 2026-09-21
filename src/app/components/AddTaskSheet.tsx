@@ -158,6 +158,7 @@ export function AddTaskSheet({
               onChangeRepeat={handleRepeatChange}
               label={`Schedule for "${namedFor}"`}
               showSummary
+              fill
               align="left"
             />
           </div>

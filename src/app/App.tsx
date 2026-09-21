@@ -1,15 +1,16 @@
 import { firebaseApp } from '../storage/firebaseApp'
 import { createFirebaseAuthService } from '../storage/firebaseAuthService'
+import { createAppAuthService } from '../storage/appAuthService'
 import { SignInScreen } from './components/SignInScreen'
 import { TasksScreen } from './TasksScreen'
 import { useAuth } from './useAuth'
 
-/** One for the life of the page. */
-const auth = createFirebaseAuthService(firebaseApp)
+/** One for the life of the page: Google underneath, guest layered on top. */
+const auth = createAppAuthService(createFirebaseAuthService(firebaseApp))
 
 /**
- * Nothing is shown without an account: the tasks are the signed-in person's,
- * so until someone is signed in there are none to show.
+ * Nothing is shown without an account — signed in with Google, or continuing as
+ * guest. Until then the only screen is the way in.
  */
 export function App() {
   const state = useAuth(auth)
@@ -21,7 +22,14 @@ export function App() {
   }
 
   if (state.status === 'signed-out') {
-    return <SignInScreen onSignIn={() => auth.signInWithGoogle()} />
+    return (
+      <SignInScreen
+        onSignIn={() => auth.signInWithGoogle()}
+        onContinueAsGuest={() => {
+          auth.continueAsGuest()
+        }}
+      />
+    )
   }
 
   function handleSignOut() {

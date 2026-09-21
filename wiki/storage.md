@@ -5,8 +5,9 @@ changes shape.
 
 ## What is saved, and where
 
-- **STORE-1** Tasks are saved in the **account** (AUTH-13), in the Firebase project's Firestore
-  database. A refresh, a closed tab or a closed browser loses nothing.
+- **STORE-1** Tasks are saved in the **account** (AUTH-13) when signed in with Google, in the
+  Firebase project's Firestore database — or, as guest, in this browser alone (STORE-37). A
+  refresh, a closed tab or a closed browser loses nothing.
 - **STORE-2** Every device and every address signed into the same account shows the same tasks. A
   change made on one appears on the others by itself, without a refresh, while they are open.
 - **STORE-14** The app always runs at the same address: `http://localhost:5173` in development,
@@ -82,13 +83,26 @@ changes shape.
 ## Tasks kept in the browser
 
 - **STORE-19** Tasks saved before they belonged to the account were kept in the browser's
-  `localStorage`, one set per address. The first time the app is open there, signed in and online,
-  they are **moved into the account** — added alongside whatever the account already has, so two
+  `localStorage`, one set per address. The first time the app is open there as a **guest**, they
+  join the guest's tasks. The first time it is open signed in with Google and online, any still left
+  are **moved into the account** — added alongside whatever the account already has, so two
   addresses that each kept their own tasks end up with both sets — and then forgotten by the
   browser.
 - **STORE-20** The move never overwrites a task the account already has, and the browser forgets
   its tasks only once the account holds them. A move that fails, offline say, is tried again next
   time. Browser data the app cannot read is left where it is.
+
+## Guest — this device only
+
+- **STORE-37** As guest (AUTH-15), tasks, lists, tags and the points ledger are kept in this
+  browser's `localStorage`, under the same versioned shapes as the account's (STORE-4, STORE-24,
+  STORE-27, STORE-34). Nothing is sent to the account or any other device. A refresh or another tab
+  on the same address sees the same records. There is nothing to sync, so the sync notice stays
+  quiet (OFF-7).
+- **STORE-38** The first time a Google account is open here online after guest data was kept, that
+  data is **moved into the account** — tasks, lists, tags, points earned and redemptions — added
+  alongside what the account already has, without overwriting tasks it already holds (STORE-20),
+  then forgotten by the browser. A move that fails, offline say, is tried again next time.
 
 ## Kept on this device
 
@@ -166,12 +180,15 @@ changes shape.
 ---
 
 **Where it lives:** `src/storage/taskRepository.ts` (the interface, and what a change comes to),
-`firestoreTaskRepository.ts` (the account's tasks), `firebaseApp.ts` (the database and its offline
-copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgrades), `localTaskImport.ts` (tasks kept in the browser),
-`firestoreBatches.ts` (writing in batches), `firestoreAccount.ts` (every collection an account keeps), `rewardRepository.ts`, `firestoreRewardRepository.ts` and
-`rewardSchema.ts` (the points ledger), `listRepository.ts`, `firestoreListRepository.ts` and
-`listSchema.ts` (the lists), `tagRepository.ts`, `firestoreTagRepository.ts` and `tagSchema.ts`
-(the kept tags), `src/storage/quoteRepository.ts` and `localStorageQuoteRepository.ts`,
+`firestoreTaskRepository.ts` (the account's tasks), `localTaskRepository.ts` (the guest's),
+`firebaseApp.ts` (the database and its offline
+copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgrades), `localTaskImport.ts` (tasks kept in the browser before accounts),
+`guestImport.ts` (moving guest data into an account), `localCollection.ts` (records in `localStorage`),
+`firestoreBatches.ts` (writing in batches), `firestoreAccount.ts` (every collection an account keeps), `rewardRepository.ts`, `firestoreRewardRepository.ts`, `localRewardRepository.ts` and
+`rewardSchema.ts` (the points ledger), `listRepository.ts`, `firestoreListRepository.ts`, `localListRepository.ts` and
+`listSchema.ts` (the lists), `tagRepository.ts`, `firestoreTagRepository.ts`, `localTagRepository.ts` and `tagSchema.ts`
+(the kept tags), `localBackupRepository.ts` and `localSyncMonitor.ts` (guest export and the quiet sync notice),
+`src/storage/quoteRepository.ts` and `localStorageQuoteRepository.ts`,
 `src/storage/quoteSource.ts` and `quotableQuoteSource.ts`, `src/storage/viewOptionsRepository.ts`,
 `viewOptionsSchema.ts` and `localStorageViewOptionsRepository.ts` (the View options),
 `src/storage/habitViewOptionsRepository.ts`, `habitViewOptionsSchema.ts` and
@@ -180,7 +197,9 @@ copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgr
 `src/app/useTags.ts` (keeping the tags tasks carry),
 `src/app/TasksScreen.tsx` (the repository and the move). Who may read what: `firestore.rules`.
 **Tested in:** `src/storage/taskRepository.test.ts` (what a change writes),
-`src/storage/localTaskImport.test.ts` (the move, and upgrading older data), `src/storage/rewardSchema.test.ts`
+`src/storage/localTaskImport.test.ts` (the move, and upgrading older data),
+`src/storage/localTaskRepository.test.ts` (the guest's tasks),
+`src/storage/rewardSchema.test.ts`
 (reading the ledger back), `src/storage/listRepository.test.ts` and `src/storage/listSchema.test.ts`
 (what a change to the lists writes, and reading one back), `src/storage/tagRepository.test.ts`,
 `src/storage/tagSchema.test.ts` and `src/app/useTags.test.ts` (the same for the tags, and keeping the

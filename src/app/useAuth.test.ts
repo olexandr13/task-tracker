@@ -20,6 +20,7 @@ function fakeAuth(first: Account | null | 'never'): AuthService {
       return () => {}
     },
     signInWithGoogle: () => Promise.resolve(null),
+    continueAsGuest: () => {},
     signOut: () => Promise.resolve(),
   }
 }

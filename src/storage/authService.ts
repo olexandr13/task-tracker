@@ -6,8 +6,8 @@
  * here rather than something the UI knows about.
  */
 
-/** The service an account signed in through. There is only one way in (AUTH-2). */
-export type AccountProvider = 'google'
+/** The service an account signed in through — or guest, with no service at all. */
+export type AccountProvider = 'google' | 'guest'
 
 /** The signed-in person, as much of them as the screen has any use for. */
 export interface Account {
@@ -16,6 +16,17 @@ export interface Account {
   readonly name: string | null
   readonly email: string | null
   readonly provider: AccountProvider
+}
+
+/**
+ * The guest account: one per browser address, data kept only here. The id is
+ * fixed so every visit as guest reads and writes the same local records.
+ */
+export const GUEST_ACCOUNT: Account = {
+  id: 'guest',
+  name: 'Guest',
+  email: null,
+  provider: 'guest',
 }
 
 /** Why a sign-in ended without anyone signed in. */
@@ -37,5 +48,7 @@ export interface AuthService {
   subscribe(listener: (account: Account | null) => void): () => void
   /** Resolves with null once signed in; never rejects. */
   signInWithGoogle(): Promise<SignInFailure | null>
+  /** Opens the app as guest: everything stays on this device. */
+  continueAsGuest(): void
   signOut(): Promise<void>
 }

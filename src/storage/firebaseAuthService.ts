@@ -81,6 +81,10 @@ export function createFirebaseAuthService(app: FirebaseApp): AuthService {
       }
     },
 
+    continueAsGuest() {
+      // Guest mode is layered in `appAuthService`; this service is Google alone.
+    },
+
     signOut() {
       return signOut(auth)
     },

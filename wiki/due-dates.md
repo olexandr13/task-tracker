@@ -16,9 +16,11 @@ instead of in a long list of everything — see [Views](views.md).
 
 ## Setting it
 
-- **DUE-4** The add row has one schedule button (DUE-13), which spells the day out beside its icon.
-  The day chosen goes with the task on Enter, and the button goes back to the list's own day afterwards, so a date picked for one task
-  is never inherited by the next unnoticed.
+- **DUE-4** The add row has one schedule button (DUE-13), which spells the day out beside its icon
+  and stays content-sized next to the title field — it does not fill the row (that is for the
+  sheet's action lines, UI-59). The day chosen goes with the task on Enter, and the button goes
+  back to the list's own day afterwards, so a date picked for one task is never inherited by the
+  next unnoticed.
 - **DUE-5** On a task row the schedule button (DUE-13) is the first of the controls, on show at
   rest on **every** task, set or not (UI-18). It is the icon alone, tinted once a date is set — and always on
   a repeating task, whose rule has set its day (DUE-12) — red when overdue (DUE-10), the date being

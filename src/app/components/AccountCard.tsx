@@ -1,10 +1,23 @@
 import type { ReactElement } from 'react'
 import type { Account, AccountProvider } from '../../storage/authService'
 import { GoogleLogo } from './GoogleLogo'
+import { GuestMark } from './GuestMark'
 
 /** What each way in is called and what it looks like. A new provider is a line here. */
-const PROVIDERS: Record<AccountProvider, { name: string; Mark: (props: { className?: string }) => ReactElement }> = {
-  google: { name: 'Google', Mark: GoogleLogo },
+const PROVIDERS: Record<
+  AccountProvider,
+  { name: string; Mark: (props: { className?: string }) => ReactElement; caption: (account: Account) => string }
+> = {
+  google: {
+    name: 'Google',
+    Mark: GoogleLogo,
+    caption: () => 'Signed in with Google',
+  },
+  guest: {
+    name: 'Guest',
+    Mark: GuestMark,
+    caption: () => 'Saved on this device only',
+  },
 }
 
 interface AccountCardProps {
@@ -33,7 +46,7 @@ export function AccountCard({ account, onSignOut }: AccountCardProps) {
         {account.email !== null && (
           <p className="truncate text-xs text-neutral-500 dark:text-neutral-400">{account.email}</p>
         )}
-        <p className="truncate text-xs text-neutral-500 dark:text-neutral-400">Signed in with {provider.name}</p>
+        <p className="truncate text-xs text-neutral-500 dark:text-neutral-400">{provider.caption(account)}</p>
       </div>
 
       <button
@@ -41,7 +54,7 @@ export function AccountCard({ account, onSignOut }: AccountCardProps) {
         onClick={onSignOut}
         className="rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
       >
-        Sign out
+        {account.provider === 'guest' ? 'Leave' : 'Sign out'}
       </button>
     </section>
   )
@@ -59,7 +72,7 @@ function ProviderMark({ provider }: { provider: AccountProvider }) {
   return (
     <span
       aria-hidden="true"
-      className="flex size-10 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white dark:border-neutral-700"
+      className="flex size-10 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 dark:border-neutral-700 dark:text-neutral-300"
     >
       <Mark className="size-6 shrink-0" />
     </span>
