@@ -1,10 +1,11 @@
 import { UNDER_MORE, VIEW_LABELS, type FixedView } from '../view'
 import { VIEW_ICONS } from '../viewIcons'
+import { ChevronIcon } from './ChevronIcon'
 import { ProcrastinationIcon } from './ProcrastinationIcon'
 import type { ProcrastinationPhase } from './ProcrastinationMode'
 
 const row =
-  'flex min-h-14 w-full items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left text-lg text-neutral-900 transition-colors hover:border-neutral-300 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:border-neutral-700'
+  'flex min-h-14 w-full items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left text-lg text-neutral-900 transition-colors hover:border-neutral-300 active:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:border-neutral-700 dark:active:bg-neutral-800'
 
 const rowOn =
   'flex min-h-14 w-full items-center gap-3 rounded-xl border border-sky-400/60 bg-sky-50 px-4 py-3 text-left text-lg text-sky-900 transition-colors hover:border-sky-400 dark:border-sky-500/40 dark:bg-sky-950/50 dark:text-sky-100 dark:hover:border-sky-500/60'
@@ -36,6 +37,8 @@ export function MorePage({ onOpen, procrastination }: MorePageProps) {
             <button type="button" onClick={() => { onOpen(value) }} className={row}>
               <Icon className="size-5 shrink-0 text-neutral-400 dark:text-neutral-500" />
               {VIEW_LABELS[value]}
+              {/* A page to go to, where Procrastination below is a switch. */}
+              <ChevronIcon className="ml-auto size-5 shrink-0 -rotate-90 text-neutral-300 dark:text-neutral-600" />
             </button>
           </li>
         )

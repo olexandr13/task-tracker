@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { completeTask, createTask, renameTask } from '../core'
-import { changesBetween } from './taskRepository'
+import { changesBetween } from './recordChanges'
 
 const NOW = new Date('2026-09-15T10:00:00.000Z')
 

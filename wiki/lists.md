@@ -122,7 +122,7 @@ reasons; requirements here are `LST-`.
 **Where it lives:** `src/core/list.ts` (the record, names, filing a task, emptying a list, the
 counts), `src/app/components/TaskItem.tsx` (the List group in a task's menu),
 `src/app/components/ContextMenu.tsx` (a menu's groups and checked choices),
-`src/app/components/SideNav.tsx` (the lists under Lists, and folding them), `src/app/useSideNav.ts`
+`src/app/components/SideNav.tsx` (the lists under Lists, and folding them), `src/app/useDeviceSetting.ts`
 (whether they are folded), `src/app/useListDropTarget.ts` (a list as a
 place to drop a task), `src/app/components/TaskDragAndDrop.tsx` and `src/app/taskDrop.ts` (carrying a
 task, and what dropping it does),

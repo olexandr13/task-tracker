@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   addTag,
   appendTask,
@@ -47,21 +47,25 @@ import {
   type TimeEntryId,
 } from '../core'
 import type { RewardRepository } from '../storage/rewardRepository'
-import { changesBetween, type TaskChanges, type TaskRepository } from '../storage/taskRepository'
+import { changesBetween, hasChanges } from '../storage/recordChanges'
+import type { TaskChanges, TaskRepository } from '../storage/taskRepository'
+import { ignoreProblems, type ReportProblem } from './storageProblem'
 
-function persist(repository: TaskRepository, changes: TaskChanges): void {
-  if (changes.saved.length === 0 && changes.removed.length === 0) return
+function persist(repository: TaskRepository, changes: TaskChanges, onProblem: ReportProblem): void {
+  if (!hasChanges(changes)) return
 
   repository.save(changes).catch((error: unknown) => {
     console.error('Could not save tasks.', error)
+    onProblem('save')
   })
 }
 
-function record(rewards: RewardRepository, changes: RewardChanges): void {
+function record(rewards: RewardRepository, changes: RewardChanges, onProblem: ReportProblem): void {
   if (!hasRewardChanges(changes)) return
 
   rewards.save(changes).catch((error: unknown) => {
     console.error('Could not save rewards.', error)
+    onProblem('save')
   })
 }
 
@@ -73,10 +77,18 @@ function record(rewards: RewardRepository, changes: RewardChanges): void {
  *
  * What a change here earns or takes back is recorded in `rewards` alongside it.
  * A change arriving from elsewhere is not: the device that made it recorded it.
+ *
+ * A load or a save the repository refuses is told to `onProblem` (STORE-13),
+ * which is expected to stay the same function from render to render.
  */
-export function useTasks(repository: TaskRepository, rewards: RewardRepository) {
+export function useTasks(repository: TaskRepository, rewards: RewardRepository, onProblem: ReportProblem = ignoreProblems) {
   const [tasks, setTasks] = useState<Task[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [status, setStatus] = useState<'loading' | 'loaded' | 'failed'>('loading')
+  // The list as the last change left it, ahead of the render that draws it. Every
+  // change builds on this rather than on the list last drawn, so two changes made
+  // in one go — a title and a description kept together — each build on the one
+  // before instead of the second quietly putting back what the first changed.
+  const latest = useRef<Task[]>([])
 
   useEffect(() => {
     return repository.subscribe(
@@ -84,28 +96,32 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
         // Anything whose time in the trash ran out, while the app was closed or on
         // another device, goes now, and is written back so storage stops carrying it.
         const kept = purgeExpired(saved)
+        latest.current = kept
         setTasks(kept)
-        setIsLoading(false)
-        persist(repository, changesBetween(saved, kept))
+        setStatus('loaded')
+        persist(repository, changesBetween(saved, kept), onProblem)
       },
       (error) => {
         console.error('Could not load tasks.', error)
-        setIsLoading(false)
+        setStatus('failed')
+        onProblem('load')
       },
     )
-  }, [repository])
+  }, [repository, onProblem])
 
   const apply = useCallback(
     (change: (current: Task[]) => Task[]) => {
       // Expiry is a matter of elapsed time, so any moment the list is touched is
       // a fair one to take the trash out too. Only the tasks the change touched are
       // written, so nothing another device changed meanwhile is written back over.
-      const next = purgeExpired(change(tasks))
+      const before = latest.current
+      const next = purgeExpired(change(before))
+      latest.current = next
       setTasks(next)
-      persist(repository, changesBetween(tasks, next))
-      record(rewards, rewardChanges(tasks, next))
+      persist(repository, changesBetween(before, next), onProblem)
+      record(rewards, rewardChanges(before, next), onProblem)
     },
-    [tasks, repository, rewards],
+    [repository, rewards, onProblem],
   )
 
   const addTask = useCallback(
@@ -355,7 +371,7 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
    */
   const remove = useCallback(
     (id: TaskId): Task | null => {
-      const target = tasks.find((task) => task.id === id)
+      const target = latest.current.find((task) => task.id === id)
       if (target === undefined || isDeleted(target)) {
         return null
       }
@@ -363,7 +379,7 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
       apply((current) => current.map((task) => (task.id === id ? deleteTask(task) : task)))
       return target
     },
-    [tasks, apply],
+    [apply],
   )
 
   /** Puts a fresh copy of the task just below it. */
@@ -398,7 +414,9 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository) 
 
   return {
     tasks,
-    isLoading,
+    isLoading: status === 'loading',
+    /** The repository refused to read the tasks: an empty list then is not an empty account. */
+    loadFailed: status === 'failed',
     addTask,
     move,
     complete,

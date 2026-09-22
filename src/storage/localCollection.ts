@@ -18,8 +18,10 @@ interface LocalCollectionOptions<T> {
   readonly read: (data: unknown) => T | null
   readonly write: (item: T) => unknown
   readonly idOf: (item: T) => string
-  /** Optional seed when the key has never been written (e.g. legacy local tasks). */
+  /** Records to start from when the key has never been written — older data to take in. */
   readonly seed?: () => T[]
+  /** Called once the seed is saved under the key, and not before, so its old home can let go of it. */
+  readonly onSeeded?: () => void
 }
 
 /** One localStorage key holding many records, keyed by id. */
@@ -44,6 +46,7 @@ export function createLocalCollection<T>(options: LocalCollectionOptions<T>): Lo
         if (seeded.length === 0) return { items: new Map() }
         const items = new Map(seeded.map((item) => [options.idOf(item), item]))
         writeStore(items)
+        options.onSeeded?.()
         return { items }
       }
       const parsed: unknown = JSON.parse(raw)

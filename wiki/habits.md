@@ -112,7 +112,7 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 `src/app/habitTones.ts` (the shades), `src/app/components/FlameIcon.tsx`, `src/app/useTasks.ts`
 (`setHabitDay`), `src/app/components/AddTaskForm.tsx` (the add box), `src/app/components/AddTaskSheet.tsx` (the detailed
 sheet, starting daily), `src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`H` opens it),
-`src/app/components/HabitViewOptionsMenu.tsx` and `src/app/useHabitViewOptions.ts`
+`src/app/components/HabitViewOptionsMenu.tsx` and `src/app/useDeviceSetting.ts`
 (the View button and whether cards start folded).
 **Tested in:** `src/core/habit.test.ts`, `src/core/task.test.ts`,
 `src/app/components/HabitList.test.tsx`, `src/app/components/HabitViewOptionsMenu.test.tsx`,

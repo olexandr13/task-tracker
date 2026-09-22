@@ -1,11 +1,7 @@
-import { isLocalDay, type LocalDay } from '../core'
-import {
-  PROCRASTINATION_OFF,
-  type ProcrastinationRepository,
-  type ProcrastinationState,
-} from './procrastinationRepository'
+import { isLocalDay, PROCRASTINATION_OFF, type LocalDay, type ProcrastinationState } from '../core'
+import { createLocalStorageSetting } from './localStorageSetting'
+import type { ProcrastinationRepository } from './procrastinationRepository'
 
-const STORAGE_KEY = 'task-tracker/procrastination'
 const SCHEMA_VERSION = 2
 
 function readState(value: unknown): ProcrastinationState | null {
@@ -24,44 +20,12 @@ function readState(value: unknown): ProcrastinationState | null {
 
 /**
  * Procrastination mode in this browser's `localStorage`, so a refresh keeps it
- * for the day it was started. A day that has rolled over, or anything unreadable,
- * is treated as off.
+ * for the day it was started. Anything unreadable is treated as off; a day that
+ * has rolled over is turned off as it is read (`settleProcrastination`).
  */
-export const localStorageProcrastinationRepository: ProcrastinationRepository = {
-  load(): ProcrastinationState {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw === null) return PROCRASTINATION_OFF
-      return readState(JSON.parse(raw)) ?? PROCRASTINATION_OFF
-    } catch {
-      return PROCRASTINATION_OFF
-    }
-  },
-
-  save(state: ProcrastinationState): void {
-    try {
-      if (state.phase === 'off') {
-        localStorage.removeItem(STORAGE_KEY)
-        return
-      }
-      if (state.phase === 'idle') {
-        localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({ version: SCHEMA_VERSION, phase: 'idle', day: state.day }),
-        )
-        return
-      }
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          version: SCHEMA_VERSION,
-          phase: state.phase,
-          taskId: state.taskId,
-          day: state.day,
-        }),
-      )
-    } catch {
-      // Kept on screen for this visit only.
-    }
-  },
-}
+export const localStorageProcrastinationRepository: ProcrastinationRepository = createLocalStorageSetting({
+  key: 'task-tracker/procrastination',
+  read: readState,
+  write: (state) => (state.phase === 'off' ? null : { version: SCHEMA_VERSION, ...state }),
+  fallback: PROCRASTINATION_OFF,
+})

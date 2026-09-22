@@ -1,12 +1,8 @@
 import type { Task, TaskId } from '../core'
+import type { RecordChanges } from './recordChanges'
 
-/** What one change to the list comes to, task by task. */
-export interface TaskChanges {
-  /** Tasks that are new, or not what they were. */
-  readonly saved: readonly Task[]
-  /** Tasks gone from the list for good — purged, not merely trashed. */
-  readonly removed: readonly TaskId[]
-}
+/** What one change to the list comes to, task by task (./recordChanges). */
+export type TaskChanges = RecordChanges<Task, TaskId>
 
 /**
  * Where an account's tasks live. Every call site talks to this interface rather
@@ -26,19 +22,4 @@ export interface TaskRepository {
   save(changes: TaskChanges): Promise<void>
   /** Adds tasks that were kept somewhere else, leaving alone any the account already has. */
   importTasks(tasks: readonly Task[]): Promise<void>
-}
-
-/**
- * The tasks that differ between two versions of the list. The rules in ../core
- * hand back the very same object for a task they did not change, so identity is
- * what tells a changed task from an untouched one.
- */
-export function changesBetween(before: readonly Task[], after: readonly Task[]): TaskChanges {
-  const previous = new Map(before.map((task) => [task.id, task]))
-  const kept = new Set(after.map((task) => task.id))
-
-  return {
-    saved: after.filter((task) => previous.get(task.id) !== task),
-    removed: before.filter((task) => !kept.has(task.id)).map((task) => task.id),
-  }
 }

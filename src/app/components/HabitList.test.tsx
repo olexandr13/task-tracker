@@ -3,6 +3,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { completeTask, createTask, logTime, setTimeGoal, type Task } from '../../core'
+import { NO_TASK_ACTIONS } from '../../test/taskActions'
 import { HabitList } from './HabitList'
 
 /* What the habits page shows and does. HAB ids refer to wiki/habits.md. */
@@ -26,7 +27,10 @@ function layOutTitle() {
   })
 }
 
-afterEach(() => { Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect') })
+afterEach(() => {
+  Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect')
+  Reflect.deleteProperty(Element.prototype, 'scrollIntoView')
+})
 
 function setup(habits: Task[], showDetails = false) {
   const user = userEvent.setup()
@@ -38,33 +42,13 @@ function setup(habits: Task[], showDetails = false) {
   const onRemove = vi.fn()
   const view = render(
     <HabitList
+      actions={{ ...NO_TASK_ACTIONS, complete: onComplete, uncomplete: onUncomplete, rename: onRename, logTime: onLogTime, remove: onRemove }}
       habits={habits}
       now={WED_16}
       showDetails={showDetails}
       knownTags={[]}
       lists={[]}
-      onComplete={onComplete}
-      onUncomplete={onUncomplete}
       onSetDay={onSetDay}
-      onRename={onRename}
-      onChangeDescription={vi.fn()}
-      onChangeDueDate={vi.fn()}
-      onSkipOccurrence={vi.fn()}
-      onChangeRepeat={vi.fn()}
-      onChangeReward={vi.fn()}
-      onChangeUrgent={vi.fn()}
-      onChangeTimeGoal={vi.fn()}
-      onLogTime={onLogTime}
-      onRemoveTimeEntry={vi.fn()}
-      onChangeList={vi.fn()}
-      onAddTag={vi.fn()}
-      onRemoveTag={vi.fn()}
-      onRemove={onRemove}
-      onDuplicate={vi.fn()}
-      onAddSubtask={vi.fn()}
-      onSetSubtaskDone={vi.fn()}
-      onRenameSubtask={vi.fn()}
-      onRemoveSubtask={vi.fn()}
     />,
   )
   return { user, onComplete, onUncomplete, onSetDay, onLogTime, onRename, onRemove, rerender: view.rerender }
@@ -77,28 +61,8 @@ function listProps(habits: Task[]) {
     now: WED_16,
     knownTags: [] as const,
     lists: [] as const,
-    onComplete: vi.fn(),
-    onUncomplete: vi.fn(),
+    actions: NO_TASK_ACTIONS,
     onSetDay: vi.fn(),
-    onRename: vi.fn(),
-    onChangeDescription: vi.fn(),
-    onChangeDueDate: vi.fn(),
-    onSkipOccurrence: vi.fn(),
-    onChangeRepeat: vi.fn(),
-    onChangeReward: vi.fn(),
-    onChangeUrgent: vi.fn(),
-    onChangeTimeGoal: vi.fn(),
-    onLogTime: vi.fn(),
-    onRemoveTimeEntry: vi.fn(),
-    onChangeList: vi.fn(),
-    onAddTag: vi.fn(),
-    onRemoveTag: vi.fn(),
-    onRemove: vi.fn(),
-    onDuplicate: vi.fn(),
-    onAddSubtask: vi.fn(),
-    onSetSubtaskDone: vi.fn(),
-    onRenameSubtask: vi.fn(),
-    onRemoveSubtask: vi.fn(),
   }
 }
 
@@ -265,6 +229,26 @@ describe('HabitList', () => {
     await user.click(screen.getByRole('button', { name: 'Log 15m' }))
 
     expect(onLogTime).toHaveBeenCalledWith('other', 15)
+  })
+
+  it('opens the sheet of a habit gone to from elsewhere (TIME-20)', () => {
+    const scrollIntoView = vi.fn()
+    Object.defineProperty(Element.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView })
+    const onRevealed = vi.fn()
+    const habit = stretch()
+    render(
+      <HabitList
+        {...listProps([habit, { ...habit, id: 'other', title: 'swim' }])}
+        showDetails={false}
+        revealId={habit.id}
+        onRevealed={onRevealed}
+      />,
+    )
+
+    expect(screen.getByRole('dialog', { name: 'Details of "stretch"' })).toBeDefined()
+    expect(screen.queryByRole('dialog', { name: 'Details of "swim"' })).toBeNull()
+    expect(scrollIntoView).toHaveBeenCalledOnce()
+    expect(onRevealed).toHaveBeenCalledOnce()
   })
 
   it('opens the task sheet from the ⋮ without unfolding the card (HAB-25, HAB-22)', async () => {

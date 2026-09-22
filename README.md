@@ -41,12 +41,12 @@ npx -y firebase-tools@latest deploy --only firestore --project task-tracker-a6e9
 ## Other commands
 
 ```bash
-npm run test    # unit tests for the task rules
+npm run test    # the rules, storage and the UI's interactions
 npm run lint    # lint, including the layer boundary check
 npm run build   # type-check + production build
 ```
 
-Pull requests into `main` run `npm test` and `npm run build` via GitHub Actions
+Pull requests into `main` run `npm run lint`, `npm test` and `npm run build` via GitHub Actions
 (`.github/workflows/ci.yml`).
 
 ## Hosting
@@ -69,11 +69,13 @@ so the hosted app does not see tasks saved on `localhost`.
 ## How it's organised
 
 - `src/core/` — the rules. Pure TypeScript, no React, no browser APIs.
-- `src/storage/` — saving and loading, and signing in. Tasks in Firestore, the quote cache in `localStorage`, and Firebase Auth.
+- `src/storage/` — saving and loading, and signing in. The account's data in Firestore (or `localStorage` as
+  guest), chosen in one place (`accountStorage.ts`); what stays on the device in `localStorage`
+  (`deviceStorage.ts`); and Firebase Auth.
 - `src/app/` — the React UI.
 
 Dependencies point inwards only, and `npm run lint` enforces it. See `CLAUDE.md` for the details.
 
 ## Status
 
-Step 1: add, list, complete and delete tasks, saved between sessions. Gamification comes next.
+What the app does today, feature by feature, is in [`wiki/`](wiki/README.md).

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useEffectEvent, useId, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import {
   currentEntries,
   habitRate,
@@ -9,13 +9,9 @@ import {
   type HabitDayState,
   type HabitRate,
   type List,
-  type ListId,
   type LocalDay,
-  type Repeat,
-  type SubtaskId,
   type Task,
   type TaskId,
-  type TimeEntryId,
 } from '../../core'
 import { describeDays, describeRate, HABIT_DAY_LABELS } from '../habitLabels'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
@@ -28,6 +24,7 @@ import { HabitGrid } from './HabitGrid'
 import { MoreVerticalIcon } from './MoreVerticalIcon'
 import { TaskSheet } from './TaskSheet'
 import { TimePicker } from './TimePicker'
+import type { TaskActions } from '../taskActions'
 import type { TaskTimer } from '../useTaskTimer'
 
 interface HabitListProps {
@@ -41,30 +38,15 @@ interface HabitListProps {
   knownTags: readonly string[]
   /** Every list there is, to offer when filing a habit. */
   lists: readonly List[]
-  onComplete: (id: TaskId) => void
-  onUncomplete: (id: TaskId) => void
+  /** What a card can do to its habit. */
+  actions: TaskActions
   /** Marks a day up to today done, or not done: what clicking a day in the grid asks for. */
   onSetDay: (id: TaskId, day: LocalDay, done: boolean) => void
-  onRename: (id: TaskId, title: string) => void
-  onChangeDescription: (id: TaskId, description: string) => void
-  onChangeDueDate: (id: TaskId, dueDate: LocalDay | null) => void
-  onSkipOccurrence: (id: TaskId) => void
-  onChangeRepeat: (id: TaskId, repeat: Repeat | null) => void
-  onChangeReward: (id: TaskId, reward: number | null) => void
-  onChangeUrgent: (id: TaskId, urgent: boolean) => void
-  onChangeTimeGoal: (id: TaskId, minutes: number | null) => void
-  onLogTime: (id: TaskId, minutes: number) => void
-  onRemoveTimeEntry: (id: TaskId, entryId: TimeEntryId) => void
-  onChangeList: (id: TaskId, listId: ListId | null) => void
-  onAddTag: (id: TaskId, name: string) => void
-  onRemoveTag: (id: TaskId, name: string) => void
-  onRemove: (id: TaskId) => void
-  onDuplicate: (id: TaskId) => void
-  onAddSubtask: (id: TaskId, index: number, title: string) => void
-  onSetSubtaskDone: (id: TaskId, subtaskId: SubtaskId, done: boolean) => void
-  onRenameSubtask: (id: TaskId, subtaskId: SubtaskId, title: string) => void
-  onRemoveSubtask: (id: TaskId, subtaskId: SubtaskId) => void
   timer?: Pick<TaskTimer, 'clock' | 'start' | 'stop' | 'isRunningFor' | 'state'>
+  /** The habit being gone to (TIME-20): its card is brought into view and its sheet opened. */
+  revealId?: TaskId | null
+  /** Its card has been brought into view and its sheet opened. */
+  onRevealed?: () => void
 }
 
 const LEGEND: readonly HabitDayState[] = ['done', 'missed', 'untracked']
@@ -76,7 +58,8 @@ const RATE_WINDOWS: readonly (readonly [days: number, label: string])[] = [
   [365, 'Last year'],
 ]
 
-const titleBox = 'min-w-0 text-left text-sm'
+/** The title and the box that replaces it, at the head of the habit's sheet: the size is the caller's. */
+const titleBox = 'min-w-0 text-left'
 
 /**
  * Every habit's record, one card each: whether today is done, how the streak
@@ -91,29 +74,11 @@ export function HabitList({
   showDetails,
   knownTags,
   lists,
-  onComplete,
-  onUncomplete,
+  actions,
   onSetDay,
-  onRename,
-  onChangeDescription,
-  onChangeDueDate,
-  onSkipOccurrence,
-  onChangeRepeat,
-  onChangeReward,
-  onChangeUrgent,
-  onChangeTimeGoal,
-  onLogTime,
-  onRemoveTimeEntry,
-  onChangeList,
-  onAddTag,
-  onRemoveTag,
-  onRemove,
-  onDuplicate,
-  onAddSubtask,
-  onSetSubtaskDone,
-  onRenameSubtask,
-  onRemoveSubtask,
   timer,
+  revealId = null,
+  onRevealed,
 }: HabitListProps) {
   // Per-card folds override the page default; clearing them when the default
   // changes is what "every card resets" means (HAB-23). The legend sits under
@@ -162,29 +127,11 @@ export function HabitList({
             now={now}
             knownTags={knownTags}
             lists={lists}
-            onComplete={onComplete}
-            onUncomplete={onUncomplete}
+            actions={actions}
             onSetDay={onSetDay}
-            onRename={onRename}
-            onChangeDescription={onChangeDescription}
-            onChangeDueDate={onChangeDueDate}
-            onSkipOccurrence={onSkipOccurrence}
-            onChangeRepeat={onChangeRepeat}
-            onChangeReward={onChangeReward}
-            onChangeUrgent={onChangeUrgent}
-            onChangeTimeGoal={onChangeTimeGoal}
-            onLogTime={onLogTime}
-            onRemoveTimeEntry={onRemoveTimeEntry}
-            onChangeList={onChangeList}
-            onAddTag={onAddTag}
-            onRemoveTag={onRemoveTag}
-            onRemove={onRemove}
-            onDuplicate={onDuplicate}
-            onAddSubtask={onAddSubtask}
-            onSetSubtaskDone={onSetSubtaskDone}
-            onRenameSubtask={onRenameSubtask}
-            onRemoveSubtask={onRemoveSubtask}
             timer={timer}
+            revealed={revealId === habit.id}
+            onRevealed={onRevealed}
             isOpen={isOpen(habit.id)}
             onToggleOpen={() => { toggleOpen(habit.id) }}
           />
@@ -226,34 +173,17 @@ function HabitCard({
   onToggleOpen,
   knownTags,
   lists,
-  onComplete,
-  onUncomplete,
+  actions,
   onSetDay,
-  onRename,
-  onChangeDescription,
-  onChangeDueDate,
-  onSkipOccurrence,
-  onChangeRepeat,
-  onChangeReward,
-  onChangeUrgent,
-  onChangeTimeGoal,
-  onLogTime,
-  onRemoveTimeEntry,
-  onChangeList,
-  onAddTag,
-  onRemoveTag,
-  onRemove,
-  onDuplicate,
-  onAddSubtask,
-  onSetSubtaskDone,
-  onRenameSubtask,
-  onRemoveSubtask,
   timer,
+  revealed,
+  onRevealed,
 }: {
   habit: Task
   isOpen: boolean
   onToggleOpen: () => void
-} & Omit<HabitListProps, 'habits' | 'showDetails'>) {
+  revealed: boolean
+} & Omit<HabitListProps, 'habits' | 'showDetails' | 'revealId'>) {
   const done = isComplete(habit, now)
   const timerRunning = timer?.isRunningFor(habit.id) ?? false
   const timerStartedAt =
@@ -268,6 +198,7 @@ function HabitCard({
   const [editedTitle, setEditedTitle] = useState<string | null>(null)
   const caret = useRef<number | null>(null)
   const input = useRef<HTMLInputElement>(null)
+  const card = useRef<HTMLLIElement>(null)
   const recordId = useId()
   const isTitleEditing = editedTitle !== null
 
@@ -280,10 +211,27 @@ function HabitCard({
     element.setSelectionRange(at, at)
   }, [isTitleEditing])
 
+  // Gone to from elsewhere (TIME-20): the sheet opens with the render that asks,
+  // and the card is scrolled to once it is drawn.
+  const [wasRevealed, setWasRevealed] = useState(false)
+  if (revealed !== wasRevealed) {
+    setWasRevealed(revealed)
+    if (revealed) setIsEditing(true)
+  }
+
+  const bringUp = useEffectEvent(() => {
+    card.current?.scrollIntoView({ block: 'center' })
+    onRevealed?.()
+  })
+
+  useEffect(() => {
+    if (revealed) bringUp()
+  }, [revealed])
+
   function closeEdit() {
     if (editedTitle !== null) {
       const trimmed = editedTitle.trim()
-      if (trimmed.length > 0) onRename(habit.id, trimmed)
+      if (trimmed.length > 0) actions.rename(habit.id, trimmed)
       setEditedTitle(null)
     }
     setIsEditing(false)
@@ -291,12 +239,12 @@ function HabitCard({
 
   function changeDueDate(dueDate: LocalDay | null) {
     if (dueDate !== null && habit.repeat !== null) setDraft({ ...draft, kind: 'once' })
-    onChangeDueDate(habit.id, dueDate)
+    actions.changeDueDate(habit.id, dueDate)
   }
 
   function handleRepeatChange(next: RepeatDraft) {
     setDraft(next)
-    onChangeRepeat(habit.id, toRepeat(next))
+    actions.changeRepeat(habit.id, toRepeat(next))
   }
 
   function startEdit(event: MouseEvent<HTMLButtonElement>) {
@@ -307,7 +255,7 @@ function HabitCard({
 
   function commitEdit() {
     const trimmed = editedTitle?.trim() ?? ''
-    if (trimmed.length > 0) onRename(habit.id, trimmed)
+    if (trimmed.length > 0) actions.rename(habit.id, trimmed)
     setEditedTitle(null)
   }
 
@@ -348,12 +296,12 @@ function HabitCard({
     )
 
   return (
-    <li className="flex flex-col rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+    <li ref={card} className="flex flex-col rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
       <div className="relative flex items-center gap-2.5 px-4 py-3.5">
         {/* Above the toggle's hit area, so ticking off never unfolds the card. */}
         <button
           type="button"
-          onClick={() => { if (done) onUncomplete(habit.id); else onComplete(habit.id) }}
+          onClick={() => { if (done) actions.uncomplete(habit.id); else actions.complete(habit.id) }}
           aria-pressed={done}
           aria-label={
             done
@@ -368,7 +316,7 @@ function HabitCard({
           ✓
         </button>
 
-        <h2 className="min-w-0 truncate text-sm font-medium">{habit.title}</h2>
+        <h2 className="min-w-0 truncate text-base font-medium md:text-sm">{habit.title}</h2>
 
         {!isOpen && (
           <span className="flex shrink-0 items-center gap-1 text-sm font-medium tabular-nums">
@@ -385,9 +333,9 @@ function HabitCard({
                 goal={habit.timeGoal}
                 sessions={currentEntries(habit.timeLog, habit.repeat, now)}
                 now={now}
-                onLog={(minutes) => { onLogTime(habit.id, minutes) }}
-                onRemove={(entryId) => { onRemoveTimeEntry(habit.id, entryId) }}
-                onChangeGoal={(minutes) => { onChangeTimeGoal(habit.id, minutes) }}
+                onLog={(minutes) => { actions.logTime(habit.id, minutes) }}
+                onRemove={(entryId) => { actions.removeTimeEntry(habit.id, entryId) }}
+                onChangeGoal={(minutes) => { actions.changeTimeGoal(habit.id, minutes) }}
                 label={`Time for "${habit.title}"`}
                 showAmount
                 timer={
@@ -414,7 +362,8 @@ function HabitCard({
             tabIndex={isEditing ? -1 : undefined}
             aria-label={`Edit "${habit.title}"`}
             title="Edit"
-            className="relative z-20 grid size-6 shrink-0 place-items-center rounded-md text-neutral-400 outline-offset-2 focus-visible:outline-2 focus-visible:outline-blue-500 dark:text-neutral-500"
+            // A thumb's size on a phone (UI-47), without growing the card: the margin gives back what it takes.
+            className="relative z-20 -m-2 grid size-10 shrink-0 place-items-center rounded-lg text-neutral-400 outline-offset-2 transition-colors focus-visible:outline-2 focus-visible:outline-blue-500 active:bg-neutral-100 md:m-0 md:size-6 md:rounded-md dark:text-neutral-500 dark:active:bg-neutral-800"
           >
             <MoreVerticalIcon className="size-4" />
           </button>
@@ -463,29 +412,15 @@ function HabitCard({
           draft={draft}
           title={titleEditor}
           onClose={closeEdit}
-          onComplete={onComplete}
-          onUncomplete={onUncomplete}
-          onChangeDescription={onChangeDescription}
-          onChangeDueDate={changeDueDate}
-          onSkipOccurrence={onSkipOccurrence}
-          onChangeRepeat={handleRepeatChange}
-          onChangeReward={onChangeReward}
-          onChangeUrgent={onChangeUrgent}
-          onChangeTimeGoal={onChangeTimeGoal}
-          onLogTime={onLogTime}
-          onRemoveTimeEntry={onRemoveTimeEntry}
-          onChangeList={onChangeList}
-          onAddTag={onAddTag}
-          onRemoveTag={onRemoveTag}
-          onRemove={(id) => {
-            setIsEditing(false)
-            onRemove(id)
+          actions={{
+            ...actions,
+            remove: (id) => {
+              setIsEditing(false)
+              actions.remove(id)
+            },
           }}
-          onDuplicate={onDuplicate}
-          onAddSubtask={onAddSubtask}
-          onSetSubtaskDone={onSetSubtaskDone}
-          onRenameSubtask={onRenameSubtask}
-          onRemoveSubtask={onRemoveSubtask}
+          onChangeDueDate={changeDueDate}
+          onChangeRepeat={handleRepeatChange}
           timer={timer}
         />
       )}

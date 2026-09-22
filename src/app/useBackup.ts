@@ -26,7 +26,7 @@ export type SaveFile = (name: string, text: string) => void
  * ../storage/backupRepository; this runs them and says how it went.
  *
  * An import is never written to the screen by hand: what it adds arrives
- * through the tasks', lists' and points' own subscriptions, like a change made
+ * through the tasks', lists', tags' and points' own subscriptions, like a change made
  * on another device. And, like one, it is not recorded as earning anything
  * again — the points it brings are the ones in the file.
  */

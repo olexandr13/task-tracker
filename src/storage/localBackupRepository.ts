@@ -7,7 +7,7 @@ import {
 } from './backupRepository'
 import { clearGuestLists, createLocalListRepository, loadGuestLists } from './localListRepository'
 import { clearGuestRewards, loadGuestLedger, replaceGuestLedger } from './localRewardRepository'
-import { clearGuestTags } from './localTagRepository'
+import { clearGuestTags, createLocalTagRepository, loadGuestTags } from './localTagRepository'
 import { clearGuestTasks, createLocalTaskRepository, loadGuestTasks } from './localTaskRepository'
 
 /**
@@ -17,6 +17,7 @@ import { clearGuestTasks, createLocalTaskRepository, loadGuestTasks } from './lo
 export function createLocalBackupRepository(): BackupRepository {
   const tasks = createLocalTaskRepository()
   const lists = createLocalListRepository()
+  const tags = createLocalTagRepository()
 
   return {
     async exportAll() {
@@ -24,6 +25,7 @@ export function createLocalBackupRepository(): BackupRepository {
       return {
         tasks: loadGuestTasks(),
         lists: loadGuestLists(),
+        tags: loadGuestTags(),
         entries: ledger.entries,
         redemptions: ledger.redemptions,
       }
@@ -31,9 +33,12 @@ export function createLocalBackupRepository(): BackupRepository {
 
     async importAll(incoming, now) {
       const ledger = loadGuestLedger()
+      const guestTags = loadGuestTags()
       const known: KnownRecords = {
         taskIds: new Set(loadGuestTasks().map((task) => task.id)),
         listIds: new Set(loadGuestLists().map((list) => list.id)),
+        tagIds: new Set(guestTags.map((tag) => tag.id)),
+        tagNames: guestTags.map((tag) => tag.name),
         redemptionIds: new Set(ledger.redemptions.map((redemption) => redemption.id)),
         days: daysKnown(ledger.entries),
       }
@@ -42,6 +47,7 @@ export function createLocalBackupRepository(): BackupRepository {
 
       await tasks.importTasks(fresh.tasks)
       await lists.save({ saved: fresh.lists, removed: [] })
+      await tags.save({ saved: fresh.tags, removed: [] })
       replaceGuestLedger([...ledger.entries, ...fresh.entries], [...ledger.redemptions, ...fresh.redemptions])
 
       return { added: countRecords(fresh), alreadyHere }

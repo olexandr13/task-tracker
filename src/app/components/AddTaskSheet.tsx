@@ -10,6 +10,7 @@ import {
   type TimeEntry,
 } from '../../core'
 import { emptyDraft, toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
+import { sheetAction } from '../rowControls'
 import { BottomSheet } from './BottomSheet'
 import { ListPicker } from './ListPicker'
 import { RewardPicker } from './RewardPicker'
@@ -52,8 +53,6 @@ interface AddTaskSheetProps {
     details: NewTaskDetails,
   ) => void
 }
-
-const action = 'flex min-h-12 w-full min-w-0 items-center md:min-h-11'
 
 const titleBox =
   'min-w-0 flex-1 bg-transparent text-lg text-neutral-900 placeholder:text-neutral-400 focus:outline-none dark:text-neutral-100 dark:placeholder:text-neutral-500'
@@ -129,7 +128,7 @@ export function AddTaskSheet({
 
   return (
     <BottomSheet label={label} onClose={onClose}>
-      <div className="flex shrink-0 items-start gap-3 px-4 pt-1 pb-3">
+      <div className="flex shrink-0 items-start gap-3 px-4 pb-3">
         <input
           ref={titleInput}
           type="text"
@@ -146,7 +145,7 @@ export function AddTaskSheet({
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <div className="flex flex-col items-stretch gap-1 border-t border-neutral-200 px-4 py-2 md:gap-0.5 dark:border-neutral-800">
-          <div className={action}>
+          <div className={sheetAction}>
             <SchedulePicker
               dueDate={repeat === null ? dueDate : null}
               draft={draft}
@@ -162,7 +161,7 @@ export function AddTaskSheet({
               align="left"
             />
           </div>
-          <div className={action}>
+          <div className={sheetAction}>
             <ListPicker
               listId={listId}
               lists={lists}
@@ -172,7 +171,7 @@ export function AddTaskSheet({
               align="left"
             />
           </div>
-          <div className={action}>
+          <div className={sheetAction}>
             <TimePicker
               goal={timeGoal}
               sessions={sessions}
@@ -196,7 +195,7 @@ export function AddTaskSheet({
               align="left"
             />
           </div>
-          <div className={action}>
+          <div className={sheetAction}>
             <TagPicker
               tags={tags}
               known={knownTags}
@@ -212,7 +211,7 @@ export function AddTaskSheet({
               align="left"
             />
           </div>
-          <div className={action}>
+          <div className={sheetAction}>
             <UrgentToggle
               urgent={urgent}
               onChange={setUrgent}
@@ -220,7 +219,7 @@ export function AddTaskSheet({
               showName
             />
           </div>
-          <div className={action}>
+          <div className={sheetAction}>
             <RewardPicker
               reward={reward}
               repeat={repeat}

@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useEffectEvent, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { elapsedMinutesFloor, elapsedSeconds, isSessionLength, isTimeGoal, type TimeEntry, type TimeEntryId } from '../../core'
 import {
   describeDuration,
@@ -7,18 +7,32 @@ import {
   describeTimeSummary,
   parseDuration,
 } from '../durationLabels'
-import { panelStep } from '../panelControls'
 import { controlOff, controlOn, controlRunning, deleteControl, detailReached, rowControlIcon, rowControlLabel } from '../rowControls'
 import { ClockIcon } from './ClockIcon'
+import { PlayIcon } from './PlayIcon'
+import { StopIcon } from './StopIcon'
 
 /** The sessions offered at a click, being the lengths most often logged. */
 const QUICK_SESSIONS: readonly number[] = [5, 15, 30, 60]
 
-/** A quick session: a panel's step button, widened to hold its words. */
-const quickButton = `${panelStep} w-auto px-2 text-sm tabular-nums md:px-1.5 md:text-xs`
+/**
+ * A quick session, and Log beside the box. Filled rather than bare, so on a
+ * phone, where nothing hovers, it still reads as a button and not as a label.
+ */
+const chip =
+  'grid h-10 min-w-0 place-items-center rounded-xl bg-neutral-100 px-3 text-sm font-medium text-neutral-700 tabular-nums transition-colors hover:bg-neutral-200 hover:text-neutral-900 active:bg-neutral-200 disabled:pointer-events-none disabled:opacity-40 md:h-7 md:rounded-lg md:px-2 md:text-xs dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:text-neutral-100 dark:active:bg-neutral-700'
+
+/** The name over a part of the panel, for the eye; the part carries it for a screen reader. */
+const heading = 'px-1 text-xs font-medium text-neutral-400 md:text-[11px] dark:text-neutral-500'
+
+/** How close to the screen's side the panel may come: a phone page's own gutter. */
+const PANEL_GUTTER = 16
+
+/** The line between one part of the panel and the next. */
+const divider = 'border-t border-neutral-200 pt-3 md:pt-2 dark:border-neutral-800'
 
 const field =
-  'min-w-0 rounded-xl border border-neutral-300 bg-transparent px-2.5 py-2 text-base text-neutral-900 tabular-nums placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none aria-invalid:border-red-500 md:rounded-lg md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-500'
+  'min-w-0 rounded-xl border border-neutral-300 bg-transparent px-3 py-2 text-base text-neutral-900 tabular-nums placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none aria-invalid:border-red-500 md:rounded-lg md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-500'
 
 interface TimePickerProps {
   /** The minutes the task asks for, or null for none. */
@@ -55,7 +69,7 @@ interface TimePickerProps {
  * the task's goal, seeing how far along it is, and setting the goal itself.
  *
  * Like the other pickers there is nothing to confirm. A quick session is logged
- * as it is clicked, and one typed — `25m`, `1h`, `1:30` — on Enter. The goal is
+ * as it is clicked, and one typed — `25m`, `1h`, `1:30` — on Enter or Log. The goal is
  * kept on Enter or on leaving the panel, and an empty goal is none; Escape drops
  * a goal half-typed. Start/Stop runs a timer that becomes a session on Stop.
  */
@@ -78,6 +92,11 @@ export function TimePicker({
   const [goalText, setGoalText] = useState('')
   const [isSessionInvalid, setIsSessionInvalid] = useState(false)
   const root = useRef<HTMLDivElement>(null)
+  const panel = useRef<HTMLDivElement>(null)
+  const ids = useId()
+  const logHeading = `${ids}-log`
+  const sessionsHeading = `${ids}-sessions`
+  const sessionHint = `${ids}-hint`
 
   const spent = sessions.reduce((total, entry) => total + entry.minutes, 0)
   const liveSeconds =
@@ -129,6 +148,23 @@ export function TimePicker({
     return () => { document.removeEventListener('pointerdown', handlePointerDown) }
   }, [isOpen])
 
+  // The panel lines up with its clock, which on a habit card sits mid-line, so
+  // on a phone it can run past the screen's edge: nudge it back inside the
+  // page's gutter. It opens below the clock, which may be near the foot of a
+  // sheet or the window, so bring the whole of it into view too — on a page,
+  // clear of the bar, the timer's chip and the Plus (its scroll margin).
+  useLayoutEffect(() => {
+    const opened = panel.current
+    if (!isOpen || opened === null) return
+
+    const { left, right } = opened.getBoundingClientRect()
+    const edge = document.documentElement.clientWidth - PANEL_GUTTER
+    const shift = left < PANEL_GUTTER ? PANEL_GUTTER - left : right > edge ? edge - right : 0
+    opened.style.translate = shift === 0 ? '' : `${String(shift)}px 0`
+
+    if (typeof opened.scrollIntoView === 'function') opened.scrollIntoView({ block: 'nearest' })
+  }, [isOpen])
+
   function toggle() {
     if (isOpen) {
       close()
@@ -140,9 +176,8 @@ export function TimePicker({
     setIsOpen(true)
   }
 
-  function handleSessionKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key !== 'Enter') return
-    event.preventDefault()
+  /** Logs the length typed, when it is one; anything else marks the box and says what would do. */
+  function logTyped() {
     if (session.trim() === '') return
 
     const minutes = parseDuration(session)
@@ -152,6 +187,12 @@ export function TimePicker({
     }
     onLog(minutes)
     setSession('')
+  }
+
+  function handleSessionKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== 'Enter') return
+    event.preventDefault()
+    logTyped()
   }
 
   function handleGoalKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -195,127 +236,166 @@ export function TimePicker({
 
       {isOpen && (
         <div
+          ref={panel}
           role="dialog"
           aria-label={label}
-          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-[min(19rem,calc(100vw-2rem))] flex-col gap-2 rounded-xl border border-neutral-200 bg-white p-2 shadow-xl md:w-60 md:gap-1.5 md:p-1.5 dark:border-neutral-700 dark:bg-neutral-900`}
+          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-[min(22rem,calc(100vw-2rem))] scroll-mt-3 scroll-mb-[calc(10rem+env(safe-area-inset-bottom))] flex-col in-[[aria-modal=true]]:scroll-mb-3 gap-3 rounded-2xl border border-neutral-200 bg-white p-3 shadow-xl md:w-60 md:scroll-mb-3 md:gap-2 md:rounded-xl md:p-2 dark:border-neutral-700 dark:bg-neutral-900`}
         >
-          <div className="flex items-baseline justify-between gap-2 px-1 pt-0.5">
-            <p className="text-sm text-neutral-500 md:text-xs dark:text-neutral-400">Time spent</p>
-            <p
-              aria-live="polite"
-              className={`text-base tabular-nums md:text-sm ${reached ? detailReached : 'text-neutral-900 dark:text-neutral-100'}`}
-            >
-              {goal === null ? describeDuration(shownSpent) : summary}
-            </p>
-          </div>
-
-          {goal !== null && (
-            <div
-              role="progressbar"
-              aria-label="Toward the goal"
-              aria-valuemin={0}
-              aria-valuemax={goal}
-              aria-valuenow={Math.min(shownSpent, goal)}
-              aria-valuetext={summary}
-              className="mx-1 h-2 overflow-hidden rounded-full bg-neutral-100 md:h-1.5 dark:bg-neutral-800"
-            >
-              <div
-                className={`h-full rounded-full transition-[width] ${reached ? 'bg-green-600 dark:bg-green-500' : 'bg-blue-600 dark:bg-blue-400'}`}
-                style={{ width: `${String(Math.min(100, (shownSpent / goal) * 100))}%` }}
-              />
-            </div>
-          )}
-
-          {reached && <p className={`px-1 text-sm md:text-xs ${detailReached}`}>Goal reached. Ready to tick off.</p>}
-
-          {timer !== undefined && (
-            <div role="group" aria-label="Timer" className="flex items-center justify-end gap-2 px-0.5">
-              {running && (
+          <div className="flex flex-col gap-2 px-1 md:gap-1.5">
+            <div className="flex items-baseline gap-2">
+              <p
+                aria-live="polite"
+                className={`text-xl font-semibold tabular-nums md:text-base ${reached ? detailReached : 'text-neutral-900 dark:text-neutral-100'}`}
+              >
+                {describeDuration(shownSpent)}
+                <span className="text-sm font-normal text-neutral-500 md:text-xs dark:text-neutral-400">
+                  {goal === null ? ' spent' : ` of ${describeDuration(goal)}`}
+                </span>
+              </p>
+              {goal !== null && (
                 <p
-                  aria-live="polite"
-                  className="text-sm tabular-nums text-blue-700 md:text-xs dark:text-blue-300"
+                  className={`ml-auto text-sm tabular-nums md:text-xs ${reached ? `font-medium ${detailReached}` : 'text-neutral-500 dark:text-neutral-400'}`}
                 >
-                  {describeElapsedClock(liveSeconds)}
+                  {reached ? 'Goal reached ✓' : `${describeDuration(goal - shownSpent)} left`}
                 </p>
               )}
-              {running ? (
+            </div>
+
+            {goal !== null && (
+              <div
+                role="progressbar"
+                aria-label="Toward the goal"
+                aria-valuemin={0}
+                aria-valuemax={goal}
+                aria-valuenow={Math.min(shownSpent, goal)}
+                aria-valuetext={summary}
+                className="h-2 overflow-hidden rounded-full bg-neutral-100 md:h-1.5 dark:bg-neutral-800"
+              >
+                <div
+                  className={`h-full rounded-full transition-[width] ${reached ? 'bg-green-600 dark:bg-green-500' : 'bg-blue-600 dark:bg-blue-400'}`}
+                  style={{ width: `${String(Math.min(100, (shownSpent / goal) * 100))}%` }}
+                />
+              </div>
+            )}
+          </div>
+
+          {timer !== undefined &&
+            (running ? (
+              <div
+                role="group"
+                aria-label="Timer"
+                className="flex h-11 items-center gap-2.5 rounded-xl bg-blue-600/10 pr-1.5 pl-3.5 md:h-8 md:gap-2 md:rounded-lg md:pr-1 md:pl-2.5 dark:bg-blue-400/10"
+              >
+                <span aria-hidden="true" className="task-timer-running size-2 shrink-0 rounded-full bg-blue-600 dark:bg-blue-400" />
+                <span
+                  role="timer"
+                  className="text-lg font-semibold tabular-nums text-blue-700 md:text-sm dark:text-blue-300"
+                >
+                  {describeElapsedClock(liveSeconds)}
+                </span>
                 <button
                   type="button"
                   onClick={() => { timer.onStop() }}
-                  className="shrink-0 rounded-lg bg-red-600/90 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-700 md:rounded-md md:px-2 md:py-0.5 md:text-xs dark:bg-red-500/90 dark:hover:bg-red-400"
+                  className="ml-auto flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-red-600 px-3 text-sm font-medium text-white transition-colors hover:bg-red-700 active:bg-red-700 md:h-6 md:rounded-md md:px-2 md:text-xs dark:bg-red-500 dark:hover:bg-red-400 [&>svg]:size-3.5 md:[&>svg]:size-3"
                 >
+                  <StopIcon />
                   Stop
                 </button>
-              ) : (
+              </div>
+            ) : (
+              <div role="group" aria-label="Timer">
                 <button
                   type="button"
                   onClick={() => { timer.onStart() }}
-                  className="shrink-0 rounded-lg bg-blue-600/90 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 md:rounded-md md:px-2 md:py-0.5 md:text-xs dark:bg-blue-500/90 dark:hover:bg-blue-400"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 text-base font-medium text-white transition-colors hover:bg-blue-700 active:bg-blue-700 md:h-8 md:gap-1.5 md:rounded-lg md:text-sm dark:bg-blue-500 dark:hover:bg-blue-400 dark:active:bg-blue-400 [&>svg]:size-4 md:[&>svg]:size-3.5"
                 >
+                  <PlayIcon />
                   Start timer
                 </button>
-              )}
-            </div>
-          )}
-
-          <div role="group" aria-label="Log time" className="flex flex-wrap items-center gap-1.5 md:gap-1">
-            {QUICK_SESSIONS.map((minutes) => (
-              <button
-                key={minutes}
-                type="button"
-                onClick={() => { onLog(minutes) }}
-                aria-label={`Log ${describeDuration(minutes)}`}
-                className={quickButton}
-              >
-                +{describeDuration(minutes)}
-              </button>
+              </div>
             ))}
-            <input
-              type="text"
-              value={session}
-              onChange={(event) => {
-                setSession(event.target.value)
-                setIsSessionInvalid(false)
-              }}
-              onKeyDown={handleSessionKeyDown}
-              placeholder="25m"
-              aria-label="Time to log"
-              aria-invalid={isSessionInvalid}
-              title="Minutes, or 1h, 1h30, 1:30. Enter logs it."
-              autoComplete="off"
-              enterKeyHint="done"
-              className={`${field} w-full flex-1`}
-            />
+
+          <div role="group" aria-labelledby={logHeading} className="flex flex-col gap-1.5 md:gap-1">
+            <p id={logHeading} className={heading}>
+              Log time
+            </p>
+            <div className="grid grid-cols-4 gap-1.5 md:gap-1">
+              {QUICK_SESSIONS.map((minutes) => (
+                <button
+                  key={minutes}
+                  type="button"
+                  onClick={() => { onLog(minutes) }}
+                  aria-label={`Log ${describeDuration(minutes)}`}
+                  className={chip}
+                >
+                  +{describeDuration(minutes)}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1.5 md:gap-1">
+              <input
+                type="text"
+                value={session}
+                onChange={(event) => {
+                  setSession(event.target.value)
+                  setIsSessionInvalid(false)
+                }}
+                onKeyDown={handleSessionKeyDown}
+                placeholder="Other, e.g. 25m"
+                aria-label="Time to log"
+                aria-invalid={isSessionInvalid}
+                aria-describedby={isSessionInvalid ? sessionHint : undefined}
+                title="Minutes, or 1h, 1h30, 1:30. Enter logs it."
+                autoComplete="off"
+                enterKeyHint="done"
+                className={`${field} w-full flex-1`}
+              />
+              <button
+                type="button"
+                onClick={logTyped}
+                disabled={session.trim() === ''}
+                className={chip}
+              >
+                Log
+              </button>
+            </div>
+            {isSessionInvalid && (
+              <p id={sessionHint} className="px-1 text-xs text-red-600 dark:text-red-400">
+                Try 25m, 1h30 or 1:30, up to 24h.
+              </p>
+            )}
           </div>
 
           {sessions.length > 0 && (
-            <ul
-              aria-label="Sessions"
-              className="flex flex-col border-t border-neutral-200 pt-1.5 md:pt-1 dark:border-neutral-800"
-            >
-              {sessions.map((entry) => {
-                const at = describeLoggedAt(entry.loggedAt, now)
-                return (
-                  <li key={entry.id} className="flex items-center gap-2 py-1 pl-1 text-sm md:py-0 md:text-xs">
-                    <span className="text-neutral-500 tabular-nums dark:text-neutral-400">{at}</span>
-                    <span className="ml-auto text-neutral-900 tabular-nums dark:text-neutral-100">
-                      {describeDuration(entry.minutes)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => { onRemove(entry.id) }}
-                      aria-label={`Remove ${describeDuration(entry.minutes)} logged at ${at}`}
-                      className={`grid size-8 shrink-0 place-items-center rounded-lg text-base leading-none md:size-5 md:rounded-md md:text-sm ${deleteControl}`}
-                    >
-                      ×
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
+            <div className={`flex flex-col gap-1 ${divider}`}>
+              <p id={sessionsHeading} className={heading}>
+                Sessions
+              </p>
+              <ul aria-labelledby={sessionsHeading} className="flex max-h-40 flex-col overflow-y-auto overscroll-contain md:max-h-32">
+                {sessions.map((entry) => {
+                  const at = describeLoggedAt(entry.loggedAt, now)
+                  return (
+                    <li key={entry.id} className="flex items-center gap-2 pl-1 text-sm md:text-xs">
+                      <span className="text-neutral-500 tabular-nums dark:text-neutral-400">{at}</span>
+                      <span className="ml-auto font-medium text-neutral-900 tabular-nums dark:text-neutral-100">
+                        {describeDuration(entry.minutes)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => { onRemove(entry.id) }}
+                        aria-label={`Remove ${describeDuration(entry.minutes)} logged at ${at}`}
+                        className={`grid size-8 shrink-0 place-items-center rounded-lg text-base leading-none md:size-5 md:rounded-md md:text-sm ${deleteControl}`}
+                      >
+                        ×
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
           )}
 
-          <label className="flex items-center gap-2 border-t border-neutral-200 px-1 pt-2 text-sm text-neutral-500 md:pt-1.5 md:text-xs dark:border-neutral-800 dark:text-neutral-400">
+          <label className={`flex items-center gap-2 px-1 text-sm text-neutral-600 md:text-xs dark:text-neutral-300 ${divider}`}>
             Goal
             <input
               type="text"
@@ -327,7 +407,7 @@ export function TimePicker({
               title="How long it takes, such as 1h. Empty for none."
               autoComplete="off"
               enterKeyHint="done"
-              className={`${field} ml-auto w-28 text-right md:w-24`}
+              className={`${field} ml-auto w-24 text-right md:w-20`}
             />
           </label>
         </div>

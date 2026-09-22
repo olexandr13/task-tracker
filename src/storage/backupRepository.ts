@@ -1,24 +1,29 @@
 import {
   isExpired,
+  sameTag,
   type List,
   type ListId,
   type LocalDay,
   type Redemption,
   type RedemptionId,
   type RewardEntry,
+  type Tag,
+  type TagId,
   type Task,
   type TaskId,
 } from '../core'
 
 /**
  * Everything an account keeps, in today's shapes: the tasks — the trash too —
- * the lists they are filed under, and the points ledger. What is kept on the
- * device alone (the View options, the sidebar, the cached quote) is not the
- * account's, and is not in here.
+ * the lists they are filed under, the kept tags, and the points ledger. What is
+ * kept on the device alone (the View options, the sidebar, the cached quote) is
+ * not the account's, and is not in here.
  */
 export interface AccountData {
   readonly tasks: readonly Task[]
   readonly lists: readonly List[]
+  /** The kept tags (./tagRepository), including those no task carries any more. */
+  readonly tags: readonly Tag[]
   /** What completions earned (./rewardRepository). */
   readonly entries: readonly RewardEntry[]
   readonly redemptions: readonly Redemption[]
@@ -28,6 +33,7 @@ export interface AccountData {
 export interface RecordCounts {
   readonly tasks: number
   readonly lists: number
+  readonly tags: number
   readonly completions: number
   readonly redemptions: number
 }
@@ -68,6 +74,9 @@ export interface BackupRepository {
 export interface KnownRecords {
   readonly taskIds: ReadonlySet<TaskId>
   readonly listIds: ReadonlySet<ListId>
+  readonly tagIds: ReadonlySet<TagId>
+  /** The names of the tags kept already, readable ones: a tag is found by its name (../core/tag). */
+  readonly tagNames: readonly string[]
   readonly redemptionIds: ReadonlySet<RedemptionId>
   /**
    * The tasks each saved day holds an entry for, or null for a day the app
@@ -80,6 +89,7 @@ export function countRecords(data: AccountData): RecordCounts {
   return {
     tasks: data.tasks.length,
     lists: data.lists.length,
+    tags: data.tags.length,
     completions: data.entries.length,
     redemptions: data.redemptions.length,
   }
@@ -93,7 +103,9 @@ export function countRecords(data: AccountData): RecordCounts {
  * `incoming` is taken once.
  *
  * A task whose time in the trash ran out since the file was made is left out:
- * it would only be purged again the moment it arrived (`purgeExpired`).
+ * it would only be purged again the moment it arrived (`purgeExpired`). A tag
+ * is the account's already when a tag of its name is kept, whatever the case,
+ * so an import never makes a second record of one tag.
  */
 export function newRecords(
   incoming: AccountData,
@@ -123,10 +135,22 @@ export function newRecords(
     if (day === null || day?.has(entry.taskId) === true) takenEntries.add(entryKey(entry))
   }
 
+  const tagNames = [...known.tagNames]
+  const tags = unseen(incoming.tags, (tag) => tag.id, known.tagIds).filter((tag) => {
+    if (known.tagNames.some((name) => sameTag(name, tag.name))) {
+      alreadyHere += 1
+      return false
+    }
+    if (tagNames.some((name) => sameTag(name, tag.name))) return false
+    tagNames.push(tag.name)
+    return true
+  })
+
   return {
     fresh: {
       tasks: unseen(incoming.tasks, (task) => task.id, known.taskIds).filter((task) => !isExpired(task, now)),
       lists: unseen(incoming.lists, (list) => list.id, known.listIds),
+      tags,
       entries: unseen(incoming.entries, entryKey, takenEntries),
       redemptions: unseen(incoming.redemptions, (redemption) => redemption.id, known.redemptionIds),
     },

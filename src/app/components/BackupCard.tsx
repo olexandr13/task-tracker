@@ -2,7 +2,7 @@ import type { BackupStatus } from '../useBackup'
 
 /** The Sign out button's look (AccountCard), so the page's buttons read as one set. */
 const action =
-  'rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+  'inline-flex min-h-10 items-center rounded-lg border border-neutral-200 px-4 text-sm text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-100 md:min-h-0 md:px-3 md:py-1.5 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:active:bg-neutral-800'
 
 interface BackupCardProps {
   status: BackupStatus
@@ -27,7 +27,7 @@ export function BackupCard({ status, onExport, onImport }: BackupCardProps) {
     >
       <h2 className="text-sm font-medium">Backup</h2>
       <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-        Everything in your account — tasks, the trash, lists and points — in one file. Importing a file adds what
+        Everything in your account — tasks, the trash, lists, tags and points — in one file. Importing a file adds what
         isn’t here yet and changes nothing that is.
       </p>
 

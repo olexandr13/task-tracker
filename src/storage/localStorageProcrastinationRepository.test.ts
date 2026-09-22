@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
 import { localStorageProcrastinationRepository } from './localStorageProcrastinationRepository'
-import { PROCRASTINATION_OFF } from './procrastinationRepository'
+import { PROCRASTINATION_OFF } from '../core'
 
 const KEY = 'task-tracker/procrastination'
 

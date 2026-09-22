@@ -22,9 +22,12 @@ interface SubtaskItemProps {
   onBackspaceWhenEmpty: (subtaskId: SubtaskId) => void
 }
 
-/** Smaller than the task's own box, so the two never read as the same rank. */
+/**
+ * Smaller than the task's own box, so the two never read as the same rank. On a
+ * phone it answers a touch past its edge, as the task's box does (UI-47).
+ */
 export const subtaskCheckbox =
-  'grid size-7 shrink-0 place-items-center rounded-md border-2 text-sm leading-none transition-colors md:size-5 md:text-xs md:rounded'
+  'relative grid size-4.5 shrink-0 place-items-center rounded border-2 text-[10px] leading-none transition-colors before:absolute before:-inset-3 md:size-5 md:text-xs md:before:hidden'
 
 export const subtaskRow = 'flex items-center gap-2.5 py-2 md:py-1'
 
@@ -154,7 +157,8 @@ export function SubtaskItem({
         type="button"
         onClick={() => { onRemove(subtask.id) }}
         aria-label={`Delete "${subtask.title}" from "${taskTitle}"`}
-        className={`shrink-0 rounded px-1.5 leading-none ${deleteControl}`}
+        // A thumb's size on a phone (UI-47), the margin giving back the room it takes; a wide screen's stays small.
+        className={`-my-2 -mr-2 grid size-10 shrink-0 place-items-center rounded-lg text-lg leading-none md:my-0 md:mr-0 md:size-auto md:rounded md:px-1.5 md:text-base ${deleteControl}`}
       >
         ×
       </button>

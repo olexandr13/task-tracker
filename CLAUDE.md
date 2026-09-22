@@ -1,74 +1,80 @@
 # PickMe
 
-A personal task tracker that fights procrastination through gamification. The gamification is
-primarily **technical** (XP, levels, rules) and will grow a visual side over time. Built as a daily
-routine: a long series of small steps, not one big build.
+Personal task tracker that fights procrastination through gamification (XP, levels, rules; visuals
+later). Built in small daily steps. What the app does is in `wiki/`; this file is how to work on it.
 
-# General rules
-- If user ask to add something, check if this functionality already exists.
-- Think about architecture and long-term support, this project is long-term and will evolve over time, thus need to be designed for that.
-- Be concise in your output of what was done.
-- When implement something, update `wiki` accordingly.
-- Bump `package.json` **version** (`MAJOR.MINOR.PATCH`) with each change to the app: **patch** for a
-  small fix, **minor** for a feature, **major** when something breaks for the person using it.
-  Settings shows that number (UI-35).
+## Rules
 
-## Wiki
+- Before adding something, check whether it already exists (code and `wiki/`).
+- Design for the long term; the project keeps evolving.
+- Report what was done briefly.
+- **Debug in Chrome only.** For anything in a browser, use Claude in Chrome (`mcp__claude-in-chrome__*`),
+  **never** the built-in browser (`mcp__Claude_Browser__*`). The app needs Google sign-in, and Chrome
+  is already signed in. Start the server from `.claude/launch.json`, then open it in Chrome:
+  dev `localhost:5173`, preview `localhost:4173`.
 
-`wiki/` holds the requirements as built, feature by feature, with a stable id on each one. It is
-the description of the app; this file stays the description of how to work on it.
+A change is done when:
 
-**A change to behaviour is not finished until `wiki/` matches it.** New behaviour gets new ids,
-changed behaviour is rewritten in place, removed behaviour is deleted. Start at `wiki/README.md`.
+1. `wiki/` matches it: new behaviour gets new ids, changed is rewritten in place, removed is deleted.
+2. `package.json` version is bumped: **patch** for a fix, **minor** for a feature, **major** when it
+   breaks something for the user.
+3. `npm run lint`, `npm test` and `npm run build` pass (as in CI).
 
 ## Architecture
 
-Three layers. **Dependencies point inwards only.**
+Dependencies point inwards only.
 
 | Layer | Responsibility | May import |
 |---|---|---|
-| `src/core/` | The rules. What a task is, what completing one means. Pure functions over plain data. | nothing else in `src/` |
-| `src/storage/` | Saving and loading, including loading from a service, and signing in. | `src/core` |
+| `src/core/` | The rules. Pure functions over plain data. | nothing else in `src/` |
+| `src/storage/` | Saving, loading, signing in. | `src/core` |
 | `src/app/` | React components and screen state. | `src/core`, `src/storage` |
 
-`src/core/` is framework-free on purpose: no React, no browser APIs, no saving. That keeps the game
-rules testable in isolation and reusable if a second front end ever appears. **This is enforced** —
-`.oxlintrc.json` has a `no-restricted-imports` override for `src/core/**`, so `npm run lint` fails if
-the boundary is crossed.
+`src/core/` has no React, browser APIs or saving; `npm run lint` enforces the boundary (`.oxlintrc.json`).
 
-Layout is a single Vite app rather than a monorepo: the boundary is enforced by lint, not by package
-ceremony. If a native app ever happens, `src/core/` moves into a workspace package.
+## Conventions
 
-### Conventions
+### Core
 
-- Core functions are pure and never mutate their arguments; they return new objects.
-- Anything time-dependent in core takes an injectable `now: Date` so tests stay deterministic and
-  future time-based rules (streaks) have a seam.
-- Tasks are saved in Firestore, one document per task at `users/{uid}/tasks/{taskId}`, under a
-  **versioned envelope** (`{ version, task }`). Changing the saved shape means bumping
-  `SCHEMA_VERSION` (`src/storage/taskSchema.ts`) and migrating on load — not breaking saved data.
-  Changing who may read or write means editing `firestore.rules` and deploying it.
-- The points ledger lives beside the tasks, not on them, so earned stays earned: one document per
-  day at `users/{uid}/rewardDays/{day}`, merged field by field per task, and one per redemption at
-  `users/{uid}/redemptions/{id}`, with their own `REWARD_SCHEMA_VERSION` (`src/storage/rewardSchema.ts`).
-  What a task change earns is derived in core (`rewardChanges`) and written from `useTasks`.
-- Every collection under an account is named in `ACCOUNT_COLLECTIONS` (`src/storage/firestoreAccount.ts`)
-  and reached through `accountCollection`, so the sync notice watches it along with the rest. A new
-  one also goes into the backup (`AccountData` in `src/storage/backupRepository.ts`, `backupFile.ts`,
-  `firestoreBackupRepository.ts`), or it is left out of every export.
-- The built app is kept for offline by a service worker (`vite-plugin-pwa`, `vite.config.ts`).
-  `npm run dev` has none; try offline behaviour with `npm run build && npm run preview`.
-- Ids are `crypto.randomUUID()` and timestamps are ISO 8601, so records from two devices merge task
-  by task.
-- Every call site talks to the `TaskRepository` and `RewardRepository` interfaces, never to
-  Firestore directly, and to the `AuthService` interface, never to Firebase directly.
-- Service settings (Firebase) come from `VITE_*` variables: `.env.local` locally, the Vercel project's
-  environment variables in production. **No key, token or secret goes in source or any committed
-  file**, even ones a browser is sent anyway; only `.env.example`, with empty values, is committed.
-- Rules are tested in `src/core/*.test.ts` (plain Node). Interaction a person could break — keys,
-  focus, where the caret goes — is tested beside its component as `*.test.tsx`, with Testing Library
-  and `user-event`; such a file starts with `// @vitest-environment jsdom` so core tests stay DOM-free.
-- **Any test that writes to the console fails** (`src/test/consoleGuard.ts`, loaded by `setupFiles`),
-  so React's own complaints and an error path firing unasked cannot pass quietly. A test that means
-  to cause output declares it with `expectConsole(...)`, and can read what was written back with
-  `consoleOutput()`.
+- Functions are pure and never mutate arguments.
+- Anything time-dependent takes an injectable `now: Date`.
+- State that follows from other state (a new day ending Procrastination mode) is derived, not stored.
+
+### Storage
+
+- Call sites use the repository interfaces and `AuthService`, never Firestore or Firebase directly.
+  Screens get them from `createAccountStorage` (Firestore, or `localStorage` as guest) or
+  `deviceStorage`, never build their own.
+- Records are saved in versioned envelopes (`*_SCHEMA_VERSION` in `src/storage/*Schema.ts`).
+  Changing a saved shape means bumping the version and migrating on load.
+- Ids are `crypto.randomUUID()`, timestamps ISO 8601, so devices merge record by record.
+- Points live beside tasks, not on them (`rewardDays/{day}`, `redemptions/{id}`), so earned stays
+  earned. What a change earns is derived in core (`rewardChanges`) and written from `useTasks`.
+- A new account collection goes into `ACCOUNT_COLLECTIONS` (`firestoreAccount.ts`), is reached via
+  `accountCollection`, and is added to the backup (`AccountData`, `backupFile.ts`,
+  `firestoreBackupRepository.ts`, `localBackupRepository.ts`).
+- Access rules are in `firestore.rules`; changing them means deploying it.
+
+### App
+
+- Nothing is written to storage during render; persist from handlers or effects.
+- Everything a row, habit card or sheet can do to a task is one `TaskActions` object
+  (`src/app/taskActions.ts`). Add a member there, don't thread props.
+- Record-set hooks (`useTasks`, `useLists`, `useTags`) build each change on the latest set via a ref
+  (STORE-39).
+- Hooks holding account data report refused loads and saves through `ReportProblem` (STORE-13), not
+  just logs.
+
+### Config
+
+- Firebase settings come from `VITE_*` variables (`.env.local`, Vercel env). **No keys or secrets in
+  committed files**; only `.env.example`, with empty values.
+- The service worker exists only in the built app: test offline with `npm run build && npm run preview`.
+
+### Testing
+
+- Rules: `src/core/*.test.ts` (Node). Interaction a person could break (keys, focus, caret):
+  `*.test.tsx` beside the component, Testing Library + `user-event`, starting with
+  `// @vitest-environment jsdom`.
+- Any console output fails a test (`src/test/consoleGuard.ts`). Declare intended output with
+  `expectConsole(...)`; read it with `consoleOutput()`.

@@ -1,26 +1,11 @@
-import {
-  doc,
-  getDocsFromServer,
-  onSnapshot,
-  type DocumentData,
-  type Firestore,
-  type WriteBatch,
-} from 'firebase/firestore'
+import { getDocsFromServer, type Firestore } from 'firebase/firestore'
 import type { Task } from '../core'
 import { accountCollection } from './firestoreAccount'
-import { commitInBatches } from './firestoreBatches'
+import { saveRecords, subscribeToRecords, type RecordKind } from './firestoreRecords'
 import type { TaskRepository } from './taskRepository'
 import { readStoredTask, toStoredTask } from './taskSchema'
 
-/** The task in today's shape, or nothing when it can't be trusted — which is left unread, not deleted. */
-function fromStored(id: string, data: DocumentData): Task[] {
-  const task = readStoredTask(data)
-  if (task === null) {
-    console.warn(`Ignoring saved task ${id}: unexpected shape (version ${String(data.version)}).`)
-    return []
-  }
-  return [task]
-}
+const TASK: RecordKind<Task> = { noun: 'task', read: readStoredTask, write: toStoredTask }
 
 /**
  * An account's tasks in Firestore: one document per task, filed under the
@@ -35,35 +20,15 @@ export function createFirestoreTaskRepository(firestore: Firestore, accountId: s
   const tasks = accountCollection(firestore, accountId, 'tasks')
 
   return {
-    subscribe(onTasks, onError) {
-      return onSnapshot(
-        tasks,
-        (snapshot) => {
-          onTasks(snapshot.docs.flatMap((saved) => fromStored(saved.id, saved.data())))
-        },
-        onError,
-      )
-    },
-
-    save({ saved, removed }) {
-      return commitInBatches(firestore, [
-        ...saved.map((task) => (batch: WriteBatch) => batch.set(doc(tasks, task.id), toStoredTask(task))),
-        ...removed.map((id) => (batch: WriteBatch) => batch.delete(doc(tasks, id))),
-      ])
-    },
+    subscribe: (onTasks, onError) => subscribeToRecords(tasks, TASK, onTasks, onError),
+    save: (changes) => saveRecords(firestore, tasks, TASK, changes),
 
     // Asks the server rather than the copy in the browser, which on a device new
     // to the account is empty and would let an import overwrite newer work.
     async importTasks(incoming) {
       const existing = await getDocsFromServer(tasks)
       const known = new Set(existing.docs.map((saved) => saved.id))
-
-      await commitInBatches(
-        firestore,
-        incoming
-          .filter((task) => !known.has(task.id))
-          .map((task) => (batch: WriteBatch) => batch.set(doc(tasks, task.id), toStoredTask(task))),
-      )
+      await saveRecords(firestore, tasks, TASK, { saved: incoming.filter((task) => !known.has(task.id)), removed: [] })
     },
   }
 }

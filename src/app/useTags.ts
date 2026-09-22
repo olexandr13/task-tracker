@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createTag, isTagSaved, sameTag, unsavedTags, type Tag, type Task } from '../core'
-import { tagChangesBetween, type TagChanges, type TagRepository } from '../storage/tagRepository'
+import { changesBetween, hasChanges } from '../storage/recordChanges'
+import type { TagChanges, TagRepository } from '../storage/tagRepository'
+import { ignoreProblems, type ReportProblem } from './storageProblem'
 
-function persist(repository: TagRepository, changes: TagChanges): void {
-  if (changes.saved.length === 0 && changes.removed.length === 0) return
+function persist(repository: TagRepository, changes: TagChanges, onProblem: ReportProblem): void {
+  if (!hasChanges(changes)) return
 
   repository.save(changes).catch((error: unknown) => {
     console.error('Could not save tags.', error)
+    onProblem('save')
   })
 }
 
@@ -19,31 +22,40 @@ function persist(repository: TagRepository, changes: TagChanges): void {
  * record keeps yet is kept here as soon as both are known. However the tag got
  * there — the tag panel, `#` in a description, another device — it stays once
  * no task carries it, until it is deleted.
+ *
+ * A load or a save the repository refuses is told to `onProblem` (STORE-13).
  */
-export function useTags(repository: TagRepository, tasks: readonly Task[] | null) {
+export function useTags(repository: TagRepository, tasks: readonly Task[] | null, onProblem: ReportProblem = ignoreProblems) {
   const [tags, setTags] = useState<Tag[]>([])
   const [status, setStatus] = useState<'loading' | 'loaded' | 'failed'>('loading')
+  // The tags as the last change left them, so changes made in one go build on
+  // each other rather than on the tags last drawn (as in useTasks).
+  const latest = useRef<Tag[]>([])
 
   useEffect(() => {
     return repository.subscribe(
       (saved) => {
+        latest.current = saved
         setTags(saved)
         setStatus('loaded')
       },
       (error) => {
         console.error('Could not load tags.', error)
         setStatus('failed')
+        onProblem('load')
       },
     )
-  }, [repository])
+  }, [repository, onProblem])
 
   const apply = useCallback(
     (change: (current: Tag[]) => Tag[]) => {
-      const next = change(tags)
+      const before = latest.current
+      const next = change(before)
+      latest.current = next
       setTags(next)
-      persist(repository, tagChangesBetween(tags, next))
+      persist(repository, changesBetween(before, next), onProblem)
     },
-    [tags, repository],
+    [repository, onProblem],
   )
 
   // Tags written to be kept and not back from the repository yet, by name in
@@ -64,8 +76,8 @@ export function useTags(repository: TagRepository, tasks: readonly Task[] | null
     for (const name of missing) asked.current.add(name.toLowerCase())
     // Written straight to the repository: what it keeps comes back through the
     // subscription, and until then the tasks carrying the tag show it anyway (`allTags`).
-    persist(repository, { saved: missing.map((name) => createTag(name)), removed: [] })
-  }, [status, tasks, tags, repository])
+    persist(repository, { saved: missing.map((name) => createTag(name)), removed: [] }, onProblem)
+  }, [status, tasks, tags, repository, onProblem])
 
   /**
    * Keeps a tag no task has to carry, and hands it back. Null when a tag of that
@@ -76,12 +88,12 @@ export function useTags(repository: TagRepository, tasks: readonly Task[] | null
   const add = useCallback(
     (name: string): Tag | null => {
       const made = createTag(name)
-      if (isTagSaved(tags, made.name)) return null
+      if (isTagSaved(latest.current, made.name)) return null
 
       apply((current) => [...current, made])
       return made
     },
-    [tags, apply],
+    [apply],
   )
 
   /**

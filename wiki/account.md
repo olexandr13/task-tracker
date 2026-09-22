@@ -9,6 +9,8 @@ device alone.
   is the sign-in screen: no list, no quote, no bars.
 - **AUTH-2** There are two ways in: a Google account behind **Continue with Google**, or **Continue
   as guest** with no account at all. No email and password, no other providers, nothing to fill in.
+  The screen carries the app's icon (UI-39) over its name, and **Continue as guest** is a button as
+  tall as Google's, not a line of text to aim a thumb at.
 - **AUTH-3** Signing in with Google opens Google's own window over the app. It always asks which
   Google account to use, so signing out and back in is also how to switch to another one.
 - **AUTH-4** While that window is open the Google button reads **Signing in…** and neither way in
@@ -67,10 +69,11 @@ device alone.
 
 **Where it lives:** `src/storage/authService.ts` (the interface), `firebaseAuthService.ts` and
 `firebaseApp.ts` (Google sign-in through Firebase, and the project it signs in to),
-`appAuthService.ts` and `guestSession.ts` (guest layered on Google),
+`appAuthService.ts` and `guestSession.ts` (guest layered on Google), `accountStorage.ts` (where
+a Google account's data is kept, and where a guest's),
 `failFastAuthFetch.ts` (so start-up does not wait on Google when there is no connection),
 `src/app/App.tsx` (nothing without an account or guest), `src/app/useAuth.ts`,
-`src/app/components/SignInScreen.tsx`, `AccountCard.tsx` (the account on Settings), `GuestMark.tsx`.
+`src/app/components/SignInScreen.tsx`, `AppLogo.tsx` (the icon on it), `AccountCard.tsx` (the account on Settings), `GuestMark.tsx`.
 The project itself: `firebase.json`, `.firebaserc`, `firestore.rules`; its settings: `.env.example`.
 **Tested in:** `src/app/useAuth.test.ts`, `src/app/components/SignInScreen.test.tsx`,
 `src/app/components/AccountCard.test.tsx`, `src/storage/appAuthService.test.ts`,

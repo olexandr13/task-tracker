@@ -60,7 +60,7 @@ export function TagPanel({ tags, known, onAdd, onRemove, autoFocus = false }: Ta
         aria-label="Tag name"
         autoComplete="off"
         enterKeyHint="done"
-        className="rounded-lg border border-neutral-300 bg-transparent px-2 py-1 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none dark:border-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-500"
+        className="rounded-lg border border-neutral-300 bg-transparent px-2.5 py-2 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-500"
       />
 
       {shown.length > 0 && (

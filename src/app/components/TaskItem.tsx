@@ -16,12 +16,8 @@ import {
   skipOccurrence,
   sortLists,
   type List,
-  type ListId,
   type LocalDay,
-  type Repeat,
-  type SubtaskId,
   type Task,
-  type TaskId,
   type TimeEntryId,
 } from '../../core'
 import { dateChoices } from '../dateChoices'
@@ -49,6 +45,7 @@ import { isHeldInPlace } from '../useLongPress'
 import { usePhoneLayout } from '../usePhoneLayout'
 import { useRowSwipe } from '../useRowSwipe'
 import { useSortableTask } from '../useSortableTask'
+import type { TaskActions } from '../taskActions'
 import type { TaskTimer } from '../useTaskTimer'
 import { CalendarIcon } from './CalendarIcon'
 import { ChecklistIcon } from './ChecklistIcon'
@@ -91,41 +88,29 @@ interface TaskItemProps {
   emphasized?: boolean
   /** The rows this one can be dragged among, when the list divides them further than to-do and done. */
   dragGroup?: string
-  onComplete: (id: TaskId) => void
-  onUncomplete: (id: TaskId) => void
-  onRename: (id: TaskId, title: string) => void
-  onChangeDescription: (id: TaskId, description: string) => void
-  onChangeDueDate: (id: TaskId, dueDate: LocalDay | null) => void
-  /** Passes over a repeating task's occurrence, so it is due on the rule's next day. */
-  onSkipOccurrence: (id: TaskId) => void
-  onChangeRepeat: (id: TaskId, repeat: Repeat | null) => void
-  onChangeReward: (id: TaskId, reward: number | null) => void
-  onChangeUrgent: (id: TaskId, urgent: boolean) => void
-  onChangeTimeGoal: (id: TaskId, minutes: number | null) => void
-  onLogTime: (id: TaskId, minutes: number) => void
-  onRemoveTimeEntry: (id: TaskId, entryId: TimeEntryId) => void
-  onChangeList: (id: TaskId, listId: ListId | null) => void
-  onAddTag: (id: TaskId, name: string) => void
-  onRemoveTag: (id: TaskId, name: string) => void
-  onRemove: (id: TaskId) => void
-  onDuplicate: (id: TaskId) => void
-  onAddSubtask: (id: TaskId, index: number, title: string) => void
-  onSetSubtaskDone: (id: TaskId, subtaskId: SubtaskId, done: boolean) => void
-  onRenameSubtask: (id: TaskId, subtaskId: SubtaskId, title: string) => void
-  onRemoveSubtask: (id: TaskId, subtaskId: SubtaskId) => void
+  /** What the row can do to its task. */
+  actions: TaskActions
   /** The screen's timer, when one is offered for logging time by running a clock. */
   timer?: Pick<TaskTimer, 'clock' | 'start' | 'stop' | 'isRunningFor' | 'state'>
+  /** Gone to from elsewhere (TIME-20): brought into view and opened, as a click on it would. */
+  revealed?: boolean
+  /** Said once the row has been brought into view and opened. */
+  onRevealed?: () => void
 }
 
-/** The title and the box that replaces it start in the same place, so nothing shifts. */
-const titleBox = 'min-w-0 text-left text-sm'
+/**
+ * The title and the box that replaces it start in the same place, so nothing
+ * shifts. Their size is the caller's: small on a wide screen's row, a step up on
+ * a phone's (UI-47), and larger again at the head of a phone's sheet (UI-48).
+ */
+const titleBox = 'min-w-0 text-left'
 
 /**
  * Where the title starts, and so where everything the row holds lines up: the
  * row's own padding, the completion box, and the gap between them. A phone's
- * box is larger, so the indent is too.
+ * row has more of both around the box, so the indent is a little deeper.
  */
-const indent = 'pl-12 md:pl-10'
+const indent = 'pl-11 md:pl-10'
 
 /**
  * Each control sits in a slot of one icon button's width, so an icon is in the
@@ -175,28 +160,10 @@ export function TaskItem({
   dimmed = false,
   emphasized = false,
   dragGroup,
-  onComplete,
-  onUncomplete,
-  onRename,
-  onChangeDescription,
-  onChangeDueDate,
-  onSkipOccurrence,
-  onChangeRepeat,
-  onChangeReward,
-  onChangeUrgent,
-  onChangeTimeGoal,
-  onLogTime,
-  onRemoveTimeEntry,
-  onChangeList,
-  onAddTag,
-  onRemoveTag,
-  onRemove,
-  onDuplicate,
-  onAddSubtask,
-  onSetSubtaskDone,
-  onRenameSubtask,
-  onRemoveSubtask,
+  actions,
   timer,
+  revealed = false,
+  onRevealed,
 }: TaskItemProps) {
   const phone = usePhoneLayout()
   const done = isComplete(task, now)
@@ -246,15 +213,16 @@ export function TaskItem({
   const input = useRef<HTMLInputElement>(null)
   const row = useRef<HTMLLIElement>(null)
   const line = useRef<HTMLDivElement>(null)
-  const sortable = useSortableTask(task, now, dragGroup)
+  const { setNodeRef, setActivatorNodeRef, listeners, attributes, isDragging, transform, transition } =
+    useSortableTask(task, now, dragGroup)
   // Right completes (or takes back), left deletes — phone only, and not while the
   // sheet is open or the row is being dragged to a new place.
-  const swipe = useRowSwipe(phone && !isActive && !sortable.isDragging, row, {
+  const swipe = useRowSwipe(phone && !isActive && !isDragging, row, {
     onComplete: () => {
-      if (done) onUncomplete(task.id)
-      else onComplete(task.id)
+      if (done) actions.uncomplete(task.id)
+      else actions.complete(task.id)
     },
-    onDelete: () => { onRemove(task.id) },
+    onDelete: () => { actions.remove(task.id) },
   })
   const isEditing = editedTitle !== null
   // What the controls hold, spelled out on a second line under each once woken, or
@@ -287,46 +255,33 @@ export function TaskItem({
       </ul>
     ) : null
   const overdue = isOverdue(task, now)
-  const schedule = !detailed
-    ? null
-    : task.repeat !== null
-      ? describeRepeatBriefly(task.repeat)
-      : task.dueDate !== null
-        ? describeDueDate(task.dueDate, now)
-        : null
-  const count = detailed && checklisted ? `${String(checklist.done)}/${String(checklist.total)}` : null
+  // Each said once and shown two ways: spelled out under the controls, or read out
+  // from a phone's marks. A repeating task's day is its rule's, so the rule is what is said.
+  const scheduleLabel =
+    task.repeat !== null ? describeRepeatBriefly(task.repeat) : day !== null ? describeDueDate(day, now) : null
   const timeProgress = describeTimeProgress(spent, task.timeGoal)
-  const time =
-    detailed && timed
-      ? timerRunning
-        ? spent > 0 || task.timeGoal !== null
-          ? `${timeProgress} · ${describeTimerRunning(liveSeconds)}`
-          : describeTimerRunning(liveSeconds)
-        : timeProgress
-      : null
-  const points = detailed && task.reward !== null ? describeReward(task.reward) : null
+  const timeLabel = (separator: string) =>
+    !timerRunning
+      ? timeProgress
+      : spent > 0 || task.timeGoal !== null
+        ? `${timeProgress}${separator}${describeTimerRunning(liveSeconds)}`
+        : describeTimerRunning(liveSeconds)
+  const rewardLabel = task.reward === null ? null : describeReward(task.reward)
+  const schedule = detailed ? scheduleLabel : null
+  const count = detailed && checklisted ? `${String(checklist.done)}/${String(checklist.total)}` : null
+  const time = detailed && timed ? timeLabel(' · ') : null
+  const points = detailed ? rewardLabel : null
   const urgentLabel = detailed && task.urgent ? 'Urgent' : null
   // On a phone, marks for what the task carries — set ones only, not buttons.
   // A tap on them is a tap on the row and opens the sheet.
-  const timeMarkLabel = timerRunning
-    ? spent > 0 || task.timeGoal !== null
-      ? `${timeProgress}, ${describeTimerRunning(liveSeconds)}`
-      : describeTimerRunning(liveSeconds)
-    : timeProgress
   const marks =
     phone && (scheduled || timed || rewarded || checklisted || described || tagged)
       ? {
           label: [
-            scheduled
-              ? task.repeat !== null
-                ? describeRepeatBriefly(task.repeat)
-                : day !== null
-                  ? describeDueDate(day, now)
-                  : null
-              : null,
+            scheduleLabel,
             checklisted ? `Checklist ${String(checklist.done)} of ${String(checklist.total)}` : null,
-            timed ? timeMarkLabel : null,
-            rewarded && task.reward !== null ? describeReward(task.reward) : null,
+            timed ? timeLabel(', ') : null,
+            rewardLabel,
             described ? 'Description' : null,
             tagged ? `Tags ${task.tags.join(', ')}` : null,
           ]
@@ -339,9 +294,9 @@ export function TaskItem({
     goal: task.timeGoal,
     sessions,
     now,
-    onLog: (minutes: number) => { onLogTime(task.id, minutes) },
-    onRemove: (entryId: TimeEntryId) => { onRemoveTimeEntry(task.id, entryId) },
-    onChangeGoal: (minutes: number | null) => { onChangeTimeGoal(task.id, minutes) },
+    onLog: (minutes: number) => { actions.logTime(task.id, minutes) },
+    onRemove: (entryId: TimeEntryId) => { actions.removeTimeEntry(task.id, entryId) },
+    onChangeGoal: (minutes: number | null) => { actions.changeTimeGoal(task.id, minutes) },
     label: `Time for "${task.title}"`,
     timer:
       timer === undefined
@@ -358,7 +313,7 @@ export function TaskItem({
   const filed = listOf(task, lists)
   // Where skipping the occurrence in play would move the task on to, while it has one to skip.
   const skipTo = canSkipOccurrence(task, now) ? dueDay(skipOccurrence(task, now), now) : null
-  const skip = skipTo === null ? undefined : { to: skipTo, onSkip: () => { onSkipOccurrence(task.id) } }
+  const skip = skipTo === null ? undefined : { to: skipTo, onSkip: () => { actions.skip(task.id) } }
   const menuItems: ContextMenuEntry[] = [
     // The same quick choices as the date panel; Select date opens that panel, calendar and all, where the menu was.
     {
@@ -376,9 +331,9 @@ export function TaskItem({
       label: 'Urgent',
       icon: <FlagIcon />,
       checked: task.urgent,
-      onSelect: () => { onChangeUrgent(task.id, !task.urgent) },
+      onSelect: () => { actions.changeUrgent(task.id, !task.urgent) },
     },
-    { label: 'Duplicate', icon: <DuplicateIcon />, onSelect: () => { onDuplicate(task.id) } },
+    { label: 'Duplicate', icon: <DuplicateIcon />, onSelect: () => { actions.duplicate(task.id) } },
     // A panel of its own rather than a group, since it takes typing and more than one choice.
     { label: 'Tags', icon: <TagIcon />, onSelect: () => { setTagsAt(menuAt) } },
     // Only once there is a list to choose: the Inbox alone is no choice at all.
@@ -392,13 +347,13 @@ export function TaskItem({
                 label: 'Inbox',
                 icon: <InboxIcon />,
                 checked: filed === null,
-                onSelect: () => { onChangeList(task.id, null) },
+                onSelect: () => { actions.changeList(task.id, null) },
               },
               ...sortLists(lists).map((list) => ({
                 label: list.name,
                 icon: <FolderIcon />,
                 checked: list.id === filed?.id,
-                onSelect: () => { onChangeList(task.id, list.id) },
+                onSelect: () => { actions.changeList(task.id, list.id) },
               })),
             ],
           },
@@ -430,6 +385,16 @@ export function TaskItem({
     return () => { document.removeEventListener('pointerdown', handlePointerDown) }
   }, [isActive, phone])
 
+  const bringUp = useEffectEvent(() => {
+    row.current?.scrollIntoView({ block: 'center' })
+    wake()
+    onRevealed?.()
+  })
+
+  useEffect(() => {
+    if (revealed) bringUp()
+  }, [revealed])
+
   /**
    * Opening the row: it shows what it holds. A row already awake is left as it
    * is, so focus moving between its controls does not bring back what was put away.
@@ -448,7 +413,7 @@ export function TaskItem({
   function rest() {
     if (phone && editedTitle !== null) {
       const trimmed = editedTitle.trim()
-      if (trimmed.length > 0) onRename(task.id, trimmed)
+      if (trimmed.length > 0) actions.rename(task.id, trimmed)
       setEditedTitle(null)
     }
     setIsActive(false)
@@ -492,7 +457,7 @@ export function TaskItem({
     const start = touchedAt.current
     const end = event.changedTouches[0]
     touchedAt.current = null
-    if (!sortable.isDragging || start === null || end === undefined) return
+    if (!isDragging || start === null || end === undefined) return
 
     const at = { x: end.clientX, y: end.clientY }
     if (!isHeldInPlace(start, at)) return
@@ -532,7 +497,7 @@ export function TaskItem({
    * being typed in keeps the browser's own menu, which is there for the text.
    */
   function handleContextMenu(event: MouseEvent<HTMLLIElement>) {
-    if (isInTextEntry(event.target) || sortable.isDragging) return
+    if (isInTextEntry(event.target) || isDragging) return
 
     event.preventDefault()
     // The context-menu key presses no button, so there is no pointer to open at:
@@ -551,19 +516,19 @@ export function TaskItem({
    */
   function changeDueDate(dueDate: LocalDay | null) {
     if (dueDate !== null && task.repeat !== null) setDraft({ ...draft, kind: 'once' })
-    onChangeDueDate(task.id, dueDate)
+    actions.changeDueDate(task.id, dueDate)
   }
 
   function handleRepeatChange(next: RepeatDraft) {
     setDraft(next)
-    onChangeRepeat(task.id, toRepeat(next))
+    actions.changeRepeat(task.id, toRepeat(next))
   }
 
   /** Keeping the edit. An empty box is an abandoned edit, not a nameless task. */
   function commitEdit() {
     const trimmed = editedTitle?.trim() ?? ''
     if (trimmed.length > 0) {
-      onRename(task.id, trimmed)
+      actions.rename(task.id, trimmed)
     }
     setEditedTitle(null)
   }
@@ -591,7 +556,7 @@ export function TaskItem({
         type="button"
         onClick={startEdit}
         aria-label={`Edit "${task.title}"`}
-        className={phone ? `${titleClass} text-lg` : titleClass}
+        className={`${titleClass} ${phone ? 'text-lg' : 'text-sm'}`}
       >
         {task.title}
       </button>
@@ -606,14 +571,14 @@ export function TaskItem({
         aria-label={`Title of "${task.title}"`}
         autoComplete="off"
         enterKeyHint="done"
-        className={`${titleBox} ${phone ? 'text-lg' : ''} flex-1 bg-transparent text-neutral-900 focus:outline-none dark:text-neutral-100`}
+        className={`${titleBox} ${phone ? 'text-lg' : 'text-sm'} flex-1 bg-transparent text-neutral-900 focus:outline-none dark:text-neutral-100`}
       />
     )
 
   // The card surface: dashed and faded while dragged; marked while its menu or
   // sheet is open. On a phone the same classes ride the sliding face so a swipe
   // can reveal complete and delete underneath.
-  const surface = sortable.isDragging
+  const surface = isDragging
     ? 'rounded-xl border border-dashed border-neutral-300 bg-white opacity-50 dark:border-neutral-700 dark:bg-neutral-900'
     : menuAt !== null || tagsAt !== null || dateAt !== null || (phone && isActive)
       ? `rounded-xl border border-neutral-400 bg-white dark:border-neutral-600 dark:bg-neutral-900${urgent ? ' shadow-[inset_3px_0_0_rgb(217_119_6_/_0.55)] dark:shadow-[inset_3px_0_0_rgb(251_191_36_/_0.45)]' : ''}${dimmed ? ' opacity-25' : ''}`
@@ -623,19 +588,19 @@ export function TaskItem({
     <li
       ref={(element) => {
         row.current = element
-        sortable.setNodeRef(element)
+        setNodeRef(element)
       }}
-      style={{ transform: CSS.Translate.toString(sortable.transform), transition: sortable.transition }}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
       // A mouse or a finger can pick the row up anywhere; the keyboard only from
       // its grip, which is where these listeners check a key press came from.
-      {...sortable.listeners}
+      {...listeners}
       // On the click rather than the press: waking the row moves the buttons
       // along, and a press that moves what is under it never becomes a click.
       onClick={handleClick}
       onClickCapture={swipe.onClickCapture}
       onPointerDown={(event) => { pointer.current = event.pointerType }}
       onTouchStart={(event) => {
-        sortable.listeners?.onTouchStart?.(event)
+        listeners?.onTouchStart?.(event)
         swipe.onTouchStart(event)
         const touch = event.touches[0]
         touchedAt.current = touch === undefined ? null : { x: touch.clientX, y: touch.clientY }
@@ -649,11 +614,11 @@ export function TaskItem({
       onBlur={handleBlur}
       onContextMenu={handleContextMenu}
       onKeyDown={(event) => {
-        sortable.listeners?.onKeyDown?.(event)
+        listeners?.onKeyDown?.(event)
         // Panels and edit boxes stop Escape before it reaches here, so this only
         // ever rests a row that has nothing of its own open — or cancels a drag,
         // which should leave the row as it was.
-        if (event.key === 'Escape' && !sortable.isDragging) rest()
+        if (event.key === 'Escape' && !isDragging) rest()
       }}
       className={
         phone
@@ -666,12 +631,12 @@ export function TaskItem({
           Shown on hover and on the woken row, where the keyboard reaches it. */}
       <button
         type="button"
-        ref={sortable.setActivatorNodeRef}
-        {...sortable.attributes}
+        ref={setActivatorNodeRef}
+        {...attributes}
         aria-label={`Move "${task.title}"`}
         title="Drag to move"
         className={
-          isActive || sortable.isDragging
+          isActive || isDragging
             ? `${grip} opacity-100`
             : `${grip} opacity-0 group-hover:opacity-100 focus-visible:opacity-100`
         }
@@ -701,7 +666,8 @@ export function TaskItem({
       )}
 
       <div
-        className={phone ? `relative ${surface}` : undefined}
+        // A phone's row answers a touch by darkening while pressed (UI-61).
+        className={phone ? `relative ${surface} active:bg-neutral-100 dark:active:bg-neutral-800` : undefined}
         style={
           phone
             ? {
@@ -719,7 +685,7 @@ export function TaskItem({
         ref={line}
         className={
           phone
-            ? 'flex items-center gap-2 px-2 py-1.5'
+            ? 'flex items-center gap-3 px-3 py-2'
             : `grid ${lineColumns} items-center gap-x-2 px-2 py-1.5 md:px-2.5 md:py-1`
         }
       >
@@ -728,8 +694,8 @@ export function TaskItem({
           onClick={(event) => {
             // Ticking a task off is not engaging with it: the row stays as it was.
             event.stopPropagation()
-            if (done) onUncomplete(task.id)
-            else onComplete(task.id)
+            if (done) actions.uncomplete(task.id)
+            else actions.complete(task.id)
           }}
           aria-pressed={done}
           aria-label={
@@ -763,8 +729,8 @@ export function TaskItem({
               tabIndex={isActive ? -1 : undefined}
               className={
                 done
-                  ? `${titleBox} break-words text-neutral-400 line-through dark:text-neutral-600`
-                  : `${titleBox} break-words text-neutral-900 dark:text-neutral-100`
+                  ? `${titleBox} text-base break-words text-neutral-400 line-through dark:text-neutral-600`
+                  : `${titleBox} text-base break-words text-neutral-900 dark:text-neutral-100`
               }
             >
               {task.title}
@@ -867,7 +833,7 @@ export function TaskItem({
               <RewardPicker
                 reward={task.reward}
                 repeat={task.repeat}
-                onChange={(reward) => { onChangeReward(task.id, reward) }}
+                onChange={(reward) => { actions.changeReward(task.id, reward) }}
                 label={`Reward for "${task.title}"`}
               />
             </div>
@@ -891,7 +857,7 @@ export function TaskItem({
               onClick={(event) => {
                 // Deleting is not engaging with the task either: the row is on its way out.
                 event.stopPropagation()
-                onRemove(task.id)
+                actions.remove(task.id)
               }}
               aria-label={`Delete "${task.title}"`}
               className={`flex h-6 shrink-0 items-center rounded-lg px-1 text-base leading-none ${deleteControl}`}
@@ -948,7 +914,7 @@ export function TaskItem({
       </div>
 
       {phone && detailed && (tags !== null || urgentLabel !== null || schedule !== null || count !== null || time !== null || points !== null) && (
-        <div className={`${detail} flex min-w-0 flex-wrap items-center gap-x-2 px-2 pb-1.5 ${indent}`}>
+        <div className={`${detail} flex min-w-0 flex-wrap items-center gap-x-2 px-3 pb-2 ${indent}`}>
           {tags}
           {urgentLabel !== null && <p>{urgentLabel}</p>}
           {schedule !== null && (
@@ -972,7 +938,7 @@ export function TaskItem({
             <ListPicker
               listId={task.listId}
               lists={lists}
-              onChange={(listId) => { onChangeList(task.id, listId) }}
+              onChange={(listId) => { actions.changeList(task.id, listId) }}
               label={`List for "${task.title}"`}
               align="left"
             />
@@ -980,19 +946,19 @@ export function TaskItem({
           <TagPicker
             tags={task.tags}
             known={knownTags}
-            onAdd={(name) => { onAddTag(task.id, name) }}
-            onRemove={(name) => { onRemoveTag(task.id, name) }}
+            onAdd={(name) => { actions.addTag(task.id, name) }}
+            onRemove={(name) => { actions.removeTag(task.id, name) }}
             label={`Tags for "${task.title}"`}
             align="left"
           />
           <UrgentToggle
             urgent={task.urgent}
-            onChange={(next) => { onChangeUrgent(task.id, next) }}
+            onChange={(next) => { actions.changeUrgent(task.id, next) }}
             label={`Urgent for "${task.title}"`}
           />
           <button
             type="button"
-            onClick={() => { onDuplicate(task.id) }}
+            onClick={() => { actions.duplicate(task.id) }}
             aria-label={`Duplicate "${task.title}"`}
             title="Duplicate"
             className={`${rowControlIcon} ${controlOff}`}
@@ -1010,10 +976,10 @@ export function TaskItem({
             repeat={task.repeat}
             now={now}
             taskTitle={task.title}
-            onAdd={(index, title) => { onAddSubtask(task.id, index, title) }}
-            onSetDone={(subtaskId, done) => { onSetSubtaskDone(task.id, subtaskId, done) }}
-            onRename={(subtaskId, title) => { onRenameSubtask(task.id, subtaskId, title) }}
-            onRemove={(subtaskId) => { onRemoveSubtask(task.id, subtaskId) }}
+            onAdd={(index, title) => { actions.addSubtask(task.id, index, title) }}
+            onSetDone={(subtaskId, done) => { actions.setSubtaskDone(task.id, subtaskId, done) }}
+            onRename={(subtaskId, title) => { actions.renameSubtask(task.id, subtaskId, title) }}
+            onRemove={(subtaskId) => { actions.removeSubtask(task.id, subtaskId) }}
           />
         </div>
       )}
@@ -1025,8 +991,8 @@ export function TaskItem({
             title={task.title}
             tags={task.tags}
             knownTags={knownTags}
-            onChange={(description) => { onChangeDescription(task.id, description) }}
-            onAddTag={(name) => { onAddTag(task.id, name) }}
+            onChange={(description) => { actions.changeDescription(task.id, description) }}
+            onAddTag={(name) => { actions.addTag(task.id, name) }}
           />
         </div>
       )}
@@ -1041,26 +1007,9 @@ export function TaskItem({
           draft={draft}
           title={titleEditor}
           onClose={rest}
-          onComplete={onComplete}
-          onUncomplete={onUncomplete}
-          onChangeDescription={onChangeDescription}
+          actions={actions}
           onChangeDueDate={changeDueDate}
-          onSkipOccurrence={onSkipOccurrence}
           onChangeRepeat={handleRepeatChange}
-          onChangeReward={onChangeReward}
-          onChangeUrgent={onChangeUrgent}
-          onChangeTimeGoal={onChangeTimeGoal}
-          onLogTime={onLogTime}
-          onRemoveTimeEntry={onRemoveTimeEntry}
-          onChangeList={onChangeList}
-          onAddTag={onAddTag}
-          onRemoveTag={onRemoveTag}
-          onRemove={onRemove}
-          onDuplicate={onDuplicate}
-          onAddSubtask={onAddSubtask}
-          onSetSubtaskDone={onSetSubtaskDone}
-          onRenameSubtask={onRenameSubtask}
-          onRemoveSubtask={onRemoveSubtask}
           timer={timer}
         />
       )}
@@ -1112,8 +1061,8 @@ export function TaskItem({
           <TagPanel
             tags={task.tags}
             known={knownTags}
-            onAdd={(name) => { onAddTag(task.id, name) }}
-            onRemove={(name) => { onRemoveTag(task.id, name) }}
+            onAdd={(name) => { actions.addTag(task.id, name) }}
+            onRemove={(name) => { actions.removeTag(task.id, name) }}
           />
         </FloatingPanel>
       )}

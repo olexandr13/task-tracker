@@ -1,8 +1,11 @@
-import { doc, onSnapshot, type Firestore, type WriteBatch } from 'firebase/firestore'
+import type { Firestore } from 'firebase/firestore'
+import type { List } from '../core'
 import { accountCollection } from './firestoreAccount'
-import { commitInBatches } from './firestoreBatches'
+import { saveRecords, subscribeToRecords, type RecordKind } from './firestoreRecords'
 import type { ListRepository } from './listRepository'
 import { readList, toStoredList } from './listSchema'
+
+const LIST: RecordKind<List> = { noun: 'list', read: readList, write: toStoredList }
 
 /**
  * An account's lists in Firestore: one document per list, filed under the
@@ -18,27 +21,7 @@ export function createFirestoreListRepository(firestore: Firestore, accountId: s
   const lists = accountCollection(firestore, accountId, 'lists')
 
   return {
-    subscribe(onLists, onError) {
-      return onSnapshot(
-        lists,
-        (snapshot) => {
-          onLists(
-            snapshot.docs.flatMap((saved) => {
-              const read = readList(saved.data())
-              if (read === null) console.warn(`Ignoring saved list ${saved.id}: unexpected shape.`)
-              return read === null ? [] : [read]
-            }),
-          )
-        },
-        onError,
-      )
-    },
-
-    save({ saved, removed }) {
-      return commitInBatches(firestore, [
-        ...saved.map((list) => (batch: WriteBatch) => batch.set(doc(lists, list.id), toStoredList(list))),
-        ...removed.map((id) => (batch: WriteBatch) => batch.delete(doc(lists, id))),
-      ])
-    },
+    subscribe: (onLists, onError) => subscribeToRecords(lists, LIST, onLists, onError),
+    save: (changes) => saveRecords(firestore, lists, LIST, changes),
   }
 }

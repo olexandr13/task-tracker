@@ -13,7 +13,8 @@ import {
   type Task,
 } from '../core'
 import type { RewardRepository } from '../storage/rewardRepository'
-import type { TaskRepository } from '../storage/taskRepository'
+import type { TaskChanges, TaskRepository } from '../storage/taskRepository'
+import { expectConsole } from '../test/consoleGuard'
 import { useTasks } from './useTasks'
 
 /*
@@ -171,5 +172,94 @@ describe('useTasks, reopening a missed occurrence', () => {
       { earned: [{ taskId: task.id, day: '2026-09-17', points: 5 }], revoked: [] },
       { earned: [], revoked: [{ taskId: task.id, day: '2026-09-17' }] },
     ])
+  })
+})
+
+describe('useTasks, changes made in one go', () => {
+  it('keeps both of two changes to one task made before the screen redraws (STORE-39)', () => {
+    const task = createTask('stretch')
+    const written: TaskChanges[] = []
+    let onTasks: (tasks: Task[]) => void = () => {}
+    const repository: TaskRepository = {
+      subscribe(callback) {
+        onTasks = callback
+        return () => {}
+      },
+      save(changes) {
+        written.push(changes)
+        return Promise.resolve()
+      },
+      importTasks: () => Promise.resolve(),
+    }
+    const { result } = renderHook(() => useTasks(repository, fakeRewardRepository().repository))
+    act(() => { onTasks([task]) })
+
+    act(() => {
+      result.current.rename(task.id, 'walk')
+      result.current.changeDescription(task.id, 'round the park')
+    })
+
+    expect(result.current.tasks).toMatchObject([{ title: 'walk', description: 'round the park' }])
+    expect(written.at(-1)?.saved).toMatchObject([{ title: 'walk', description: 'round the park' }])
+  })
+
+  it('hands back the task a deletion took, even straight after another change', () => {
+    const task = createTask('stretch')
+    const { result } = setUp([task])
+
+    let deleted: Task | null = null
+    act(() => {
+      result.current.rename(task.id, 'walk')
+      deleted = result.current.remove(task.id)
+    })
+
+    expect(deleted).toMatchObject({ title: 'walk' })
+  })
+})
+
+describe('useTasks, when the repository refuses', () => {
+  it('says a load it refused is not an empty list, and reports it (STORE-13)', () => {
+    expectConsole('Could not load tasks.')
+    const onProblem = vi.fn()
+    let fail: (error: unknown) => void = () => {}
+    const repository: TaskRepository = {
+      subscribe(_onTasks, onError) {
+        fail = onError
+        return () => {}
+      },
+      save: () => Promise.resolve(),
+      importTasks: () => Promise.resolve(),
+    }
+    const { result } = renderHook(() => useTasks(repository, fakeRewardRepository().repository, onProblem))
+
+    act(() => { fail(new Error('Missing or insufficient permissions.')) })
+
+    expect(result.current.isLoading).toBe(false)
+    expect(result.current.loadFailed).toBe(true)
+    expect(onProblem).toHaveBeenCalledWith('load')
+  })
+
+  it('reports a save it refused (STORE-13)', async () => {
+    expectConsole('Could not save tasks.')
+    const onProblem = vi.fn()
+    const task = createTask('stretch')
+    let onTasks: (tasks: Task[]) => void = () => {}
+    const repository: TaskRepository = {
+      subscribe(callback) {
+        onTasks = callback
+        return () => {}
+      },
+      save: () => Promise.reject(new Error('quota exceeded')),
+      importTasks: () => Promise.resolve(),
+    }
+    const { result } = renderHook(() => useTasks(repository, fakeRewardRepository().repository, onProblem))
+    act(() => { onTasks([task]) })
+
+    await act(async () => {
+      result.current.rename(task.id, 'walk')
+      await Promise.resolve()
+    })
+
+    expect(onProblem).toHaveBeenCalledWith('save')
   })
 })

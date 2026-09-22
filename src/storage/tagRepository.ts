@@ -1,12 +1,8 @@
 import type { Tag, TagId } from '../core'
+import type { RecordChanges } from './recordChanges'
 
-/** What one change to the kept tags comes to, tag by tag. */
-export interface TagChanges {
-  /** Tags that are new, or not what they were. */
-  readonly saved: readonly Tag[]
-  /** Tags gone for good. */
-  readonly removed: readonly TagId[]
-}
+/** What one change to the kept tags comes to, tag by tag (./recordChanges). */
+export type TagChanges = RecordChanges<Tag, TagId>
 
 /**
  * Where an account's tags are kept. Every call site talks to this interface
@@ -23,18 +19,4 @@ export interface TagRepository {
    */
   subscribe(onTags: (tags: Tag[]) => void, onError: (error: unknown) => void): () => void
   save(changes: TagChanges): Promise<void>
-}
-
-/**
- * The tags that differ between two versions of the set. Identity is what tells a
- * changed tag from an untouched one, as with the lists (./listRepository).
- */
-export function tagChangesBetween(before: readonly Tag[], after: readonly Tag[]): TagChanges {
-  const previous = new Map(before.map((tag) => [tag.id, tag]))
-  const kept = new Set(after.map((tag) => tag.id))
-
-  return {
-    saved: after.filter((tag) => previous.get(tag.id) !== tag),
-    removed: before.filter((tag) => !kept.has(tag.id)).map((tag) => tag.id),
-  }
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { SignInFailure } from '../../storage/authService'
+import { AppIcon } from './AppLogo'
 import { GoogleLogo } from './GoogleLogo'
 
 /** A cancelled sign-in is not a fault, so it has nothing to say. */
@@ -39,9 +40,10 @@ export function SignInScreen({ onSignIn, onContinueAsGuest }: SignInScreenProps)
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center px-4 py-8">
+    <main className="flex min-h-dvh items-center justify-center px-4 py-[max(2rem,env(safe-area-inset-top))]">
       <div className="flex w-full max-w-sm flex-col items-center gap-6 rounded-2xl border border-neutral-200 bg-white px-6 py-10 text-center dark:border-neutral-800 dark:bg-neutral-900">
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col items-center gap-1.5">
+          <AppIcon className="mb-2 size-14 shrink-0 rounded-2xl" />
           <h1 className="text-2xl font-semibold tracking-tight">PickMe</h1>
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
             Sign in to sync across devices, or continue as guest on this one.
@@ -66,7 +68,8 @@ export function SignInScreen({ onSignIn, onContinueAsGuest }: SignInScreenProps)
             type="button"
             onClick={onContinueAsGuest}
             disabled={isPending}
-            className="text-sm text-neutral-500 transition-colors hover:text-neutral-800 disabled:cursor-default disabled:opacity-60 dark:text-neutral-400 dark:hover:text-neutral-200"
+            // As tall as the Google button, so a thumb need not aim at a line of text (AUTH-2).
+            className="flex h-10 items-center rounded-full px-4 text-sm text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-800 active:bg-neutral-100 disabled:cursor-default disabled:opacity-60 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 dark:active:bg-neutral-800"
           >
             Continue as guest
           </button>

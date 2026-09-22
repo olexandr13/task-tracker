@@ -1,8 +1,11 @@
-import { doc, onSnapshot, type Firestore, type WriteBatch } from 'firebase/firestore'
+import type { Firestore } from 'firebase/firestore'
+import type { Tag } from '../core'
 import { accountCollection } from './firestoreAccount'
-import { commitInBatches } from './firestoreBatches'
+import { saveRecords, subscribeToRecords, type RecordKind } from './firestoreRecords'
 import type { TagRepository } from './tagRepository'
 import { readTag, toStoredTag } from './tagSchema'
+
+const TAG: RecordKind<Tag> = { noun: 'tag', read: readTag, write: toStoredTag }
 
 /**
  * An account's kept tags in Firestore: one document per tag, filed under the
@@ -17,27 +20,7 @@ export function createFirestoreTagRepository(firestore: Firestore, accountId: st
   const tags = accountCollection(firestore, accountId, 'tags')
 
   return {
-    subscribe(onTags, onError) {
-      return onSnapshot(
-        tags,
-        (snapshot) => {
-          onTags(
-            snapshot.docs.flatMap((saved) => {
-              const read = readTag(saved.data())
-              if (read === null) console.warn(`Ignoring saved tag ${saved.id}: unexpected shape.`)
-              return read === null ? [] : [read]
-            }),
-          )
-        },
-        onError,
-      )
-    },
-
-    save({ saved, removed }) {
-      return commitInBatches(firestore, [
-        ...saved.map((tag) => (batch: WriteBatch) => batch.set(doc(tags, tag.id), toStoredTag(tag))),
-        ...removed.map((id) => (batch: WriteBatch) => batch.delete(doc(tags, id))),
-      ])
-    },
+    subscribe: (onTags, onError) => subscribeToRecords(tags, TAG, onTags, onError),
+    save: (changes) => saveRecords(firestore, tags, TAG, changes),
   }
 }

@@ -42,9 +42,9 @@ task to do, fade the rest, and earn a rest by finishing it.
   control becomes **Create new task** and opens the add-task sheet (UI-54) instead.
 - **JUST-7** Completing the focused task does **not** turn the mode off: it opens the win card
   (JUST-9) and More's Procrastination control stays active. **Rest** leaves the mode on and goes to idle
-  (**Choose another task**, optional). The mode ends when the focused task is deleted or no
-  longer in Today while still focusing, when they end the mode (JUST-8), or when the day rolls
-  over (JUST-10).
+  (**Choose another task**, optional). A focused or won task that is deleted, or no longer in
+  Today, leaves the mode resting in the same way — however that happened, on this device or
+  another. The mode ends only when they end it (JUST-8) or when the day rolls over (JUST-10).
 
 ## Leaving without a win
 
@@ -65,7 +65,8 @@ task to do, fade the rest, and earn a rest by finishing it.
 
 ---
 
-**Where it lives:** `src/core/justOne.ts` (the pick), `src/app/components/ProcrastinationMode.tsx`,
+**Where it lives:** `src/core/justOne.ts` (the pick, and how the mode settles as its task is done or
+moves on), `src/app/components/ProcrastinationMode.tsx`,
 `src/app/components/ProcrastinationIcon.tsx`, `src/app/components/RestingIcon.tsx`, `src/app/components/CelebrateIcon.tsx`,
 `src/app/useProcrastination.ts`, `src/storage/localStorageProcrastinationRepository.ts`,
 `src/app/components/MorePage.tsx` (the entry control), `src/app/components/TaskList.tsx` / `TaskItem.tsx` (dimming),

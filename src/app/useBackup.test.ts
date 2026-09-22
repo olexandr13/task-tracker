@@ -13,9 +13,9 @@ import { useBackup } from './useBackup'
 const AT = new Date('2026-09-19T09:00:00.000Z')
 
 const WRITE = createTask('Write report', null, AT)
-const DATA: AccountData = { tasks: [WRITE], lists: [createList('Work', AT)], entries: [], redemptions: [] }
+const DATA: AccountData = { tasks: [WRITE], lists: [createList('Work', AT)], tags: [], entries: [], redemptions: [] }
 
-const ADDED: ImportSummary = { added: { tasks: 1, lists: 1, completions: 0, redemptions: 0 }, alreadyHere: 0 }
+const ADDED: ImportSummary = { added: { tasks: 1, lists: 1, tags: 0, completions: 0, redemptions: 0 }, alreadyHere: 0 }
 
 function fakeBackupRepository({ exportFails = false, importFails = null as unknown }: { exportFails?: boolean; importFails?: unknown } = {}) {
   const imported: AccountData[] = []

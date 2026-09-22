@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Redemption, RewardChanges, RewardEntry } from '../core'
 import type { PointsLedger, RewardRepository } from '../storage/rewardRepository'
+import { expectConsole } from '../test/consoleGuard'
 import { useRewards } from './useRewards'
 
 /* Removing and restoring ledger rows. RWD ids refer to wiki/rewards.md. */
@@ -82,7 +83,7 @@ describe('useRewards, removing ledger rows', () => {
     const { result, saved } = setUp({ entries: [], redemptions: [] })
 
     act(() => {
-      result.current.restoreEarning(RUN)
+      result.current.saveEarning(RUN)
     })
 
     expect(saved).toEqual([{ earned: [RUN], revoked: [] }])
@@ -108,5 +109,23 @@ describe('useRewards, removing ledger rows', () => {
     })
 
     expect(redeemed).toEqual([COFFEE])
+  })
+})
+
+describe('when the repository refuses', () => {
+  it('reports a write it refused (STORE-13)', async () => {
+    expectConsole('Could not delete the redemption.')
+    const onProblem = vi.fn()
+    const fake = fakeRewardRepository({ entries: [RUN], redemptions: [COFFEE] })
+    const repository: RewardRepository = { ...fake.repository, removeRedemption: () => Promise.reject(new Error('denied')) }
+    const { result } = renderHook(() => useRewards(repository, onProblem))
+    fake.arrive({ entries: [RUN], redemptions: [COFFEE] })
+
+    await act(async () => {
+      result.current.removeRedemption(COFFEE.id)
+      await Promise.resolve()
+    })
+
+    expect(onProblem).toHaveBeenCalledWith('save')
   })
 })

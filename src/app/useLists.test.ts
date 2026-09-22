@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { appendList, createList, type List } from '../core'
 import type { ListChanges, ListRepository } from '../storage/listRepository'
 import { consoleOutput, expectConsole } from '../test/consoleGuard'
+import type { ReportProblem } from './storageProblem'
 import { useLists } from './useLists'
 
 /*
@@ -44,9 +45,9 @@ function fakeListRepository({ saveFails = false } = {}) {
   }
 }
 
-function setUp(options?: { saveFails?: boolean }) {
+function setUp(options?: { saveFails?: boolean; onProblem?: ReportProblem }) {
   const lists = fakeListRepository(options)
-  const { result } = renderHook(() => useLists(lists.repository))
+  const { result } = renderHook(() => useLists(lists.repository, options?.onProblem))
   return { result, ...lists }
 }
 
@@ -76,9 +77,11 @@ describe('when the repository will not play along', () => {
    */
   it('says so once and carries on when the lists cannot be loaded (STORE-13)', () => {
     expectConsole('Could not load lists.')
-    const { result, fail } = setUp()
+    const onProblem = vi.fn()
+    const { result, fail } = setUp({ onProblem })
 
     fail(new Error('Missing or insufficient permissions.'))
+    expect(onProblem).toHaveBeenCalledWith('load')
 
     // The page stops waiting rather than showing "Loading…" for ever, and the
     // rest of the app — the tasks, which load separately — is untouched.
@@ -93,13 +96,16 @@ describe('when the repository will not play along', () => {
 
   it('says so when a change cannot be saved (STORE-13)', async () => {
     expectConsole('Could not save lists.')
-    const { result, arrive } = setUp({ saveFails: true })
+    const onProblem = vi.fn()
+    const { result, arrive } = setUp({ saveFails: true, onProblem })
     arrive([])
 
     await act(async () => {
       result.current.add('Work')
       await Promise.resolve()
     })
+
+    expect(onProblem).toHaveBeenCalledWith('save')
 
     expect(consoleOutput()).toHaveLength(1)
     expect(consoleOutput()[0].text).toContain('Could not save lists.')
@@ -179,5 +185,33 @@ describe('changing the lists', () => {
     expect(result.current.lists.map((list) => list.name)).toEqual(['Work'])
     expect(written[0].removed).toEqual([HOME.id])
     expect(written[0].saved).toEqual([])
+  })
+})
+
+describe('changes made in one go', () => {
+  it('keeps both of two lists made before the screen redraws (STORE-39)', () => {
+    const { result, arrive } = setUp()
+    arrive([])
+
+    act(() => {
+      result.current.add('Work')
+      result.current.add('Home')
+    })
+
+    expect(result.current.lists.map((list) => list.name)).toEqual(['Work', 'Home'])
+  })
+
+  it('refuses a second list of the same name made in the same go (LST-5)', () => {
+    const { result, arrive } = setUp()
+    arrive([])
+
+    let second: List | null = null
+    act(() => {
+      result.current.add('Work')
+      second = result.current.add('work')
+    })
+
+    expect(second).toBeNull()
+    expect(result.current.lists).toHaveLength(1)
   })
 })

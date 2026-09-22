@@ -1,7 +1,67 @@
 @import 'tailwindcss';
 
+html {
+  /* The browser's own parts — scrollbars, number boxes, the caret — follow dark mode too (UI-11). */
+  color-scheme: light dark;
+  /* A tap answers with the control's own pressed look (UI-61), not the browser's grey flash. */
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   @apply min-h-dvh bg-neutral-50 text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100;
+}
+
+/* A sheet rises from the bottom of a phone and settles in the middle of a wide
+   screen (UI-48, UI-54); the page behind it dims as it comes. */
+@keyframes sheet-rise {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-settle {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes sheet-dim {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sheet-enter {
+  /* Backwards, not both: once in, a finger dragging the sheet (UI-48) sets its transform itself. */
+  animation: sheet-rise 0.26s cubic-bezier(0.32, 0.72, 0, 1) backwards;
+}
+
+@media (width >= 48rem) {
+  .sheet-enter {
+    animation: sheet-settle 0.18s ease-out backwards;
+  }
+}
+
+.sheet-dim-enter {
+  animation: sheet-dim 0.2s ease-out backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-enter,
+  .sheet-dim-enter {
+    animation: none;
+  }
 }
 
 @keyframes procrastination-win-in {

@@ -44,15 +44,11 @@ function migrate(stored: StoredQuote): DailyQuote | null {
 
 export const localStorageQuoteRepository: QuoteRepository = {
   load(): Promise<DailyQuote | null> {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw === null) {
-      return Promise.resolve(null)
-    }
-
     try {
+      const raw = localStorage.getItem(STORAGE_KEY)
       // A cached quote is worth nothing once it can't be read: there is no
       // history to lose, so anything unexpected is simply dropped and refetched.
-      return Promise.resolve(migrate(JSON.parse(raw) as StoredQuote))
+      return Promise.resolve(raw === null ? null : migrate(JSON.parse(raw) as StoredQuote))
     } catch {
       return Promise.resolve(null)
     }
@@ -60,7 +56,11 @@ export const localStorageQuoteRepository: QuoteRepository = {
 
   save(daily: DailyQuote): Promise<void> {
     const stored: StoredQuote = { version: SCHEMA_VERSION, daily }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored))
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stored))
+    } catch {
+      // Today's quote is on screen already; tomorrow's open simply asks again.
+    }
     return Promise.resolve()
   },
 }

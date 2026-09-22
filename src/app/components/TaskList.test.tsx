@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { completeTask, createTask, ROLLING_SPANS, type CompletionSpans, type Task } from '../../core'
+import { NO_TASK_ACTIONS } from '../../test/taskActions'
 import { TaskList } from './TaskList'
 
 /* What a list says around its tasks. TASK ids refer to wiki/tasks.md. */
@@ -15,6 +16,7 @@ afterEach(cleanup)
 function setup(tasks: Task[], doneSpans: CompletionSpans | null = null, focusId: string | null = null, dimAll = false) {
   render(
     <TaskList
+      actions={NO_TASK_ACTIONS}
       tasks={tasks}
       now={NOW}
       doneSpans={doneSpans}
@@ -24,27 +26,6 @@ function setup(tasks: Task[], doneSpans: CompletionSpans | null = null, focusId:
       lists={[]}
       emptyMessage={EMPTY}
       allDoneMessage={ALL_DONE}
-      onComplete={vi.fn()}
-      onUncomplete={vi.fn()}
-      onRename={vi.fn()}
-      onChangeDescription={vi.fn()}
-      onChangeDueDate={vi.fn()}
-      onSkipOccurrence={vi.fn()}
-      onChangeRepeat={vi.fn()}
-      onChangeReward={vi.fn()}
-      onChangeUrgent={vi.fn()}
-      onChangeTimeGoal={vi.fn()}
-      onLogTime={vi.fn()}
-      onRemoveTimeEntry={vi.fn()}
-      onChangeList={vi.fn()}
-      onAddTag={vi.fn()}
-      onRemoveTag={vi.fn()}
-      onRemove={vi.fn()}
-      onDuplicate={vi.fn()}
-      onAddSubtask={vi.fn()}
-      onSetSubtaskDone={vi.fn()}
-      onRenameSubtask={vi.fn()}
-      onRemoveSubtask={vi.fn()}
     />,
   )
 }

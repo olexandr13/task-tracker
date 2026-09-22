@@ -1,4 +1,4 @@
-import { toLocalDay, type List, type Redemption, type RewardEntry, type Task } from '../core'
+import { toLocalDay, type List, type Redemption, type RewardEntry, type Tag, type Task } from '../core'
 import type { AccountData } from './backupRepository'
 import { readList, toStoredList, type StoredList } from './listSchema'
 import { isRecord } from './plainData'
@@ -10,6 +10,7 @@ import {
   type StoredRedemption,
   type StoredRewardDay,
 } from './rewardSchema'
+import { readTag, toStoredTag, type StoredTag } from './tagSchema'
 import { readStoredTask, toStoredTask, type StoredTask } from './taskSchema'
 
 /** What a backup says it is, so any other JSON file is turned away rather than half read. */
@@ -21,8 +22,11 @@ export const BACKUP_FORMAT = 'task-tracker-backup'
  * ./rewardSchema), so a record in a file made by an older app is upgraded by
  * the same steps as one saved in the account, and this only changes when the
  * wrapper does.
+ *
+ * Version 1 held no tags: a file made before the kept tags were backed up is
+ * read as keeping none, and the tags its tasks carry are kept again on arrival.
  */
-export const BACKUP_VERSION = 1
+export const BACKUP_VERSION = 2
 
 interface BackupFile {
   format: typeof BACKUP_FORMAT
@@ -31,6 +35,7 @@ interface BackupFile {
   exportedAt: string
   tasks: StoredTask[]
   lists: StoredList[]
+  tags: StoredTag[]
   rewardDays: StoredRewardDay[]
   redemptions: StoredRedemption[]
 }
@@ -57,6 +62,7 @@ export function writeBackupFile(data: AccountData, now: Date): string {
     exportedAt: now.toISOString(),
     tasks: data.tasks.map(toStoredTask),
     lists: data.lists.map(toStoredList),
+    tags: data.tags.map(toStoredTag),
     rewardDays: toStoredRewardDays(data.entries),
     redemptions: data.redemptions.map(toStoredRedemption),
   }
@@ -78,10 +84,17 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
 
   if (!isRecord(file) || file.format !== BACKUP_FORMAT || typeof file.version !== 'number') return 'not-a-backup'
   if (file.version > BACKUP_VERSION) return 'newer-version'
-  if (file.version !== BACKUP_VERSION) return 'not-a-backup'
+  if (file.version !== 1 && file.version !== BACKUP_VERSION) return 'not-a-backup'
 
   const { tasks, lists, rewardDays, redemptions } = file
-  if (!Array.isArray(tasks) || !Array.isArray(lists) || !Array.isArray(rewardDays) || !Array.isArray(redemptions)) {
+  const tags = file.version === 1 ? [] : file.tags
+  if (
+    !Array.isArray(tasks) ||
+    !Array.isArray(lists) ||
+    !Array.isArray(tags) ||
+    !Array.isArray(rewardDays) ||
+    !Array.isArray(redemptions)
+  ) {
     return 'not-a-backup'
   }
 
@@ -97,6 +110,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
   const data: AccountData = {
     tasks: readEach<Task>(tasks, readStoredTask),
     lists: readEach<List>(lists, readList),
+    tags: readEach<Tag>(tags, readTag),
     entries: readEach<RewardEntry[]>(rewardDays, readRewardDay).flat(),
     redemptions: readEach<Redemption>(redemptions, readRedemption),
   }

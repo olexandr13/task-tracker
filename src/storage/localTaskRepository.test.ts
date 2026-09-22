@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createTask, type Task } from '../core'
 import { clearGuestTasks, createLocalTaskRepository, loadGuestTasks } from './localTaskRepository'
 import { SCHEMA_VERSION, toStoredTask } from './taskSchema'
+import { expectConsole } from '../test/consoleGuard'
 
 /* Guest tasks on this device. STORE ids refer to wiki/storage.md. */
 
@@ -44,6 +45,21 @@ describe('createLocalTaskRepository', () => {
 
     expect(seen.at(-1)?.map((t) => t.id)).toEqual(['legacy'])
     expect(localStorage.getItem('task-tracker/tasks')).toBeNull()
+  })
+
+  it('keeps older browser tasks where they are when the guest store cannot be written (STORE-20)', () => {
+    expectConsole('Could not save to task-tracker/guest/tasks', 'Ignoring saved data at task-tracker/guest/tasks')
+    const legacy = { ...createTask('Old', null, NOW), id: 'legacy' }
+    const kept = JSON.stringify({ version: SCHEMA_VERSION, tasks: [legacy] })
+    localStorage.setItem('task-tracker/tasks', kept)
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('Quota exceeded', 'QuotaExceededError')
+    })
+
+    loadGuestTasks()
+    setItem.mockRestore()
+
+    expect(localStorage.getItem('task-tracker/tasks')).toBe(kept)
   })
 
   it('does not import a task the guest already has (STORE-37)', async () => {

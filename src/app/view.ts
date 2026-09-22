@@ -1,5 +1,6 @@
 import {
   hasTag,
+  isHabit,
   isInList,
   isInPeriod,
   isInInbox,
@@ -135,6 +136,17 @@ export function showsTask(view: TaskView, task: Task, now: Date, lists: readonly
   if (isOneListView(view)) return isInList(task, viewListId(view))
   if (isTagView(view)) return hasTag(task, viewTag(view))
   return isInPeriod(task, view, now)
+}
+
+/**
+ * Where to go to see a live task: the view already open when it shows the
+ * task — Habits does for a habit — or else Today when it is due today, or else
+ * Tasks, which shows every task there is.
+ */
+export function viewShowingTask(task: Task, current: View, now: Date, lists: readonly List[]): View {
+  const shownHere = isTaskView(current) ? showsTask(current, task, now, lists) : current === 'habits' && isHabit(task)
+  if (shownHere) return current
+  return showsTask('today', task, now, lists) ? 'today' : 'tasks'
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   elapsedMinutesFloor,
   elapsedSeconds,
@@ -72,12 +72,17 @@ export function useTaskTimer(
   const [state, setState] = useState<TaskTimerState>(() => repository.load())
   const [clock, setClock] = useState(() => new Date())
   const [goalNotice, setGoalNotice] = useState<GoalNotice | null>(null)
+  // The timer as the last start or stop left it, so two in one go — stopping one
+  // task's run by starting another's — each see the one before.
   const stateRef = useRef(state)
-  stateRef.current = state
+  // The latest of what the screen passed, for start and stop to call: they are
+  // handed out once, and must not see the tasks as they were when they were.
   const describeRef = useRef(describe)
   const onLogRef = useRef(onLog)
-  describeRef.current = describe
-  onLogRef.current = onLog
+  useLayoutEffect(() => {
+    describeRef.current = describe
+    onLogRef.current = onLog
+  })
 
   useEffect(() => {
     if (state.status !== 'running') return
@@ -87,6 +92,7 @@ export function useTaskTimer(
 
   const persist = useCallback(
     (next: TaskTimerState) => {
+      stateRef.current = next
       setState(next)
       repository.save(next)
     },

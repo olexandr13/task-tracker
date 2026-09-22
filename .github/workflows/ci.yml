@@ -29,6 +29,10 @@ jobs:
       - name: Install
         run: npm ci
 
+      # Includes the layer boundary: src/core may not import React, storage or the app.
+      - name: Lint
+        run: npm run lint
+
       - name: Test
         run: npm test
 

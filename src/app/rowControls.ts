@@ -66,13 +66,30 @@ export const deleteControl =
   'text-neutral-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400'
 
 /**
+ * The sheet's Delete (UI-48): a word, not a bare ×, and red at rest (UI-38). The
+ * sheet is a phone's, where no pointer hovers over it to give the warning first.
+ */
+export const deleteAction =
+  'text-red-600 transition-colors hover:bg-red-50 active:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 dark:active:bg-red-950/40'
+
+/**
+ * One line of a sheet's action rows — the schedule, the list, the time, the tags,
+ * urgent, the reward (UI-59). On a phone the control in it fills the line, so the
+ * whole line is the target, a thumb's height tall; on a wide screen it stays compact.
+ */
+export const sheetAction =
+  'flex min-h-11 w-full min-w-0 items-center max-md:[&>button]:h-11 max-md:[&>div>button]:h-11'
+
+/**
  * The box that ticks a task off, wherever a task can be ticked off — a row, a
- * habit's card — so finishing something looks and feels the same everywhere.
- * On a phone it is larger, so a finger can hit it; on a wide screen it stays
- * small with the rest of the row.
+ * habit's card, the head of a phone's sheet — so finishing something looks and
+ * feels the same everywhere. It is drawn small on every screen, about the size of
+ * the title beside it, so a list stays dense. On a phone it answers a touch well
+ * past its edge — a thumb's 44 pixels square — and shrinks a touch while pressed
+ * (UI-47).
  */
 const completionBox =
-  'grid size-8 shrink-0 place-items-center rounded-lg border-2 text-sm leading-none transition-colors md:size-5 md:rounded-md md:text-xs'
+  'relative grid size-5 shrink-0 place-items-center rounded-md border-2 text-xs leading-none transition before:absolute before:-inset-3 active:scale-90 md:before:hidden'
 
 export const completionBoxOn = `${completionBox} border-green-600 bg-green-600 text-white hover:border-green-700 hover:bg-green-700`
 

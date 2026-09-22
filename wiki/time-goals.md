@@ -17,12 +17,14 @@ ticked off. The tick itself stays the owner's.
 ## Logging
 
 - **TIME-3** Time is logged in **sessions**, from the clock's panel: **+5m**, **+15m**, **+30m** and
-  **+1h** log at a click, and any other length is typed and logged with Enter. A session is a whole
+  **+1h** log at a click — filled, so a phone, where nothing hovers, still shows them as buttons —
+  and any other length is typed into the box under them and logged with Enter or **Log** beside it.
+  A session is a whole
   number of minutes from 1 minute to 24 hours. The panel stays open after logging, so the new total
   is in view. Time can be logged on a task without a goal too; it is then just time spent.
-- **TIME-4** The panel lists the sessions that count (TIME-7), each with when it was logged — its
-  time today, its date and time before that — and its length. The **×** beside one takes it back
-  (UI-38), for a session logged by mistake.
+- **TIME-4** The panel lists the sessions that count (TIME-7) under **Sessions**, each with when it
+  was logged — its time today, its date and time before that — and its length. The **×** beside one
+  takes it back (UI-38), for a session logged by mistake. A long list scrolls inside the panel.
 
 ## Ready to tick off
 
@@ -54,9 +56,14 @@ ticked off. The tick itself stays the owner's.
   stands: `Time for "sport": 20m of 1h`. On a phone the line has no room for the *control*, so the
   sheet a tap opens (UI-48) has it, spelling the time out — `20m of 1h` — or offering **Log time**;
   a resting row still shows the clock as a mark when time is set (UI-50).
+- **TIME-21** The clock's panel opens with **how the time stands**: the time spent, large, against
+  the goal (`20m of 1h`, or `20m spent` without one), beside it what is **left** (`40m left`) or
+  that the goal is reached (TIME-5), and under it a bar toward the goal. A running timer's whole
+  minutes count in it. Opened near the foot of a sheet or the window, the panel scrolls into view
+  whole, so its goal is not left cut off.
 - **TIME-11** A length is typed the ways it is written: a bare number is minutes (`45`), and `25m`,
   `1h`, `1.5h`, `1h30`, `1h 30m` and `1:30` all read as expected. A session that cannot be read is
-  not logged, and its box is marked until it is changed.
+  not logged: its box is marked, and a line under it says what would do, until it is changed.
 - **TIME-12** A woken row spells the time out under the clock, closed up to fit: `20m/1h`, `1h05/1h30`,
   or just `20m` without a goal. Nothing is spelled out while there is neither.
 - **TIME-13** On the **Habits** page a habit with a goal has its clock on the card's line, spelling
@@ -67,8 +74,9 @@ ticked off. The tick itself stays the owner's.
 
 ## Timer
 
-- **TIME-15** The clock's panel has a clear **Start timer** button (and **Stop** while it runs),
-  above logging by hand. Start begins a timer for that task; Stop ends it and logs the whole minutes
+- **TIME-15** The clock's panel has a clear **Start timer** button across its width, above logging
+  by hand. While the timer runs the button gives way to the live clock, with a pulsing dot, and
+  **Stop** beside it. Start begins a timer for that task; Stop ends it and logs the whole minutes
   that passed as one session (TIME-3). Under a minute logs nothing. The panel can stay closed while
   the timer runs.
 - **TIME-16** Only **one timer runs on this device** at a time. Starting on another task stops the
@@ -83,6 +91,11 @@ ticked off. The tick itself stays the owner's.
   that run — an on-screen toast, and a browser notification when permission was given — and **does
   not stop the timer**. Starting on a task whose logged time already meets the goal notices at
   once. A task with no goal never notices this way.
+- **TIME-20** A tap on the chip's title and clock **goes to the task**. The page open stays when it
+  shows the task (Habits does for a habit); otherwise the app goes to Today when the task is due
+  today, or else to Tasks, which shows every task. There the task is scrolled into view and opened
+  as a tap on it would: its sheet on a phone, its woken row on a wide window, and a habit's sheet on
+  Habits. **Stop** beside it only stops the timer.
 
 ---
 
@@ -92,11 +105,14 @@ goal is reached), `src/core/taskTimer.ts` (elapsed time and whether a run has re
 dropped), `src/app/components/TimePicker.tsx` (the clock and its panel), `src/app/components/TaskItem.tsx`
 (the slot, the detail and the box's hint), `src/app/components/HabitList.tsx` (the habit card),
 `src/app/components/RunningTimerChip.tsx`, `src/app/components/GoalNoticeToast.tsx`,
-`src/app/components/ClockIcon.tsx`, `src/app/durationLabels.ts` (wording, and reading typed lengths),
+`src/app/components/ClockIcon.tsx`, `src/app/components/PlayIcon.tsx`,
+`src/app/components/StopIcon.tsx`, `src/app/durationLabels.ts` (wording, and reading typed lengths),
 `src/app/rowControls.ts` (the ready box), `src/app/useTasks.ts`, `src/app/useTaskTimer.ts`,
+`src/app/view.ts` (which page goes to the task), `src/app/TasksScreen.tsx` (going there),
 `src/storage/taskTimerRepository.ts`, `src/storage/localStorageTaskTimerRepository.ts`.
 **Tested in:** `src/core/timeLog.test.ts`, `src/core/taskTimer.test.ts`, `src/app/durationLabels.test.ts`,
 `src/app/useTaskTimer.test.ts`, `src/app/components/TimePicker.test.tsx`,
 `src/app/components/TaskItem.test.tsx`, `src/app/components/HabitList.test.tsx`,
+`src/app/components/RunningTimerChip.test.tsx`, `src/app/view.test.ts`,
 `src/storage/localStorageTaskTimerRepository.test.ts`, `src/storage/localTaskImport.test.ts`
 (tasks saved before time goals).

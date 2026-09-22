@@ -1,50 +1,29 @@
 import { useEffect, useState } from 'react'
 import {
   allTags,
-  completionDays,
   countInboxOpen,
   currentEntries,
   groupByCompletion,
   habitTasks,
   isComplete,
   liveTasks,
-  pickJustOne,
   pinFocusedFirst,
   sameTag,
   setSubtaskDone,
   sortForDisplay,
   summarizeLists,
   summarizeTags,
-  toLocalDay,
   trashedTasks,
   type ListId,
   type RedemptionId,
   type RewardKey,
   type SubtaskId,
+  type Task,
   type TaskId,
 } from '../core'
+import { createAccountStorage } from '../storage/accountStorage'
 import type { Account } from '../storage/authService'
-import { firestore } from '../storage/firebaseApp'
-import { createFirestoreBackupRepository } from '../storage/firestoreBackupRepository'
-import { createFirestoreListRepository } from '../storage/firestoreListRepository'
-import { createFirestoreRewardRepository } from '../storage/firestoreRewardRepository'
-import { createFirestoreSyncMonitor } from '../storage/firestoreSyncMonitor'
-import { createFirestoreTagRepository } from '../storage/firestoreTagRepository'
-import { createFirestoreTaskRepository } from '../storage/firestoreTaskRepository'
-import { importGuestAccount } from '../storage/guestImport'
-import { createLocalBackupRepository } from '../storage/localBackupRepository'
-import { createLocalListRepository } from '../storage/localListRepository'
-import { createLocalRewardRepository } from '../storage/localRewardRepository'
-import { createLocalSyncMonitor } from '../storage/localSyncMonitor'
-import { createLocalTagRepository } from '../storage/localTagRepository'
-import { createLocalTaskRepository } from '../storage/localTaskRepository'
-import { localStorageProcrastinationRepository } from '../storage/localStorageProcrastinationRepository'
-import { localStorageTaskTimerRepository } from '../storage/localStorageTaskTimerRepository'
-import { localStorageHabitViewOptionsRepository } from '../storage/localStorageHabitViewOptionsRepository'
-import { localStorageQuoteRepository } from '../storage/localStorageQuoteRepository'
-import { localStorageSideNavRepository } from '../storage/localStorageSideNavRepository'
-import { localStorageViewOptionsRepository } from '../storage/localStorageViewOptionsRepository'
-import { importLocalTasks } from '../storage/localTaskImport'
+import { deviceStorage } from '../storage/deviceStorage'
 import { quotableQuoteSource } from '../storage/quotableQuoteSource'
 import { AddTaskForm } from './components/AddTaskForm'
 import { AddTaskSheet } from './components/AddTaskSheet'
@@ -52,10 +31,7 @@ import { BottomNav } from './components/BottomNav'
 import { FolderIcon } from './components/FolderIcon'
 import { HabitList } from './components/HabitList'
 import { HabitViewOptionsMenu } from './components/HabitViewOptionsMenu'
-import {
-  ProcrastinationPanel,
-  type ProcrastinationPhase,
-} from './components/ProcrastinationMode'
+import { ProcrastinationPanel } from './components/ProcrastinationMode'
 import { ListsPage } from './components/ListsPage'
 import { MorePage } from './components/MorePage'
 import { ProgressPanel } from './components/ProgressPanel'
@@ -63,6 +39,7 @@ import { QuoteCard } from './components/QuoteCard'
 import { RewardsPage } from './components/RewardsPage'
 import { SettingsList } from './components/SettingsList'
 import { SideNav } from './components/SideNav'
+import { StorageProblemNotice } from './components/StorageProblemNotice'
 import { SyncBadge } from './components/SyncBadge'
 import { RunningTimerChip } from './components/RunningTimerChip'
 import { GoalNoticeToast } from './components/GoalNoticeToast'
@@ -73,21 +50,23 @@ import { TrashIcon } from './components/TrashIcon'
 import { TrashList } from './components/TrashList'
 import { UndoToast } from './components/UndoToast'
 import { ViewOptionsMenu } from './components/ViewOptionsMenu'
+import { TASKS_NOT_LOADED } from './storageProblem'
+import type { TaskActions } from './taskActions'
 import { useLetterShortcut } from './useLetterShortcut'
+import { ABOVE_PHONE_BAR } from './usePhoneLayout'
 import { useBackup } from './useBackup'
+import { useDeviceSetting } from './useDeviceSetting'
 import { useLists } from './useLists'
 import { useProcrastination } from './useProcrastination'
 import { useQuote } from './useQuote'
 import { useRewards } from './useRewards'
-import { useSideNav } from './useSideNav'
+import { useStorageProblem } from './useStorageProblem'
 import { useSyncNotice } from './useSyncNotice'
 import { useTags } from './useTags'
 import { useTasks } from './useTasks'
 import { useTaskTimer } from './useTaskTimer'
 import { useUndoToast } from './useUndoToast'
 import { useView } from './useView'
-import { useHabitViewOptions } from './useHabitViewOptions'
-import { useViewOptions } from './useViewOptions'
 import {
   allDoneMessage,
   emptyMessage,
@@ -101,11 +80,12 @@ import {
   tagView,
   VIEW_LABELS,
   viewLabel,
+  viewShowingTask,
 } from './view'
 
 /** A way on from the foot of Tasks, where a phone's bar has no tab for it. */
 const footLink =
-  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100'
+  'flex min-h-11 items-center gap-2 rounded-lg px-3 text-base text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100 dark:active:bg-neutral-800/60'
 
 /**
  * Three areas once there is room for them: navigation down the left, the work —
@@ -132,44 +112,24 @@ const footLink =
  * a tab in the phone's bar alike.
  *
  * The tasks, the lists they are filed under and the points they earn are the
- * account's — or, as guest, this browser's alone. The screen is remade for each
- * account (App), so one repository of each serves it for as long as it is up.
+ * account's — or, as guest, this browser's alone (`createAccountStorage`). The
+ * screen is remade for each account (App), so one set of repositories serves it
+ * for as long as it is up.
  */
 export function TasksScreen({ account, onSignOut }: { account: Account; onSignOut: () => void }) {
-  const guest = account.provider === 'guest'
-  const [repository] = useState(() =>
-    guest ? createLocalTaskRepository() : createFirestoreTaskRepository(firestore, account.id),
-  )
-  const [rewardRepository] = useState(() =>
-    guest ? createLocalRewardRepository() : createFirestoreRewardRepository(firestore, account.id),
-  )
-  const [listRepository] = useState(() =>
-    guest ? createLocalListRepository() : createFirestoreListRepository(firestore, account.id),
-  )
-  const [tagRepository] = useState(() =>
-    guest ? createLocalTagRepository() : createFirestoreTagRepository(firestore, account.id),
-  )
-  const [syncMonitor] = useState(() =>
-    guest ? createLocalSyncMonitor() : createFirestoreSyncMonitor(firestore, account.id),
-  )
-  const [backupRepository] = useState(() =>
-    guest ? createLocalBackupRepository() : createFirestoreBackupRepository(firestore, account.id),
-  )
+  const [storage] = useState(() => createAccountStorage(account))
 
   // Tasks and other records kept as guest — or from before they belonged to an
   // account — join a signed-in account the first time it is open here online.
   useEffect(() => {
-    if (guest) return
-    importLocalTasks(repository).catch((error: unknown) => {
-      console.warn('Could not move the tasks kept in this browser into the account; will try again next time.', error)
-    })
-    importGuestAccount(repository, listRepository, tagRepository, rewardRepository).catch((error: unknown) => {
-      console.warn('Could not move the guest data into the account; will try again next time.', error)
-    })
-  }, [guest, repository, listRepository, tagRepository, rewardRepository])
+    void storage.moveBrowserDataIn()
+  }, [storage])
+  // A load or a save the service refused, said on screen until dismissed (STORE-13).
+  const storageProblem = useStorageProblem()
   const {
     tasks,
     isLoading,
+    loadFailed: tasksNotLoaded,
     addTask,
     move,
     complete,
@@ -199,11 +159,11 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     restore,
     purge,
     emptyTrash,
-  } = useTasks(repository, rewardRepository)
-  const rewards = useRewards(rewardRepository)
-  const lists = useLists(listRepository)
-  const savedTags = useTags(tagRepository, isLoading ? null : tasks)
-  const backup = useBackup(backupRepository)
+  } = useTasks(storage.tasks, storage.rewards, storageProblem.report)
+  const rewards = useRewards(storage.rewards, storageProblem.report)
+  const lists = useLists(storage.lists, storageProblem.report)
+  const savedTags = useTags(storage.tags, isLoading ? null : tasks, storageProblem.report)
+  const backup = useBackup(storage.backup)
   const [view, setView] = useView()
   // The detailed add sheet (UI-54): open from the Plus, from `N` on a task page
   // (UI-55), or from `H` for a habit (UI-56) — which opens Habits first if needed.
@@ -219,27 +179,26 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     if (view !== 'rewards') setView('rewards')
   })
   // How the task views are shown: one set for all of them, kept on this device.
-  const [viewOptions, setViewOptions] = useViewOptions(localStorageViewOptionsRepository)
+  const [viewOptions, setViewOptions] = useDeviceSetting(deviceStorage.viewOptions)
   // How the habits view is shown, kept on this device too, apart from the task views'.
-  const [habitViewOptions, setHabitViewOptions] = useHabitViewOptions(localStorageHabitViewOptionsRepository)
+  const [habitViewOptions, setHabitViewOptions] = useDeviceSetting(deviceStorage.habitViewOptions)
   // Which of the sidebar's groups are folded away, kept on this device too.
-  const [sideNav, setSideNav] = useSideNav(localStorageSideNavRepository)
+  const [sideNav, setSideNav] = useDeviceSetting(deviceStorage.sideNav)
   const undo = useUndoToast()
-  const syncNotice = useSyncNotice(syncMonitor)
+  const syncNotice = useSyncNotice(storage.sync)
 
   // One `now` for the whole render, so the order of the list, what each row
   // draws, which period each bar counts and how long the trash has left all
   // agree with one another.
   const now = new Date()
-  // Procrastination mode: kept on this device for today, restored on refresh, off tomorrow.
-  const [procrastination, setProcrastination] = useProcrastination(
-    localStorageProcrastinationRepository,
-    now,
-  )
   const live = liveTasks(tasks)
   const trashed = trashedTasks(tasks, now)
+  const todayTasks = live.filter((task) => showsTask('today', task, now, lists.lists))
+  // Procrastination mode: kept on this device for today, restored on refresh, off
+  // tomorrow, and settled against Today's tasks once they have loaded (JUST-7, JUST-10).
+  const procrastination = useProcrastination(deviceStorage.procrastination, isLoading ? null : todayTasks, now, rewards)
   const taskTimer = useTaskTimer(
-    localStorageTaskTimerRepository,
+    deviceStorage.taskTimer,
     (taskId) => {
       const task = live.find((candidate) => candidate.id === taskId)
       if (task === undefined) return null
@@ -264,6 +223,17 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
       stopTaskTimer()
     }
   }, [isLoading, runningTimerTaskId, runningTimerTask, stopTaskTimer])
+  // The task being gone to from the timer's chip (TIME-20), until its row or card has
+  // brought itself into view and opened — then let go of, so no row opening later,
+  // on another view, takes it for a new request.
+  const [revealId, setRevealId] = useState<TaskId | null>(null)
+  const revealed = () => { setRevealId(null) }
+
+  /** Going to a task: the view open if it shows the task, or one that does. */
+  function revealTask(task: Task) {
+    setView(viewShowingTask(task, view, now, lists.lists))
+    setRevealId(task.id)
+  }
   // Every tag there is: the kept ones, whether or not a task carries them, and
   // any a live task carries that is not kept yet.
   const tags = allTags(savedTags.tags, live)
@@ -279,113 +249,16 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     : sortForDisplay(shown, now)
 
   // Focus dims every other row; a win keeps the finished task highlighted until Rest / next.
-  const procrastinationPhase: ProcrastinationPhase = procrastination.phase
-  const procrastinationTaskId =
-    procrastination.phase === 'focus' || procrastination.phase === 'won'
-      ? procrastination.taskId
-      : null
-  const focusId =
-    view === 'today' &&
-    procrastination.phase === 'focus' &&
-    procrastinationTaskId !== null &&
-    ordered.some((task) => task.id === procrastinationTaskId && !isComplete(task, now))
-      ? procrastinationTaskId
-      : view === 'today' && procrastination.phase === 'won' && procrastinationTaskId !== null
-        ? procrastinationTaskId
-        : null
+  const focusId = view === 'today' ? procrastination.taskId : null
   // A finished focused task would sink with done work; keep it above the dimmed rows.
   const listed = pinFocusedFirst(ordered, focusId)
-  // Wait until tasks are loaded: on refresh the list is empty first, and clearing
-  // then would wipe the saved mode (JUST-10). After load, a missing focus becomes
-  // idle (mode stays on); a completed focus becomes a win.
-  if (
-    !isLoading &&
-    view === 'today' &&
-    procrastination.phase === 'focus' &&
-    procrastinationTaskId !== null
-  ) {
-    const focused = ordered.find((task) => task.id === procrastinationTaskId)
-    if (focused === undefined) {
-      setProcrastination({ phase: 'idle' })
-    } else if (isComplete(focused, now)) {
-      setProcrastination({ phase: 'won', taskId: focused.id })
-    }
-  }
-  // Same for a win whose task has gone: stay in mode, rest.
-  if (
-    !isLoading &&
-    view === 'today' &&
-    procrastination.phase === 'won' &&
-    procrastinationTaskId !== null &&
-    !ordered.some((task) => task.id === procrastinationTaskId)
-  ) {
-    setProcrastination({ phase: 'idle' })
-  }
-  const todayTasks = live.filter((task) => showsTask('today', task, now, lists.lists))
-  const openTodayCount = todayTasks.filter((task) => !isComplete(task, now)).length
-  const canPickOpen = openTodayCount > 0
-  const hasOtherProcrastinationTask = openTodayCount > 1
-  const procrastinationAvailable = canPickOpen || procrastination.phase !== 'off'
-  const showProcrastinationShortcut =
-    view === 'today' && procrastinationAvailable
-  const dimChrome = procrastinationPhase !== 'off'
-  const wonTask =
-    procrastination.phase === 'won'
-      ? ordered.find((task) => task.id === procrastination.taskId) ?? null
-      : null
-  const winDay =
-    wonTask !== null
-      ? (completionDays(wonTask).at(-1) ?? toLocalDay(now))
-      : null
-  const pointsEarned =
-    wonTask !== null && winDay !== null
-      ? (rewards.entries.find((entry) => entry.taskId === wonTask.id && entry.day === winDay)?.points ?? 0)
-      : 0
-
-  function startProcrastination() {
-    const picked = pickJustOne(todayTasks, now)
-    if (picked !== null) {
-      setProcrastination({ phase: 'focus', taskId: picked.id })
-    }
-  }
-
-  function pickNextProcrastination(excludeId: TaskId | null = null) {
-    // Prefer the live Today set so a just-finished task is already complete and
-    // the next open one is focused in one step (no idle + second click).
-    const candidates = live.filter((task) => showsTask('today', task, now, lists.lists))
-    const picked = pickJustOne(candidates, now, excludeId)
-    if (picked !== null) {
-      setProcrastination({ phase: 'focus', taskId: picked.id })
-      return
-    }
-    setProcrastination({ phase: 'idle' })
-  }
-
-  function endProcrastination() {
-    setProcrastination({ phase: 'off' })
-  }
-
-  function restProcrastination() {
-    setProcrastination({ phase: 'idle' })
-  }
+  const dimChrome = procrastination.phase !== 'off'
 
   // Same as More's Procrastination control (JUST-1, JUST-8): start when off, end when on.
-  useLetterShortcut(
-    'p',
-    showProcrastinationShortcut && !adding,
-    () => {
-      if (procrastination.phase === 'off') startProcrastination()
-      else endProcrastination()
-    },
-  )
-
-  function grantWinPoints(total: number) {
-    if (procrastination.phase !== 'won' || winDay === null) return
-    void rewardRepository.save({
-      earned: [{ taskId: procrastination.taskId, day: winDay, points: total }],
-      revoked: [],
-    })
-  }
+  useLetterShortcut('p', view === 'today' && procrastination.available && !adding, () => {
+    if (procrastination.phase === 'off') procrastination.start()
+    else procrastination.end()
+  })
 
   function handleComplete(id: TaskId) {
     const task = tasks.find((candidate) => candidate.id === id)
@@ -393,9 +266,6 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     complete(id)
     if (task !== undefined && !wasDone) {
       undo.show({ kind: 'completion', taskId: id })
-    }
-    if (procrastination.phase === 'focus' && procrastination.taskId === id) {
-      setProcrastination({ phase: 'won', taskId: id })
     }
   }
 
@@ -414,7 +284,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
 
   // The same `now` once more: which quote is today's is derived from the day it
   // falls in, so the quote and the bars can't disagree about which day it is.
-  const quote = useQuote(quotableQuoteSource, localStorageQuoteRepository, now)
+  const quote = useQuote(quotableQuoteSource, deviceStorage.quote, now)
 
   function handleRemove(id: TaskId) {
     const deleted = remove(id)
@@ -444,7 +314,7 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
         restore(undo.pending.task.id)
         break
       case 'earning':
-        rewards.restoreEarning(undo.pending.entry)
+        rewards.saveEarning(undo.pending.entry)
         break
       case 'redemption':
         rewards.restoreRedemption(undo.pending.redemption)
@@ -484,6 +354,35 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     return !tags.some((tag) => sameTag(tag, name)) && savedTags.add(name) !== null
   }
 
+  /**
+   * What a row, a habit card or a task's sheet can do to its task: the rules
+   * from useTasks, with completing and deleting offering their undo, and tags
+   * spelled the way they already are.
+   */
+  const taskActions: TaskActions = {
+    complete: handleComplete,
+    uncomplete,
+    rename,
+    changeDescription,
+    changeDueDate,
+    skip,
+    changeRepeat,
+    changeReward,
+    changeUrgent,
+    changeTimeGoal,
+    logTime: logTaskTime,
+    removeTimeEntry: removeTaskTime,
+    changeList,
+    addTag: (id, name) => { tag(id, name, tags) },
+    removeTag: untag,
+    remove: handleRemove,
+    duplicate,
+    addSubtask: addChecklistItem,
+    setSubtaskDone: handleSetChecklistItemDone,
+    renameSubtask: renameChecklistItem,
+    removeSubtask: removeChecklistItem,
+  }
+
   /** Makes a list and opens it, so the next thing typed goes into it. */
   function handleAddList(name: string): boolean {
     const made = lists.add(name)
@@ -493,9 +392,18 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
     return true
   }
 
+  // The pages with the add box also have the Plus floating in the corner (UI-54).
+  const hasPlus = isTaskView(view) || view === 'habits'
+
   return (
-    // The bottom padding on a phone keeps the end of the page clear of the bar.
-    <main className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col px-4 pt-6 pb-24 md:pb-8">
+    // On a phone the page keeps clear of the notch and the rounded corners (UI-61), and its
+    // end scrolls clear of the bar — and of the Plus, where there is one — so nothing is left
+    // under them (UI-4).
+    <main
+      className={`mx-auto flex min-h-dvh w-full max-w-6xl flex-col pt-[max(1.5rem,calc(env(safe-area-inset-top)+0.75rem))] pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))] md:px-4 md:pt-6 md:pb-8 ${
+        hasPlus ? 'pb-[calc(10rem+env(safe-area-inset-bottom))]' : 'pb-[calc(6rem+env(safe-area-inset-bottom))]'
+      }`}
+    >
       {/* Which view this is, for a screen reader only: on screen the navigation marks it. */}
       <h1 className="sr-only">{viewLabel(view, lists.lists)}</h1>
 
@@ -527,13 +435,13 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                 <MorePage
                   onOpen={setView}
                   procrastination={{
-                    phase: procrastinationPhase,
-                    available: procrastinationAvailable,
+                    phase: procrastination.phase,
+                    available: procrastination.available,
                     onStart: () => {
-                      startProcrastination()
+                      procrastination.start()
                       setView('today')
                     },
-                    onEnd: endProcrastination,
+                    onEnd: procrastination.end,
                   }}
                 />
               </section>
@@ -576,23 +484,19 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                   <ViewOptionsMenu options={viewOptions} onChange={setViewOptions} />
                 </div>
 
-                {view === 'today' && procrastinationPhase !== 'off' && (
+                {view === 'today' && procrastination.phase !== 'off' && (
                   <ProcrastinationPanel
-                    phase={procrastinationPhase}
-                    wonTask={wonTask}
-                    canPick={canPickOpen}
-                    hasOtherTask={hasOtherProcrastinationTask}
-                    pointsEarned={pointsEarned}
-                    onOtherTask={() => { pickNextProcrastination(focusId) }}
+                    phase={procrastination.phase}
+                    wonTask={procrastination.wonTask}
+                    canPick={procrastination.canPick}
+                    hasOtherTask={procrastination.hasOtherTask}
+                    pointsEarned={procrastination.pointsEarned}
+                    onOtherTask={procrastination.pickNext}
                     onCreateTask={() => { setAdding(true) }}
-                    onEnd={endProcrastination}
-                    onRest={restProcrastination}
-                    onGetOneMore={() => {
-                      pickNextProcrastination(
-                        procrastination.phase === 'won' ? procrastination.taskId : null,
-                      )
-                    }}
-                    onGrantPoints={grantWinPoints}
+                    onEnd={procrastination.end}
+                    onRest={procrastination.rest}
+                    onGetOneMore={procrastination.pickNext}
+                    onGrantPoints={procrastination.grantPoints}
                   />
                 )}
 
@@ -604,32 +508,14 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     lists={lists.lists}
                     showDetails={viewOptions.showDetails}
                     focusId={focusId}
-                    dimAll={procrastinationPhase === 'idle'}
+                    dimAll={procrastination.phase === 'idle'}
                     doneSpans={spans}
-                    emptyMessage={emptyMessage(view, lists.lists)}
+                    emptyMessage={tasksNotLoaded ? TASKS_NOT_LOADED : emptyMessage(view, lists.lists)}
                     allDoneMessage={allDoneMessage(view, lists.lists)}
-                    onComplete={handleComplete}
-                    onUncomplete={uncomplete}
-                    onRename={rename}
-                    onChangeDescription={changeDescription}
-                    onChangeDueDate={changeDueDate}
-                    onSkipOccurrence={skip}
-                    onChangeRepeat={changeRepeat}
-                    onChangeReward={changeReward}
-                    onChangeUrgent={changeUrgent}
-                    onChangeTimeGoal={changeTimeGoal}
-                    onLogTime={logTaskTime}
-                    onRemoveTimeEntry={removeTaskTime}
-                    onChangeList={changeList}
-                    onAddTag={(id, name) => { tag(id, name, tags) }}
-                    onRemoveTag={untag}
-                    onRemove={handleRemove}
-                    onDuplicate={duplicate}
-                    onAddSubtask={addChecklistItem}
-                    onSetSubtaskDone={handleSetChecklistItemDone}
-                    onRenameSubtask={renameChecklistItem}
-                    onRemoveSubtask={removeChecklistItem}
+                    actions={taskActions}
                     timer={taskTimer}
+                    revealId={revealId}
+                    onRevealed={revealed}
                   />
                 </section>
 
@@ -705,29 +591,11 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                     showDetails={habitViewOptions.showDetails}
                     knownTags={tags}
                     lists={lists.lists}
-                    onComplete={handleComplete}
-                    onUncomplete={uncomplete}
+                    actions={taskActions}
                     onSetDay={setHabitDay}
-                    onRename={rename}
-                    onChangeDescription={changeDescription}
-                    onChangeDueDate={changeDueDate}
-                    onSkipOccurrence={skip}
-                    onChangeRepeat={changeRepeat}
-                    onChangeReward={changeReward}
-                    onChangeUrgent={changeUrgent}
-                    onChangeTimeGoal={changeTimeGoal}
-                    onLogTime={logTaskTime}
-                    onRemoveTimeEntry={removeTaskTime}
-                    onChangeList={changeList}
-                    onAddTag={(id, name) => { tag(id, name, tags) }}
-                    onRemoveTag={untag}
-                    onRemove={handleRemove}
-                    onDuplicate={duplicate}
-                    onAddSubtask={addChecklistItem}
-                    onSetSubtaskDone={handleSetChecklistItemDone}
-                    onRenameSubtask={renameChecklistItem}
-                    onRemoveSubtask={removeChecklistItem}
                     timer={taskTimer}
+                    revealId={revealId}
+                    onRevealed={revealed}
                   />
                 </section>
               </>
@@ -777,14 +645,23 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
         />
       )}
 
-      {/* What the screen has to say, stacked: above a phone's navigation bar, at the foot of the window where there is none. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-20 z-30 flex flex-col items-center gap-2 px-4 md:bottom-4">
+      {/* What the screen has to say, stacked: above a phone's navigation bar — beside the Plus
+          rather than under it — and at the foot of the window where there is no bar. */}
+      <div
+        className={`pointer-events-none fixed inset-x-0 ${ABOVE_PHONE_BAR} z-30 flex flex-col items-center gap-2 px-4 md:bottom-4 ${
+          hasPlus ? 'pr-20 md:pr-4' : ''
+        }`}
+      >
+        {storageProblem.problem !== null && (
+          <StorageProblemNotice problem={storageProblem.problem} onDismiss={storageProblem.dismiss} />
+        )}
         {syncNotice !== null && <SyncBadge notice={syncNotice} />}
         {runningTimerTask !== null && taskTimer.state.status === 'running' && (
           <RunningTimerChip
             title={runningTimerTask.title}
             startedAt={taskTimer.state.startedAt}
             clock={taskTimer.clock}
+            onOpen={() => { revealTask(runningTimerTask) }}
             onStop={taskTimer.stop}
           />
         )}

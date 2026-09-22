@@ -1,6 +1,8 @@
 import { useState, type KeyboardEvent } from 'react'
 import type { LocalDay, Repeat } from '../../core'
 import { emptyDraft, toDraft, toRepeat } from '../repeatDraft'
+import { ABOVE_PHONE_BAR } from '../usePhoneLayout'
+import { PlusIcon } from './PlusIcon'
 import { SchedulePicker } from './SchedulePicker'
 
 interface AddTaskFormProps {
@@ -85,9 +87,9 @@ export function AddTaskForm({
         type="button"
         aria-label={label}
         onClick={onOpenSheet}
-        className="fixed right-4 bottom-[max(5.5rem,calc(4.25rem+env(safe-area-inset-bottom)))] z-30 grid size-14 place-items-center rounded-full bg-blue-600 text-3xl leading-none text-white shadow-lg hover:bg-blue-700 md:right-6 md:bottom-6 dark:bg-blue-500 dark:hover:bg-blue-400"
+        className={`fixed right-[max(1rem,env(safe-area-inset-right))] ${ABOVE_PHONE_BAR} z-30 grid size-14 place-items-center rounded-full bg-blue-600 text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 active:scale-95 md:right-6 md:bottom-6 dark:bg-blue-500 dark:shadow-black/40 dark:hover:bg-blue-400`}
       >
-        <span aria-hidden="true">+</span>
+        <PlusIcon className="size-7" />
       </button>
     </>
   )

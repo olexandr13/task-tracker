@@ -13,10 +13,17 @@ interface StoredTasks {
 /**
  * The tasks this browser still holds, in today's shape, or null when there is
  * nothing to move: none were ever kept here, or what is kept can't be trusted —
- * which is left where it is rather than thrown away.
+ * which is left where it is rather than thrown away (STORE-20). Read by both
+ * the guest's tasks and the move into an account; neither forgets them until
+ * they are safely somewhere else (`forgetLegacyTasks`).
  */
-function readLocalTasks(): Task[] | null {
-  const raw = localStorage.getItem(STORAGE_KEY)
+export function readLegacyTasks(): Task[] | null {
+  let raw: string | null
+  try {
+    raw = localStorage.getItem(STORAGE_KEY)
+  } catch {
+    return null
+  }
   if (raw === null) {
     return null
   }
@@ -34,13 +41,22 @@ function readLocalTasks(): Task[] | null {
   }
 }
 
+/** Lets go of the tasks kept from before accounts, once they are held somewhere else. */
+export function forgetLegacyTasks(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    // Nothing to forget.
+  }
+}
+
 /**
  * Moves the tasks this browser kept, from before tasks belonged to the account,
  * into the account, then forgets them here. Only once the account has them: a
  * move that fails, offline say, leaves them in the browser for the next attempt.
  */
 export async function importLocalTasks(repository: TaskRepository): Promise<void> {
-  const tasks = readLocalTasks()
+  const tasks = readLegacyTasks()
   if (tasks === null) {
     return
   }
@@ -51,5 +67,5 @@ export async function importLocalTasks(repository: TaskRepository): Promise<void
     if (typeof navigator !== 'undefined' && navigator.onLine === false) return
     await repository.importTasks(tasks)
   }
-  localStorage.removeItem(STORAGE_KEY)
+  forgetLegacyTasks()
 }

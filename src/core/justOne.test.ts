@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { pickJustOne, pinFocusedFirst, recentDoneCount } from './justOne'
+import {
+  pickJustOne,
+  pinFocusedFirst,
+  PROCRASTINATION_OFF,
+  recentDoneCount,
+  settleProcrastination,
+  type ProcrastinationState,
+} from './justOne'
 import { appendTask } from './order'
 import { setReward } from './reward'
 import type { Repeat } from './repeat'
-import { addSubtask, createTask, type Task } from './task'
+import { addSubtask, completeTask, createTask, type Task } from './task'
 import { setTimeGoal } from './timeLog'
 
 /*
@@ -100,5 +107,40 @@ describe('pinFocusedFirst (JUST-5)', () => {
   it('leaves the list alone when nothing is focused', () => {
     const tasks = withOrder([createTask('a', null, WED_16), createTask('b', null, WED_16)])
     expect(pinFocusedFirst(tasks, null).map((task) => task.title)).toEqual(['a', 'b'])
+  })
+})
+
+describe('settleProcrastination', () => {
+  const TODAY = '2026-09-16'
+  const task = createTask('a', null, WED_16)
+  const focus: ProcrastinationState = { phase: 'focus', taskId: task.id, day: TODAY }
+
+  it('turns a mode from an earlier day off (JUST-10)', () => {
+    expect(settleProcrastination({ phase: 'idle', day: '2026-09-15' }, [task], WED_16)).toEqual(PROCRASTINATION_OFF)
+  })
+
+  it('checks only the day while the tasks are still loading (JUST-10)', () => {
+    expect(settleProcrastination(focus, null, WED_16)).toBe(focus)
+  })
+
+  it('makes a focused task that is done a win (JUST-7)', () => {
+    expect(settleProcrastination(focus, [completeTask(task, WED_16)], WED_16)).toEqual({
+      phase: 'won',
+      taskId: task.id,
+      day: TODAY,
+    })
+  })
+
+  it('rests when the focused or won task is no longer on Today (JUST-7)', () => {
+    const won: ProcrastinationState = { ...focus, phase: 'won' }
+    expect(settleProcrastination(focus, [], WED_16)).toEqual({ phase: 'idle', day: TODAY })
+    expect(settleProcrastination(won, [], WED_16)).toEqual({ phase: 'idle', day: TODAY })
+  })
+
+  it('hands back the very same state when nothing changes', () => {
+    const idle: ProcrastinationState = { phase: 'idle', day: TODAY }
+    expect(settleProcrastination(focus, [task], WED_16)).toBe(focus)
+    expect(settleProcrastination(idle, [], WED_16)).toBe(idle)
+    expect(settleProcrastination(PROCRASTINATION_OFF, [], WED_16)).toBe(PROCRASTINATION_OFF)
   })
 })

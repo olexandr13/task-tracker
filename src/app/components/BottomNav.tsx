@@ -28,10 +28,11 @@ const MENU_INSET = 8
 const MENU_GAP = 4
 
 const tab =
-  'flex w-full touch-manipulation flex-col items-center gap-1 pt-2 pb-2.5 text-[11px] leading-none transition-colors select-none [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none]'
+  'group flex w-full touch-manipulation flex-col items-center gap-1 pt-2 pb-2.5 text-[11px] leading-none transition-colors select-none [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none]'
 const tabOn = 'font-medium text-neutral-900 dark:text-neutral-100'
 const tabOff = 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'
-const pill = 'flex h-7 w-12 items-center justify-center rounded-full transition-colors'
+/** Shrinks a touch while pressed, so a tap is felt as well as seen (UI-61). */
+const pill = 'flex h-7 w-12 items-center justify-center rounded-full transition group-active:scale-90'
 const pillOn = 'bg-neutral-200/80 dark:bg-neutral-800'
 const pillOff = 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
 
@@ -157,7 +158,8 @@ export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavPr
     <>
       <nav
         aria-label="Views"
-        className={`fixed inset-x-0 bottom-0 z-20 border-t border-neutral-200 bg-white/95 backdrop-blur md:hidden dark:border-neutral-800 dark:bg-neutral-900/95${dimmed ? ' opacity-25' : ''}`}
+        // Clear of a phone's home indicator and, turned sideways, its rounded corners (UI-61).
+        className={`fixed inset-x-0 bottom-0 z-20 border-t border-neutral-200 bg-white/95 pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] backdrop-blur md:hidden dark:border-neutral-800 dark:bg-neutral-900/95${dimmed ? ' opacity-25' : ''}`}
       >
         <ul className="mx-auto grid max-w-md grid-cols-5">
           <li>

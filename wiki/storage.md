@@ -162,24 +162,38 @@ changes shape.
 - **STORE-10** Expired tasks are dropped from storage whenever the list arrives — on load, or
   changed from elsewhere — and whenever it is written, so nothing carries them around longer than
   the trash keeps them.
+- **STORE-39** Changes made in one go all stick. Two changes to the same task at once — its title and
+  its description kept together as its sheet closes, say — are saved and shown one on top of the
+  other; the second never puts back what the first changed. The same holds for the lists and the
+  kept tags.
 
 ## The seam
 
 - **STORE-11** Every call site talks to a repository **interface**, never to Firestore directly.
   Moving the tasks to another service is a new file behind the interface rather than a change
-  everywhere else.
+  everywhere else. Which service keeps an account's data — Firestore, or this browser as guest —
+  is chosen in one place for the whole account, and what is kept on the device alone in another.
 - **STORE-12** Where a fresh quote comes from is behind an interface for the same reason — the
   service this one uses is already a mirror of one that went off the air.
 
-## Known gap
+## When the service refuses
 
-- **STORE-13** A failed save or load is written to the console and the app carries on. Nothing
-  tells the owner on screen — so a load the database refuses looks like an empty list, and a save
-  it refuses looks fine until the next refresh. Not yet addressed.
+- **STORE-13** A load or a save the database refuses — or, as guest, the browser, when it is out of
+  room — is said on screen as well as written to the console: **Couldn’t load everything from your
+  account. Reload to try again.**, or **Couldn’t save a change. Reload to see what was kept.** The
+  notice sits at the foot of the screen with the sync notice (OFF-8), and stays until it is
+  dismissed; a failed load outranks a failed save. A task list that could not be loaded says
+  **Couldn’t load your tasks. Reload to try again.** rather than looking empty. Being offline is
+  not a refusal: changes wait for a connection (STORE-18), and the sync notice says so (OFF-4). A
+  move of browser data into the account that fails is not said either: it is tried again next time
+  (STORE-20).
 
 ---
 
-**Where it lives:** `src/storage/taskRepository.ts` (the interface, and what a change comes to),
+**Where it lives:** `src/storage/accountStorage.ts` (which service keeps an account's data, and
+moving what the browser kept into it), `deviceStorage.ts` and `localStorageSetting.ts` (what is kept
+on the device alone), `src/storage/taskRepository.ts` (the interface), `recordChanges.ts` (what a
+change comes to, record by record), `firestoreRecords.ts` (one document per record),
 `firestoreTaskRepository.ts` (the account's tasks), `localTaskRepository.ts` (the guest's),
 `firebaseApp.ts` (the database and its offline
 copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgrades), `localTaskImport.ts` (tasks kept in the browser before accounts),
@@ -194,9 +208,13 @@ copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgr
 `src/storage/habitViewOptionsRepository.ts`, `habitViewOptionsSchema.ts` and
 `localStorageHabitViewOptionsRepository.ts` (Habits'), `src/storage/sideNavRepository.ts`,
 `sideNavSchema.ts` and `localStorageSideNavRepository.ts` (the sidebar's layout), `src/app/useTasks.ts`, `src/app/useLists.ts`,
-`src/app/useTags.ts` (keeping the tags tasks carry),
-`src/app/TasksScreen.tsx` (the repository and the move). Who may read what: `firestore.rules`.
+`src/app/useTags.ts` (keeping the tags tasks carry; all three build each change on the one before,
+STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/StorageProblemNotice.tsx`
+(saying what was refused). Who may read what: `firestore.rules`.
 **Tested in:** `src/storage/taskRepository.test.ts` (what a change writes),
+`src/app/useTasks.test.ts` and `src/app/useLists.test.ts` (changes made in one go, and refusals),
+`src/app/useRewards.test.ts`, `src/app/storageProblem.test.ts` and
+`src/app/components/StorageProblemNotice.test.tsx` (what is said when the service refuses),
 `src/storage/localTaskImport.test.ts` (the move, and upgrading older data),
 `src/storage/localTaskRepository.test.ts` (the guest's tasks),
 `src/storage/rewardSchema.test.ts`

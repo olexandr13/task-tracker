@@ -1,12 +1,13 @@
 /**
- * Picking one open task when the owner wants a single next step.
+ * Procrastination mode: picking one open task when the owner wants a single
+ * next step, and how the mode stands as that task is done or moves on.
  *
  * Pure ranking over tasks already in play (Today's list, typically): checklist
  * size, time goal, reward, habit, and recent completion momentum. Urgent is not
  * a signal — the mark is the owner's, not a measure of how hard the task feels.
  */
 
-import { offsetDay, toLocalDay } from './day'
+import { offsetDay, toLocalDay, type LocalDay } from './day'
 import { isHabit } from './habit'
 import { compareOrder } from './order'
 import { countSubtasks, isComplete, type Task, type TaskId } from './task'
@@ -89,4 +90,44 @@ export function pickJustOne(
       : open
 
   return [...pool].sort((a, b) => compareJustOne(a, b, now))[0] ?? null
+}
+
+/**
+ * Procrastination mode on Today: off; on with nothing picked (resting); focused
+ * on one task; or that task just won. Every phase but off belongs to the local
+ * day it was set on (JUST-10).
+ */
+export type ProcrastinationState =
+  | { readonly phase: 'off' }
+  | { readonly phase: 'idle'; readonly day: LocalDay }
+  | { readonly phase: 'focus' | 'won'; readonly taskId: TaskId; readonly day: LocalDay }
+
+export const PROCRASTINATION_OFF: ProcrastinationState = { phase: 'off' }
+
+/**
+ * How the mode stands against the day and Today's tasks at `now`:
+ *
+ * - a mode from an earlier day is off (JUST-10);
+ * - a focused task that is done is a win (JUST-7);
+ * - a focused or won task no longer on Today leaves the mode resting (JUST-7).
+ *
+ * `today` is null while the tasks are still loading: an empty list then is not a
+ * task gone, so only the day is checked (JUST-10). Derived rather than stored at
+ * the moment it happens, so however a task is finished or moved — its box, its
+ * checklist, another device — the mode follows. Returns `state` itself when
+ * nothing changes.
+ */
+export function settleProcrastination(
+  state: ProcrastinationState,
+  today: readonly Task[] | null,
+  now: Date = new Date(),
+): ProcrastinationState {
+  if (state.phase === 'off') return state
+  if (state.day !== toLocalDay(now)) return PROCRASTINATION_OFF
+  if (today === null || state.phase === 'idle') return state
+
+  const task = today.find((candidate) => candidate.id === state.taskId)
+  if (task === undefined) return { phase: 'idle', day: state.day }
+  if (state.phase === 'focus' && isComplete(task, now)) return { phase: 'won', taskId: task.id, day: state.day }
+  return state
 }

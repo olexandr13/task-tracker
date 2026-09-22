@@ -6,6 +6,13 @@ import { useEffect, useState } from 'react'
  */
 export const PHONE_QUERY = '(width < 48rem)'
 
+/**
+ * How high above the foot of a phone's screen something floating over the page
+ * sits — the Plus (UI-54), and what the screen has to say beside it — to stay
+ * clear of the bottom bar (UI-4) and of the home indicator under the bar (UI-61).
+ */
+export const ABOVE_PHONE_BAR = 'bottom-[calc(5.25rem+env(safe-area-inset-bottom))]'
+
 export function isPhoneLayout(): boolean {
   return typeof window.matchMedia === 'function' && window.matchMedia(PHONE_QUERY).matches
 }

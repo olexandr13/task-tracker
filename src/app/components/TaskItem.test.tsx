@@ -22,7 +22,9 @@ import {
   type Repeat,
   type Task,
 } from '../../core'
+import { NO_TASK_ACTIONS } from '../../test/taskActions'
 import { describeShortDate } from '../dueLabels'
+import type { TaskActions } from '../taskActions'
 import { PHONE_QUERY } from '../usePhoneLayout'
 import { TaskDragAndDrop } from './TaskDragAndDrop'
 import { TaskItem } from './TaskItem'
@@ -38,30 +40,6 @@ const NOW = new Date('2026-09-15T10:00:00.000Z')
 const TASK = 'stretch'
 const nothing = () => undefined
 
-/** Every handler a row takes, doing nothing. */
-const HANDLERS = {
-  onComplete: nothing,
-  onUncomplete: nothing,
-  onRename: nothing,
-  onChangeDescription: nothing,
-  onChangeDueDate: nothing,
-  onSkipOccurrence: nothing,
-  onChangeRepeat: nothing,
-  onChangeReward: nothing,
-  onChangeUrgent: nothing,
-  onChangeTimeGoal: nothing,
-  onLogTime: nothing,
-  onRemoveTimeEntry: nothing,
-  onChangeList: nothing,
-  onAddTag: nothing,
-  onRemoveTag: nothing,
-  onRemove: nothing,
-  onDuplicate: nothing,
-  onAddSubtask: nothing,
-  onSetSubtaskDone: nothing,
-  onRenameSubtask: nothing,
-  onRemoveSubtask: nothing,
-}
 
 afterEach(cleanup)
 
@@ -83,31 +61,11 @@ function setup(
   render(
     <ul>
       <TaskItem
+        actions={{ ...NO_TASK_ACTIONS, complete: nothing, uncomplete: nothing, rename: nothing, changeDescription: nothing, changeDueDate: nothing, skip: nothing, changeRepeat: nothing, changeReward: nothing, changeUrgent: nothing, changeTimeGoal: nothing, logTime: nothing, removeTimeEntry: nothing, changeList: filing.onChangeList ?? nothing, addTag: nothing, removeTag: nothing, remove: nothing, duplicate: onDuplicate, addSubtask: nothing, setSubtaskDone: nothing, renameSubtask: nothing, removeSubtask: nothing }}
         task={task}
         now={NOW}
         knownTags={[]}
         lists={filing.lists ?? []}
-        onComplete={nothing}
-        onUncomplete={nothing}
-        onRename={nothing}
-        onChangeDescription={nothing}
-        onChangeDueDate={nothing}
-        onSkipOccurrence={nothing}
-        onChangeRepeat={nothing}
-        onChangeReward={nothing}
-        onChangeUrgent={nothing}
-        onChangeTimeGoal={nothing}
-        onLogTime={nothing}
-        onRemoveTimeEntry={nothing}
-        onChangeList={filing.onChangeList ?? nothing}
-        onAddTag={nothing}
-        onRemoveTag={nothing}
-        onRemove={nothing}
-        onDuplicate={onDuplicate}
-        onAddSubtask={nothing}
-        onSetSubtaskDone={nothing}
-        onRenameSubtask={nothing}
-        onRemoveSubtask={nothing}
       />
     </ul>,
   )
@@ -130,6 +88,15 @@ function layOutTitle() {
 }
 
 afterEach(() => { Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect') })
+
+/** jsdom scrolls nothing either, so bringing a row into view is only recorded. */
+function stubScrollIntoView() {
+  const scrollIntoView = vi.fn()
+  Object.defineProperty(Element.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView })
+  return scrollIntoView
+}
+
+afterEach(() => { Reflect.deleteProperty(Element.prototype, 'scrollIntoView') })
 
 function titleButton() {
   return screen.getByRole('button', { name: `Edit "${TASK}"` })
@@ -204,7 +171,7 @@ describe('the due date on a repeating task row', () => {
     const missed = createTask(TASK, mondays, new Date('2026-09-07T10:00:00.000Z'))
     const row = (task: Task) => (
       <ul>
-        <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={[]} lists={[]} />
+        <TaskItem actions={NO_TASK_ACTIONS} task={task} now={NOW} knownTags={[]} lists={[]} />
       </ul>
     )
 
@@ -224,12 +191,11 @@ describe('the due date on a repeating task row', () => {
     render(
       <ul>
         <TaskItem
-          {...HANDLERS}
+          actions={{ ...NO_TASK_ACTIONS, changeDueDate: onChangeDueDate }}
           task={createTask(TASK, { kind: 'daily' }, NOW)}
           now={NOW}
           knownTags={[]}
           lists={[]}
-          onChangeDueDate={onChangeDueDate}
         />
       </ul>,
     )
@@ -247,7 +213,7 @@ describe('a task row with Show task details on', () => {
   function renderRow(task: Task) {
     render(
       <ul>
-        <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={[]} lists={[]} showDetails />
+        <TaskItem actions={NO_TASK_ACTIONS} task={task} now={NOW} knownTags={[]} lists={[]} showDetails />
       </ul>,
     )
     return within(screen.getAllByRole('listitem')[0])
@@ -284,7 +250,7 @@ describe('task urgent', () => {
     const user = userEvent.setup()
     render(
       <ul>
-        <TaskItem {...HANDLERS} task={createTask(TASK, null, NOW)} now={NOW} knownTags={[]} lists={[]} onChangeUrgent={onChangeUrgent} />
+        <TaskItem actions={{ ...NO_TASK_ACTIONS, changeUrgent: onChangeUrgent }} task={createTask(TASK, null, NOW)} now={NOW} knownTags={[]} lists={[]} />
       </ul>,
     )
 
@@ -299,7 +265,7 @@ describe('task urgent', () => {
     const user = userEvent.setup()
     render(
       <ul>
-        <TaskItem {...HANDLERS} task={createTask(TASK, null, NOW)} now={NOW} knownTags={[]} lists={[]} onChangeUrgent={onChangeUrgent} />
+        <TaskItem actions={{ ...NO_TASK_ACTIONS, changeUrgent: onChangeUrgent }} task={createTask(TASK, null, NOW)} now={NOW} knownTags={[]} lists={[]} />
       </ul>,
     )
 
@@ -313,7 +279,7 @@ describe('task urgent', () => {
     render(
       <ul>
         <TaskItem
-          {...HANDLERS}
+          actions={NO_TASK_ACTIONS}
           task={{ ...createTask(TASK, null, NOW), urgent: true }}
           now={NOW}
           knownTags={[]}
@@ -330,7 +296,7 @@ describe('task urgent', () => {
     const { rerender } = render(
       <ul>
         <TaskItem
-          {...HANDLERS}
+          actions={NO_TASK_ACTIONS}
           task={{ ...createTask(TASK, null, NOW), urgent: true }}
           now={NOW}
           knownTags={[]}
@@ -344,7 +310,7 @@ describe('task urgent', () => {
     rerender(
       <ul>
         <TaskItem
-          {...HANDLERS}
+          actions={NO_TASK_ACTIONS}
           task={completeTask({ ...createTask(TASK, null, NOW), urgent: true }, NOW)}
           now={NOW}
           knownTags={[]}
@@ -377,7 +343,7 @@ describe('the menu actions on a woken row', () => {
     const user = userEvent.setup()
     render(
       <ul>
-        <TaskItem {...HANDLERS} task={createTask(TASK, null, NOW)} now={NOW} knownTags={[]} lists={[work]} />
+        <TaskItem actions={NO_TASK_ACTIONS} task={createTask(TASK, null, NOW)} now={NOW} knownTags={[]} lists={[work]} />
       </ul>,
     )
 
@@ -393,7 +359,7 @@ describe('the menu actions on a woken row', () => {
     const user = userEvent.setup()
     render(
       <ul>
-        <TaskItem {...HANDLERS} task={createTask(TASK, null, NOW)} now={NOW} knownTags={[]} lists={[]} onDuplicate={onDuplicate} />
+        <TaskItem actions={{ ...NO_TASK_ACTIONS, duplicate: onDuplicate }} task={createTask(TASK, null, NOW)} now={NOW} knownTags={[]} lists={[]} />
       </ul>,
     )
 
@@ -458,7 +424,7 @@ describe('the tags on a task row', () => {
     render(
       <ul>
         <TaskItem
-          {...HANDLERS}
+          actions={NO_TASK_ACTIONS}
           task={addTag(addTag(createTask(TASK, null, NOW), 'health'), 'morning')}
           now={NOW}
           knownTags={['health', 'morning']}
@@ -577,7 +543,7 @@ describe('a finger on a task row, which has no right-click', () => {
       render(
         <TaskDragAndDrop tasks={[task]} onMove={nothing} onFile={nothing}>
           <ul>
-            <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={[]} lists={[]} />
+            <TaskItem actions={NO_TASK_ACTIONS} task={task} now={NOW} knownTags={[]} lists={[]} />
           </ul>
         </TaskDragAndDrop>,
       )
@@ -738,11 +704,11 @@ describe('the menu a right-click opens on a task row', () => {
     const TODAY = toLocalDay(NOW)
     const TOMORROW = offsetDay(TODAY, 1)
 
-    function renderDated(task: Task, handlers: Partial<typeof HANDLERS> = {}) {
+    function renderDated(task: Task, handlers: Partial<TaskActions> = {}) {
       const user = userEvent.setup()
       render(
         <ul>
-          <TaskItem {...HANDLERS} {...handlers} task={task} now={NOW} knownTags={[]} lists={[]} />
+          <TaskItem actions={{ ...NO_TASK_ACTIONS, ...handlers }} task={task} now={NOW} knownTags={[]} lists={[]} />
         </ul>,
       )
       return user
@@ -780,7 +746,7 @@ describe('the menu a right-click opens on a task row', () => {
 
     it('sets the day chosen and closes (DUE-14)', async () => {
       const onChangeDueDate = vi.fn()
-      const user = renderDated(createTask(TASK, null, NOW), { onChangeDueDate })
+      const user = renderDated(createTask(TASK, null, NOW), { changeDueDate: onChangeDueDate })
 
       await openMenu(user)
       await user.click(screen.getByRole('menuitemradio', { name: 'Next week' }))
@@ -791,14 +757,14 @@ describe('the menu a right-click opens on a task row', () => {
 
     it('takes a one-off\'s day away, and offers that only once there is one (DUE-14)', async () => {
       const onChangeDueDate = vi.fn()
-      const user = renderDated(createTask(TASK, null, NOW), { onChangeDueDate })
+      const user = renderDated(createTask(TASK, null, NOW), { changeDueDate: onChangeDueDate })
 
       await openMenu(user)
       expect(icons()).not.toContain('Remove date')
       await user.keyboard('{Escape}')
       cleanup()
 
-      const again = renderDated(setDueDate(createTask(TASK, null, NOW), TODAY), { onChangeDueDate })
+      const again = renderDated(setDueDate(createTask(TASK, null, NOW), TODAY), { changeDueDate: onChangeDueDate })
       await openMenu(again)
       await again.click(screen.getByRole('menuitem', { name: 'Remove date' }))
 
@@ -807,7 +773,7 @@ describe('the menu a right-click opens on a task row', () => {
 
     it('offers to skip a repeating task\'s occurrence, naming the day it moves to (DUE-14, RPT-34)', async () => {
       const onSkipOccurrence = vi.fn()
-      const user = renderDated(createTask(TASK, { kind: 'daily' }, NOW), { onSkipOccurrence })
+      const user = renderDated(createTask(TASK, { kind: 'daily' }, NOW), { skip: onSkipOccurrence })
 
       await openMenu(user)
 
@@ -830,7 +796,7 @@ describe('the menu a right-click opens on a task row', () => {
 
     it('is in the row\'s schedule panel too, skip and all (DUE-9, RPT-34)', async () => {
       const onSkipOccurrence = vi.fn()
-      const user = renderDated(createTask(TASK, { kind: 'daily' }, NOW), { onSkipOccurrence })
+      const user = renderDated(createTask(TASK, { kind: 'daily' }, NOW), { skip: onSkipOccurrence })
 
       await user.click(screen.getByRole('button', { name: /^Schedule for/ }))
       await user.click(screen.getByRole('button', { name: 'Skip occurrence' }))
@@ -848,7 +814,7 @@ describe('the menu a right-click opens on a task row', () => {
 
     it('opens the date panel where the menu was, its calendar ready for the keys (DUE-14)', async () => {
       const onChangeDueDate = vi.fn()
-      const user = renderDated(createTask(TASK, null, NOW), { onChangeDueDate })
+      const user = renderDated(createTask(TASK, null, NOW), { changeDueDate: onChangeDueDate })
 
       await openMenu(user)
       await user.click(screen.getByRole('menuitem', { name: 'Select date' }))
@@ -959,13 +925,12 @@ describe('the menu a right-click opens on a task row', () => {
 
   describe('tagging the task', () => {
     /** A one-off task tagged `health`, with `work` in use elsewhere. */
-    function renderTagged(handlers: { onAddTag?: () => void; onRemoveTag?: () => void } = {}) {
+    function renderTagged(handlers: Partial<TaskActions> = {}) {
       const user = userEvent.setup()
       render(
         <ul>
           <TaskItem
-            {...HANDLERS}
-            {...handlers}
+            actions={{ ...NO_TASK_ACTIONS, ...handlers }}
             task={addTag(createTask(TASK, null, NOW), 'health')}
             now={NOW}
             knownTags={['health', 'work']}
@@ -1000,7 +965,7 @@ describe('the menu a right-click opens on a task row', () => {
     it('puts a tag on and takes one off as clicked, staying open and leaving the row at rest (TAG-7, UI-31)', async () => {
       const onAddTag = vi.fn()
       const onRemoveTag = vi.fn()
-      const user = renderTagged({ onAddTag, onRemoveTag })
+      const user = renderTagged({ addTag: onAddTag, removeTag: onRemoveTag })
 
       await openTags(user)
       await user.click(screen.getByRole('button', { name: 'work' }))
@@ -1014,7 +979,7 @@ describe('the menu a right-click opens on a task row', () => {
 
     it('makes a tag typed in its box on Enter (TAG-7)', async () => {
       const onAddTag = vi.fn()
-      const user = renderTagged({ onAddTag })
+      const user = renderTagged({ addTag: onAddTag })
 
       await openTags(user)
       await user.keyboard('trip{Enter}')
@@ -1057,11 +1022,11 @@ describe('the time on a task row', () => {
     return minutes === 0 ? task : logTime(task, minutes, NOW)
   }
 
-  function renderRow(task: Task, handlers: Partial<typeof HANDLERS> = {}) {
+  function renderRow(task: Task, handlers: Partial<TaskActions> = {}) {
     const user = userEvent.setup()
     render(
       <ul>
-        <TaskItem {...HANDLERS} {...handlers} task={task} now={NOW} knownTags={[]} lists={[]} />
+        <TaskItem actions={{ ...NO_TASK_ACTIONS, ...handlers }} task={task} now={NOW} knownTags={[]} lists={[]} />
       </ul>,
     )
     return user
@@ -1103,7 +1068,7 @@ describe('the time on a task row', () => {
 
   it('logs a quick session, and one typed, keeping the panel open (TIME-3, TIME-11)', async () => {
     const onLogTime = vi.fn()
-    const user = renderRow(sport(0), { onLogTime })
+    const user = renderRow(sport(0), { logTime: onLogTime })
 
     await user.click(clock())
     await user.click(screen.getByRole('button', { name: 'Log 30m' }))
@@ -1116,7 +1081,7 @@ describe('the time on a task row', () => {
 
   it('refuses a session it cannot read, logging nothing', async () => {
     const onLogTime = vi.fn()
-    const user = renderRow(sport(0), { onLogTime })
+    const user = renderRow(sport(0), { logTime: onLogTime })
 
     await user.click(clock())
     await user.type(screen.getByRole('textbox', { name: 'Time to log' }), 'soon{Enter}')
@@ -1128,7 +1093,7 @@ describe('the time on a task row', () => {
   it('takes a session back (TIME-4)', async () => {
     const onRemoveTimeEntry = vi.fn()
     const task = sport(20)
-    const user = renderRow(task, { onRemoveTimeEntry })
+    const user = renderRow(task, { removeTimeEntry: onRemoveTimeEntry })
 
     await user.click(clock())
     await user.click(screen.getByRole('button', { name: /^Remove 20m logged at/ }))
@@ -1138,7 +1103,7 @@ describe('the time on a task row', () => {
 
   it('keeps the goal typed on Enter, and an empty one as none (TIME-1)', async () => {
     const onChangeTimeGoal = vi.fn()
-    const user = renderRow(sport(0), { onChangeTimeGoal })
+    const user = renderRow(sport(0), { changeTimeGoal: onChangeTimeGoal })
 
     await user.click(clock())
     const goal = screen.getByRole('textbox', { name: 'Goal' })
@@ -1156,7 +1121,7 @@ describe('the time on a task row', () => {
 
   it('keeps the goal typed when a click outside closes the panel, and drops it on Escape', async () => {
     const onChangeTimeGoal = vi.fn()
-    const user = renderRow(sport(0), { onChangeTimeGoal })
+    const user = renderRow(sport(0), { changeTimeGoal: onChangeTimeGoal })
 
     await user.click(clock())
     await user.clear(screen.getByRole('textbox', { name: 'Goal' }))
@@ -1174,13 +1139,43 @@ describe('the time on a task row', () => {
 
   it('leaves the goal as it was when what is typed is not one', async () => {
     const onChangeTimeGoal = vi.fn()
-    const user = renderRow(sport(0), { onChangeTimeGoal })
+    const user = renderRow(sport(0), { changeTimeGoal: onChangeTimeGoal })
 
     await user.click(clock())
     await user.clear(screen.getByRole('textbox', { name: 'Goal' }))
     await user.type(screen.getByRole('textbox', { name: 'Goal' }), 'lots{Enter}')
 
     expect(onChangeTimeGoal).not.toHaveBeenCalled()
+  })
+})
+
+describe('a task row gone to from elsewhere', () => {
+  it('is brought into view and woken, as a click would (TIME-20)', () => {
+    const scrollIntoView = stubScrollIntoView()
+    const onRevealed = vi.fn()
+    const task = createTask(TASK, { kind: 'daily' }, NOW)
+    const row = (revealed: boolean) => (
+      <ul>
+        <TaskItem
+          actions={NO_TASK_ACTIONS}
+          task={task}
+          now={NOW}
+          knownTags={[]}
+          lists={[]}
+          revealed={revealed}
+          onRevealed={onRevealed}
+        />
+      </ul>
+    )
+    const { rerender } = render(row(false))
+    expect(within(screen.getByRole('listitem')).queryByText('Daily')).toBeNull()
+    expect(onRevealed).not.toHaveBeenCalled()
+
+    rerender(row(true))
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center' })
+    expect(within(screen.getByRole('listitem')).getByText('Daily')).toBeDefined()
+    expect(onRevealed).toHaveBeenCalledOnce()
   })
 })
 
@@ -1216,6 +1211,19 @@ describe('on a phone, tapping a task', () => {
     return screen.getByRole('dialog', { name: `Details of "${TASK}"` })
   }
 
+  it('opens the sheet when the task is gone to from elsewhere (TIME-20)', () => {
+    const scrollIntoView = stubScrollIntoView()
+    const task = createTask(TASK, null, NOW)
+    render(
+      <ul>
+        <TaskItem actions={NO_TASK_ACTIONS} task={task} now={NOW} knownTags={[]} lists={[]} revealed />
+      </ul>,
+    )
+
+    expect(sheet()).toBeDefined()
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center' })
+  })
+
   it('opens a sheet from the bottom with the details and the action buttons (UI-48)', async () => {
     const user = setup(null, ['one'])
 
@@ -1247,7 +1255,7 @@ describe('on a phone, tapping a task', () => {
     const task = createTask(TASK, null, NOW)
     render(
       <ul>
-        <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={[]} lists={[]} onRename={onRename} />
+        <TaskItem actions={{ ...NO_TASK_ACTIONS, rename: onRename }} task={task} now={NOW} knownTags={[]} lists={[]} />
       </ul>,
     )
 
@@ -1275,6 +1283,26 @@ describe('on a phone, tapping a task', () => {
     expect(screen.queryByRole('dialog', { name: `Details of "${TASK}"` })).toBeNull()
   })
 
+  it('sizes the row and the sheet for a thumb, and says Delete in red (UI-38, UI-47, UI-48)', async () => {
+    const user = setup()
+
+    const row = screen.getByRole('button', { name: `Mark "${TASK}" as done` })
+    // The box answers a touch past its edge: a thumb's 44 pixels, not its drawn 20.
+    expect(row.className).toContain('size-5')
+    expect(row.className).toContain('before:-inset-3')
+    const title = screen.getByRole('button', { name: TASK })
+    expect(title.className).toContain('text-base')
+    expect(title.className).not.toContain('text-sm')
+
+    await user.click(screen.getByRole('listitem'))
+
+    const open = within(sheet())
+    const heading = open.getByRole('button', { name: `Edit "${TASK}"` })
+    expect(heading.className).toContain('text-lg')
+    expect(heading.className).not.toContain('text-sm')
+    expect(open.getByRole('button', { name: `Delete "${TASK}"` }).className).toContain('text-red-600')
+  })
+
   it('does not open from ticking the box (UI-19)', async () => {
     const user = setup()
 
@@ -1298,7 +1326,7 @@ describe('on a phone, tapping a task', () => {
     task = { ...task, subtasks: [createSubtask('one', NOW)] }
     render(
       <ul>
-        <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={['home']} lists={[]} />
+        <TaskItem actions={NO_TASK_ACTIONS} task={task} now={NOW} knownTags={['home']} lists={[]} />
       </ul>,
     )
 
@@ -1331,7 +1359,7 @@ describe('on a phone, tapping a task', () => {
       const task = createTask(TASK, null, NOW)
       render(
         <ul>
-          <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={[]} lists={[]} onComplete={onComplete} />
+          <TaskItem actions={{ ...NO_TASK_ACTIONS, complete: onComplete }} task={task} now={NOW} knownTags={[]} lists={[]} />
         </ul>,
       )
 
@@ -1346,7 +1374,7 @@ describe('on a phone, tapping a task', () => {
       const task = completeTask(createTask(TASK, null, NOW), NOW)
       render(
         <ul>
-          <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={[]} lists={[]} onUncomplete={onUncomplete} />
+          <TaskItem actions={{ ...NO_TASK_ACTIONS, uncomplete: onUncomplete }} task={task} now={NOW} knownTags={[]} lists={[]} />
         </ul>,
       )
 
@@ -1360,7 +1388,7 @@ describe('on a phone, tapping a task', () => {
       const task = createTask(TASK, null, NOW)
       render(
         <ul>
-          <TaskItem {...HANDLERS} task={task} now={NOW} knownTags={[]} lists={[]} onRemove={onRemove} />
+          <TaskItem actions={{ ...NO_TASK_ACTIONS, remove: onRemove }} task={task} now={NOW} knownTags={[]} lists={[]} />
         </ul>,
       )
 
@@ -1377,13 +1405,11 @@ describe('on a phone, tapping a task', () => {
       render(
         <ul>
           <TaskItem
-            {...HANDLERS}
+            actions={{ ...NO_TASK_ACTIONS, complete: onComplete, remove: onRemove }}
             task={task}
             now={NOW}
             knownTags={[]}
             lists={[]}
-            onComplete={onComplete}
-            onRemove={onRemove}
           />
         </ul>,
       )

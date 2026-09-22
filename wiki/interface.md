@@ -25,7 +25,10 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 - **UI-4** Below `md` there is no room for three columns, so they stack into one and the navigation
   moves to a **bar along the bottom of the screen**, in reach of a thumb (UI-32). A sidebar is a poor
-  use of a phone. The end of the page, and the undo toast (TRASH-3), stay clear of the bar.
+  use of a phone. The end of the page, and the undo toast (TRASH-3), stay clear of the bar — and of
+  the Plus (UI-54) where there is one: the page ends with room to scroll its last row above the Plus,
+  and what the screen has to say (the undo toast, the sync notice, a running timer) sits beside the
+  Plus rather than under it.
 - **UI-5** Stacked, the rail comes **after** the work — the bars, then the quote at the very bottom
   of the page.
 - **UI-6** Nothing is reachable only on a wide screen. On a phone a tap on a task opens a sheet
@@ -34,11 +37,17 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   two on the woken strip and in the task's menu (UI-53). The Lists page (UI-34) and the Tags and
   Rewards pages (UI-45) are on a phone too. The task's menu itself needs no right-click: a finger
   opens it by holding a row (UI-44).
-- **UI-47** On a phone the **completion box is larger**, so ticking a task off does not need a
-  precise tap, and a habit's card uses the same box (HAB-4). The rows themselves are a little
-  taller and sit further apart than on a wide screen, so a tap aimed at one task is less likely to
-  land on the next. Checklist items stay a step smaller than the task's box, so they never read as
-  the same rank, but they grow with it. On a wide screen the box and the row stay small (UI-23).
+- **UI-47** On a phone the **completion box is drawn small** — about the height of the title
+  beside it, as on a wide screen — so a list stays dense and reads like a list, not a column of
+  buttons. It still does not need a precise tap: it **answers a touch well past its drawn edge** — a
+  thumb's 44 pixels square — and shrinks a touch while pressed. A habit's card (HAB-4) and the head
+  of a task's sheet (UI-48) use the same box. The rows are a little taller and sit a little further
+  apart than on a wide screen, so a tap aimed at one task is less likely to land on the next, and a
+  task's title is a step larger, as is a habit's. Checklist items stay a step smaller than the
+  task's box, so they never read as the same rank, and answer a touch past their edge the same way;
+  the × that takes one off is a thumb's size too, and so is a habit card's ⋮ (HAB-25) — both
+  without making their line any taller. On a wide screen the rows stay as short as they can be
+  (UI-23).
 - **UI-49** On a phone a **menu's items are large enough for a thumb** — taller, with larger type
   and icons — so choosing one does not need a precise tap: the menus of the bottom bar
   (UI-33, UI-43), More's list of links (UI-45), and a task's menu (UI-31, UI-44). The Inbox and the lists indented under
@@ -47,18 +56,23 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   opens a **sheet from the bottom of the screen**, overlapping the bar (UI-4). It holds the title,
   which is the only place a title is edited (TASK-8), the checklist and the description, and the
   action buttons: the schedule, the list, the time, the tags, urgent, the reward, Duplicate and Delete. The
-  row behind it stays a single line. The sheet closes on a tap on the dimmed page or on Escape
-  (UI-9, UI-10). Opening it never takes the caret (UI-22). Its controls and the panels they open are
-  sized for a thumb (UI-59).
+  row behind it stays a single line. The sheet **rises** from the bottom as the page behind dims.
+  It closes on a tap on the dimmed page or on Escape (UI-9, UI-10), or **pulled down by its handle**
+  — the bar at its top: let go far enough down, or with a flick, and it closes; a shorter pull lets
+  it settle back. A tap on the handle closes it too, so a screen reader has a **Close** button. The
+  title at its head is larger than the row's. Opening it never takes the caret (UI-22). Its controls
+  and the panels they open are sized for a thumb (UI-59).
 - **UI-59** On a phone the **task sheet's action rows** (UI-48) — and the same rows on the add sheet
-  (UI-54) — are large enough for a thumb: taller controls, larger type and icons, and each **whole
-  row** opens its picker, not only the pill of text. The panels those rows open (schedule, list,
+  (UI-54) — are large enough for a thumb: larger type and icons, and each **whole row**, 44 pixels
+  tall, is the control that opens its picker, not only the pill of text. The panels those rows open (schedule, list,
   time, tags, reward) grow with them, as menus do (UI-49). On a wide screen the same controls stay
   compact on the woken strip (UI-53, UI-40).
 - **UI-54** Every page with the add box also has a **Plus** button in the bottom-right corner — above
   the bar on a phone (UI-4), and in the same corner on a wide screen. A tap opens a **sheet** for
   adding a task with the same fields the edit sheet has (TASK-66), so more than a title can be set
-  before it is saved. The one-line box at the top still adds a title on Enter (TASK-4). In the sheet,
+  before it is saved. On a wide screen the sheet — like a habit's (HAB-25) — opens as a **dialog in
+  the middle of the window**, no wider than its fields need, rather than along the whole bottom of
+  the screen. The one-line box at the top still adds a title on Enter (TASK-4). In the sheet,
   Enter in the title — including the phone keyboard's Done/Return — adds the same way (TASK-66).
   Closing the sheet without adding keeps nothing. Procrastination mode is started from **More**
   (JUST-1), not from beside the Plus. The sheet's action rows follow UI-59.
@@ -79,6 +93,18 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   — into the trash, with the undo toast (TRASH-1, TRASH-3). A short swipe snaps back and does
   nothing. Vertical still scrolls the list, and a hold still picks the row up to move it (TASK-39).
   The box and the sheet keep doing the same jobs; the swipe is the thumb's way on a resting row.
+- **UI-61** On a phone the app runs to the edges of the screen and keeps clear of what is in the way
+  there: the page starts below the notch and keeps off the rounded corners when the phone is turned,
+  the bottom bar (UI-4) grows by the height of the home indicator so its tabs sit above it, and the
+  Plus, the notices and the sheets keep the same clearance. Every control answers a touch with a
+  **pressed look of its own** — a row or a button darkens, a tab's mark, the Plus and the completion
+  box shrink a touch — rather than the browser's grey flash. Buttons that are a page's only way on —
+  Settings' **Sign out**, **Export** and **Import**, the **Lists** and **Trash** at the foot of Tasks
+  (UI-34), **Add** beside a new list or tag — are a thumb's height.
+- **UI-62** On a phone every box that takes typing — the add box, a title, a checklist item, a tag, a
+  list's name, a redemption, the time and the reward — is set in type at least 16 pixels high, so the
+  phone does not zoom the page in when one is tapped. On a wide screen they stay compact with the
+  rest of their panel (UI-40).
 
 ## Navigation
 
@@ -129,8 +155,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   other view, a list's included, a tap on Tasks goes to Tasks.
 - **UI-45** The bar and the sidebar have no entry for the tags or the rewards: they are under
   **More**, marked with three dots. **A tap opens More's page** — a list of links to **Tags** and
-  **Rewards**, each with its icon, large enough for a thumb (UI-49) — and **Procrastination** when
-  it is available (JUST-1). Choosing Tags or Rewards goes there; choosing Procrastination starts (or
+  **Rewards**, each with its icon, large enough for a thumb (UI-49), and a chevron at its end marking
+  it as a page to go to — and **Procrastination** when it is available (JUST-1), which, being a
+  switch rather than a page, has none. Choosing Tags or Rewards goes there; choosing Procrastination starts (or
   ends) the mode and opens Today. **More** stays marked while its own page, the Tags page, a tag's
   view or the Rewards page is open. Its address is `#/more` (UI-36).
 
@@ -218,7 +245,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-23** On a wide screen a row is as short as its contents allow — the completion box, one
   line of title, and the small controls beside it. The list is meant to be run down at a glance, so
   every row costs the same and none of it is padding. On a phone the row is taller and the list
-  leaves more room between one and the next, so a finger can hit the box (UI-47).
+  leaves a little more room between one and the next, so a finger lands on the task it aims at
+  (UI-47).
 - **UI-28** Clicking a woken row **on the task's own line** — anywhere on it that is not the title,
   a control, or an open picker — puts it away again, so a row opens and closes from the same place.
   A finger's tap there opens the task's menu instead (UI-44); a tap anywhere else puts the row away.
@@ -275,7 +303,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 ## Everywhere
 
-- **UI-11** Dark mode follows the system. There is no theme switch.
+- **UI-11** Dark mode follows the system — the browser's own parts too, such as scrollbars and the
+  caret. There is no theme switch.
 - **UI-12** Every control carries a name for a screen reader, and one that names its task where
   several of the same control are on screen at once.
 - **UI-13** Toggles report whether they are on — the completion box, the repeat kinds, the weekday
@@ -288,7 +317,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-38** Every control that **deletes or removes** something — a task, a checklist item, a task
   in the trash for good, a tag, a redemption — is muted at rest like the controls around it and **turns red under
   the pointer**, so what a click would do is plain before it is done. Closing the undo toast deletes
-  nothing, and stays neutral.
+  nothing, and stays neutral. The sheet's **Delete** (UI-48) is the exception: a word with a bin
+  beside it rather than a bare ×, and **red at rest**, since a phone has no pointer to hover over it
+  and warn first.
 - **UI-14** The whole screen is drawn for one moment, so the list order, each row, the three bars,
   the trash countdown and the quote can never disagree about which day it is.
 - **UI-39** The app's icon, shown in the browser tab, is a **progress ring** about three-quarters full
@@ -297,17 +328,21 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 ---
 
-**Where it lives:** `src/app/TasksScreen.tsx` (the three areas), `src/app/components/TaskItem.tsx` (the
+**Where it lives:** `src/app/TasksScreen.tsx` (the three areas), `src/app/taskActions.ts` (everything a
+row, a habit card or a task's sheet can do to its task), `src/app/components/TaskItem.tsx` (the
 row at rest and awake), `src/app/components/TaskSheet.tsx` and `src/app/components/BottomSheet.tsx` (a
-phone's look at a task), `src/app/usePhoneLayout.ts` (whether the screen is a phone's), `src/app/components/TaskList.tsx` (the room between rows), `src/app/components/ContextMenu.tsx` (a task's menu), `src/app/components/FloatingPanel.tsx` (a menu or panel floating where the pointer was), `src/app/textOffsetAtPoint.ts` (which character a click landed on), `src/app/components/SideNav.tsx`,
+phone's look at a task, and a wide screen's dialog), `src/app/sheetDrag.ts` and `src/app/useSheetDrag.ts`
+(pulling a sheet down to close it), `src/app/usePhoneLayout.ts` (whether the screen is a phone's, and
+how high above the bar the Plus and the notices float), `index.html` (the page running under the
+notch and the home indicator), `src/app/components/TaskList.tsx` (the room between rows), `src/app/components/ContextMenu.tsx` (a task's menu), `src/app/components/FloatingPanel.tsx` (a menu or panel floating where the pointer was), `src/app/textOffsetAtPoint.ts` (which character a click landed on), `src/app/components/SideNav.tsx`,
 `src/app/components/BottomNav.tsx` (the phone's bar), `src/app/components/AddTaskForm.tsx` (the one-line
 add box and the Plus), `src/app/components/AddTaskSheet.tsx` (the detailed add sheet), `src/app/letterShortcut.ts`
 and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet, `R` opens Rewards, `P` toggles
 Procrastination mode), `src/app/components/MorePage.tsx` (More's list of
 links and Procrastination), `src/app/components/ViewMenu.tsx` (the View
-button and its panel), `src/app/components/ViewOptionsMenu.tsx` and `src/app/useViewOptions.ts` (the
-task views' options), `src/app/components/HabitViewOptionsMenu.tsx` and `src/app/useHabitViewOptions.ts`
-(Habits'), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/useLongPress.ts` (a press told from a
+button and its panel), `src/app/components/ViewOptionsMenu.tsx` (the
+task views' options), `src/app/components/HabitViewOptionsMenu.tsx`
+(Habits'), `src/app/useDeviceSetting.ts` (keeping either on this device), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/useLongPress.ts` (a press told from a
 long press), `src/app/useRowSwipe.ts` and `src/app/rowSwipe.ts` (a phone's swipe to complete or
 delete), `src/app/components/SettingsList.tsx` (and the version on it, from `package.json` via
 `vite.config.ts`), `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
@@ -320,7 +355,9 @@ the sheet's pickers), `src/styles.css`,
 items are large enough for a finger), `src/app/components/MorePage.test.tsx` (More's links), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
 view in the address), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel), `src/app/components/HabitViewOptionsMenu.test.tsx`
 (Habits'), `src/app/components/SettingsList.test.tsx` (the version on Settings), `src/app/components/TaskItem.test.tsx`
-(a row with Show task details on, a finger on a row, a phone's sheet, and a swipe to complete or
-delete), `src/app/rowSwipe.test.ts` (how far a swipe must travel),
+(a row with Show task details on, a finger on a row, a phone's sheet and the sizes a thumb needs on
+it, and a swipe to complete or delete), `src/app/rowSwipe.test.ts` (how far a swipe must travel),
 `src/app/components/AddTaskForm.test.tsx` (the one-line box, the Plus and the detailed sheet),
-`src/app/letterShortcut.test.ts` and `src/app/useLetterShortcut.test.ts` (`N`, `H`, `R` and `P`).
+`src/app/letterShortcut.test.ts` and `src/app/useLetterShortcut.test.ts` (`N`, `H`, `R` and `P`),
+`src/app/components/BottomSheet.test.tsx` and `src/app/sheetDrag.test.ts` (closing a sheet by its
+handle, pulled or tapped).

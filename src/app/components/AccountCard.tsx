@@ -52,7 +52,7 @@ export function AccountCard({ account, onSignOut }: AccountCardProps) {
       <button
         type="button"
         onClick={onSignOut}
-        className="rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+        className="inline-flex min-h-10 items-center rounded-lg border border-neutral-200 px-4 text-sm text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-100 md:min-h-0 md:px-3 md:py-1.5 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:active:bg-neutral-800"
       >
         {account.provider === 'guest' ? 'Leave' : 'Sign out'}
       </button>
