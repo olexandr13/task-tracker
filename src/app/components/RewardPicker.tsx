@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { defaultReward, isRewardAmount, MAX_REWARD, MIN_REWARD, type Repeat } from '../../core'
+import { isRewardAmount, MAX_REWARD, MIN_REWARD } from '../../core'
 import { panelStep as stepButton } from '../panelControls'
 import { describePoints } from '../rewardLabels'
 import { controlOff, controlOn, rowControlIcon, rowControlLabel } from '../rowControls'
@@ -11,36 +11,45 @@ function isPoints(points: number): boolean {
 }
 
 interface RewardPickerProps {
-  /** The points each completion earns, or null for none. */
+  /** The points, or null for none. */
   reward: number | null
-  /** The task's rule, which says where the first step up from no reward lands. */
-  repeat: Repeat | null
+  /** Where the first step up from none lands — a task's rule is worth `defaultReward` (RWD-2). */
+  startAt: number
   onChange: (reward: number | null) => void
   /** What this picker is for, when there is more than one on screen. */
   label?: string
+  /** What the points are for, as the panel says it above them. */
+  hint?: string
   /** Whether the button spells the points out beside its star, or a way to add some when there are none. */
   showAmount?: boolean
+  /** What the button says while there are no points, where it spells them out. */
+  addLabel?: string
+  /** How no points read where the button is named: `Reward: No reward`. */
+  noneLabel?: string
   /** Which edge of the button the panel lines up with: the one nearer the middle of the screen. */
   align?: 'left' | 'right'
 }
 
 /**
- * A task's reward: a small star that opens a panel for the points each
- * completion earns.
+ * Points: a small star that opens a panel for how many. A task's reward uses it
+ * for what each completion earns (RWD-5), and the Rewards page for what
+ * clearing Today earns (RWD-26) — the panel knows only the number.
  *
- * Clicking the star of a task without a reward gives it 1 point and opens the
- * panel on it. The panel is like the other pickers: every step or number typed
- * is saved as it is made, with nothing to confirm. 0 is no reward, so stepping
- * down to it or typing it takes the reward away. A step up from 0 lands on what
- * the task's rule starts at rather than on 1, so a monthly task is not 25 clicks
- * from its reward.
+ * Clicking the star while there are none gives 1 point and opens the panel on
+ * it. The panel is like the other pickers: every step or number typed is saved
+ * as it is made, with nothing to confirm. 0 is none, so stepping down to it or
+ * typing it takes the points away. A step up from 0 lands on `startAt` rather
+ * than on 1, so a monthly task is not 25 clicks from its reward.
  */
 export function RewardPicker({
   reward,
-  repeat,
+  startAt,
   onChange,
   label = 'Reward',
+  hint = 'Points each time it is done',
   showAmount = false,
+  addLabel = 'Add reward',
+  noneLabel = 'No reward',
   align = 'right',
 }: RewardPickerProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -65,7 +74,7 @@ export function RewardPicker({
   const isValid = typed.trim() !== '' && isPoints(amount)
   // Where the steps count from: what is typed while it is a number of points, and what it was otherwise.
   const base = isValid ? amount : settled
-  const summary = reward === null ? 'No reward' : describePoints(reward)
+  const summary = reward === null ? noneLabel : describePoints(reward)
 
   // Named (sheet) fills its row so the whole line is the hit target (UI-59);
   // icon-only stays content-sized for a woken strip.
@@ -77,8 +86,8 @@ export function RewardPicker({
       setIsOpen(false)
       return
     }
-    // Reaching for the star of a task without a reward is asking for one: it gets
-    // the least there is at once, to step up from.
+    // Reaching for the star while there are none is asking for some: they start
+    // at the least there is, to step up from.
     if (reward === null) {
       onChange(MIN_REWARD)
       setTyped(String(MIN_REWARD))
@@ -123,11 +132,11 @@ export function RewardPicker({
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-label={`${label}: ${summary}`}
-        title={reward === null ? 'Add a reward' : summary}
+        title={reward === null ? addLabel : summary}
         className={reward === null ? `${button} ${controlOff}` : `${button} ${controlOn}`}
       >
         <StarIcon />
-        {showAmount && <span className="min-w-0 truncate">{reward === null ? 'Add reward' : summary}</span>}
+        {showAmount && <span className="min-w-0 truncate">{reward === null ? addLabel : summary}</span>}
       </button>
 
       {isOpen && (
@@ -136,7 +145,7 @@ export function RewardPicker({
           aria-label={label}
           className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-60 flex-col gap-1.5 rounded-xl border border-neutral-200 bg-white p-2 shadow-xl md:w-52 md:gap-1 md:p-1.5 dark:border-neutral-700 dark:bg-neutral-900`}
         >
-          <p className="px-1 pt-0.5 text-sm text-neutral-500 md:text-xs dark:text-neutral-400">Points each time it is done</p>
+          <p className="px-1 pt-0.5 text-sm text-neutral-500 md:text-xs dark:text-neutral-400">{hint}</p>
 
           <div role="group" aria-label="Points" className="flex items-center justify-center gap-1.5 md:gap-1">
             <button
@@ -165,7 +174,7 @@ export function RewardPicker({
             />
             <button
               type="button"
-              onClick={() => { choose(base === 0 ? defaultReward(repeat) : base + 1) }}
+              onClick={() => { choose(base === 0 ? startAt : base + 1) }}
               disabled={base >= MAX_REWARD}
               aria-label="More points"
               className={stepButton}

@@ -22,7 +22,14 @@ const ENTRIES: RewardEntry[] = [
 ]
 const TREAT = createRedemption(3, 'Coffee', 12, AT)
 
-const DATA: AccountData = { tasks: [DONE, TRASHED], lists: [WORK], tags: [ERRANDS], entries: ENTRIES, redemptions: [TREAT] }
+const DATA: AccountData = {
+  tasks: [DONE, TRASHED],
+  lists: [WORK],
+  tags: [ERRANDS],
+  entries: ENTRIES,
+  redemptions: [TREAT],
+  todayBonus: 10,
+}
 
 function fileWith(changes: Record<string, unknown>): string {
   return JSON.stringify({ ...(JSON.parse(writeBackupFile(DATA, AT)) as object), ...changes })
@@ -107,6 +114,9 @@ describe('reading a backup', () => {
       }),
     )
 
-    expect(read).toEqual({ data: { tasks: [DONE], lists: [], tags: [], entries: [], redemptions: [TREAT] }, unreadable: 6 })
+    expect(read).toEqual({
+      data: { tasks: [DONE], lists: [], tags: [], entries: [], redemptions: [TREAT], todayBonus: null },
+      unreadable: 6,
+    })
   })
 })

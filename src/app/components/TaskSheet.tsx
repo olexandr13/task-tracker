@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import {
   canSkipOccurrence,
   currentEntries,
+  defaultReward,
   dueDay,
   isComplete,
   isOverdue,
@@ -181,7 +182,7 @@ export function TaskSheet({
           <div className={sheetAction}>
             <RewardPicker
               reward={task.reward}
-              repeat={task.repeat}
+              startAt={defaultReward(task.repeat)}
               onChange={(reward) => { actions.changeReward(task.id, reward) }}
               label={`Reward for "${task.title}"`}
               showAmount

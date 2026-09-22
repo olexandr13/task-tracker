@@ -6,6 +6,9 @@ import { describeDueDate } from './dueLabels'
  * ../core; wording is presentation, so it stays here.
  */
 
+/** What the bonus for clearing Today reads as, where a task's title would be (RWD-27). */
+export const TODAY_BONUS_TITLE = 'All of Today done'
+
 /** `1 point`, `5 points`, `-3 points`. */
 export function describePoints(points: number): string {
   return `${String(points)} ${Math.abs(points) === 1 ? 'point' : 'points'}`

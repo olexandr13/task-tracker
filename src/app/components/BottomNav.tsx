@@ -23,8 +23,7 @@ interface BottomNavProps {
   onChange: (view: View) => void
 }
 
-/** Where a tab's menu opens: its corner this far in from the tab's, and just clear of its top. */
-const MENU_INSET = 8
+/** Where a tab's menu opens: centred across the screen, and just clear of the tab's top. */
 const MENU_GAP = 4
 
 const tab =
@@ -45,8 +44,9 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * A phone's navigation: a bar along the bottom, in reach of a thumb, where the
  * sidebar would be on a wide screen.
  *
- * Today, Week and Month share the first tab, which shows the one last chosen and
- * goes to it on a tap. The lists and the trash have no tab — they are reached from
+ * The tabs run from Settings on the left to the period on the right. Today, Week
+ * and Month share that last tab, which shows the one last chosen and goes to it
+ * on a tap. The lists and the trash have no tab — they are reached from
  * Tasks, so Tasks stays marked while either is open, or one list or the Inbox. The
  * tags and the rewards have none either: they are under More, which goes to its
  * own page on a tap and stays marked while that page, the Tags page, a tag's
@@ -56,12 +56,13 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * place: the three periods, and Lists with the Inbox and every list indented
  * under it, then the trash. Holding the tab opens it, and so does tapping it
  * again once its page is on screen, a tap there having nowhere further to go —
- * so a double tap opens it from anywhere. A tap on a tab while its menu is open
- * closes it. A tab stays marked while its menu is open, so it is plain which tab
- * the menu belongs to.
+ * so a double tap opens it from anywhere. It opens centred across the screen,
+ * whichever tab it belongs to. A tap on a tab while its menu is open closes it.
+ * A tab stays marked while its menu is open, so it is plain which tab the menu
+ * belongs to.
  */
 export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavProps) {
-  // The period the first tab goes back to after leaving it: the last one on
+  // The period the period tab goes back to after leaving it: the last one on
   // screen, Today to begin with.
   const [period, setPeriod] = useState<PeriodView>(isPeriodView(view) ? view : 'today')
   if (isPeriodView(view) && view !== period) {
@@ -72,13 +73,12 @@ export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavPr
     of: TabMenu
     x: number
     y: number
-    align: 'left' | 'right'
     fromKeyboard: boolean
   } | null>(null)
 
   function openMenu(of: TabMenu, button: HTMLElement, fromKeyboard: boolean) {
-    const { left, top } = button.getBoundingClientRect()
-    setMenu({ of, x: left + MENU_INSET, y: top - MENU_GAP, align: 'left', fromKeyboard })
+    const { top } = button.getBoundingClientRect()
+    setMenu({ of, x: window.innerWidth / 2, y: top - MENU_GAP, fromKeyboard })
   }
 
   // The menu that was open as a pointer came down on a tab. Coming down outside it
@@ -164,19 +164,18 @@ export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavPr
         <ul className="mx-auto grid max-w-md grid-cols-5">
           <li>
             <Tab
-              label={VIEW_LABELS[period]}
-              icon={VIEW_ICONS[period]}
-              active={isPeriodView(view) || menu?.of === 'period'}
-              description="Hold, or tap again, to switch between Today, Week and Month"
-              {...noticingMenu(periodPress)}
+              label={VIEW_LABELS.settings}
+              icon={VIEW_ICONS.settings}
+              active={view === 'settings'}
+              onClick={() => { onChange('settings') }}
             />
           </li>
           <li>
             <Tab
-              label={VIEW_LABELS.habits}
-              icon={VIEW_ICONS.habits}
-              active={view === 'habits'}
-              onClick={() => { onChange('habits') }}
+              label={VIEW_LABELS.more}
+              icon={VIEW_ICONS.more}
+              active={isUnder(view, 'more')}
+              onClick={() => { onChange('more') }}
             />
           </li>
           <li>
@@ -190,18 +189,19 @@ export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavPr
           </li>
           <li>
             <Tab
-              label={VIEW_LABELS.more}
-              icon={VIEW_ICONS.more}
-              active={isUnder(view, 'more')}
-              onClick={() => { onChange('more') }}
+              label={VIEW_LABELS.habits}
+              icon={VIEW_ICONS.habits}
+              active={view === 'habits'}
+              onClick={() => { onChange('habits') }}
             />
           </li>
           <li>
             <Tab
-              label={VIEW_LABELS.settings}
-              icon={VIEW_ICONS.settings}
-              active={view === 'settings'}
-              onClick={() => { onChange('settings') }}
+              label={VIEW_LABELS[period]}
+              icon={VIEW_ICONS[period]}
+              active={isPeriodView(view) || menu?.of === 'period'}
+              description="Hold, or tap again, to switch between Today, Week and Month"
+              {...noticingMenu(periodPress)}
             />
           </li>
         </ul>
@@ -212,7 +212,7 @@ export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavPr
         <ContextMenu
           x={menu.x}
           y={menu.y}
-          align={menu.align}
+          align="center"
           label={menus[menu.of].label}
           fromKeyboard={menu.fromKeyboard}
           items={menus[menu.of].items}

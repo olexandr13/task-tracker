@@ -13,7 +13,14 @@ import { useBackup } from './useBackup'
 const AT = new Date('2026-09-19T09:00:00.000Z')
 
 const WRITE = createTask('Write report', null, AT)
-const DATA: AccountData = { tasks: [WRITE], lists: [createList('Work', AT)], tags: [], entries: [], redemptions: [] }
+const DATA: AccountData = {
+  tasks: [WRITE],
+  lists: [createList('Work', AT)],
+  tags: [],
+  entries: [],
+  redemptions: [],
+  todayBonus: null,
+}
 
 const ADDED: ImportSummary = { added: { tasks: 1, lists: 1, tags: 0, completions: 0, redemptions: 0 }, alreadyHere: 0 }
 

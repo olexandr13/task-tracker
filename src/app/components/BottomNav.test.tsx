@@ -55,7 +55,7 @@ function setup(initial: View = 'today', lists: readonly List[] = [], dimmed = fa
 }
 
 const tabs = () => screen.getAllByRole('button')
-const periodTab = () => tabs()[0]
+const periodTab = () => tabs()[4]
 const menu = () => screen.queryByRole('menu', { name: 'Period' })
 const tasksTab = () => screen.getByRole('button', { name: 'Tasks' })
 const tasksMenu = () => screen.queryByRole('menu', { name: 'Tasks' })
@@ -68,10 +68,10 @@ async function hold(user: ReturnType<typeof userEvent.setup>, target: HTMLElemen
 }
 
 describe('BottomNav', () => {
-  it('has five tabs — the period, Habits, Tasks, More and Settings — and marks the one you are on (UI-32, UI-8)', () => {
+  it('has five tabs — Settings, More, Tasks, Habits and the period — and marks the one you are on (UI-32, UI-8)', () => {
     setup('habits')
 
-    expect(tabs().map((tab) => tab.textContent)).toEqual(['Today', 'Habits', 'Tasks', 'More', 'Settings'])
+    expect(tabs().map((tab) => tab.textContent)).toEqual(['Settings', 'More', 'Tasks', 'Habits', 'Today'])
     expect(screen.getByRole('button', { name: 'Habits' }).getAttribute('aria-current')).toBe('page')
     expect(periodTab().getAttribute('aria-current')).toBeNull()
   })

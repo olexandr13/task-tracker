@@ -112,26 +112,30 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   **Rewards**, **Lists**, **Tags**, **More**,
   **Trash** and **Settings**, and a view for each list, opened from Lists, and one for each tag,
   opened from Tags. Each is named and carries an
-  icon — every tag's view the same `#` as Tags, and every list the same folder as Lists. **Tags**,
-  **Rewards** and **Procrastination** are reached from **More** (UI-45); the sidebar and the phone
-  bar both have a **More** entry. See
+  icon — every tag's view the same `#` as Tags, and every list the same folder as Lists. **Tags**
+  and **Procrastination** are reached from **More** (UI-45), and **Rewards** is too on a phone; the
+  sidebar and the phone bar both have a **More** entry, and the sidebar an entry for **Rewards**
+  itself (UI-30). See
   [Views](views.md), [Lists](lists.md), [Habits](habits.md),
   [Rewards](rewards.md) and [Tags](tags.md).
 - **UI-30** In the sidebar the views come in four groups with a thin line between each: the period
-  views (**Today**, **Week**, **Month**), then **Habits**, **Tasks**, **Lists** and **More**, then **Trash**,
-  then **Settings**. **Lists** is always open, with the **Inbox** and then every list under it,
-  indented (LST-13); the one open is marked itself, and Lists only on the Lists page. A tag's view
-  has no entry of its own: **More** stays marked while Tags, Rewards or a tag's tasks are open.
+  views (**Today**, **Week**, **Month**), then **Tasks**, **Habits**, **Lists**, **Rewards** and
+  **More**, then **Trash**, then **Settings**. **Lists** is always open, with the **Inbox** and then
+  every list under it, indented (LST-13); the one open is marked itself, and Lists only on the Lists
+  page. **Rewards** has a place of its own here, where a phone has no room for one (UI-45), and is
+  marked itself while its page is open. A tag's view has no entry of its own: **More** stays marked
+  while Tags or a tag's tasks are open.
 - **UI-8** The view you are on is marked, in the sidebar and in the bottom bar alike.
-- **UI-32** The bottom bar has five tabs, each an icon over its name: **the period** (UI-33),
-  **Tasks**, **Habits**, **More** (UI-45) and **Settings**.
-- **UI-33** Today, Week and Month share the first tab. It shows the one last on screen — Today to
+- **UI-32** The bottom bar has five tabs, each an icon over its name, from left to right:
+  **Settings**, **More** (UI-45), **Tasks**, **Habits** and **the period** (UI-33).
+- **UI-33** Today, Week and Month share the last tab. It shows the one last on screen — Today to
   begin with — and a tap goes to it. **Holding it down**, or **tapping it again** while Today, Week or
-  Month is on screen — so a double tap from anywhere — opens a menu above it to switch between
-  Today, Week and Month; letting go of a hold does not also go to the tab. A right-click, the
-  context-menu key or Shift+F10 open the same menu, and so does Enter on the tab while its period is
-  on screen, from the keyboard starting on its first item. It closes as a task's menu does (UI-31),
-  and on a tap on the tab while it is open, which does not open it again.
+  Month is on screen — so a double tap from anywhere — opens a menu above it, **centred across
+  the screen**, to switch between Today, Week and Month; letting go of a hold does not also go to
+  the tab. A right-click, the context-menu key or Shift+F10 open the same menu, and so does Enter
+  on the tab while its period is on screen, from the keyboard starting on its first item. It closes
+  as a task's menu does (UI-31), and on a tap on the tab while it is open, which does not open it
+  again.
 - **UI-34** The bar has no tab for the lists or the trash. **Tasks** ends with a **Lists** and a
   **Trash** button instead, the Tasks tab's menu has them too (UI-43), and **Tasks** stays marked
   while either is open, or one list or the Inbox. The sidebar keeps its own entries, so the buttons
@@ -153,13 +157,16 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   **Trash**, each entry with its icon — so any list is two taps from anywhere, however long Tasks
   runs, and no heading repeats the name of the entry above it. Choosing one goes there. From any
   other view, a list's included, a tap on Tasks goes to Tasks.
-- **UI-45** The bar and the sidebar have no entry for the tags or the rewards: they are under
-  **More**, marked with three dots. **A tap opens More's page** — a list of links to **Tags** and
-  **Rewards**, each with its icon, large enough for a thumb (UI-49), and a chevron at its end marking
-  it as a page to go to — and **Procrastination** when it is available (JUST-1), which, being a
-  switch rather than a page, has none. Choosing Tags or Rewards goes there; choosing Procrastination starts (or
-  ends) the mode and opens Today. **More** stays marked while its own page, the Tags page, a tag's
-  view or the Rewards page is open. Its address is `#/more` (UI-36).
+- **UI-45** Neither the bar nor the sidebar has an entry for the tags, and the phone's bar, with
+  five tabs, has none for the rewards either: they are under **More**, marked with three dots. **A
+  tap opens More's page** — a list of links to **Tags** and **Rewards**, each with its icon, large
+  enough for a thumb (UI-49), and a chevron at its end marking it as a page to go to — and
+  **Procrastination** when it is available (JUST-1), which, being a switch rather than a page, has
+  none. The page is the same on a wide screen, where Rewards is also a click away in the sidebar
+  (UI-30). Choosing Tags or Rewards goes there; choosing Procrastination starts (or ends) the mode
+  and opens Today. **More** stays marked while its own page, the Tags page or a tag's view is open,
+  and in the bar while the Rewards page is — in the sidebar Rewards is marked instead. Its address
+  is `#/more` (UI-36).
 
 ## Popovers
 

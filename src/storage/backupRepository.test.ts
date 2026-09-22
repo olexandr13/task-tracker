@@ -14,7 +14,7 @@ const COFFEE = createRedemption(3, 'Coffee', 12, AT)
 const ERRANDS = createTag('errands', AT)
 const GARDEN = createTag('garden', AT)
 
-const EMPTY: AccountData = { tasks: [], lists: [], tags: [], entries: [], redemptions: [] }
+const EMPTY: AccountData = { tasks: [], lists: [], tags: [], entries: [], redemptions: [], todayBonus: null }
 
 const NOTHING_KNOWN: KnownRecords = {
   taskIds: new Set(),
@@ -22,6 +22,7 @@ const NOTHING_KNOWN: KnownRecords = {
   tagIds: new Set(),
   tagNames: [],
   redemptionIds: new Set(),
+  todayBonus: null,
   days: new Map(),
 }
 
@@ -33,6 +34,7 @@ describe('what an import adds', () => {
       tags: [ERRANDS],
       entries: [{ taskId: WRITE.id, day: '2026-09-19', points: 5 }],
       redemptions: [COFFEE],
+      todayBonus: 10,
     }
 
     expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
@@ -133,8 +135,10 @@ describe('counting records', () => {
         { taskId: WRITE.id, day: '2026-09-18', points: 5 },
       ],
       redemptions: [],
+      todayBonus: 10,
     }
 
+    // The bonus is a setting rather than a record, and is counted as none.
     expect(countRecords(data)).toEqual({ tasks: 2, lists: 1, tags: 1, completions: 2, redemptions: 0 })
   })
 })

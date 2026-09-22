@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { Repeat } from '../../core'
+import { defaultReward, type Repeat } from '../../core'
 import { RewardPicker } from './RewardPicker'
 
 /* Giving a task a reward, changing it and taking it away. RWD ids refer to wiki/rewards.md, UI ids to wiki/interface.md. */
@@ -17,7 +17,7 @@ function Picker({ initial, repeat, onChange }: { initial: number | null; repeat:
   return (
     <RewardPicker
       reward={reward}
-      repeat={repeat}
+      startAt={defaultReward(repeat)}
       onChange={(next) => {
         onChange(next)
         setReward(next)

@@ -17,10 +17,11 @@ separately, on the [Rewards](rewards.md) page.
   nothing of its day, so a daily task skipped today is out of today's count and still in the week's,
   and a weekly task whose only occurrence this week was skipped is out of the week. An occurrence
   passed over by reopening a task after its day (RPT-38) counts the same way.
-- **PROG-5** A task that happens once with no due date sits in every period's count until it is
-  done. One with a due date belongs to the period its day falls in and, while it is still to do, to
-  every later period as well — letting it slip does not take it out of the count. Done, either kind
-  counts only in the period it was completed in.
+- **PROG-5** A task that happens once with a due date belongs to the period its day falls in and,
+  while it is still to do, to every later period as well — letting it slip does not take it out of
+  the count. One with **no due date** belongs to no period while it is still to do, so a bar counts
+  what its list shows (LIST-5, LIST-13, LIST-18). Done, either kind counts in the period it was
+  completed in.
 - **PROG-6** A task counts as done for a period when its completion time falls inside that period.
   Yesterday's tick is out of today, and still in this week and this month.
 - **PROG-7** A task completed inside a period always counts towards it, even where the occurrence

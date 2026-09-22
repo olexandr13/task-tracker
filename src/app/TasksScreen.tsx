@@ -135,6 +135,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   }, [storage])
   // A load or a save the service refused, said on screen until dismissed (STORE-13).
   const storageProblem = useStorageProblem()
+  // The points come first: what clearing Today is worth is part of what a change
+  // to the tasks earns (RWD-24), so the tasks are held knowing it.
+  const rewards = useRewards(storage.rewards, storageProblem.report)
   const {
     tasks,
     isLoading,
@@ -169,8 +172,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     restore,
     purge,
     emptyTrash,
-  } = useTasks(storage.tasks, storage.rewards, storageProblem.report)
-  const rewards = useRewards(storage.rewards, storageProblem.report)
+  } = useTasks(storage.tasks, storage.rewards, storageProblem.report, rewards.todayBonus)
   const lists = useLists(storage.lists, storageProblem.report)
   const savedTags = useTags(storage.tags, isLoading ? null : tasks, storageProblem.report)
   const backup = useBackup(storage.backup)
@@ -463,7 +465,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     redemptions={rewards.redemptions}
                     taskTitles={new Map(tasks.map((task) => [task.id, task.title]))}
                     now={now}
+                    todayBonus={rewards.todayBonus}
                     onRedeem={rewards.redeem}
+                    onChangeTodayBonus={rewards.setTodayBonus}
                     onRemoveEarning={handleRemoveEarning}
                     onRemoveRedemption={handleRemoveRedemption}
                   />

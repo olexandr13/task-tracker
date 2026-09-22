@@ -25,6 +25,7 @@ function fakeRewardRepository(initial: PointsLedger) {
   const saved: RewardChanges[] = []
   const redeemed: Redemption[] = []
   const removed: string[] = []
+  const bonuses: (number | null)[] = []
 
   const repository: RewardRepository = {
     subscribe(callback) {
@@ -43,6 +44,11 @@ function fakeRewardRepository(initial: PointsLedger) {
       removed.push(id)
       return Promise.resolve()
     },
+    setTodayBonus(points) {
+      bonuses.push(points)
+      return Promise.resolve()
+    },
+    importTodayBonus: () => Promise.resolve(),
   }
 
   return {
@@ -50,6 +56,7 @@ function fakeRewardRepository(initial: PointsLedger) {
     saved,
     redeemed,
     removed,
+    bonuses,
     arrive: (ledger: PointsLedger) => {
       act(() => {
         onLedger(ledger)
@@ -68,7 +75,7 @@ function setUp(ledger: PointsLedger) {
 
 describe('useRewards, removing ledger rows', () => {
   it('removes an earning at once and hands it back to undo (RWD-23)', () => {
-    const { result, saved } = setUp({ entries: [RUN], redemptions: [] })
+    const { result, saved } = setUp({ entries: [RUN], redemptions: [], todayBonus: null })
 
     let removed: RewardEntry | null = null
     act(() => {
@@ -80,7 +87,7 @@ describe('useRewards, removing ledger rows', () => {
   })
 
   it('restores a deleted earning (RWD-23)', () => {
-    const { result, saved } = setUp({ entries: [], redemptions: [] })
+    const { result, saved } = setUp({ entries: [], redemptions: [], todayBonus: null })
 
     act(() => {
       result.current.saveEarning(RUN)
@@ -90,7 +97,7 @@ describe('useRewards, removing ledger rows', () => {
   })
 
   it('removes a redemption at once and hands it back to undo (RWD-18)', () => {
-    const { result, removed } = setUp({ entries: [], redemptions: [COFFEE] })
+    const { result, removed } = setUp({ entries: [], redemptions: [COFFEE], todayBonus: null })
 
     let deleted: Redemption | null = null
     act(() => {
@@ -102,7 +109,7 @@ describe('useRewards, removing ledger rows', () => {
   })
 
   it('restores a deleted redemption with the same id and day (RWD-18)', () => {
-    const { result, redeemed } = setUp({ entries: [], redemptions: [] })
+    const { result, redeemed } = setUp({ entries: [], redemptions: [], todayBonus: null })
 
     act(() => {
       result.current.restoreRedemption(COFFEE)
@@ -116,10 +123,10 @@ describe('when the repository refuses', () => {
   it('reports a write it refused (STORE-13)', async () => {
     expectConsole('Could not delete the redemption.')
     const onProblem = vi.fn()
-    const fake = fakeRewardRepository({ entries: [RUN], redemptions: [COFFEE] })
+    const fake = fakeRewardRepository({ entries: [RUN], redemptions: [COFFEE], todayBonus: null })
     const repository: RewardRepository = { ...fake.repository, removeRedemption: () => Promise.reject(new Error('denied')) }
     const { result } = renderHook(() => useRewards(repository, onProblem))
-    fake.arrive({ entries: [RUN], redemptions: [COFFEE] })
+    fake.arrive({ entries: [RUN], redemptions: [COFFEE], todayBonus: null })
 
     await act(async () => {
       result.current.removeRedemption(COFFEE.id)

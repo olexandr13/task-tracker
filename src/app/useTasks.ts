@@ -37,6 +37,7 @@ import {
   skipOccurrence,
   tagsInUse,
   uncompleteTask,
+  withTodayBonus,
   type ListId,
   type LocalDay,
   type Placement,
@@ -76,13 +77,21 @@ function record(rewards: RewardRepository, changes: RewardChanges, onProblem: Re
  * another device — comes back through the subscription and is shown.
  * The rules themselves live in ../core; this only wires them to React.
  *
- * What a change here earns or takes back is recorded in `rewards` alongside it.
- * A change arriving from elsewhere is not: the device that made it recorded it.
+ * What a change here earns or takes back is recorded in `rewards` alongside it,
+ * `todayBonus` included: a change that leaves Today clear earns it, and one that
+ * leaves it unclear again takes it back (RWD-24). A change arriving from
+ * elsewhere is not recorded: the device that made it recorded it.
  *
  * A load or a save the repository refuses is told to `onProblem` (STORE-13),
  * which is expected to stay the same function from render to render.
  */
-export function useTasks(repository: TaskRepository, rewards: RewardRepository, onProblem: ReportProblem = ignoreProblems) {
+export function useTasks(
+  repository: TaskRepository,
+  rewards: RewardRepository,
+  onProblem: ReportProblem = ignoreProblems,
+  /** What clearing Today earns as things stand (RWD-24), or null for no bonus. */
+  todayBonus: number | null = null,
+) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [status, setStatus] = useState<'loading' | 'loaded' | 'failed'>('loading')
   // The list as the last change left it, ahead of the render that draws it. Every
@@ -120,9 +129,10 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository, 
       latest.current = next
       setTasks(next)
       persist(repository, changesBetween(before, next), onProblem)
-      record(rewards, rewardChanges(before, next), onProblem)
+      // The moment of the change, which says whose day the bonus is for.
+      record(rewards, withTodayBonus(rewardChanges(before, next), before, next, todayBonus, new Date()), onProblem)
     },
-    [repository, rewards, onProblem],
+    [repository, rewards, onProblem, todayBonus],
   )
 
   const addTask = useCallback(

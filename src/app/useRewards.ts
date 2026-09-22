@@ -3,12 +3,13 @@ import { createRedemption, pointsBalance, type Redemption, type RedemptionId, ty
 import type { PointsLedger, RewardRepository } from '../storage/rewardRepository'
 import { ignoreProblems, type ReportProblem } from './storageProblem'
 
-const EMPTY: PointsLedger = { entries: [], redemptions: [] }
+const EMPTY: PointsLedger = { entries: [], redemptions: [], todayBonus: null }
 
 /**
- * Holds the points ledger on screen: what completions earned and what was
- * redeemed. What completions earn is written as tasks change (useTasks); this
- * reads it back, redeems, and can take an earning or a redemption off the ledger.
+ * Holds the points ledger on screen: what completions earned, what was
+ * redeemed, and what clearing Today is worth (RWD-24). What completions earn is
+ * written as tasks change (useTasks); this reads it back, redeems, sets the
+ * bonus, and can take an earning or a redemption off the ledger.
  *
  * Nothing is put on screen ahead of the repository: Firestore hands a write
  * made here straight back through the subscription, offline too, so the ledger
@@ -95,6 +96,18 @@ export function useRewards(repository: RewardRepository, onProblem: ReportProble
   )
 
   /**
+   * Sets what clearing Today earns from here on, or takes the bonus away with
+   * null. What earlier days earned by it stays as it is, as changing a task's
+   * reward leaves its earlier completions (RWD-3).
+   */
+  const setTodayBonus = useCallback(
+    (points: number | null) => {
+      attempt(repository.setTodayBonus(points), 'Could not save the Today bonus.')
+    },
+    [repository, attempt],
+  )
+
+  /**
    * Writes what one completion earned, in place of whatever it earned before:
    * a deleted earning put back, or the win card's extra points (JUST-9).
    */
@@ -114,5 +127,6 @@ export function useRewards(repository: RewardRepository, onProblem: ReportProble
     restoreRedemption,
     removeEarning,
     saveEarning,
+    setTodayBonus,
   }
 }

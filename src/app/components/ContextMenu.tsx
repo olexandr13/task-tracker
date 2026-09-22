@@ -65,8 +65,8 @@ interface ContextMenuProps {
   /** Where it was asked for, in window pixels. */
   x: number
   y: number
-  /** Which edge of the menu sits at x: its left, or its right. */
-  align?: 'left' | 'right'
+  /** What of the menu sits at x: its left edge, its right edge, or its middle. */
+  align?: 'left' | 'right' | 'center'
   /** What the menu is for, when there could be more than one on screen. */
   label: string
   items: readonly ContextMenuEntry[]

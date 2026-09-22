@@ -29,7 +29,8 @@ export async function importGuestAccount(
     guestLists.length === 0 &&
     guestTags.length === 0 &&
     ledger.entries.length === 0 &&
-    ledger.redemptions.length === 0
+    ledger.redemptions.length === 0 &&
+    ledger.todayBonus === null
 
   if (empty) {
     clearGuestAccount()
@@ -50,6 +51,9 @@ export async function importGuestAccount(
   for (const redemption of ledger.redemptions) {
     await rewards.redeem(redemption)
   }
+
+  // The bonus set as guest comes too, where the account has none of its own.
+  if (ledger.todayBonus !== null) await rewards.importTodayBonus(ledger.todayBonus)
 
   clearGuestAccount()
 }

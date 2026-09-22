@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import {
   createSubtask,
+  defaultReward,
   sameTag,
   type List,
   type ListId,
@@ -222,7 +223,7 @@ export function AddTaskSheet({
           <div className={sheetAction}>
             <RewardPicker
               reward={reward}
-              repeat={repeat}
+              startAt={defaultReward(repeat)}
               onChange={setReward}
               label={`Reward for "${namedFor}"`}
               showAmount

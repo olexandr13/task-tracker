@@ -13,7 +13,15 @@ import { countRecords, NeedsConnectionError, newRecords, type BackupRepository, 
 import { accountCollection } from './firestoreAccount'
 import { commitInBatches } from './firestoreBatches'
 import { readList, toStoredList } from './listSchema'
-import { readRedemption, readRewardDay, toStoredRedemption, toStoredRewardDays } from './rewardSchema'
+import {
+  readRedemption,
+  readRewardDay,
+  readRewardGoal,
+  TODAY_GOAL,
+  toStoredRedemption,
+  toStoredRewardDays,
+  toStoredRewardGoal,
+} from './rewardSchema'
 import { readTag, toStoredTag } from './tagSchema'
 import { readStoredTask, toStoredTask } from './taskSchema'
 
@@ -41,12 +49,18 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   const tags = accountCollection(firestore, accountId, 'tags')
   const days = accountCollection(firestore, accountId, 'rewardDays')
   const redemptions = accountCollection(firestore, accountId, 'redemptions')
+  const goals = accountCollection(firestore, accountId, 'rewardGoals')
+
+  /** What the account earns for clearing Today, of everything its goals hold. */
+  const todayBonusIn = (snapshot: QuerySnapshot): number | null =>
+    snapshot.docs.flatMap((saved) => readRewardGoal(saved.data()) ?? []).find((goal) => goal.period === TODAY_GOAL)
+      ?.points ?? null
 
   return {
     // The server when there is a connection, the browser's copy when there is not.
     async exportAll() {
-      const [savedTasks, savedLists, savedTags, savedDays, savedRedemptions] = await Promise.all(
-        [tasks, lists, tags, days, redemptions].map((collection) => getDocs(collection)),
+      const [savedTasks, savedLists, savedTags, savedDays, savedRedemptions, savedGoals] = await Promise.all(
+        [tasks, lists, tags, days, redemptions, goals].map((collection) => getDocs(collection)),
       )
       const readAll = <T>(snapshot: QuerySnapshot, read: (data: unknown) => T | null): T[] =>
         snapshot.docs.flatMap((saved) => read(saved.data()) ?? [])
@@ -57,17 +71,19 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         tags: readAll(savedTags, readTag),
         entries: readAll(savedDays, readRewardDay).flat(),
         redemptions: readAll(savedRedemptions, readRedemption),
+        todayBonus: todayBonusIn(savedGoals),
       }
     },
 
     async importAll(incoming, now) {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new NeedsConnectionError()
-      const [savedTasks, savedLists, savedTags, savedDays, savedRedemptions] = await fromServer([
+      const [savedTasks, savedLists, savedTags, savedDays, savedRedemptions, savedGoals] = await fromServer([
         tasks,
         lists,
         tags,
         days,
         redemptions,
+        goals,
       ])
       const known: KnownRecords = {
         taskIds: ids(savedTasks),
@@ -75,6 +91,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         tagIds: ids(savedTags),
         tagNames: savedTags.docs.flatMap((saved) => readTag(saved.data())?.name ?? []),
         redemptionIds: ids(savedRedemptions),
+        todayBonus: todayBonusIn(savedGoals),
         days: new Map(
           savedDays.docs.map((saved): [LocalDay, ReadonlySet<TaskId> | null] => {
             const entries = readRewardDay(saved.data())
@@ -84,6 +101,8 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
       }
 
       const { fresh, alreadyHere } = newRecords(incoming, known, now)
+      // Only ever set where the account has no bonus of its own (`newRecords`).
+      const bonus = fresh.todayBonus
 
       // A day is merged, never replaced, as when points are earned: only the
       // entries it did not hold are added to it.
@@ -97,6 +116,9 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         ...fresh.redemptions.map((redemption) => (batch: WriteBatch) =>
           batch.set(doc(redemptions, redemption.id), toStoredRedemption(redemption)),
         ),
+        ...(bonus === null
+          ? []
+          : [(batch: WriteBatch) => batch.set(doc(goals, TODAY_GOAL), toStoredRewardGoal(TODAY_GOAL, bonus))]),
       ])
 
       return { added: countRecords(fresh), alreadyHere }

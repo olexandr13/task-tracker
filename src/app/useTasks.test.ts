@@ -58,6 +58,8 @@ function fakeRewardRepository() {
       return Promise.resolve()
     },
     redeem: () => Promise.resolve(),
+    setTodayBonus: () => Promise.resolve(),
+    importTodayBonus: () => Promise.resolve(),
     removeRedemption: () => Promise.resolve(),
   }
   return { repository, recorded }

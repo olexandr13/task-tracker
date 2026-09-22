@@ -41,7 +41,7 @@ describe('SideNav', () => {
     expect(screen.getByText('PickMe')).toBeTruthy()
   })
 
-  it('carries Lists and More beside Tasks and Habits, and no entry for Tags, Rewards or any one tag (UI-30, UI-45, TAG-18, RWD-19, LST-13)', () => {
+  it('carries Lists, Rewards and More beside Tasks and Habits, and no entry for Tags or any one tag (UI-30, UI-45, TAG-18, RWD-19, LST-13)', () => {
     setup('today')
 
     const entries = screen.getAllByRole('button').filter((button) => button !== foldButton())
@@ -49,10 +49,11 @@ describe('SideNav', () => {
       'Today',
       'Week',
       'Month',
-      'Habits',
       'Tasks',
+      'Habits',
       'Lists',
       'Inbox',
+      'Rewards',
       'More',
       'Trash',
       'Settings',
@@ -75,17 +76,27 @@ describe('SideNav', () => {
     expect(onChange).toHaveBeenCalledWith('more')
   })
 
-  it('keeps More marked while Tags, Rewards or a tag\'s tasks are open (UI-8, UI-45, TAG-17, RWD-19)', () => {
-    setup('tags')
-    expect(marked().map((button) => button.textContent)).toEqual(['More'])
-    cleanup()
+  it('goes to Rewards from its own entry (RWD-19)', async () => {
+    const { user, onChange } = setup('today')
 
-    setup('rewards')
+    await user.click(screen.getByRole('button', { name: 'Rewards' }))
+
+    expect(onChange).toHaveBeenCalledWith('rewards')
+  })
+
+  it('keeps More marked while Tags or a tag\'s tasks are open (UI-8, UI-45, TAG-17)', () => {
+    setup('tags')
     expect(marked().map((button) => button.textContent)).toEqual(['More'])
     cleanup()
 
     setup('tag/work')
     expect(marked().map((button) => button.textContent)).toEqual(['More'])
+  })
+
+  it('marks Rewards itself, and not More, while the Rewards page is open (UI-8, UI-30, RWD-19)', () => {
+    setup('rewards')
+
+    expect(marked().map((button) => button.textContent)).toEqual(['Rewards'])
   })
 
   it('keeps Lists open, with the Inbox and then every list under it (LST-13)', () => {

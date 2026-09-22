@@ -4,6 +4,7 @@ import {
   canSkipOccurrence,
   countSubtasks,
   currentEntries,
+  defaultReward,
   dueDay,
   elapsedSeconds,
   hasDescription,
@@ -835,7 +836,7 @@ export function TaskItem({
             <div className={slot}>
               <RewardPicker
                 reward={task.reward}
-                repeat={task.repeat}
+                startAt={defaultReward(task.repeat)}
                 onChange={(reward) => { actions.changeReward(task.id, reward) }}
                 label={`Reward for "${task.title}"`}
               />

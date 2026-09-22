@@ -5,10 +5,14 @@ import { isRecord } from './plainData'
 import {
   readRedemption,
   readRewardDay,
+  readRewardGoal,
+  TODAY_GOAL,
   toStoredRedemption,
   toStoredRewardDays,
+  toStoredRewardGoal,
   type StoredRedemption,
   type StoredRewardDay,
+  type StoredRewardGoal,
 } from './rewardSchema'
 import { readTag, toStoredTag, type StoredTag } from './tagSchema'
 import { readStoredTask, toStoredTask, type StoredTask } from './taskSchema'
@@ -25,8 +29,13 @@ export const BACKUP_FORMAT = 'task-tracker-backup'
  *
  * Version 1 held no tags: a file made before the kept tags were backed up is
  * read as keeping none, and the tags its tasks carry are kept again on arrival.
+ * Version 2 held no bonus for clearing a period (RWD-24): a file made before
+ * there was one is read as setting none.
  */
-export const BACKUP_VERSION = 2
+export const BACKUP_VERSION = 3
+
+/** The versions of the wrapper this app can still read, oldest first. */
+const READABLE_VERSIONS = [1, 2, BACKUP_VERSION]
 
 interface BackupFile {
   format: typeof BACKUP_FORMAT
@@ -38,6 +47,8 @@ interface BackupFile {
   tags: StoredTag[]
   rewardDays: StoredRewardDay[]
   redemptions: StoredRedemption[]
+  /** What clearing a period earns, one record per period that has a bonus (RWD-24). */
+  rewardGoals: StoredRewardGoal[]
 }
 
 /** Why a file was not read at all. */
@@ -65,6 +76,7 @@ export function writeBackupFile(data: AccountData, now: Date): string {
     tags: data.tags.map(toStoredTag),
     rewardDays: toStoredRewardDays(data.entries),
     redemptions: data.redemptions.map(toStoredRedemption),
+    rewardGoals: data.todayBonus === null ? [] : [toStoredRewardGoal(TODAY_GOAL, data.todayBonus)],
   }
   return `${JSON.stringify(file, null, 2)}\n`
 }
@@ -84,16 +96,19 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
 
   if (!isRecord(file) || file.format !== BACKUP_FORMAT || typeof file.version !== 'number') return 'not-a-backup'
   if (file.version > BACKUP_VERSION) return 'newer-version'
-  if (file.version !== 1 && file.version !== BACKUP_VERSION) return 'not-a-backup'
+  if (!READABLE_VERSIONS.includes(file.version)) return 'not-a-backup'
 
   const { tasks, lists, rewardDays, redemptions } = file
+  // What an older wrapper did not hold is read as empty rather than missing.
   const tags = file.version === 1 ? [] : file.tags
+  const rewardGoals = file.version < BACKUP_VERSION ? [] : file.rewardGoals
   if (
     !Array.isArray(tasks) ||
     !Array.isArray(lists) ||
     !Array.isArray(tags) ||
     !Array.isArray(rewardDays) ||
-    !Array.isArray(redemptions)
+    !Array.isArray(redemptions) ||
+    !Array.isArray(rewardGoals)
   ) {
     return 'not-a-backup'
   }
@@ -113,6 +128,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     tags: readEach<Tag>(tags, readTag),
     entries: readEach<RewardEntry[]>(rewardDays, readRewardDay).flat(),
     redemptions: readEach<Redemption>(redemptions, readRedemption),
+    todayBonus: readEach(rewardGoals, readRewardGoal).find((goal) => goal.period === TODAY_GOAL)?.points ?? null,
   }
   return { data, unreadable }
 }

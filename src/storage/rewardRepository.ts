@@ -1,9 +1,11 @@
 import type { Redemption, RedemptionId, RewardChanges, RewardEntry } from '../core'
 
-/** Everything the points are read from: what completions earned, and what was redeemed. */
+/** Everything the points are read from: what completions earned, what was redeemed, and what clearing Today is worth. */
 export interface PointsLedger {
   readonly entries: readonly RewardEntry[]
   readonly redemptions: readonly Redemption[]
+  /** What clearing Today earns (RWD-24), or null when it earns nothing. */
+  readonly todayBonus: number | null
 }
 
 /**
@@ -22,4 +24,8 @@ export interface RewardRepository {
   redeem(redemption: Redemption): Promise<void>
   /** Deletes a redemption, which gives its points back. */
   removeRedemption(id: RedemptionId): Promise<void>
+  /** Sets what clearing Today earns from here on, or takes the bonus away with null. */
+  setTodayBonus(points: number | null): Promise<void>
+  /** Takes on a bonus from elsewhere — the guest's — only where there is none already, as `importTasks` does. */
+  importTodayBonus(points: number): Promise<void>
 }

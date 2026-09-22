@@ -1,5 +1,5 @@
-import type { RewardEntry, RewardKey, TaskId } from '../../core'
-import { describeEarnedOn, describePoints } from '../rewardLabels'
+import { isTodayBonus, type RewardEntry, type RewardKey, type TaskId } from '../../core'
+import { describeEarnedOn, describePoints, TODAY_BONUS_TITLE } from '../rewardLabels'
 import { deleteControl } from '../rowControls'
 
 interface EarningListProps {
@@ -14,7 +14,8 @@ interface EarningListProps {
 
 /**
  * What completions earned: each entry's day, the task's title and how many
- * points, with a button deleting it. A purged task still shows — earned stays
+ * points, with a button deleting it. A day's bonus is named for what earned it
+ * rather than for a task (RWD-27). A purged task still shows — earned stays
  * earned until the row is removed — as a deleted one. Deleting asks nothing:
  * the screen offers to undo for a few seconds.
  */
@@ -59,5 +60,6 @@ export function EarningList({ entries, taskTitles, now, onRemove }: EarningListP
 }
 
 function titleOf(taskId: TaskId, taskTitles: ReadonlyMap<TaskId, string>): string {
+  if (isTodayBonus(taskId)) return TODAY_BONUS_TITLE
   return taskTitles.get(taskId) ?? 'Deleted task'
 }

@@ -27,6 +27,12 @@ export interface AccountData {
   /** What completions earned (./rewardRepository). */
   readonly entries: readonly RewardEntry[]
   readonly redemptions: readonly Redemption[]
+  /**
+   * What clearing Today earns (RWD-24), or null for no bonus. A setting rather
+   * than a record: it is counted as none of them, and an import takes it only
+   * where the account has none of its own.
+   */
+  readonly todayBonus: number | null
 }
 
 /** How many of each kind of record there are. A completion is one entry of the ledger. */
@@ -78,6 +84,8 @@ export interface KnownRecords {
   /** The names of the tags kept already, readable ones: a tag is found by its name (../core/tag). */
   readonly tagNames: readonly string[]
   readonly redemptionIds: ReadonlySet<RedemptionId>
+  /** What the account earns for clearing Today already, or null when it has no bonus. */
+  readonly todayBonus: number | null
   /**
    * The tasks each saved day holds an entry for, or null for a day the app
    * cannot read — which is left as it is, so nothing is added to it.
@@ -105,7 +113,10 @@ export function countRecords(data: AccountData): RecordCounts {
  * A task whose time in the trash ran out since the file was made is left out:
  * it would only be purged again the moment it arrived (`purgeExpired`). A tag
  * is the account's already when a tag of its name is kept, whatever the case,
- * so an import never makes a second record of one tag.
+ * so an import never makes a second record of one tag. The Today bonus is the
+ * one thing in here that is no record: the file's is taken only where the
+ * account has none, and counts towards neither what was added nor what was
+ * already here.
  */
 export function newRecords(
   incoming: AccountData,
@@ -153,6 +164,7 @@ export function newRecords(
       tags,
       entries: unseen(incoming.entries, entryKey, takenEntries),
       redemptions: unseen(incoming.redemptions, (redemption) => redemption.id, known.redemptionIds),
+      todayBonus: known.todayBonus === null ? incoming.todayBonus : null,
     },
     alreadyHere,
   }

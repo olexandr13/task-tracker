@@ -28,6 +28,7 @@ export function createLocalBackupRepository(): BackupRepository {
         tags: loadGuestTags(),
         entries: ledger.entries,
         redemptions: ledger.redemptions,
+        todayBonus: ledger.todayBonus,
       }
     },
 
@@ -40,6 +41,7 @@ export function createLocalBackupRepository(): BackupRepository {
         tagIds: new Set(guestTags.map((tag) => tag.id)),
         tagNames: guestTags.map((tag) => tag.name),
         redemptionIds: new Set(ledger.redemptions.map((redemption) => redemption.id)),
+        todayBonus: ledger.todayBonus,
         days: daysKnown(ledger.entries),
       }
 
@@ -48,7 +50,12 @@ export function createLocalBackupRepository(): BackupRepository {
       await tasks.importTasks(fresh.tasks)
       await lists.save({ saved: fresh.lists, removed: [] })
       await tags.save({ saved: fresh.tags, removed: [] })
-      replaceGuestLedger([...ledger.entries, ...fresh.entries], [...ledger.redemptions, ...fresh.redemptions])
+      replaceGuestLedger(
+        [...ledger.entries, ...fresh.entries],
+        [...ledger.redemptions, ...fresh.redemptions],
+        // The file's bonus only where there is none here already (`newRecords`).
+        ledger.todayBonus ?? fresh.todayBonus,
+      )
 
       return { added: countRecords(fresh), alreadyHere }
     },

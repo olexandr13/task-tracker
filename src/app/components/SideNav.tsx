@@ -9,19 +9,33 @@ import { FolderIcon } from './FolderIcon'
 import { InboxIcon } from './InboxIcon'
 
 /**
- * The views, grouped: the ones named after a period, then the habits, every
- * task, the lists and More, then the trash, then settings. A thin line is drawn
- * between groups. Lists opens onto the Inbox and every list under it, so a list
- * is one click away and a task can be dropped on one to file it, and folds them
- * away when they are not wanted. Tags, Rewards and Procrastination live under
- * More; a tag's tasks have no entry of their own.
+ * The views, grouped: the ones named after a period, then every task, the
+ * habits, the lists, the rewards and More, then the trash, then settings. A
+ * thin line is drawn between groups. Lists opens onto the Inbox and every list
+ * under it, so a list is one click away and a task can be dropped on one to
+ * file it, and folds them away when they are not wanted. There is room here for
+ * Rewards itself, which a phone reaches from More; Tags and Procrastination
+ * live under More, and a tag's tasks have no entry of their own.
  */
 const VIEW_GROUPS: readonly (readonly FixedView[])[] = [
   ['today', 'week', 'month'],
-  ['habits', 'tasks', 'lists', 'more'],
+  ['tasks', 'habits', 'lists', 'rewards', 'more'],
   ['trash'],
   ['settings'],
 ]
+
+/** Every view listed here, whatever group it is in. */
+const LISTED: ReadonlySet<View> = new Set<View>(VIEW_GROUPS.flat())
+
+/**
+ * Whether an entry is the one you are on. More stands for the pages under it
+ * (UI-45) — but not for one this sidebar lists itself, as Rewards is, or two
+ * entries would be marked at once.
+ */
+function isOn(view: View, value: FixedView): boolean {
+  if (value === 'more' && view !== 'more' && LISTED.has(view)) return false
+  return isUnder(view, value)
+}
 
 const item = 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors'
 const itemOn = 'bg-neutral-200/70 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100'
@@ -55,7 +69,8 @@ interface SideNavProps {
  * Only where there is room for one — a phone gets the bar along the bottom
  * instead (BottomNav), and no mark above the work. The one you are on is
  * marked, a list under Lists included — or Lists itself while the lists are
- * folded away. More stays marked while Tags, Rewards or a tag's tasks are open.
+ * folded away. More stays marked while Tags or a tag's tasks are open; Rewards
+ * has its own entry here, and is marked itself.
  */
 export function SideNav({ view, lists, listsOpen, dimmed = false, onChange, onListsOpenChange }: SideNavProps) {
   const listsId = useId()
@@ -116,7 +131,7 @@ export function SideNav({ view, lists, listsOpen, dimmed = false, onChange, onLi
                 </li>
               ) : (
                 <li key={value}>
-                  <NavButton value={value} active={isUnder(view, value)} onSelect={onChange} />
+                  <NavButton value={value} active={isOn(view, value)} onSelect={onChange} />
                 </li>
               ),
             )}

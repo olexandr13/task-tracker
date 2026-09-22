@@ -12,8 +12,8 @@ interface FloatingPanelProps {
   /** Where it was asked for, in window pixels. */
   x: number
   y: number
-  /** Which edge of the panel sits at x: its left, or its right. */
-  align?: 'left' | 'right'
+  /** What of the panel sits at x: its left edge, its right edge, or its middle. */
+  align?: 'left' | 'right' | 'center'
   role: 'menu' | 'dialog'
   /** What the panel is for, when there could be more than one on screen. */
   label: string
@@ -41,7 +41,7 @@ function keepInside(event: SyntheticEvent) {
 /**
  * A panel floating over the page at a point — where a right-click was. It opens
  * with its corner at the point, and on the other side of it where the window
- * runs out.
+ * runs out; or centred on the point, moved in as far as the window needs.
  *
  * It closes on Escape, on a click outside it, and when the page scrolls or the
  * window changes size, since it would then be left floating away from what it
@@ -68,10 +68,13 @@ export function FloatingPanel({
     if (panel === null) return
 
     const { width, height } = panel.getBoundingClientRect()
+    const lastLeft = window.innerWidth - margin - width
     panel.style.left =
       align === 'right'
-        ? `${String(Math.max(margin, Math.min(x - width, window.innerWidth - margin - width)))}px`
-        : `${String(x + width > window.innerWidth - margin ? Math.max(margin, x - width) : x)}px`
+        ? `${String(Math.max(margin, Math.min(x - width, lastLeft)))}px`
+        : align === 'center'
+          ? `${String(Math.max(margin, Math.min(x - width / 2, lastLeft)))}px`
+          : `${String(x + width > window.innerWidth - margin ? Math.max(margin, x - width) : x)}px`
     panel.style.top = `${String(y + height > window.innerHeight - margin ? Math.max(margin, y - height) : y)}px`
   }, [x, y, align])
 

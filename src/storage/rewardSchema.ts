@@ -1,4 +1,12 @@
-import { isLocalDay, isRedemptionAmount, type LocalDay, type Redemption, type RewardEntry, type TaskId } from '../core'
+import {
+  isLocalDay,
+  isRedemptionAmount,
+  isRewardAmount,
+  type LocalDay,
+  type Redemption,
+  type RewardEntry,
+  type TaskId,
+} from '../core'
 import { isRecord } from './plainData'
 
 /**
@@ -76,4 +84,35 @@ export function readRedemption(data: unknown): Redemption | null {
   }
 
   return { id, points, note, redeemedAt }
+}
+
+/**
+ * A standing amount the account earns for clearing a period — Today for now
+ * (RWD-24). One record per period, named by the period rather than by an id of
+ * its own, so the two devices that set it write the one record and the later
+ * write wins. It is saved under the ledger's version: an amount and what a
+ * completion earned have every reason to change shape together.
+ */
+export interface StoredRewardGoal {
+  version: number
+  goal: { period: RewardGoalPeriod; points: number }
+}
+
+/** The periods a bonus can be set for. Only Today has one so far (RWD-24). */
+export type RewardGoalPeriod = 'today'
+
+export const TODAY_GOAL: RewardGoalPeriod = 'today'
+
+export function toStoredRewardGoal(period: RewardGoalPeriod, points: number): StoredRewardGoal {
+  return { version: REWARD_SCHEMA_VERSION, goal: { period, points } }
+}
+
+/** A saved bonus, or null when it can't be trusted. */
+export function readRewardGoal(data: unknown): { period: RewardGoalPeriod; points: number } | null {
+  if (!isRecord(data) || data.version !== REWARD_SCHEMA_VERSION || !isRecord(data.goal)) return null
+
+  const { period, points } = data.goal
+  if (period !== TODAY_GOAL || typeof points !== 'number' || !isRewardAmount(points)) return null
+
+  return { period, points }
 }

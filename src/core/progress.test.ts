@@ -79,12 +79,12 @@ describe('summarize, which tasks a period counts', () => {
     expect(summarize(tasks, 'month', TUE_15).total).toBe(1)
   })
 
-  it('keeps a task that happens once in every period until it is done', () => {
+  it('leaves a task that happens once with no day out of every period, as the lists do (LIST-5)', () => {
     const tasks = [task(null)]
 
-    expect(summarize(tasks, 'today', TUE_15).total).toBe(1)
-    expect(summarize(tasks, 'week', TUE_15).total).toBe(1)
-    expect(summarize(tasks, 'month', TUE_15).total).toBe(1)
+    expect(summarize(tasks, 'today', TUE_15).total).toBe(0)
+    expect(summarize(tasks, 'week', TUE_15).total).toBe(0)
+    expect(summarize(tasks, 'month', TUE_15).total).toBe(0)
   })
 
   it('drops a task that happens once once it is done and its period has passed', () => {
@@ -177,8 +177,8 @@ describe('summarize, the numbers it reports', () => {
 
 describe('deleted tasks', () => {
   it('belong to no period, however they were counted before', () => {
-    const live = task(null)
-    const binned = deleteTask(task(null), TUE_15)
+    const live = task(DAILY)
+    const binned = deleteTask(task(DAILY), TUE_15)
 
     for (const period of ['today', 'week', 'month'] as const) {
       expect(summarize([live, binned], period, TUE_15).total).toBe(1)
@@ -198,10 +198,12 @@ describe('deleted tasks', () => {
 })
 
 describe('a task with a checklist', () => {
+  const dueToday = () => setDueDate(task(null), '2026-09-15')
+
   it('counts once however many items it has, because the unit is the task', () => {
     const listed = ['crate it', 'label it', 'post it'].reduce(
       (current, title) => addSubtask(current, title, MON_14_EVENING),
-      task(null),
+      dueToday(),
     )
 
     expect(summarize([listed], 'today', TUE_15).total).toBe(1)
@@ -228,7 +230,7 @@ describe('a task with a checklist', () => {
   it('is still to do while an item is open, even with the rest ticked', () => {
     const listed = ['crate it', 'label it'].reduce(
       (current, title) => addSubtask(current, title, MON_14_EVENING),
-      task(null),
+      dueToday(),
     )
     const partly = setSubtaskDone(listed, listed.subtasks[0].id, true, TUE_15)
 
