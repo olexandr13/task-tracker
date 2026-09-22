@@ -137,8 +137,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   while either is open, or one list or the Inbox. The sidebar keeps its own entries, so the buttons
   are only on a phone.
 - **UI-35** **Settings** holds the signed-in account and the way out (AUTH-9), and under it
-  **Backup**: exporting the account to a file and importing one back (BAK-1, BAK-4). Under
-  those, the **version** of the app that is open — `MAJOR.MINOR.PATCH` from `package.json`,
+  **Backup**: exporting the account to a file and importing one back (BAK-1, BAK-4), then the
+  **Theme** (UI-63). Under those, the **version** of the app that is open — `MAJOR.MINOR.PATCH` from `package.json`,
   baked in when the app is built. The number is bumped with each change to the app (patch for a
   small fix, minor for a feature, major when something breaks for the person using it).
 - **UI-36** The view you are on is **in the address** — `#/week`, `#/habits`, `#/inbox`,
@@ -303,8 +303,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 ## Everywhere
 
-- **UI-11** Dark mode follows the system — the browser's own parts too, such as scrollbars and the
-  caret. There is no theme switch.
+- **UI-11** Dark mode follows the system unless a theme is picked on Settings (UI-63) — the
+  browser's own parts too, such as scrollbars and the caret.
 - **UI-12** Every control carries a name for a screen reader, and one that names its task where
   several of the same control are on screen at once.
 - **UI-13** Toggles report whether they are on — the completion box, the repeat kinds, the weekday
@@ -325,6 +325,13 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-39** The app's icon, shown in the browser tab, is a **progress ring** about three-quarters full
   around a check, drawn in the app's blue on a dark tile, so it reads well on light and dark tab bars.
   The same icon stands for the app once installed on a home screen or a desktop (OFF-10).
+- **UI-63** **Settings** has a **Theme**: **System**, **Light** or **Dark**, one always chosen, side by
+  side as one control. **System** — where it starts — follows the device's light or dark mode, and
+  changes with it; **Light** and **Dark** stay put whatever the device is set to. Picking one colours
+  the whole app at once, the sign-in screen included, the browser's own parts (UI-11) and the bar a
+  phone or an installed app draws around the page. The choice is kept on this device, not in the
+  account (STORE-40), and the app **opens in it** — never in the other theme for a moment first.
+  The arrow keys move along the three, as in any set of options where one is chosen.
 
 ---
 
@@ -345,7 +352,9 @@ task views' options), `src/app/components/HabitViewOptionsMenu.tsx`
 (Habits'), `src/app/useDeviceSetting.ts` (keeping either on this device), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/useLongPress.ts` (a press told from a
 long press), `src/app/useRowSwipe.ts` and `src/app/rowSwipe.ts` (a phone's swipe to complete or
 delete), `src/app/components/SettingsList.tsx` (and the version on it, from `package.json` via
-`vite.config.ts`), `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
+`vite.config.ts`), `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it),
+`ThemeCard.tsx` (the theme on it), `src/app/theme.ts` and `src/app/useTheme.ts` (the theme worn by the page),
+`index.html` (the theme put on before the page is first drawn), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
 view's icon), `src/app/rowControls.ts` (the shape and tones a row's controls share — larger on a phone for the
 sheet, UI-59), `src/app/panelControls.ts` (the size a panel's buttons share — larger on a phone with
 the sheet's pickers), `src/styles.css`,
@@ -354,7 +363,9 @@ the sheet's pickers), `src/styles.css`,
 **Tested in:** `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
 items are large enough for a finger), `src/app/components/MorePage.test.tsx` (More's links), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
 view in the address), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel), `src/app/components/HabitViewOptionsMenu.test.tsx`
-(Habits'), `src/app/components/SettingsList.test.tsx` (the version on Settings), `src/app/components/TaskItem.test.tsx`
+(Habits'), `src/app/components/SettingsList.test.tsx` (the version on Settings),
+`src/app/components/ThemeCard.test.tsx` (picking a theme, by click and by arrow keys),
+`src/app/theme.test.ts` (the theme on the page and the bar, and `index.html` reading it back), `src/app/components/TaskItem.test.tsx`
 (a row with Show task details on, a finger on a row, a phone's sheet and the sizes a thumb needs on
 it, and a swipe to complete or delete), `src/app/rowSwipe.test.ts` (how far a swipe must travel),
 `src/app/components/AddTaskForm.test.tsx` (the one-line box, the Plus and the detailed sheet),

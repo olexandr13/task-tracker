@@ -25,6 +25,7 @@ import { createAccountStorage } from '../storage/accountStorage'
 import type { Account } from '../storage/authService'
 import { deviceStorage } from '../storage/deviceStorage'
 import { quotableQuoteSource } from '../storage/quotableQuoteSource'
+import type { Theme } from '../storage/themeRepository'
 import { AddTaskForm } from './components/AddTaskForm'
 import { AddTaskSheet } from './components/AddTaskSheet'
 import { BottomNav } from './components/BottomNav'
@@ -87,6 +88,14 @@ import {
 const footLink =
   'flex min-h-11 items-center gap-2 rounded-lg px-3 text-base text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100 dark:active:bg-neutral-800/60'
 
+interface TasksScreenProps {
+  account: Account
+  onSignOut: () => void
+  /** The theme on this device, kept above the account's screen since it outlives it (UI-63). */
+  theme: Theme
+  onThemeChange: (theme: Theme) => void
+}
+
 /**
  * Three areas once there is room for them: navigation down the left, the work —
  * adding tasks and the list — in the middle, and a rail holding how the periods
@@ -116,7 +125,7 @@ const footLink =
  * screen is remade for each account (App), so one set of repositories serves it
  * for as long as it is up.
  */
-export function TasksScreen({ account, onSignOut }: { account: Account; onSignOut: () => void }) {
+export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksScreenProps) {
   const [storage] = useState(() => createAccountStorage(account))
 
   // Tasks and other records kept as guest — or from before they belonged to an
@@ -428,6 +437,8 @@ export function TasksScreen({ account, onSignOut }: { account: Account; onSignOu
                   backup={backup.status}
                   onExport={() => { void backup.exportAll() }}
                   onImport={(file) => { void backup.importFile(file) }}
+                  theme={theme}
+                  onThemeChange={onThemeChange}
                 />
               </section>
             ) : view === 'more' ? (

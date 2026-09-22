@@ -7,8 +7,23 @@
     <!-- viewport-fit=cover: the page runs under a phone's rounded corners and home indicator, and
          fixed bars keep clear of them with env(safe-area-inset-*) (UI-61). -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- The bar a phone or an installed app draws around the page, in the page's own background.
+         A theme picked on Settings sets both to its own (src/app/theme.ts). -->
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fafafa" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
+    <!-- The theme picked on Settings (UI-63), put on the page before it is first drawn, so it
+         never opens in the system's for a moment. Reads what src/storage/themeSchema.ts saves;
+         src/app/theme.test.ts keeps the two in step. -->
+    <script>
+      try {
+        const saved = JSON.parse(localStorage.getItem('task-tracker/theme'))
+        if (saved.version === 1 && (saved.theme === 'light' || saved.theme === 'dark')) {
+          document.documentElement.dataset.theme = saved.theme
+        }
+      } catch {
+        // Nothing saved, or no storage: the system's theme, as unset.
+      }
+    </script>
     <title>PickMe</title>
   </head>
   <body>

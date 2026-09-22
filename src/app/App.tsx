@@ -1,9 +1,11 @@
 import { firebaseApp } from '../storage/firebaseApp'
 import { createFirebaseAuthService } from '../storage/firebaseAuthService'
 import { createAppAuthService } from '../storage/appAuthService'
+import { deviceStorage } from '../storage/deviceStorage'
 import { SignInScreen } from './components/SignInScreen'
 import { TasksScreen } from './TasksScreen'
 import { useAuth } from './useAuth'
+import { useTheme } from './useTheme'
 
 /** One for the life of the page: Google underneath, guest layered on top. */
 const auth = createAppAuthService(createFirebaseAuthService(firebaseApp))
@@ -14,6 +16,8 @@ const auth = createAppAuthService(createFirebaseAuthService(firebaseApp))
  */
 export function App() {
   const state = useAuth(auth)
+  // The device's theme, worn on every screen — the way in included — whoever is signed in.
+  const [theme, setTheme] = useTheme(deviceStorage.theme)
 
   // A saved session takes a moment to read back. Showing nothing for it beats
   // flashing the sign-in screen at someone who is already signed in.
@@ -40,5 +44,13 @@ export function App() {
 
   // Keyed by the account, so nothing held on screen for one person is still
   // there when another signs in.
-  return <TasksScreen key={state.account.id} account={state.account} onSignOut={handleSignOut} />
+  return (
+    <TasksScreen
+      key={state.account.id}
+      account={state.account}
+      onSignOut={handleSignOut}
+      theme={theme}
+      onThemeChange={setTheme}
+    />
+  )
 }

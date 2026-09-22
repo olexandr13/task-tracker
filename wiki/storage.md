@@ -121,6 +121,11 @@ changes shape.
   way again, under a version of its own, apart from the task View options (STORE-30). A phone and a
   desktop have different room, so each is set its own way. Options the app cannot read fall back to
   the default: folded.
+- **STORE-40** The theme (UI-63) is kept the same way again, under a version of its own: a phone
+  kept dark and a desktop kept light are each set their own way, and it is the same whoever is
+  signed in — or nobody, on the sign-in screen. Following the system, the default, keeps nothing.
+  It is read **before the page is first drawn**, so the app never opens in the other theme first. A
+  theme the app cannot read is ignored, and the system followed until one is picked again.
 
 ## A copy outside the account
 
@@ -207,7 +212,9 @@ copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgr
 `viewOptionsSchema.ts` and `localStorageViewOptionsRepository.ts` (the View options),
 `src/storage/habitViewOptionsRepository.ts`, `habitViewOptionsSchema.ts` and
 `localStorageHabitViewOptionsRepository.ts` (Habits'), `src/storage/sideNavRepository.ts`,
-`sideNavSchema.ts` and `localStorageSideNavRepository.ts` (the sidebar's layout), `src/app/useTasks.ts`, `src/app/useLists.ts`,
+`sideNavSchema.ts` and `localStorageSideNavRepository.ts` (the sidebar's layout),
+`src/storage/themeRepository.ts`, `themeSchema.ts` and `localStorageThemeRepository.ts` (the theme; `index.html`
+reads it too, before the page is drawn), `src/app/useTasks.ts`, `src/app/useLists.ts`,
 `src/app/useTags.ts` (keeping the tags tasks carry; all three build each change on the one before,
 STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/StorageProblemNotice.tsx`
 (saying what was refused). Who may read what: `firestore.rules`.
@@ -223,4 +230,5 @@ STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/S
 `src/storage/tagSchema.test.ts` and `src/app/useTags.test.ts` (the same for the tags, and keeping the
 ones tasks carry), `src/storage/viewOptionsSchema.test.ts` (reading the
 View options back), `src/storage/habitViewOptionsSchema.test.ts` (reading Habits' back),
-`src/storage/sideNavSchema.test.ts` (reading the sidebar's layout back).
+`src/storage/sideNavSchema.test.ts` (reading the sidebar's layout back), `src/storage/themeSchema.test.ts`
+(reading the theme back) and `src/app/theme.test.ts` (`index.html` reading it back as saved).

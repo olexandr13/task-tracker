@@ -24,6 +24,8 @@ describe('SettingsList', () => {
         backup={{ state: 'idle' }}
         onExport={vi.fn()}
         onImport={vi.fn()}
+        theme="system"
+        onThemeChange={vi.fn()}
       />,
     )
 

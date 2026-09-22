@@ -1,10 +1,33 @@
 @import 'tailwindcss';
 
+/* Every `dark:` class: dark where the theme picked on Settings is Dark, or where the
+   system is dark and Light was not picked (UI-11, UI-63). The pick is `data-theme` on
+   <html>, put there before the page is drawn (index.html) and kept by src/app/theme.ts. */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme='light']), :root:not([data-theme='light']) *) {
+      @slot;
+    }
+  }
+}
+
 html {
-  /* The browser's own parts — scrollbars, number boxes, the caret — follow dark mode too (UI-11). */
+  /* The browser's own parts — scrollbars, number boxes, the caret — follow the theme too (UI-11). */
   color-scheme: light dark;
   /* A tap answers with the control's own pressed look (UI-61), not the browser's grey flash. */
   -webkit-tap-highlight-color: transparent;
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 body {
