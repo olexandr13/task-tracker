@@ -317,7 +317,11 @@ function HabitCard({
           {!isOpen && <Glance habit={habit} streak={currentStreak} now={now} />}
         </div>
 
-        <div className="relative z-20 flex shrink-0 items-center gap-2.5 self-center">
+        {/*
+          Level with the title's first line, like the box, so folding does not move them. Not positioned
+          itself, so the chevron's hit area stretches over the whole line rather than this group.
+        */}
+        <div className="flex shrink-0 items-center gap-2.5 md:-my-0.5">
           <button
             type="button"
             onClick={() => { setIsEditing(true) }}
@@ -403,7 +407,7 @@ function Glance({ habit, streak, now }: { habit: Task; streak: number; now: Date
 
   return (
     <div className="flex items-center gap-3">
-      <span className="flex items-center gap-1 text-sm font-medium tabular-nums text-neutral-700 dark:text-neutral-300">
+      <span className="flex items-center gap-1 text-sm font-medium whitespace-nowrap tabular-nums text-neutral-700 dark:text-neutral-300">
         <Flame streak={streak} />
         <span className="sr-only">Current streak: </span>
         {describeDays(streak)}

@@ -85,9 +85,10 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   today on the right, in the grid's shades (HAB-10); a screen reader hears them as `Last 7 days: done
   on 5 days`. **Tapping the card** — anywhere on it but the box and the ⋮ — unfolds the numbers
   (HAB-5 to HAB-8) and the grid (HAB-9) beneath it, and tapping it again folds them away. The
-  chevron points down while folded and up while open. Open, the second line goes, as the numbers
-  and the grid below already give it. A list of year-long grids is a long way to scroll for a box
-  to tick, and ticking is what the page is visited for.
+  chevron points down while folded and up while open. The ⋮ and the chevron sit level with the
+  title's first line, like the box, so folding or unfolding never moves them. Open, the second line
+  goes, as the numbers and the grid below already give it. A list of year-long grids is a long way
+  to scroll for a box to tick, and ticking is what the page is visited for.
 - **HAB-22** Ticking the box never unfolds a card, and neither does opening the edit sheet (HAB-25).
   Each card folds on its own, so opening one never moves one being reached for, and a card starts
   in the default again when the page is next opened. A screen reader hears the fold as a button
