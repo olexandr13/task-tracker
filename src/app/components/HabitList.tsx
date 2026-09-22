@@ -1,9 +1,8 @@
 import { useEffect, useEffectEvent, useId, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import {
-  currentEntries,
+  habitLastDays,
   habitRate,
   habitStats,
-  hasTimeGoal,
   isComplete,
   isTimeGoalReached,
   type HabitDayState,
@@ -23,7 +22,6 @@ import { FlameIcon } from './FlameIcon'
 import { HabitGrid } from './HabitGrid'
 import { MoreVerticalIcon } from './MoreVerticalIcon'
 import { TaskSheet } from './TaskSheet'
-import { TimePicker } from './TimePicker'
 import type { TaskActions } from '../taskActions'
 import type { TaskTimer } from '../useTaskTimer'
 
@@ -50,6 +48,9 @@ interface HabitListProps {
 }
 
 const LEGEND: readonly HabitDayState[] = ['done', 'missed', 'untracked']
+
+/** How many days a folded card's run shows beside its streak. */
+const GLANCE_DAYS = 7
 
 /** How far back each rate looks, in days, today included, and what it is called. */
 const RATE_WINDOWS: readonly (readonly [days: number, label: string])[] = [
@@ -154,17 +155,18 @@ export function HabitList({
 
 /**
  * One habit. A list of year-long grids is a long way to scroll for a box to
- * tick, so a card starts folded to the box, the title and the streak, and a tap
- * on its line unfolds the numbers and the days. Each card folds on its own, so
- * opening one never moves the one being reached for.
+ * tick, so a card starts folded to the box, the title and, under it, the streak
+ * and the last week, and a tap on its line unfolds the numbers and the days.
+ * Each card folds on its own, so opening one never moves the one being reached
+ * for.
  *
- * The toggle and its hit area are always available; the hit area is stretched
- * over the card's line so ticking the box, changing the time goal or opening
- * the edit sheet does not unfold the card.
+ * The title has the width of the card to itself, wrapping rather than being cut
+ * off: what a habit is matters more than anything said about it. The toggle's
+ * hit area is stretched over the card's line so ticking the box or opening the
+ * edit sheet does not unfold the card.
  *
- * A habit that asks for an amount of time has its clock on the card's line, so
- * the time is logged where the habit is ticked off. The ⋮ opens the task's
- * sheet so the habit can be renamed, scheduled and the rest without leaving.
+ * The ⋮ opens the task's sheet so the habit can be renamed, scheduled, timed
+ * and the rest without leaving. The time is logged there, not on the card.
  */
 function HabitCard({
   habit,
@@ -185,12 +187,6 @@ function HabitCard({
   revealed: boolean
 } & Omit<HabitListProps, 'habits' | 'showDetails' | 'revealId'>) {
   const done = isComplete(habit, now)
-  const timerRunning = timer?.isRunningFor(habit.id) ?? false
-  const timerStartedAt =
-    timerRunning && timer !== undefined && timer.state.status === 'running'
-      ? timer.state.startedAt
-      : null
-  const timed = hasTimeGoal(habit) || timerRunning
   const ready = !done && isTimeGoalReached(habit, now)
   const { currentStreak, bestStreak } = habitStats(habit, now)
   const [isEditing, setIsEditing] = useState(false)
@@ -297,8 +293,8 @@ function HabitCard({
 
   return (
     <li ref={card} className="flex flex-col rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-      <div className="relative flex items-center gap-2.5 px-4 py-3.5">
-        {/* Above the toggle's hit area, so ticking off never unfolds the card. */}
+      <div className="relative flex items-start gap-2.5 px-4 py-3">
+        {/* Above the toggle's hit area, so ticking off never unfolds the card. Level with the title's first line. */}
         <button
           type="button"
           onClick={() => { if (done) actions.uncomplete(habit.id); else actions.complete(habit.id) }}
@@ -311,48 +307,17 @@ function HabitCard({
                 : `Mark "${habit.title}" as done today`
           }
           title={ready ? 'Time goal reached: ready to tick off' : undefined}
-          className={`relative z-10 ${done ? completionBoxOn : ready ? completionBoxReady : completionBoxOff}`}
+          className={`relative z-10 mt-0.5 md:mt-0 ${done ? completionBoxOn : ready ? completionBoxReady : completionBoxOff}`}
         >
           ✓
         </button>
 
-        <h2 className="min-w-0 truncate text-base font-medium md:text-sm">{habit.title}</h2>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <h2 className="text-base font-medium break-words md:text-sm">{habit.title}</h2>
+          {!isOpen && <Glance habit={habit} streak={currentStreak} now={now} />}
+        </div>
 
-        {!isOpen && (
-          <span className="flex shrink-0 items-center gap-1 text-sm font-medium tabular-nums">
-            <Flame streak={currentStreak} />
-            <span className="sr-only">Current streak: </span>
-            {String(currentStreak)}
-          </span>
-        )}
-
-        <div className="relative z-20 ml-auto flex shrink-0 items-center gap-2.5">
-          {timed && (
-            <div className="shrink-0">
-              <TimePicker
-                goal={habit.timeGoal}
-                sessions={currentEntries(habit.timeLog, habit.repeat, now)}
-                now={now}
-                onLog={(minutes) => { actions.logTime(habit.id, minutes) }}
-                onRemove={(entryId) => { actions.removeTimeEntry(habit.id, entryId) }}
-                onChangeGoal={(minutes) => { actions.changeTimeGoal(habit.id, minutes) }}
-                label={`Time for "${habit.title}"`}
-                showAmount
-                timer={
-                  timer === undefined
-                    ? undefined
-                    : {
-                        running: timerRunning,
-                        startedAt: timerStartedAt,
-                        clock: timer.clock,
-                        onStart: () => { timer.start(habit.id) },
-                        onStop: () => { timer.stop() },
-                      }
-                }
-              />
-            </div>
-          )}
-
+        <div className="relative z-20 flex shrink-0 items-center gap-2.5 self-center">
           <button
             type="button"
             onClick={() => { setIsEditing(true) }}
@@ -425,6 +390,37 @@ function HabitCard({
         />
       )}
     </li>
+  )
+}
+
+/**
+ * What a folded card says under its title (HAB-21): the streak, and how the
+ * last week went, a square a day with today on the right, in the grid's shades.
+ */
+function Glance({ habit, streak, now }: { habit: Task; streak: number; now: Date }) {
+  const days = habitLastDays(habit, GLANCE_DAYS, now)
+  const kept = days.filter((day) => day.state === 'done').length
+
+  return (
+    <div className="flex items-center gap-3">
+      <span className="flex items-center gap-1 text-sm font-medium tabular-nums text-neutral-700 dark:text-neutral-300">
+        <Flame streak={streak} />
+        <span className="sr-only">Current streak: </span>
+        {describeDays(streak)}
+      </span>
+      <span
+        role="img"
+        aria-label={`Last ${String(GLANCE_DAYS)} days: done on ${describeDays(kept)}`}
+        className="flex items-center gap-[3px]"
+      >
+        {days.map(({ day, state }) => (
+          <span
+            key={day}
+            className={`size-2.5 rounded-[3px] ${HABIT_DAY_TONES[state]}`}
+          />
+        ))}
+      </span>
+    </div>
   )
 }
 

@@ -176,6 +176,21 @@ export function habitWeeks(task: Task, weeks: number, now: Date = new Date()): H
   })
 }
 
+/**
+ * The last `days` days, oldest first and ending with today, each read as in
+ * `habitWeeks` — the run a folded card shows beside its streak.
+ */
+export function habitLastDays(task: Task, days: number, now: Date = new Date()): HabitDay[] {
+  const today = toLocalDay(now)
+  const set = new Set(recordedDays(task, today))
+  const created = createdDay(task)
+
+  return Array.from({ length: days }, (_, at) => {
+    const day = offsetDay(today, at - days + 1)
+    return { day, state: stateOf(day, today, set, created) }
+  })
+}
+
 function stateOf(day: LocalDay, today: LocalDay, done: ReadonlySet<LocalDay>, created: LocalDay): HabitDayState {
   if (day > today) return 'future'
   if (done.has(day)) return 'done'

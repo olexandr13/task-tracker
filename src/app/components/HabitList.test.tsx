@@ -97,7 +97,8 @@ describe('HabitList', () => {
     setup([stretch()])
 
     expect(screen.getByRole('heading', { name: 'stretch' })).toBeTruthy()
-    expect(screen.getAllByText('2 days')).toHaveLength(2)
+    // The folded line's streak, the current streak and the best one.
+    expect(screen.getAllByText('2 days')).toHaveLength(3)
     // The last 7 days, the last 30 and the last year are all Mon and Tue, today still to do.
     expect(screen.getAllByText('100%')).toHaveLength(3)
     expect(screen.getByText('Last year')).toBeTruthy()
@@ -117,13 +118,18 @@ describe('HabitList', () => {
     expect(onSetDay).toHaveBeenLastCalledWith(habit.id, '2026-09-14', false)
   })
 
-  it('folds a card to its streak and unfolds its record on a tap (HAB-21, HAB-22)', async () => {
+  it('folds a card to its streak and last week, and unfolds its record on a tap (HAB-21, HAB-22)', async () => {
     const { user, onComplete } = setup([stretch()])
     const toggle = screen.getByRole('button', { name: 'Record of "stretch"' })
+    const title = screen.getByRole('heading', { name: 'stretch' })
 
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
-    expect(toggle.parentElement?.className).toContain('ml-auto')
-    expect(screen.getByText('Current streak:').parentElement?.textContent).toBe('Current streak: 2')
+    // The title is never cut off to make room: the streak and the week are on a line under it.
+    expect(title.className).not.toContain('truncate')
+    expect(screen.getByText('Current streak:').parentElement?.textContent).toBe('Current streak: 2 days')
+    const week = screen.getByRole('img', { name: 'Last 7 days: done on 2 days' })
+    expect(week.children).toHaveLength(7)
+    expect(title.compareDocumentPosition(week) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(screen.queryByRole('list', { name: 'Legend' })).toBeNull()
     const record = document.getElementById(toggle.getAttribute('aria-controls') ?? '')
     expect(record?.className).toContain('hidden')
@@ -137,8 +143,9 @@ describe('HabitList', () => {
     await user.click(toggle)
     expect(toggle.getAttribute('aria-expanded')).toBe('true')
     expect(record?.className).toContain('flex')
-    // The streak is in the record now, so the line no longer repeats it.
+    // The streak and the days are in the record now, so the line no longer repeats them.
     expect(screen.queryByText('Current streak:')).toBeNull()
+    expect(screen.queryByRole('img', { name: /Last 7 days/ })).toBeNull()
     // The legend names the grid's shades once a card is open (HAB-10).
     const legend = screen.getByRole('list', { name: 'Legend' })
     expect(legend.textContent).toBe('DoneMissedNot tracked')
@@ -206,26 +213,17 @@ describe('HabitList', () => {
     expect(onSetDay).toHaveBeenLastCalledWith(habit.id, '2026-09-16', true)
   })
 
-  it('has no clock on a habit without a time goal', () => {
-    setup([stretch()])
-
-    expect(screen.queryByRole('button', { name: /^Time for/ })).toBeNull()
-  })
-
-  it('puts the clock of a timed habit on its card, and invites a tick once the goal is reached (TIME-13)', async () => {
+  it('keeps the clock of a timed habit in its sheet, and invites a tick once the goal is reached (TIME-13)', async () => {
     const sport = setTimeGoal(createTask('sport', { kind: 'daily' }, WED_16), 60)
     const { user, onLogTime } = setup([logTime(sport, 60, WED_16), { ...sport, id: 'other', title: 'swim' }])
 
     expect(screen.getByRole('button', { name: 'Mark "sport" as done today: its time goal is reached' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'Mark "swim" as done today' })).toBeDefined()
-    const time = screen.getByRole('button', { name: 'Time for "swim": 0m of 1h' })
-    const edit = screen.getByRole('button', { name: 'Edit "swim"' })
-    const expand = screen.getByRole('button', { name: 'Record of "swim"' })
-    expect(time.textContent).toBe('0m of 1h')
-    expect(time.compareDocumentPosition(edit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(edit.compareDocumentPosition(expand) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Time for/ })).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Time for "swim": 0m of 1h' }))
+    await user.click(screen.getByRole('button', { name: 'Edit "swim"' }))
+    const sheet = screen.getByRole('dialog', { name: 'Details of "swim"' })
+    await user.click(within(sheet).getByRole('button', { name: 'Time for "swim": 0m of 1h' }))
     await user.click(screen.getByRole('button', { name: 'Log 15m' }))
 
     expect(onLogTime).toHaveBeenCalledWith('other', 15)

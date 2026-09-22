@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { habitRate, habitStats, habitTasks, habitWeeks, isHabit, setDoneOnDay } from './habit'
+import { habitLastDays, habitRate, habitStats, habitTasks, habitWeeks, isHabit, setDoneOnDay } from './habit'
 import { InvalidDayError, type LocalDay } from './day'
 import type { Repeat } from './repeat'
 import { appendTask } from './order'
@@ -147,6 +147,27 @@ describe('habitWeeks (HAB-9, HAB-10)', () => {
 
   it('reads today as done once it is', () => {
     expect(habitWeeks(habit(['2026-09-16']), 1, WED_16)[0][2].state).toBe('done')
+  })
+})
+
+describe('habitLastDays (HAB-21)', () => {
+  it('reads the last days up to today, oldest first', () => {
+    const days = habitLastDays(habit(['2026-09-11', '2026-09-14', '2026-09-15'], DAILY, SAT_12), 7, WED_16)
+
+    expect(days.map((day) => day.day)).toEqual([
+      '2026-09-10',
+      '2026-09-11',
+      '2026-09-12',
+      '2026-09-13',
+      '2026-09-14',
+      '2026-09-15',
+      '2026-09-16',
+    ])
+    expect(days.map((day) => day.state)).toEqual(['untracked', 'done', 'missed', 'missed', 'done', 'done', 'pending'])
+  })
+
+  it('reads today as done once it is', () => {
+    expect(habitLastDays(habit(['2026-09-16']), 7, WED_16).at(-1)?.state).toBe('done')
   })
 })
 
