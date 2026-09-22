@@ -66,9 +66,9 @@ ticked off. The tick itself stays the owner's.
   not logged: its box is marked, and a line under it says what would do, until it is changed.
 - **TIME-12** A woken row spells the time out under the clock, closed up to fit: `20m/1h`, `1h05/1h30`,
   or just `20m` without a goal. Nothing is spelled out while there is neither.
-- **TIME-13** On the **Habits** page a habit with a goal has its clock on the card's line, spelling
-  the time out, so time is logged where the habit is ticked off; its box invites a tick as on a
-  row (TIME-5). A habit without a goal has no clock there: the goal is given from the task's row.
+- **TIME-13** On the **Habits** page a habit's card has **no clock**, so its title has the room: the
+  time is logged, and the goal given, in the sheet its ⋮ opens (HAB-25), as on a phone's row
+  (TIME-10). Its box still invites a tick once the goal is reached, as on a row (TIME-5).
 - **TIME-14** Time earns nothing and counts for nothing in any period's bar. Points come from
   completing (RWD-9) and the bars count tasks (PROG-3); a goal only says when completing is due.
 
@@ -103,7 +103,7 @@ ticked off. The tick itself stays the owner's.
 goal is reached), `src/core/taskTimer.ts` (elapsed time and whether a run has reached the goal),
 `src/core/task.ts` (the fields, and letting go of stale sessions when a rule is
 dropped), `src/app/components/TimePicker.tsx` (the clock and its panel), `src/app/components/TaskItem.tsx`
-(the slot, the detail and the box's hint), `src/app/components/HabitList.tsx` (the habit card),
+(the slot, the detail and the box's hint), `src/app/components/HabitList.tsx` (the habit card's box),
 `src/app/components/RunningTimerChip.tsx`, `src/app/components/GoalNoticeToast.tsx`,
 `src/app/components/ClockIcon.tsx`, `src/app/components/PlayIcon.tsx`,
 `src/app/components/StopIcon.tsx`, `src/app/durationLabels.ts` (wording, and reading typed lengths),

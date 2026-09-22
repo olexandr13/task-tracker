@@ -17,8 +17,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 
 - **HAB-4** Each habit has a box to tick **today** off, and to take today back. It is the task's
   own box (UI-47), so it does the same as ticking the task off in a list, checklist and all (CHK),
-  and the lists show the change. A habit with a time goal has its clock on the card's line too, and
-  its box invites a tick once today's time is in (TIME-13).
+  and the lists show the change. A habit with a time goal has no clock on its card; its box still
+  invites a tick once today's time is in (TIME-13).
 - **HAB-5** **Current streak**: the days in a row it was done, counting back from today. While
   today is still to do, the count starts from yesterday instead: today is still in play until it
   is over, so it breaks nothing yet. A day that went by without it ends the streak. The flame
@@ -35,7 +35,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 - **HAB-10** A day in the grid is **done** (green), **missed** (a darker gap), **not tracked** (a
   pale square, before the task was created) or **today still to do** (an outlined square). Days after
   today are left empty. A legend at the bottom of the page names the shades, and only while any
-  habit's card is open (HAB-21) — folded cards show no grid, so the legend has nothing to name.
+  habit's card is open (HAB-21) — a folded card shows no grid, only its last week (HAB-21), whose
+  green reads without one.
   A day can be clicked (on a folded card: that a habit is tapped to see its days, HAB-21). Pointing at a day shows its date and what it was: `Wed, Sep 16 · Done`.
 - **HAB-11** A screen reader hears the numbers as text, and the grid as a group of day buttons,
   named for how many days of the year shown were done. Each day is heard by its date and what it
@@ -78,13 +79,15 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 ## The record
 
 - **HAB-21** A card starts **folded**, unless Show habit details by default is on (HAB-23): the box
-  for today (HAB-4), the title, a timed habit's clock (TIME-13), a ⋮ to edit the task (HAB-25), and
-  the current streak as a flame and a number. **Tapping the card's line** — anywhere on it but the
-  box, the clock and the ⋮ — unfolds the numbers (HAB-5 to HAB-8) and the grid (HAB-9) beneath it,
-  and tapping it again folds them away. A chevron at the end of the line points down while folded
-  and up while open. Open, the line drops its streak, which the numbers below already give. A list
-  of year-long grids is a long way to scroll for a box to tick, and ticking is what the page is
-  visited for.
+  for today (HAB-4), the title, a ⋮ to edit the task (HAB-25) and a chevron. The title has the
+  card's width to itself and **wraps rather than being cut off**. Under it a second line gives the
+  **current streak** as a flame and days (`6 days`) and the **last 7 days** as a small square each,
+  today on the right, in the grid's shades (HAB-10); a screen reader hears them as `Last 7 days: done
+  on 5 days`. **Tapping the card** — anywhere on it but the box and the ⋮ — unfolds the numbers
+  (HAB-5 to HAB-8) and the grid (HAB-9) beneath it, and tapping it again folds them away. The
+  chevron points down while folded and up while open. Open, the second line goes, as the numbers
+  and the grid below already give it. A list of year-long grids is a long way to scroll for a box
+  to tick, and ticking is what the page is visited for.
 - **HAB-22** Ticking the box never unfolds a card, and neither does opening the edit sheet (HAB-25).
   Each card folds on its own, so opening one never moves one being reached for, and a card starts
   in the default again when the page is next opened. A screen reader hears the fold as a button
@@ -106,7 +109,7 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 
 ---
 
-**Where it lives:** `src/core/habit.ts` (what a habit is, streaks, rates, the weeks, `setDoneOnDay`),
+**Where it lives:** `src/core/habit.ts` (what a habit is, streaks, rates, the weeks, the last days, `setDoneOnDay`),
 `src/core/task.ts` (`doneDays`, kept in step by `settleHistory`), `src/app/components/HabitList.tsx`
 (the page and its cards, and a timed habit's clock — see [Time goals](time-goals.md)), `src/app/components/HabitGrid.tsx`, `src/app/components/ChevronIcon.tsx`, `src/app/components/MoreVerticalIcon.tsx`, `src/app/components/TaskSheet.tsx` (editing a habit), `src/app/habitLabels.ts` (wording),
 `src/app/habitTones.ts` (the shades), `src/app/components/FlameIcon.tsx`, `src/app/useTasks.ts`
