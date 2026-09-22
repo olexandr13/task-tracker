@@ -12,22 +12,16 @@ export function elapsedSeconds(startedAt: string, now: Date = new Date()): numbe
   return Math.max(0, Math.floor((now.getTime() - started) / 1000))
 }
 
-/** Whole minutes completed since `startedAt` (floor of elapsed seconds / 60). */
-export function elapsedMinutesFloor(startedAt: string, now: Date = new Date()): number {
-  return Math.floor(elapsedSeconds(startedAt, now) / 60)
-}
-
 /**
- * Whether minutes already logged plus the live run have reached the goal.
- * No goal means never exceeded. Live seconds count as floor minutes so a
- * notification matches what Stop would log.
+ * Whether the seconds already logged plus the live run have reached the goal
+ * (in minutes). No goal means never exceeded. Both are added to the second, as
+ * Stop logs the run, so the notice matches the time Stop would leave.
  */
 export function isGoalExceeded(args: {
-  readonly spent: number
+  readonly spentSeconds: number
   readonly elapsedSeconds: number
   readonly goal: number | null
 }): boolean {
   if (args.goal === null) return false
-  const liveMinutes = Math.floor(args.elapsedSeconds / 60)
-  return args.spent + liveMinutes >= args.goal
+  return args.spentSeconds + args.elapsedSeconds >= args.goal * 60
 }

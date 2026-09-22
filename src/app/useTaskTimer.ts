@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
-  elapsedMinutesFloor,
   elapsedSeconds,
   isGoalExceeded,
-  MAX_SESSION_MINUTES,
+  MAX_SESSION_SECONDS,
   type TaskId,
 } from '../core'
 import {
@@ -14,8 +13,10 @@ import {
 
 export type TaskTimerInfo = {
   readonly title: string
+  /** Minutes, or null for no goal. */
   readonly goal: number | null
-  readonly spent: number
+  /** Seconds already logged that count for the occurrence in play. */
+  readonly spentSeconds: number
 }
 
 export type GoalNotice = {
@@ -53,21 +54,21 @@ function requestNotificationIfNeeded(goal: number | null): void {
 function finishRun(
   running: Extract<TaskTimerState, { status: 'running' }>,
   now: Date,
-  onLog: (taskId: TaskId, minutes: number) => void,
+  onLog: (taskId: TaskId, seconds: number) => void,
 ): void {
-  const minutes = Math.min(elapsedMinutesFloor(running.startedAt, now), MAX_SESSION_MINUTES)
-  if (minutes >= 1) onLog(running.taskId, minutes)
+  const seconds = Math.min(elapsedSeconds(running.startedAt, now), MAX_SESSION_SECONDS)
+  if (seconds >= 1) onLog(running.taskId, seconds)
 }
 
 /**
  * One running timer on this device: start/stop against a task, persist across
- * refresh, log whole minutes on stop, and notice once when the run reaches the
- * task's time goal.
+ * refresh, log the run to the second on stop, and notice once when the run
+ * reaches the task's time goal.
  */
 export function useTaskTimer(
   repository: TaskTimerRepository,
   describe: (taskId: TaskId) => TaskTimerInfo | null,
-  onLog: (taskId: TaskId, minutes: number) => void,
+  onLog: (taskId: TaskId, seconds: number) => void,
 ): TaskTimer {
   const [state, setState] = useState<TaskTimerState>(() => repository.load())
   const [clock, setClock] = useState(() => new Date())
@@ -105,7 +106,7 @@ export function useTaskTimer(
     const info = describeRef.current(state.taskId)
     if (info === null || info.goal === null) return
     const seconds = elapsedSeconds(state.startedAt, clock)
-    if (!isGoalExceeded({ spent: info.spent, elapsedSeconds: seconds, goal: info.goal })) return
+    if (!isGoalExceeded({ spentSeconds: info.spentSeconds, elapsedSeconds: seconds, goal: info.goal })) return
 
     const next: TaskTimerState = { ...state, goalNotified: true }
     persist(next)
@@ -132,7 +133,7 @@ export function useTaskTimer(
       requestNotificationIfNeeded(info?.goal ?? null)
       const alreadyExceeded =
         info !== null &&
-        isGoalExceeded({ spent: info.spent, elapsedSeconds: 0, goal: info.goal })
+        isGoalExceeded({ spentSeconds: info.spentSeconds, elapsedSeconds: 0, goal: info.goal })
       const next: TaskTimerState = {
         status: 'running',
         taskId,

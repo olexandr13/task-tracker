@@ -13,8 +13,10 @@ import {
   isOverdue,
   isTimeGoalReached,
   listOf,
+  sessionSeconds,
   skipOccurrence,
   sortLists,
+  wholeMinutes,
   type List,
   type LocalDay,
   type Task,
@@ -172,7 +174,8 @@ export function TaskItem({
   // The time that counts for the occurrence in play; once it meets the goal the
   // box invites a tick, and ticking it is still the owner's to do.
   const sessions = currentEntries(task.timeLog, task.repeat, now)
-  const spent = sessions.reduce((total, entry) => total + entry.minutes, 0)
+  const spentSeconds = sessionSeconds(sessions)
+  const spent = wholeMinutes(spentSeconds)
   const timerRunning = timer?.isRunningFor(task.id) ?? false
   const timerStartedAt =
     timerRunning && timer !== undefined && timer.state.status === 'running'
@@ -237,7 +240,7 @@ export function TaskItem({
   const detailed = phone ? showDetails : isActive || showDetails
   const day = dueDay(task, now)
   const scheduled = task.repeat !== null || day !== null
-  const timed = task.timeGoal !== null || spent > 0 || timerRunning
+  const timed = task.timeGoal !== null || spentSeconds > 0 || timerRunning
   const rewarded = task.reward !== null
   const checklisted = hasSubtasks(task)
   const described = hasDescription(task)
@@ -263,7 +266,7 @@ export function TaskItem({
   const timeLabel = (separator: string) =>
     !timerRunning
       ? timeProgress
-      : spent > 0 || task.timeGoal !== null
+      : spentSeconds > 0 || task.timeGoal !== null
         ? `${timeProgress}${separator}${describeTimerRunning(liveSeconds)}`
         : describeTimerRunning(liveSeconds)
   const rewardLabel = task.reward === null ? null : describeReward(task.reward)

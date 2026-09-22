@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
-import { completeTask, createTask, setDueDate, toLocalDay, type Task } from '../core'
+import { completeTask, createTask, logTime, setDueDate, timeSpent, toLocalDay, type Task } from '../core'
 import { expectConsole } from '../test/consoleGuard'
 import { importLocalTasks } from './localTaskImport'
 import type { TaskRepository } from './taskRepository'
@@ -103,6 +103,18 @@ describe('importLocalTasks', () => {
     await importLocalTasks(repository)
 
     expect(imported).toEqual([{ ...savedAtV12, skippedDays: [] }])
+  })
+
+  it('keeps the time of tasks saved when sessions were whole minutes, to the second (TIME-22)', async () => {
+    const task = logTime(logTime(createTask('stretch', null, NOW), 20, NOW), 45, NOW)
+    const savedAtV15 = { ...task, timeLog: task.timeLog.map(({ seconds, ...entry }) => ({ ...entry, minutes: seconds / 60 })) }
+    localStorage.setItem(KEY, JSON.stringify({ version: 15, tasks: [savedAtV15] }))
+    const { repository, imported } = repositoryThat('accepts')
+
+    await importLocalTasks(repository)
+
+    expect(imported).toEqual([task])
+    expect(imported.map((saved) => timeSpent(saved, NOW))).toEqual([65])
   })
 
   it('gives tasks saved before tags existed none', async () => {

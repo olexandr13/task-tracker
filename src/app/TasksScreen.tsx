@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import {
   allTags,
   countInboxOpen,
-  currentEntries,
   groupByCompletion,
   habitTasks,
   isComplete,
   liveTasks,
   pinFocusedFirst,
   sameTag,
+  secondsSpent,
   setSubtaskDone,
   sortForDisplay,
   summarizeLists,
@@ -152,6 +152,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     changeUrgent,
     changeTimeGoal,
     logTaskTime,
+    logTaskSeconds,
     removeTaskTime,
     tag,
     untag,
@@ -211,13 +212,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     (taskId) => {
       const task = live.find((candidate) => candidate.id === taskId)
       if (task === undefined) return null
-      const spent = currentEntries(task.timeLog, task.repeat, now).reduce(
-        (total, entry) => total + entry.minutes,
-        0,
-      )
-      return { title: task.title, goal: task.timeGoal, spent }
+      return { title: task.title, goal: task.timeGoal, spentSeconds: secondsSpent(task, now) }
     },
-    logTaskTime,
+    logTaskSeconds,
   )
   const runningTimerTaskId = taskTimer.state.status === 'running' ? taskTimer.state.taskId : null
   const runningTimerTask =

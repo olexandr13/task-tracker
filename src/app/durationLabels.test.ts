@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { describeDuration, describeElapsedClock, describeLoggedAt, describeTimeProgress, describeTimeSummary, describeTimerRunning, parseDuration } from './durationLabels'
+import { describeDuration, describeElapsedClock, describeLoggedAt, describeSessionLength, describeTimeProgress, describeTimeSummary, describeTimerRunning, parseDuration } from './durationLabels'
 
 /* TIME ids refer to wiki/time-goals.md. */
 
@@ -28,6 +28,15 @@ describe('parseDuration (TIME-11)', () => {
     for (const text of ['', ' ', 'soon', 'h', '1:75', '-5', '1h30x', '1d']) {
       expect(parseDuration(text)).toBeNull()
     }
+  })
+})
+
+describe('describeSessionLength (TIME-22)', () => {
+  it('shows a session in whole minutes, and a run under a minute as <1m', () => {
+    expect(describeSessionLength(20)).toBe('<1m')
+    expect(describeSessionLength(60)).toBe('1m')
+    expect(describeSessionLength(100)).toBe('1m')
+    expect(describeSessionLength(90 * 60 + 59)).toBe('1h 30m')
   })
 })
 

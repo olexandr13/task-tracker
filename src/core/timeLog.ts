@@ -7,6 +7,9 @@
  * reach the goal the task is ready to be ticked off, and the row says so; the
  * tick is still the owner's to give, so time never finishes a task by itself.
  *
+ * A session keeps its length to the second, so short timer runs add up: three
+ * runs of 20 seconds make a minute. Time spent is read in whole minutes.
+ *
  * Under a repeating task a session counts for the occurrence it was logged in,
  * the same trick a checklist tick uses (./subtask): a daily hour starts from
  * nothing again tomorrow, and a weekly one when its next day comes round,
@@ -19,11 +22,11 @@ import type { Task } from './task'
 
 export type TimeEntryId = string
 
-/** One session: some minutes, logged at a moment. */
+/** One session: some time, logged at a moment. */
 export interface TimeEntry {
   readonly id: TimeEntryId
-  /** Whole minutes, from 1 to `MAX_SESSION_MINUTES`. */
-  readonly minutes: number
+  /** Whole seconds, from 1 to `MAX_SESSION_SECONDS`. Logged by hand, always whole minutes. */
+  readonly seconds: number
   /** ISO 8601 timestamp. Which occurrence the session counts for follows from it. */
   readonly loggedAt: string
 }
@@ -33,6 +36,9 @@ export const MAX_TIME_GOAL_MINUTES = 100 * 60
 
 /** The longest one session can be: a whole day. */
 export const MAX_SESSION_MINUTES = 24 * 60
+
+/** The same day, to the second, for a session a timer logs. */
+export const MAX_SESSION_SECONDS = MAX_SESSION_MINUTES * 60
 
 export class InvalidTimeError extends Error {
   constructor(message: string) {
@@ -46,9 +52,14 @@ export function isTimeGoal(minutes: number): boolean {
   return Number.isInteger(minutes) && minutes >= 1 && minutes <= MAX_TIME_GOAL_MINUTES
 }
 
-/** Whether one session can be this many minutes long. */
+/** Whether one session logged by hand can be this many minutes long. */
 export function isSessionLength(minutes: number): boolean {
   return Number.isInteger(minutes) && minutes >= 1 && minutes <= MAX_SESSION_MINUTES
+}
+
+/** Whether one session can be this many seconds long. */
+export function isSessionSeconds(seconds: number): boolean {
+  return Number.isInteger(seconds) && seconds >= 1 && seconds <= MAX_SESSION_SECONDS
 }
 
 /**
@@ -84,8 +95,9 @@ export function currentEntries(entries: readonly TimeEntry[], repeat: Repeat | n
 }
 
 /**
- * Logs a session. Whether the task is done is left alone either way: time
- * reaching the goal says the task is ready, not that it was done.
+ * Logs a session of whole minutes, as typed or clicked. Whether the task is
+ * done is left alone either way: time reaching the goal says the task is
+ * ready, not that it was done.
  *
  * Returns a new task; the one passed in is never modified.
  */
@@ -96,7 +108,23 @@ export function logTime(task: Task, minutes: number, now: Date = new Date()): Ta
     )
   }
 
-  const entry: TimeEntry = { id: crypto.randomUUID(), minutes, loggedAt: now.toISOString() }
+  return logSeconds(task, minutes * 60, now)
+}
+
+/**
+ * Logs a session to the second, as a timer ran it. Seconds add up across
+ * sessions, so runs too short to make a minute alone still count together.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function logSeconds(task: Task, seconds: number, now: Date = new Date()): Task {
+  if (!isSessionSeconds(seconds)) {
+    throw new InvalidTimeError(
+      `${String(seconds)} is not a session: a session is a whole number of seconds from 1 to ${String(MAX_SESSION_SECONDS)}.`,
+    )
+  }
+
+  const entry: TimeEntry = { id: crypto.randomUUID(), seconds, loggedAt: now.toISOString() }
   return { ...task, timeLog: [...currentEntries(task.timeLog, task.repeat, now), entry] }
 }
 
@@ -111,9 +139,24 @@ export function removeTimeEntry(task: Task, entryId: TimeEntryId): Task {
   return kept.length === task.timeLog.length ? task : { ...task, timeLog: kept }
 }
 
-/** The minutes that count as of `now`. */
+/** The seconds the sessions add up to. */
+export function sessionSeconds(entries: readonly TimeEntry[]): number {
+  return entries.reduce((total, entry) => total + entry.seconds, 0)
+}
+
+/** Whole minutes in `seconds`: what is shown, and what a goal is measured in. */
+export function wholeMinutes(seconds: number): number {
+  return Math.floor(seconds / 60)
+}
+
+/** The seconds that count as of `now`. */
+export function secondsSpent(task: Task, now: Date = new Date()): number {
+  return sessionSeconds(currentEntries(task.timeLog, task.repeat, now))
+}
+
+/** The whole minutes that count as of `now`, the seconds of every session added up first. */
 export function timeSpent(task: Task, now: Date = new Date()): number {
-  return currentEntries(task.timeLog, task.repeat, now).reduce((total, entry) => total + entry.minutes, 0)
+  return wholeMinutes(secondsSpent(task, now))
 }
 
 /** Whether the task has a goal and the time that counts as of `now` has reached it. */

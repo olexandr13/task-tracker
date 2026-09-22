@@ -22,7 +22,7 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 | `reward` | The points each completion earns, or nothing. What completions already earned is kept apart from the task. See [Rewards](rewards.md). |
 | `urgent` | Whether it is marked urgent. An open urgent task floats to the top of the list. |
 | `timeGoal` | The minutes the task asks for, or nothing. See [Time goals](time-goals.md). |
-| `timeLog` | The sessions of time logged, oldest first. Under a repeating task only the occurrence in play's count. See [Time goals](time-goals.md). |
+| `timeLog` | The sessions of time logged, oldest first, each to the second. Under a repeating task only the occurrence in play's count. See [Time goals](time-goals.md). |
 | `deletedAt` | When it went to the trash, or nothing while it is live. |
 | `order` | Where it sits in the list, as a number: lower comes first. |
 

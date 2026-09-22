@@ -13,6 +13,7 @@ import {
   insertTask,
   isDeleted,
   liveTasks,
+  logSeconds,
   logTime,
   moveTask,
   moveToList,
@@ -269,6 +270,14 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository, 
     [apply],
   )
 
+  /** Logs a timer's run to the second, so short runs add up (TIME-22). */
+  const logTaskSeconds = useCallback(
+    (id: TaskId, seconds: number) => {
+      apply((current) => current.map((task) => (task.id === id ? logSeconds(task, seconds) : task)))
+    },
+    [apply],
+  )
+
   const removeTaskTime = useCallback(
     (id: TaskId, entryId: TimeEntryId) => {
       apply((current) => current.map((task) => (task.id === id ? removeTimeEntry(task, entryId) : task)))
@@ -430,6 +439,7 @@ export function useTasks(repository: TaskRepository, rewards: RewardRepository, 
     changeUrgent,
     changeTimeGoal,
     logTaskTime,
+    logTaskSeconds,
     removeTaskTime,
     tag,
     untag,

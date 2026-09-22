@@ -1,9 +1,18 @@
 import { useEffect, useEffectEvent, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { elapsedMinutesFloor, elapsedSeconds, isSessionLength, isTimeGoal, type TimeEntry, type TimeEntryId } from '../../core'
+import {
+  elapsedSeconds,
+  isSessionLength,
+  isTimeGoal,
+  sessionSeconds,
+  wholeMinutes,
+  type TimeEntry,
+  type TimeEntryId,
+} from '../../core'
 import {
   describeDuration,
   describeElapsedClock,
   describeLoggedAt,
+  describeSessionLength,
   describeTimeSummary,
   parseDuration,
 } from '../durationLabels'
@@ -98,18 +107,16 @@ export function TimePicker({
   const sessionsHeading = `${ids}-sessions`
   const sessionHint = `${ids}-hint`
 
-  const spent = sessions.reduce((total, entry) => total + entry.minutes, 0)
+  const spentSeconds = sessionSeconds(sessions)
   const liveSeconds =
     timer?.running === true && timer.startedAt !== null
       ? elapsedSeconds(timer.startedAt, timer.clock)
       : 0
-  const liveMinutes = timer?.running === true && timer.startedAt !== null
-    ? elapsedMinutesFloor(timer.startedAt, timer.clock)
-    : 0
-  const shownSpent = spent + liveMinutes
+  // Logged and live time add up to the second; only the total is read in minutes.
+  const shownSpent = wholeMinutes(spentSeconds + liveSeconds)
   const reached = goal !== null && shownSpent >= goal
   const summary = describeTimeSummary(shownSpent, goal)
-  const isSet = goal !== null || spent > 0 || (timer?.running ?? false)
+  const isSet = goal !== null || spentSeconds > 0 || (timer?.running ?? false)
   const typedGoal = goalText.trim() === '' ? null : parseDuration(goalText)
   const isGoalInvalid = goalText.trim() !== '' && (typedGoal === null || !isTimeGoal(typedGoal))
   const running = timer?.running === true
@@ -378,12 +385,12 @@ export function TimePicker({
                     <li key={entry.id} className="flex items-center gap-2 pl-1 text-sm md:text-xs">
                       <span className="text-neutral-500 tabular-nums dark:text-neutral-400">{at}</span>
                       <span className="ml-auto font-medium text-neutral-900 tabular-nums dark:text-neutral-100">
-                        {describeDuration(entry.minutes)}
+                        {describeSessionLength(entry.seconds)}
                       </span>
                       <button
                         type="button"
                         onClick={() => { onRemove(entry.id) }}
-                        aria-label={`Remove ${describeDuration(entry.minutes)} logged at ${at}`}
+                        aria-label={`Remove ${describeSessionLength(entry.seconds)} logged at ${at}`}
                         className={`grid size-8 shrink-0 place-items-center rounded-lg text-base leading-none md:size-5 md:rounded-md md:text-sm ${deleteControl}`}
                       >
                         ×

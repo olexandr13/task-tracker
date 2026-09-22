@@ -4,10 +4,13 @@ import {
   hasTimeGoal,
   InvalidTimeError,
   isTimeGoalReached,
+  logSeconds,
   logTime,
   MAX_SESSION_MINUTES,
+  MAX_SESSION_SECONDS,
   MAX_TIME_GOAL_MINUTES,
   removeTimeEntry,
+  secondsSpent,
   setTimeGoal,
   timeSpent,
 } from './timeLog'
@@ -66,7 +69,7 @@ describe('logTime (TIME-3)', () => {
     const task = logTime(logTime(sport(), 20, TUE_15), 25, TUE_15_EVENING)
 
     expect(timeSpent(task, TUE_15_EVENING)).toBe(45)
-    expect(task.timeLog.map((entry) => entry.minutes)).toEqual([20, 25])
+    expect(task.timeLog.map((entry) => entry.seconds)).toEqual([20 * 60, 25 * 60])
   })
 
   it('takes whole minutes from 1 up to a day only', () => {
@@ -134,17 +137,17 @@ describe('time under a repeating task (TIME-7)', () => {
   it('lets go of sessions from occurrences gone by as the next is logged (TIME-8)', () => {
     const task = logTime(logTime(sport(), 50, MON_14), 10, TUE_15)
 
-    expect(task.timeLog.map((entry) => entry.minutes)).toEqual([10])
+    expect(task.timeLog.map((entry) => entry.seconds)).toEqual([10 * 60])
   })
 
   it('lets go of sessions that no longer count when the rule is dropped, keeping those that do', () => {
     // Yesterday's session is still on the task: nothing has been logged since to let go of it.
     const task = logTime(sport(), 10, TUE_15)
-    const stale = { ...task, timeLog: [{ id: 'old', minutes: 50, loggedAt: MON_14.toISOString() }, ...task.timeLog] }
+    const stale = { ...task, timeLog: [{ id: 'old', seconds: 50 * 60, loggedAt: MON_14.toISOString() }, ...task.timeLog] }
 
     const oneOff = setRepeat(stale, null, TUE_15_EVENING)
 
-    expect(oneOff.timeLog.map((entry) => entry.minutes)).toEqual([10])
+    expect(oneOff.timeLog.map((entry) => entry.seconds)).toEqual([10 * 60])
     expect(timeSpent(oneOff, MON_21)).toBe(10)
   })
 
@@ -152,6 +155,41 @@ describe('time under a repeating task (TIME-7)', () => {
     const task = logTime(sport(), 30, TUE_15)
 
     expect(timeSpent(uncompleteTask(completeTask(task, TUE_15), TUE_15), TUE_15)).toBe(30)
+  })
+})
+
+describe('logSeconds (TIME-22)', () => {
+  it('adds seconds up across sessions before reading whole minutes', () => {
+    const once = logSeconds(sport(), 20, TUE_15)
+    const twice = logSeconds(once, 20, TUE_15)
+    const thrice = logSeconds(twice, 20, TUE_15)
+
+    expect([timeSpent(once, TUE_15), timeSpent(twice, TUE_15), timeSpent(thrice, TUE_15)]).toEqual([0, 0, 1])
+    expect(secondsSpent(thrice, TUE_15)).toBe(60)
+  })
+
+  it('adds seconds to minutes logged by hand', () => {
+    const task = logSeconds(logTime(sport(), 59, TUE_15), 59, TUE_15)
+
+    expect(timeSpent(task, TUE_15)).toBe(59)
+    expect(isTimeGoalReached(task, TUE_15)).toBe(false)
+    expect(isTimeGoalReached(logSeconds(task, 1, TUE_15), TUE_15)).toBe(true)
+  })
+
+  it('takes whole seconds from one to a day only', () => {
+    const task = sport()
+
+    for (const seconds of [0, -1, 2.5, MAX_SESSION_SECONDS + 1, Number.NaN]) {
+      expect(() => logSeconds(task, seconds, TUE_15)).toThrow(InvalidTimeError)
+    }
+    expect(secondsSpent(logSeconds(task, MAX_SESSION_SECONDS, TUE_15), TUE_15)).toBe(MAX_SESSION_SECONDS)
+  })
+
+  it('counts seconds for the occurrence they were logged in (TIME-7)', () => {
+    const task = logSeconds(logSeconds(sport(), 40, MON_14), 40, TUE_15)
+
+    expect(secondsSpent(task, TUE_15)).toBe(40)
+    expect(timeSpent(task, TUE_15)).toBe(0)
   })
 })
 

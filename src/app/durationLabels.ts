@@ -11,6 +11,14 @@ export function describeDuration(minutes: number): string {
   return rest === 0 ? `${String(hours)}h` : `${String(hours)}h ${String(rest)}m`
 }
 
+/**
+ * A session's length in whole minutes, as time is shown everywhere: its seconds
+ * count toward the total, not on screen. A timer's run under a minute is `<1m`.
+ */
+export function describeSessionLength(seconds: number): string {
+  return seconds < 60 ? '<1m' : describeDuration(Math.floor(seconds / 60))
+}
+
 /** As `describeDuration`, closed up to fit under a row's control: `1h30`. */
 function describeDurationShort(minutes: number): string {
   const hours = Math.floor(minutes / 60)

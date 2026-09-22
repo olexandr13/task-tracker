@@ -104,7 +104,7 @@ export function AddTaskSheet({
       reward,
       urgent,
       timeGoal,
-      timeLogMinutes: sessions.map((entry) => entry.minutes),
+      timeLogMinutes: sessions.map((entry) => entry.seconds / 60),
       subtasks: subtasks.map((subtask) => ({
         title: subtask.title,
         done: subtask.completedAt !== null,
@@ -181,7 +181,7 @@ export function AddTaskSheet({
                   ...current,
                   {
                     id: crypto.randomUUID(),
-                    minutes,
+                    seconds: minutes * 60,
                     loggedAt: now.toISOString(),
                   },
                 ])

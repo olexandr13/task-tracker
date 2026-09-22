@@ -1,4 +1,4 @@
-import { ORDER_STEP, toLocalDay, type Task } from '../core'
+import { ORDER_STEP, toLocalDay, type Task, type TimeEntry } from '../core'
 import { isRecord } from './plainData'
 
 /**
@@ -6,13 +6,20 @@ import { isRecord } from './plainData'
  * changes, and add a step below: storing the version means old saved data can be
  * upgraded rather than silently breaking.
  */
-export const SCHEMA_VERSION = 15
+export const SCHEMA_VERSION = 16
 
 /**
- * Version 14 ranked urgency as low, medium or high (or none). Today's shape is a
+ * Version 15 kept a session in whole minutes, so a timer run under a minute was
+ * lost. Today's shape keeps it to the second: a minute is sixty of them.
+ */
+type TimeEntryV15 = Omit<TimeEntry, 'seconds'> & { readonly minutes: number }
+type TaskV15 = Omit<Task, 'timeLog'> & { readonly timeLog: readonly TimeEntryV15[] }
+
+/**
+ * Version 14 ranked urgency as low, medium or high (or none). Version 15 has a
  * single urgent mark: high becomes urgent, everything else does not.
  */
-type TaskV14 = Omit<Task, 'urgent'> & { readonly priority: 'low' | 'medium' | 'high' | null }
+type TaskV14 = Omit<TaskV15, 'urgent'> & { readonly priority: 'low' | 'medium' | 'high' | null }
 
 /** Version 13 had no priority and no urgent mark: a task was no more urgent than any other. */
 type TaskV13 = Omit<TaskV14, 'priority'>
@@ -53,9 +60,16 @@ type TaskV2 = Omit<TaskV3, 'deletedAt'>
 /** Version 1 knew nothing about repeating either: every task happened once. */
 type TaskV1 = Omit<TaskV2, 'repeat'>
 
+function fromV15(task: TaskV15): Task {
+  return {
+    ...task,
+    timeLog: task.timeLog.map(({ minutes, ...entry }) => ({ ...entry, seconds: minutes * 60 })),
+  }
+}
+
 function fromV14(task: TaskV14): Task {
   const { priority, ...rest } = task
-  return { ...rest, urgent: priority === 'high' }
+  return fromV15({ ...rest, urgent: priority === 'high' })
 }
 
 function fromV13(task: TaskV13): Task {
@@ -159,6 +173,8 @@ export function migrateTasks(version: unknown, tasks: unknown): Task[] | null {
       return (tasks as TaskV13[]).map(fromV13)
     case 14:
       return (tasks as TaskV14[]).map(fromV14)
+    case 15:
+      return (tasks as TaskV15[]).map(fromV15)
     case SCHEMA_VERSION:
       return tasks as Task[]
     default:

@@ -67,7 +67,7 @@ describe('TimePicker timer', () => {
 
 describe('TimePicker panel', () => {
   const NOW = new Date(2026, 8, 21, 10, 0)
-  const logged = [{ id: 'a', minutes: 20, loggedAt: NOW.toISOString() }]
+  const logged = [{ id: 'a', seconds: 20 * 60, loggedAt: NOW.toISOString() }]
 
   function renderPicker(goal: number | null, onLog = vi.fn()) {
     const user = userEvent.setup()
