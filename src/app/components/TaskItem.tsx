@@ -119,7 +119,8 @@ const indent = 'pl-11 md:pl-10'
  * Each control sits in a slot of one icon button's width, so an icon is in the
  * same place on every row whatever its neighbours hold. The slot is the button
  * and nothing more: the controls belong together, so only the line's gap is
- * between them.
+ * between them. It keeps its width while it is empty, which a resting row's
+ * unset controls leave it (UI-18), so the icons that are there still line up.
  */
 const slot = 'flex w-6 shrink-0 items-center'
 
@@ -193,8 +194,8 @@ export function TaskItem({
   // Null unless the title is being edited. The text lives here rather than in the
   // task while it is being typed, so an abandoned edit leaves nothing behind.
   const [editedTitle, setEditedTitle] = useState<string | null>(null)
-  // A woken row is the one being worked on: it spells its repeat rule out and
-  // opens what it holds. Its controls are on show either way.
+  // A woken row is the one being worked on: it spells its repeat rule out, opens
+  // what it holds, and brings out the controls holding nothing yet (UI-18).
   const [isActive, setIsActive] = useState(false)
   // What the woken row is showing. Both come up with it — clicking a task is
   // asking to see the whole of it, not to be handed two more buttons to press —
@@ -796,64 +797,78 @@ export function TaskItem({
 
         {!phone && (
           <>
+            {/* A resting row shows only the controls holding something, so the list reads as
+                what its tasks carry rather than as rows of empty buttons; waking it brings the
+                rest out, the row being worked on having every control one click away (UI-18).
+                The slots stay either way, so an icon keeps its column down the list (UI-27). */}
             {/* On every row: the date and the repeat rule are one control, since a rule is
                 what gives a repeating task its days. Its name carries the occurrence in play,
                 and a day picked there makes the task a one-off. */}
             <div className={slot}>
-              <SchedulePicker
-                dueDate={dueDay(task, now)}
-                draft={draft}
-                now={now}
-                overdue={overdue}
-                onChangeDueDate={changeDueDate}
-                onChangeRepeat={handleRepeatChange}
-                skip={skip}
-                label={`Schedule for "${task.title}"`}
-              />
+              {(isActive || scheduled) && (
+                <SchedulePicker
+                  dueDate={dueDay(task, now)}
+                  draft={draft}
+                  now={now}
+                  overdue={overdue}
+                  onChangeDueDate={changeDueDate}
+                  onChangeRepeat={handleRepeatChange}
+                  skip={skip}
+                  label={`Schedule for "${task.title}"`}
+                />
+              )}
             </div>
 
             <div className={slot}>
-              <button
-                type="button"
-                onClick={() => { setIsChecklistOpen(!isChecklistOpen) }}
-                aria-expanded={isChecklistOpen}
-                aria-label={
-                  hasSubtasks(task)
-                    ? `Checklist for "${task.title}": ${String(checklist.done)} of ${String(checklist.total)} done`
-                    : `Add a checklist to "${task.title}"`
-                }
-                title={hasSubtasks(task) ? `${String(checklist.done)}/${String(checklist.total)} done` : 'Add a checklist'}
-                className={hasSubtasks(task) ? `${rowButton} ${controlOn}` : `${rowButton} ${controlOff}`}
-              >
-                <ChecklistIcon />
-              </button>
+              {(isActive || checklisted) && (
+                <button
+                  type="button"
+                  onClick={() => { setIsChecklistOpen(!isChecklistOpen) }}
+                  aria-expanded={isChecklistOpen}
+                  aria-label={
+                    hasSubtasks(task)
+                      ? `Checklist for "${task.title}": ${String(checklist.done)} of ${String(checklist.total)} done`
+                      : `Add a checklist to "${task.title}"`
+                  }
+                  title={hasSubtasks(task) ? `${String(checklist.done)}/${String(checklist.total)} done` : 'Add a checklist'}
+                  className={hasSubtasks(task) ? `${rowButton} ${controlOn}` : `${rowButton} ${controlOff}`}
+                >
+                  <ChecklistIcon />
+                </button>
+              )}
             </div>
+
+            <div className={slot}>{(isActive || timed) && <TimePicker {...timePicker} />}</div>
 
             <div className={slot}>
-              <TimePicker {...timePicker} />
+              {(isActive || rewarded) && (
+                <RewardPicker
+                  reward={task.reward}
+                  startAt={defaultReward(task.repeat)}
+                  onChange={(reward) => { actions.changeReward(task.id, reward) }}
+                  label={`Reward for "${task.title}"`}
+                />
+              )}
             </div>
 
+            {/* In a slot of its own like the rest, so the delete beside it keeps its place
+                whether or not there is a description to show. */}
             <div className={slot}>
-              <RewardPicker
-                reward={task.reward}
-                startAt={defaultReward(task.repeat)}
-                onChange={(reward) => { actions.changeReward(task.id, reward) }}
-                label={`Reward for "${task.title}"`}
-              />
+              {(isActive || described) && (
+                <button
+                  type="button"
+                  onClick={() => { setIsDescriptionOpen(!isDescriptionOpen) }}
+                  aria-expanded={isDescriptionOpen}
+                  aria-label={
+                    hasDescription(task) ? `Description of "${task.title}"` : `Add a description to "${task.title}"`
+                  }
+                  title={hasDescription(task) ? 'Description' : 'Add a description'}
+                  className={hasDescription(task) ? `${rowButton} ${controlOn}` : `${rowButton} ${controlOff}`}
+                >
+                  <NoteIcon />
+                </button>
+              )}
             </div>
-
-            <button
-              type="button"
-              onClick={() => { setIsDescriptionOpen(!isDescriptionOpen) }}
-              aria-expanded={isDescriptionOpen}
-              aria-label={
-                hasDescription(task) ? `Description of "${task.title}"` : `Add a description to "${task.title}"`
-              }
-              title={hasDescription(task) ? 'Description' : 'Add a description'}
-              className={hasDescription(task) ? `${rowButton} ${controlOn}` : `${rowButton} ${controlOff}`}
-            >
-              <NoteIcon />
-            </button>
 
             {/* Always on show, and last, so it keeps its place as the row wakes and rests. */}
             <button

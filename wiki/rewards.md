@@ -20,7 +20,7 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
 ## Setting a reward
 
 - **RWD-5** The **star button** on a row opens the reward panel. It is tinted while the task has a
-  reward (UI-26). The panel is a number with **−** and **+** beside it and nothing to confirm. **0 is
+  reward (UI-26); a task with none shows no star until its row is woken (UI-18). The panel is a number with **−** and **+** beside it and nothing to confirm. **0 is
   no reward**. **Clicking the star of a task without a reward gives it 1 point** at once, whatever its
   rule, and opens the panel on it; opening the panel of a task that has a reward changes nothing.
   **+** from 0 gives the rule's starting amount (RWD-2); typing a number gives that.

@@ -67,8 +67,8 @@ and whether it reads as done is derived from the occurrence currently in play ra
   task row the button is the **icon alone** — enough to say the task repeats, and the rule, with
   the occurrence in play, is its name and tooltip (DUE-12). How often
   is a detail, spelled out once the row is clicked into — on the line of details, **under the
-  button**, on every screen width (UI-27), so it moves no icon along. A plain
-  button is on show at rest too (UI-18).
+  button**, on every screen width (UI-27), so it moves no icon along. A task with
+  neither a rule nor a day shows no schedule button until its row is woken (UI-18).
 - **RPT-18** Choosing the kind already chosen turns it back off, so the task happens once.
 - **RPT-19** Weekly shows the seven days, Monday first and Sunday last, as weeks run everywhere
   in the app (PROG-2). Taking away the last selected day clears the rule, as choosing Weekly

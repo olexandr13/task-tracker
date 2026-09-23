@@ -69,8 +69,9 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   title, alongside the checklist. The button beside the repeat one puts it away again without
   leaving the row, and brings it back. A row at rest shows no description, so the list stays
   something you can run your eye down. On a phone it comes up in the sheet (UI-48).
-- **TASK-23** That button shows whether there is anything written: marked when there is, muted when
-  there is not. It is on the row at rest either way — see [Interface](interface.md). On a phone it
+- **TASK-23** That button shows whether there is anything written: marked when there is. A task
+  with nothing written has no such button on its resting row; it comes up, muted, when the row is
+  woken — see [Interface](interface.md). On a phone it
   is in the sheet, the rest row having no description button (UI-48) but still a mark when
   there is a description (UI-50).
 - **TASK-24** It opens as text either way, a blank one reading as the line that invites you to

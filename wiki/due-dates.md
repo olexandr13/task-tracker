@@ -21,8 +21,9 @@ instead of in a long list of everything — see [Views](views.md).
   sheet's action lines, UI-59). The day chosen goes with the task on Enter, and the button goes
   back to the list's own day afterwards, so a date picked for one task is never inherited by the
   next unnoticed.
-- **DUE-5** On a task row the schedule button (DUE-13) is the first of the controls, on show at
-  rest on **every** task, set or not (UI-18). It is the icon alone, tinted once a date is set — and always on
+- **DUE-5** On a task row the schedule button (DUE-13) is the first of the controls. On a resting
+  row it is there once the task has a day or a rule, and on an undated task it waits for the row to
+  be woken (UI-18). It is the icon alone, tinted once a date is set — and always on
   a repeating task, whose rule has set its day (DUE-12) — red when overdue (DUE-10), the date being
   its name and tooltip. The date itself is spelled out **under the button**
   only on the woken row, like the other details (UI-27), so a dated row at rest is no taller than

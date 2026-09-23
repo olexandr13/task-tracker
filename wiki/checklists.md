@@ -28,8 +28,9 @@ count.
   title, above the description. The button beside the description one puts it away again without
   leaving the row, and brings it back. A row at rest shows no checklist, so the list stays
   something you can run your eye down. On a phone it comes up in the sheet (UI-48).
-- **CHK-5** That button shows whether there is a checklist: marked when there is, muted when there
-  is not, and on show at rest either way (UI-18). The button is the **icon alone**. How it stands —
+- **CHK-5** That button shows whether there is a checklist: marked on a resting row when there is
+  one, and on a row at rest with none there is no button at all — it comes up, muted, when the row
+  is woken (UI-18). The button is the **icon alone**. How it stands —
   `2/5` — is spelled out on the line of details, **under the button**, once the row is clicked into, on every
   screen width (UI-27); a screen reader is told the full count at rest too. On a phone the button is
   not on the rest row — the checklist is in the sheet (UI-48) — but a resting row still shows the

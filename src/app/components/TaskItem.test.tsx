@@ -394,14 +394,36 @@ describe('the checklist count on a task row', () => {
 })
 
 describe('the controls on a task row', () => {
-  it('are all on show at rest, even with nothing set (UI-18)', () => {
+  it('are the set ones only at rest, a task with nothing set showing none (UI-18)', () => {
     setup(null)
+
+    expect(screen.queryByRole('button', { name: /^Schedule for/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Add a checklist to/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Time for/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Reward for/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Add a description to/ })).toBeNull()
+    // Urgent is no control on a resting row, set or not (TASK-62).
+    expect(screen.queryByRole('button', { name: /^Urgent for/ })).toBeNull()
+  })
+
+  it('show the set ones at rest, a repeat rule and a checklist among them (UI-18)', () => {
+    setup({ kind: 'daily' }, ['one'])
+
+    expect(screen.getByRole('button', { name: `Schedule for "${TASK}": Daily · Today` })).toBeDefined()
+    expect(screen.getByRole('button', { name: `Checklist for "${TASK}": 0 of 1 done` })).toBeDefined()
+    expect(screen.queryByRole('button', { name: /^Reward for/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Add a description to/ })).toBeNull()
+  })
+
+  it('are all on show once the row is woken, empty ones included (UI-18)', async () => {
+    const user = setup(null)
+
+    await user.click(screen.getByRole('listitem'))
 
     expect(screen.getByRole('button', { name: `Schedule for "${TASK}": No date` })).toBeDefined()
     expect(screen.getByRole('button', { name: `Add a checklist to "${TASK}"` })).toBeDefined()
     expect(screen.getByRole('button', { name: `Reward for "${TASK}": No reward` })).toBeDefined()
     expect(screen.getByRole('button', { name: `Add a description to "${TASK}"` })).toBeDefined()
-    expect(screen.queryByRole('button', { name: /^Urgent for/ })).toBeNull()
   })
 })
 
@@ -477,7 +499,7 @@ describe('clicking a woken row', () => {
     await user.click(screen.getByRole('listitem'))
 
     expect(within(screen.getByRole('listitem')).queryByText('Daily')).toBeNull()
-    expect(screen.getByRole('button', { name: `Add a checklist to "${TASK}"` }).getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('textbox', { name: `Add a subtask to "${TASK}"` })).toBeNull()
   })
 
   it('on a control leaves it awake (UI-21)', async () => {
@@ -974,7 +996,8 @@ describe('the menu a right-click opens on a task row', () => {
       expect(onAddTag).toHaveBeenCalledWith(expect.any(String), 'work')
       expect(onRemoveTag).toHaveBeenCalledWith(expect.any(String), 'health')
       expect(tagPanel()).not.toBeNull()
-      expect(screen.getByRole('button', { name: `Add a checklist to "${TASK}"` }).getAttribute('aria-expanded')).toBe('false')
+      // The woken row's strip would be there had the row opened (UI-53).
+      expect(screen.queryByRole('button', { name: `Duplicate "${TASK}"` })).toBeNull()
     })
 
     it('makes a tag typed in its box on Enter (TAG-7)', async () => {

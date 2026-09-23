@@ -188,16 +188,21 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 ## The task row
 
-- **UI-17** A row at rest is the completion box, the title and its tags, its controls and the delete button.
+- **UI-17** A row at rest is the completion box, the title and its tags, the controls holding
+  something (UI-18) and the delete button.
   Clicking anywhere on the row **opens what the task holds** — its checklist and its description,
   both at once — and spells its date or repeat rule and its checklist count out under their buttons (UI-27). Clicking a task is asking to see the whole
   of it, not to be handed buttons to press. It all goes again when you click the row again (UI-28),
   click away, press Escape, or click into another row. On a phone a tap opens that as a sheet
   instead of growing the row (UI-48).
-- **UI-18** Every control is **on show at rest**, set or not — the schedule (the date, or the rule
-  on a repeating task, DUE-13), the checklist, the time (TIME-10), the reward (RWD-5), the description — so any of them is one click away
-  on any row. Set ones are tinted (UI-26), empty ones muted, so what the task carries still reads at
-  a glance. Deleting is always on show too, at the far end of the row, so it keeps its place as the
+- **UI-18** A resting row shows the controls that **hold something**, and no others — the schedule
+  (the date, or the rule on a repeating task, DUE-13), the checklist, the time (TIME-10), the reward
+  (RWD-5), the description — tinted (UI-26), so the list reads as what its tasks carry rather than as
+  rows of the same empty buttons. A task with nothing set is its title alone. Waking the row brings
+  the empty ones out (UI-17), so the task being worked on has every control one click away, and they
+  go again when it rests. A control's **slot keeps its place and its width while it is empty**
+  (UI-27), so an icon means the same thing in the same column on every row, however much the rows
+  beside it hold. Deleting is always on show, at the far end of the row, so it keeps its place as the
   row wakes and rests. On a phone the rest row is the box, the title and **marks** for what is set
   (UI-50); the controls themselves live in the sheet a tap opens (UI-48).
 - **UI-50** On a phone, a resting row shows **tinted icons** for what the task carries — the
@@ -208,7 +213,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   icons stand for still come up under the title only with **Show task details** (UI-42), or inside
   the sheet.
 - **UI-27** The controls **line up down the list**: each is its icon alone, in a slot of its own
-  that sits in the same place on every row, whatever the rows beside it hold. A slot is **no wider than the button in it** — an icon with no words
+  that sits in the same place on every row, whatever the rows beside it hold — and whether or not
+  the control is there, an unset one leaving its slot empty at rest (UI-18). A slot is **no wider than the button in it** — an icon with no words
   beside it is padded to a square — and a small gap is between one slot and the next, enough that each icon
   reads as its own button while the controls still sit together and read as one group at the end of the row rather than as buttons scattered along it. The list and the
   tags have no slot at all on the resting row: they are set from the task's menu (LST-14, TAG-7),

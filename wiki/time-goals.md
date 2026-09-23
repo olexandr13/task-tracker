@@ -53,7 +53,8 @@ ticked off. The tick itself stays the owner's.
 ## On screen
 
 - **TIME-10** The **clock** sits in a slot of its own after the checklist button (UI-27). It is
-  tinted while the task has a goal or time counting (UI-26), and a screen reader hears how the time
+  tinted while the task has a goal or time counting (UI-26), and with neither it waits for the row
+  to be woken (UI-18). A screen reader hears how the time
   stands: `Time for "sport": 20m of 1h`. On a phone the line has no room for the *control*, so the
   sheet a tap opens (UI-48) has it, spelling the time out — `20m of 1h` — or offering **Log time**;
   a resting row still shows the clock as a mark when time is set (UI-50).
