@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { canSkipOccurrence, dueDay, isInPeriod, isOverdue, lastDayOf, nextWeekDueDay, skipOccurrence } from './due'
+import {
+  canSkipOccurrence,
+  dueDay,
+  isInPeriod,
+  isOverdue,
+  lastDayOf,
+  nextWeekDueDay,
+  skipOccurrence,
+  splitOverdue,
+} from './due'
 import type { Repeat } from './repeat'
 import { completeTask, createTask, deleteTask, duplicateTask, setDueDate, uncompleteTask, type Task } from './task'
 
@@ -16,6 +25,11 @@ const MONDAYS: Repeat = { kind: 'weekly', weekdays: [1] }
 /** A one-off written on the Monday, due on `day`. */
 function dueOn(day: string | null): Task {
   return setDueDate(createTask('a task', null, MON_14), day)
+}
+
+/** A one-off with no day at all, written on `createdAt`. */
+function undated(createdAt: Date = MON_14): Task {
+  return createTask('a task', null, createdAt)
 }
 
 function repeating(repeat: Repeat, createdAt: Date = MON_14): Task {
@@ -75,6 +89,51 @@ describe('isOverdue', () => {
   })
 })
 
+describe('splitOverdue', () => {
+  /** A one-off due on `day`, titled by it so the runs read plainly. */
+  function task(title: string, day: string | null): Task {
+    return { ...setDueDate(createTask(title, null, MON_14), day), id: title }
+  }
+
+  it('takes the overdue out of the run and leaves the rest', () => {
+    const tasks = [task('late', '2026-09-14'), task('today', '2026-09-16'), task('someday', null)]
+    const { overdue, rest } = splitOverdue(tasks, WED_16)
+
+    expect(overdue.map((one) => one.title)).toEqual(['late'])
+    expect(rest.map((one) => one.title)).toEqual(['today', 'someday'])
+  })
+
+  it('keeps the order each run was given', () => {
+    const tasks = [task('late', '2026-09-14'), task('today', '2026-09-16'), task('later', '2026-09-13')]
+    const { overdue, rest } = splitOverdue(tasks, WED_16)
+
+    expect(overdue.map((one) => one.title)).toEqual(['late', 'later'])
+    expect(rest.map((one) => one.title)).toEqual(['today'])
+  })
+
+  it('leaves a done task in the rest, however late it was finished', () => {
+    const tasks = [completeTask(task('late', '2026-09-14'), WED_16)]
+    const { overdue, rest } = splitOverdue(tasks, WED_16)
+
+    expect(overdue).toHaveLength(0)
+    expect(rest).toHaveLength(1)
+  })
+
+  it('follows the day it is asked about, so a page left open moves a task along', () => {
+    const tasks = [task('tuesday', '2026-09-15')]
+
+    expect(splitOverdue(tasks, TUE_15).overdue).toHaveLength(0)
+    expect(splitOverdue(tasks, WED_16).overdue).toHaveLength(1)
+  })
+
+  it('never modifies the list it is given', () => {
+    const tasks = [task('late', '2026-09-14')]
+    splitOverdue(tasks, WED_16)
+
+    expect(tasks).toHaveLength(1)
+  })
+})
+
 describe('isInToday, to do', () => {
   it('holds what is due today', () => {
     expect(isInToday(dueOn('2026-09-16'), WED_16)).toBe(true)
@@ -84,7 +143,7 @@ describe('isInToday, to do', () => {
     expect(isInToday(dueOn('2026-09-10'), WED_16)).toBe(true)
   })
 
-  it('leaves out what is due later, and what has no day', () => {
+  it('leaves out what is due later, and what has no day and is still to do', () => {
     expect(isInToday(dueOn('2026-09-17'), WED_16)).toBe(false)
     expect(isInToday(dueOn(null), WED_16)).toBe(false)
   })
@@ -125,8 +184,12 @@ describe('isInToday, done', () => {
     expect(isInToday(completeTask(dueOn('2026-09-18'), WED_16), WED_16_EVENING)).toBe(false)
   })
 
-  it('never takes in a task with no day, however recently it was ticked', () => {
-    expect(isInToday(completeTask(dueOn(null), WED_16), WED_16_EVENING)).toBe(false)
+  it('takes in a task with no day ticked today, the only day it has', () => {
+    expect(isInToday(completeTask(undated(), WED_16), WED_16_EVENING)).toBe(true)
+  })
+
+  it('lets go of a task with no day ticked on an earlier day', () => {
+    expect(isInToday(completeTask(undated(), MON_14), WED_16)).toBe(false)
   })
 
   it('keeps a repeating task ticked today, and lets go of one ticked for an earlier occurrence', () => {
@@ -143,7 +206,7 @@ describe('isInWeek, to do', () => {
     expect(isInWeek(dueOn('2026-09-01'), WED_16)).toBe(true)
   })
 
-  it('leaves out what is due next week, and what has no day', () => {
+  it('leaves out what is due next week, and what has no day and is still to do', () => {
     expect(isInWeek(dueOn('2026-09-21'), WED_16)).toBe(false)
     expect(isInWeek(dueOn(null), WED_16)).toBe(false)
   })
@@ -177,6 +240,11 @@ describe('isInWeek, done', () => {
     expect(isInWeek(completeTask(dueOn('2026-09-22'), WED_16), WED_16_EVENING)).toBe(false)
   })
 
+  it('keeps a task with no day ticked this week, and lets go of one ticked before it', () => {
+    expect(isInWeek(completeTask(undated(), MON_14), WED_16)).toBe(true)
+    expect(isInWeek(completeTask(undated(new Date(2026, 8, 7, 9, 0)), new Date(2026, 8, 12, 9, 0)), WED_16)).toBe(false)
+  })
+
   it('keeps a repeating task ticked for an occurrence this week', () => {
     expect(isInWeek(completeTask(repeating(MONDAYS), MON_14), WED_16)).toBe(true)
   })
@@ -188,7 +256,7 @@ describe('isInMonth', () => {
     expect(isInMonth(dueOn('2026-08-20'), WED_16)).toBe(true)
   })
 
-  it('leaves out what is due next month, and what has no day', () => {
+  it('leaves out what is due next month, and what has no day and is still to do', () => {
     expect(isInMonth(dueOn('2026-10-01'), WED_16)).toBe(false)
     expect(isInMonth(dueOn(null), WED_16)).toBe(false)
   })
@@ -197,6 +265,11 @@ describe('isInMonth', () => {
     expect(isInMonth(completeTask(dueOn('2026-09-02'), new Date(2026, 8, 1, 9, 0)), WED_16)).toBe(true)
     expect(isInMonth(completeTask(dueOn('2026-08-20'), MON_14), WED_16)).toBe(true)
     expect(isInMonth(completeTask(dueOn('2026-08-20'), new Date(2026, 7, 31, 9, 0)), WED_16)).toBe(false)
+  })
+
+  it('keeps a task with no day ticked this month, and lets go of one ticked before it', () => {
+    expect(isInMonth(completeTask(undated(new Date(2026, 8, 1, 9, 0)), new Date(2026, 8, 2, 9, 0)), WED_16)).toBe(true)
+    expect(isInMonth(completeTask(undated(new Date(2026, 7, 20, 9, 0)), new Date(2026, 7, 31, 9, 0)), WED_16)).toBe(false)
   })
 
   it('holds a monthly task on its occurrence in play, not on one still to come', () => {

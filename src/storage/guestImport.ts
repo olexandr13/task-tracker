@@ -1,9 +1,12 @@
+import { BONUS_PERIODS } from '../core'
 import type { ListRepository } from './listRepository'
 import { clearGuestAccount } from './localBackupRepository'
 import { loadGuestLists } from './localListRepository'
+import { loadGuestPrizes } from './localPrizeRepository'
 import { loadGuestLedger } from './localRewardRepository'
 import { loadGuestTags } from './localTagRepository'
 import { loadGuestTasks } from './localTaskRepository'
+import type { PrizeRepository } from './prizeRepository'
 import type { RewardRepository } from './rewardRepository'
 import type { TagRepository } from './tagRepository'
 import type { TaskRepository } from './taskRepository'
@@ -17,20 +20,24 @@ export async function importGuestAccount(
   tasks: TaskRepository,
   lists: ListRepository,
   tags: TagRepository,
+  prizes: PrizeRepository,
   rewards: RewardRepository,
 ): Promise<void> {
   const guestTasks = loadGuestTasks()
   const guestLists = loadGuestLists()
   const guestTags = loadGuestTags()
+  const guestPrizes = loadGuestPrizes()
   const ledger = loadGuestLedger()
 
   const empty =
     guestTasks.length === 0 &&
     guestLists.length === 0 &&
     guestTags.length === 0 &&
+    guestPrizes.length === 0 &&
     ledger.entries.length === 0 &&
     ledger.redemptions.length === 0 &&
-    ledger.todayBonus === null
+    BONUS_PERIODS.every((period) => ledger.bonuses[period] === null) &&
+    ledger.pointValue === null
 
   if (empty) {
     clearGuestAccount()
@@ -44,6 +51,7 @@ export async function importGuestAccount(
   if (guestTasks.length > 0) await tasks.importTasks(guestTasks)
   if (guestLists.length > 0) await lists.save({ saved: guestLists, removed: [] })
   if (guestTags.length > 0) await tags.save({ saved: guestTags, removed: [] })
+  if (guestPrizes.length > 0) await prizes.save({ saved: guestPrizes, removed: [] })
 
   if (ledger.entries.length > 0) {
     await rewards.save({ earned: [...ledger.entries], revoked: [] })
@@ -52,8 +60,12 @@ export async function importGuestAccount(
     await rewards.redeem(redemption)
   }
 
-  // The bonus set as guest comes too, where the account has none of its own.
-  if (ledger.todayBonus !== null) await rewards.importTodayBonus(ledger.todayBonus)
+  // What was set as guest comes too, where the account has none of its own.
+  for (const period of BONUS_PERIODS) {
+    const points = ledger.bonuses[period]
+    if (points !== null) await rewards.importBonus(period, points)
+  }
+  if (ledger.pointValue !== null) await rewards.importPointValue(ledger.pointValue)
 
   clearGuestAccount()
 }

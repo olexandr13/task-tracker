@@ -49,6 +49,12 @@ npm run build   # type-check + production build
 Pull requests into `main` run `npm run lint`, `npm test` and `npm run build` via GitHub Actions
 (`.github/workflows/ci.yml`).
 
+A **pre-commit hook** (`.githooks/pre-commit`) runs the lint and the tests before every commit, so
+neither a lint error nor a **console error** reaches one: any console output a test did not ask for
+fails that test (`src/test/consoleGuard.ts`). `npm install` points git at the hooks itself (the
+`prepare` script); to set it up without installing, run `git config core.hooksPath .githooks`. Skip
+it for one commit with `git commit --no-verify`.
+
 ## Hosting
 
 Live at https://task-tracker-pi-virid-63.vercel.app (Vercel project `task-tracker`, team

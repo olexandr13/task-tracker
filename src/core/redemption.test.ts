@@ -3,6 +3,7 @@ import {
   createRedemption,
   earningHistory,
   InvalidRedemptionError,
+  ledgerHistory,
   MAX_REDEMPTION_NOTE,
   NotEnoughPointsError,
   pointsBalance,
@@ -121,5 +122,36 @@ describe('earningHistory (RWD-23)', () => {
     const newerB = entry('2026-09-17', 1, 'write')
 
     expect(earningHistory([older, newerB, newerA]).map((e) => e.taskId)).toEqual(['read', 'write', 'run'])
+  })
+})
+
+describe('everything that happened to the points (RWD-38)', () => {
+  const EARNED: RewardEntry[] = [
+    { taskId: 'run', day: '2026-09-17', points: 5 },
+    { taskId: 'read', day: '2026-09-15', points: 2 },
+  ]
+  const SPENT: Redemption[] = [
+    { id: 'coffee', points: 3, note: 'Coffee', redeemedAt: '2026-09-17T12:00:00.000Z' },
+    { id: 'film', points: 8, note: 'A film', redeemedAt: '2026-09-16T20:00:00.000Z' },
+  ]
+
+  it('is one run of both sides, most recent day first', () => {
+    expect(ledgerHistory(EARNED, SPENT).map((row) => [row.day, row.kind])).toEqual([
+      ['2026-09-17', 'redeemed'],
+      ['2026-09-17', 'earned'],
+      ['2026-09-16', 'redeemed'],
+      ['2026-09-15', 'earned'],
+    ])
+  })
+
+  it('carries each row whole, so it can say what it was for and what it was worth', () => {
+    const [spent, earned] = ledgerHistory(EARNED, SPENT)
+
+    expect(spent.kind === 'redeemed' && spent.redemption.note).toBe('Coffee')
+    expect(earned.kind === 'earned' && earned.entry.points).toBe(5)
+  })
+
+  it('is empty when nothing has happened at all', () => {
+    expect(ledgerHistory([], [])).toEqual([])
   })
 })

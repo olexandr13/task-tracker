@@ -152,12 +152,20 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 
 ## The list
 
-- **TASK-17** Urgent tasks float to the top, overdue next, and done tasks sink to the bottom.
-  Otherwise tasks keep the order they were put in — the order they were added, until one is moved —
-  and completing one, marking one urgent, or a day turning overdue, does not shuffle the rest inside
-  their band.
+- **TASK-17** Overdue tasks float to the top, urgent next, and done tasks sink to the bottom. Urgent
+  is read inside a run rather than across the list, so an urgent task that is also overdue leads the
+  overdue rather than leaving them (TASK-60). Otherwise tasks keep the order they were put in — the
+  order they were added, until one is moved — and completing one, marking one urgent, or a day
+  turning overdue, does not shuffle the rest inside their band.
 - **TASK-18** A repeating task is only at the bottom while its current occurrence is done; it comes
   back up on its own when the next one arrives.
+- **TASK-68** The tasks still to do are drawn in **two runs**: the overdue under a heading of their
+  own — **Overdue**, in the same red the dates read in (DUE-10), with its count beside it — and then
+  the rest, under no heading. The heading is the done spans' (TASK-56) in red, the runs set the same
+  distance apart, so a day missed is seen at a glance instead of being read off each row. A list with
+  nothing overdue is one run, as it was, and the heading goes the moment the last one is done or
+  moved. Every list draws the two runs — Today, Week, Month, Tasks, the Inbox, lists and tags — bar
+  Today in Procrastination mode, which draws one run so the chosen task still leads it (JUST-5).
 - **TASK-19** An empty list encourages a start and points at the box above it.
 - **TASK-50** A list whose tasks are all done shows a praise banner above the done tasks: a soft
   green panel with a spark icon and clear, high-contrast praise. The moment one is open again, the
@@ -197,12 +205,12 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-40** From the keyboard, the grip picks the row up with Space or Enter. The arrow keys move
   it, Space or Enter drops it, and Escape puts it back. Screen readers hear the task's title and its
   position as it moves.
-- **TASK-41** A task moves only within its own group. An urgent task can't be dropped among overdue
-  or other to-dos or among done ones, an overdue task can't among urgent, other to-dos or done, a
-  to-do that is neither can't among urgent, overdue or done, and a done task can't among the open
-  groups. Completing a task, un-completing it, marking it urgent (or clearing the mark), or a day
-  turning overdue (or a date moving so it is no longer) is what moves it between them, and it goes
-  back to its place in the order when it returns. On Tasks a done task moves only among those under
+- **TASK-41** A task moves only within its own group — the groups TASK-17 draws: urgent overdue,
+  other overdue, urgent, other to-do, and done. A task can't be dropped among any of the others, so
+  a drag never lifts a task out of the Overdue run (TASK-68) or into it. Completing a task,
+  un-completing it, marking it urgent (or clearing the mark), or a day turning overdue (or a date
+  moving so it is no longer) is what moves it between them, and it goes back to its place in the
+  order when it returns. On Tasks a done task moves only among those under
   its own heading (TASK-56): a drag never changes when a task was finished.
 - **TASK-42** A task keeps its place while it is in the trash: restoring it puts it back where it
   was. New tasks still join the end (TASK-7).
@@ -227,9 +235,10 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 ## Urgent
 
 - **TASK-60** A task can be marked **urgent**. It is a label, not a ranking: the task is urgent or
-  it is not. Marking it floats it to the top of the list among tasks still to do (TASK-17) — above
-  overdue ones — and changing it changes that field alone — same id, same completion record, same
-  stored order — and counts for nothing in any period's bar.
+  it is not. Marking it floats it to the top of its **run** of tasks still to do (TASK-17) — of the
+  overdue, or of the rest, not out of the Overdue run and into the tasks above it (TASK-68) — and
+  changing it changes that field alone — same id, same completion record, same stored order — and
+  counts for nothing in any period's bar.
 - **TASK-61** A new task is **not urgent**. Most tasks need no mark until one is given. Clearing the
   mark puts it back.
 - **TASK-62** Urgent is **shown only in details** — on the woken row's line of details, under every
@@ -254,7 +263,8 @@ down and read back), `src/core/descriptionLists.ts` (lists, the same), `src/app/
 `TaskList.tsx`, `TaskItem.tsx`, `TaskSheet.tsx` (a phone's look at a task), `UrgentToggle.tsx`, `ContextMenu.tsx` (a task's menu), `TaskDescription.tsx`, `src/app/descriptionBox.ts` (the box a
 description is written in), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx` (ordering), `src/app/useUndoToast.ts`
 and `UndoToast.tsx` (undo after a completion or a deletion), `src/core/order.ts`
-(where a task sits, moving it, where a copy goes, and `sortForDisplay` — urgent above, overdue next, done below),
+(where a task sits, moving it, where a copy goes, and `sortForDisplay` — overdue above, urgent next, done below),
+`src/core/due.ts` (`splitOverdue`, the two runs still to do) and `src/app/dueLabels.ts` (the Overdue heading),
 `src/app/components/TaskDragAndDrop.tsx`,
 `src/app/taskDrop.ts`, `src/app/components/SortableTasks.tsx`, `src/app/useSortableTask.ts` and
 `src/app/dragSensors.ts` (dragging).

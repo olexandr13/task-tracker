@@ -1,4 +1,4 @@
-import type { LocalDay, TaskId } from '../core'
+import { BONUS_PERIODS, type LocalDay, type PeriodBonuses, type TaskId } from '../core'
 import {
   countRecords,
   newRecords,
@@ -6,6 +6,7 @@ import {
   type KnownRecords,
 } from './backupRepository'
 import { clearGuestLists, createLocalListRepository, loadGuestLists } from './localListRepository'
+import { clearGuestPrizes, createLocalPrizeRepository, loadGuestPrizes } from './localPrizeRepository'
 import { clearGuestRewards, loadGuestLedger, replaceGuestLedger } from './localRewardRepository'
 import { clearGuestTags, createLocalTagRepository, loadGuestTags } from './localTagRepository'
 import { clearGuestTasks, createLocalTaskRepository, loadGuestTasks } from './localTaskRepository'
@@ -18,6 +19,7 @@ export function createLocalBackupRepository(): BackupRepository {
   const tasks = createLocalTaskRepository()
   const lists = createLocalListRepository()
   const tags = createLocalTagRepository()
+  const prizes = createLocalPrizeRepository()
 
   return {
     async exportAll() {
@@ -26,9 +28,11 @@ export function createLocalBackupRepository(): BackupRepository {
         tasks: loadGuestTasks(),
         lists: loadGuestLists(),
         tags: loadGuestTags(),
+        prizes: loadGuestPrizes(),
         entries: ledger.entries,
         redemptions: ledger.redemptions,
-        todayBonus: ledger.todayBonus,
+        bonuses: ledger.bonuses,
+        pointValue: ledger.pointValue,
       }
     },
 
@@ -40,8 +44,10 @@ export function createLocalBackupRepository(): BackupRepository {
         listIds: new Set(loadGuestLists().map((list) => list.id)),
         tagIds: new Set(guestTags.map((tag) => tag.id)),
         tagNames: guestTags.map((tag) => tag.name),
+        prizeIds: new Set(loadGuestPrizes().map((prize) => prize.id)),
         redemptionIds: new Set(ledger.redemptions.map((redemption) => redemption.id)),
-        todayBonus: ledger.todayBonus,
+        bonuses: ledger.bonuses,
+        pointValue: ledger.pointValue,
         days: daysKnown(ledger.entries),
       }
 
@@ -50,11 +56,17 @@ export function createLocalBackupRepository(): BackupRepository {
       await tasks.importTasks(fresh.tasks)
       await lists.save({ saved: fresh.lists, removed: [] })
       await tags.save({ saved: fresh.tags, removed: [] })
+      await prizes.save({ saved: fresh.prizes, removed: [] })
+      // The file's bonuses and point value only where there are none here
+      // already (`newRecords`).
+      const bonuses = Object.fromEntries(
+        BONUS_PERIODS.map((period) => [period, ledger.bonuses[period] ?? fresh.bonuses[period]]),
+      ) as PeriodBonuses
       replaceGuestLedger(
         [...ledger.entries, ...fresh.entries],
         [...ledger.redemptions, ...fresh.redemptions],
-        // The file's bonus only where there is none here already (`newRecords`).
-        ledger.todayBonus ?? fresh.todayBonus,
+        bonuses,
+        ledger.pointValue ?? fresh.pointValue,
       )
 
       return { added: countRecords(fresh), alreadyHere }
@@ -77,5 +89,6 @@ export function clearGuestAccount(): void {
   clearGuestTasks()
   clearGuestLists()
   clearGuestTags()
+  clearGuestPrizes()
   clearGuestRewards()
 }

@@ -20,8 +20,12 @@ import {
  * Most of them show tasks — the ones for today, this week and this month, every
  * task, the Inbox, one list's and the ones carrying a tag — and share everything
  * but which tasks they show, what a task added to them starts with and whether
- * their done tasks are divided by when they were finished. Habits,
- * rewards, More, the lists, the tags, the trash and settings are screens of their own.
+ * their done tasks are divided by when they were finished. Habits, the rewards
+ * pages, More, the lists, the tags, the trash and settings are screens of their own.
+ *
+ * Rewards is four screens rather than one: how the points stand, and under it the
+ * history, the wishlist and the rules (RWD-19). They are named `rewards/…`, which
+ * is what their addresses read as and what marks them as belonging under Rewards.
  *
  * "View" is this file's word for a screen. What the owner calls a **list** is
  * somewhere tasks are filed (`../core/list`), which is a different thing: Today
@@ -35,6 +39,10 @@ export type FixedView =
   | 'inbox'
   | 'habits'
   | 'rewards'
+  | 'rewards/history'
+  | 'rewards/prizes'
+  | 'rewards/wishlist'
+  | 'rewards/rules'
   | 'lists'
   | 'tags'
   | 'more'
@@ -59,13 +67,34 @@ export type TagView = `tag/${string}`
 export type View = FixedView | OneListView | TagView
 
 /** The views that show tasks: the box to add one, the rows, and the rail beside them. */
-export type TaskView = Exclude<View, 'habits' | 'rewards' | 'lists' | 'tags' | 'more' | 'trash' | 'settings'>
+export type TaskView = Exclude<View, 'habits' | RewardsView | 'lists' | 'tags' | 'more' | 'trash' | 'settings'>
 
 /**
- * Pages reached from More, listed on More's own page — Tags and Rewards.
- * Procrastination is an action on that page too, not a view of its own.
+ * The pages under Rewards, in the order they are listed: what was earned and
+ * spent, the prizes points buy again and again, the wishlist they are saved up
+ * for, and what earns them (RWD-30). Rewards itself is how the points stand,
+ * and heads them.
  */
-export const UNDER_MORE = ['tags', 'rewards'] as const satisfies readonly FixedView[]
+export const UNDER_REWARDS = [
+  'rewards/history',
+  'rewards/prizes',
+  'rewards/wishlist',
+  'rewards/rules',
+] as const satisfies readonly FixedView[]
+
+/** Rewards and the pages under it: the one section of the app that is more than a page. */
+export type RewardsView = 'rewards' | (typeof UNDER_REWARDS)[number]
+
+export function isRewardsView(view: View): view is RewardsView {
+  return view === 'rewards' || (UNDER_REWARDS as readonly View[]).includes(view)
+}
+
+/**
+ * Pages reached from More, listed on More's own page — Tags alone, now that
+ * Rewards has a place of its own everywhere (RWD-19). Procrastination is an
+ * action on that page too, not a view of its own.
+ */
+export const UNDER_MORE = ['tags'] as const satisfies readonly FixedView[]
 
 /** The views named after a period, which a phone keeps behind a single tab. */
 export type PeriodView = 'today' | 'week' | 'month'
@@ -99,12 +128,14 @@ export function tagView(tag: string): TagView {
 /**
  * Whether being on `view` is being somewhere under `menu` in the navigation: on
  * it, or on one of the screens opened from it — a list or the Inbox under Lists,
- * a tag's tasks under Tags, or Tags and Rewards under More.
+ * a tag's tasks under Tags, the history, the wishlist and the rules under
+ * Rewards, or Tags under More.
  */
 export function isUnder(view: View, menu: View): boolean {
   if (view === menu) return true
   if (menu === 'lists') return isOneListView(view) || view === 'inbox'
   if (menu === 'tags') return isTagView(view)
+  if (menu === 'rewards') return isRewardsView(view)
   if (menu === 'more') {
     return (UNDER_MORE as readonly View[]).includes(view) || isTagView(view)
   }
@@ -140,7 +171,7 @@ export function showsTask(view: TaskView, task: Task, now: Date, lists: readonly
 
 /**
  * Where to go to see a live task: the view already open when it shows the
- * task — Habits does for a habit — or else Today when it is due today, or else
+ * task — Habits does for a habit — or else Today when Today shows it, or else
  * Tasks, which shows every task there is.
  */
 export function viewShowingTask(task: Task, current: View, now: Date, lists: readonly List[]): View {
@@ -185,6 +216,10 @@ export const VIEW_LABELS: Record<FixedView, string> = {
   inbox: 'Inbox',
   habits: 'Habits',
   rewards: 'Rewards',
+  'rewards/history': 'History',
+  'rewards/prizes': 'Prizes',
+  'rewards/wishlist': 'Wishlist',
+  'rewards/rules': 'Rules',
   lists: 'Lists',
   tags: 'Tags',
   more: 'More',

@@ -88,7 +88,8 @@ instead of in a long list of everything — see [Views](views.md).
 ## Overdue
 
 - **DUE-10** A task is **overdue** when its day has gone by and it is still to do. Its date reads in
-  red, and a screen reader hears that it is overdue. Done, however late, it is not overdue.
+  red, a screen reader hears that it is overdue, and its row is drawn in a run of its own at the top
+  of the list, under **Overdue** (TASK-68). Done, however late, it is not overdue.
 - **DUE-11** A repeating task is overdue when the occurrence in play went by undone — a Monday task
   on the Tuesday. An occurrence from before the task was written does not count: a Monday task
   written on a Tuesday is next due on Monday, not overdue from the day before it existed. Ticking
@@ -109,11 +110,12 @@ instead of in a long list of everything — see [Views](views.md).
 ---
 
 **Where it lives:** `src/core/day.ts` (local days), `src/core/task.ts` (`setDueDate`, `setRepeat`
-clearing it, and `scheduleOnce`, a day that ends a rule), `src/app/useTasks.ts` (`changeDueDate`), `src/core/due.ts` (which day a task is due, overdue, and the day Next week sets), `src/app/dueLabels.ts`
-(wording), `src/app/components/SchedulePicker.tsx` (the one control) and `DueChoices.tsx` (its
+clearing it, and `scheduleOnce`, a day that ends a rule), `src/app/useTasks.ts` (`changeDueDate`), `src/core/due.ts` (which day a task is due, overdue, the two runs a list draws — `splitOverdue` — and the day Next week sets), `src/app/dueLabels.ts`
+(wording, the **Overdue** heading with it), `src/app/components/TaskList.tsx` (the run it heads), `src/app/components/SchedulePicker.tsx` (the one control) and `DueChoices.tsx` (its
 date half), `DateCalendar.tsx` and `src/app/calendarMonth.ts` (the month calendar and the days it
 lays out), `src/app/dateChoices.tsx` (the Date row, shared by the panel and the menu), `AddTaskForm.tsx`,
 `TaskItem.tsx`, `ContextMenu.tsx` (a row of icons).
 **Tested in:** `src/core/day.test.ts`, `src/core/due.test.ts`, `src/core/task.test.ts`,
 `src/app/dueLabels.test.ts`, `src/app/calendarMonth.test.ts`, `src/app/components/SchedulePicker.test.tsx`,
-`DateCalendar.test.tsx`, `AddTaskForm.test.tsx`, `TaskItem.test.tsx` (the Date row).
+`DateCalendar.test.tsx`, `AddTaskForm.test.tsx`, `TaskItem.test.tsx` (the Date row),
+`TaskList.test.tsx` (the Overdue run).

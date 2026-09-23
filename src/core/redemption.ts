@@ -115,6 +115,42 @@ export function rewardTotals(
   }
 }
 
+/**
+ * One row of the ledger, whichever side it is: points a completion earned, or
+ * points a redemption spent. The two are kept apart in storage — one is a day's
+ * record, the other a record of its own — and put together here, since what a
+ * person wants to see is one run of what happened to the points (RWD-38).
+ */
+export type LedgerRow =
+  | { readonly kind: 'earned'; readonly day: LocalDay; readonly entry: RewardEntry }
+  | { readonly kind: 'redeemed'; readonly day: LocalDay; readonly redemption: Redemption }
+
+/**
+ * Everything that happened to the points, **most recent day first**. Within a
+ * day, what was spent comes before what was earned — a redemption carries a
+ * time and an earning only its day, so there is no telling the order of the two
+ * apart — and each side keeps the stable order it has on its own
+ * (`earningHistory`, `redemptionHistory`).
+ */
+export function ledgerHistory(
+  entries: readonly RewardEntry[],
+  redemptions: readonly Redemption[],
+): LedgerRow[] {
+  const rows: LedgerRow[] = [
+    ...redemptionHistory(redemptions).map(
+      (redemption): LedgerRow => ({
+        kind: 'redeemed',
+        day: toLocalDay(new Date(redemption.redeemedAt)),
+        redemption,
+      }),
+    ),
+    ...earningHistory(entries).map((entry): LedgerRow => ({ kind: 'earned', day: entry.day, entry })),
+  ]
+
+  // A stable sort, so each side keeps the order it arrived in within a day.
+  return rows.sort((a, b) => (a.day === b.day ? 0 : a.day < b.day ? 1 : -1))
+}
+
 /** The redemptions, most recent first. */
 export function redemptionHistory(redemptions: readonly Redemption[]): Redemption[] {
   return [...redemptions].sort((a, b) => new Date(b.redeemedAt).getTime() - new Date(a.redeemedAt).getTime())

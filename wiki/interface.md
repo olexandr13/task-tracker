@@ -34,8 +34,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-6** Nothing is reachable only on a wide screen. On a phone a tap on a task opens a sheet
   with its details and the action buttons (UI-48), so the list, the tags, the clock and the reward
   are there (LST-23, TAG-16, TIME-10, RWD-8); a wide screen has the last two on the row and the first
-  two on the woken strip and in the task's menu (UI-53). The Lists page (UI-34) and the Tags and
-  Rewards pages (UI-45) are on a phone too. The task's menu itself needs no right-click: a finger
+  two on the woken strip and in the task's menu (UI-53). The Lists page (UI-34), the Tags page
+  (UI-45) and every rewards page (RWD-30) is on a phone too. The task's menu itself needs no right-click: a finger
   opens it by holding a row (UI-44).
 - **UI-47** On a phone the **completion box is drawn small** — about the height of the title
   beside it, as on a wide screen — so a list stays dense and reads like a list, not a column of
@@ -50,7 +50,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   (UI-23).
 - **UI-49** On a phone a **menu's items are large enough for a thumb** — taller, with larger type
   and icons — so choosing one does not need a precise tap: the menus of the bottom bar
-  (UI-33, UI-43), More's list of links (UI-45), and a task's menu (UI-31, UI-44). The Inbox and the lists indented under
+  (UI-33, UI-43), More's list of links (UI-45), the strip across the rewards pages (RWD-30), and a
+  task's menu (UI-31, UI-44). The Inbox and the lists indented under
   Lists grow with them. On a wide screen they stay compact with the rest of a panel (UI-40).
 - **UI-48** On a phone, tapping a task — the title or the rest of the row, not the completion box —
   opens a **sheet from the bottom of the screen**, overlapping the bar (UI-4). It holds the title,
@@ -108,26 +109,29 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 ## Navigation
 
-- **UI-7** Twelve views: **Today**, **Week**, **Month**, **Tasks**, **Inbox**, **Habits**,
-  **Rewards**, **Lists**, **Tags**, **More**,
-  **Trash** and **Settings**, and a view for each list, opened from Lists, and one for each tag,
-  opened from Tags. Each is named and carries an
+- **UI-7** Sixteen views: **Today**, **Week**, **Month**, **Tasks**, **Inbox**, **Habits**,
+  **Rewards** with **History**, **Prizes**, **Wishlist** and **Rules** under it (RWD-30), **Lists**,
+  **Tags**, **More**, **Trash** and **Settings**, and a view for each list, opened from Lists, and one for
+  each tag, opened from Tags. Each is named and carries an
   icon — every tag's view the same `#` as Tags, and every list the same folder as Lists. **Tags**
-  and **Procrastination** are reached from **More** (UI-45), and **Rewards** is too on a phone; the
-  sidebar and the phone bar both have a **More** entry, and the sidebar an entry for **Rewards**
-  itself (UI-30). See
+  and **Procrastination** are reached from **More** (UI-45); **Rewards** has an entry of its own in
+  the sidebar and a tab of its own on a phone (UI-30, UI-32). See
   [Views](views.md), [Lists](lists.md), [Habits](habits.md),
   [Rewards](rewards.md) and [Tags](tags.md).
 - **UI-30** In the sidebar the views come in four groups with a thin line between each: the period
   views (**Today**, **Week**, **Month**), then **Tasks**, **Habits**, **Lists**, **Rewards** and
-  **More**, then **Trash**, then **Settings**. **Lists** is always open, with the **Inbox** and then
-  every list under it, indented (LST-13); the one open is marked itself, and Lists only on the Lists
-  page. **Rewards** has a place of its own here, where a phone has no room for one (UI-45), and is
-  marked itself while its page is open. A tag's view has no entry of its own: **More** stays marked
-  while Tags or a tag's tasks are open.
+  **More**, then **Trash**, then **Settings**. **Lists** and **Rewards** each keep their pages
+  indented under them — the **Inbox** and every list (LST-13), and **History**, **Prizes**,
+  **Wishlist** and **Rules** (RWD-30) — and each has a **chevron at its end that folds them away** and opens them
+  again, without leaving the view you are on. Open, the page you are on is marked itself; folded,
+  the entry above stands for it. Both start open, and how they are left is kept on this device
+  (STORE-31). A tag's view has no entry of its own: **More** stays marked while Tags or a tag's
+  tasks are open.
 - **UI-8** The view you are on is marked, in the sidebar and in the bottom bar alike.
-- **UI-32** The bottom bar has five tabs, each an icon over its name, from left to right:
-  **Settings**, **More** (UI-45), **Tasks**, **Habits** and **the period** (UI-33).
+- **UI-32** The bottom bar has six tabs, each an icon over its name, from left to right:
+  **Settings**, **Rewards**, **More** (UI-45), **Tasks**, **Habits** and **the period** (UI-33).
+  The Rewards tab goes to how the points stand and stays marked on any of the rewards pages, which
+  are reached from the strip across the top of them (RWD-30).
 - **UI-33** Today, Week and Month share the last tab. It shows the one last on screen — Today to
   begin with — and a tap goes to it. **Holding it down**, or **tapping it again** while Today, Week or
   Month is on screen — so a double tap from anywhere — opens a menu above it, **centred across
@@ -146,7 +150,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   baked in when the app is built. The number is bumped with each change to the app (patch for a
   small fix, minor for a feature, major when something breaks for the person using it).
 - **UI-36** The view you are on is **in the address** — `#/week`, `#/habits`, `#/inbox`,
-  `#/list/{id}`, `#/tag/work` — so reloading the page
+  `#/rewards/wishlist`, `#/list/{id}`, `#/tag/work` — so reloading the page
   keeps you on it, and a bookmark or a link opens on it. An address naming no view opens on Today.
 - **UI-37** Each switch of view is a step in the browser's history: **back and forward** move
   between the views you went through.
@@ -157,16 +161,14 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   **Trash**, each entry with its icon — so any list is two taps from anywhere, however long Tasks
   runs, and no heading repeats the name of the entry above it. Choosing one goes there. From any
   other view, a list's included, a tap on Tasks goes to Tasks.
-- **UI-45** Neither the bar nor the sidebar has an entry for the tags, and the phone's bar, with
-  five tabs, has none for the rewards either: they are under **More**, marked with three dots. **A
-  tap opens More's page** — a list of links to **Tags** and **Rewards**, each with its icon, large
-  enough for a thumb (UI-49), and a chevron at its end marking it as a page to go to — and
+- **UI-45** Neither the bar nor the sidebar has an entry for the tags: they are under **More**,
+  marked with three dots. **A tap opens More's page** — a link to **Tags**, with its icon, large
+  enough for a thumb (UI-49) and a chevron at its end marking it as a page to go to — and
   **Procrastination** when it is available (JUST-1), which, being a switch rather than a page, has
-  none. The page is the same on a wide screen, where Rewards is also a click away in the sidebar
-  (UI-30). Choosing Tags or Rewards goes there; choosing Procrastination starts (or ends) the mode
-  and opens Today. **More** stays marked while its own page, the Tags page or a tag's view is open,
-  and in the bar while the Rewards page is — in the sidebar Rewards is marked instead. Its address
-  is `#/more` (UI-36).
+  none. The page is the same on a wide screen. Choosing Tags goes there; choosing Procrastination
+  starts (or ends) the mode and opens Today. **More** stays marked while its own page, the Tags page
+  or a tag's view is open. The rewards were here while a phone's bar had no room for them; they have
+  a tab of their own now (UI-32, RWD-19). Its address is `#/more` (UI-36).
 
 ## Popovers
 

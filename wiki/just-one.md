@@ -29,7 +29,9 @@ task to do, fade the rest, and earn a rest by finishing it.
 - **JUST-5** While focusing, a banner says **Procrastination mode** and **Some functionality dimmed to prevent distraction. Do just one
   highlighted task**, with no emoji on the banner. The chosen task stays at full strength with
   extra space above and below it, and is drawn **first** in the list — so a finished win stays
-  above the dimmed rows instead of sinking with other done work.
+  above the dimmed rows instead of sinking with other done work. The list is **one run** while the
+  mode is on: the **Overdue** heading (TASK-68) would speak for rows the chosen task sits above, and
+  a heading is a distraction besides.
   Every other row on Today — done included — is shown at a quarter opacity. The view navigation
   (sidebar or phone bar) and the progress bars are dimmed the same way, so attention stays on the
   one task. After **Rest**, the banner becomes **Resting** (😌) with a calm note (**No rush —

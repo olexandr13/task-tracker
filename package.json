@@ -1,14 +1,15 @@
 {
   "name": "task-tracker",
   "private": true,
-  "version": "0.30.0",
+  "version": "0.34.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

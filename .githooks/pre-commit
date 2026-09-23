@@ -1,0 +1,18 @@
+#!/bin/sh
+# What a commit has to pass here: the checks CI runs (.github/workflows/ci.yml)
+# bar the build, which is slower and rarely breaks on its own.
+#
+# `npm test` is also the console check: any console output a test did not ask
+# for fails it (src/test/consoleGuard.ts), so a stray log or a warning from the
+# storage layer never reaches a commit.
+#
+# The working tree is what is checked, not the staged content alone: a commit of
+# part of the tree is rare here, and stashing the rest to be exact risks more
+# than it catches. `git commit --no-verify` skips this.
+set -e
+
+echo 'pre-commit: lint'
+npm run lint
+
+echo 'pre-commit: test'
+npm test

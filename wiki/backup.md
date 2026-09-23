@@ -7,11 +7,13 @@ in. Both are on **Settings**, under the account (UI-35).
 
 - **BAK-1** **Export** saves a file of the whole account, named for the local day it was made:
   `task-tracker-backup-2026-09-19.json`. Nothing is asked first, and the page then says what went into
-  it — `Exported 12 tasks, 2 lists, 3 tags, 30 completions and 1 redemption.` — or that the account had nothing
+  it — `Exported 12 tasks, 2 lists, 3 tags, 4 prizes, 30 completions and 1 redemption.` — or that the account had nothing
   in it yet. Offline it still works, from the copy of the account this device keeps (STORE-18).
 - **BAK-2** The file holds **everything the account keeps**: every task, those in the trash too, the
-  lists, the kept tags — those no task carries any more too (TAG-6) — what completions earned (a *completion* in the counts is one task's points on one day) and
-  the redemptions. What is kept on this device alone — the View options (STORE-30), the sidebar
+  lists, the kept tags — those no task carries any more too (TAG-6) — the wishlist (RWD-33), what
+  completions earned (a *completion* in the counts is one task's points on one day), the
+  redemptions, what clearing each period is worth (RWD-24, RWD-29) and what a point is worth
+  (RWD-31). What is kept on this device alone — the View options (STORE-30), the sidebar
   (STORE-31), the cached quote — is not the account's, and is not in it. A record the app cannot
   read (STORE-7) is left out.
 - **BAK-3** The file is JSON, indented so a person can read it. It says what it is, the version of
@@ -24,13 +26,13 @@ in. Both are on **Settings**, under the account (UI-35).
 - **BAK-4** **Import** opens the browser's own file picker. It opens from the keyboard as well as
   with a click, and the same file can be picked again straight after. While an export or an import
   is under way neither can be started, and the one running reads **Exporting…** or **Importing…**.
-- **BAK-5** An import **adds to the account what it does not have yet**: tasks, lists, tags, what
-  completions earned and redemptions. They appear on their own, the way a change made on another
+- **BAK-5** An import **adds to the account what it does not have yet**: tasks, lists, tags,
+  prizes, what completions earned and redemptions. They appear on their own, the way a change made on another
   device does, and are not recorded as earning anything again — the points they bring are the ones
   in the file (STORE-25). A file exported from another account works the same, so this is also how
   to copy one account into another.
-- **BAK-6** An import **never changes anything already here**. A task, list or redemption the
-  account has is left as it is, however the one in the file differs; a tag is the account's already
+- **BAK-6** An import **never changes anything already here**. A task, list, prize or redemption
+  the account has is left as it is, however the one in the file differs; a tag is the account's already
   when it keeps a tag of that name, whatever the case, so no tag is ever kept twice; what a completion earned is
   added to its day only when that day holds nothing for that task, and a day the app cannot read is
   left alone (STORE-24). So an import is not a return to the moment the file was made — what changed
@@ -55,13 +57,21 @@ in. Both are on **Settings**, under the account (UI-35).
 - **BAK-12** A file made before the kept tags were backed up holds no tags, and is read as keeping
   none rather than turned away. The tags its tasks carry are kept again as they arrive (STORE-33);
   only a tag no task carried is missing from such a file.
+- **BAK-13** A file made before there was a bonus for clearing Today holds none, and is read as
+  setting none rather than turned away, the same way. A file made before the wishlist and the point
+  value (RWD-31, RWD-33) holds neither, and is read as having no prizes and setting no value.
+- **BAK-14** The bonuses and what a point is worth are the things in the file that are **no
+  records**: they are counted neither among what was imported nor among what was already here. An
+  import takes the file's bonus for a period, and its point value, only where the account has **none
+  of its own**, and never changes one it has (BAK-6). Each period is its own: a file's week bonus
+  can be taken while the account keeps its own for Today.
 
 ---
 
 **Where it lives:** `src/storage/backupRepository.ts` (the interface, and what an import adds),
 `firestoreBackupRepository.ts` (reading and adding to the account in Firestore), `localBackupRepository.ts`
 (the guest's), `backupFile.ts` (the file and its version), `taskSchema.ts`, `listSchema.ts`, `tagSchema.ts`,
-`rewardSchema.ts` (each record's own shape),
+`prizeSchema.ts`, `rewardSchema.ts` (each record's own shape),
 `src/app/useBackup.ts` (running them), `src/app/backupLabels.ts` (what is said),
 `src/app/downloadFile.ts`, `src/app/components/BackupCard.tsx`, `SettingsList.tsx`.
 **Tested in:** `src/storage/backupFile.test.ts` (the file, and reading one back),

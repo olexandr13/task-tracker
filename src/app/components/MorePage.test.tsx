@@ -9,22 +9,23 @@ import { MorePage } from './MorePage'
 afterEach(cleanup)
 
 describe('MorePage', () => {
-  it('lists Tags and Rewards as links large enough for a finger (UI-45, UI-49)', async () => {
+  it('lists Tags as a link large enough for a finger (UI-45, UI-49)', async () => {
     const user = userEvent.setup()
     const onOpen = vi.fn()
     render(<MorePage onOpen={onOpen} />)
 
     const tags = screen.getByRole('button', { name: 'Tags' })
-    const rewards = screen.getByRole('button', { name: 'Rewards' })
     expect(tags.className).toContain('min-h-14')
     expect(tags.className).toContain('text-lg')
-    expect(rewards.className).toContain('min-h-14')
 
     await user.click(tags)
     expect(onOpen).toHaveBeenCalledExactlyOnceWith('tags')
+  })
 
-    await user.click(rewards)
-    expect(onOpen).toHaveBeenLastCalledWith('rewards')
+  it('has no entry for the rewards: they have a tab and a sidebar entry of their own (RWD-19)', () => {
+    render(<MorePage onOpen={vi.fn()} />)
+
+    expect(screen.queryByRole('button', { name: 'Rewards' })).toBeNull()
   })
 
   it('offers Procrastination when available, and starts the mode (JUST-1)', async () => {

@@ -1,8 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { completeTask, createList, createRedemption, createTag, createTask, deleteTask, type RewardEntry } from '../core'
+import {
+  completeTask,
+  createList,
+  createPointValue,
+  createPrize,
+  createRedemption,
+  createTag,
+  createTask,
+  deleteTask,
+  NO_BONUSES,
+  type PeriodBonuses,
+  type RewardEntry,
+} from '../core'
 import { backupFileName, BACKUP_FORMAT, BACKUP_VERSION, readBackupFile, writeBackupFile } from './backupFile'
 import type { AccountData } from './backupRepository'
 import { LIST_SCHEMA_VERSION } from './listSchema'
+import { PRIZE_SCHEMA_VERSION } from './prizeSchema'
 import { REWARD_SCHEMA_VERSION } from './rewardSchema'
 import { TAG_SCHEMA_VERSION } from './tagSchema'
 import { SCHEMA_VERSION } from './taskSchema'
@@ -21,14 +34,19 @@ const ENTRIES: RewardEntry[] = [
   { taskId: DONE.id, day: '2026-09-19', points: 5 },
 ]
 const TREAT = createRedemption(3, 'Coffee', 12, AT)
+const CHOCOLATE = createPrize('Chocolate', 20, 'prize', AT)
+const BONUSES: PeriodBonuses = { today: 10, week: 40, month: null }
+const UAH = createPointValue(2.5)
 
 const DATA: AccountData = {
   tasks: [DONE, TRASHED],
   lists: [WORK],
   tags: [ERRANDS],
+  prizes: [CHOCOLATE],
   entries: ENTRIES,
   redemptions: [TREAT],
-  todayBonus: 10,
+  bonuses: BONUSES,
+  pointValue: UAH,
 }
 
 function fileWith(changes: Record<string, unknown>): string {
@@ -52,7 +70,13 @@ describe('writing a backup', () => {
       tasks: [{ version: SCHEMA_VERSION, task: DONE }, { version: SCHEMA_VERSION, task: TRASHED }],
       lists: [{ version: LIST_SCHEMA_VERSION, list: WORK }],
       tags: [{ version: TAG_SCHEMA_VERSION, tag: ERRANDS }],
+      prizes: [{ version: PRIZE_SCHEMA_VERSION, prize: CHOCOLATE }],
       redemptions: [{ version: REWARD_SCHEMA_VERSION, redemption: TREAT }],
+      rewardGoals: [
+        { version: REWARD_SCHEMA_VERSION, goal: { period: 'today', points: 10 } },
+        { version: REWARD_SCHEMA_VERSION, goal: { period: 'week', points: 40 } },
+      ],
+      rewardSettings: [{ version: REWARD_SCHEMA_VERSION, name: 'pointValue', value: UAH }],
     })
   })
 
@@ -84,12 +108,32 @@ describe('reading a backup', () => {
   it('turns away a backup missing a kind of record (BAK-9)', () => {
     expect(readBackupFile(fileWith({ lists: undefined }))).toBe('not-a-backup')
     expect(readBackupFile(fileWith({ tags: undefined }))).toBe('not-a-backup')
+    expect(readBackupFile(fileWith({ prizes: undefined }))).toBe('not-a-backup')
   })
 
   it('reads a file from before tags were backed up as keeping none (BAK-12)', () => {
-    const read = readBackupFile(fileWith({ version: 1, tags: undefined }))
+    const read = readBackupFile(
+      fileWith({ version: 1, tags: undefined, prizes: undefined, rewardGoals: undefined, rewardSettings: undefined }),
+    )
 
-    expect(read).toEqual({ data: { ...DATA, tags: [] }, unreadable: 0 })
+    expect(read).toEqual({
+      data: { ...DATA, tags: [], prizes: [], bonuses: NO_BONUSES, pointValue: null },
+      unreadable: 0,
+    })
+  })
+
+  it('reads a file from before there was a bonus as setting none (BAK-13)', () => {
+    const read = readBackupFile(
+      fileWith({ version: 2, prizes: undefined, rewardGoals: undefined, rewardSettings: undefined }),
+    )
+
+    expect(read).toEqual({ data: { ...DATA, prizes: [], bonuses: NO_BONUSES, pointValue: null }, unreadable: 0 })
+  })
+
+  it('reads a file from before the wishlist as holding no prizes and no point value (BAK-14)', () => {
+    const read = readBackupFile(fileWith({ version: 3, prizes: undefined, rewardSettings: undefined }))
+
+    expect(read).toEqual({ data: { ...DATA, prizes: [], pointValue: null }, unreadable: 0 })
   })
 
   it('says so when a backup was made by a newer version of the app (BAK-9)', () => {
@@ -115,7 +159,16 @@ describe('reading a backup', () => {
     )
 
     expect(read).toEqual({
-      data: { tasks: [DONE], lists: [], tags: [], entries: [], redemptions: [TREAT], todayBonus: null },
+      data: {
+        tasks: [DONE],
+        lists: [],
+        tags: [],
+        prizes: [CHOCOLATE],
+        entries: [],
+        redemptions: [TREAT],
+        bonuses: BONUSES,
+        pointValue: UAH,
+      },
       unreadable: 6,
     })
   })

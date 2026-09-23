@@ -7,8 +7,8 @@
  * still be merged one by one, the same reason ids are UUIDs. Numbers are handed
  * out with gaps, so there is room to move into.
  *
- * The number is only half of what the screen shows: urgent tasks float to the
- * top, overdue next, and done ones sink to the bottom (`sortForDisplay`), each
+ * The number is only half of what the screen shows: overdue tasks float to the
+ * top, urgent next, and done ones sink to the bottom (`sortForDisplay`), each
  * band keeping this order inside it.
  */
 
@@ -38,10 +38,13 @@ export function sortByOrder(tasks: readonly Task[]): Task[] {
 }
 
 /**
- * The order a list draws: urgent still to do, then overdue still to do, then the
- * rest still to do, then done. Within each band the stored order is kept. Sort
- * is stable, so completing one, marking one urgent, or a day turning overdue
- * does not shuffle the others inside their band.
+ * The order a list draws: the overdue still to do first — the run a list heads
+ * with **Overdue** (`splitOverdue`) — then the rest still to do, then done.
+ * Urgent floats to the top inside each of the two open runs, so an overdue task
+ * marked urgent leads the overdue rather than leaving its run. Within each band
+ * the stored order is kept. Sort is stable, so completing one, marking one
+ * urgent, or a day turning overdue does not shuffle the others inside their
+ * band.
  *
  * Returns a new list; the one passed in is never modified.
  */
@@ -50,14 +53,13 @@ export function sortForDisplay(tasks: readonly Task[], now: Date = new Date()): 
     const aDone = isComplete(a, now)
     const bDone = isComplete(b, now)
     if (aDone !== bDone) return Number(aDone) - Number(bDone)
+    if (aDone) return 0
 
-    if (!aDone) {
-      if (a.urgent !== b.urgent) return Number(b.urgent) - Number(a.urgent)
+    const aOverdue = isOverdue(a, now)
+    const bOverdue = isOverdue(b, now)
+    if (aOverdue !== bOverdue) return Number(bOverdue) - Number(aOverdue)
 
-      const aOverdue = isOverdue(a, now)
-      const bOverdue = isOverdue(b, now)
-      if (aOverdue !== bOverdue) return Number(bOverdue) - Number(aOverdue)
-    }
+    if (a.urgent !== b.urgent) return Number(b.urgent) - Number(a.urgent)
 
     return 0
   })

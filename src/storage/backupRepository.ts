@@ -1,9 +1,14 @@
 import {
+  BONUS_PERIODS,
   isExpired,
   sameTag,
   type List,
   type ListId,
   type LocalDay,
+  type PeriodBonuses,
+  type PointValue,
+  type Prize,
+  type PrizeId,
   type Redemption,
   type RedemptionId,
   type RewardEntry,
@@ -15,24 +20,28 @@ import {
 
 /**
  * Everything an account keeps, in today's shapes: the tasks — the trash too —
- * the lists they are filed under, the kept tags, and the points ledger. What is
- * kept on the device alone (the View options, the sidebar, the cached quote) is
- * not the account's, and is not in here.
+ * the lists they are filed under, the kept tags, the wishlist, and the points
+ * ledger. What is kept on the device alone (the View options, the sidebar, the
+ * cached quote) is not the account's, and is not in here.
  */
 export interface AccountData {
   readonly tasks: readonly Task[]
   readonly lists: readonly List[]
   /** The kept tags (./tagRepository), including those no task carries any more. */
   readonly tags: readonly Tag[]
+  /** The prizes points are saved up for (./prizeRepository). */
+  readonly prizes: readonly Prize[]
   /** What completions earned (./rewardRepository). */
   readonly entries: readonly RewardEntry[]
   readonly redemptions: readonly Redemption[]
   /**
-   * What clearing Today earns (RWD-24), or null for no bonus. A setting rather
-   * than a record: it is counted as none of them, and an import takes it only
-   * where the account has none of its own.
+   * What clearing each period earns (RWD-24, RWD-29), null where nothing does.
+   * Settings rather than records: they are counted as none of them, and an
+   * import takes one only where the account has none of its own.
    */
-  readonly todayBonus: number | null
+  readonly bonuses: PeriodBonuses
+  /** What one point is worth (RWD-31), or null while nothing says. A setting, as the bonuses are. */
+  readonly pointValue: PointValue | null
 }
 
 /** How many of each kind of record there are. A completion is one entry of the ledger. */
@@ -40,6 +49,7 @@ export interface RecordCounts {
   readonly tasks: number
   readonly lists: number
   readonly tags: number
+  readonly prizes: number
   readonly completions: number
   readonly redemptions: number
 }
@@ -83,9 +93,12 @@ export interface KnownRecords {
   readonly tagIds: ReadonlySet<TagId>
   /** The names of the tags kept already, readable ones: a tag is found by its name (../core/tag). */
   readonly tagNames: readonly string[]
+  readonly prizeIds: ReadonlySet<PrizeId>
   readonly redemptionIds: ReadonlySet<RedemptionId>
-  /** What the account earns for clearing Today already, or null when it has no bonus. */
-  readonly todayBonus: number | null
+  /** What the account earns for clearing each period already, null where it has no bonus. */
+  readonly bonuses: PeriodBonuses
+  /** What the account says a point is worth already, or null when it says nothing. */
+  readonly pointValue: PointValue | null
   /**
    * The tasks each saved day holds an entry for, or null for a day the app
    * cannot read — which is left as it is, so nothing is added to it.
@@ -98,6 +111,7 @@ export function countRecords(data: AccountData): RecordCounts {
     tasks: data.tasks.length,
     lists: data.lists.length,
     tags: data.tags.length,
+    prizes: data.prizes.length,
     completions: data.entries.length,
     redemptions: data.redemptions.length,
   }
@@ -113,10 +127,10 @@ export function countRecords(data: AccountData): RecordCounts {
  * A task whose time in the trash ran out since the file was made is left out:
  * it would only be purged again the moment it arrived (`purgeExpired`). A tag
  * is the account's already when a tag of its name is kept, whatever the case,
- * so an import never makes a second record of one tag. The Today bonus is the
- * one thing in here that is no record: the file's is taken only where the
- * account has none, and counts towards neither what was added nor what was
- * already here.
+ * so an import never makes a second record of one tag. The bonuses and what a
+ * point is worth are the things in here that are no records: the file's are
+ * taken only where the account has none, and count towards neither what was
+ * added nor what was already here.
  */
 export function newRecords(
   incoming: AccountData,
@@ -157,14 +171,20 @@ export function newRecords(
     return true
   })
 
+  const bonuses = Object.fromEntries(
+    BONUS_PERIODS.map((period) => [period, known.bonuses[period] === null ? incoming.bonuses[period] : null]),
+  ) as PeriodBonuses
+
   return {
     fresh: {
       tasks: unseen(incoming.tasks, (task) => task.id, known.taskIds).filter((task) => !isExpired(task, now)),
       lists: unseen(incoming.lists, (list) => list.id, known.listIds),
       tags,
+      prizes: unseen(incoming.prizes, (prize) => prize.id, known.prizeIds),
       entries: unseen(incoming.entries, entryKey, takenEntries),
       redemptions: unseen(incoming.redemptions, (redemption) => redemption.id, known.redemptionIds),
-      todayBonus: known.todayBonus === null ? incoming.todayBonus : null,
+      bonuses,
+      pointValue: known.pointValue === null ? incoming.pointValue : null,
     },
     alreadyHere,
   }

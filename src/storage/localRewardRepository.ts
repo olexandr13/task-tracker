@@ -1,15 +1,18 @@
-import type { Redemption, RewardEntry } from '../core'
+import { NO_BONUSES, type PeriodBonuses, type PointValue, type Redemption, type RewardEntry } from '../core'
 import { isRecord } from './plainData'
 import type { PointsLedger, RewardRepository } from './rewardRepository'
 import {
+  POINT_VALUE,
+  readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
   REWARD_SCHEMA_VERSION,
-  TODAY_GOAL,
+  toStoredPointValue,
   toStoredRedemption,
   toStoredRewardDays,
   toStoredRewardGoal,
+  type StoredPointValue,
   type StoredRedemption,
   type StoredRewardDay,
   type StoredRewardGoal,
@@ -20,8 +23,10 @@ const STORAGE_KEY = 'task-tracker/guest/rewards'
 interface StoredLedger {
   days: Record<string, StoredRewardDay>
   redemptions: Record<string, StoredRedemption>
-  /** What clearing a period earns, by period (RWD-24). A period with none is not in here. */
+  /** What clearing a period earns, by period (RWD-24, RWD-29). A period with none is not in here. */
   goals: Record<string, StoredRewardGoal>
+  /** The standing settings of the points, by name (RWD-31). One not set is not in here. */
+  settings: Record<string, StoredPointValue>
 }
 
 type Listener = (ledger: PointsLedger) => void
@@ -29,7 +34,7 @@ type Listener = (ledger: PointsLedger) => void
 const listeners = new Set<Listener>()
 
 function empty(): StoredLedger {
-  return { days: {}, redemptions: {}, goals: {} }
+  return { days: {}, redemptions: {}, goals: {}, settings: {} }
 }
 
 function readStore(): StoredLedger {
@@ -41,9 +46,10 @@ function readStore(): StoredLedger {
     return {
       days: parsed.days as Record<string, StoredRewardDay>,
       redemptions: parsed.redemptions as Record<string, StoredRedemption>,
-      // A ledger kept before there were bonuses holds none, rather than being
-      // unreadable for the lack of them.
+      // A ledger kept before there were bonuses, or before a point had a value,
+      // holds none, rather than being unreadable for the lack of them.
       goals: isRecord(parsed.goals) ? (parsed.goals as Record<string, StoredRewardGoal>) : {},
+      settings: isRecord(parsed.settings) ? (parsed.settings as Record<string, StoredPointValue>) : {},
     }
   } catch (error) {
     console.warn('Ignoring saved guest rewards: could not be read.', error)
@@ -81,11 +87,23 @@ function toLedger(stored: StoredLedger): PointsLedger {
     redemptions.push(read)
   }
 
-  const saved: unknown = stored.goals[TODAY_GOAL]
-  const goal = saved === undefined ? null : readRewardGoal(saved)
-  if (saved !== undefined && goal === null) console.warn('Ignoring the saved guest Today bonus: unexpected shape.')
+  const bonuses: Record<string, number | null> = { ...NO_BONUSES }
+  for (const [period, data] of Object.entries(stored.goals)) {
+    const goal = readRewardGoal(data)
+    if (goal === null) {
+      console.warn(`Ignoring the saved guest bonus for ${period}: unexpected shape.`)
+      continue
+    }
+    bonuses[goal.period] = goal.points
+  }
 
-  return { entries, redemptions, todayBonus: goal?.points ?? null }
+  const savedValue: unknown = stored.settings[POINT_VALUE]
+  const pointValue = savedValue === undefined ? null : readPointValue(savedValue)
+  if (savedValue !== undefined && pointValue === null) {
+    console.warn('Ignoring the saved guest point value: unexpected shape.')
+  }
+
+  return { entries, redemptions, bonuses: bonuses as PeriodBonuses, pointValue }
 }
 
 function emit(stored: StoredLedger): void {
@@ -154,19 +172,35 @@ export function createLocalRewardRepository(): RewardRepository {
       emit(stored)
     },
 
-    async setTodayBonus(points) {
+    async setBonus(period, points) {
       const stored = readStore()
       // No bonus is no record, as in the account: one shape for nothing set.
-      if (points === null) delete stored.goals[TODAY_GOAL]
-      else stored.goals[TODAY_GOAL] = toStoredRewardGoal(TODAY_GOAL, points)
+      if (points === null) delete stored.goals[period]
+      else stored.goals[period] = toStoredRewardGoal(period, points)
       writeStore(stored)
       emit(stored)
     },
 
-    async importTodayBonus(points) {
+    async setPointValue(value) {
       const stored = readStore()
-      if (stored.goals[TODAY_GOAL] !== undefined) return
-      stored.goals[TODAY_GOAL] = toStoredRewardGoal(TODAY_GOAL, points)
+      if (value === null) delete stored.settings[POINT_VALUE]
+      else stored.settings[POINT_VALUE] = toStoredPointValue(value)
+      writeStore(stored)
+      emit(stored)
+    },
+
+    async importBonus(period, points) {
+      const stored = readStore()
+      if (stored.goals[period] !== undefined) return
+      stored.goals[period] = toStoredRewardGoal(period, points)
+      writeStore(stored)
+      emit(stored)
+    },
+
+    async importPointValue(value) {
+      const stored = readStore()
+      if (stored.settings[POINT_VALUE] !== undefined) return
+      stored.settings[POINT_VALUE] = toStoredPointValue(value)
       writeStore(stored)
       emit(stored)
     },
@@ -181,12 +215,16 @@ export function loadGuestLedger(): PointsLedger {
 export function replaceGuestLedger(
   entries: readonly RewardEntry[],
   redemptions: readonly Redemption[],
-  todayBonus: number | null,
+  bonuses: PeriodBonuses,
+  pointValue: PointValue | null,
 ): void {
   const stored = empty()
   for (const day of toStoredRewardDays(entries)) stored.days[day.day] = day
   for (const redemption of redemptions) stored.redemptions[redemption.id] = toStoredRedemption(redemption)
-  if (todayBonus !== null) stored.goals[TODAY_GOAL] = toStoredRewardGoal(TODAY_GOAL, todayBonus)
+  for (const [period, points] of Object.entries(bonuses)) {
+    if (points !== null) stored.goals[period] = toStoredRewardGoal(period as keyof PeriodBonuses, points)
+  }
+  if (pointValue !== null) stored.settings[POINT_VALUE] = toStoredPointValue(pointValue)
   writeStore(stored)
   emit(stored)
 }

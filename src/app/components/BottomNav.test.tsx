@@ -55,11 +55,12 @@ function setup(initial: View = 'today', lists: readonly List[] = [], dimmed = fa
 }
 
 const tabs = () => screen.getAllByRole('button')
-const periodTab = () => tabs()[4]
+const periodTab = () => tabs()[5]
 const menu = () => screen.queryByRole('menu', { name: 'Period' })
 const tasksTab = () => screen.getByRole('button', { name: 'Tasks' })
 const tasksMenu = () => screen.queryByRole('menu', { name: 'Tasks' })
 const moreTab = () => screen.getByRole('button', { name: 'More' })
+const rewardsTab = () => screen.getByRole('button', { name: 'Rewards' })
 
 async function hold(user: ReturnType<typeof userEvent.setup>, target: HTMLElement, ms: number) {
   await user.pointer({ keys: '[TouchA>]', target })
@@ -68,10 +69,10 @@ async function hold(user: ReturnType<typeof userEvent.setup>, target: HTMLElemen
 }
 
 describe('BottomNav', () => {
-  it('has five tabs — Settings, More, Tasks, Habits and the period — and marks the one you are on (UI-32, UI-8)', () => {
+  it('has six tabs — Settings, Rewards, More, Tasks, Habits and the period — and marks the one you are on (UI-32, UI-8)', () => {
     setup('habits')
 
-    expect(tabs().map((tab) => tab.textContent)).toEqual(['Settings', 'More', 'Tasks', 'Habits', 'Today'])
+    expect(tabs().map((tab) => tab.textContent)).toEqual(['Settings', 'Rewards', 'More', 'Tasks', 'Habits', 'Today'])
     expect(screen.getByRole('button', { name: 'Habits' }).getAttribute('aria-current')).toBe('page')
     expect(periodTab().getAttribute('aria-current')).toBeNull()
   })
@@ -82,12 +83,21 @@ describe('BottomNav', () => {
     expect(screen.getByRole('button', { name: 'Tasks' }).getAttribute('aria-current')).toBe('page')
   })
 
-  it('has no tab for the rewards, and keeps More marked while they are open (UI-45, RWD-19)', () => {
-    setup('rewards')
+  it('has a tab of its own for the rewards, marked on any of their pages (RWD-19, RWD-30)', () => {
+    for (const view of ['rewards', 'rewards/history', 'rewards/wishlist', 'rewards/rules'] as const) {
+      setup(view)
+      expect(rewardsTab().getAttribute('aria-current')).toBe('page')
+      expect(moreTab().getAttribute('aria-current')).toBeNull()
+      cleanup()
+    }
+  })
 
-    expect(screen.queryByRole('button', { name: 'Rewards' })).toBeNull()
-    expect(moreTab().getAttribute('aria-current')).toBe('page')
-    expect(tasksTab().getAttribute('aria-current')).toBeNull()
+  it('goes to how the points stand on a tap, whichever rewards page was open (RWD-30)', async () => {
+    const { user, onChange } = setup('rewards/wishlist')
+
+    await user.click(rewardsTab())
+
+    expect(onChange).toHaveBeenCalledExactlyOnceWith('rewards')
   })
 
   it('keeps More marked while the tags, or a tag\'s list, are open (UI-45, TAG-17)', () => {
@@ -303,7 +313,7 @@ describe('the Tasks tab', () => {
 })
 
 describe('the More tab', () => {
-  it('goes to More on a tap from anywhere, Tags and Rewards included (UI-45)', async () => {
+  it('goes to More on a tap from anywhere, Tags and the rewards included (UI-45)', async () => {
     for (const view of ['today', 'tags', 'rewards'] as const) {
       const { user, onChange } = setup(view)
       await user.click(moreTab())

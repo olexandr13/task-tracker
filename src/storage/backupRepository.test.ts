@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { createList, createRedemption, createTag, createTask, deleteTask, renameTask, TRASH_RETENTION_MS } from '../core'
+import {
+  createList,
+  createPointValue,
+  createPrize,
+  createRedemption,
+  createTag,
+  createTask,
+  deleteTask,
+  NO_BONUSES,
+  renameTask,
+  TRASH_RETENTION_MS,
+} from '../core'
 import { countRecords, newRecords, type AccountData, type KnownRecords } from './backupRepository'
 
 /* What an import adds to the account. BAK ids refer to wiki/backup.md. */
@@ -13,16 +24,29 @@ const HOME = createList('Home', AT)
 const COFFEE = createRedemption(3, 'Coffee', 12, AT)
 const ERRANDS = createTag('errands', AT)
 const GARDEN = createTag('garden', AT)
+const CHOCOLATE = createPrize('Chocolate', 20, 'prize', AT)
+const UAH = createPointValue(2.5)
 
-const EMPTY: AccountData = { tasks: [], lists: [], tags: [], entries: [], redemptions: [], todayBonus: null }
+const EMPTY: AccountData = {
+  tasks: [],
+  lists: [],
+  tags: [],
+  prizes: [],
+  entries: [],
+  redemptions: [],
+  bonuses: NO_BONUSES,
+  pointValue: null,
+}
 
 const NOTHING_KNOWN: KnownRecords = {
   taskIds: new Set(),
   listIds: new Set(),
   tagIds: new Set(),
   tagNames: [],
+  prizeIds: new Set(),
   redemptionIds: new Set(),
-  todayBonus: null,
+  bonuses: NO_BONUSES,
+  pointValue: null,
   days: new Map(),
 }
 
@@ -32,9 +56,11 @@ describe('what an import adds', () => {
       tasks: [WRITE, CALL],
       lists: [WORK],
       tags: [ERRANDS],
+      prizes: [CHOCOLATE],
       entries: [{ taskId: WRITE.id, day: '2026-09-19', points: 5 }],
       redemptions: [COFFEE],
-      todayBonus: 10,
+      bonuses: { today: 10, week: 40, month: null },
+      pointValue: UAH,
     }
 
     expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
@@ -124,21 +150,61 @@ describe('what an import adds', () => {
   })
 })
 
+describe('what an import does with the bonuses and the point value', () => {
+  it('takes the file\u2019s bonus where the account has none (BAK-14)', () => {
+    const incoming: AccountData = { ...EMPTY, bonuses: { today: 10, week: 40, month: null } }
+
+    expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
+  })
+
+  it('leaves the account\u2019s own bonus as it is, and counts it as no record (BAK-14)', () => {
+    const incoming: AccountData = { ...EMPTY, bonuses: { today: 10, week: 40, month: null } }
+    const known: KnownRecords = { ...NOTHING_KNOWN, bonuses: { today: 3, week: null, month: null } }
+
+    expect(newRecords(incoming, known, AT)).toEqual({
+      fresh: { ...EMPTY, bonuses: { today: null, week: 40, month: null } },
+      alreadyHere: 0,
+    })
+  })
+
+  it('takes the point value only where the account says nothing (BAK-14)', () => {
+    const incoming: AccountData = { ...EMPTY, pointValue: UAH }
+
+    expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
+    expect(newRecords(incoming, { ...NOTHING_KNOWN, pointValue: createPointValue(1) }, AT)).toEqual({
+      fresh: EMPTY,
+      alreadyHere: 0,
+    })
+  })
+
+  it('adds a prize the account does not have, and leaves one it does (BAK-5, BAK-6)', () => {
+    const incoming: AccountData = { ...EMPTY, prizes: [CHOCOLATE] }
+
+    expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
+    expect(newRecords(incoming, { ...NOTHING_KNOWN, prizeIds: new Set([CHOCOLATE.id]) }, AT)).toEqual({
+      fresh: EMPTY,
+      alreadyHere: 1,
+    })
+  })
+})
+
 describe('counting records', () => {
   it('counts each kind, a completion being one entry of the ledger', () => {
     const data: AccountData = {
       tasks: [WRITE, CALL],
       lists: [WORK],
       tags: [ERRANDS],
+      prizes: [CHOCOLATE],
       entries: [
         { taskId: WRITE.id, day: '2026-09-19', points: 5 },
         { taskId: WRITE.id, day: '2026-09-18', points: 5 },
       ],
       redemptions: [],
-      todayBonus: 10,
+      bonuses: { today: 10, week: null, month: null },
+      pointValue: UAH,
     }
 
-    // The bonus is a setting rather than a record, and is counted as none.
-    expect(countRecords(data)).toEqual({ tasks: 2, lists: 1, tags: 1, completions: 2, redemptions: 0 })
+    // The bonuses and the point value are settings rather than records, and are counted as none.
+    expect(countRecords(data)).toEqual({ tasks: 2, lists: 1, tags: 1, prizes: 1, completions: 2, redemptions: 0 })
   })
 })

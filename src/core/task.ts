@@ -92,8 +92,8 @@ export interface Task {
   readonly reward: number | null
   /**
    * Whether the task is marked urgent. False for every task until it is marked.
-   * An open urgent task floats to the top of the list; see ./urgent and
-   * `sortForDisplay` in ./order.
+   * An open urgent task floats to the top of its run — the overdue, or the rest;
+   * see ./urgent and `sortForDisplay` in ./order.
    */
   readonly urgent: boolean
   /**

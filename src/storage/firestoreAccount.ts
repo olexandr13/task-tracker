@@ -7,7 +7,16 @@ import { collection, type CollectionReference, type Firestore } from 'firebase/f
  * (`firestoreBackupRepository.ts`, `backupFile.ts`), or no export holds it.
  * Who may read each: `firestore.rules`.
  */
-export const ACCOUNT_COLLECTIONS = ['tasks', 'lists', 'tags', 'rewardDays', 'redemptions', 'rewardGoals'] as const
+export const ACCOUNT_COLLECTIONS = [
+  'tasks',
+  'lists',
+  'tags',
+  'prizes',
+  'rewardDays',
+  'redemptions',
+  'rewardGoals',
+  'rewardSettings',
+] as const
 
 export type AccountCollection = (typeof ACCOUNT_COLLECTIONS)[number]
 

@@ -23,7 +23,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Trash](trash.md) | Deleting, the undo window, retention and purging |
 | [Progress](progress.md) | The three bars: today, this week, this month |
 | [Habits](habits.md) | Daily tasks as habits: streaks, rates and the grid of days |
-| [Rewards](rewards.md) | Points a task earns on every completion, redeeming them, and the Rewards page |
+| [Rewards](rewards.md) | Points a task earns on every completion, the bonus for clearing a period, the prizes and the wishlist they are spent on, and the Rewards pages |
 | [Time goals](time-goals.md) | A length of time a task asks for, sessions logged against it, and the hint to tick it off |
 | [Daily quote](daily-quote.md) | One quote a day, from the quote service, cached for the day |
 | [Interface](interface.md) | Layout, navigation, popovers, phone behaviour, accessibility |

@@ -14,23 +14,27 @@ afterEach(cleanup)
 const WORK = createList('Work', new Date('2026-09-01T00:00:00.000Z'))
 const HOME = createList('Home', new Date('2026-09-02T00:00:00.000Z'))
 
-function setup(view: View, lists: readonly List[] = [], listsOpen = true, dimmed = false) {
+function setup(view: View, lists: readonly List[] = [], listsOpen = true, dimmed = false, rewardsOpen = true) {
   const onChange = vi.fn()
   const onListsOpenChange = vi.fn()
+  const onRewardsOpenChange = vi.fn()
   render(
     <SideNav
       view={view}
       lists={lists}
       listsOpen={listsOpen}
+      rewardsOpen={rewardsOpen}
       dimmed={dimmed}
       onChange={onChange}
       onListsOpenChange={onListsOpenChange}
+      onRewardsOpenChange={onRewardsOpenChange}
     />,
   )
-  return { user: userEvent.setup(), onChange, onListsOpenChange }
+  return { user: userEvent.setup(), onChange, onListsOpenChange, onRewardsOpenChange }
 }
 
 const foldButton = () => screen.getByRole('button', { name: 'Show lists' })
+const rewardsFoldButton = () => screen.getByRole('button', { name: 'Show rewards pages' })
 
 const marked = () => screen.getAllByRole('button').filter((button) => button.getAttribute('aria-current') === 'page')
 
@@ -44,7 +48,9 @@ describe('SideNav', () => {
   it('carries Lists, Rewards and More beside Tasks and Habits, and no entry for Tags or any one tag (UI-30, UI-45, TAG-18, RWD-19, LST-13)', () => {
     setup('today')
 
-    const entries = screen.getAllByRole('button').filter((button) => button !== foldButton())
+    const entries = screen
+      .getAllByRole('button')
+      .filter((button) => button !== foldButton() && button !== rewardsFoldButton())
     expect(entries.map((button) => button.textContent)).toEqual([
       'Today',
       'Week',
@@ -54,6 +60,10 @@ describe('SideNav', () => {
       'Lists',
       'Inbox',
       'Rewards',
+      'History',
+      'Prizes',
+      'Wishlist',
+      'Rules',
       'More',
       'Trash',
       'Settings',
@@ -97,6 +107,60 @@ describe('SideNav', () => {
     setup('rewards')
 
     expect(marked().map((button) => button.textContent)).toEqual(['Rewards'])
+  })
+
+  it('folds the rewards pages away and opens them again, without leaving the view (RWD-19)', async () => {
+    const { user, onChange, onRewardsOpenChange } = setup('today')
+
+    expect(rewardsFoldButton().getAttribute('aria-expanded')).toBe('true')
+    expect(rewardsFoldButton().getAttribute('aria-controls')).toBe(screen.getByRole('list', { name: 'Rewards' }).id)
+
+    await user.click(rewardsFoldButton())
+
+    expect(onRewardsOpenChange).toHaveBeenCalledWith(false)
+    expect(onChange).not.toHaveBeenCalled()
+
+    cleanup()
+    const folded = setup('today', [], true, false, false)
+    await folded.user.click(rewardsFoldButton())
+
+    expect(folded.onRewardsOpenChange).toHaveBeenCalledWith(true)
+  })
+
+  it('leaves the rewards pages out while folded, and Rewards still goes to its page (RWD-19)', async () => {
+    const { user, onChange } = setup('today', [], true, false, false)
+
+    expect(rewardsFoldButton().getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('list', { name: 'Rewards' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Wishlist' })).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Rewards' }))
+
+    expect(onChange).toHaveBeenCalledWith('rewards')
+  })
+
+  it('marks Rewards while one of its pages is open and they are folded (UI-8, RWD-19)', () => {
+    setup('rewards/wishlist', [], true, false, false)
+
+    expect(marked().map((button) => button.textContent)).toEqual(['Rewards'])
+  })
+
+  it('keeps the rewards pages under Rewards, each marked on its own (UI-30, RWD-30)', async () => {
+    const { user, onChange } = setup('rewards/wishlist')
+
+    const under = within(screen.getByRole('list', { name: 'Rewards' }))
+    expect(under.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'History',
+      'Prizes',
+      'Wishlist',
+      'Rules',
+    ])
+    // The page itself is marked, not Rewards above it.
+    expect(marked().map((button) => button.textContent)).toEqual(['Wishlist'])
+
+    await user.click(under.getByRole('button', { name: 'History' }))
+
+    expect(onChange).toHaveBeenCalledWith('rewards/history')
   })
 
   it('keeps Lists open, with the Inbox and then every list under it (LST-13)', () => {

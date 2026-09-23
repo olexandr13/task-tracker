@@ -1,11 +1,24 @@
-import type { Redemption, RedemptionId, RewardChanges, RewardEntry } from '../core'
+import type {
+  Period,
+  PeriodBonuses,
+  PointValue,
+  Redemption,
+  RedemptionId,
+  RewardChanges,
+  RewardEntry,
+} from '../core'
 
-/** Everything the points are read from: what completions earned, what was redeemed, and what clearing Today is worth. */
+/**
+ * Everything the points are read from: what completions earned, what was
+ * redeemed, what clearing each period earns, and what a point is worth.
+ */
 export interface PointsLedger {
   readonly entries: readonly RewardEntry[]
   readonly redemptions: readonly Redemption[]
-  /** What clearing Today earns (RWD-24), or null when it earns nothing. */
-  readonly todayBonus: number | null
+  /** What clearing each period earns (RWD-24, RWD-29), null where it earns nothing. */
+  readonly bonuses: PeriodBonuses
+  /** What one point is worth in money (RWD-31), or null while nothing says. */
+  readonly pointValue: PointValue | null
 }
 
 /**
@@ -24,8 +37,12 @@ export interface RewardRepository {
   redeem(redemption: Redemption): Promise<void>
   /** Deletes a redemption, which gives its points back. */
   removeRedemption(id: RedemptionId): Promise<void>
-  /** Sets what clearing Today earns from here on, or takes the bonus away with null. */
-  setTodayBonus(points: number | null): Promise<void>
+  /** Sets what clearing the period earns from here on, or takes its bonus away with null. */
+  setBonus(period: Period, points: number | null): Promise<void>
+  /** Sets what one point is worth, or forgets it with null. */
+  setPointValue(value: PointValue | null): Promise<void>
   /** Takes on a bonus from elsewhere — the guest's — only where there is none already, as `importTasks` does. */
-  importTodayBonus(points: number): Promise<void>
+  importBonus(period: Period, points: number): Promise<void>
+  /** Takes on a point value from elsewhere, only where there is none already. */
+  importPointValue(value: PointValue): Promise<void>
 }

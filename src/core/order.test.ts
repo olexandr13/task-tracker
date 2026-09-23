@@ -67,7 +67,7 @@ describe('sortForDisplay', () => {
     expect(displayTitles(tasks)).toEqual(['overdue', 'open', 'later', 'done'])
   })
 
-  it('floats urgent tasks above overdue ones (TASK-60)', () => {
+  it('floats urgent tasks to the top of the rest, below the overdue (TASK-60)', () => {
     const [open, overdue, urgent, done] = listOf('open', 'overdue', 'urgent', 'done')
     const tasks = [
       open,
@@ -76,7 +76,18 @@ describe('sortForDisplay', () => {
       completeTask(done, NOW),
     ]
 
-    expect(displayTitles(tasks)).toEqual(['urgent', 'overdue', 'open', 'done'])
+    expect(displayTitles(tasks)).toEqual(['overdue', 'urgent', 'open', 'done'])
+  })
+
+  it('floats an urgent overdue task to the top of the overdue, not out of them (TASK-60)', () => {
+    const [first, second, urgent] = listOf('first', 'second', 'urgent')
+    const tasks = [
+      setDueDate(first, '2026-09-14'),
+      { ...second, urgent: true },
+      { ...setDueDate(urgent, '2026-09-15'), urgent: true },
+    ]
+
+    expect(displayTitles(tasks)).toEqual(['urgent', 'first', 'second'])
   })
 
   it('keeps stored order inside each band, so completing one does not shuffle the rest (TASK-17)', () => {

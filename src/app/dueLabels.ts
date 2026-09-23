@@ -5,6 +5,9 @@ import { offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from '../core'
  * is presentation, so it stays here.
  */
 
+/** What heads the run of tasks whose day has gone by. */
+export const OVERDUE_LABEL = 'Overdue'
+
 /** Relative where that is quicker to read — Today, Tomorrow, Yesterday — and a short date otherwise. */
 export function describeDueDate(day: LocalDay, now: Date): string {
   const today = toLocalDay(now)

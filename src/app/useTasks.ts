@@ -37,12 +37,15 @@ import {
   skipOccurrence,
   tagsInUse,
   uncompleteTask,
-  withTodayBonus,
+  withPeriodBonuses,
+  NO_BONUSES,
   type ListId,
   type LocalDay,
+  type PeriodBonuses,
   type Placement,
   type Repeat,
   type RewardChanges,
+  type RewardEntry,
   type SubtaskId,
   type Task,
   type TaskId,
@@ -78,8 +81,10 @@ function record(rewards: RewardRepository, changes: RewardChanges, onProblem: Re
  * The rules themselves live in ../core; this only wires them to React.
  *
  * What a change here earns or takes back is recorded in `rewards` alongside it,
- * `todayBonus` included: a change that leaves Today clear earns it, and one that
- * leaves it unclear again takes it back (RWD-24). A change arriving from
+ * the period bonuses included: a change that leaves Today, this week or this
+ * month clear earns that period's bonus, and one that leaves it unclear again
+ * takes it back (RWD-24, RWD-29). Taking one back needs to know where in the
+ * period it was earned, which is what `earned` is for. A change arriving from
  * elsewhere is not recorded: the device that made it recorded it.
  *
  * A load or a save the repository refuses is told to `onProblem` (STORE-13),
@@ -89,8 +94,10 @@ export function useTasks(
   repository: TaskRepository,
   rewards: RewardRepository,
   onProblem: ReportProblem = ignoreProblems,
-  /** What clearing Today earns as things stand (RWD-24), or null for no bonus. */
-  todayBonus: number | null = null,
+  /** What clearing each period earns as things stand (RWD-24, RWD-29), null where nothing does. */
+  bonuses: PeriodBonuses = NO_BONUSES,
+  /** What the ledger holds already, so a bonus is taken back off the day it was earned on. */
+  earned: readonly RewardEntry[] = [],
 ) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [status, setStatus] = useState<'loading' | 'loaded' | 'failed'>('loading')
@@ -130,9 +137,13 @@ export function useTasks(
       setTasks(next)
       persist(repository, changesBetween(before, next), onProblem)
       // The moment of the change, which says whose day the bonus is for.
-      record(rewards, withTodayBonus(rewardChanges(before, next), before, next, todayBonus, new Date()), onProblem)
+      record(
+        rewards,
+        withPeriodBonuses(rewardChanges(before, next), before, next, bonuses, earned, new Date()),
+        onProblem,
+      )
     },
-    [repository, rewards, onProblem, todayBonus],
+    [repository, rewards, onProblem, bonuses, earned],
   )
 
   const addTask = useCallback(

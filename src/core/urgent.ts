@@ -2,8 +2,9 @@
  * Whether a task is marked urgent.
  *
  * Urgent is a label, not a ranking: a task is urgent or it is not. Marking it
- * floats it to the top of the list among tasks still to do (`sortForDisplay` in
- * ./order); it earns nothing. Most tasks are not urgent until one is marked.
+ * floats it to the top of its run of tasks still to do — the overdue, or the
+ * rest (`sortForDisplay` in ./order); it earns nothing. Most tasks are not
+ * urgent until one is marked.
  */
 
 import type { Task } from './task'

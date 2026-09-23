@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { completeTask, createTask, ROLLING_SPANS, type CompletionSpans, type Task } from '../../core'
+import { completeTask, createTask, ROLLING_SPANS, setDueDate, type CompletionSpans, type Task } from '../../core'
 import { NO_TASK_ACTIONS } from '../../test/taskActions'
 import { TaskList } from './TaskList'
 
@@ -81,6 +81,39 @@ describe('TaskList', () => {
 
   it('keeps one run of done tasks where the view does not divide them (TASK-56)', () => {
     setup([completeTask(createTask('read', null, NOW), NOW), createTask('write', null, NOW)])
+
+    expect(screen.queryAllByRole('heading')).toEqual([])
+  })
+
+  it('heads the overdue tasks with a run of their own (TASK-68)', () => {
+    const late = setDueDate(createTask('late', null, NOW), '2026-09-15')
+    const open = createTask('plan', null, NOW)
+    setup([late, open])
+
+    const overdue = screen.getByRole('region', { name: 'Overdue' })
+    expect(screen.getByRole('heading').textContent).toBe('Overdue1')
+    expect(within(overdue).getByText('late')).toBeTruthy()
+    expect(within(overdue).queryByText('plan')).toBeNull()
+  })
+
+  it('heads the overdue above the done spans too (TASK-68)', () => {
+    const late = setDueDate(createTask('late', null, NOW), '2026-09-15')
+    const done = completeTask(createTask('read', null, NOW), NOW)
+    setup([late, done], ROLLING_SPANS)
+
+    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual(['Overdue1', 'Done today1'])
+  })
+
+  it('says nothing about overdue when none is (TASK-68)', () => {
+    setup([createTask('plan', null, NOW), setDueDate(createTask('later', null, NOW), '2026-09-20')])
+
+    expect(screen.queryAllByRole('heading')).toEqual([])
+  })
+
+  it('draws one run while Procrastination mode is on, so the chosen task leads (TASK-68, JUST-5)', () => {
+    const late = setDueDate(createTask('late', null, NOW), '2026-09-15')
+    const focus = createTask('focus', null, NOW)
+    setup([focus, late], null, focus.id)
 
     expect(screen.queryAllByRole('heading')).toEqual([])
   })

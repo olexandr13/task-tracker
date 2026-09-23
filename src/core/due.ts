@@ -78,17 +78,44 @@ export function isOverdue(task: Task, now: Date = new Date()): boolean {
   return due !== null && due < toLocalDay(now) && !isComplete(task, now)
 }
 
+/** The overdue tasks and everything else, the two runs a list is drawn in. */
+export interface OverdueSplit {
+  readonly overdue: readonly Task[]
+  readonly rest: readonly Task[]
+}
+
+/**
+ * The tasks split into the overdue ones and the rest, so a list can draw the
+ * overdue under a heading of their own. Each run keeps the order it was given,
+ * so tasks sorted by `sortForDisplay` — which already floats the overdue to the
+ * top — stay sorted inside their run.
+ *
+ * Nothing is rewritten when the day turns: which run a task is in follows from
+ * `now`, so a page left open moves a task that has just fallen behind on its
+ * next render.
+ */
+export function splitOverdue(tasks: readonly Task[], now: Date = new Date()): OverdueSplit {
+  return {
+    overdue: tasks.filter((task) => isOverdue(task, now)),
+    rest: tasks.filter((task) => !isOverdue(task, now)),
+  }
+}
+
 /**
  * Whether the task belongs in the list for a period — Today, Week or Month —
  * the periods the progress bars count, a week running Monday to Sunday.
  *
  * To do, it belongs when it is due by the period's last day, overdue included —
  * a day missed does not let a task drop out of sight, and whatever is in Today
- * is in Week and Month too. Done, it stays when it was due inside the period,
- * whenever it was finished, and when it was overdue and finished inside the
- * period, so ticking something off does not make it vanish. A task finished
- * ahead of a later period stays in that period, and a task with no day at all
- * is never in one, however recently it was touched.
+ * is in Week and Month too. A task still to do with no day is in none of them:
+ * nothing asks for it on any particular day.
+ *
+ * Done, it stays when it was due inside the period, whenever it was finished,
+ * and otherwise when it was finished inside the period, so ticking something
+ * off does not make it vanish — that is what keeps an overdue task finished
+ * today in today's list, and what puts a task with no day there, the day it was
+ * finished being the only day it has. A task finished ahead of a later period
+ * stays in that period.
  *
  * A repeating task is in on its occurrence in play, so a Friday task joins the
  * week on Friday: ahead of that the only occurrence there is to show is last
@@ -96,17 +123,17 @@ export function isOverdue(task: Task, now: Date = new Date()): boolean {
  */
 export function isInPeriod(task: Task, period: Period, now: Date = new Date()): boolean {
   const due = dueDay(task, now)
-  if (isDeleted(task) || due === null) {
+  if (isDeleted(task)) {
     return false
   }
 
   const last = lastDayOf(period, now)
   if (!isComplete(task, now)) {
-    return due <= last
+    return due !== null && due <= last
   }
 
   const first = toLocalDay(periodRange(period, now).start)
-  if (due >= first) {
+  if (due !== null && due >= first) {
     return due <= last
   }
 

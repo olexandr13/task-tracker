@@ -1,29 +1,36 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Redemption, RewardEntry, Task, TaskId } from '../core'
+import type { PrizeId, Redemption, RewardEntry, Task, TaskId } from '../core'
+import { describePoints } from './rewardLabels'
 
 /** How long the offer to undo stays on screen. */
 const UNDO_WINDOW_MS = 5000
 
 /**
  * What was just done and can be taken straight back: a deletion (task in the
- * trash, or an earning / redemption gone for good once the offer lapses), or a
- * completion (the task stays done if the offer lapses; the toast only reopens it).
+ * trash, or an earning / redemption gone for good once the offer lapses), a
+ * completion (the task stays done if the offer lapses; the toast only reopens
+ * it), or points just spent (RWD-41), which the toast is also the confirmation
+ * of — the row that was redeemed does not change, so without it a click would
+ * look like nothing happening.
  */
 export type UndoPending =
   | { kind: 'task'; task: Task }
   | { kind: 'earning'; entry: RewardEntry; title: string }
   | { kind: 'redemption'; redemption: Redemption }
+  | { kind: 'redeem'; redemption: Redemption; wishId: PrizeId | null }
   | { kind: 'completion'; taskId: TaskId }
 
-/** The name shown on the deletion toast. Completions name nothing. */
-export function undoTitle(pending: Exclude<UndoPending, { kind: 'completion' }>): string {
+/** What the toast says happened. Completions say nothing: the tick already did. */
+export function undoMessage(pending: Exclude<UndoPending, { kind: 'completion' }>): string {
   switch (pending.kind) {
     case 'task':
-      return pending.task.title
+      return `Deleted “${pending.task.title}”`
     case 'earning':
-      return pending.title
+      return `Deleted “${pending.title}”`
     case 'redemption':
-      return pending.redemption.note
+      return `Deleted “${pending.redemption.note}”`
+    case 'redeem':
+      return `Redeemed “${pending.redemption.note}” for ${describePoints(pending.redemption.points)}`
   }
 }
 

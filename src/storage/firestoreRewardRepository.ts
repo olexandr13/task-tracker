@@ -8,16 +8,18 @@ import {
   type Firestore,
   type WriteBatch,
 } from 'firebase/firestore'
-import type { Redemption, RewardEntry } from '../core'
+import { NO_BONUSES, type PeriodBonuses, type PointValue, type Redemption, type RewardEntry } from '../core'
 import { accountCollection } from './firestoreAccount'
 import { commitInBatches } from './firestoreBatches'
 import type { RewardRepository } from './rewardRepository'
 import {
+  POINT_VALUE,
+  readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
   REWARD_SCHEMA_VERSION,
-  TODAY_GOAL,
+  toStoredPointValue,
   toStoredRedemption,
   toStoredRewardGoal,
 } from './rewardSchema'
@@ -31,8 +33,10 @@ import {
  * - what was redeemed, one document per redemption at
  *   `users/{accountId}/redemptions/{redemptionId}`;
  * - what clearing a period earns, one document per period at
- *   `users/{accountId}/rewardGoals/{period}` — Today's is all there is so far
- *   (RWD-24), and no document at all is no bonus.
+ *   `users/{accountId}/rewardGoals/{period}` — Today, week and month (RWD-29) —
+ *   and no document at all is no bonus;
+ * - what a point is worth, at `users/{accountId}/rewardSettings/pointValue`,
+ *   and no document at all is nothing set.
  *
  * A day is only ever written field by field — merged, never replaced — so two
  * devices completing different tasks on one day keep both, and the same
@@ -43,21 +47,23 @@ export function createFirestoreRewardRepository(firestore: Firestore, accountId:
   const days = accountCollection(firestore, accountId, 'rewardDays')
   const redemptions = accountCollection(firestore, accountId, 'redemptions')
   const goals = accountCollection(firestore, accountId, 'rewardGoals')
-  const todayGoal = doc(goals, TODAY_GOAL)
+  const settings = accountCollection(firestore, accountId, 'rewardSettings')
+  const pointValue = doc(settings, POINT_VALUE)
 
   return {
     subscribe(onLedger, onError) {
-      // Three collections, one ledger: nothing is handed on until all of them
-      // are known, so a balance is never drawn from part of it. The bonus is
-      // held as a box rather than a number, there being no bonus to tell from
-      // not knowing yet.
+      // Four watchers, one ledger: nothing is handed on until all of them are
+      // known, so a balance is never drawn from part of it. The bonuses and the
+      // point value are held as boxes rather than values, there being nothing
+      // set to tell from not knowing yet.
       let entries: RewardEntry[] | null = null
       let spent: Redemption[] | null = null
-      let bonus: { points: number | null } | null = null
+      let bonuses: { of: PeriodBonuses } | null = null
+      let value: { of: PointValue | null } | null = null
 
       function emit() {
-        if (entries !== null && spent !== null && bonus !== null) {
-          onLedger({ entries, redemptions: spent, todayBonus: bonus.points })
+        if (entries !== null && spent !== null && bonuses !== null && value !== null) {
+          onLedger({ entries, redemptions: spent, bonuses: bonuses.of, pointValue: value.of })
         }
       }
 
@@ -88,11 +94,29 @@ export function createFirestoreRewardRepository(firestore: Firestore, accountId:
       )
 
       const stopGoals = onSnapshot(
-        todayGoal,
+        goals,
+        (snapshot) => {
+          const read: Record<string, number | null> = { ...NO_BONUSES }
+          for (const saved of snapshot.docs) {
+            const goal = readRewardGoal(saved.data())
+            if (goal === null) {
+              console.warn(`Ignoring the saved bonus for ${saved.id}: unexpected shape.`)
+              continue
+            }
+            read[goal.period] = goal.points
+          }
+          bonuses = { of: read as PeriodBonuses }
+          emit()
+        },
+        onError,
+      )
+
+      const stopValue = onSnapshot(
+        pointValue,
         (saved) => {
-          const read = saved.exists() ? readRewardGoal(saved.data()) : null
-          if (saved.exists() && read === null) console.warn('Ignoring the saved Today bonus: unexpected shape.')
-          bonus = { points: read?.points ?? null }
+          const read = saved.exists() ? readPointValue(saved.data()) : null
+          if (saved.exists() && read === null) console.warn('Ignoring the saved point value: unexpected shape.')
+          value = { of: read }
           emit()
         },
         onError,
@@ -102,6 +126,7 @@ export function createFirestoreRewardRepository(firestore: Firestore, accountId:
         stopDays()
         stopRedemptions()
         stopGoals()
+        stopValue()
       }
     },
 
@@ -126,16 +151,28 @@ export function createFirestoreRewardRepository(firestore: Firestore, accountId:
       return deleteDoc(doc(redemptions, id))
     },
 
-    setTodayBonus(points) {
+    setBonus(period, points) {
       // No bonus is no document, rather than a document saying none: one shape
       // for "nothing set", whether it was never set or was taken away.
-      return points === null ? deleteDoc(todayGoal) : setDoc(todayGoal, toStoredRewardGoal(TODAY_GOAL, points))
+      const goal = doc(goals, period)
+      return points === null ? deleteDoc(goal) : setDoc(goal, toStoredRewardGoal(period, points))
     },
 
-    async importTodayBonus(points) {
-      const existing = await getDocFromServer(todayGoal)
+    setPointValue(value) {
+      return value === null ? deleteDoc(pointValue) : setDoc(pointValue, toStoredPointValue(value))
+    },
+
+    async importBonus(period, points) {
+      const goal = doc(goals, period)
+      const existing = await getDocFromServer(goal)
       if (existing.exists()) return
-      await setDoc(todayGoal, toStoredRewardGoal(TODAY_GOAL, points))
+      await setDoc(goal, toStoredRewardGoal(period, points))
+    },
+
+    async importPointValue(value) {
+      const existing = await getDocFromServer(pointValue)
+      if (existing.exists()) return
+      await setDoc(pointValue, toStoredPointValue(value))
     },
   }
 }

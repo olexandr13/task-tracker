@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   allTags,
   countInboxOpen,
+  prizesOfKind,
   groupByCompletion,
   habitTasks,
   isComplete,
@@ -15,6 +16,7 @@ import {
   summarizeTags,
   trashedTasks,
   type ListId,
+  type Prize,
   type RedemptionId,
   type RewardKey,
   type SubtaskId,
@@ -37,7 +39,11 @@ import { ListsPage } from './components/ListsPage'
 import { MorePage } from './components/MorePage'
 import { ProgressPanel } from './components/ProgressPanel'
 import { QuoteCard } from './components/QuoteCard'
+import { RewardRulesPage } from './components/RewardRulesPage'
+import { RewardsHistoryPage } from './components/RewardsHistoryPage'
+import { RewardsNav } from './components/RewardsNav'
 import { RewardsPage } from './components/RewardsPage'
+import { PrizeListPage } from './components/PrizeListPage'
 import { SettingsList } from './components/SettingsList'
 import { SideNav } from './components/SideNav'
 import { StorageProblemNotice } from './components/StorageProblemNotice'
@@ -51,13 +57,15 @@ import { TrashIcon } from './components/TrashIcon'
 import { TrashList } from './components/TrashList'
 import { UndoToast } from './components/UndoToast'
 import { ViewOptionsMenu } from './components/ViewOptionsMenu'
-import { TASKS_NOT_LOADED } from './storageProblem'
+import { describeEarningTitle } from './rewardLabels'
+import { POINTS_NOT_LOADED, TASKS_NOT_LOADED } from './storageProblem'
 import type { TaskActions } from './taskActions'
 import { useLetterShortcut } from './useLetterShortcut'
 import { ABOVE_PHONE_BAR } from './usePhoneLayout'
 import { useBackup } from './useBackup'
 import { useDeviceSetting } from './useDeviceSetting'
 import { useLists } from './useLists'
+import { usePrizes } from './usePrizes'
 import { useProcrastination } from './useProcrastination'
 import { useQuote } from './useQuote'
 import { useRewards } from './useRewards'
@@ -72,6 +80,7 @@ import {
   allDoneMessage,
   emptyMessage,
   doneSpans,
+  isRewardsView,
   isTaskView,
   newTaskDueDay,
   newTaskListId,
@@ -103,8 +112,8 @@ interface TasksScreenProps {
  * the work, then the bars, then the quote at the very bottom, with the
  * navigation moved to a bar along the bottom of the screen.
  *
- * The rail belongs to the views that show tasks, not to the app, so habits,
- * rewards, More, the lists, the tags, the trash and settings do without it. The habits page is a record of progress already,
+ * The rail belongs to the views that show tasks, not to the app, so habits, the
+ * rewards pages, More, the lists, the tags, the trash and settings do without it. The habits page is a record of progress already,
  * and how much of the week is cleared says nothing about what was thrown away —
  * nobody needs spurring on to empty a bin.
  *
@@ -172,8 +181,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     restore,
     purge,
     emptyTrash,
-  } = useTasks(storage.tasks, storage.rewards, storageProblem.report, rewards.todayBonus)
+  } = useTasks(storage.tasks, storage.rewards, storageProblem.report, rewards.bonuses, rewards.entries)
   const lists = useLists(storage.lists, storageProblem.report)
+  const prizes = usePrizes(storage.prizes, storageProblem.report)
   const savedTags = useTags(storage.tags, isLoading ? null : tasks, storageProblem.report)
   const backup = useBackup(storage.backup)
   const [view, setView] = useView()
@@ -246,9 +256,10 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // any a live task carries that is not kept yet.
   const tags = allTags(savedTags.tags, live)
 
-  // Overdue float to the top and done sink to the bottom; sort is stable, so
-  // each band keeps the order it was given. A repeating task is only done for
-  // its current occurrence. A view dividing its done tasks by when they were
+  // Overdue float to the top — the run the list heads with Overdue — urgent to
+  // the top of their run, and done sink to the bottom; sort is stable, so each
+  // band keeps the order it was given. A repeating task is only done for its
+  // current occurrence. A view dividing its done tasks by when they were
   // finished puts the most recent first, the order its headings come in.
   const shown = isTaskView(view) ? live.filter((task) => showsTask(view, task, now, lists.lists)) : live
   const spans = isTaskView(view) ? doneSpans(view) : null
@@ -293,6 +304,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // The same `now` once more: which quote is today's is derived from the day it
   // falls in, so the quote and the bars can't disagree about which day it is.
   const quote = useQuote(quotableQuoteSource, deviceStorage.quote, now)
+  /** What each ledger row is named after, the trash included: a purged task has no title left. */
+  const taskTitles = new Map(tasks.map((task) => [task.id, task.title]))
 
   function handleRemove(id: TaskId) {
     const deleted = remove(id)
@@ -304,8 +317,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   function handleRemoveEarning(key: RewardKey) {
     const deleted = rewards.removeEarning(key)
     if (deleted === null) return
-    const title = tasks.find((task) => task.id === deleted.taskId)?.title ?? 'Deleted task'
-    undo.show({ kind: 'earning', entry: deleted, title })
+    undo.show({ kind: 'earning', entry: deleted, title: describeEarningTitle(deleted.taskId, taskTitles) })
   }
 
   function handleRemoveRedemption(id: RedemptionId) {
@@ -313,6 +325,31 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     if (deleted !== null) {
       undo.show({ kind: 'redemption', redemption: deleted })
     }
+  }
+
+  /**
+   * Spends points on something that is on neither list (RWD-15). The toast is
+   * the confirmation as well as the way back: nothing else on the page changes
+   * but the balance.
+   */
+  function handleRedeem(points: number, note: string) {
+    const spent = rewards.redeem(points, note)
+    if (spent !== null) {
+      undo.show({ kind: 'redeem', redemption: spent, wishId: null })
+    }
+  }
+
+  /**
+   * Spends a prize's or a wish's price on it (RWD-36): a prize is left to come
+   * round again, a wish is marked bought and leaves what the points can buy
+   * (RWD-40). Undoing gives the points back and puts a bought wish back with them.
+   */
+  function handleRedeemPrize(prize: Prize) {
+    const spent = rewards.redeem(prize.points, prize.name)
+    if (spent === null) return
+
+    if (prize.kind === 'wish') prizes.buy(prize.id)
+    undo.show({ kind: 'redeem', redemption: spent, wishId: prize.kind === 'wish' ? prize.id : null })
   }
 
   function handleUndo() {
@@ -326,6 +363,10 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
         break
       case 'redemption':
         rewards.restoreRedemption(undo.pending.redemption)
+        break
+      case 'redeem':
+        rewards.removeRedemption(undo.pending.redemption.id)
+        if (undo.pending.wishId !== null) prizes.restore(undo.pending.wishId)
         break
       case 'completion':
         uncomplete(undo.pending.taskId)
@@ -422,9 +463,11 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
             view={view}
             lists={lists.lists}
             listsOpen={sideNav.listsOpen}
+            rewardsOpen={sideNav.rewardsOpen}
             dimmed={dimChrome}
             onChange={setView}
             onListsOpenChange={(listsOpen) => { setSideNav({ ...sideNav, listsOpen }) }}
+            onRewardsOpenChange={(rewardsOpen) => { setSideNav({ ...sideNav, rewardsOpen }) }}
           />
 
           <div className="flex min-w-0 flex-1 flex-col gap-5">
@@ -455,21 +498,58 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   }}
                 />
               </section>
-            ) : view === 'rewards' ? (
-              <section aria-label="Rewards">
+            ) : isRewardsView(view) ? (
+              <section aria-label={viewLabel(view)} className="flex flex-col gap-5">
+                {/* A phone has no sidebar to list the pages under Rewards, so they are here (RWD-30). */}
+                <RewardsNav view={view} onChange={setView} />
                 {rewards.isLoading ? (
                   <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                ) : rewards.loadFailed ? (
+                  // Zeros here would read as points lost, rather than as points unread (RWD-22).
+                  <p className="py-10 text-center text-neutral-500 dark:text-neutral-400">{POINTS_NOT_LOADED}</p>
+                ) : view === 'rewards/history' ? (
+                  <RewardsHistoryPage
+                    entries={rewards.entries}
+                    redemptions={rewards.redemptions}
+                    taskTitles={taskTitles}
+                    now={now}
+                    onRemoveEarning={handleRemoveEarning}
+                    onRemoveRedemption={handleRemoveRedemption}
+                  />
+                ) : view === 'rewards/prizes' || view === 'rewards/wishlist' ? (
+                  <PrizeListPage
+                    // Keyed by the list, so the add box starts empty on each.
+                    key={view}
+                    kind={view === 'rewards/wishlist' ? 'wish' : 'prize'}
+                    prizes={prizesOfKind(prizes.prizes, view === 'rewards/wishlist' ? 'wish' : 'prize')}
+                    balance={rewards.balance}
+                    pointValue={rewards.pointValue}
+                    now={now}
+                    onAdd={prizes.add}
+                    onRename={prizes.rename}
+                    onReprice={prizes.reprice}
+                    onDelete={prizes.remove}
+                    onRedeem={handleRedeemPrize}
+                    onRedeemOther={view === 'rewards/prizes' ? handleRedeem : undefined}
+                  />
+                ) : view === 'rewards/rules' ? (
+                  <RewardRulesPage
+                    bonuses={rewards.bonuses}
+                    pointValue={rewards.pointValue}
+                    onChangeBonus={rewards.setBonus}
+                    onChangePointValue={rewards.setPointValue}
+                  />
                 ) : (
                   <RewardsPage
                     entries={rewards.entries}
                     redemptions={rewards.redemptions}
-                    taskTitles={new Map(tasks.map((task) => [task.id, task.title]))}
+                    prizes={prizes.prizes}
+                    bonuses={rewards.bonuses}
+                    pointValue={rewards.pointValue}
                     now={now}
-                    todayBonus={rewards.todayBonus}
-                    onRedeem={rewards.redeem}
-                    onChangeTodayBonus={rewards.setTodayBonus}
-                    onRemoveEarning={handleRemoveEarning}
-                    onRemoveRedemption={handleRemoveRedemption}
+                    onOpenPrizes={() => { setView('rewards/prizes') }}
+                    onOpenWishlist={() => { setView('rewards/wishlist') }}
+                    onOpenRules={() => { setView('rewards/rules') }}
                   />
                 )}
               </section>
@@ -532,7 +612,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                 </section>
 
                 {/* A phone's bar has no room for the lists or the trash, so they are kept at
-                    the foot of every task. The tags and the rewards are on its More page. */}
+                    the foot of every task. The tags are on its More page. */}
                 {view === 'tasks' && (
                   <nav aria-label="Under Tasks" className="flex flex-wrap gap-1 md:hidden">
                     <button type="button" onClick={() => { setView('lists') }} className={footLink}>

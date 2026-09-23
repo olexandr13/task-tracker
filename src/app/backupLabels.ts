@@ -18,12 +18,13 @@ export const BACKUP_FAILURES: Record<BackupFailure, string> = {
   'newer-version': 'That backup was made by a newer version of the app. Reload the page to update it, then try again.',
 }
 
-/** `12 tasks, 2 lists, 3 tags, 30 completions and 1 redemption`, leaving out any kind there are none of. Null for none at all. */
+/** `12 tasks, 2 lists, 3 tags, 4 prizes, 30 completions and 1 redemption`, leaving out any kind there are none of. Null for none at all. */
 export function describeRecordCounts(counts: RecordCounts): string | null {
   const parts = [
     countOf(counts.tasks, 'task'),
     countOf(counts.lists, 'list'),
     countOf(counts.tags, 'tag'),
+    countOf(counts.prizes, 'prize'),
     countOf(counts.completions, 'completion'),
     countOf(counts.redemptions, 'redemption'),
   ].filter((part) => part !== null)

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createList, createTask } from '../core'
+import { createList, createTask, NO_BONUSES } from '../core'
 import { BACKUP_VERSION, writeBackupFile } from '../storage/backupFile'
 import { NeedsConnectionError, type AccountData, type BackupRepository, type ImportSummary } from '../storage/backupRepository'
 import { consoleOutput, expectConsole } from '../test/consoleGuard'
@@ -17,12 +17,17 @@ const DATA: AccountData = {
   tasks: [WRITE],
   lists: [createList('Work', AT)],
   tags: [],
+  prizes: [],
   entries: [],
   redemptions: [],
-  todayBonus: null,
+  bonuses: NO_BONUSES,
+  pointValue: null,
 }
 
-const ADDED: ImportSummary = { added: { tasks: 1, lists: 1, tags: 0, completions: 0, redemptions: 0 }, alreadyHere: 0 }
+const ADDED: ImportSummary = {
+  added: { tasks: 1, lists: 1, tags: 0, prizes: 0, completions: 0, redemptions: 0 },
+  alreadyHere: 0,
+}
 
 function fakeBackupRepository({ exportFails = false, importFails = null as unknown }: { exportFails?: boolean; importFails?: unknown } = {}) {
   const imported: AccountData[] = []

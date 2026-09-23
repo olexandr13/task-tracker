@@ -8,16 +8,19 @@ import {
   type QuerySnapshot,
   type WriteBatch,
 } from 'firebase/firestore'
-import type { LocalDay, TaskId } from '../core'
+import { BONUS_PERIODS, NO_BONUSES, type LocalDay, type PeriodBonuses, type TaskId } from '../core'
 import { countRecords, NeedsConnectionError, newRecords, type BackupRepository, type KnownRecords } from './backupRepository'
 import { accountCollection } from './firestoreAccount'
 import { commitInBatches } from './firestoreBatches'
 import { readList, toStoredList } from './listSchema'
+import { readPrize, toStoredPrize } from './prizeSchema'
 import {
+  POINT_VALUE,
+  readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
-  TODAY_GOAL,
+  toStoredPointValue,
   toStoredRedemption,
   toStoredRewardDays,
   toStoredRewardGoal,
@@ -47,21 +50,32 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   const tasks = accountCollection(firestore, accountId, 'tasks')
   const lists = accountCollection(firestore, accountId, 'lists')
   const tags = accountCollection(firestore, accountId, 'tags')
+  const prizes = accountCollection(firestore, accountId, 'prizes')
   const days = accountCollection(firestore, accountId, 'rewardDays')
   const redemptions = accountCollection(firestore, accountId, 'redemptions')
   const goals = accountCollection(firestore, accountId, 'rewardGoals')
+  const settings = accountCollection(firestore, accountId, 'rewardSettings')
 
-  /** What the account earns for clearing Today, of everything its goals hold. */
-  const todayBonusIn = (snapshot: QuerySnapshot): number | null =>
-    snapshot.docs.flatMap((saved) => readRewardGoal(saved.data()) ?? []).find((goal) => goal.period === TODAY_GOAL)
-      ?.points ?? null
+  /** What the account earns for clearing each period, of everything its goals hold. */
+  function bonusesIn(snapshot: QuerySnapshot): PeriodBonuses {
+    const bonuses = { ...NO_BONUSES } as Record<string, number | null>
+    for (const goal of snapshot.docs.flatMap((saved) => readRewardGoal(saved.data()) ?? [])) {
+      bonuses[goal.period] = goal.points
+    }
+    return bonuses as PeriodBonuses
+  }
+
+  /** What the account says a point is worth, of everything its settings hold. */
+  const pointValueIn = (snapshot: QuerySnapshot) =>
+    snapshot.docs.flatMap((saved) => (saved.id === POINT_VALUE ? (readPointValue(saved.data()) ?? []) : []))[0] ?? null
 
   return {
     // The server when there is a connection, the browser's copy when there is not.
     async exportAll() {
-      const [savedTasks, savedLists, savedTags, savedDays, savedRedemptions, savedGoals] = await Promise.all(
-        [tasks, lists, tags, days, redemptions, goals].map((collection) => getDocs(collection)),
-      )
+      const [savedTasks, savedLists, savedTags, savedPrizes, savedDays, savedRedemptions, savedGoals, savedSettings] =
+        await Promise.all(
+          [tasks, lists, tags, prizes, days, redemptions, goals, settings].map((collection) => getDocs(collection)),
+        )
       const readAll = <T>(snapshot: QuerySnapshot, read: (data: unknown) => T | null): T[] =>
         snapshot.docs.flatMap((saved) => read(saved.data()) ?? [])
 
@@ -69,29 +83,27 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         tasks: readAll(savedTasks, readStoredTask),
         lists: readAll(savedLists, readList),
         tags: readAll(savedTags, readTag),
+        prizes: readAll(savedPrizes, readPrize),
         entries: readAll(savedDays, readRewardDay).flat(),
         redemptions: readAll(savedRedemptions, readRedemption),
-        todayBonus: todayBonusIn(savedGoals),
+        bonuses: bonusesIn(savedGoals),
+        pointValue: pointValueIn(savedSettings),
       }
     },
 
     async importAll(incoming, now) {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new NeedsConnectionError()
-      const [savedTasks, savedLists, savedTags, savedDays, savedRedemptions, savedGoals] = await fromServer([
-        tasks,
-        lists,
-        tags,
-        days,
-        redemptions,
-        goals,
-      ])
+      const [savedTasks, savedLists, savedTags, savedPrizes, savedDays, savedRedemptions, savedGoals, savedSettings] =
+        await fromServer([tasks, lists, tags, prizes, days, redemptions, goals, settings])
       const known: KnownRecords = {
         taskIds: ids(savedTasks),
         listIds: ids(savedLists),
         tagIds: ids(savedTags),
         tagNames: savedTags.docs.flatMap((saved) => readTag(saved.data())?.name ?? []),
+        prizeIds: ids(savedPrizes),
         redemptionIds: ids(savedRedemptions),
-        todayBonus: todayBonusIn(savedGoals),
+        bonuses: bonusesIn(savedGoals),
+        pointValue: pointValueIn(savedSettings),
         days: new Map(
           savedDays.docs.map((saved): [LocalDay, ReadonlySet<TaskId> | null] => {
             const entries = readRewardDay(saved.data())
@@ -101,8 +113,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
       }
 
       const { fresh, alreadyHere } = newRecords(incoming, known, now)
-      // Only ever set where the account has no bonus of its own (`newRecords`).
-      const bonus = fresh.todayBonus
+      const value = fresh.pointValue
 
       // A day is merged, never replaced, as when points are earned: only the
       // entries it did not hold are added to it.
@@ -110,15 +121,24 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         ...fresh.tasks.map((task) => (batch: WriteBatch) => batch.set(doc(tasks, task.id), toStoredTask(task))),
         ...fresh.lists.map((list) => (batch: WriteBatch) => batch.set(doc(lists, list.id), toStoredList(list))),
         ...fresh.tags.map((tag) => (batch: WriteBatch) => batch.set(doc(tags, tag.id), toStoredTag(tag))),
+        ...fresh.prizes.map((prize) => (batch: WriteBatch) => batch.set(doc(prizes, prize.id), toStoredPrize(prize))),
         ...toStoredRewardDays(fresh.entries).map((day) => (batch: WriteBatch) =>
           batch.set(doc(days, day.day), day, { merge: true }),
         ),
         ...fresh.redemptions.map((redemption) => (batch: WriteBatch) =>
           batch.set(doc(redemptions, redemption.id), toStoredRedemption(redemption)),
         ),
-        ...(bonus === null
+        // The file's bonuses and point value are only ever set where the
+        // account has none of its own (`newRecords`).
+        ...BONUS_PERIODS.flatMap((period) => {
+          const points = fresh.bonuses[period]
+          return points === null
+            ? []
+            : [(batch: WriteBatch) => batch.set(doc(goals, period), toStoredRewardGoal(period, points))]
+        }),
+        ...(value === null
           ? []
-          : [(batch: WriteBatch) => batch.set(doc(goals, TODAY_GOAL), toStoredRewardGoal(TODAY_GOAL, bonus))]),
+          : [(batch: WriteBatch) => batch.set(doc(settings, POINT_VALUE), toStoredPointValue(value))]),
       ])
 
       return { added: countRecords(fresh), alreadyHere }

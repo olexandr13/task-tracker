@@ -47,10 +47,13 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * The tabs run from Settings on the left to the period on the right. Today, Week
  * and Month share that last tab, which shows the one last chosen and goes to it
  * on a tap. The lists and the trash have no tab — they are reached from
- * Tasks, so Tasks stays marked while either is open, or one list or the Inbox. The
- * tags and the rewards have none either: they are under More, which goes to its
- * own page on a tap and stays marked while that page, the Tags page, a tag's
- * tasks or the Rewards page is open. The sidebar has the same More entry.
+ * Tasks, so Tasks stays marked while either is open, or one list or the Inbox.
+ * **Rewards** has a tab of its own, which stays marked while any of its four
+ * pages is open (RWD-19); the pages under it are reached from the strip across
+ * the top of them (RWD-30), a phone having no sidebar to list them in. The tags
+ * have no tab: they are under More, which goes to its own page on a tap and
+ * stays marked while that page, the Tags page or a tag's tasks are open. The
+ * sidebar has the same More entry.
  *
  * The period tab and Tasks each have a menu of what the sidebar has in their
  * place: the three periods, and Lists with the Inbox and every list indented
@@ -161,13 +164,21 @@ export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavPr
         // Clear of a phone's home indicator and, turned sideways, its rounded corners (UI-61).
         className={`fixed inset-x-0 bottom-0 z-20 border-t border-neutral-200 bg-white/95 pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] backdrop-blur md:hidden dark:border-neutral-800 dark:bg-neutral-900/95${dimmed ? ' opacity-25' : ''}`}
       >
-        <ul className="mx-auto grid max-w-md grid-cols-5">
+        <ul className="mx-auto grid max-w-md grid-cols-6">
           <li>
             <Tab
               label={VIEW_LABELS.settings}
               icon={VIEW_ICONS.settings}
               active={view === 'settings'}
               onClick={() => { onChange('settings') }}
+            />
+          </li>
+          <li>
+            <Tab
+              label={VIEW_LABELS.rewards}
+              icon={VIEW_ICONS.rewards}
+              active={isUnder(view, 'rewards')}
+              onClick={() => { onChange('rewards') }}
             />
           </li>
           <li>

@@ -39,10 +39,31 @@ changes shape.
   done.
 - **STORE-22** A day is only ever changed **task by task**: earning adds that task's points to the
   day, taking back removes them, and nothing else on the day is touched. Two devices completing
-  different tasks on the same day keep both. The same completion recorded twice is recorded once.
+  different tasks on the same day keep both. The same completion recorded twice is recorded once. A
+  day whose last earning was taken back is left **holding nothing**, and is read as a day that
+  earned nothing rather than as a record that cannot be read (STORE-7).
 - **STORE-23** Each redemption is saved as **its own record**, and deleting one removes it.
 - **STORE-24** The ledger has **its own version**, apart from the tasks'. A day or a redemption in a
   version the app does not recognise, or not shaped as it should be, is ignored with a warning and
+  left as it is (STORE-7).
+- **STORE-41** What clearing **Today**, **this week** and **this month** earns (RWD-24, RWD-29) is
+  kept in the account too, apart from the days and the redemptions: **one record per period that has
+  a bonus**, named by the period rather than by an id of its own, so the devices that set it write
+  the one record and the later write wins. No record at all is no bonus. It is kept under the
+  ledger's version (STORE-24), and one the app cannot read is ignored with a warning and left as it
+  is (STORE-7) — clearing that period then earns nothing until a bonus is set again.
+- **STORE-42** What a point is worth (RWD-31) is kept beside the bonuses, as **one record per
+  setting**, named by the setting rather than by an id, for the same reason: two devices setting it
+  write the one record. No record at all is nothing set, and the points are counted in points alone.
+  It is kept under the ledger's version (STORE-24) and ignored, with a warning, when it cannot be
+  read.
+- **STORE-43** Each prize and each wish (RWD-33, RWD-40) is saved as **its own record**, in one
+  collection of its own beside the ledger — the record says which kind it is, and when a wish was
+  bought — inside a versioned envelope like a list's (STORE-26). Changes are written **record by
+  record**, as with the lists (STORE-28). It has **its own version**, apart from the ledger's: a
+  redemption keeps the name and the price it was made under, so one renamed, repriced or deleted
+  never rewrites one. A record saved before the two kinds were told apart is read as a **prize**,
+  never bought — the kind it was written as. One the app cannot read is ignored with a warning and
   left as it is (STORE-7).
 - **STORE-25** What a change earns is recorded by the device that made the change. A change arriving
   from another device is not recorded again. The ledger is readable and writable by the account
@@ -94,15 +115,18 @@ changes shape.
 
 ## Guest — this device only
 
-- **STORE-37** As guest (AUTH-15), tasks, lists, tags and the points ledger are kept in this
+- **STORE-37** As guest (AUTH-15), tasks, lists, tags, the wishlist and the points ledger — the
+  bonuses and what a point is worth with it (STORE-41, STORE-42, STORE-43) — are kept in this
   browser's `localStorage`, under the same versioned shapes as the account's (STORE-4, STORE-24,
-  STORE-27, STORE-34). Nothing is sent to the account or any other device. A refresh or another tab
+  STORE-27, STORE-34). A ledger kept before there were bonuses, or before a point had a value, holds
+  none of them, rather than being unreadable for the lack of one. Nothing is sent to the account or any other device. A refresh or another tab
   on the same address sees the same records. There is nothing to sync, so the sync notice stays
   quiet (OFF-7).
 - **STORE-38** The first time a Google account is open here online after guest data was kept, that
-  data is **moved into the account** — tasks, lists, tags, points earned and redemptions — added
-  alongside what the account already has, without overwriting tasks it already holds (STORE-20),
-  then forgotten by the browser. A move that fails, offline say, is tried again next time.
+  data is **moved into the account** — tasks, lists, tags, prizes, points earned, redemptions, the
+  bonuses and what a point is worth — added alongside what the account already has, without
+  overwriting tasks it already holds (STORE-20) or a bonus or point value it has already set, then
+  forgotten by the browser. A move that fails, offline say, is tried again next time.
 
 ## Kept on this device
 
@@ -113,10 +137,11 @@ changes shape.
   anything not shaped as it should be — are ignored and the defaults used until they are set again;
   like a cached quote (STORE-8) there is nothing in them worth carrying forward. A browser that
   refuses storage keeps them for as long as the page is open.
-- **STORE-31** How the sidebar is laid out — whether the lists under Lists are folded (LST-26) — is
-  kept the same way, and for the same reasons: in this browser's `localStorage`, not in the
-  account, under a version of its own, read at once when the app opens, and back to the default —
-  unfolded — when it cannot be read.
+- **STORE-31** How the sidebar is laid out — whether the lists under Lists (LST-26) and the pages
+  under Rewards (RWD-19) are folded — is kept the same way, and for the same reasons: in this
+  browser's `localStorage`, not in the account, under a version of its own, read at once when the
+  app opens, and back to the default — unfolded — when it cannot be read. A layout saved before
+  there were pages under Rewards is read as leaving those open.
 - **STORE-36** How the habits view is shown — whether cards start open (HAB-23) — is kept the same
   way again, under a version of its own, apart from the task View options (STORE-30). A phone and a
   desktop have different room, so each is set its own way. Options the app cannot read fall back to
@@ -204,7 +229,9 @@ change comes to, record by record), `firestoreRecords.ts` (one document per reco
 copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgrades), `localTaskImport.ts` (tasks kept in the browser before accounts),
 `guestImport.ts` (moving guest data into an account), `localCollection.ts` (records in `localStorage`),
 `firestoreBatches.ts` (writing in batches), `firestoreAccount.ts` (every collection an account keeps), `rewardRepository.ts`, `firestoreRewardRepository.ts`, `localRewardRepository.ts` and
-`rewardSchema.ts` (the points ledger), `listRepository.ts`, `firestoreListRepository.ts`, `localListRepository.ts` and
+`rewardSchema.ts` (the points ledger, the period bonuses and what a point is worth),
+`prizeRepository.ts`, `firestorePrizeRepository.ts`, `localPrizeRepository.ts` and `prizeSchema.ts`
+(the prizes and the wishlist), `listRepository.ts`, `firestoreListRepository.ts`, `localListRepository.ts` and
 `listSchema.ts` (the lists), `tagRepository.ts`, `firestoreTagRepository.ts`, `localTagRepository.ts` and `tagSchema.ts`
 (the kept tags), `localBackupRepository.ts` and `localSyncMonitor.ts` (guest export and the quiet sync notice),
 `src/storage/quoteRepository.ts` and `localStorageQuoteRepository.ts`,
@@ -225,7 +252,8 @@ STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/S
 `src/storage/localTaskImport.test.ts` (the move, and upgrading older data),
 `src/storage/localTaskRepository.test.ts` (the guest's tasks),
 `src/storage/rewardSchema.test.ts`
-(reading the ledger back), `src/storage/listRepository.test.ts` and `src/storage/listSchema.test.ts`
+(reading the ledger back), `src/storage/prizeSchema.test.ts` and `src/app/usePrizes.test.ts`
+(reading a prize or a wish back, and keeping them), `src/storage/listRepository.test.ts` and `src/storage/listSchema.test.ts`
 (what a change to the lists writes, and reading one back), `src/storage/tagRepository.test.ts`,
 `src/storage/tagSchema.test.ts` and `src/app/useTags.test.ts` (the same for the tags, and keeping the
 ones tasks carry), `src/storage/viewOptionsSchema.test.ts` (reading the

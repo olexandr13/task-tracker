@@ -19,6 +19,9 @@ export const STORAGE_PROBLEM_LABELS: Record<StorageProblem, string> = {
 /** What a list says in place of being empty when its tasks could not be loaded. */
 export const TASKS_NOT_LOADED = 'Couldn’t load your tasks. Reload to try again.'
 
+/** What the Rewards page says in place of the points when the ledger could not be loaded. */
+export const POINTS_NOT_LOADED = 'Couldn’t load your points. Reload to try again.'
+
 /**
  * The one worth saying of two. A failed load outranks a failed save: the screen
  * is not showing what the account holds, and saving over it is what to avoid.

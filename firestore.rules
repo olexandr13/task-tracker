@@ -13,8 +13,13 @@ rules_version = '2';
 //   (src/storage/firestoreRewardRepository.ts), always filed under its day.
 // - Points redeemed: one document per redemption, stored as { version, redemption },
 //   always filed under the redemption's id.
+// - Prizes: one document per prize on the wishlist, stored as { version, prize }
+//   (src/storage/firestorePrizeRepository.ts), always filed under the prize's id.
 // - Points for clearing a period: one document per period, stored as
 //   { version, goal }, always filed under the period the goal names.
+// - Settings of the points: one document per setting, stored as
+//   { version, name, value } — what a point is worth is the only one so far —
+//   always filed under the name it carries.
 service cloud.firestore {
   match /databases/{database}/documents {
     function isOwner(accountId) {
@@ -36,6 +41,11 @@ service cloud.firestore {
       allow create, update: if isOwner(accountId) && request.resource.data.tag.id == tagId;
     }
 
+    match /users/{accountId}/prizes/{prizeId} {
+      allow read, delete: if isOwner(accountId);
+      allow create, update: if isOwner(accountId) && request.resource.data.prize.id == prizeId;
+    }
+
     match /users/{accountId}/rewardDays/{day} {
       allow read, delete: if isOwner(accountId);
       allow create, update: if isOwner(accountId) && request.resource.data.day == day;
@@ -49,6 +59,11 @@ service cloud.firestore {
     match /users/{accountId}/rewardGoals/{period} {
       allow read, delete: if isOwner(accountId);
       allow create, update: if isOwner(accountId) && request.resource.data.goal.period == period;
+    }
+
+    match /users/{accountId}/rewardSettings/{name} {
+      allow read, delete: if isOwner(accountId);
+      allow create, update: if isOwner(accountId) && request.resource.data.name == name;
     }
   }
 }

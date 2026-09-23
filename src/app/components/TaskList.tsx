@@ -1,6 +1,7 @@
 import {
   groupByCompletion,
   isComplete,
+  splitOverdue,
   type CompletionSpan,
   type CompletionSpans,
   type List,
@@ -8,6 +9,7 @@ import {
   type TaskId,
 } from '../../core'
 import { COMPLETION_SPAN_LABELS } from '../completionLabels'
+import { OVERDUE_LABEL } from '../dueLabels'
 import { CelebrateIcon } from './CelebrateIcon'
 import { SortableTasks } from './SortableTasks'
 import { TaskItem } from './TaskItem'
@@ -16,6 +18,11 @@ import type { TaskTimer } from '../useTaskTimer'
 
 /** A phone leaves room between rows so a tap aimed at one does not catch the next. */
 const rows = 'flex flex-col gap-1.5 md:gap-1'
+
+/** A run of rows under a heading: the overdue, or a span of done work. */
+const section = 'flex flex-col gap-1.5'
+
+const heading = 'flex items-baseline gap-2 px-1 text-xs font-medium'
 
 /**
  * Older done work fades further back: yesterday still near full, last week and
@@ -99,7 +106,14 @@ export function TaskList({
 
   const allDone = tasks.every((task) => isComplete(task, now))
 
-  /** A row; one under a span is dragged among that span's rows alone. */
+  /**
+   * Procrastination mode draws its tasks in one run: the chosen task is pinned
+   * to the top whatever its day (JUST-5), so no heading could speak for what
+   * follows it — and headings are a distraction the mode is there to remove.
+   */
+  const headOverdue = focusId === null && !dimAll
+
+  /** A row; one under a heading is dragged among that heading's rows alone. */
   function row(task: Task, span?: CompletionSpan) {
     return (
       <TaskItem
@@ -120,6 +134,58 @@ export function TaskList({
     )
   }
 
+  /**
+   * The tasks still to do: the overdue under their own heading, then the rest
+   * with none. A list with nothing overdue is one plain run, as it was.
+   */
+  function todoRuns(group: readonly Task[]) {
+    const { overdue, rest } = headOverdue ? splitOverdue(group, now) : { overdue: [], rest: group }
+    if (overdue.length === 0) {
+      return [
+        <ul key="todo" className={rows}>
+          {rest.map((task) => row(task))}
+        </ul>,
+      ]
+    }
+
+    return [
+      <section key="overdue" aria-label={OVERDUE_LABEL} className={section}>
+        <h2 className={`${heading} text-red-600 dark:text-red-400`}>
+          {OVERDUE_LABEL}
+          <span className="font-normal text-red-600/60 tabular-nums dark:text-red-400/60">{overdue.length}</span>
+        </h2>
+        <ul className={rows}>{overdue.map((task) => row(task))}</ul>
+      </section>,
+      ...(rest.length === 0
+        ? []
+        : [
+            <ul key="todo" className={rows}>
+              {rest.map((task) => row(task))}
+            </ul>,
+          ]),
+    ]
+  }
+
+  /** A span of done work under its heading, faded by how long ago it was finished. */
+  function doneRun(span: CompletionSpan, group: readonly Task[]) {
+    return (
+      <section
+        key={span}
+        aria-label={COMPLETION_SPAN_LABELS[span]}
+        className={[section, doneSpanClass(span)].filter(Boolean).join(' ')}
+      >
+        <h2 className={`${heading} text-neutral-400 dark:text-neutral-500`}>
+          {COMPLETION_SPAN_LABELS[span]}
+          <span className="font-normal text-neutral-300 tabular-nums dark:text-neutral-600">{group.length}</span>
+        </h2>
+        <ul className={rows}>{group.map((task) => row(task, span))}</ul>
+      </section>
+    )
+  }
+
+  // One run of done tasks unless the view divides them by when they were finished.
+  const groups = doneSpans === null ? [{ span: null, tasks }] : groupByCompletion(tasks, doneSpans, now)
+
   return (
     <>
       {allDone && (
@@ -131,35 +197,13 @@ export function TaskList({
           <p className="text-sm font-medium text-green-900 dark:text-green-100">{allDoneMessage}</p>
         </div>
       )}
-      {doneSpans !== null ? (
-        <div className="flex flex-col gap-3">
-          <SortableTasks tasks={tasks}>
-            {groupByCompletion(tasks, doneSpans, now).map(({ span, tasks: group }) =>
-              span === null ? (
-                <ul key="todo" className={rows}>
-                  {group.map((task) => row(task))}
-                </ul>
-              ) : (
-                <section
-                  key={span}
-                  aria-label={COMPLETION_SPAN_LABELS[span]}
-                  className={['flex flex-col gap-1.5', doneSpanClass(span)].filter(Boolean).join(' ')}
-                >
-                  <h2 className="flex items-baseline gap-2 px-1 text-xs font-medium text-neutral-400 dark:text-neutral-500">
-                    {COMPLETION_SPAN_LABELS[span]}
-                    <span className="font-normal text-neutral-300 tabular-nums dark:text-neutral-600">{group.length}</span>
-                  </h2>
-                  <ul className={rows}>{group.map((task) => row(task, span))}</ul>
-                </section>
-              ),
-            )}
-          </SortableTasks>
-        </div>
-      ) : (
-        <ul className={rows}>
-          <SortableTasks tasks={tasks}>{tasks.map((task) => row(task))}</SortableTasks>
-        </ul>
-      )}
+      <div className="flex flex-col gap-3">
+        <SortableTasks tasks={tasks}>
+          {groups.flatMap(({ span, tasks: group }) =>
+            span === null ? todoRuns(group) : [doneRun(span, group)],
+          )}
+        </SortableTasks>
+      </div>
     </>
   )
 }

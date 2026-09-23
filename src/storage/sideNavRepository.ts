@@ -6,10 +6,12 @@
 export interface SideNavState {
   /** Every list is shown, indented under Lists. */
   readonly listsOpen: boolean
+  /** The rewards pages are shown, indented under Rewards. */
+  readonly rewardsOpen: boolean
 }
 
-/** How the sidebar is laid out until the owner folds anything away. */
-export const DEFAULT_SIDE_NAV_STATE: SideNavState = { listsOpen: true }
+/** How the sidebar is laid out until the owner folds anything away: everything open. */
+export const DEFAULT_SIDE_NAV_STATE: SideNavState = { listsOpen: true, rewardsOpen: true }
 
 /**
  * Where the sidebar's layout is kept between visits.

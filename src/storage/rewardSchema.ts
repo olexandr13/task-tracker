@@ -1,8 +1,13 @@
 import {
+  BONUS_PERIODS,
+  isCurrency,
   isLocalDay,
+  isPointAmount,
   isRedemptionAmount,
   isRewardAmount,
   type LocalDay,
+  type Period,
+  type PointValue,
   type Redemption,
   type RewardEntry,
   type TaskId,
@@ -51,12 +56,19 @@ export function toStoredRedemption(redemption: Redemption): StoredRedemption {
 /**
  * The entries a saved day holds, or null when it can't be trusted — an unknown
  * version, or anything in it that is not what it should be.
+ *
+ * A day with **no entries at all** is a day that earned nothing, not a day that
+ * cannot be read: taking back the last of what a day earned deletes the last
+ * field of its map, and Firestore drops an empty map rather than keeping it, so
+ * the record left behind holds only its version and its day.
  */
 export function readRewardDay(data: unknown): RewardEntry[] | null {
   if (!isRecord(data) || data.version !== REWARD_SCHEMA_VERSION) return null
 
   const { day, entries } = data
-  if (typeof day !== 'string' || !isLocalDay(day) || !isRecord(entries)) return null
+  if (typeof day !== 'string' || !isLocalDay(day)) return null
+  if (entries === undefined) return []
+  if (!isRecord(entries)) return null
 
   const read: RewardEntry[] = []
   for (const [taskId, entry] of Object.entries(entries)) {
@@ -87,32 +99,67 @@ export function readRedemption(data: unknown): Redemption | null {
 }
 
 /**
- * A standing amount the account earns for clearing a period — Today for now
- * (RWD-24). One record per period, named by the period rather than by an id of
- * its own, so the two devices that set it write the one record and the later
- * write wins. It is saved under the ledger's version: an amount and what a
- * completion earned have every reason to change shape together.
+ * A standing amount the account earns for clearing a period — Today, this week
+ * or this month (RWD-24, RWD-29). One record per period, named by the period
+ * rather than by an id of its own, so the two devices that set it write the one
+ * record and the later write wins. It is saved under the ledger's version: an
+ * amount and what a completion earned have every reason to change shape together.
  */
 export interface StoredRewardGoal {
   version: number
-  goal: { period: RewardGoalPeriod; points: number }
+  goal: { period: Period; points: number }
 }
 
-/** The periods a bonus can be set for. Only Today has one so far (RWD-24). */
-export type RewardGoalPeriod = 'today'
-
-export const TODAY_GOAL: RewardGoalPeriod = 'today'
-
-export function toStoredRewardGoal(period: RewardGoalPeriod, points: number): StoredRewardGoal {
+export function toStoredRewardGoal(period: Period, points: number): StoredRewardGoal {
   return { version: REWARD_SCHEMA_VERSION, goal: { period, points } }
 }
 
 /** A saved bonus, or null when it can't be trusted. */
-export function readRewardGoal(data: unknown): { period: RewardGoalPeriod; points: number } | null {
+export function readRewardGoal(data: unknown): { period: Period; points: number } | null {
   if (!isRecord(data) || data.version !== REWARD_SCHEMA_VERSION || !isRecord(data.goal)) return null
 
   const { period, points } = data.goal
-  if (period !== TODAY_GOAL || typeof points !== 'number' || !isRewardAmount(points)) return null
+  if (
+    typeof period !== 'string' ||
+    !(BONUS_PERIODS as readonly string[]).includes(period) ||
+    typeof points !== 'number' ||
+    !isRewardAmount(points)
+  ) {
+    return null
+  }
 
-  return { period, points }
+  return { period: period as Period, points }
+}
+
+/**
+ * A standing setting of the points, kept one record per setting under a name of
+ * its own rather than an id — the same reasoning as a bonus above. What one
+ * point is worth (RWD-31) is the only one so far.
+ */
+export type RewardSetting = 'pointValue'
+
+export const POINT_VALUE: RewardSetting = 'pointValue'
+
+export interface StoredPointValue {
+  version: number
+  name: RewardSetting
+  value: PointValue
+}
+
+export function toStoredPointValue(value: PointValue): StoredPointValue {
+  return { version: REWARD_SCHEMA_VERSION, name: POINT_VALUE, value }
+}
+
+/** A saved point value, or null when it can't be trusted. */
+export function readPointValue(data: unknown): PointValue | null {
+  if (!isRecord(data) || data.version !== REWARD_SCHEMA_VERSION || data.name !== POINT_VALUE || !isRecord(data.value)) {
+    return null
+  }
+
+  const { amount, currency } = data.value
+  if (typeof amount !== 'number' || !isPointAmount(amount) || typeof currency !== 'string' || !isCurrency(currency)) {
+    return null
+  }
+
+  return { amount, currency }
 }

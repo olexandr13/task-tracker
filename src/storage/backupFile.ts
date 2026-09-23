@@ -1,15 +1,29 @@
-import { toLocalDay, type List, type Redemption, type RewardEntry, type Tag, type Task } from '../core'
+import {
+  BONUS_PERIODS,
+  NO_BONUSES,
+  toLocalDay,
+  type List,
+  type PeriodBonuses,
+  type Prize,
+  type Redemption,
+  type RewardEntry,
+  type Tag,
+  type Task,
+} from '../core'
 import type { AccountData } from './backupRepository'
 import { readList, toStoredList, type StoredList } from './listSchema'
 import { isRecord } from './plainData'
+import { readPrize, toStoredPrize, type StoredPrize } from './prizeSchema'
 import {
+  readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
-  TODAY_GOAL,
+  toStoredPointValue,
   toStoredRedemption,
   toStoredRewardDays,
   toStoredRewardGoal,
+  type StoredPointValue,
   type StoredRedemption,
   type StoredRewardDay,
   type StoredRewardGoal,
@@ -30,12 +44,14 @@ export const BACKUP_FORMAT = 'task-tracker-backup'
  * Version 1 held no tags: a file made before the kept tags were backed up is
  * read as keeping none, and the tags its tasks carry are kept again on arrival.
  * Version 2 held no bonus for clearing a period (RWD-24): a file made before
- * there was one is read as setting none.
+ * there was one is read as setting none. Version 3 held no wishlist and no
+ * point value (RWD-31, RWD-33): a file made before those is read as holding no
+ * prizes and setting no value.
  */
-export const BACKUP_VERSION = 3
+export const BACKUP_VERSION = 4
 
 /** The versions of the wrapper this app can still read, oldest first. */
-const READABLE_VERSIONS = [1, 2, BACKUP_VERSION]
+const READABLE_VERSIONS = [1, 2, 3, BACKUP_VERSION]
 
 interface BackupFile {
   format: typeof BACKUP_FORMAT
@@ -45,10 +61,14 @@ interface BackupFile {
   tasks: StoredTask[]
   lists: StoredList[]
   tags: StoredTag[]
+  /** The wishlist, one record per prize (RWD-33). */
+  prizes: StoredPrize[]
   rewardDays: StoredRewardDay[]
   redemptions: StoredRedemption[]
-  /** What clearing a period earns, one record per period that has a bonus (RWD-24). */
+  /** What clearing a period earns, one record per period that has a bonus (RWD-24, RWD-29). */
   rewardGoals: StoredRewardGoal[]
+  /** The standing settings of the points: what one is worth, where anything says (RWD-31). */
+  rewardSettings: StoredPointValue[]
 }
 
 /** Why a file was not read at all. */
@@ -74,9 +94,14 @@ export function writeBackupFile(data: AccountData, now: Date): string {
     tasks: data.tasks.map(toStoredTask),
     lists: data.lists.map(toStoredList),
     tags: data.tags.map(toStoredTag),
+    prizes: data.prizes.map(toStoredPrize),
     rewardDays: toStoredRewardDays(data.entries),
     redemptions: data.redemptions.map(toStoredRedemption),
-    rewardGoals: data.todayBonus === null ? [] : [toStoredRewardGoal(TODAY_GOAL, data.todayBonus)],
+    rewardGoals: BONUS_PERIODS.flatMap((period) => {
+      const points = data.bonuses[period]
+      return points === null ? [] : [toStoredRewardGoal(period, points)]
+    }),
+    rewardSettings: data.pointValue === null ? [] : [toStoredPointValue(data.pointValue)],
   }
   return `${JSON.stringify(file, null, 2)}\n`
 }
@@ -101,14 +126,18 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
   const { tasks, lists, rewardDays, redemptions } = file
   // What an older wrapper did not hold is read as empty rather than missing.
   const tags = file.version === 1 ? [] : file.tags
-  const rewardGoals = file.version < BACKUP_VERSION ? [] : file.rewardGoals
+  const rewardGoals = file.version < 3 ? [] : file.rewardGoals
+  const prizes = file.version < 4 ? [] : file.prizes
+  const rewardSettings = file.version < 4 ? [] : file.rewardSettings
   if (
     !Array.isArray(tasks) ||
     !Array.isArray(lists) ||
     !Array.isArray(tags) ||
+    !Array.isArray(prizes) ||
     !Array.isArray(rewardDays) ||
     !Array.isArray(redemptions) ||
-    !Array.isArray(rewardGoals)
+    !Array.isArray(rewardGoals) ||
+    !Array.isArray(rewardSettings)
   ) {
     return 'not-a-backup'
   }
@@ -122,13 +151,19 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     })
   }
 
+  const goals = readEach(rewardGoals, readRewardGoal)
+  const bonuses = { ...NO_BONUSES } as Record<string, number | null>
+  for (const goal of goals) bonuses[goal.period] = goal.points
+
   const data: AccountData = {
     tasks: readEach<Task>(tasks, readStoredTask),
     lists: readEach<List>(lists, readList),
     tags: readEach<Tag>(tags, readTag),
+    prizes: readEach<Prize>(prizes, readPrize),
     entries: readEach<RewardEntry[]>(rewardDays, readRewardDay).flat(),
     redemptions: readEach<Redemption>(redemptions, readRedemption),
-    todayBonus: readEach(rewardGoals, readRewardGoal).find((goal) => goal.period === TODAY_GOAL)?.points ?? null,
+    bonuses: bonuses as PeriodBonuses,
+    pointValue: readEach(rewardSettings, readPointValue)[0] ?? null,
   }
   return { data, unreadable }
 }

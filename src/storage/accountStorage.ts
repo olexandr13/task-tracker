@@ -3,6 +3,7 @@ import type { BackupRepository } from './backupRepository'
 import { firestore } from './firebaseApp'
 import { createFirestoreBackupRepository } from './firestoreBackupRepository'
 import { createFirestoreListRepository } from './firestoreListRepository'
+import { createFirestorePrizeRepository } from './firestorePrizeRepository'
 import { createFirestoreRewardRepository } from './firestoreRewardRepository'
 import { createFirestoreSyncMonitor } from './firestoreSyncMonitor'
 import { createFirestoreTagRepository } from './firestoreTagRepository'
@@ -11,11 +12,13 @@ import { importGuestAccount } from './guestImport'
 import type { ListRepository } from './listRepository'
 import { createLocalBackupRepository } from './localBackupRepository'
 import { createLocalListRepository } from './localListRepository'
+import { createLocalPrizeRepository } from './localPrizeRepository'
 import { createLocalRewardRepository } from './localRewardRepository'
 import { createLocalSyncMonitor } from './localSyncMonitor'
 import { createLocalTagRepository } from './localTagRepository'
 import { importLocalTasks } from './localTaskImport'
 import { createLocalTaskRepository } from './localTaskRepository'
+import type { PrizeRepository } from './prizeRepository'
 import type { RewardRepository } from './rewardRepository'
 import type { SyncMonitor } from './syncMonitor'
 import type { TagRepository } from './tagRepository'
@@ -31,6 +34,7 @@ export interface AccountStorage {
   readonly tasks: TaskRepository
   readonly lists: ListRepository
   readonly tags: TagRepository
+  readonly prizes: PrizeRepository
   readonly rewards: RewardRepository
   readonly sync: SyncMonitor
   readonly backup: BackupRepository
@@ -48,12 +52,14 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
   const tasks = createFirestoreTaskRepository(firestore, accountId)
   const lists = createFirestoreListRepository(firestore, accountId)
   const tags = createFirestoreTagRepository(firestore, accountId)
+  const prizes = createFirestorePrizeRepository(firestore, accountId)
   const rewards = createFirestoreRewardRepository(firestore, accountId)
 
   return {
     tasks,
     lists,
     tags,
+    prizes,
     rewards,
     sync: createFirestoreSyncMonitor(firestore, accountId),
     backup: createFirestoreBackupRepository(firestore, accountId),
@@ -62,7 +68,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
         importLocalTasks(tasks).catch((error: unknown) => {
           console.warn('Could not move the tasks kept in this browser into the account; will try again next time.', error)
         }),
-        importGuestAccount(tasks, lists, tags, rewards).catch((error: unknown) => {
+        importGuestAccount(tasks, lists, tags, prizes, rewards).catch((error: unknown) => {
           console.warn('Could not move the guest data into the account; will try again next time.', error)
         }),
       ])
@@ -76,6 +82,7 @@ function createGuestAccountStorage(): AccountStorage {
     tasks: createLocalTaskRepository(),
     lists: createLocalListRepository(),
     tags: createLocalTagRepository(),
+    prizes: createLocalPrizeRepository(),
     rewards: createLocalRewardRepository(),
     sync: createLocalSyncMonitor(),
     backup: createLocalBackupRepository(),

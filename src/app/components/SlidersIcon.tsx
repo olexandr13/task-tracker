@@ -1,4 +1,4 @@
-/** Three sliders, marking how a view is set to show things. */
+/** Three sliders, marking how something is set: how a view shows things, what the points are worth. */
 export function SlidersIcon({ className }: { className?: string }) {
   return (
     <svg

@@ -33,7 +33,7 @@ interface RewardPickerProps {
 /**
  * Points: a small star that opens a panel for how many. A task's reward uses it
  * for what each completion earns (RWD-5), and the Rewards page for what
- * clearing Today earns (RWD-26) — the panel knows only the number.
+ * clearing Today earns (RWD-27) — the panel knows only the number.
  *
  * Clicking the star while there are none gives 1 point and opens the panel on
  * it. The panel is like the other pickers: every step or number typed is saved

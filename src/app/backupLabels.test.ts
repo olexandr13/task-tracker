@@ -3,13 +3,14 @@ import { describeExport, describeImport, describeRecordCounts } from './backupLa
 
 /* How a backup reads on screen. BAK ids refer to wiki/backup.md. */
 
-const NONE = { tasks: 0, lists: 0, tags: 0, completions: 0, redemptions: 0 }
+const NONE = { tasks: 0, lists: 0, tags: 0, prizes: 0, completions: 0, redemptions: 0 }
 
 describe('counting what a file holds', () => {
   it('names each kind there is, and leaves out the ones there are none of', () => {
-    expect(describeRecordCounts({ tasks: 12, lists: 2, tags: 3, completions: 30, redemptions: 1 })).toBe(
-      '12 tasks, 2 lists, 3 tags, 30 completions and 1 redemption',
+    expect(describeRecordCounts({ tasks: 12, lists: 2, tags: 3, prizes: 4, completions: 30, redemptions: 1 })).toBe(
+      '12 tasks, 2 lists, 3 tags, 4 prizes, 30 completions and 1 redemption',
     )
+    expect(describeRecordCounts({ ...NONE, prizes: 1 })).toBe('1 prize')
     expect(describeRecordCounts({ ...NONE, tags: 1 })).toBe('1 tag')
     expect(describeRecordCounts({ ...NONE, tasks: 1, completions: 4 })).toBe('1 task and 4 completions')
     expect(describeRecordCounts({ ...NONE, lists: 3 })).toBe('3 lists')
