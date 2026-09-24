@@ -9,6 +9,7 @@ import {
   deleteTask,
   duplicateTask,
   hasRewardChanges,
+  hasDueDay,
   insertSubtask,
   insertTask,
   isDeleted,
@@ -25,10 +26,10 @@ import {
   renameTask,
   restoreTask,
   rewardChanges,
-  scheduleOnce,
+  scheduleOn,
   setDescription,
   setDoneOnDay,
-  setDueDate,
+  setDueTime,
   setRepeat,
   setReward,
   setSubtaskDone,
@@ -41,6 +42,7 @@ import {
   NO_BONUSES,
   type ListId,
   type LocalDay,
+  type LocalTime,
   type PeriodBonuses,
   type Placement,
   type Repeat,
@@ -150,7 +152,8 @@ export function useTasks(
     (
       title: string,
       repeat: Repeat | null = null,
-      dueDate: LocalDay | null = null,
+      day: LocalDay | null = null,
+      time: LocalTime | null = null,
       tags: readonly string[] = [],
       listId: ListId | null = null,
       details: {
@@ -164,7 +167,13 @@ export function useTasks(
     ) => {
       apply((current) => {
         const known = tagsInUse(liveTasks(current))
-        let task = moveToList(setDueDate(createTask(title, repeat), dueDate), listId)
+        // The hour goes on after the day, which is what it hangs on (`setDueTime`):
+        // a new task with an hour and no day of any kind would have no moment to
+        // be due at, so the hour is simply not taken.
+        let task = moveToList(scheduleOn(createTask(title, repeat), day), listId)
+        if (time !== null && hasDueDay(task)) {
+          task = setDueTime(task, time)
+        }
         task = tags.reduce((tagged, tag) => addTag(tagged, tag, known), task)
         if (details.description !== undefined && details.description.length > 0) {
           task = setDescription(task, details.description)
@@ -233,25 +242,29 @@ export function useTasks(
   )
 
   /**
-   * A day picked for a repeating task ends its rule: only a one-off carries a
-   * date. Hands back the task it was when a rule ended this way, so the caller
-   * can offer to put it back (DUE-17); null when no rule ended, there being
-   * nothing to take back.
+   * The day picked for a task, or taken away: a one-off is due on it, a
+   * repeating task starts its rule there (DUE-12). The rule itself is left alone.
    */
-  const changeDueDate = useCallback(
-    (id: TaskId, dueDate: LocalDay | null): Task | null => {
-      const target = latest.current.find((task) => task.id === id)
-      apply((current) =>
-        current.map((task) =>
-          task.id !== id ? task : dueDate === null ? setDueDate(task, null) : scheduleOnce(task, dueDate),
-        ),
-      )
-      return target === undefined || target.repeat === null || dueDate === null ? null : target
+  const changeDay = useCallback(
+    (id: TaskId, day: LocalDay | null) => {
+      apply((current) => current.map((task) => (task.id === id ? scheduleOn(task, day) : task)))
     },
     [apply],
   )
 
   /** Passes over a repeating task's occurrence, so it is due on the rule's next day. It earns nothing. */
+  /**
+   * The hour picked for a task, or taken away: it is due at that hour on the day
+   * it already falls on (DUE-19), which is what the reminder goes off at. The
+   * day and the rule are both left alone.
+   */
+  const changeTime = useCallback(
+    (id: TaskId, time: LocalTime | null) => {
+      apply((current) => current.map((task) => (task.id === id ? setDueTime(task, time) : task)))
+    },
+    [apply],
+  )
+
   const skip = useCallback(
     (id: TaskId) => {
       apply((current) => current.map((task) => (task.id === id ? skipOccurrence(task) : task)))
@@ -437,18 +450,6 @@ export function useTasks(
     [apply],
   )
 
-  /**
-   * Puts a record back exactly as it was, for an undo its own rules cannot
-   * rebuild: ending a repeat lets go of the ticks and sessions of occurrences
-   * gone by (DUE-17), which setting the rule again would not bring back.
-   */
-  const putBack = useCallback(
-    (was: Task) => {
-      apply((current) => current.map((task) => (task.id === was.id ? was : task)))
-    },
-    [apply],
-  )
-
   /** The end of the line: gone from storage, with nothing left to restore. */
   const purge = useCallback(
     (id: TaskId) => {
@@ -472,7 +473,8 @@ export function useTasks(
     uncomplete,
     rename,
     changeDescription,
-    changeDueDate,
+    changeDay,
+    changeTime,
     skip,
     changeRepeat,
     changeReward,
@@ -494,7 +496,6 @@ export function useTasks(
     remove,
     duplicate,
     restore,
-    putBack,
     purge,
     emptyTrash,
   }

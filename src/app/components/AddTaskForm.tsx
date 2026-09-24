@@ -1,6 +1,6 @@
 import { useState, type KeyboardEvent } from 'react'
-import type { LocalDay, Repeat } from '../../core'
-import { emptyDraft, toDraft, toRepeat } from '../repeatDraft'
+import { firstDueDay, type LocalDay, type LocalTime, type Repeat } from '../../core'
+import { emptyDraft, toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { ABOVE_PHONE_BAR } from '../usePhoneLayout'
 import { PlusIcon } from './PlusIcon'
 import { SchedulePicker } from './SchedulePicker'
@@ -15,8 +15,11 @@ interface AddTaskFormProps {
   label?: string
   /** Opens the detailed add sheet (UI-54). */
   onOpenSheet: () => void
-  /** `dueDate` is always null alongside a rule, which says which days the task is due itself. */
-  onAdd: (title: string, repeat: Repeat | null, dueDate: LocalDay | null) => void
+  /**
+   * The day picked: the task is due on it, or its rule starts there (DUE-6) —
+   * and the hour on that day, where one was picked too (DUE-19).
+   */
+  onAdd: (title: string, repeat: Repeat | null, day: LocalDay | null, time: LocalTime | null) => void
 }
 
 export function AddTaskForm({
@@ -29,8 +32,30 @@ export function AddTaskForm({
 }: AddTaskFormProps) {
   const [title, setTitle] = useState('')
   const [draft, setDraft] = useState(() => defaultRepeat !== undefined ? toDraft(defaultRepeat ?? null, now) : emptyDraft(now))
-  const [dueDate, setDueDate] = useState(defaultDueDate)
+  const [day, setDay] = useState(defaultDueDate)
+  const [time, setTime] = useState<LocalTime | null>(null)
   const repeat = toRepeat(draft)
+
+  /**
+   * The day goes with the shape it was picked for, as it does on a task
+   * (`setRepeat`): a date belongs to a one-off, a start to a rule, so turning
+   * one into the other starts again with no day. A rule swapped for another
+   * keeps the day it starts on.
+   */
+  function handleRepeatChange(next: RepeatDraft) {
+    setDraft(next)
+    if ((toRepeat(next) === null) !== (repeat === null)) setDay(null)
+  }
+
+  /**
+   * An hour hangs on a day (`setDueTime`), so a day taken away here takes the
+   * hour with it rather than leaving it to be inherited by the next day picked.
+   * A repeating task keeps its hour: its rule is still giving it days.
+   */
+  function handleDayChange(next: LocalDay | null) {
+    setDay(next)
+    if (next === null && repeat === null) setTime(null)
+  }
 
   // There is no Add button: Enter is the only way to submit. Handling the key
   // directly (rather than leaning on a form's implicit submission, which needs
@@ -40,11 +65,12 @@ export function AddTaskForm({
     event.preventDefault()
     const trimmed = title.trim()
     if (trimmed.length === 0) return
-    onAdd(trimmed, repeat, repeat === null ? dueDate : null)
+    onAdd(trimmed, repeat, day, time)
     setTitle('')
     // Back to the default state: daily for habits, once for tasks.
     setDraft(defaultRepeat !== undefined ? toDraft(defaultRepeat ?? null, now) : emptyDraft(now))
-    setDueDate(defaultDueDate)
+    setDay(defaultDueDate)
+    setTime(null)
   }
 
   return (
@@ -66,17 +92,18 @@ export function AddTaskForm({
           className="min-w-0 flex-1 bg-transparent text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none dark:text-neutral-100 dark:placeholder:text-neutral-500"
         />
 
-        {/* A rule says which days the task is due, so while there is one the date gives way
-            to it. A day picked ends the rule, as it does on a task row. */}
+        {/* A rule says which days the task is due, so the button reads the rule with the
+            first day it comes round on. A day picked is the task's date, or the day its
+            rule starts on, as it is on a task row (DUE-6). */}
         <SchedulePicker
-          dueDate={repeat === null ? dueDate : null}
+          dueDate={repeat === null || day === null ? day : firstDueDay(repeat, day)}
+          startDay={repeat === null ? null : day}
           draft={draft}
           now={now}
-          onChangeDueDate={(day) => {
-            setDueDate(day)
-            if (day !== null) setDraft({ ...draft, kind: 'once' })
-          }}
-          onChangeRepeat={setDraft}
+          onChangeDay={handleDayChange}
+          dueTime={time}
+          onChangeTime={setTime}
+          onChangeRepeat={handleRepeatChange}
           showSummary
         />
       </div>

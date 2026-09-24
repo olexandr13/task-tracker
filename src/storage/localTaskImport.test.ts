@@ -105,6 +105,17 @@ describe('importLocalTasks', () => {
     expect(imported).toEqual([{ ...savedAtV12, skippedDays: [] }])
   })
 
+  it('gives tasks saved before a rule could start on a day no start of their own', async () => {
+    const { startDay, ...savedAtV16 } = createTask('stretch', { kind: 'daily' }, NOW)
+    expect(startDay).toBeNull()
+    localStorage.setItem(KEY, JSON.stringify({ version: 16, tasks: [savedAtV16] }))
+    const { repository, imported } = repositoryThat('accepts')
+
+    await importLocalTasks(repository)
+
+    expect(imported).toEqual([{ ...savedAtV16, startDay: null }])
+  })
+
   it('keeps the time of tasks saved when sessions were whole minutes, to the second (TIME-22)', async () => {
     const task = logTime(logTime(createTask('stretch', null, NOW), 20, NOW), 45, NOW)
     const savedAtV15 = { ...task, timeLog: task.timeLog.map(({ seconds, ...entry }) => ({ ...entry, minutes: seconds / 60 })) }

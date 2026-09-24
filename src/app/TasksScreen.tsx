@@ -17,6 +17,7 @@ import {
   trashedTasks,
   type ListId,
   type LocalDay,
+  type LocalTime,
   type Prize,
   type RedemptionId,
   type Repeat,
@@ -58,6 +59,7 @@ import { SyncBadge } from './components/SyncBadge'
 import { RunningTimerChip } from './components/RunningTimerChip'
 import { GoalNoticeToast } from './components/GoalNoticeToast'
 import { NudgeToast } from './components/NudgeToast'
+import { ReminderToast } from './components/ReminderToast'
 import { TagList } from './components/TagList'
 import { TaskDragAndDrop } from './components/TaskDragAndDrop'
 import { TaskList } from './components/TaskList'
@@ -83,6 +85,7 @@ import { useSyncNotice } from './useSyncNotice'
 import { useTags } from './useTags'
 import { useTasks } from './useTasks'
 import { useNudge } from './useNudge'
+import { useReminders } from './useReminders'
 import { useTaskTimer } from './useTaskTimer'
 import { useUndoToast } from './useUndoToast'
 import { modeStates } from './modes'
@@ -170,7 +173,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     uncomplete,
     rename,
     changeDescription,
-    changeDueDate,
+    changeDay,
+    changeTime,
     skip,
     changeRepeat,
     changeReward,
@@ -192,7 +196,6 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     remove,
     duplicate,
     restore,
-    putBack,
     purge,
     emptyTrash,
   } = useTasks(storage.tasks, storage.rewards, storageProblem.report, rewards.bonuses, rewards.entries)
@@ -243,6 +246,11 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // The nudge: nothing finished for a while says so and points at Today's leader
   // (NUDGE-1). The same set Procrastination mode works on, and null while it loads.
   const nudge = useNudge(deviceStorage.nudge, isLoading ? null : todayTasks)
+  // The hours tasks are due at, watched against the clock: one that comes round
+  // on a task still to do says so (REM-1). Every live task, not just Today's —
+  // an hour is due at its moment wherever the task is filed — and null while
+  // they load.
+  const reminders = useReminders(isLoading ? null : live)
   // Warm-up mode: the account's, so every device agrees which day it is on, and
   // measured against every habit there is — null while those are still loading
   // (WARM-1, WARM-4).
@@ -266,6 +274,11 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const nudgeNotice = nudge.notice
   const nudgeTask =
     nudgeNotice === null ? null : live.find((task) => task.id === nudgeNotice.taskId) ?? null
+  // The first standing reminder and the task it points at, as it stands now:
+  // `standingReminders` has already dropped any whose task was finished or went.
+  const reminderNotice = reminders.notices[0] ?? null
+  const reminderTask =
+    reminderNotice === null ? null : live.find((task) => task.id === reminderNotice.taskId) ?? null
   const { stop: stopTaskTimer } = taskTimer
   // A timer whose task was deleted cannot be shown; stop it so it does not linger.
   useEffect(() => {
@@ -384,13 +397,6 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
    * ticks and sessions of occurrences gone by go with it. So it offers to put
    * the task back exactly as it was, for the few seconds the toast is up (DUE-17).
    */
-  function handleChangeDueDate(id: TaskId, dueDate: LocalDay | null) {
-    const was = changeDueDate(id, dueDate)
-    if (was !== null) {
-      undo.show({ kind: 'repeatEnded', task: was })
-    }
-  }
-
   function handleRemoveEarning(key: RewardKey) {
     const deleted = rewards.removeEarning(key)
     if (deleted === null) return
@@ -448,9 +454,6 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       case 'completion':
         uncomplete(undo.pending.taskId)
         break
-      case 'repeatEnded':
-        putBack(undo.pending.task)
-        break
     }
     undo.dismiss()
   }
@@ -493,7 +496,13 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     uncomplete,
     rename,
     changeDescription,
-    changeDueDate: handleChangeDueDate,
+    changeDay,
+    // Setting an hour is asking to be told when it comes round, so that is the
+    // moment to ask the browser whether it may say so (REM-7).
+    changeTime: (id, time) => {
+      if (time !== null) reminders.ask()
+      changeTime(id, time)
+    },
     skip,
     // A rule that would make one habit more is held to the warm-up's allowance,
     // the same as adding one; turning a habit's own rule over is no new habit.
@@ -532,14 +541,16 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   function handleAddTask(
     title: string,
     repeat: Repeat | null,
-    dueDate: LocalDay | null,
+    day: LocalDay | null,
+    time: LocalTime | null,
     taskTags: readonly string[],
     listId: ListId | null,
-    details?: Parameters<typeof addTask>[5],
+    details?: Parameters<typeof addTask>[6],
   ): boolean {
     if (warmUp.holdsBack(repeat)) return false
 
-    addTask(title, repeat, dueDate, taskTags, listId, details)
+    if (time !== null) reminders.ask()
+    addTask(title, repeat, day, time, taskTags, listId, details)
     return true
   }
 
@@ -678,8 +689,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                       now={now}
                       defaultDueDate={newTaskDueDay(view, now)}
                       onOpenSheet={() => { setAdding(true) }}
-                      onAdd={(title, repeat, dueDate) => {
-                        handleAddTask(title, repeat, dueDate, newTaskTags(view), newTaskListId(view))
+                      onAdd={(title, repeat, dueDate, dueTime) => {
+                        handleAddTask(title, repeat, dueDate, dueTime, newTaskTags(view), newTaskListId(view))
                       }}
                     />
                   </div>
@@ -786,8 +797,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                       defaultRepeat={{ kind: 'daily' }}
                       label="Add habit"
                       onOpenSheet={() => { setAdding(true) }}
-                      onAdd={(title, repeat, dueDate) => {
-                        handleAddTask(title, repeat ?? { kind: 'daily' }, dueDate, [], null)
+                      onAdd={(title, repeat, dueDate, dueTime) => {
+                        handleAddTask(title, repeat ?? { kind: 'daily' }, dueDate, dueTime, [], null)
                       }}
                     />
                   </div>
@@ -849,10 +860,10 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
           knownTags={tags}
           lists={lists.lists}
           onClose={() => { setAdding(false) }}
-          onAdd={(title, repeat, dueDate, taskTags, listId, details) => {
+          onAdd={(title, repeat, dueDate, dueTime, taskTags, listId, details) => {
             // Held back by the warm-up, the sheet stays open with everything
             // typed still in it, so the rule can be changed instead (WARM-8).
-            if (handleAddTask(title, repeat, dueDate, taskTags, listId, details)) setAdding(false)
+            if (handleAddTask(title, repeat, dueDate, dueTime, taskTags, listId, details)) setAdding(false)
           }}
         />
       )}
@@ -890,6 +901,14 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
           <GoalNoticeToast
             title={taskTimer.goalNotice.title}
             onDismiss={taskTimer.dismissGoalNotice}
+          />
+        )}
+        {reminderTask !== null && reminderNotice !== null && (
+          <ReminderToast
+            title={reminderNotice.title}
+            more={reminders.notices.length - 1}
+            onOpen={() => { revealTask(reminderTask); reminders.dismiss() }}
+            onDismiss={reminders.dismiss}
           />
         )}
         {nudgeTask !== null && nudgeNotice !== null && (

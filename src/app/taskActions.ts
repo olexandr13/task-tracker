@@ -1,4 +1,4 @@
-import type { ListId, LocalDay, Repeat, SubtaskId, TaskId, TimeEntryId } from '../core'
+import type { ListId, LocalDay, LocalTime, Repeat, SubtaskId, TaskId, TimeEntryId } from '../core'
 
 /**
  * Everything a task's row, card or sheet can do to it, handed down as one object
@@ -11,7 +11,16 @@ export interface TaskActions {
   readonly uncomplete: (id: TaskId) => void
   readonly rename: (id: TaskId, title: string) => void
   readonly changeDescription: (id: TaskId, description: string) => void
-  readonly changeDueDate: (id: TaskId, dueDate: LocalDay | null) => void
+  /**
+   * The day picked for the task, or taken away: a one-off is due on it, a
+   * repeating task starts its rule there (DUE-12).
+   */
+  readonly changeDay: (id: TaskId, day: LocalDay | null) => void
+  /**
+   * The hour picked for the task, or taken away: it is due at that hour on the
+   * day it already falls on (DUE-19). The day is untouched.
+   */
+  readonly changeTime: (id: TaskId, time: LocalTime | null) => void
   /** Passes over a repeating task's occurrence, so it is due on the rule's next day. */
   readonly skip: (id: TaskId) => void
   readonly changeRepeat: (id: TaskId, repeat: Repeat | null) => void

@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { InvalidDayError, daysBetween, isLocalDay, offsetDay, startOfLocalDay, toLocalDay } from './day'
+import {
+  InvalidDayError,
+  InvalidTimeOfDayError,
+  atLocalTime,
+  daysBetween,
+  isLocalDay,
+  isLocalTime,
+  offsetDay,
+  startOfLocalDay,
+  toLocalDay,
+  toLocalTime,
+} from './day'
 
 describe('toLocalDay', () => {
   it('names the local day a moment falls in, padded', () => {
@@ -71,5 +82,41 @@ describe('daysBetween', () => {
 
   it('throws on something that is not a day', () => {
     expect(() => daysBetween('2026-02-30', '2026-03-01')).toThrow(InvalidDayError)
+  })
+})
+
+describe('isLocalTime', () => {
+  it('accepts an hour that exists, at both ends of the clock', () => {
+    expect(isLocalTime('00:00')).toBe(true)
+    expect(isLocalTime('09:00')).toBe(true)
+    expect(isLocalTime('23:59')).toBe(true)
+  })
+
+  it('refuses hours that do not exist, and anything not written HH:MM', () => {
+    expect(isLocalTime('24:00')).toBe(false)
+    expect(isLocalTime('09:60')).toBe(false)
+    expect(isLocalTime('9:00')).toBe(false)
+    expect(isLocalTime('09:00:00')).toBe(false)
+    expect(isLocalTime('')).toBe(false)
+  })
+})
+
+describe('toLocalTime', () => {
+  it('names the hour a moment falls at, padded and to the minute', () => {
+    expect(toLocalTime(new Date(2026, 8, 16, 9, 5, 30))).toBe('09:05')
+    expect(toLocalTime(new Date(2026, 8, 16, 0, 0))).toBe('00:00')
+    expect(toLocalTime(new Date(2026, 8, 16, 23, 59))).toBe('23:59')
+  })
+})
+
+describe('atLocalTime', () => {
+  it('is that hour on that day, local', () => {
+    expect(atLocalTime('2026-09-16', '09:30')).toEqual(new Date(2026, 8, 16, 9, 30))
+    expect(atLocalTime('2026-09-16', '00:00')).toEqual(startOfLocalDay('2026-09-16'))
+  })
+
+  it('throws on something that is not a day or not an hour', () => {
+    expect(() => atLocalTime('2026-02-30', '09:00')).toThrow(InvalidDayError)
+    expect(() => atLocalTime('2026-09-16', '24:00')).toThrow(InvalidTimeOfDayError)
   })
 })

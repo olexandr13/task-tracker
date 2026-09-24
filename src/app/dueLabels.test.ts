@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { describeDueDate, describeFullDate, describeMonth, describeShortDate } from './dueLabels'
+import {
+  describeDueAt,
+  describeDueDate,
+  describeFullDate,
+  describeMonth,
+  describeShortDate,
+  describeTimeOfDay,
+} from './dueLabels'
 
 const WED_16 = new Date(2026, 8, 16, 9, 0)
 
@@ -33,5 +40,24 @@ describe('describeShortDate', () => {
   it('is a short date even for today and tomorrow', () => {
     expect(describeShortDate('2026-09-16', WED_16)).toBe('Sep 16')
     expect(describeShortDate('2027-01-02', WED_16)).toBe('Jan 2, 2027')
+  })
+})
+
+describe('describeTimeOfDay', () => {
+  it('reads the hour as the clock does, morning and evening apart', () => {
+    expect(describeTimeOfDay('09:00', WED_16)).toBe('9:00 AM')
+    expect(describeTimeOfDay('18:30', WED_16)).toBe('6:30 PM')
+    expect(describeTimeOfDay('00:00', WED_16)).toBe('12:00 AM')
+  })
+})
+
+describe('describeDueAt', () => {
+  it('reads the hour with the day it falls on', () => {
+    expect(describeDueAt('2026-09-16', '09:00', WED_16)).toBe('Today at 9:00 AM')
+    expect(describeDueAt('2026-09-20', '18:30', WED_16)).toBe('Sep 20 at 6:30 PM')
+  })
+
+  it('is the day alone where the task is due at no hour', () => {
+    expect(describeDueAt('2026-09-16', null, WED_16)).toBe('Today')
   })
 })

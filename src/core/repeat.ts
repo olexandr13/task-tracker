@@ -150,6 +150,15 @@ export function nextOccurrence(repeat: Repeat, day: Date): Date {
   throw new InvalidRepeatError('The rule never comes round.')
 }
 
+/**
+ * The start of the first day on or after `day` the rule falls on — where a rule
+ * that starts on a day first comes round (see `startDay` in ./task).
+ */
+export function occurrenceFrom(repeat: Repeat, day: Date): Date {
+  const from = startOfDay(day)
+  return occursOn(repeat, from) ? from : nextOccurrence(repeat, from)
+}
+
 function addDays(day: Date, offset: number): Date {
   return new Date(day.getFullYear(), day.getMonth(), day.getDate() + offset)
 }

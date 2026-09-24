@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import type { LocalDay } from '../../core'
+import type { LocalDay, LocalTime } from '../../core'
 import type { SkipChoice } from '../dateChoices'
-import { describeDueDate } from '../dueLabels'
+import { describeDueAt } from '../dueLabels'
 import { toRepeat, type RepeatDraft } from '../repeatDraft'
 import { describeRepeat, describeRepeatBriefly } from '../repeatLabels'
 import { controlOff, controlOn, rowControlIcon, rowControlLabel } from '../rowControls'
@@ -19,14 +19,23 @@ interface SchedulePickerProps {
    * occurrence in play, which a rule can have none of yet.
    */
   dueDate: LocalDay | null
+  /**
+   * The day a repeating task's rule starts on, where one was picked for it. Null
+   * on a one-off, whose own day is `dueDate` already.
+   */
+  startDay?: LocalDay | null
   /** The repeat rule being chosen, `once` when the task happens once. */
   draft: RepeatDraft
   now: Date
   /**
-   * A day picked, or taken away. A day picked on a repeating task ends its rule;
-   * moving the draft back to `once` is the caller's, which owns it.
+   * The day picked, or taken away: a one-off is due on it, a repeating task
+   * starts its rule there. The rule is untouched either way.
    */
-  onChangeDueDate: (dueDate: LocalDay | null) => void
+  onChangeDay: (day: LocalDay | null) => void
+  /** The hour the task is due at, where it is due at one (DUE-19). */
+  dueTime?: LocalTime | null
+  /** The hour picked, or taken away. The day is untouched either way. */
+  onChangeTime: (time: LocalTime | null) => void
   onChangeRepeat: (draft: RepeatDraft) => void
   /** Passing over a repeating task's occurrence, where it has one to pass over. */
   skip?: SkipChoice
@@ -53,15 +62,19 @@ interface SchedulePickerProps {
  * When a task is due: one small button for both the day and the repeat rule,
  * since a rule is what gives a repeating task its days. Its icon says which the
  * task has — the looping arrows for a rule, the calendar otherwise — and it
- * opens one panel with the date choices and a month calendar over the repeat ones.
+ * opens one panel with the date choices, a month calendar and the hour the task
+ * is due at over the repeat ones.
  *
  * There is nothing to confirm: each choice is saved as it is made.
  */
 export function SchedulePicker({
   dueDate,
+  startDay = null,
   draft,
   now,
-  onChangeDueDate,
+  onChangeDay,
+  dueTime = null,
+  onChangeTime,
   onChangeRepeat,
   skip,
   overdue = false,
@@ -85,7 +98,9 @@ export function SchedulePicker({
   }, [isOpen])
 
   const rule = toRepeat(draft)
-  const day = dueDate === null ? null : describeDueDate(dueDate, now)
+  // The hour rides with the day it falls on — "Tomorrow at 9:00 AM" — and has
+  // nothing to say on its own, a task with no day having no moment to be due at.
+  const day = dueDate === null ? null : describeDueAt(dueDate, dueTime, now)
   // A rule can have no day in play yet: a Monday task written on a Tuesday.
   // Spoken and in the tooltip in full; beside the repeat icon, briefly (RPT-24).
   const summarize = (describe: typeof describeRepeat) =>
@@ -137,10 +152,13 @@ export function SchedulePicker({
         >
           <DueChoices
             dueDate={dueDate}
+            chosen={rule === null ? dueDate : startDay}
             now={now}
             repeats={rule !== null}
             skip={skip}
-            onChange={onChangeDueDate}
+            onChange={onChangeDay}
+            dueTime={dueTime}
+            onChangeTime={onChangeTime}
             onDone={() => { setIsOpen(false) }}
           />
 

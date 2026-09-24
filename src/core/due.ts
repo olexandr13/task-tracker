@@ -12,17 +12,21 @@
  * derived from `now`, so a page left open picks up the new day on its own.
  */
 
-import { offsetDay, toLocalDay, type LocalDay } from './day'
+import { atLocalTime, offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from './day'
 import { periodRange, type Period } from './progress'
-import { currentOccurrence, nextOccurrence } from './repeat'
-import { isComplete, isDeleted, type Task } from './task'
+import { currentOccurrence, nextOccurrence, occurrenceFrom, type Repeat } from './repeat'
+import { isComplete, isDeleted, startedOn, type Task, type TaskId } from './task'
 
 /**
  * The day the task is due as of `now`, or null when it has none.
  *
- * A repeating task's occurrence from before the task existed asked nothing of
- * it: a weekly Monday task written on a Tuesday is next due on Monday, not
- * overdue from the day before it was thought of.
+ * A repeating task's occurrence from before its rule started asked nothing of
+ * it. What that leaves depends on where the start came from. A day **chosen**
+ * for it (`startDay`) is a day the owner picked, so the task is due on the first
+ * occurrence from it: a Monday task started on a Thursday is due the Monday
+ * after. A rule with no day chosen starts where the task was written, and there
+ * is simply no occurrence in play yet — a weekly Monday task written on a
+ * Tuesday is next due on Monday, not overdue from the day before it was thought of.
  *
  * A skipped occurrence hands the task on to the next one the rule gives, and
  * that one on again while it was skipped too — unless the task was done after
@@ -34,8 +38,11 @@ export function dueDay(task: Task, now: Date = new Date()): LocalDay | null {
   }
 
   let occurrence = currentOccurrence(task.repeat, now)
-  if (toLocalDay(occurrence) < toLocalDay(new Date(task.createdAt))) {
-    return null
+  if (toLocalDay(occurrence) < startedOn(task)) {
+    if (task.startDay === null) {
+      return null
+    }
+    occurrence = startOfLocalDay(firstDueDay(task.repeat, task.startDay))
   }
 
   if (!isComplete(task, now)) {
@@ -44,6 +51,15 @@ export function dueDay(task: Task, now: Date = new Date()): LocalDay | null {
     }
   }
   return toLocalDay(occurrence)
+}
+
+/**
+ * The first day from `start` the rule comes round on — `start` itself where the
+ * rule falls on it. The day a rule started there is first due, before any of its
+ * occurrences has been and gone.
+ */
+export function firstDueDay(repeat: Repeat, start: LocalDay): LocalDay {
+  return toLocalDay(occurrenceFrom(repeat, startOfLocalDay(start)))
 }
 
 /**
@@ -72,10 +88,97 @@ export function skipOccurrence(task: Task, now: Date = new Date()): Task {
   return { ...task, skippedDays: [...task.skippedDays, day].sort() }
 }
 
-/** Due on a day already gone, and still not done. */
+/**
+ * The exact moment the task is due, or null where there is no such moment: a
+ * task with no day, or one due on a day with no hour to it (`dueTime`), which is
+ * due some time that day rather than at a time.
+ *
+ * A repeating task's moment is its hour on the occurrence in play, so it moves
+ * with the occurrence the way the day does: a daily 9:00 task is due at nine
+ * every morning, without anything being stored or rolled over.
+ */
+export function dueMoment(task: Task, now: Date = new Date()): Date | null {
+  if (task.dueTime === null) return null
+
+  const day = dueDay(task, now)
+  return day === null ? null : atLocalTime(day, task.dueTime)
+}
+
+/** A task whose hour has just come round, and the moment it was due at. */
+export interface Reminder {
+  readonly taskId: TaskId
+  /** The title as it stands, so a task renamed since is named as it is now. */
+  readonly title: string
+  readonly at: Date
+}
+
+/**
+ * The tasks whose due moment fell in the stretch just watched — after `since`,
+ * up to and including `now` — and which are still to do. These are the ones
+ * worth saying something about: an hour that has come round on a task nobody has
+ * finished.
+ *
+ * The stretch is half-open at its start so that a moment is only ever reminded
+ * of once, however often the clock is read: the tick that catches 9:00 carries
+ * its own moment forward as the next `since`.
+ *
+ * Nothing is stored against the task. Which tasks these are is derived from the
+ * clock and the tasks as they stand, so a task finished, deleted, moved or
+ * renamed on another device is read as it is now rather than as it was when its
+ * hour was set. A task due at an hour that went by while nothing was watching is
+ * not here — it is simply overdue, which the list says on its own.
+ *
+ * Ordered by the moment they were due, earliest first.
+ */
+export function dueReminders(tasks: readonly Task[], since: Date, now: Date = new Date()): Reminder[] {
+  return tasks
+    .flatMap((task) => {
+      if (isDeleted(task) || isComplete(task, now)) return []
+
+      const at = dueMoment(task, now)
+      if (at === null || at.getTime() <= since.getTime() || at.getTime() > now.getTime()) return []
+
+      return [{ taskId: task.id, title: task.title, at }]
+    })
+    .sort((one, other) => one.at.getTime() - other.at.getTime())
+}
+
+/**
+ * The reminders that still have something to say, read from the tasks as they
+ * stand, and named as they are named now. One drops out once its task is done,
+ * deleted or gone — a reminder saying to do something already done is worse
+ * than none — so finishing the task on another device takes the notice away
+ * here too, and a task renamed meanwhile is named afresh.
+ *
+ * The moment each was due is kept as it was: that is when the hour struck, and
+ * moving the task's day afterwards does not unsay it. Order is kept.
+ */
+export function standingReminders(
+  standing: readonly Reminder[],
+  tasks: readonly Task[],
+  now: Date = new Date(),
+): Reminder[] {
+  return standing.flatMap((reminder) => {
+    const task = tasks.find((candidate) => candidate.id === reminder.taskId)
+    if (task === undefined || isDeleted(task) || isComplete(task, now)) return []
+
+    return [{ ...reminder, title: task.title }]
+  })
+}
+
+/**
+ * Past the moment it was wanted, and still not done: a day already gone, or —
+ * where the task is due at an hour (`dueTime`) — that hour already struck. A
+ * task due today at nine is late at ten rather than at midnight, which is the
+ * whole point of having named the hour; one due today at six this evening is
+ * not late all morning for having a day in common with it.
+ */
 export function isOverdue(task: Task, now: Date = new Date()): boolean {
   const due = dueDay(task, now)
-  return due !== null && due < toLocalDay(now) && !isComplete(task, now)
+  if (due === null || isComplete(task, now)) return false
+
+  const at = dueMoment(task, now)
+  return at === null ? due < toLocalDay(now) : at.getTime() < now.getTime()
 }
 
 /** The overdue tasks and everything else, the two runs a list is drawn in. */

@@ -11,18 +11,19 @@
  *
  * - **Today is still in play until it is over.** A habit not yet done today has
  *   not missed the day or broken its streak; it just has not been kept yet.
- * - **A day can only be missed once the task exists.** From the day it was
- *   created, a day without a tick is a miss. Before that nothing was asked of
- *   it, so an unticked day is not tracked — and a day marked done back then is
- *   done without turning the days around it into misses. The same reading
- *   ./due gives a repeating task's occurrences from before it was written.
+ * - **A day can only be missed once the habit has started.** From the day it
+ *   starts — the day chosen for it, or the day it was written when none was
+ *   (`startedOn`) — a day without a tick is a miss. Before that nothing was
+ *   asked of it, so an unticked day is not tracked — and a day marked done back
+ *   then is done without turning the days around it into misses. The same
+ *   reading ./due gives a repeating task's occurrences from before its rule started.
  */
 
 import { InvalidDayError, isLocalDay, offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from './day'
 import { sortByOrder } from './order'
 import { periodRange } from './progress'
 import { repeatsEveryDay, type Repeat } from './repeat'
-import { completeTask, isDeleted, uncompleteTask, type Task } from './task'
+import { completeTask, isDeleted, startedOn, uncompleteTask, type Task } from './task'
 
 /**
  * Whether a rule would make a habit of whatever carries it — asked of the rule
@@ -45,9 +46,9 @@ export function habitTasks(tasks: readonly Task[]): Task[] {
  * How one day of a habit reads:
  *
  * - `done` — it was done that day.
- * - `missed` — a day since the task was created that went by without it.
+ * - `missed` — a day since the habit started that went by without it.
  * - `pending` — today, not done yet.
- * - `untracked` — a day before the task was created, and not done.
+ * - `untracked` — a day before the habit started, and not done.
  * - `future` — not here yet.
  */
 export type HabitDayState = 'done' | 'missed' | 'pending' | 'untracked' | 'future'
@@ -67,9 +68,9 @@ export interface HabitStats {
 export interface HabitRate {
   readonly done: number
   /**
-   * The days that count: every day since the task was created and every day it
-   * was done on before that, with today among them only once it is done. Zero
-   * when there are none, and so no rate to give.
+   * The days that count: every day since the habit started and every day it was
+   * done on before that, with today among them only once it is done. Zero when
+   * there are none, and so no rate to give.
    */
   readonly days: number
   /** 0-100, rounded down so that 100 only ever means every day was kept. */
@@ -90,7 +91,7 @@ export function habitStats(task: Task, now: Date = new Date()): HabitStats {
 /**
  * How the last `days` days went, today included — the last 7, the last 30, the
  * last year. The days that count are the ones that could be missed, since the
- * task was created, and the ones it was done on before that; today only once it
+ * habit started, and the ones it was done on before that; today only once it
  * is done.
  */
 export function habitRate(task: Task, days: number, now: Date = new Date()): HabitRate {
@@ -100,8 +101,8 @@ export function habitRate(task: Task, days: number, now: Date = new Date()): Hab
   const windowEnd = done.at(-1) === today ? today : offsetDay(today, -1)
   const inWindow = (day: LocalDay) => day >= windowStart && day <= windowEnd
 
-  const created = createdDay(task)
-  const trackedFrom = created > windowStart ? created : windowStart
+  const started = startedOn(task)
+  const trackedFrom = started > windowStart ? started : windowStart
   const tracked = Math.max(0, daysBetween(trackedFrom, windowEnd) + 1)
   const kept = done.filter(inWindow).length
   const doneBefore = done.filter((day) => inWindow(day) && day < trackedFrom).length
@@ -172,14 +173,14 @@ export function setDoneOnDay(task: Task, day: LocalDay, done: boolean, now: Date
 export function habitWeeks(task: Task, weeks: number, now: Date = new Date()): HabitDay[][] {
   const today = toLocalDay(now)
   const set = new Set(recordedDays(task, today))
-  const created = createdDay(task)
+  const started = startedOn(task)
   const thisMonday = toLocalDay(periodRange('week', now).start)
 
   return Array.from({ length: weeks }, (_, week) => {
     const monday = offsetDay(thisMonday, (week - weeks + 1) * 7)
     return Array.from({ length: 7 }, (_, offset) => {
       const day = offsetDay(monday, offset)
-      return { day, state: stateOf(day, today, set, created) }
+      return { day, state: stateOf(day, today, set, started) }
     })
   })
 }
@@ -191,24 +192,19 @@ export function habitWeeks(task: Task, weeks: number, now: Date = new Date()): H
 export function habitLastDays(task: Task, days: number, now: Date = new Date()): HabitDay[] {
   const today = toLocalDay(now)
   const set = new Set(recordedDays(task, today))
-  const created = createdDay(task)
+  const started = startedOn(task)
 
   return Array.from({ length: days }, (_, at) => {
     const day = offsetDay(today, at - days + 1)
-    return { day, state: stateOf(day, today, set, created) }
+    return { day, state: stateOf(day, today, set, started) }
   })
 }
 
-function stateOf(day: LocalDay, today: LocalDay, done: ReadonlySet<LocalDay>, created: LocalDay): HabitDayState {
+function stateOf(day: LocalDay, today: LocalDay, done: ReadonlySet<LocalDay>, started: LocalDay): HabitDayState {
   if (day > today) return 'future'
   if (done.has(day)) return 'done'
   if (day === today) return 'pending'
-  return day >= created ? 'missed' : 'untracked'
-}
-
-/** The local day the task was written on: the first day it could be missed. */
-function createdDay(task: Task): LocalDay {
-  return toLocalDay(new Date(task.createdAt))
+  return day >= started ? 'missed' : 'untracked'
 }
 
 /**

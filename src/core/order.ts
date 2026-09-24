@@ -8,8 +8,9 @@
  * out with gaps, so there is room to move into.
  *
  * The number is only half of what the screen shows: overdue tasks float to the
- * top, urgent next, and done ones sink to the bottom (`sortForDisplay`), each
- * band keeping this order inside it.
+ * top, urgent next, and done ones sink to the bottom (`sortForDisplay`). Each
+ * band of open tasks keeps this order inside it; the done are ordered by when
+ * they were finished instead, so the number says nothing there.
  */
 
 import { isOverdue } from './due'
@@ -41,10 +42,14 @@ export function sortByOrder(tasks: readonly Task[]): Task[] {
  * The order a list draws: the overdue still to do first — the run a list heads
  * with **Overdue** (`splitOverdue`) — then the rest still to do, then done.
  * Urgent floats to the top inside each of the two open runs, so an overdue task
- * marked urgent leads the overdue rather than leaving its run. Within each band
- * the stored order is kept. Sort is stable, so completing one, marking one
- * urgent, or a day turning overdue does not shuffle the others inside their
- * band.
+ * marked urgent leads the overdue rather than leaving its run. Within each open
+ * band the stored order is kept. Sort is stable, so marking one urgent or a day
+ * turning overdue does not shuffle the others inside their band.
+ *
+ * The done are ordered by when they were finished, latest first: the last thing
+ * ticked off leads them, so a list read from the top says what has just been
+ * done rather than where the work once sat. Completing a task therefore sends it
+ * to the head of the done run, not to wherever its number falls among them.
  *
  * Returns a new list; the one passed in is never modified.
  */
@@ -53,7 +58,7 @@ export function sortForDisplay(tasks: readonly Task[], now: Date = new Date()): 
     const aDone = isComplete(a, now)
     const bDone = isComplete(b, now)
     if (aDone !== bDone) return Number(aDone) - Number(bDone)
-    if (aDone) return 0
+    if (aDone) return compareCompletion(a, b)
 
     const aOverdue = isOverdue(a, now)
     const bOverdue = isOverdue(b, now)
@@ -63,6 +68,28 @@ export function sortForDisplay(tasks: readonly Task[], now: Date = new Date()): 
 
     return 0
   })
+}
+
+/**
+ * Latest completion first. A done task with nothing saying when — one finished
+ * before anything recorded the moment — comes last, and two stamped alike keep
+ * the order they were given.
+ *
+ * A repeating task's stamp is its latest completion, which is the one that has
+ * it reading as done, so it sits by that rather than by any earlier round.
+ */
+function compareCompletion(a: Task, b: Task): number {
+  const first = finishedAt(a)
+  const second = finishedAt(b)
+  if (first === second) return 0
+  return first > second ? -1 : 1
+}
+
+/** When a task was finished, or before everything when nothing says. */
+function finishedAt(task: Task): number {
+  if (task.completedAt === null) return -Infinity
+  const at = Date.parse(task.completedAt)
+  return Number.isNaN(at) ? -Infinity : at
 }
 
 /**

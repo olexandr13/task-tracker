@@ -97,6 +97,43 @@ describe('sortForDisplay', () => {
     expect(displayTitles(tasks)).toEqual(['a', 'c', 'b'])
   })
 
+  it('puts the latest completion at the head of the done tasks (TASK-17)', () => {
+    const [open, first, second, third] = listOf('open', 'first', 'second', 'third')
+    const tasks = [
+      completeTask(first, new Date(2026, 8, 16, 9, 0)),
+      open,
+      completeTask(second, new Date(2026, 8, 16, 11, 0)),
+      completeTask(third, new Date(2026, 8, 15, 18, 0)),
+    ]
+
+    expect(displayTitles(tasks)).toEqual(['open', 'second', 'first', 'third'])
+  })
+
+  it('sinks a done task with no time on it below the ones there is a time for (TASK-17)', () => {
+    const [untimed, timed] = listOf('untimed', 'timed')
+    const tasks = [
+      { ...completeTask(untimed, NOW), completedAt: null },
+      completeTask(timed, new Date(2026, 8, 10, 9, 0)),
+    ]
+
+    expect(displayTitles(tasks)).toEqual(['timed', 'untimed'])
+  })
+
+  it('keeps the stored order between completions stamped alike (TASK-17)', () => {
+    const [a, b] = listOf('a', 'b')
+    const tasks = [completeTask(b, NOW), completeTask(a, NOW)]
+
+    expect(displayTitles(tasks)).toEqual(['a', 'b'])
+  })
+
+  it('sorts a repeating task by its latest completion, the one that has it done (TASK-57)', () => {
+    const daily = { ...createTask('stretch', { kind: 'daily' }, NOW), order: 0 }
+    const once = { ...createTask('read', null, NOW), order: ORDER_STEP }
+    const tasks = [completeTask(daily, new Date(2026, 8, 16, 8, 0)), completeTask(once, new Date(2026, 8, 16, 10, 0))]
+
+    expect(displayTitles(tasks)).toEqual(['read', 'stretch'])
+  })
+
   it('never modifies the list it is given', () => {
     const tasks = listOf('a', 'b')
     sortForDisplay(tasks, NOW)

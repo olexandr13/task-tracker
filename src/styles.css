@@ -130,3 +130,81 @@ body {
   animation: task-timer-pulse 1.6s ease-in-out infinite;
 }
 
+/* A tick landing in a completion box (UI-65): the box flashes a lighter green
+   and bounces, the mark sweeps in rather than appearing whole, and a green ring
+   opens past the edge and fades. Noticeable at a glance without being a show,
+   and the whole of it is over in half a second — the length the row holds its
+   place for, LANDING_MS in src/app/components/CompletionBox.tsx. */
+@keyframes tick-settle {
+  0% {
+    background-color: var(--color-green-400);
+    transform: scale(0.78);
+  }
+  45% {
+    transform: scale(1.22);
+  }
+  75% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes tick-sweep {
+  from {
+    stroke-dashoffset: 22;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes tick-ring {
+  from {
+    opacity: 0.7;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+/* The colour is left out of the last step on purpose: it runs back to whatever
+   the box is wearing, so the flash fades into the green of a done box. */
+.completion-box-landing {
+  animation: tick-settle 0.42s cubic-bezier(0.25, 0.8, 0.35, 1);
+}
+
+/* 22 covers the whole mark (UI-64), which runs a little under 20 units long. */
+.completion-box-landing > svg {
+  stroke-dasharray: 22;
+  animation: tick-sweep 0.28s ease-out backwards;
+}
+
+/* Brighter than the box it leaves, so it carries on a dark screen as well as a
+   light one. Forwards, so the ring is left faded out for the rest of the tick's
+   flight; it catches nothing, the box under it answering a click as it always did. */
+.completion-box-landing::after {
+  content: '';
+  position: absolute;
+  inset: -0.125rem;
+  border: 2px solid var(--color-green-500);
+  border-radius: 0.5rem;
+  pointer-events: none;
+  animation: tick-ring 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+/* A device asking for less motion is given none of this, and none of the wait
+   either: the box ticks the task off as it is clicked (CompletionBox). */
+@media (prefers-reduced-motion: reduce) {
+  .completion-box-landing,
+  .completion-box-landing > svg {
+    animation: none;
+  }
+
+  .completion-box-landing::after {
+    content: none;
+  }
+}

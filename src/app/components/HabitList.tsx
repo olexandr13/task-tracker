@@ -10,23 +10,24 @@ import {
   type HabitRate,
   type List,
   type LocalDay,
+  type LocalTime,
   type Task,
   type TaskId,
 } from '../../core'
 import { describeDays, describeRate, HABIT_DAY_LABELS } from '../habitLabels'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
-import { completionBoxOff, completionBoxOn, completionBoxReady, dragGrip } from '../rowControls'
+import { dragGrip } from '../rowControls'
 import { HABIT_DAY_TONES } from '../habitTones'
 import { textOffsetAtPoint } from '../textOffsetAtPoint'
 import { useSortableTask } from '../useSortableTask'
 import { ChevronIcon } from './ChevronIcon'
+import { CompletionBox } from './CompletionBox'
 import { FlameIcon } from './FlameIcon'
 import { GripIcon } from './GripIcon'
 import { HabitGrid } from './HabitGrid'
 import { MoreVerticalIcon } from './MoreVerticalIcon'
 import { SortableTasks } from './SortableTasks'
 import { TaskSheet } from './TaskSheet'
-import { TickIcon } from './TickIcon'
 import type { TaskActions } from '../taskActions'
 import type { TaskTimer } from '../useTaskTimer'
 
@@ -258,9 +259,14 @@ function HabitCard({
     setIsEditing(false)
   }
 
-  function changeDueDate(dueDate: LocalDay | null) {
-    if (dueDate !== null && habit.repeat !== null) setDraft({ ...draft, kind: 'once' })
-    actions.changeDueDate(habit.id, dueDate)
+  /** A day picked for the habit starts its rule there (DUE-12); the rule itself stays. */
+  function changeDay(day: LocalDay | null) {
+    actions.changeDay(habit.id, day)
+  }
+
+  /** An hour picked for the habit is the hour every occurrence is due at (DUE-19). */
+  function changeTime(time: LocalTime | null) {
+    actions.changeTime(habit.id, time)
   }
 
   function handleRepeatChange(next: RepeatDraft) {
@@ -357,22 +363,15 @@ function HabitCard({
 
       <div className="relative flex items-start gap-2.5 px-4 py-3">
         {/* Above the toggle's hit area, so ticking off never unfolds the card. Level with the title's first line. */}
-        <button
-          type="button"
-          onClick={() => { if (done) actions.uncomplete(habit.id); else actions.complete(habit.id) }}
-          aria-pressed={done}
-          aria-label={
-            done
-              ? `Mark "${habit.title}" as not done today`
-              : ready
-                ? `Mark "${habit.title}" as done today: its time goal is reached`
-                : `Mark "${habit.title}" as done today`
-          }
-          title={ready ? 'Time goal reached: ready to tick off' : undefined}
-          className={`relative z-10 mt-0.5 md:mt-0 ${done ? completionBoxOn : ready ? completionBoxReady : completionBoxOff}`}
-        >
-          <TickIcon className="size-4" />
-        </button>
+        <CompletionBox
+          title={habit.title}
+          done={done}
+          ready={ready}
+          today
+          onComplete={() => { actions.complete(habit.id) }}
+          onUncomplete={() => { actions.uncomplete(habit.id) }}
+          className="relative z-10 mt-0.5 md:mt-0"
+        />
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h2 className="text-base font-medium break-words md:text-sm">{habit.title}</h2>
@@ -451,7 +450,8 @@ function HabitCard({
               actions.remove(id)
             },
           }}
-          onChangeDueDate={changeDueDate}
+          onChangeDay={changeDay}
+          onChangeTime={changeTime}
           onChangeRepeat={handleRepeatChange}
           timer={timer}
         />

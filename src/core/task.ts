@@ -6,7 +6,15 @@
  * reusable if the app ever grows a second front end. See CLAUDE.md.
  */
 
-import { InvalidDayError, isLocalDay, toLocalDay, type LocalDay } from './day'
+import {
+  InvalidDayError,
+  InvalidTimeOfDayError,
+  isLocalDay,
+  isLocalTime,
+  toLocalDay,
+  type LocalDay,
+  type LocalTime,
+} from './day'
 // Type-only: ./list reads the task's rules, so nothing is imported back from it.
 import type { ListId } from './list'
 import { assertValidRepeat, countsForCurrentOccurrence, currentOccurrence, type Repeat } from './repeat'
@@ -64,6 +72,22 @@ export interface Task {
    */
   readonly dueDate: LocalDay | null
   /**
+   * The local day a repeating task's rule starts on, or null for one that starts
+   * where it was written. Occurrences before it asked nothing of the task, and
+   * the task is due on the first one from it — so a daily task given next Monday
+   * is due next Monday, not today. Always null on a one-off, which has a date of
+   * its own instead. See `dueDay` in ./due.
+   */
+  readonly startDay: LocalDay | null
+  /**
+   * The time of day the task is due at, or null for one due on the day with no
+   * hour to it — which is most of them. It reads the same way whichever shape
+   * the task is: a one-off is due at it on its date, a repeating task at it on
+   * whichever day its rule gives. A time needs a day to hang on, so it is always
+   * null on a task that has neither a date nor a rule; see `setDueTime`.
+   */
+  readonly dueTime: LocalTime | null
+  /**
    * The checklist, in the order it was written. Empty for a task that has no
    * parts worth naming — which is most of them. A task carrying one is done
    * exactly when every item on it is; see `syncWithSubtasks`. The items are not
@@ -116,8 +140,9 @@ export interface Task {
   readonly deletedAt: string | null
   /**
    * Where the task sits in the list: lower comes first. Overdue tasks still
-   * float above the rest and done ones sink below; this orders each band. See
-   * ./order.
+   * float above the rest and done ones sink below; this orders each band of the
+   * tasks still to do. The done are ordered by `completedAt` instead, latest
+   * first, so this says nothing about where one of them sits. See ./order.
    */
   readonly order: number
 }
@@ -147,6 +172,8 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
     doneDays: [],
     skippedDays: [],
     dueDate: null,
+    startDay: null,
+    dueTime: null,
     subtasks: [],
     tags: [],
     listId: null,
@@ -160,8 +187,8 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
 }
 
 /**
- * A new task carrying what this one says — title, description, rule, due date,
- * checklist, tags, reward, urgent, time goal — and none of what has happened
+ * A new task carrying what this one says — title, description, rule, due date
+ * and hour, checklist, tags, reward, urgent, time goal — and none of what has happened
  * to it. It is not done, its checklist is unticked, it has no time logged, a
  * repeating one has no history, and it is not in the trash: a copy is another go
  * at the same thing, not a second record of the first.
@@ -337,11 +364,13 @@ function reopen(task: Task, now: Date): Task {
  * already missed (RPT-38). The day is only ever recorded, never taken away:
  * ticking the task off again does that occurrence after all (RPT-36).
  *
- * The three guards are exactly what `isOverdue` in ./due reads as missed — the
- * occurrence has gone by, the task already existed on it, and it was not passed
- * over already — so nothing is ever skipped that was not. This writes the same
- * record `skipOccurrence` there does; it cannot call it, since ./due is the
- * layer above this one.
+ * The three guards are what `isOverdue` in ./due reads as missed on a task with
+ * no hour to it — the occurrence has gone by, the task already existed on it,
+ * and it was not passed over already — so nothing is ever skipped that was not.
+ * A whole day is the measure here whatever hour the task is due at: an hour
+ * struck is a task running late, not an occurrence there is no longer any point
+ * doing. This writes the same record `skipOccurrence` there does; it cannot call
+ * it, since ./due is the layer above this one.
  */
 function passOverMissedOccurrence(task: Task, now: Date): Task {
   if (task.repeat === null) {
@@ -405,16 +434,24 @@ export function setRepeat(task: Task, repeat: Repeat | null, now: Date = new Dat
     const subtasks = task.subtasks.map((subtask) => forgetStaleTick(subtask, task.repeat, now))
     const timeLog = currentEntries(task.timeLog, task.repeat, now)
 
+    // The rule was the only thing giving this task days — a repeating task
+    // carries no date of its own — so dropping it leaves the hour nothing to
+    // fall on (`setDueTime`), and the hour goes with it.
     if (!isComplete(task, now)) {
-      return { ...task, repeat: null, status: 'todo', completedAt: null, subtasks, timeLog }
+      return { ...task, repeat: null, startDay: null, dueTime: null, status: 'todo', completedAt: null, subtasks, timeLog }
     }
 
-    return { ...task, repeat: null, subtasks, timeLog }
+    return { ...task, repeat: null, startDay: null, dueTime: null, subtasks, timeLog }
   }
 
   // The rule decides the days from here on, so a date set before it would only
-  // be a second, disagreeing answer. A completion that still stands under the
-  // new rule goes into the history, the way ticking it off under the rule would have.
+  // be a second, disagreeing answer: a one-off's day goes rather than becoming
+  // the day the rule starts on, which is a choice of its own (`setStartDay`). A
+  // rule swapped for another keeps the day it starts on: what it comes round on
+  // changed, not when it began. The hour stays through all of it: the rule gives
+  // the task days to fall on, so "9:00" survives becoming a daily 9:00. A
+  // completion that still stands under the new rule goes into the history, the
+  // way ticking it off under the rule would have.
   return settleHistory({ ...task, repeat, dueDate: null }, now)
 }
 
@@ -445,18 +482,115 @@ export function setDueDate(task: Task, dueDate: LocalDay | null): Task {
     throw new DueDateOnRepeatingTaskError()
   }
 
-  return { ...task, dueDate }
+  // An hour hangs on a day (`setDueTime`). Reaching here with no date is a
+  // one-off losing the only day it had — a repeating task's date is null
+  // already, so it never gets this far — and its hour has nothing left to fall
+  // on, so it goes too.
+  return { ...task, dueDate, dueTime: dueDate === null ? null : task.dueTime }
+}
+
+export class StartDayOnOneOffError extends Error {
+  constructor() {
+    super('A task that happens once is due on a date of its own, not on a day a rule starts.')
+    this.name = 'StartDayOnOneOffError'
+  }
 }
 
 /**
- * Makes the task a one-off due on `dueDate`. A repeating task's rule ends first,
- * exactly as choosing Once would, since only a one-off carries a date of its
- * own; a one-off just has its day set, as `setDueDate` does.
+ * Says which day a repeating task's rule starts on, moves it, or lets it go with
+ * null — where the rule starts on the day the task was written. The rule itself
+ * is untouched: a Monday task started on a Thursday is still a Monday task, and
+ * is due on the Monday after (see `dueDay` in ./due).
  *
  * Returns a new task; the one passed in is never modified.
  */
-export function scheduleOnce(task: Task, dueDate: LocalDay, now: Date = new Date()): Task {
-  return setDueDate(task.repeat === null ? task : setRepeat(task, null, now), dueDate)
+export function setStartDay(task: Task, startDay: LocalDay | null): Task {
+  if (startDay !== null && !isLocalDay(startDay)) {
+    throw new InvalidDayError(startDay)
+  }
+
+  if (startDay === task.startDay) {
+    return task
+  }
+
+  if (startDay !== null && task.repeat === null) {
+    throw new StartDayOnOneOffError()
+  }
+
+  return { ...task, startDay }
+}
+
+/**
+ * Gives the task the day picked for it, or takes it away with null: a one-off is
+ * due on that day, a repeating task starts its rule there. One day picked, read
+ * by whichever of the two the task is — which is what the schedule button offers.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function scheduleOn(task: Task, day: LocalDay | null): Task {
+  return task.repeat === null ? setDueDate(task, day) : setStartDay(task, day)
+}
+
+/**
+ * The day the task carries itself — a one-off's date, a repeating task's start —
+ * or null where it carries none. This is the day a picker marks as chosen and
+ * offers to take away; which day the task is actually *due* is `dueDay` in ./due.
+ */
+export function scheduledDay(task: Task): LocalDay | null {
+  return task.repeat === null ? task.dueDate : task.startDay
+}
+
+/**
+ * Whether the task falls on any day at all: a date of its own, or a rule that
+ * gives it days. It is what a time of day needs to hang on — see `setDueTime`.
+ */
+export function hasDueDay(task: Task): boolean {
+  return task.dueDate !== null || task.repeat !== null
+}
+
+export class DueTimeWithoutDayError extends Error {
+  constructor() {
+    super('A time of day needs a day to fall on: give the task a date or a repeat rule first.')
+    this.name = 'DueTimeWithoutDayError'
+  }
+}
+
+/**
+ * Gives the task the hour it is due at, moves it, or takes it away with null.
+ * The day is untouched: setting an hour never gives a task a date it did not
+ * have, and moving the hour is not moving the day.
+ *
+ * An hour needs a day to fall on, since "09:00" on no day is due at no moment
+ * at all — so a task with neither a date nor a rule refuses one. That also means
+ * the hour leaves with the day: taking a one-off's date away, or a repeating
+ * task's rule, takes the hour with it rather than leaving it behind to be
+ * inherited by the next date picked.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function setDueTime(task: Task, dueTime: LocalTime | null): Task {
+  if (dueTime !== null && !isLocalTime(dueTime)) {
+    throw new InvalidTimeOfDayError(dueTime)
+  }
+
+  if (dueTime === task.dueTime) {
+    return task
+  }
+
+  if (dueTime !== null && !hasDueDay(task)) {
+    throw new DueTimeWithoutDayError()
+  }
+
+  return { ...task, dueTime }
+}
+
+/**
+ * The day the task's rule starts counting from: the day chosen for it, or the
+ * day the task was written when none was. Occurrences before it are not the
+ * task's to answer for — see `dueDay` in ./due and the Habits page in ./habit.
+ */
+export function startedOn(task: Task): LocalDay {
+  return task.startDay ?? toLocalDay(new Date(task.createdAt))
 }
 
 /** Lets go of a tick that no longer counts, leaving live ones — and blanks — alone. */

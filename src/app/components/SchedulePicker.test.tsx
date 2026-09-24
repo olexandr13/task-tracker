@@ -3,9 +3,9 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { LocalDay } from '../../core'
+import { firstDueDay, type LocalDay, type LocalTime } from '../../core'
 import type { SkipChoice } from '../dateChoices'
-import { emptyDraft, type RepeatDraft } from '../repeatDraft'
+import { emptyDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { SchedulePicker } from './SchedulePicker'
 
 /* Choosing when a task is due: its day, or the rule that gives it its days. DUE and RPT ids refer to the wiki. */
@@ -16,27 +16,37 @@ afterEach(cleanup)
 
 interface PickerProps {
   initial?: LocalDay | null
+  initialTime?: LocalTime | null
   initialDraft?: RepeatDraft
   overdue?: boolean
   showSummary?: boolean
   skip?: SkipChoice
 }
 
-/** Holds both as a parent does, a day picked moving the draft back to Once. */
-function Picker({ initial = null, initialDraft = emptyDraft(WED_16), overdue = false, showSummary, skip }: PickerProps) {
-  const [dueDate, setDueDate] = useState(initial)
+/** Holds both as a parent does: the day is the task's date, or where its rule starts. */
+function Picker({
+  initial = null,
+  initialTime = null,
+  initialDraft = emptyDraft(WED_16),
+  overdue = false,
+  showSummary,
+  skip,
+}: PickerProps) {
+  const [day, setDay] = useState(initial)
+  const [time, setTime] = useState(initialTime)
   const [draft, setDraft] = useState(initialDraft)
+  const repeat = toRepeat(draft)
   return (
     <SchedulePicker
-      dueDate={dueDate}
+      dueDate={repeat === null || day === null ? day : firstDueDay(repeat, day)}
+      startDay={repeat === null ? null : day}
       draft={draft}
       now={WED_16}
       overdue={overdue}
       showSummary={showSummary}
-      onChangeDueDate={(day) => {
-        setDueDate(day)
-        if (day !== null) setDraft({ ...draft, kind: 'once' })
-      }}
+      onChangeDay={setDay}
+      dueTime={time}
+      onChangeTime={setTime}
       onChangeRepeat={setDraft}
       skip={skip}
     />
@@ -192,7 +202,8 @@ describe('SchedulePicker', () => {
         dueDate="2026-09-16"
         draft={emptyDraft(WED_16)}
         now={WED_16}
-        onChangeDueDate={vi.fn()}
+        onChangeDay={vi.fn()}
+        onChangeTime={vi.fn()}
         onChangeRepeat={vi.fn()}
         showSummary
       />,
@@ -208,7 +219,8 @@ describe('SchedulePicker', () => {
         dueDate="2026-09-16"
         draft={emptyDraft(WED_16)}
         now={WED_16}
-        onChangeDueDate={vi.fn()}
+        onChangeDay={vi.fn()}
+        onChangeTime={vi.fn()}
         onChangeRepeat={vi.fn()}
         showSummary
         fill
@@ -251,34 +263,44 @@ describe('SchedulePicker, repeating', () => {
     expect(trigger().getAttribute('title')).toBe('Every 20th')
   })
 
-  it('says a day picked turns off the repeat, marks no day and offers no Remove date (DUE-12)', async () => {
-    const user = setup({ initial: '2026-09-16', initialDraft: { ...emptyDraft(WED_16), kind: 'daily' } })
+  it('says a day picked starts the repeat, and keeps the rule when one is picked (DUE-18)', async () => {
+    const user = setup({ initialDraft: { ...emptyDraft(WED_16), kind: 'daily' } })
 
     await user.click(trigger())
 
-    expect(screen.getByText('Picking a day turns off the repeat.')).toBeDefined()
+    expect(screen.getByText('Picking a day starts the repeat on it. The repeat itself stays as it is.')).toBeDefined()
     // And again in each day's tooltip, which is all the menu and the row's strip have.
-    expect(screen.getByRole('button', { name: /^Today/ }).title).toBe('Today · Turns off the repeat')
-    expect(screen.getByRole('button', { name: /^Next week/ }).title).toBe('Next week · Sep 27 · Turns off the repeat')
-    expect(screen.getByRole('button', { name: /^Today/ })).toHaveProperty('ariaPressed', 'false')
-    expect(screen.queryByRole('button', { name: 'Remove date' })).toBeNull()
+    expect(screen.getByRole('button', { name: /^Today/ }).title).toBe('Today · Starts the repeat')
+    expect(screen.getByRole('button', { name: /^Next week/ }).title).toBe('Next week · Sep 27 · Starts the repeat')
 
     await user.click(screen.getByRole('button', { name: /^Tomorrow/ }))
-    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Tomorrow')
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Daily · Tomorrow')
   })
 
-  it('marks no day in the calendar, the day being the rule\'s, and a day picked there ends the rule (DUE-12)', async () => {
+  it('marks the day its rule starts on, and takes that day away again (DUE-18)', async () => {
     const user = setup({ initial: '2026-09-16', initialDraft: { ...emptyDraft(WED_16), kind: 'daily' } })
 
     await user.click(trigger())
-    expect(screen.queryAllByRole('gridcell', { selected: true })).toEqual([])
+    expect(screen.getByRole('button', { name: /^Today/ })).toHaveProperty('ariaPressed', 'true')
+    expect(screen.getByRole('gridcell', { selected: true }).textContent).toBe('16')
 
-    // Every day in the grid says what picking it costs, the note above being out of
+    // The rule stays, so what goes is the day it was told to start on.
+    await user.click(screen.getByRole('button', { name: 'Remove start date' }))
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Daily')
+  })
+
+  it('starts the rule on a day picked in the calendar, the rule saying which day is due (DUE-18)', async () => {
+    const user = setup({ initialDraft: { ...emptyDraft(WED_16), kind: 'weekly', weekdays: [1] } })
+
+    await user.click(trigger())
+
+    // Every day in the grid says what picking it does, the note above being out of
     // the way once the eye is on the calendar.
-    expect(screen.getByRole('button', { name: 'Friday, September 25, 2026' }).title).toBe('Turns off the repeat')
+    expect(screen.getByRole('button', { name: 'Friday, September 25, 2026' }).title).toBe('Starts the repeat')
 
+    // Started on the Friday, a Monday rule is first due on the Monday after it.
     await user.click(screen.getByRole('button', { name: 'Friday, September 25, 2026' }))
-    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Sep 25')
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Every Mon · Sep 28')
   })
 
   it('leaves a one-off\'s calendar days without a tooltip, there being nothing to warn of (DUE-15)', async () => {
@@ -336,5 +358,72 @@ describe('SchedulePicker, repeating', () => {
 
     expect(screen.getByRole('option', { name: '31/last' })).toHaveProperty('selected', true)
     expect(screen.getByText('Shorter months fall back to their last day.')).toBeDefined()
+  })
+})
+
+describe('the hour a task is due at', () => {
+  const timeField = () => screen.getByLabelText('Time of day')
+
+  it('waits for a day to hang on before offering an hour (DUE-19)', async () => {
+    const user = setup()
+    await user.click(trigger())
+
+    expect(screen.getByText('Pick a day above, and you can set a time on it.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Morning/ })).toBeNull()
+  })
+
+  it('offers hours once the task has a day, and sets one at a click (DUE-19)', async () => {
+    const user = setup({ initial: '2026-09-16', showSummary: true })
+    await user.click(trigger())
+    await user.click(screen.getByRole('button', { name: 'Morning, 9:00 AM' }))
+
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today at 9:00 AM')
+    expect(trigger().textContent).toBe('Today at 9:00 AM')
+  })
+
+  it('leaves the panel open, an hour being picked with the day it falls on (DUE-20)', async () => {
+    const user = setup({ initial: '2026-09-16' })
+    await user.click(trigger())
+    await user.click(screen.getByRole('button', { name: 'Evening, 6:00 PM' }))
+
+    expect(panel()).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Evening, 6:00 PM' })).toHaveProperty('ariaPressed', 'true')
+  })
+
+  it('takes the hour back off, leaving the day (DUE-19)', async () => {
+    const user = setup({ initial: '2026-09-16', initialTime: '09:00', showSummary: true })
+    await user.click(trigger())
+    await user.click(screen.getByRole('button', { name: 'Remove time' }))
+
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today')
+  })
+
+  it('offers an hour on a repeating task with no day picked, its rule giving it days (DUE-19)', async () => {
+    const user = setup({ initialDraft: { ...emptyDraft(WED_16), kind: 'daily' } })
+    await user.click(trigger())
+    await user.click(screen.getByRole('button', { name: 'Midday, 12:00 PM' }))
+
+    expect(screen.getByRole('button', { name: 'Midday, 12:00 PM' })).toHaveProperty('ariaPressed', 'true')
+  })
+
+  it('reads the hour with the day a rule gives the task (DUE-19)', async () => {
+    const user = setup({
+      initial: '2026-09-16',
+      initialDraft: { ...emptyDraft(WED_16), kind: 'daily' },
+      showSummary: true,
+    })
+    await user.click(trigger())
+    await user.click(screen.getByRole('button', { name: 'Midday, 12:00 PM' }))
+
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Daily · Today at 12:00 PM')
+  })
+
+  it('takes an hour typed into the clock field (DUE-19)', async () => {
+    const user = setup({ initial: '2026-09-16', showSummary: true })
+    await user.click(trigger())
+    await user.clear(timeField())
+    await user.type(timeField(), '07:45')
+
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today at 7:45 AM')
   })
 })

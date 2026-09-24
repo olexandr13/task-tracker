@@ -37,7 +37,7 @@ describe('AddTaskForm', () => {
 
     await user.type(box(), 'file taxes{Enter}')
 
-    expect(onAdd).toHaveBeenCalledWith('file taxes', null, null)
+    expect(onAdd).toHaveBeenCalledWith('file taxes', null, null, null)
   })
 
   it('starts a task on the list’s own day, so one added in Today is due today (LIST-6)', async () => {
@@ -46,7 +46,7 @@ describe('AddTaskForm', () => {
     expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Today')
     await user.type(box(), 'file taxes{Enter}')
 
-    expect(onAdd).toHaveBeenCalledWith('file taxes', null, '2026-09-16')
+    expect(onAdd).toHaveBeenCalledWith('file taxes', null, '2026-09-16', null)
     expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Today')
   })
 
@@ -57,7 +57,7 @@ describe('AddTaskForm', () => {
     await user.click(screen.getByRole('button', { name: /^Tomorrow/ }))
     await user.type(box(), 'file taxes{Enter}')
 
-    expect(onAdd).toHaveBeenLastCalledWith('file taxes', null, '2026-09-17')
+    expect(onAdd).toHaveBeenLastCalledWith('file taxes', null, '2026-09-17', null)
     expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Today')
   })
 
@@ -70,7 +70,23 @@ describe('AddTaskForm', () => {
     expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Daily')
     expect(scheduleButton().textContent).toBe('Daily')
     await user.type(box(), 'stretch{Enter}')
-    expect(onAdd).toHaveBeenCalledWith('stretch', { kind: 'daily' }, null)
+    expect(onAdd).toHaveBeenCalledWith('stretch', { kind: 'daily' }, null, null)
+  })
+
+  it('starts a rule on a day picked beside it, the rule staying (DUE-6, DUE-18)', async () => {
+    const { user, onAdd } = setupForm(null)
+
+    await user.click(scheduleButton())
+    await user.click(screen.getByRole('button', { name: 'Weekly' }))
+    // Weekly keeps its choices open (RPT-22), so the date row is still there.
+    await user.click(screen.getByRole('button', { name: 'Monday' }))
+    await user.click(screen.getByRole('button', { name: /^Tomorrow/ }))
+
+    // Weekly starts on today's weekday, so the rule is Mon and Wed; started on the
+    // Thursday, the first day it comes round on is the Monday after.
+    expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Every Mon, Wed · Sep 21')
+    await user.type(box(), 'stretch{Enter}')
+    expect(onAdd).toHaveBeenCalledWith('stretch', { kind: 'weekly', weekdays: [1, 3] }, '2026-09-17', null)
   })
 
   it('starts a habit on a daily rule, and goes back to daily after adding (HAB-24)', async () => {
@@ -90,7 +106,7 @@ describe('AddTaskForm', () => {
     expect(screen.getByRole('textbox', { name: 'Add habit' })).toBeTruthy()
     expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Daily')
     await user.type(screen.getByRole('textbox', { name: 'Add habit' }), 'stretch{Enter}')
-    expect(onAdd).toHaveBeenCalledWith('stretch', { kind: 'daily' }, null)
+    expect(onAdd).toHaveBeenCalledWith('stretch', { kind: 'daily' }, null, null)
     expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Daily')
   })
 
@@ -142,6 +158,7 @@ describe('AddTaskSheet', () => {
       'file taxes',
       null,
       '2026-09-16',
+      null,
       [],
       null,
       expect.objectContaining({ urgent: true, description: '', reward: null, timeGoal: null }),
@@ -158,6 +175,7 @@ describe('AddTaskSheet', () => {
       'file taxes',
       null,
       '2026-09-16',
+      null,
       [],
       null,
       expect.objectContaining({ description: '', reward: null, urgent: false }),

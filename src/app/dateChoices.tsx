@@ -26,18 +26,21 @@ export interface SkipChoice {
 }
 
 interface DateChoicesOptions {
-  /** The task's own day, or on a repeating task the day its rule gives it. */
-  dueDate: LocalDay | null
+  /**
+   * The day the task carries itself: a one-off's date, or the day a repeating
+   * task's rule starts on — `scheduledDay`. It is the one marked as chosen, and
+   * the one **Remove date** (**Remove start date** on a repeating task) takes away.
+   */
+  chosen: LocalDay | null
   now: Date
   /**
-   * Whether the task repeats: its day is the rule's, so none is marked as chosen,
-   * there is no taking it away, and picking one ends the rule — which each day's
-   * tooltip says.
+   * Whether the task repeats: a day picked is the day its rule starts on rather
+   * than a date of its own, which each day's tooltip says.
    */
   repeats: boolean
   /** Left out where there is no occurrence to skip. */
   skip?: SkipChoice
-  onChange: (dueDate: LocalDay | null) => void
+  onChange: (day: LocalDay | null) => void
   /** Asking for any other day than the quick ones. Left out where a calendar is on show already. */
   onSelectDate?: () => void
 }
@@ -46,25 +49,25 @@ interface DateChoicesOptions {
  * What picking a day does to a repeating task, said in the tooltip of every day
  * there is to pick — these choices and the calendar's own days (DUE-12).
  */
-export const ENDS_REPEAT = 'Turns off the repeat'
+export const STARTS_REPEAT = 'Starts the repeat'
 
 /**
  * The quick date choices, the same wherever a day is set — a task's menu and the
  * date panel: today, tomorrow, next week, skipping a repeating task's occurrence,
- * any other day where there is no calendar beside them, and taking a one-off's
- * day away. A tooltip is a few words: the day is spelled out only where the name
- * does not already say it, and on a repeating task every day says that it ends
- * the rule, since the menu and the row's strip have no panel note to say it once.
+ * any other day where there is no calendar beside them, and taking the day away.
+ * A tooltip is a few words: the day is spelled out only where the name does not
+ * already say it, and on a repeating task every day says that it starts the rule,
+ * since the menu and the row's strip have no panel note to say it once.
  */
-export function dateChoices({ dueDate, now, repeats, skip, onChange, onSelectDate }: DateChoicesOptions): DateChoice[] {
+export function dateChoices({ chosen, now, repeats, skip, onChange, onSelectDate }: DateChoicesOptions): DateChoice[] {
   const today = toLocalDay(now)
   const day = (label: string, icon: ReactNode, choice: LocalDay, hint?: string): DateChoice => ({
     label,
     icon,
-    // Only a day ends the rule: skipping keeps it, and Select date opens the panel,
-    // whose note says it, rather than choosing anything yet.
-    hint: repeats ? `${hint ?? label} · ${ENDS_REPEAT}` : hint,
-    checked: !repeats && choice === dueDate,
+    // Only a day starts the rule: skipping moves the task on inside it, and
+    // Select date opens the panel, whose note says it, rather than choosing yet.
+    hint: repeats ? `${hint ?? label} · ${STARTS_REPEAT}` : hint,
+    checked: choice === chosen,
     onSelect: () => { onChange(choice) },
   })
   const nextWeek = nextWeekDueDay(now)
@@ -86,8 +89,17 @@ export function dateChoices({ dueDate, now, repeats, skip, onChange, onSelectDat
     ...(onSelectDate === undefined
       ? []
       : [{ label: 'Select date', icon: <CalendarPickIcon />, onSelect: onSelectDate }]),
-    ...(repeats || dueDate === null
+    // On a repeating task what goes is the day its rule was told to start on —
+    // the rule stays and runs from the day the task was written, as it did
+    // before a day was picked — so the choice says which date it takes away.
+    ...(chosen === null
       ? []
-      : [{ label: 'Remove date', icon: <CalendarRemoveIcon />, onSelect: () => { onChange(null) } }]),
+      : [
+          {
+            label: repeats ? 'Remove start date' : 'Remove date',
+            icon: <CalendarRemoveIcon />,
+            onSelect: () => { onChange(null) },
+          },
+        ]),
   ]
 }

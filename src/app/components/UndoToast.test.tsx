@@ -31,23 +31,6 @@ describe('UndoToast', () => {
     expect(onDismiss).toHaveBeenCalledOnce()
   })
 
-  it('names the task whose repeat a day picked for it ended (DUE-17)', async () => {
-    const user = userEvent.setup()
-    const onUndo = vi.fn()
-
-    render(
-      <UndoToast
-        pending={{ kind: 'repeatEnded', task: createTask('Stretch', { kind: 'daily' }, NOW) }}
-        onUndo={onUndo}
-        onDismiss={vi.fn()}
-      />,
-    )
-
-    expect(screen.getByText(/Ended the repeat on “Stretch”/)).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Undo' }))
-    expect(onUndo).toHaveBeenCalledOnce()
-  })
-
   it('shows only an Undo arrow after a completion, with no task title (TASK-67)', async () => {
     const user = userEvent.setup()
     const onUndo = vi.fn()

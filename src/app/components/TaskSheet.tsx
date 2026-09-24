@@ -10,20 +10,19 @@ import {
   skipOccurrence,
   type List,
   type LocalDay,
+  type LocalTime,
   type Task,
 } from '../../core'
 import type { SkipChoice } from '../dateChoices'
 import type { RepeatDraft } from '../repeatDraft'
 import {
-  completionBoxOff,
-  completionBoxOn,
-  completionBoxReady,
   controlOff,
   deleteAction,
   rowControlLabel,
   sheetAction,
 } from '../rowControls'
 import { BottomSheet } from './BottomSheet'
+import { CompletionBox } from './CompletionBox'
 import { DuplicateIcon } from './DuplicateIcon'
 import { ListPicker } from './ListPicker'
 import { RewardPicker } from './RewardPicker'
@@ -31,7 +30,6 @@ import { SchedulePicker } from './SchedulePicker'
 import { SubtaskList } from './SubtaskList'
 import { TagPicker } from './TagPicker'
 import { TaskDescription } from './TaskDescription'
-import { TickIcon } from './TickIcon'
 import { TimePicker } from './TimePicker'
 import { TrashIcon } from './TrashIcon'
 import { UrgentToggle } from './UrgentToggle'
@@ -49,7 +47,9 @@ interface TaskSheetProps {
   onClose: () => void
   /** What can be done to the task; a day and a rule go through the two below, which keep the row's draft in step. */
   actions: TaskActions
-  onChangeDueDate: (dueDate: LocalDay | null) => void
+  onChangeDay: (day: LocalDay | null) => void
+  /** The hour picked, or taken away: the task is due at it on the day it falls on (DUE-19). */
+  onChangeTime: (time: LocalTime | null) => void
   onChangeRepeat: (draft: RepeatDraft) => void
   /** The screen's timer, when one is offered for logging time by running a clock. */
   timer?: Pick<TaskTimer, 'clock' | 'start' | 'stop' | 'isRunningFor' | 'state'>
@@ -68,7 +68,8 @@ export function TaskSheet({
   title,
   onClose,
   actions,
-  onChangeDueDate,
+  onChangeDay,
+  onChangeTime,
   onChangeRepeat,
   timer,
 }: TaskSheetProps) {
@@ -88,25 +89,13 @@ export function TaskSheet({
   return (
     <BottomSheet label={`Details of "${task.title}"`} onClose={onClose}>
       <div className="flex shrink-0 items-start gap-3 px-4 pb-3">
-        <button
-          type="button"
-          onClick={() => {
-            if (done) actions.uncomplete(task.id)
-            else actions.complete(task.id)
-          }}
-          aria-pressed={done}
-          aria-label={
-            done
-              ? `Mark "${task.title}" as not done`
-              : ready
-                ? `Mark "${task.title}" as done: its time goal is reached`
-                : `Mark "${task.title}" as done`
-          }
-          title={ready ? 'Time goal reached: ready to tick off' : undefined}
-          className={done ? completionBoxOn : ready ? completionBoxReady : completionBoxOff}
-        >
-          <TickIcon className="size-4" />
-        </button>
+        <CompletionBox
+          title={task.title}
+          done={done}
+          ready={ready}
+          onComplete={() => { actions.complete(task.id) }}
+          onUncomplete={() => { actions.uncomplete(task.id) }}
+        />
         <div className="flex min-h-8 min-w-0 flex-1 items-center">{title}</div>
       </div>
 
@@ -115,10 +104,13 @@ export function TaskSheet({
           <div className={sheetAction}>
             <SchedulePicker
               dueDate={dueDay(task, now)}
+              startDay={task.startDay}
               draft={draft}
               now={now}
               overdue={overdue}
-              onChangeDueDate={onChangeDueDate}
+              onChangeDay={onChangeDay}
+              dueTime={task.dueTime}
+              onChangeTime={onChangeTime}
               onChangeRepeat={onChangeRepeat}
               skip={skip}
               label={`Schedule for "${task.title}"`}

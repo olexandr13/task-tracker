@@ -2,10 +2,12 @@ import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import {
   createSubtask,
   defaultReward,
+  firstDueDay,
   sameTag,
   type List,
   type ListId,
   type LocalDay,
+  type LocalTime,
   type Repeat,
   type Subtask,
   type TimeEntry,
@@ -48,7 +50,10 @@ interface AddTaskSheetProps {
   onAdd: (
     title: string,
     repeat: Repeat | null,
-    dueDate: LocalDay | null,
+    /** The day picked: the task is due on it, or its rule starts there (DUE-6). */
+    day: LocalDay | null,
+    /** The hour on that day, where one was picked (DUE-19). */
+    time: LocalTime | null,
     tags: readonly string[],
     listId: ListId | null,
     details: NewTaskDetails,
@@ -81,7 +86,8 @@ export function AddTaskSheet({
   const [draft, setDraft] = useState<RepeatDraft>(() =>
     defaultRepeat !== undefined ? toDraft(defaultRepeat ?? null, now) : emptyDraft(now),
   )
-  const [dueDate, setDueDate] = useState(defaultDueDate)
+  const [day, setDay] = useState(defaultDueDate)
+  const [time, setTime] = useState<LocalTime | null>(null)
   const [listId, setListId] = useState<ListId | null>(defaultListId)
   const [tags, setTags] = useState<string[]>(() => [...defaultTags])
   const [reward, setReward] = useState<number | null>(null)
@@ -100,7 +106,7 @@ export function AddTaskSheet({
 
   function commit() {
     if (!canAdd) return
-    onAdd(trimmed, repeat, repeat === null ? dueDate : null, tags, listId, {
+    onAdd(trimmed, repeat, day, time, tags, listId, {
       description,
       reward,
       urgent,
@@ -122,9 +128,25 @@ export function AddTaskSheet({
     commit()
   }
 
+  /**
+   * The day goes with the shape it was picked for, as it does on a task
+   * (`setRepeat`): a date belongs to a one-off, a start to a rule, so turning
+   * one into the other starts again with no day. A rule swapped for another
+   * keeps the day it starts on.
+   */
   function handleRepeatChange(next: RepeatDraft) {
     setDraft(next)
-    if (toRepeat(next) !== null) setDueDate(null)
+    if ((toRepeat(next) === null) !== (repeat === null)) setDay(null)
+  }
+
+  /**
+   * An hour hangs on a day (`setDueTime`), so a day taken away here takes the
+   * hour with it rather than leaving it to be inherited by the next day picked.
+   * A repeating task keeps its hour: its rule is still giving it days.
+   */
+  function handleDayChange(next: LocalDay | null) {
+    setDay(next)
+    if (next === null && repeat === null) setTime(null)
   }
 
   return (
@@ -148,13 +170,13 @@ export function AddTaskSheet({
         <div className="flex flex-col items-stretch gap-1 border-t border-neutral-200 px-4 py-2 md:gap-0.5 dark:border-neutral-800">
           <div className={sheetAction}>
             <SchedulePicker
-              dueDate={repeat === null ? dueDate : null}
+              dueDate={repeat === null || day === null ? day : firstDueDay(repeat, day)}
+              startDay={repeat === null ? null : day}
               draft={draft}
               now={now}
-              onChangeDueDate={(day) => {
-                setDueDate(day)
-                if (day !== null) setDraft({ ...draft, kind: 'once' })
-              }}
+              onChangeDay={handleDayChange}
+              dueTime={time}
+              onChangeTime={setTime}
               onChangeRepeat={handleRepeatChange}
               label={`Schedule for "${namedFor}"`}
               showSummary

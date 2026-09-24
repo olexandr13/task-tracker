@@ -10,6 +10,7 @@ import {
   logTime,
   setDueDate,
   setReward,
+  setStartDay,
   BONUS_IDS,
   NO_BONUSES,
   type PeriodBonuses,
@@ -254,59 +255,44 @@ describe('useTasks, reopening a missed occurrence', () => {
   })
 })
 
-describe('useTasks, a day picked for a repeating task', () => {
+describe('useTasks, a day picked for a task (DUE-18)', () => {
   /** A week before, so there is an occurrence gone by to have logged time against. */
   const THU_10 = new Date(2026, 8, 10, 9, 0)
 
-  it('hands back the task it was, so the day can be taken back (DUE-17)', () => {
-    const task = createTask('stretch', { kind: 'daily' }, THU_10)
-    const { result } = setUp([task])
-
-    let was: Task | null = null
-    act(() => { was = result.current.changeDueDate(task.id, '2026-09-25') })
-
-    expect(was).toEqual(task)
-    expect(result.current.tasks[0].repeat).toBeNull()
-    expect(result.current.tasks[0].dueDate).toBe('2026-09-25')
-  })
-
-  it('hands nothing back where no rule ended, there being nothing to take back (DUE-17)', () => {
-    const oneOff = setDueDate(createTask('call mum', null, THU_10), '2026-09-18')
-    const repeating = createTask('stretch', { kind: 'daily' }, THU_10)
-    const { result } = setUp([oneOff, repeating])
-
-    let moved: Task | null = null
-    let cleared: Task | null = null
-    act(() => { moved = result.current.changeDueDate(oneOff.id, '2026-09-25') })
-    // Taking a day away leaves a rule alone, so it is no undo either.
-    act(() => { cleared = result.current.changeDueDate(repeating.id, null) })
-
-    expect(moved).toBeNull()
-    expect(cleared).toBeNull()
-  })
-
-  it('puts back the sessions that ending the rule let go of (DUE-17, TIME-7)', () => {
-    // Logged under last Thursday's occurrence, so ending the rule drops it (currentEntries).
+  it('starts a repeating task’s rule on the day, keeping the rule', () => {
     const task = logTime(createTask('stretch', { kind: 'daily' }, THU_10), 30, THU_10)
     const { result } = setUp([task])
 
-    expect(result.current.tasks[0].timeLog).toHaveLength(1)
+    act(() => { result.current.changeDay(task.id, '2026-09-25') })
 
-    let was: Task | null = null
-    act(() => { was = result.current.changeDueDate(task.id, '2026-09-25') })
-
-    // The day is set, and last week's session went with the rule.
-    expect(result.current.tasks[0].timeLog).toEqual([])
-
-    // A const, so it is still the task it was inside the callback below.
-    const before: Task | null = was
-    expect(before).not.toBeNull()
-    act(() => { if (before !== null) result.current.putBack(before) })
-
-    expect(result.current.tasks[0]).toEqual(task)
-    expect(result.current.tasks[0].timeLog).toHaveLength(1)
     expect(result.current.tasks[0].repeat).toEqual({ kind: 'daily' })
+    expect(result.current.tasks[0].startDay).toBe('2026-09-25')
     expect(result.current.tasks[0].dueDate).toBeNull()
+    // Nothing was let go of with the rule, because no rule ended (TIME-7).
+    expect(result.current.tasks[0].timeLog).toHaveLength(1)
+  })
+
+  it('gives a one-off the day it is due', () => {
+    const oneOff = setDueDate(createTask('call mum', null, THU_10), '2026-09-18')
+    const { result } = setUp([oneOff])
+
+    act(() => { result.current.changeDay(oneOff.id, '2026-09-25') })
+
+    expect(result.current.tasks[0].dueDate).toBe('2026-09-25')
+    expect(result.current.tasks[0].startDay).toBeNull()
+  })
+
+  it('takes the day away again, whichever day the task carried', () => {
+    const oneOff = setDueDate(createTask('call mum', null, THU_10), '2026-09-18')
+    const repeating = setStartDay(createTask('stretch', { kind: 'daily' }, THU_10), '2026-09-25')
+    const { result } = setUp([oneOff, repeating])
+
+    act(() => { result.current.changeDay(oneOff.id, null) })
+    act(() => { result.current.changeDay(repeating.id, null) })
+
+    expect(result.current.tasks[0].dueDate).toBeNull()
+    expect(result.current.tasks[1].startDay).toBeNull()
+    expect(result.current.tasks[1].repeat).toEqual({ kind: 'daily' })
   })
 })
 

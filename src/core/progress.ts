@@ -121,18 +121,31 @@ function inPlayDuring(task: Task, range: PeriodRange, now: Date): boolean {
     return startOfLocalDay(task.dueDate) < range.end
   }
 
-  return occursWithin(task.repeat, task.skippedDays, range)
+  return occursWithin(task.repeat, task.skippedDays, range, task.startDay)
 }
 
-/** Whether the rule falls on a day of the range that was not skipped: a skipped occurrence asks nothing of it. */
-function occursWithin(repeat: Repeat, skipped: readonly LocalDay[], range: PeriodRange): boolean {
+/**
+ * Whether the rule falls on a day of the range that was not skipped: a skipped
+ * occurrence asks nothing of it, and neither does a day before the rule starts
+ * (`startDay`) — a habit that starts next month is no part of this month's count.
+ */
+function occursWithin(
+  repeat: Repeat,
+  skipped: readonly LocalDay[],
+  range: PeriodRange,
+  startDay: LocalDay | null,
+): boolean {
   // Rounded because a day either side of a daylight saving change is 23 or 25
   // hours long, and the count of whole days is what matters here.
   const days = Math.round((range.end.getTime() - range.start.getTime()) / MS_PER_DAY)
 
   for (let offset = 0; offset < days; offset += 1) {
     const day = dayAfter(range.start, offset)
-    if (occursOn(repeat, day) && !skipped.includes(toLocalDay(day))) {
+    const local = toLocalDay(day)
+    if (startDay !== null && local < startDay) {
+      continue
+    }
+    if (occursOn(repeat, day) && !skipped.includes(local)) {
       return true
     }
   }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { skipOccurrence } from './due'
 import { periodRange, summarize } from './progress'
 import type { Repeat } from './repeat'
-import { addSubtask, completeTask, createTask, deleteTask, setDueDate, setSubtaskDone, type Task } from './task'
+import { addSubtask, completeTask, createTask, deleteTask, setDueDate, setStartDay, setSubtaskDone, type Task } from './task'
 
 // Local dates on purpose: periods are made of local days. September 2026 runs
 // Mon 14, Tue 15, Wed 16, Thu 17, Fri 18, Sat 19, Sun 20, Mon 21.
@@ -235,6 +235,28 @@ describe('a task with a checklist', () => {
     const partly = setSubtaskDone(listed, listed.subtasks[0].id, true, TUE_15)
 
     expect(summarize([partly], 'today', TUE_15).completed).toBe(0)
+  })
+})
+
+describe('summarize, a rule with a day to start on (DUE-18)', () => {
+  it('asks nothing of the days before the rule starts', () => {
+    const fromThursday = setStartDay(task(DAILY), '2026-09-17')
+
+    expect(summarize([fromThursday], 'today', TUE_15).total).toBe(0)
+    // Thursday is in this week, so the week still has its day to keep.
+    expect(summarize([fromThursday], 'week', TUE_15).total).toBe(1)
+  })
+
+  it('counts as before once the start has gone by', () => {
+    const fromMonday = setStartDay(task(DAILY), '2026-09-14')
+
+    expect(summarize([fromMonday], 'today', TUE_15).total).toBe(1)
+  })
+
+  it('leaves a period out entirely when the rule starts after it', () => {
+    const nextMonth = setStartDay(task(DAILY), '2026-10-01')
+
+    expect(summarize([nextMonth], 'month', TUE_15).total).toBe(0)
   })
 })
 

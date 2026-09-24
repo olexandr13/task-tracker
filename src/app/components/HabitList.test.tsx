@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { completeTask, createTask, logTime, setTimeGoal, type Task } from '../../core'
@@ -85,7 +85,9 @@ describe('HabitList', () => {
     const box = screen.getByRole('button', { name: 'Mark "stretch" as done today' })
     expect(box.getAttribute('aria-pressed')).toBe('false')
     await user.click(box)
-    expect(onComplete).toHaveBeenCalledWith(habit.id)
+    // The tick is shown where it was clicked and lands a moment later (UI-65).
+    expect(box.getAttribute('aria-pressed')).toBe('true')
+    await waitFor(() => { expect(onComplete).toHaveBeenCalledWith(habit.id) })
 
     cleanup()
     const second = setup([completeTask(habit, WED_16)])
@@ -137,7 +139,7 @@ describe('HabitList', () => {
 
     // Ticking off is not asking for the record.
     await user.click(screen.getByRole('button', { name: 'Mark "stretch" as done today' }))
-    expect(onComplete).toHaveBeenCalled()
+    await waitFor(() => { expect(onComplete).toHaveBeenCalled() })
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
 
     await user.click(toggle)

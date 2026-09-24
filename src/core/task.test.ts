@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { InvalidDayError } from './day'
+import { InvalidDayError, InvalidTimeOfDayError, toLocalDay } from './day'
 import { InvalidRepeatError, type Repeat } from './repeat'
 import { setReward } from './reward'
 import { setUrgent } from './urgent'
@@ -7,6 +7,8 @@ import { addTag } from './tag'
 import { EmptyTitleError } from './title'
 import {
   DueDateOnRepeatingTaskError,
+  DueTimeWithoutDayError,
+  StartDayOnOneOffError,
   addSubtask,
   completeTask,
   createTask,
@@ -18,11 +20,16 @@ import {
   isRepeating,
   renameTask,
   restoreTask,
-  scheduleOnce,
+  hasDueDay,
+  scheduleOn,
+  scheduledDay,
   setDescription,
   setDueDate,
+  setDueTime,
   setRepeat,
+  setStartDay,
   setSubtaskDone,
+  startedOn,
   uncompleteTask,
 } from './task'
 
@@ -356,20 +363,165 @@ describe('setDueDate', () => {
   })
 })
 
-describe('scheduleOnce', () => {
-  it('ends a repeating task\'s rule and gives it the day, as choosing Once then a day would', () => {
+describe('setStartDay', () => {
+  it('says which day a repeating task\'s rule starts on, and leaves the rule alone', () => {
     const daily = createTask('stretch', { kind: 'daily' }, NOW)
-    const once = scheduleOnce(daily, '2026-09-20', LATER)
+    const started = setStartDay(daily, '2026-09-20')
 
-    expect(once).toEqual(setDueDate(setRepeat(daily, null, LATER), '2026-09-20'))
-    expect(once.repeat).toBeNull()
-    expect(once.dueDate).toBe('2026-09-20')
+    expect(started.startDay).toBe('2026-09-20')
+    expect(started.repeat).toEqual({ kind: 'daily' })
+    expect(started.dueDate).toBeNull()
   })
 
-  it('sets the day on a one-off and nothing else', () => {
+  it('moves the day, and lets it go with null', () => {
+    const daily = setStartDay(createTask('stretch', { kind: 'daily' }, NOW), '2026-09-20')
+
+    expect(setStartDay(daily, '2026-09-21').startDay).toBe('2026-09-21')
+    expect(setStartDay(daily, null).startDay).toBeNull()
+  })
+
+  it('refuses a day that is not a day', () => {
+    const daily = createTask('stretch', { kind: 'daily' }, NOW)
+
+    expect(() => setStartDay(daily, '2026-02-30')).toThrow(InvalidDayError)
+    expect(() => setStartDay(daily, 'monday')).toThrow(InvalidDayError)
+  })
+
+  it('refuses a start on a one-off, which is due on a date of its own', () => {
     const task = createTask('file taxes', null, NOW)
 
-    expect(scheduleOnce(task, '2026-09-20', LATER)).toEqual(setDueDate(task, '2026-09-20'))
+    expect(() => setStartDay(task, '2026-09-20')).toThrow(StartDayOnOneOffError)
+    expect(setStartDay(task, null)).toBe(task)
+  })
+
+  it('is let go of with the rule, and kept when one rule is swapped for another', () => {
+    const daily = setStartDay(createTask('stretch', { kind: 'daily' }, NOW), '2026-09-20')
+
+    expect(setRepeat(daily, null, LATER).startDay).toBeNull()
+    expect(setRepeat(daily, { kind: 'weekly', weekdays: [1] }, LATER).startDay).toBe('2026-09-20')
+  })
+})
+
+describe('scheduleOn', () => {
+  it('gives a one-off its date, and a repeating task the day its rule starts on', () => {
+    const task = createTask('file taxes', null, NOW)
+    const daily = createTask('stretch', { kind: 'daily' }, NOW)
+
+    expect(scheduleOn(task, '2026-09-20')).toEqual(setDueDate(task, '2026-09-20'))
+    expect(scheduleOn(daily, '2026-09-20')).toEqual(setStartDay(daily, '2026-09-20'))
+    // The rule is untouched: a date picked no longer ends it.
+    expect(scheduleOn(daily, '2026-09-20').repeat).toEqual({ kind: 'daily' })
+  })
+
+  it('takes the day away with null, whichever day the task carried', () => {
+    const dated = setDueDate(createTask('file taxes', null, NOW), '2026-09-20')
+    const started = setStartDay(createTask('stretch', { kind: 'daily' }, NOW), '2026-09-20')
+
+    expect(scheduleOn(dated, null).dueDate).toBeNull()
+    expect(scheduleOn(started, null).startDay).toBeNull()
+  })
+})
+
+describe('setDueTime', () => {
+  const dated = setDueDate(createTask('file taxes', null, NOW), '2026-09-20')
+  const daily = createTask('stretch', { kind: 'daily' }, NOW)
+
+  it('starts a task with no hour, and gives it one, moves it and takes it away', () => {
+    expect(dated.dueTime).toBeNull()
+
+    const nine = setDueTime(dated, '09:00')
+    expect(nine.dueTime).toBe('09:00')
+    expect(setDueTime(nine, '18:30').dueTime).toBe('18:30')
+    expect(setDueTime(nine, null).dueTime).toBeNull()
+  })
+
+  it('leaves the day where it is: an hour is not a second way to move a date', () => {
+    const nine = setDueTime(dated, '09:00')
+
+    expect(nine.dueDate).toBe('2026-09-20')
+    expect({ ...nine, dueTime: null }).toEqual(dated)
+  })
+
+  it('gives a repeating task the hour every one of its occurrences is due at', () => {
+    const nine = setDueTime(daily, '09:00')
+
+    expect(nine.dueTime).toBe('09:00')
+    expect(nine.repeat).toEqual({ kind: 'daily' })
+  })
+
+  it('hands back the same task when the hour is already the one set', () => {
+    const nine = setDueTime(dated, '09:00')
+
+    expect(setDueTime(nine, '09:00')).toBe(nine)
+  })
+
+  it('refuses something that is not a time of day', () => {
+    expect(() => setDueTime(dated, '24:00')).toThrow(InvalidTimeOfDayError)
+    expect(() => setDueTime(dated, '9am')).toThrow(InvalidTimeOfDayError)
+  })
+
+  it('refuses an hour on a task with no day for it to fall on', () => {
+    const undated = createTask('file taxes', null, NOW)
+
+    expect(() => setDueTime(undated, '09:00')).toThrow(DueTimeWithoutDayError)
+    // Taking away an hour there is none of is nothing to refuse.
+    expect(setDueTime(undated, null)).toBe(undated)
+  })
+
+  it('leaves with the date it hung on, rather than waiting for the next one', () => {
+    const nine = setDueTime(dated, '09:00')
+    const cleared = setDueDate(nine, null)
+
+    expect(cleared.dueTime).toBeNull()
+    expect(setDueDate(cleared, '2026-09-21').dueTime).toBeNull()
+  })
+
+  it('leaves with the rule that was giving a repeating task its days', () => {
+    const nine = setDueTime(daily, '09:00')
+
+    expect(setRepeat(nine, null, LATER).dueTime).toBeNull()
+  })
+
+  it('stays when a dated task is made to repeat, the rule giving it days instead', () => {
+    const nine = setDueTime(dated, '09:00')
+    const repeating = setRepeat(nine, { kind: 'daily' }, NOW)
+
+    expect(repeating.dueDate).toBeNull()
+    expect(repeating.dueTime).toBe('09:00')
+  })
+
+  it('stays when one rule is swapped for another', () => {
+    const nine = setDueTime(daily, '09:00')
+
+    expect(setRepeat(nine, { kind: 'weekly', weekdays: [1] }, LATER).dueTime).toBe('09:00')
+  })
+})
+
+describe('hasDueDay', () => {
+  it('is true of a task with a date, and of one whose rule gives it days', () => {
+    expect(hasDueDay(createTask('file taxes', null, NOW))).toBe(false)
+    expect(hasDueDay(setDueDate(createTask('file taxes', null, NOW), '2026-09-20'))).toBe(true)
+    expect(hasDueDay(createTask('stretch', { kind: 'daily' }, NOW))).toBe(true)
+  })
+})
+
+describe('scheduledDay', () => {
+  it('is the day the task carries itself: a one-off\'s date, a repeating task\'s start', () => {
+    const dated = setDueDate(createTask('file taxes', null, NOW), '2026-09-20')
+    const daily = createTask('stretch', { kind: 'daily' }, NOW)
+
+    expect(scheduledDay(dated)).toBe('2026-09-20')
+    expect(scheduledDay(daily)).toBeNull()
+    expect(scheduledDay(setStartDay(daily, '2026-09-20'))).toBe('2026-09-20')
+  })
+})
+
+describe('startedOn', () => {
+  it('is the day chosen for the rule, or the day the task was written', () => {
+    const daily = createTask('stretch', { kind: 'daily' }, NOW)
+
+    expect(startedOn(daily)).toBe(toLocalDay(NOW))
+    expect(startedOn(setStartDay(daily, '2026-09-20'))).toBe('2026-09-20')
   })
 })
 

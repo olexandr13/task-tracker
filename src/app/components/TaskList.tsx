@@ -114,8 +114,8 @@ export function TaskList({
    */
   const headRuns = focusId === null && !dimAll
 
-  /** A row; one under a span's heading is dragged among that heading's rows alone. */
-  function row(task: Task, dragGroup?: string) {
+  /** A row. Done rows are not dragged at all: their place is when they were finished. */
+  function row(task: Task) {
     return (
       <TaskItem
         key={task.id}
@@ -126,7 +126,6 @@ export function TaskList({
         showDetails={showDetails}
         dimmed={dimAll || (focusId !== null && focusId !== task.id)}
         emphasized={!dimAll && focusId !== null && focusId === task.id}
-        dragGroup={dragGroup}
         actions={actions}
         timer={timer}
         revealed={revealId === task.id}
@@ -174,8 +173,7 @@ export function TaskList({
    * scanned row by row.
    */
   function doneRun(span: CompletionSpan, group: readonly Task[]) {
-    const divided = doneSpans !== null
-    const label = divided ? COMPLETION_SPAN_LABELS[span] : DONE_LABEL
+    const label = doneSpans !== null ? COMPLETION_SPAN_LABELS[span] : DONE_LABEL
 
     return (
       <section
@@ -187,7 +185,7 @@ export function TaskList({
           {label}
           <span className="font-normal text-neutral-300 tabular-nums dark:text-neutral-600">{group.length}</span>
         </h2>
-        <ul className={rows}>{group.map((task) => row(task, divided ? `done:${span}` : undefined))}</ul>
+        <ul className={rows}>{group.map((task) => row(task))}</ul>
       </section>
     )
   }

@@ -2,15 +2,30 @@ import { describe, expect, it } from 'vitest'
 import {
   canSkipOccurrence,
   dueDay,
+  dueMoment,
+  dueReminders,
+  firstDueDay,
   isInPeriod,
   isOverdue,
   lastDayOf,
   nextWeekDueDay,
   skipOccurrence,
   splitOverdue,
+  standingReminders,
 } from './due'
 import type { Repeat } from './repeat'
-import { completeTask, createTask, deleteTask, duplicateTask, setDueDate, uncompleteTask, type Task } from './task'
+import {
+  completeTask,
+  createTask,
+  deleteTask,
+  duplicateTask,
+  setDueDate,
+  setDueTime,
+  setStartDay,
+  renameTask,
+  uncompleteTask,
+  type Task,
+} from './task'
 
 // Local dates on purpose: due days are local days. September 2026 runs
 // Mon 14, Tue 15, Wed 16, Thu 17, Fri 18, and the week closes on Sun 20.
@@ -34,6 +49,11 @@ function undated(createdAt: Date = MON_14): Task {
 
 function repeating(repeat: Repeat, createdAt: Date = MON_14): Task {
   return createTask('a task', repeat, createdAt)
+}
+
+/** A repeating task written on the Monday whose rule was told to start on `day`. */
+function startedOnDay(repeat: Repeat, day: string, createdAt: Date = MON_14): Task {
+  return setStartDay(createTask('a task', repeat, createdAt), day)
 }
 
 function isInToday(task: Task, now: Date): boolean {
@@ -65,6 +85,34 @@ describe('dueDay', () => {
     expect(dueDay(writtenTuesday, WED_16)).toBeNull()
     expect(dueDay(writtenTuesday, new Date(2026, 8, 21, 9, 0))).toBe('2026-09-21')
   })
+
+  it('is the first occurrence from the day a rule was told to start on (DUE-18)', () => {
+    // Friday the 18th, so a daily task starts there and a Monday task on the 21st.
+    expect(dueDay(startedOnDay(DAILY, '2026-09-18'), WED_16)).toBe('2026-09-18')
+    expect(dueDay(startedOnDay(MONDAYS, '2026-09-18'), WED_16)).toBe('2026-09-21')
+  })
+
+  it('is the occurrence in play again once the start has gone by', () => {
+    expect(dueDay(startedOnDay(DAILY, '2026-09-14'), WED_16)).toBe('2026-09-16')
+    expect(dueDay(startedOnDay(MONDAYS, '2026-09-14'), WED_16)).toBe('2026-09-14')
+  })
+
+  it('takes a start day over the day the task was written, either way round', () => {
+    // Written on the Tuesday, so the Monday before asked nothing of it — until
+    // that Monday is the day the rule was told to start on.
+    const writtenTuesday = repeating(MONDAYS, TUE_15)
+
+    expect(dueDay(setStartDay(writtenTuesday, '2026-09-14'), WED_16)).toBe('2026-09-14')
+    expect(dueDay(setStartDay(writtenTuesday, '2026-09-21'), WED_16)).toBe('2026-09-21')
+  })
+})
+
+describe('firstDueDay', () => {
+  it('is the start itself where the rule falls on it, and the next day it does otherwise', () => {
+    expect(firstDueDay(DAILY, '2026-09-18')).toBe('2026-09-18')
+    expect(firstDueDay(MONDAYS, '2026-09-14')).toBe('2026-09-14')
+    expect(firstDueDay(MONDAYS, '2026-09-15')).toBe('2026-09-21')
+  })
 })
 
 describe('isOverdue', () => {
@@ -86,6 +134,119 @@ describe('isOverdue', () => {
     expect(isOverdue(repeating(MONDAYS), WED_16)).toBe(true)
     expect(isOverdue(completeTask(repeating(MONDAYS), TUE_15), WED_16)).toBe(false)
     expect(isOverdue(repeating(DAILY), WED_16)).toBe(false)
+  })
+
+  it('is today\'s hour once it has struck, and not before it', () => {
+    const nine = setDueTime(dueOn('2026-09-16'), '09:00')
+
+    expect(isOverdue(nine, new Date(2026, 8, 16, 8, 59))).toBe(false)
+    expect(isOverdue(nine, new Date(2026, 8, 16, 9, 1))).toBe(true)
+    // An hour later in the day is not late all morning for sharing its day.
+    expect(isOverdue(setDueTime(dueOn('2026-09-16'), '22:00'), WED_16_EVENING)).toBe(false)
+  })
+
+  it('is a repeating task past today\'s hour, and not one still to come', () => {
+    const nine = setDueTime(repeating(DAILY), '09:00')
+
+    expect(isOverdue(nine, new Date(2026, 8, 16, 8, 0))).toBe(false)
+    expect(isOverdue(nine, WED_16_EVENING)).toBe(true)
+    expect(isOverdue(completeTask(nine, WED_16), WED_16_EVENING)).toBe(false)
+  })
+})
+
+describe('dueMoment', () => {
+  it('is the hour on the day the task is due', () => {
+    expect(dueMoment(setDueTime(dueOn('2026-09-16'), '09:00'), WED_16)).toEqual(new Date(2026, 8, 16, 9, 0))
+  })
+
+  it('moves with a repeating task\'s occurrence, without anything being stored', () => {
+    const nine = setDueTime(repeating(DAILY), '09:00')
+
+    expect(dueMoment(nine, TUE_15)).toEqual(new Date(2026, 8, 15, 9, 0))
+    expect(dueMoment(nine, WED_16)).toEqual(new Date(2026, 8, 16, 9, 0))
+  })
+
+  it('is nothing for a task due on a day with no hour, or on no day at all', () => {
+    expect(dueMoment(dueOn('2026-09-16'), WED_16)).toBeNull()
+    expect(dueMoment(undated(), WED_16)).toBeNull()
+  })
+})
+
+describe('dueReminders', () => {
+  const NINE = new Date(2026, 8, 16, 9, 0)
+  const BEFORE = new Date(2026, 8, 16, 8, 59)
+  const AFTER = new Date(2026, 8, 16, 9, 1)
+
+  /** A one-off due on the Wednesday at `time`. */
+  function at(time: string, title = 'a task'): Task {
+    return setDueTime(renameTask(dueOn('2026-09-16'), title), time)
+  }
+
+  it('names a task whose hour struck in the stretch watched', () => {
+    expect(dueReminders([at('09:00', 'write')], BEFORE, AFTER)).toEqual([
+      { taskId: expect.any(String), title: 'write', at: NINE },
+    ])
+  })
+
+  it('says nothing for an hour still to come, or one already behind the stretch', () => {
+    expect(dueReminders([at('09:00')], AFTER, new Date(2026, 8, 16, 10, 0))).toEqual([])
+    expect(dueReminders([at('10:00')], BEFORE, AFTER)).toEqual([])
+  })
+
+  it('says nothing twice: the stretch is open at its start', () => {
+    // The tick that caught nine carries its own moment forward as the next start.
+    expect(dueReminders([at('09:00')], NINE, AFTER)).toEqual([])
+  })
+
+  it('says nothing about a task already done, deleted, or due on no day', () => {
+    expect(dueReminders([completeTask(at('09:00'), BEFORE)], BEFORE, AFTER)).toEqual([])
+    expect(dueReminders([deleteTask(at('09:00'), BEFORE)], BEFORE, AFTER)).toEqual([])
+    expect(dueReminders([dueOn('2026-09-16')], BEFORE, AFTER)).toEqual([])
+  })
+
+  it('names a repeating task on the hour of the occurrence in play', () => {
+    const daily = setDueTime(repeating(DAILY), '09:00')
+
+    expect(dueReminders([daily], BEFORE, AFTER).map((one) => one.at)).toEqual([NINE])
+  })
+
+  it('names every hour that struck together, earliest first', () => {
+    const eight = new Date(2026, 8, 16, 8, 0)
+    const tasks = [at('09:00', 'later'), at('08:30', 'earlier')]
+
+    expect(dueReminders(tasks, eight, AFTER).map((one) => one.title)).toEqual(['earlier', 'later'])
+  })
+})
+
+describe('standingReminders', () => {
+  const NINE = new Date(2026, 8, 16, 9, 0)
+
+  function standing(task: Task) {
+    return [{ taskId: task.id, title: task.title, at: NINE }]
+  }
+
+  it('keeps a reminder whose task is still to do, named as it is named now', () => {
+    const task = setDueTime(dueOn('2026-09-16'), '09:00')
+    const renamed = renameTask(task, 'file the taxes')
+
+    expect(standingReminders(standing(task), [renamed], WED_16_EVENING)).toEqual([
+      { taskId: task.id, title: 'file the taxes', at: NINE },
+    ])
+  })
+
+  it('drops one whose task is done, deleted or gone', () => {
+    const task = setDueTime(dueOn('2026-09-16'), '09:00')
+
+    expect(standingReminders(standing(task), [completeTask(task, WED_16)], WED_16_EVENING)).toEqual([])
+    expect(standingReminders(standing(task), [deleteTask(task, WED_16)], WED_16_EVENING)).toEqual([])
+    expect(standingReminders(standing(task), [], WED_16_EVENING)).toEqual([])
+  })
+
+  it('keeps the moment the hour struck, whatever the day has become since', () => {
+    const task = setDueTime(dueOn('2026-09-16'), '09:00')
+    const moved = setDueDate(task, '2026-09-30')
+
+    expect(standingReminders(standing(task), [moved], WED_16_EVENING)[0]?.at).toEqual(NINE)
   })
 })
 

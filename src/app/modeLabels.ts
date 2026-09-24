@@ -26,22 +26,14 @@ export const MODE_SUMMARY: Record<ModeView, string> = {
  */
 export const MODE_POINTS: Record<ModeView, readonly string[]> = {
   'modes/procrastination': [
-    'Picks one open task from Today for you to do — the easiest win it can find.',
-    'Dims everything else — the other tasks, the menu, the progress bars — so nothing distracts you. Nothing is hidden or deleted.',
-    'Press "Other task" to pick a different one. When one task is left, it offers to create a new one instead.',
-    'Finish the task to win: add a point for the work, take another task straight away, or rest.',
-    'Press "Rest" to stay in the mode with no task in front of you. Pick another one whenever you want.',
-    'Press "P" on Today to turn this mode on and off from the keyboard.',
-    'Stays on wherever you are signed in, until you turn it off or midnight ends it.',
+    'Focus on just one important task.',
+    'Dims everything else — the other tasks, the menu, the progress bars — so nothing distracts you.',
+    'Could be activated by pressing "P" button.',
   ],
   'modes/warm-up': [
     'Lets you increase your productivity gradually. No rush, no extra effort, and no promises to yourself you end up breaking.',
-    'Allows one new habit a day: 1 habit on day one, 2 on day two, up to 30 on day thirty. A habit over that is held back until tomorrow.',
-    'Holds back new habits only. Ordinary tasks are never limited, however many you have.',
-    'Counts all the habits you have, not only the ones added since it started.',
-    'Explains why a habit is held back, and never deletes or changes the habits you already have.',
-    'Shows the day, the allowance and the way out at the top of the Habits page.',
-    'Ends by itself after 30 days, and holds nothing back after that. Turn the switch off to end it sooner.',
+    'Allows only one new habit a day: 1 habit on day one, 2 on day two and so on.',
+    'Ends automatically after 30 days.',
   ],
 }
 

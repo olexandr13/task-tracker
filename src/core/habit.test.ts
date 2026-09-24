@@ -3,7 +3,7 @@ import { habitLastDays, habitRate, habitStats, habitTasks, habitWeeks, isHabit, 
 import { InvalidDayError, type LocalDay } from './day'
 import type { Repeat } from './repeat'
 import { appendTask } from './order'
-import { addSubtask, completeTask, createTask, deleteTask, isComplete, type Task } from './task'
+import { addSubtask, completeTask, createTask, deleteTask, isComplete, setStartDay, type Task } from './task'
 
 /*
  * HAB ids refer to wiki/habits.md. Local dates on purpose: a habit is kept day by
@@ -142,6 +142,12 @@ describe('habitWeeks (HAB-9, HAB-10)', () => {
     const [lastWeek, week] = habitWeeks(habit(['2026-09-09'], DAILY, tuesday), 2, WED_16)
 
     expect(lastWeek.slice(0, 4).map((day) => day.state)).toEqual(['untracked', 'untracked', 'done', 'untracked'])
+    expect(week.slice(0, 3).map((day) => day.state)).toEqual(['untracked', 'missed', 'pending'])
+  })
+
+  it('tracks from the day the habit was told to start, not from the day it was written (DUE-18)', () => {
+    const [week] = habitWeeks(setStartDay(habit([]), '2026-09-15'), 1, WED_16)
+
     expect(week.slice(0, 3).map((day) => day.state)).toEqual(['untracked', 'missed', 'pending'])
   })
 

@@ -6,14 +6,26 @@ import { isRecord } from './plainData'
  * changes, and add a step below: storing the version means old saved data can be
  * upgraded rather than silently breaking.
  */
-export const SCHEMA_VERSION = 16
+export const SCHEMA_VERSION = 18
+
+/**
+ * Version 17 had no hour to a task: it was due on a day and no time of day, so
+ * nothing could come round at a moment and say so.
+ */
+type TaskV17 = Omit<Task, 'dueTime'>
+
+/**
+ * Version 16 had no day for a rule to start on: a repeating task's occurrences
+ * ran from the day it was written, and picking a date ended the rule instead.
+ */
+type TaskV16 = Omit<TaskV17, 'startDay'>
 
 /**
  * Version 15 kept a session in whole minutes, so a timer run under a minute was
  * lost. Today's shape keeps it to the second: a minute is sixty of them.
  */
 type TimeEntryV15 = Omit<TimeEntry, 'seconds'> & { readonly minutes: number }
-type TaskV15 = Omit<Task, 'timeLog'> & { readonly timeLog: readonly TimeEntryV15[] }
+type TaskV15 = Omit<TaskV16, 'timeLog'> & { readonly timeLog: readonly TimeEntryV15[] }
 
 /**
  * Version 14 ranked urgency as low, medium or high (or none). Version 15 has a
@@ -60,11 +72,19 @@ type TaskV2 = Omit<TaskV3, 'deletedAt'>
 /** Version 1 knew nothing about repeating either: every task happened once. */
 type TaskV1 = Omit<TaskV2, 'repeat'>
 
+function fromV17(task: TaskV17): Task {
+  return { ...task, dueTime: null }
+}
+
+function fromV16(task: TaskV16): Task {
+  return fromV17({ ...task, startDay: null })
+}
+
 function fromV15(task: TaskV15): Task {
-  return {
+  return fromV16({
     ...task,
     timeLog: task.timeLog.map(({ minutes, ...entry }) => ({ ...entry, seconds: minutes * 60 })),
-  }
+  })
 }
 
 function fromV14(task: TaskV14): Task {
@@ -175,6 +195,10 @@ export function migrateTasks(version: unknown, tasks: unknown): Task[] | null {
       return (tasks as TaskV14[]).map(fromV14)
     case 15:
       return (tasks as TaskV15[]).map(fromV15)
+    case 16:
+      return (tasks as TaskV16[]).map(fromV16)
+    case 17:
+      return (tasks as TaskV17[]).map(fromV17)
     case SCHEMA_VERSION:
       return tasks as Task[]
     default:

@@ -16,25 +16,24 @@ import {
   isOverdue,
   isTimeGoalReached,
   listOf,
+  scheduledDay,
   sessionSeconds,
   skipOccurrence,
   sortLists,
   wholeMinutes,
   type List,
   type LocalDay,
+  type LocalTime,
   type Task,
   type TimeEntryId,
 } from '../../core'
 import { dateChoices } from '../dateChoices'
-import { describeDueDate } from '../dueLabels'
+import { describeDueDate, describeTimeOfDay } from '../dueLabels'
 import { describeTimeProgress, describeTimerRunning } from '../durationLabels'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { describeRepeatBriefly } from '../repeatLabels'
 import { describeReward } from '../rewardLabels'
 import {
-  completionBoxOff,
-  completionBoxOn,
-  completionBoxReady,
   controlMarker,
   controlMarkerOverdue,
   controlMarkerRunning,
@@ -56,6 +55,7 @@ import type { TaskTimer } from '../useTaskTimer'
 import { CalendarIcon } from './CalendarIcon'
 import { ChecklistIcon } from './ChecklistIcon'
 import { ClockIcon } from './ClockIcon'
+import { CompletionBox } from './CompletionBox'
 import { ContextMenu, type ContextMenuEntry } from './ContextMenu'
 import { DueChoices } from './DueChoices'
 import { DuplicateIcon } from './DuplicateIcon'
@@ -76,7 +76,6 @@ import { TagPanel } from './TagPanel'
 import { TagPicker } from './TagPicker'
 import { TaskDescription } from './TaskDescription'
 import { TaskSheet } from './TaskSheet'
-import { TickIcon } from './TickIcon'
 import { TimePicker } from './TimePicker'
 import { UrgentToggle } from './UrgentToggle'
 
@@ -93,8 +92,6 @@ interface TaskItemProps {
   dimmed?: boolean
   /** Give the focused row extra space from its neighbours (JUST-5). */
   emphasized?: boolean
-  /** The rows this one can be dragged among, when the list divides them further than to-do and done. */
-  dragGroup?: string
   /** What the row can do to its task. */
   actions: TaskActions
   /** The screen's timer, when one is offered for logging time by running a clock. */
@@ -166,7 +163,6 @@ export function TaskItem({
   showDetails = false,
   dimmed = false,
   emphasized = false,
-  dragGroup,
   actions,
   timer,
   revealed = false,
@@ -241,7 +237,7 @@ export function TaskItem({
   const row = useRef<HTMLLIElement>(null)
   const line = useRef<HTMLDivElement>(null)
   const { setNodeRef, setActivatorNodeRef, listeners, attributes, isDragging, transform, transition } =
-    useSortableTask(task, now, dragGroup)
+    useSortableTask(task, now)
   // Right completes (or takes back), left deletes — phone only, and not while the
   // sheet is open or the row is being dragged to a new place.
   const swipe = useRowSwipe(phone && !isActive && !isDragging, row, {
@@ -284,8 +280,14 @@ export function TaskItem({
   const overdue = isOverdue(task, now)
   // Each said once and shown two ways: spelled out under the controls, or read out
   // from a phone's marks. A repeating task's day is its rule's, so the rule is what is said.
-  const scheduleLabel =
+  const scheduleDay =
     task.repeat !== null ? describeRepeatBriefly(task.repeat) : day !== null ? describeDueDate(day, now) : null
+  // The hour (DUE-19) rides with whichever of the two is said, being the same hour
+  // on every day the task falls on — "Today at 8:14 PM", "Daily at 9:00 AM".
+  const scheduleLabel =
+    scheduleDay !== null && task.dueTime !== null
+      ? `${scheduleDay} at ${describeTimeOfDay(task.dueTime, now)}`
+      : scheduleDay
   const timeProgress = describeTimeProgress(spent, task.timeGoal)
   const timeLabel = (separator: string) =>
     !timerRunning
@@ -345,11 +347,11 @@ export function TaskItem({
   // (DUE-14, UI-53). The menu adds Select date, having no calendar of its own; the
   // strip leaves it out, the row's own schedule control opening one beside it.
   const dateOptions = {
-    dueDate: task.dueDate,
+    chosen: scheduledDay(task),
     now,
     repeats: task.repeat !== null,
     skip,
-    onChange: changeDueDate,
+    onChange: changeDay,
   }
   const menuItems: ContextMenuEntry[] = [
     // The same quick choices as the date panel; Select date opens that panel, calendar and all, where the menu was.
@@ -543,12 +545,20 @@ export function TaskItem({
   }
 
   /**
-   * A day picked for the task, or taken away. A day picked for a repeating task
-   * ends its rule, so the draft goes to Once, keeping its choices.
+   * A day picked for the task, or taken away: the task is due on it, or its rule
+   * starts there (DUE-12). The rule is left as it is, so the draft is too.
    */
-  function changeDueDate(dueDate: LocalDay | null) {
-    if (dueDate !== null && task.repeat !== null) setDraft({ ...draft, kind: 'once' })
-    actions.changeDueDate(task.id, dueDate)
+  function changeDay(day: LocalDay | null) {
+    actions.changeDay(task.id, day)
+  }
+
+  /**
+   * An hour picked for the task, or taken away: it is due at that hour on the
+   * day it already falls on (DUE-19), and the app says so when it comes round
+   * (REM-1). The day and the rule are left as they are.
+   */
+  function changeTime(time: LocalTime | null) {
+    actions.changeTime(task.id, time)
   }
 
   function handleRepeatChange(next: RepeatDraft) {
@@ -660,21 +670,25 @@ export function TaskItem({
       title={urgent ? 'Urgent' : undefined}
     >
       {/* In the gutter left of the row, so it takes nothing from the row itself.
-          Shown on hover and on the woken row, where the keyboard reaches it. */}
-      <button
-        type="button"
-        ref={setActivatorNodeRef}
-        {...attributes}
-        aria-label={`Move "${task.title}"`}
-        title="Drag to move"
-        className={
-          isActive || isDragging
-            ? `${grip} opacity-100`
-            : `${grip} opacity-0 group-hover:opacity-100 focus-visible:opacity-100`
-        }
-      >
-        <GripIcon className="size-3.5" />
-      </button>
+          Shown on hover and on the woken row, where the keyboard reaches it. A
+          done row has none: its place is when it was finished (TASK-17), so
+          there is nothing for a drag to change. */}
+      {!done && (
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          {...attributes}
+          aria-label={`Move "${task.title}"`}
+          title="Drag to move"
+          className={
+            isActive || isDragging
+              ? `${grip} opacity-100`
+              : `${grip} opacity-0 group-hover:opacity-100 focus-visible:opacity-100`
+          }
+        >
+          <GripIcon className="size-3.5" />
+        </button>
+      )}
 
       {/* Under the sliding face on a phone: green to the right (complete), red to
           the left (delete). Covered at rest; a swipe peels the face back. */}
@@ -721,29 +735,15 @@ export function TaskItem({
             : `grid ${lineColumns} items-center gap-x-2 px-2 py-1.5 md:px-2.5 md:py-1`
         }
       >
-        <button
-          type="button"
-          onClick={(event) => {
-            // Ticking a task off is not engaging with it: the row stays as it was.
-            event.stopPropagation()
-            if (done) actions.uncomplete(task.id)
-            else actions.complete(task.id)
-          }}
-          aria-pressed={done}
-          aria-label={
-            done
-              ? `Mark "${task.title}" as not done`
-              : ready
-                ? `Mark "${task.title}" as done: its time goal is reached`
-                : `Mark "${task.title}" as done`
-          }
-          title={ready ? 'Time goal reached: ready to tick off' : undefined}
-          className={`${done ? completionBoxOn : ready ? completionBoxReady : completionBoxOff} md:mr-0.5`}
-          aria-hidden={phone && isActive ? true : undefined}
-          tabIndex={phone && isActive ? -1 : undefined}
-        >
-          <TickIcon className="size-4" />
-        </button>
+        <CompletionBox
+          title={task.title}
+          done={done}
+          ready={ready}
+          onComplete={() => { actions.complete(task.id) }}
+          onUncomplete={() => { actions.uncomplete(task.id) }}
+          inert={phone && isActive}
+          className="md:mr-0.5"
+        />
 
         {/* On a phone the title is part of the tap that opens the sheet, not an
             edit. The words plus a little past them are the edit on a wide screen. */}
@@ -830,15 +830,18 @@ export function TaskItem({
                 The slots stay either way, so an icon keeps its column down the list (UI-27). */}
             {/* On every row: the date and the repeat rule are one control, since a rule is
                 what gives a repeating task its days. Its name carries the occurrence in play,
-                and a day picked there makes the task a one-off. */}
+                and a day picked there is the task's date, or the day its rule starts on. */}
             <div className={slot}>
               {(isActive || scheduled) && (
                 <SchedulePicker
                   dueDate={dueDay(task, now)}
+                  startDay={task.startDay}
                   draft={draft}
                   now={now}
                   overdue={overdue}
-                  onChangeDueDate={changeDueDate}
+                  onChangeDay={changeDay}
+                  dueTime={task.dueTime}
+                  onChangeTime={changeTime}
                   onChangeRepeat={handleRepeatChange}
                   skip={skip}
                   label={`Schedule for "${task.title}"`}
@@ -1076,7 +1079,8 @@ export function TaskItem({
           title={titleEditor}
           onClose={rest}
           actions={actions}
-          onChangeDueDate={changeDueDate}
+          onChangeDay={changeDay}
+          onChangeTime={changeTime}
           onChangeRepeat={handleRepeatChange}
           timer={timer}
         />
@@ -1106,10 +1110,13 @@ export function TaskItem({
         >
           <DueChoices
             dueDate={dueDay(task, now)}
+            chosen={scheduledDay(task)}
             now={now}
             repeats={task.repeat !== null}
             skip={skip}
-            onChange={changeDueDate}
+            onChange={changeDay}
+            dueTime={task.dueTime}
+            onChangeTime={changeTime}
             onDone={() => { setDateAt(null) }}
           />
         </FloatingPanel>
