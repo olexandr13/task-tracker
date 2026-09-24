@@ -25,7 +25,7 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   beside the count is lit while there is a streak.
 - **HAB-6** **Best streak**: the longest run of days in a row it was ever done.
 - **HAB-8** **Last 7 days**, **last 30 days** and **last year** (the last 365 days): a percentage,
-  with the days behind it (`25/30`). The days that count are every day since the task was created,
+  with the days behind it (`25/30`). The days that count are every day since the habit started,
   and any day it was done on before that (HAB-12). Today counts only once it is done. The percentage is rounded down, so 100% only ever means every day was kept. A
   habit with no record yet shows a dash.
 - **HAB-9** Below the numbers is a grid of days: a column per week, Monday to Sunday, with this
@@ -33,7 +33,7 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   holds its first Monday. As many weeks show as the card has room for, up to a year. A phone shows
   about four months.
 - **HAB-10** A day in the grid is **done** (green), **missed** (a darker gap), **not tracked** (a
-  pale square, before the task was created) or **today still to do** (an outlined square). Days after
+  pale square, before the habit started) or **today still to do** (an outlined square). Days after
   today are left empty. A legend at the bottom of the page names the shades, and only while any
   habit's card is open (HAB-21) — a folded card shows no grid, only its last week (HAB-21), whose
   green reads without one.
@@ -44,12 +44,13 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 
 ## The record
 
-- **HAB-12** A day can only be **missed once the task exists**. From the day it was created, a day
+- **HAB-12** A day can only be **missed once the habit has started**. From the day it starts — the
+  day picked for its rule (DUE-18), or the day the task was written when none was — a day
   with no tick is a miss. Before that nothing was asked of it, so an unticked day is **not
-  tracked**. A day marked done before the task was created still counts as done, and the days
+  tracked**. A day marked done before the habit started still counts as done, and the days
   around it stay not tracked (HAB-16). This is the same reading a repeating task's due days get
   (DUE-11). A task that was a one-off, or repeated another way, before it became daily counts its
-  misses from its creation all the same. So does a task saved before history was kept (STORE-6),
+  misses from its start all the same. So does a task saved before history was kept (STORE-6),
   whose history starts at its last completion.
 - **HAB-13** A day recorded twice counts once, and a day after today does not count at all, so a
   device whose clock runs ahead cannot put a habit ahead of itself.

@@ -33,10 +33,11 @@ requirements were written with, so older references to them still mean what they
 - **LIST-6** A task added in Today is **due today**, unless another day or a repeat rule is chosen
   for it before Enter.
 - **LIST-7** Otherwise Today shows what Tasks shows: the same rows, overdue floating to the top
-  under their **Overdue** heading (TASK-68), urgent next, and done sinking to the bottom (TASK-17)
-  — in one run under **Done** (TASK-69), where Tasks divides them by when they were
-  finished (TASK-56) — dragging to reorder — which moves the task everywhere else too — and the
-  same rail, whose bars count every task rather than only today's.
+  under their **Overdue** heading (TASK-68), urgent next, and done sinking to the bottom (TASK-17),
+  latest finished first (TASK-70) — in one run under **Done** (TASK-69), where Tasks divides them by
+  when they were finished (TASK-56) — dragging the ones still to do to reorder (TASK-71) — which
+  moves the task everywhere else too — and the same rail, whose bars count every task rather than
+  only today's.
 - **LIST-8** An empty Today greets a fresh day and says to add a task above. Once everything in it
   is done, it praises the day's work instead (TASK-50).
 - **LIST-9** Nothing moves at midnight. What is in Today follows from the day it is, so a page left

@@ -75,7 +75,7 @@ Off until it is turned on ([Settings](interface.md)), and kept on this device.
 `src/storage/nudgeRepository.ts` and `nudgeSchema.ts` (the setting and its saved shape),
 `src/storage/localStorageNudgeRepository.ts` (kept on this device),
 `src/app/browserNotification.ts` (the browser's notification and its permission, shared with
-[Time goals](time-goals.md)), `src/app/useNudge.ts` (the measuring, and what is said),
+[Reminders](reminders.md) and [Time goals](time-goals.md)), `src/app/useNudge.ts` (the measuring, and what is said),
 `src/app/components/NudgeToast.tsx` (the notice), `src/app/components/NudgeCard.tsx` and
 `BellIcon.tsx` (the setting).
 **Tested in:** `src/core/nudge.test.ts`, `src/storage/nudgeSchema.test.ts`,

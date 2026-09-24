@@ -363,6 +363,16 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   ✅ rather than the thin one a font draws, so it still reads as a tick at the small size a row draws
   its box. It is the same mark wherever a box is ticked off, white on green when done and a faint
   green when a time goal says the task is ready to be (TIME-5).
+- **UI-65** A **tick lands** where it was clicked. The box answers the click at once — it flashes a
+  lighter green and bounces, the mark (UI-64) sweeps in rather than appearing whole, and a green ring
+  opens past the edge and fades — and the **task is left where it is** while that plays, for half a
+  second. Only then is it ticked off: it greys out and is struck through (TASK-16), and sinks under
+  the work still to do (TASK-17), once the tick has landed rather than sliding away from under it.
+  **Clicking the box again before the tick lands takes it back**, and nothing was done. Taking a tick
+  back from a task already done (TASK-15) happens at once and without the flourish: undoing
+  something is quiet. A device asking for less motion is given neither the flourish nor the wait —
+  its tick is done as it is clicked. Finishing a task any other way — a swipe (UI-60), its last
+  checklist item (CHK-9) — moves it as it always did.
 
 ---
 
@@ -388,7 +398,8 @@ delete), `src/app/components/SettingsList.tsx` (and the version on it, from `pac
 `index.html` (the theme put on before the page is first drawn), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
 view's icon), `src/app/components/TickIcon.tsx` (the tick in a box that is ticked off),
 `src/app/rowControls.ts` (the shape and tones a row's controls share — larger on a phone for the
-sheet, UI-59), `src/app/panelControls.ts` (the size a panel's buttons share — larger on a phone with
+sheet, UI-59), `src/app/components/CompletionBox.tsx` (the box a task is ticked off in, wherever it
+is: how it is drawn, what it is called, and a tick left to land before the task is really done), `src/app/panelControls.ts` (the size a panel's buttons share — larger on a phone with
 the sheet's pickers), `src/styles.css`,
 `public/favicon.svg` (the app's icon; the PNGs beside it are the same icon for installing),
 `src/app/components/AppLogo.tsx` (the mark in the sidebar).
@@ -400,6 +411,8 @@ view in the address), `src/app/components/ViewOptionsMenu.test.tsx` (the View pa
 `src/app/theme.test.ts` (the theme on the page and the bar, and `index.html` reading it back), `src/app/components/TaskItem.test.tsx`
 (a row with Show task details on, a finger on a row, a phone's sheet and the sizes a thumb needs on
 it, and a swipe to complete or delete), `src/app/rowSwipe.test.ts` (how far a swipe must travel),
+`src/app/components/CompletionBox.test.tsx` (a tick landing where it was clicked, taken back before
+it lands, and gone through at once where less motion is asked for),
 `src/app/components/AddTaskForm.test.tsx` (the one-line box, the Plus and the detailed sheet),
 `src/app/letterShortcut.test.ts` and `src/app/useLetterShortcut.test.ts` (`N`, `H`, `R` and `P`),
 `src/app/components/BottomSheet.test.tsx` and `src/app/sheetDrag.test.ts` (closing a sheet by its

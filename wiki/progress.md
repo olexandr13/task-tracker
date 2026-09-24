@@ -16,7 +16,8 @@ separately, on the [Rewards](rewards.md) pages — where clearing a bar of its o
   when its due date does, or when it was completed inside it. A **skipped** occurrence (RPT-34) asks
   nothing of its day, so a daily task skipped today is out of today's count and still in the week's,
   and a weekly task whose only occurrence this week was skipped is out of the week. An occurrence
-  passed over by reopening a task after its day (RPT-38) counts the same way.
+  passed over by reopening a task after its day (RPT-38) counts the same way, and so does a day
+  before the rule starts (DUE-18): a habit that starts next month is no part of this month's count.
 - **PROG-5** A task that happens once with a due date belongs to the period its day falls in and,
   while it is still to do, to every later period as well — letting it slip does not take it out of
   the count. One with **no due date** belongs to no period while it is still to do, so a bar counts

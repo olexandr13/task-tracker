@@ -16,6 +16,7 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 | `completedAt` | When it was most recently completed, or nothing while it is todo. |
 | `repeat` | A recurrence rule, or nothing for a task that happens once. See [Repeating tasks](repeating-tasks.md). |
 | `dueDate` | The local day a one-off is due, or nothing. Always nothing on a repeating task. See [Due dates](due-dates.md). |
+| `startDay` | The local day a repeating task's rule starts on, or nothing for one that starts where it was written. Always nothing on a one-off. See [Due dates](due-dates.md). |
 | `subtasks` | The checklist, in the order it was written, or empty. See [Checklists](checklists.md). |
 | `tags` | The tags it carries, in the order they were put on, or empty. See [Tags](tags.md). |
 | `listId` | The list it is filed under, by id, or nothing for one in no list — the Inbox. One at a time. See [Lists](lists.md). |
@@ -155,9 +156,15 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 
 - **TASK-17** Overdue tasks float to the top, urgent next, and done tasks sink to the bottom. Urgent
   is read inside a run rather than across the list, so an urgent task that is also overdue leads the
-  overdue rather than leaving them (TASK-60). Otherwise tasks keep the order they were put in — the
-  order they were added, until one is moved — and completing one, marking one urgent, or a day
-  turning overdue, does not shuffle the rest inside their band.
+  overdue rather than leaving them (TASK-60). Otherwise tasks still to do keep the order they were
+  put in — the order they were added, until one is moved — and marking one urgent, or a day turning
+  overdue, does not shuffle the rest inside their band.
+- **TASK-70** The done are ordered by **when they were finished, latest first**: ticking a task off
+  sends it to the head of the done run, so the top of it says what has just been done. A done task
+  from before anything recorded the moment (TASK-14) comes last of them. Where a view divides the
+  done by when they were finished (TASK-56), the order runs on through the spans, latest first
+  inside each. Taking a tick back puts the task among those still to do, back in the order it was
+  put in (TASK-15).
 - **TASK-18** A repeating task is only at the bottom while its current occurrence is done; it comes
   back up on its own when the next one arrives.
 - **TASK-68** The tasks still to do are drawn in **two runs**: the overdue under a heading of their
@@ -177,8 +184,9 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   a small, muted gray heading with its count, the spans set close together: **Done today**, **Done yesterday**, **Done in the last 7 days**, **Done
   in the last 30 days** and **Done earlier**, most recent first. The spans count back in local days
   and each leaves out the ones before it, so a task is under exactly one; a span with nothing in it
-  has no heading. Tasks still to do stay above, with no heading. Today, Week, Month, the Inbox, lists
-  and tags keep one run of done tasks, under the plain **Done** heading (TASK-69).
+  has no heading. Inside a span the latest completion comes first (TASK-70). Tasks still to do stay
+  above, with no heading. Today, Week, Month, the Inbox, lists and tags keep one run of done tasks,
+  under the plain **Done** heading (TASK-69).
 - **TASK-69** The done tasks are set apart from the ones still to do by a heading of their own:
   **Done**, in the same small, muted gray the spans read in (TASK-56), with its count beside it and
   the same distance to the run above. Every list has it — Today, Week, Month, the Inbox, lists and
@@ -201,8 +209,9 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   pointer, and its row stays in the list, faded, while the other rows slide aside to show where it
   will land; the new order is saved when it is dropped. A task can also be dropped on a list in the
   sidebar to file it there (LST-25).
-- **TASK-38** A row can be picked up anywhere on it, or by the grip in the margin to its left. The
-  grip shows when the pointer is over the row, and on a woken row. A press inside a text box being
+- **TASK-38** A row still to do can be picked up anywhere on it, or by the grip in the margin to its
+  left. The grip shows when the pointer is over the row, and on a woken row; a done row has none
+  (TASK-71). A press inside a text box being
   typed in selects text instead.
 - **TASK-39** With a mouse, a drag starts only once the pointer has moved a few pixels, so a click
   is still a click. With a finger, you hold for a moment first, so a vertical swipe still scrolls
@@ -212,14 +221,17 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-40** From the keyboard, the grip picks the row up with Space or Enter. The arrow keys move
   it, Space or Enter drops it, and Escape puts it back. Screen readers hear the task's title and its
   position as it moves.
-- **TASK-41** A task moves only within its own group — the groups TASK-17 draws: urgent overdue,
-  other overdue, urgent, other to-do, and done. A task can't be dropped among any of the others, so
-  a drag never lifts a task out of the Overdue run (TASK-68) or into it. Completing a task,
-  un-completing it, marking it urgent (or clearing the mark), or a day turning overdue (or a date
-  moving so it is no longer) is what moves it between them, and it goes back to its place in the
-  order when it returns. On Tasks a done task moves only among those under
-  its own heading (TASK-56): a drag never changes when a task was finished. Habits draws no such
-  bands, so there a card moves among every other habit (HAB-28).
+- **TASK-41** A task moves only within its own group — the groups TASK-17 draws among the tasks
+  still to do: urgent overdue, other overdue, urgent, and other to-do. A task can't be dropped among
+  any of the others, so a drag never lifts a task out of the Overdue run (TASK-68) or into it.
+  Marking a task urgent (or clearing the mark), or a day turning overdue (or a date moving so it is
+  no longer), is what moves it between them, and it goes back to its place in the order when it
+  returns. Habits draws no such bands, so there a card moves among every other habit (HAB-28).
+- **TASK-71** **Done tasks are not dragged.** Their order is when they were finished (TASK-70),
+  which no drag could change, so a done row has **no grip** and nothing can be dropped among the
+  done. Completing a task takes it out of the reordering, and taking the tick back gives it its
+  place — and its grip — back. On Habits a card is still dragged whether or not today is ticked off,
+  the page having no done band to speak of (HAB-28).
 - **TASK-42** A task keeps its place while it is in the trash: restoring it puts it back where it
   was. New tasks still join the end (TASK-7).
 - **TASK-43** A move changes the moved task's `order` and nothing else, so it counts for nothing in
@@ -230,8 +242,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-51** **Duplicate**, in the task's menu — a right-click on a row, or a finger's hold
   (UI-31, UI-44) — on a woken wide-screen row (UI-53), and on a phone in the sheet as well
   (UI-48), adds a copy of the
-  task carrying what it says: the same title, description, repeat rule, due date, checklist
-  items, tags, reward, urgent and time goal.
+  task carrying what it says: the same title, description, repeat rule, due date or day it starts
+  on (DUE-18), checklist items, tags, reward, urgent and time goal.
 - **TASK-52** The copy is a task of its own — its own id, stamped as created now — and each item on
   its checklist is its own too, so changing one never changes the other.
 - **TASK-53** It carries **none of what happened** to the original: it is not done, its checklist is
@@ -271,7 +283,7 @@ down and read back), `src/core/descriptionLists.ts` (lists, the same), `src/app/
 `TaskList.tsx`, `TaskItem.tsx`, `TaskSheet.tsx` (a phone's look at a task), `UrgentToggle.tsx`, `ContextMenu.tsx` (a task's menu), `TaskDescription.tsx`, `src/app/descriptionBox.ts` (the box a
 description is written in), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx` (ordering), `src/app/useUndoToast.ts`
 and `UndoToast.tsx` (undo after a completion or a deletion), `src/core/order.ts`
-(where a task sits, moving it, where a copy goes, and `sortForDisplay` — overdue above, urgent next, done below),
+(where a task sits, moving it, where a copy goes, and `sortForDisplay` — overdue above, urgent next, done below, latest finished first among them),
 `src/core/due.ts` (`splitOverdue`, the two runs still to do), `src/app/dueLabels.ts` (the Overdue heading)
 and `src/app/completionLabels.ts` (the Done one),
 `src/app/components/TaskDragAndDrop.tsx`,

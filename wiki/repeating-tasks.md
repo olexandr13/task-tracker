@@ -11,7 +11,8 @@ and whether it reads as done is derived from the occurrence currently in play ra
   background: what builds up is a list of the days it was done on (RPT-27), kept on the task itself.
 - **RPT-3** A rule stores no dates of its own. It answers one question — given a moment, which day
   is the occurrence in play? — and whether the task reads as done follows from that answer and the
-  single stored completion time.
+  single stored completion time. The day a rule **starts** on is the task's, not the rule's
+  (DUE-18): the same rule started on another day is the same rule.
 
 ## Which occurrence is in play
 
@@ -48,8 +49,7 @@ and whether it reads as done is derived from the occurrence currently in play ra
 
 - **RPT-12** An existing task can be given a rule, swapped to another, or have its rule dropped,
   and the change is saved straight away — no separate confirm step. Picking a date for it from its
-  schedule button drops the rule too (DUE-12), and that one offers to undo, being the easiest of
-  them to do by accident (DUE-17).
+  schedule button leaves the rule alone: that date is the day the rule **starts** on (DUE-18).
 - **RPT-13** Giving a rule to a one-off that was finished today keeps that completion: it is still
   done today.
 - **RPT-14** Dropping the rule while the task is **not** currently done clears the stale completion
@@ -136,8 +136,8 @@ and whether it reads as done is derived from the occurrence currently in play ra
 
 ---
 
-**Where it lives:** `src/core/repeat.ts` (the rules, and `nextOccurrence`), `src/core/task.ts` (`isComplete`,
-`setRepeat`, `doneDays`, `skippedDays`, `settleHistory` and `passOverMissedOccurrence`),
+**Where it lives:** `src/core/repeat.ts` (the rules, `nextOccurrence` and `occurrenceFrom`), `src/core/task.ts` (`isComplete`,
+`setRepeat`, `startDay`, `doneDays`, `skippedDays`, `settleHistory` and `passOverMissedOccurrence`),
 `src/core/due.ts` (`skipOccurrence`), `src/app/repeatDraft.ts` (what the picker holds while choosing),
 `src/app/repeatLabels.ts` (wording), `src/app/components/RepeatChoices.tsx` (the repeat half of
 `SchedulePicker.tsx`).
