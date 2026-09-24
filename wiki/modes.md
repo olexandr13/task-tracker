@@ -14,28 +14,32 @@ and each mode a page of its own that says what it does.
   `#/modes/warm-up` (UI-36).
 - **MODE-2** The page **lists every mode there is** — Procrastination first, then Warm-up — each
   with its own glyph (🫠, 🌱), its name, and the one line it is summed up in: *One task out of
-  Today, and everything else dimmed until it is done*, *One more habit allowed each day: one on day
-  one, thirty on day thirty*.
+  Today, and everything else dimmed until it is done*, *Increase your productivity gradually: one
+  new habit a day, for thirty days*.
 
 ## Turning one on
 
-- **MODE-3** Each row says **where its mode stands** — `Off`, `On · resting`, `On · Day 3 of 30 ·
-  27 days left` — and carries a **switch** that turns it on or off from this page, at once and with
-  no confirm. Starting Procrastination opens **Today**, there being nothing to focus on anywhere
-  else (JUST-1); starting or ending the warm-up stays where it is (WARM-2). A mode that is on takes
-  the same sky tint its banner wears.
+- **MODE-3** Each row carries a **switch** that turns its mode on or off from this page, at once
+  and with no confirm, with **`Enabled` or `Disabled` under it** — a track and a knob say which way
+  is on only to someone who already knows which side is which, so the word sits with the switch
+  rather than with the mode's name. Whatever else there is to say about **where the mode stands**
+  — `Resting`, `A win to enjoy`, `Day 3 of 30 · 27 days left` — reads under the line the mode is
+  summed up in, and a mode with nothing to add says nothing there. Starting Procrastination opens
+  **Today**, there being nothing to focus on anywhere else (JUST-1); starting or ending the warm-up
+  stays where it is (WARM-2). A mode that is on takes the same sky tint its banner wears.
 - **MODE-6** A mode with **nothing to do cannot be turned on**: with everything in Today ticked
-  off, Procrastination's switch is dimmed and refuses (JUST-2), and says why — on the row (`Off ·
-  nothing to do in Today`) and in a tooltip. The mode is still listed and its page still reads:
+  off, Procrastination's switch is dimmed and refuses (JUST-2), and says why — on the row
+  (`Nothing to do in Today`) and in a tooltip. The mode is still listed and its page still reads:
   what it does is worth knowing before there is something to do. Nothing ever blocks the warm-up,
   which is about the habits rather than about today.
 
 - **MODE-9** A mode is **the account's**, not the device's: turned on at the laptop it is on at
   the phone, and turned off anywhere it is off everywhere (STORE-44, STORE-45). A mode is a way of
   working for a while, and it is the person who is working, not the machine.
-- **MODE-8** While a mode's data is **still on its way** its row says `Loading…` rather than `Off`,
-  and its switch waits. `Off` would be a guess, and on the warm-up a costly one: turning it on over
-  a month already running would start a fresh one at day one (WARM-2). What the modes are measured
+- **MODE-8** While a mode's data is **still on its way** the word under its switch is `Loading…`
+  rather than `Disabled`, and the switch waits. `Disabled` would be a guess, and on the warm-up a
+  costly one: turning it on over a month already running would start a fresh one at day one
+  (WARM-2). What the modes are measured
   against — the account's warm-up, Today's tasks — arrives a moment after the page does.
 
 ## What a mode does
@@ -48,9 +52,11 @@ and each mode a page of its own that says what it does.
   what being on actually does, in **plain sentences, one thing each**, naming the controls they
   mean in quotes (*Press "Other task" to pick a different one*). Procrastination: what is picked,
   what is dimmed, what each control does, what finishing one wins, and the **P** shortcut. The
-  warm-up: what each day allows, that only new habits are held back, what counts against the
-  allowance, that nothing already there is touched, where it is shown, and how it ends. Short
-  enough to read before the switch is touched, and said outright rather than hinted at.
+  warm-up: **why going gradually is the point** — no rush, no extra effort, no promises to
+  yourself you end up breaking — then what each day allows, that only new habits are held back,
+  what counts against the allowance, that nothing already there is touched, where it is shown, and
+  how it ends. Short enough to read before the switch is touched, and said outright rather than
+  hinted at.
 - **MODE-10** Wherever a mode **shows itself at work** — the warm-up panel at the head of Habits
   (WARM-6), the focus and idle banners on Today (JUST-5) — the banner carries a **More info**
   button beside its way out, which opens that mode's own page. A banner has room for a line; the
