@@ -33,10 +33,19 @@ export function ModePage({ mode }: { mode: ModeState }) {
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-lg leading-6">{label}</span>
           <span className="text-xs text-neutral-500 dark:text-neutral-400">{MODE_SUMMARY[mode.view]}</span>
-          <span className="text-xs text-neutral-600 dark:text-neutral-300">{mode.status}</span>
+          {/* Whether it is on is said under the switch; this is the rest of where it stands (MODE-3). */}
+          {mode.status.detail !== null && (
+            <span className="text-xs text-neutral-600 dark:text-neutral-300">{mode.status.detail}</span>
+          )}
         </div>
 
-        <ModeSwitch label={label} checked={mode.on} blocked={mode.blocked} onChange={mode.toggle} />
+        <ModeSwitch
+          label={label}
+          state={mode.status.state}
+          checked={mode.on}
+          blocked={mode.blocked}
+          onChange={mode.toggle}
+        />
       </div>
 
       <section aria-label="What it does" className="flex flex-col gap-2">

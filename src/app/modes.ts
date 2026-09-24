@@ -5,6 +5,7 @@ import {
   describeWarmUpStatus,
   MODE_LOADING,
   MODE_NOT_LOADED,
+  type ModeStatus,
   NOTHING_TO_FOCUS_ON,
 } from './modeLabels'
 import type { ModeView } from './view'
@@ -23,8 +24,8 @@ export interface ModeState {
   readonly view: ModeView
   /** Whether it is on now. */
   readonly on: boolean
-  /** Where it stands: `Off`, `On · Day 3 of 30 · 27 days left`. */
-  readonly status: string
+  /** Where it stands: `Disabled`, or `Enabled` and `Day 3 of 30 · 27 days left`. */
+  readonly status: ModeStatus
   /** Why it cannot be turned on just now, or null while it can (MODE-6, MODE-8). */
   readonly blocked: string | null
   /** Turns it on or off at once — no confirm, as everywhere else. */
@@ -65,7 +66,7 @@ export function modeStates({ procrastination, warmUp }: ModeSources): Record<Mod
         ? MODE_NOT_LOADED
         : procrastination.available
           ? null
-          : `There is ${NOTHING_TO_FOCUS_ON}.`,
+          : `${NOTHING_TO_FOCUS_ON}.`,
       toggle: (on) => { if (on) procrastination.onStart(); else procrastination.onEnd() },
     },
     'modes/warm-up': {

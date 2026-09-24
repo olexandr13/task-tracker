@@ -55,14 +55,23 @@ function ModeRow({ mode, onOpen }: { mode: ModeState; onOpen: () => void }) {
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-lg leading-6">{label}</span>
           <span className="truncate text-xs text-neutral-500 dark:text-neutral-400">{MODE_SUMMARY[mode.view]}</span>
-          <span className="text-xs text-neutral-600 dark:text-neutral-300">{mode.status}</span>
+          {/* Whether it is on is said under the switch; this is the rest of where it stands (MODE-3). */}
+          {mode.status.detail !== null && (
+            <span className="truncate text-xs text-neutral-600 dark:text-neutral-300">{mode.status.detail}</span>
+          )}
         </span>
 
         {/* A page to go to behind the row, where the switch beside it is the mode itself. */}
         <ChevronIcon className="size-5 shrink-0 -rotate-90 text-neutral-300 dark:text-neutral-600" />
       </button>
 
-      <ModeSwitch label={label} checked={mode.on} blocked={mode.blocked} onChange={mode.toggle} />
+      <ModeSwitch
+        label={label}
+        state={mode.status.state}
+        checked={mode.on}
+        blocked={mode.blocked}
+        onChange={mode.toggle}
+      />
     </div>
   )
 }

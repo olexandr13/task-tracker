@@ -15,7 +15,7 @@ import { VIEW_LABELS, type ModeView } from './view'
 /** What a mode is for, in the one line its row on the Modes page has (MODE-2). */
 export const MODE_SUMMARY: Record<ModeView, string> = {
   'modes/procrastination': 'One task out of Today, and everything else dimmed until it is done.',
-  'modes/warm-up': 'One more habit allowed each day: one on day one, thirty on day thirty.',
+  'modes/warm-up': 'Increase your productivity gradually: one new habit a day, for thirty days.',
 }
 
 /**
@@ -35,12 +35,13 @@ export const MODE_POINTS: Record<ModeView, readonly string[]> = {
     'Stays on wherever you are signed in, until you turn it off or midnight ends it.',
   ],
   'modes/warm-up': [
-    'Allows one more habit each day: 1 habit on day one, 2 on day two, up to 30 on day thirty.',
+    'Lets you increase your productivity gradually. No rush, no extra effort, and no promises to yourself you end up breaking.',
+    'Allows one new habit a day: 1 habit on day one, 2 on day two, up to 30 on day thirty. A habit over that is held back until tomorrow.',
     'Holds back new habits only. Ordinary tasks are never limited, however many you have.',
     'Counts all the habits you have, not only the ones added since it started.',
     'Explains why a habit is held back, and never deletes or changes the habits you already have.',
     'Shows the day, the allowance and the way out at the top of the Habits page.',
-    'Ends by itself after 30 days. Turn the switch off to end it sooner.',
+    'Ends by itself after 30 days, and holds nothing back after that. Turn the switch off to end it sooner.',
   ],
 }
 
@@ -49,33 +50,57 @@ export function describeModeHint(view: ModeView): string {
   return `Open ${VIEW_LABELS[view]} for what it does`
 }
 
+/**
+ * Where a mode stands, in the two places it is said (MODE-3): whether it is on,
+ * in a word under its own switch, and whatever else there is to say about it,
+ * beside the mode itself.
+ *
+ * Split in two because the switch is what the word belongs to — a switch says
+ * nothing about which way is on until something beside it does — while `Day 3
+ * of 30 · 27 days left` is about the mode, and far too long to stand under a
+ * thumb-sized control.
+ */
+export interface ModeStatus {
+  /** `Enabled`, `Disabled`, or `Loading…` while it is not known yet (MODE-8). */
+  readonly state: string
+  /** What else there is to say — `Resting`, `Day 3 of 30 · 27 days left` — or null. */
+  readonly detail: string | null
+}
+
+/** A mode turned on and off, in the word under its switch (MODE-3). */
+export const MODE_ENABLED = 'Enabled'
+export const MODE_DISABLED = 'Disabled'
+
 /** Where Procrastination mode stands, for its row and the head of its page (MODE-3). */
-export function describeProcrastinationStatus(phase: 'off' | 'idle' | 'focus' | 'won', available: boolean): string {
+export function describeProcrastinationStatus(
+  phase: 'off' | 'idle' | 'focus' | 'won',
+  available: boolean,
+): ModeStatus {
   switch (phase) {
     case 'focus':
-      return 'On · one task in front of you'
+      return { state: MODE_ENABLED, detail: 'One task in front of you' }
     case 'won':
-      return 'On · a win to enjoy'
+      return { state: MODE_ENABLED, detail: 'A win to enjoy' }
     case 'idle':
-      return 'On · resting'
+      return { state: MODE_ENABLED, detail: 'Resting' }
     default:
-      return available ? 'Off' : `Off · ${NOTHING_TO_FOCUS_ON}`
+      return { state: MODE_DISABLED, detail: available ? null : NOTHING_TO_FOCUS_ON }
   }
 }
 
 /** Why Procrastination mode cannot be turned on just now (JUST-2). */
-export const NOTHING_TO_FOCUS_ON = 'nothing to do in Today'
+export const NOTHING_TO_FOCUS_ON = 'Nothing to do in Today'
 
 /**
  * Where a mode stands while its data is still on its way, and why it cannot be
- * switched yet (MODE-8). `Off` would be a lie — and worse than a lie on the
+ * switched yet (MODE-8). `Disabled` would be a lie — and worse than a lie on the
  * warm-up, whose switch would start a fresh month over the one already running.
  */
-export const MODE_LOADING = 'Loading…'
+export const MODE_LOADING: ModeStatus = { state: 'Loading…', detail: null }
 export const MODE_NOT_LOADED = 'Still loading.'
 
 /** Where the warm-up stands: how far through its month it is, or that there is none (MODE-3). */
-export function describeWarmUpStatus(progress: WarmUpProgress | null): string {
-  if (progress === null) return 'Off'
-  return `On · ${describeWarmUpDay(progress)} · ${describeDaysLeft(progress)}`
+export function describeWarmUpStatus(progress: WarmUpProgress | null): ModeStatus {
+  if (progress === null) return { state: MODE_DISABLED, detail: null }
+  return { state: MODE_ENABLED, detail: `${describeWarmUpDay(progress)} · ${describeDaysLeft(progress)}` }
 }

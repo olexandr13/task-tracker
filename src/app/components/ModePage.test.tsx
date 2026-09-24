@@ -9,8 +9,10 @@ import { ModePage } from './ModePage'
 
 /* One mode's own page. MODE ids refer to wiki/modes.md. */
 
+const OFF = { state: 'Disabled', detail: null } as const
+
 function mode(view: ModeView, over: Partial<ModeState> = {}): ModeState {
-  return { view, on: false, status: 'Off', blocked: null, toggle: vi.fn(), ...over }
+  return { view, on: false, status: OFF, blocked: null, toggle: vi.fn(), ...over }
 }
 
 afterEach(cleanup)
@@ -25,10 +27,16 @@ describe('ModePage', () => {
   })
 
   it('carries the mode, where it stands and its switch (MODE-5)', () => {
-    render(<ModePage mode={mode('modes/procrastination', { on: true, status: 'On · resting' })} />)
+    render(
+      <ModePage
+        mode={mode('modes/procrastination', { on: true, status: { state: 'Enabled', detail: 'Resting' } })}
+      />,
+    )
 
     expect(screen.getByText('Procrastination')).toBeDefined()
-    expect(screen.getByText('On · resting')).toBeDefined()
+    // Which way the switch is, under the switch; the rest of it beside the mode (MODE-3).
+    expect(screen.getByText('Enabled')).toBeDefined()
+    expect(screen.getByText('Resting')).toBeDefined()
     expect(screen.getByRole('switch', { name: 'Procrastination' }).getAttribute('aria-checked')).toBe('true')
   })
 
@@ -41,7 +49,7 @@ describe('ModePage', () => {
   })
 
   it('reads even while the mode cannot be turned on (MODE-6)', () => {
-    render(<ModePage mode={mode('modes/procrastination', { blocked: 'There is nothing to do in Today.' })} />)
+    render(<ModePage mode={mode('modes/procrastination', { blocked: 'Nothing to do in Today.' })} />)
 
     expect(screen.getByRole('switch', { name: 'Procrastination' }).hasAttribute('disabled')).toBe(true)
     expect(screen.getByRole('list').textContent).toContain('the easiest win it can find')

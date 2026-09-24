@@ -8,8 +8,10 @@ import { ModesPage } from './ModesPage'
 
 /* The page listing the modes. MODE ids refer to wiki/modes.md. */
 
+const OFF = { state: 'Disabled', detail: null } as const
+
 function mode(view: ModeView, over: Partial<ModeState> = {}): ModeState {
-  return { view, on: false, status: 'Off', blocked: null, toggle: vi.fn(), ...over }
+  return { view, on: false, status: OFF, blocked: null, toggle: vi.fn(), ...over }
 }
 
 function modes(over: Partial<Record<ModeView, ModeState>> = {}): Record<ModeView, ModeState> {
@@ -27,7 +29,10 @@ describe('ModesPage', () => {
     render(
       <ModesPage
         modes={modes({
-          'modes/warm-up': mode('modes/warm-up', { on: true, status: 'On · Day 3 of 30 · 27 days left' }),
+          'modes/warm-up': mode('modes/warm-up', {
+            on: true,
+            status: { state: 'Enabled', detail: 'Day 3 of 30 · 27 days left' },
+          }),
         })}
         onOpen={vi.fn()}
       />,
@@ -37,9 +42,10 @@ describe('ModesPage', () => {
     expect(rows).toHaveLength(2)
     expect(rows[0]?.textContent).toContain('Procrastination')
     expect(rows[0]?.textContent).toContain('One task out of Today')
-    expect(rows[0]?.textContent).toContain('Off')
+    expect(rows[0]?.textContent).toContain('Disabled')
     expect(rows[1]?.textContent).toContain('Warm-up')
-    expect(rows[1]?.textContent).toContain('On · Day 3 of 30 · 27 days left')
+    expect(rows[1]?.textContent).toContain('Enabled')
+    expect(rows[1]?.textContent).toContain('Day 3 of 30 · 27 days left')
   })
 
   it('turns a mode on and off from the list itself (MODE-3)', async () => {
@@ -49,7 +55,11 @@ describe('ModesPage', () => {
       <ModesPage
         modes={modes({
           'modes/procrastination': mode('modes/procrastination', { toggle: start }),
-          'modes/warm-up': mode('modes/warm-up', { on: true, status: 'On', toggle: end }),
+          'modes/warm-up': mode('modes/warm-up', {
+            on: true,
+            status: { state: 'Enabled', detail: null },
+            toggle: end,
+          }),
         })}
         onOpen={vi.fn()}
       />,
@@ -81,8 +91,8 @@ describe('ModesPage', () => {
       <ModesPage
         modes={modes({
           'modes/procrastination': mode('modes/procrastination', {
-            status: 'Off · nothing to do in Today',
-            blocked: 'There is nothing to do in Today.',
+            status: { state: 'Disabled', detail: 'Nothing to do in Today' },
+            blocked: 'Nothing to do in Today.',
             toggle,
           }),
         })}
@@ -92,7 +102,7 @@ describe('ModesPage', () => {
 
     const control = screen.getByRole('switch', { name: 'Procrastination' })
     expect(control.hasAttribute('disabled')).toBe(true)
-    expect(control.getAttribute('title')).toBe('There is nothing to do in Today.')
+    expect(control.getAttribute('title')).toBe('Nothing to do in Today.')
 
     await userEvent.click(control)
     expect(toggle).not.toHaveBeenCalled()
@@ -103,7 +113,7 @@ describe('ModesPage', () => {
     render(
       <ModesPage
         modes={modes({
-          'modes/procrastination': mode('modes/procrastination', { blocked: 'There is nothing to do in Today.' }),
+          'modes/procrastination': mode('modes/procrastination', { blocked: 'Nothing to do in Today.' }),
         })}
         onOpen={onOpen}
       />,
