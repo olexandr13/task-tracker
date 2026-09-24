@@ -32,7 +32,7 @@ export const MODE_POINTS: Record<ModeView, readonly string[]> = {
   ],
   'modes/warm-up': [
     'Lets you increase your productivity gradually. No rush, no extra effort, and no promises to yourself you end up breaking.',
-    'Allows only one new habit a day: 1 habit on day one, 2 on day two and so on.',
+    'Allows only one new habit a day: 1 habit on day one, 2 habits on day two and so on.',
     'Ends automatically after 30 days.',
   ],
 }

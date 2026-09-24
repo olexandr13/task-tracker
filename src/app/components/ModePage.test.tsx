@@ -23,7 +23,7 @@ describe('ModePage', () => {
 
     const points = screen.getByRole('list')
     expect(points.children).toHaveLength(MODE_POINTS['modes/warm-up'].length)
-    expect(points.textContent).toContain('Holds back new habits only')
+    expect(points.textContent).toContain('Allows only one new habit a day')
   })
 
   it('carries the mode, where it stands and its switch (MODE-5)', () => {
@@ -52,6 +52,6 @@ describe('ModePage', () => {
     render(<ModePage mode={mode('modes/procrastination', { blocked: 'Nothing to do in Today.' })} />)
 
     expect(screen.getByRole('switch', { name: 'Procrastination' }).hasAttribute('disabled')).toBe(true)
-    expect(screen.getByRole('list').textContent).toContain('the easiest win it can find')
+    expect(screen.getByRole('list').textContent).toContain('Dims everything else')
   })
 })

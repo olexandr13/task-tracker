@@ -42,7 +42,7 @@ import { WarmUpPanel } from './components/WarmUpPanel'
 import { ProcrastinationPanel } from './components/ProcrastinationMode'
 import { ListsPage } from './components/ListsPage'
 import { ModePage } from './components/ModePage'
-import { ModesNav } from './components/ModesNav'
+import { ModesBackLink } from './components/ModesBackLink'
 import { ModesPage } from './components/ModesPage'
 import { MorePage } from './components/MorePage'
 import { ProgressPanel } from './components/ProgressPanel'
@@ -586,10 +586,12 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
             lists={lists.lists}
             listsOpen={sideNav.listsOpen}
             rewardsOpen={sideNav.rewardsOpen}
+            modesOpen={sideNav.modesOpen}
             dimmed={dimChrome}
             onChange={setView}
             onListsOpenChange={(listsOpen) => { setSideNav({ ...sideNav, listsOpen }) }}
             onRewardsOpenChange={(rewardsOpen) => { setSideNav({ ...sideNav, rewardsOpen }) }}
+            onModesOpenChange={(modesOpen) => { setSideNav({ ...sideNav, modesOpen }) }}
           />
 
           <div className="flex min-w-0 flex-1 flex-col gap-5">
@@ -616,8 +618,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
               </section>
             ) : isModesView(view) ? (
               <section aria-label={viewLabel(view)} className="flex flex-col gap-5">
-                {/* Neither the sidebar nor the bar lists the modes, so the way back is here (MODE-7). */}
-                <ModesNav view={view} onChange={setView} />
+                {/* A phone has no sidebar listing the modes, so the way back is here (MODE-7). */}
+                <ModesBackLink onBack={() => { setView('modes') }} />
                 <ModePage mode={modes[view]} />
               </section>
             ) : isRewardsView(view) ? (

@@ -115,21 +115,23 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   it (MODE-1), **Trash** and **Settings**, and a view for each list, opened from Lists, and one for
   each tag, opened from Tags. Each is named and carries an
   icon — every tag's view the same `#` as Tags, and every list the same folder as Lists, and each
-  mode the glyph it wears everywhere else. **Tags** and **Modes** are reached from **More**
-  (UI-45); **Rewards** has an entry of its own in
+  mode the glyph it wears everywhere else. **Tags** is reached from **More** (UI-45), and so is
+  **Modes** on a phone — the sidebar gives Modes an entry of its own, with each mode under it
+  (MODE-7); **Rewards** has an entry of its own in
   the sidebar and a tab of its own on a phone (UI-30, UI-32). See
   [Views](views.md), [Lists](lists.md), [Habits](habits.md),
   [Rewards](rewards.md), [Tags](tags.md) and [Modes](modes.md).
 - **UI-30** In the sidebar the views come in four groups with a thin line between each: the period
-  views (**Today**, **Week**, **Month**), then **Tasks**, **Habits**, **Lists**, **Rewards** and
-  **More**, then **Trash**, then **Settings**. **Lists** and **Rewards** each keep their pages
-  indented under them — the **Inbox** and every list (LST-13), and **History**, **Prizes**,
-  **Wishlist** and **Rules** (RWD-30) — and each has a **chevron at its end that folds them away** and opens them
+  views (**Today**, **Week**, **Month**), then **Tasks**, **Habits**, **Lists**, **Rewards**,
+  **Modes** and **More**, then **Trash**, then **Settings**. **Lists**, **Rewards** and **Modes**
+  each keep their pages indented under them — the **Inbox** and every list (LST-13), **History**,
+  **Prizes**, **Wishlist** and **Rules** (RWD-30), and **Procrastination** and **Warm-up**
+  (MODE-7) — and each has a **chevron at its end that folds them away** and opens them
   again, without leaving the view you are on. Open, the page you are on is marked itself; folded,
-  the entry above stands for it. Both start open, and how they are left is kept on this device
-  (STORE-31). A tag's view has no entry of its own, and neither has a mode's: **More** stays marked
-  while Tags, a tag's tasks, Modes or one mode's page are open (MODE-1). A mode's page carries its
-  own strip back to Modes (MODE-7), the sidebar listing none of them.
+  the entry above stands for it. All three start open, and how they are left is kept on this device
+  (STORE-31). A tag's view has no entry of its own: **More** stays marked while Tags or a tag's
+  tasks are open (UI-45). A mode's page has one, under **Modes**, so nothing there needs a strip of
+  its own (MODE-7).
 - **UI-8** The view you are on is marked, in the sidebar and in the bottom bar alike.
 - **UI-32** The bottom bar has six tabs, each an icon over its name, from left to right:
   **Settings**, **Rewards**, **More** (UI-45), **Tasks**, **Habits** and **the period** (UI-33).
@@ -164,12 +166,13 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   **Trash**, each entry with its icon — so any list is two taps from anywhere, however long Tasks
   runs, and no heading repeats the name of the entry above it. Choosing one goes there. From any
   other view, a list's included, a tap on Tasks goes to Tasks.
-- **UI-45** Neither the bar nor the sidebar has an entry for the tags or the modes: they are under
-  **More**, marked with three dots. **A tap opens More's page** — two links, **Tags** and **Modes**,
-  each with its icon, large enough for a thumb (UI-49) and a chevron at its end marking it as a page
-  to go to. The Modes row says how many modes are on (MODE-1). The page is the same on a wide
-  screen, and choosing either goes there. **More** stays marked while its own page, the Tags page, a
-  tag's view, the Modes page or one mode's page is open. Procrastination and the warm-up were rows
+- **UI-45** The bar has no entry for the tags or the modes, and the sidebar none for the tags:
+  they are under **More**, marked with three dots; the sidebar lists the modes itself (MODE-7).
+  **A tap opens More's page** — two links, **Tags** and **Modes**, each with its icon, large enough
+  for a thumb (UI-49) and a chevron at its end marking it as a page to go to. The Modes row says how many modes are on (MODE-1). The page is the same on a wide
+  screen, and choosing either goes there. **More** stays marked while its own page, the Tags page or
+  a tag's view is open, and in the bar while the Modes page or one mode's page is; in the sidebar
+  those mark **Modes** instead (MODE-7). Procrastination and the warm-up were rows
   here while they were switches with nothing to say; each has a page of its own now (MODE-5), as the
   rewards took a tab of their own once a phone's bar had room (UI-32, RWD-19). Its address is
   `#/more` (UI-36).

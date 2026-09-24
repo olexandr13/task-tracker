@@ -7,34 +7,45 @@ import type { View } from '../view'
 import { SideNav } from './SideNav'
 
 /* The sidebar. UI ids refer to wiki/interface.md, TAG ids to wiki/tags.md, RWD ids to
-   wiki/rewards.md, LST ids to wiki/lists.md. */
+   wiki/rewards.md, LST ids to wiki/lists.md, MODE ids to wiki/modes.md. */
 
 afterEach(cleanup)
 
 const WORK = createList('Work', new Date('2026-09-01T00:00:00.000Z'))
 const HOME = createList('Home', new Date('2026-09-02T00:00:00.000Z'))
 
-function setup(view: View, lists: readonly List[] = [], listsOpen = true, dimmed = false, rewardsOpen = true) {
+function setup(
+  view: View,
+  lists: readonly List[] = [],
+  listsOpen = true,
+  dimmed = false,
+  rewardsOpen = true,
+  modesOpen = true,
+) {
   const onChange = vi.fn()
   const onListsOpenChange = vi.fn()
   const onRewardsOpenChange = vi.fn()
+  const onModesOpenChange = vi.fn()
   render(
     <SideNav
       view={view}
       lists={lists}
       listsOpen={listsOpen}
       rewardsOpen={rewardsOpen}
+      modesOpen={modesOpen}
       dimmed={dimmed}
       onChange={onChange}
       onListsOpenChange={onListsOpenChange}
       onRewardsOpenChange={onRewardsOpenChange}
+      onModesOpenChange={onModesOpenChange}
     />,
   )
-  return { user: userEvent.setup(), onChange, onListsOpenChange, onRewardsOpenChange }
+  return { user: userEvent.setup(), onChange, onListsOpenChange, onRewardsOpenChange, onModesOpenChange }
 }
 
 const foldButton = () => screen.getByRole('button', { name: 'Show lists' })
 const rewardsFoldButton = () => screen.getByRole('button', { name: 'Show rewards pages' })
+const modesFoldButton = () => screen.getByRole('button', { name: 'Show modes' })
 
 const marked = () => screen.getAllByRole('button').filter((button) => button.getAttribute('aria-current') === 'page')
 
@@ -45,12 +56,14 @@ describe('SideNav', () => {
     expect(screen.getByText('PickMe')).toBeTruthy()
   })
 
-  it('carries Lists, Rewards and More beside Tasks and Habits, and no entry for Tags or any one tag (UI-30, UI-45, TAG-18, RWD-19, LST-13)', () => {
+  it('carries Lists, Rewards, Modes and More beside Tasks and Habits, and no entry for Tags or any one tag (UI-30, UI-45, TAG-18, RWD-19, LST-13, MODE-7)', () => {
     setup('today')
 
     const entries = screen
       .getAllByRole('button')
-      .filter((button) => button !== foldButton() && button !== rewardsFoldButton())
+      .filter(
+        (button) => button !== foldButton() && button !== rewardsFoldButton() && button !== modesFoldButton(),
+      )
     expect(entries.map((button) => button.textContent)).toEqual([
       'Today',
       'Week',
@@ -64,6 +77,9 @@ describe('SideNav', () => {
       'Prizes',
       'Wishlist',
       'Rules',
+      'Modes',
+      '🫠Procrastination',
+      '🌱Warm-up',
       'More',
       'Trash',
       'Settings',
@@ -103,12 +119,64 @@ describe('SideNav', () => {
     expect(marked().map((button) => button.textContent)).toEqual(['More'])
   })
 
-  it('keeps More marked while the Modes page or one mode\'s is open (UI-8, UI-45, MODE-1)', () => {
-    for (const view of ['modes', 'modes/procrastination', 'modes/warm-up'] as const) {
-      setup(view)
-      expect(marked().map((button) => button.textContent)).toEqual(['More'])
-      cleanup()
-    }
+  it('marks Modes, and each mode\'s page itself, rather than More (UI-8, UI-30, MODE-7)', () => {
+    setup('modes')
+    expect(marked().map((button) => button.textContent)).toEqual(['Modes'])
+    cleanup()
+
+    setup('modes/procrastination')
+    // Each mode wears its own glyph here, as it does wherever it is named (MODE-2).
+    expect(marked().map((button) => button.textContent)).toEqual(['🫠Procrastination'])
+    cleanup()
+
+    setup('modes/warm-up')
+    expect(marked().map((button) => button.textContent)).toEqual(['🌱Warm-up'])
+  })
+
+  it('goes to Modes, and to one mode\'s page, from the sidebar (MODE-7)', async () => {
+    const { user, onChange } = setup('today')
+
+    await user.click(screen.getByRole('button', { name: 'Modes' }))
+    await user.click(within(screen.getByRole('list', { name: 'Modes' })).getByRole('button', { name: 'Warm-up' }))
+
+    expect(onChange.mock.calls).toEqual([['modes'], ['modes/warm-up']])
+  })
+
+  it('keeps the modes under Modes, in the order the page lists them (UI-30, MODE-2, MODE-7)', () => {
+    setup('modes')
+
+    const under = within(screen.getByRole('list', { name: 'Modes' }))
+    expect(under.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      '🫠Procrastination',
+      '🌱Warm-up',
+    ])
+  })
+
+  it('folds the modes away and opens them again, without leaving the view (MODE-7)', async () => {
+    const { user, onChange, onModesOpenChange } = setup('today')
+
+    expect(modesFoldButton().getAttribute('aria-expanded')).toBe('true')
+    expect(modesFoldButton().getAttribute('aria-controls')).toBe(screen.getByRole('list', { name: 'Modes' }).id)
+
+    await user.click(modesFoldButton())
+
+    expect(onModesOpenChange).toHaveBeenCalledWith(false)
+    expect(onChange).not.toHaveBeenCalled()
+
+    cleanup()
+    const folded = setup('today', [], true, false, true, false)
+    await folded.user.click(modesFoldButton())
+
+    expect(folded.onModesOpenChange).toHaveBeenCalledWith(true)
+  })
+
+  it('leaves the modes out while folded, and marks Modes for the page you are on (UI-8, MODE-7)', () => {
+    setup('modes/warm-up', [], true, false, true, false)
+
+    expect(modesFoldButton().getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('list', { name: 'Modes' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Warm-up' })).toBeNull()
+    expect(marked().map((button) => button.textContent)).toEqual(['Modes'])
   })
 
   it('marks Rewards itself, and not More, while the Rewards page is open (UI-8, UI-30, RWD-19)', () => {

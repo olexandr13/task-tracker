@@ -5,8 +5,8 @@ import { readSideNavState, SIDE_NAV_SCHEMA_VERSION, toStoredSideNavState } from 
 
 describe('readSideNavState', () => {
   it('reads back what was saved', () => {
-    const folded = { listsOpen: false, rewardsOpen: false }
-    const open = { listsOpen: true, rewardsOpen: true }
+    const folded = { listsOpen: false, rewardsOpen: false, modesOpen: false }
+    const open = { listsOpen: true, rewardsOpen: true, modesOpen: true }
 
     expect(readSideNavState(toStoredSideNavState(folded))).toEqual(folded)
     expect(readSideNavState(toStoredSideNavState(open))).toEqual(open)
@@ -16,6 +16,15 @@ describe('readSideNavState', () => {
     expect(readSideNavState({ version: 1, state: { listsOpen: false } })).toEqual({
       listsOpen: false,
       rewardsOpen: true,
+      modesOpen: true,
+    })
+  })
+
+  it('reads a layout saved before the modes were listed as leaving them open (STORE-31)', () => {
+    expect(readSideNavState({ version: 2, state: { listsOpen: false, rewardsOpen: false } })).toEqual({
+      listsOpen: false,
+      rewardsOpen: false,
+      modesOpen: true,
     })
   })
 
@@ -30,5 +39,8 @@ describe('readSideNavState', () => {
     expect(readSideNavState({ version: SIDE_NAV_SCHEMA_VERSION, state: [] })).toBeNull()
     expect(readSideNavState({ version: SIDE_NAV_SCHEMA_VERSION, state: { listsOpen: 'no' } })).toBeNull()
     expect(readSideNavState({ version: SIDE_NAV_SCHEMA_VERSION, state: { listsOpen: true } })).toBeNull()
+    expect(
+      readSideNavState({ version: SIDE_NAV_SCHEMA_VERSION, state: { listsOpen: true, rewardsOpen: true } }),
+    ).toBeNull()
   })
 })

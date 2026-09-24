@@ -1,7 +1,16 @@
 import { Fragment, useId, type ReactElement, type ReactNode } from 'react'
 import { sortLists, type List, type ListId } from '../../core'
 import { useListDropTarget } from '../useListDropTarget'
-import { isUnder, oneListView, UNDER_REWARDS, VIEW_LABELS, type FixedView, type View } from '../view'
+import {
+  isModesView,
+  isUnder,
+  oneListView,
+  UNDER_MODES,
+  UNDER_REWARDS,
+  VIEW_LABELS,
+  type FixedView,
+  type View,
+} from '../view'
 import { VIEW_ICONS } from '../viewIcons'
 import { AppLogo } from './AppLogo'
 import { ChevronIcon } from './ChevronIcon'
@@ -10,16 +19,17 @@ import { InboxIcon } from './InboxIcon'
 
 /**
  * The views, grouped: the ones named after a period, then every task, the
- * habits, the lists, the rewards and More, then the trash, then settings. A
- * thin line is drawn between groups. Lists opens onto the Inbox and every list
- * under it, so a list is one click away and a task can be dropped on one to
- * file it, and folds them away when they are not wanted. Rewards keeps its
- * three pages under it in the same way, and folds them away the same way. Tags
- * and Procrastination live under More, and a tag's tasks have no entry of their own.
+ * habits, the lists, the rewards, the modes and More, then the trash, then
+ * settings. A thin line is drawn between groups. Lists opens onto the Inbox and
+ * every list under it, so a list is one click away and a task can be dropped on
+ * one to file it, and folds them away when they are not wanted. Rewards keeps
+ * its four pages under it in the same way, and Modes a page for each mode
+ * (MODE-7); both fold away as Lists does. Tags lives under More, and a tag's
+ * tasks have no entry of their own.
  */
 const VIEW_GROUPS: readonly (readonly FixedView[])[] = [
   ['today', 'week', 'month'],
-  ['tasks', 'habits', 'lists', 'rewards', 'more'],
+  ['tasks', 'habits', 'lists', 'rewards', 'modes', 'more'],
   ['trash'],
   ['settings'],
 ]
@@ -29,12 +39,12 @@ const LISTED: ReadonlySet<View> = new Set<View>(VIEW_GROUPS.flat())
 
 /**
  * Whether an entry is the one you are on. More stands for the pages under it
- * (UI-45) — but not for one this sidebar lists itself, or two entries would be
- * marked at once. Lists and Rewards are their own case, being folded or not
- * (`FoldableEntry`).
+ * (UI-45) — but not for one this sidebar lists itself, nor for a mode's page,
+ * which is listed under Modes, or two entries would be marked at once. Lists,
+ * Rewards and Modes are their own case, being folded or not (`FoldableEntry`).
  */
 function isOn(view: View, value: FixedView): boolean {
-  if (value === 'more' && view !== 'more' && LISTED.has(view)) return false
+  if (value === 'more' && view !== 'more' && (LISTED.has(view) || isModesView(view))) return false
   return isUnder(view, value)
 }
 
@@ -43,13 +53,15 @@ const itemOn = 'bg-neutral-200/70 font-medium text-neutral-900 dark:bg-neutral-8
 const itemOff =
   'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100'
 
-/** A page under Lists or Rewards: indented to start where the word above does, and a little shorter. */
+/** A page under Lists, Rewards or Modes: indented to start where the word above does, and a little shorter. */
 const subItem = 'flex w-full min-w-0 items-center gap-2 rounded-lg py-1.5 pr-3 pl-[2.375rem] text-left text-sm transition-colors'
 /** A task being carried over it, to be dropped there. */
 const subItemOver = 'bg-blue-50 text-blue-700 ring-1 ring-blue-300 ring-inset dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-500/40'
 const subGlyph = 'size-3.5 shrink-0'
+/** A mode wears an emoji rather than a drawing, which needs a box of its own to sit in the middle of. */
+const subEmoji = 'inline-flex size-3.5 shrink-0 items-center justify-center text-[0.8125rem] leading-none'
 
-/** The chevron at the end of Lists or Rewards that folds what is under it: quiet until pointed at. */
+/** The chevron at the end of Lists, Rewards or Modes that folds what is under it: quiet until pointed at. */
 const foldButton =
   'absolute inset-y-0 right-1.5 my-auto grid size-6 place-items-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-200/70 hover:text-neutral-900 dark:text-neutral-500 dark:hover:bg-neutral-700/60 dark:hover:text-neutral-100'
 
@@ -61,11 +73,14 @@ interface SideNavProps {
   listsOpen: boolean
   /** Whether the rewards pages are shown under Rewards, or folded away. */
   rewardsOpen: boolean
+  /** Whether each mode's page is shown under Modes, or folded away. */
+  modesOpen: boolean
   /** Soften the sidebar while Procrastination mode is on (JUST-5). */
   dimmed?: boolean
   onChange: (view: View) => void
   onListsOpenChange: (open: boolean) => void
   onRewardsOpenChange: (open: boolean) => void
+  onModesOpenChange: (open: boolean) => void
 }
 
 /**
@@ -76,20 +91,25 @@ interface SideNavProps {
  * folded away. More stays marked while Tags or a tag's tasks are open; Rewards
  * has its own entry here, with the history, the wishlist and the rules under it,
  * and each of the four is marked itself (RWD-19) — or Rewards alone while they
- * are folded away, as with Lists.
+ * are folded away, as with Lists. Modes is listed the same way, with each mode's
+ * page under it, so going from one mode to the other is a step down the sidebar
+ * rather than a strip across the top of them (MODE-7).
  */
 export function SideNav({
   view,
   lists,
   listsOpen,
   rewardsOpen,
+  modesOpen,
   dimmed = false,
   onChange,
   onListsOpenChange,
   onRewardsOpenChange,
+  onModesOpenChange,
 }: SideNavProps) {
   const listsId = useId()
   const rewardsId = useId()
+  const modesId = useId()
 
   return (
     <nav
@@ -149,6 +169,27 @@ export function SideNav({
                     <SubNavButton key={page} value={page} active={view === page} onSelect={onChange} />
                   ))}
                 </FoldableEntry>
+              ) : value === 'modes' ? (
+                <FoldableEntry
+                  key={value}
+                  value={value}
+                  active={modesOpen ? view === 'modes' : isUnder(view, 'modes')}
+                  open={modesOpen}
+                  id={modesId}
+                  foldLabel="Show modes"
+                  onSelect={onChange}
+                  onOpenChange={onModesOpenChange}
+                >
+                  {UNDER_MODES.map((page) => (
+                    <SubNavButton
+                      key={page}
+                      value={page}
+                      active={view === page}
+                      glyph={subEmoji}
+                      onSelect={onChange}
+                    />
+                  ))}
+                </FoldableEntry>
               ) : (
                 <li key={value}>
                   <NavButton value={value} active={isOn(view, value)} onSelect={onChange} />
@@ -176,9 +217,9 @@ interface FoldableEntryProps {
 }
 
 /**
- * An entry with pages under it — Lists, Rewards — each a click away, and a
- * chevron that folds them away when they are not wanted (LST-26, RWD-19). The
- * entry itself still goes to its own page.
+ * An entry with pages under it — Lists, Rewards, Modes — each a click away, and
+ * a chevron that folds them away when they are not wanted (LST-26, RWD-19,
+ * MODE-7). The entry itself still goes to its own page.
  */
 function FoldableEntry({ value, active, open, id, foldLabel, onSelect, onOpenChange, children }: FoldableEntryProps) {
   return (
@@ -221,8 +262,16 @@ function NavButton({ value, active, onSelect }: { value: FixedView; active: bool
   )
 }
 
-/** A page under Rewards: the same indent as a list under Lists, and nothing to drop on it. */
-function SubNavButton({ value, active, onSelect }: { value: FixedView; active: boolean; onSelect: (view: View) => void }) {
+interface SubNavButtonProps {
+  value: FixedView
+  active: boolean
+  /** How the page's glyph is drawn: a mode's emoji needs more said than a drawing does. */
+  glyph?: string
+  onSelect: (view: View) => void
+}
+
+/** A page under Rewards or Modes: the same indent as a list under Lists, and nothing to drop on it. */
+function SubNavButton({ value, active, glyph = subGlyph, onSelect }: SubNavButtonProps) {
   const Icon = VIEW_ICONS[value]
 
   return (
@@ -233,7 +282,7 @@ function SubNavButton({ value, active, onSelect }: { value: FixedView; active: b
         aria-current={active ? 'page' : undefined}
         className={`${subItem} ${active ? itemOn : itemOff}`}
       >
-        <Icon className={subGlyph} />
+        <Icon className={glyph} />
         <span className="min-w-0 truncate">{VIEW_LABELS[value]}</span>
       </button>
     </li>

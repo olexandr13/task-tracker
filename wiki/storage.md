@@ -162,11 +162,12 @@ changes shape.
   anything not shaped as it should be — are ignored and the defaults used until they are set again;
   like a cached quote (STORE-8) there is nothing in them worth carrying forward. A browser that
   refuses storage keeps them for as long as the page is open.
-- **STORE-31** How the sidebar is laid out — whether the lists under Lists (LST-26) and the pages
-  under Rewards (RWD-19) are folded — is kept the same way, and for the same reasons: in this
+- **STORE-31** How the sidebar is laid out — whether the lists under Lists (LST-26), the pages
+  under Rewards (RWD-19) and the modes under Modes (MODE-7) are folded — is kept the same way, and
+  for the same reasons: in this
   browser's `localStorage`, not in the account, under a version of its own, read at once when the
   app opens, and back to the default — unfolded — when it cannot be read. A layout saved before
-  there were pages under Rewards is read as leaving those open.
+  there were pages under Rewards, or before the modes were listed, is read as leaving those open.
 - **STORE-36** How the habits view is shown — whether cards start open (HAB-23) — is kept the same
   way again, under a version of its own, apart from the task View options (STORE-30). A phone and a
   desktop have different room, so each is set its own way. Options the app cannot read fall back to

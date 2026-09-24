@@ -9,8 +9,9 @@ and each mode a page of its own that says what it does.
 ## Where they are
 
 - **MODE-1** **More** offers **Modes**, a page like Tags (UI-45). Its row says how many modes are
-  on (`1 on`), or nothing at all while none is. **More** stays marked while the Modes page or one
-  mode's page is open. The addresses are `#/modes` and, for a mode, `#/modes/procrastination` and
+  on (`1 on`), or nothing at all while none is. On a phone **More** stays marked while the Modes
+  page or one mode's page is open; a wide screen marks **Modes** itself, having an entry for it
+  (MODE-7). The addresses are `#/modes` and, for a mode, `#/modes/procrastination` and
   `#/modes/warm-up` (UI-36).
 - **MODE-2** The page **lists every mode there is** — Procrastination first, then Warm-up — each
   with its own glyph (🫠, 🌱), its name, and the one line it is summed up in: *One task out of
@@ -62,10 +63,14 @@ and each mode a page of its own that says what it does.
   button beside its way out, which opens that mode's own page. A banner has room for a line; the
   page is where the whole of it is written down, and there is no other way to it from the page the
   mode is being felt on. The win card (JUST-9) carries none: a win is not the moment to read.
-- **MODE-7** A **strip across the top** of a mode's page — **Modes**, **Procrastination**,
-  **Warm-up**, the one you are on marked — goes back to the list and on to the other mode. It is
-  there on a wide screen as well as a phone, unlike the rewards strip (RWD-30): neither the sidebar
-  nor the bar lists a mode, so without it there would be no one step back.
+- **MODE-7** **Modes has an entry of its own in the sidebar**, with a page for each mode indented
+  under it — **Procrastination**, **Warm-up**, each wearing its own glyph — and a chevron that
+  **folds them away** as Lists folds its lists (UI-30, LST-26); folded, Modes itself is marked
+  wherever you are under it, and open, each mode's page is marked on its own, so one mode is a
+  click from the other. How it is left is kept on this device (STORE-31). A phone has no sidebar
+  and no tab for the modes, so a mode's page begins with **a single link back to Modes** — a
+  chevron and the word — and the other mode is chosen from the list there. **More** still offers
+  Modes (MODE-1), which is how a phone reaches it at all.
 
 ---
 
@@ -73,7 +78,9 @@ and each mode a page of its own that says what it does.
 `src/app/modes.ts` (a mode as both pages read it: on, where it stands, what blocks it, the switch),
 `src/app/modeLabels.ts` (wording — the summaries, what each mode does, the statuses),
 `src/app/components/ModesPage.tsx` (the list), `src/app/components/ModePage.tsx` (one mode's page),
-`src/app/components/ModeSwitch.tsx` (the switch), `src/app/components/ModesNav.tsx` (the strip),
+`src/app/components/ModeSwitch.tsx` (the switch),
+`src/app/components/SideNav.tsx` (the modes in the sidebar),
+`src/app/components/ModesBackLink.tsx` (a phone's way back),
 `src/app/components/ModesIcon.tsx`, `src/app/components/MorePage.tsx` (the way in),
 `src/app/components/WarmUpPanel.tsx` and `src/app/components/ProcrastinationMode.tsx`
 (**More info** on a mode's banner),
