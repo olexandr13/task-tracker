@@ -80,9 +80,45 @@ describe('TaskList', () => {
   })
 
   it('keeps one run of done tasks where the view does not divide them (TASK-56)', () => {
+    const yesterday = completeTask(createTask('read', null, NOW), new Date(2026, 8, 16, 18, 0))
+    const today = completeTask(createTask('call', null, NOW), NOW)
+    setup([createTask('write', null, NOW), today, yesterday])
+
+    const done = screen.getByRole('region', { name: 'Done' })
+    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual(['Done2'])
+    expect(within(done).getByText('read')).toBeTruthy()
+    expect(within(done).getByText('call')).toBeTruthy()
+    expect(within(done).queryByText('write')).toBeNull()
+  })
+
+  it('heads the done tasks apart from the ones still to do (TASK-69)', () => {
     setup([completeTask(createTask('read', null, NOW), NOW), createTask('write', null, NOW)])
 
+    const done = screen.getByRole('region', { name: 'Done' })
+    expect(screen.getByRole('heading').textContent).toBe('Done1')
+    expect(within(done).getByText('read')).toBeTruthy()
+    expect(within(done).queryByText('write')).toBeNull()
+  })
+
+  it('says nothing about done tasks when none is (TASK-69)', () => {
+    setup([createTask('write', null, NOW), createTask('plan', null, NOW)])
+
     expect(screen.queryAllByRole('heading')).toEqual([])
+  })
+
+  it('heads the overdue above the done run (TASK-68, TASK-69)', () => {
+    const late = setDueDate(createTask('late', null, NOW), '2026-09-15')
+    const done = completeTask(createTask('read', null, NOW), NOW)
+    setup([late, done])
+
+    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual(['Overdue1', 'Done1'])
+  })
+
+  it('keeps the praise banner above the done run once every task is done (TASK-50, TASK-69)', () => {
+    setup([completeTask(createTask('read', null, NOW), NOW)])
+
+    expect(screen.getByRole('status').textContent).toBe(ALL_DONE)
+    expect(screen.getByRole('heading').textContent).toBe('Done1')
   })
 
   it('heads the overdue tasks with a run of their own (TASK-68)', () => {
@@ -110,10 +146,11 @@ describe('TaskList', () => {
     expect(screen.queryAllByRole('heading')).toEqual([])
   })
 
-  it('draws one run while Procrastination mode is on, so the chosen task leads (TASK-68, JUST-5)', () => {
+  it('draws one run while Procrastination mode is on, so the chosen task leads (TASK-68, TASK-69, JUST-5)', () => {
     const late = setDueDate(createTask('late', null, NOW), '2026-09-15')
+    const done = completeTask(createTask('read', null, NOW), NOW)
     const focus = createTask('focus', null, NOW)
-    setup([focus, late], null, focus.id)
+    setup([focus, late, done], null, focus.id)
 
     expect(screen.queryAllByRole('heading')).toEqual([])
   })

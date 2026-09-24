@@ -10,6 +10,8 @@ import { clearGuestPrizes, createLocalPrizeRepository, loadGuestPrizes } from '.
 import { clearGuestRewards, loadGuestLedger, replaceGuestLedger } from './localRewardRepository'
 import { clearGuestTags, createLocalTagRepository, loadGuestTags } from './localTagRepository'
 import { clearGuestTasks, createLocalTaskRepository, loadGuestTasks } from './localTaskRepository'
+import { clearGuestProcrastination } from './localProcrastinationRepository'
+import { clearGuestWarmUp, createLocalWarmUpRepository, loadGuestWarmUp } from './localWarmUpRepository'
 
 /**
  * The guest's data as a whole file — export and import stay on this device.
@@ -20,6 +22,7 @@ export function createLocalBackupRepository(): BackupRepository {
   const lists = createLocalListRepository()
   const tags = createLocalTagRepository()
   const prizes = createLocalPrizeRepository()
+  const warmUp = createLocalWarmUpRepository()
 
   return {
     async exportAll() {
@@ -33,6 +36,7 @@ export function createLocalBackupRepository(): BackupRepository {
         redemptions: ledger.redemptions,
         bonuses: ledger.bonuses,
         pointValue: ledger.pointValue,
+        warmUp: loadGuestWarmUp(),
       }
     },
 
@@ -48,6 +52,7 @@ export function createLocalBackupRepository(): BackupRepository {
         redemptionIds: new Set(ledger.redemptions.map((redemption) => redemption.id)),
         bonuses: ledger.bonuses,
         pointValue: ledger.pointValue,
+        warmUp: loadGuestWarmUp(),
         days: daysKnown(ledger.entries),
       }
 
@@ -68,6 +73,9 @@ export function createLocalBackupRepository(): BackupRepository {
         bonuses,
         ledger.pointValue ?? fresh.pointValue,
       )
+
+      // The file's warm-up only where there is none here already (`newRecords`).
+      if (fresh.warmUp !== null) await warmUp.importWarmUp(fresh.warmUp)
 
       return { added: countRecords(fresh), alreadyHere }
     },
@@ -91,4 +99,7 @@ export function clearGuestAccount(): void {
   clearGuestTags()
   clearGuestPrizes()
   clearGuestRewards()
+  clearGuestWarmUp()
+  // Today's mode goes with them; it is the day's state, not a record (STORE-45).
+  clearGuestProcrastination()
 }

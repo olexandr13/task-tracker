@@ -53,7 +53,8 @@ Dependencies point inwards only.
 - A new account collection goes into `ACCOUNT_COLLECTIONS` (`firestoreAccount.ts`), is reached via
   `accountCollection`, and is added to the backup (`AccountData`, `backupFile.ts`,
   `firestoreBackupRepository.ts`, `localBackupRepository.ts`).
-- Access rules are in `firestore.rules`; changing them means deploying it.
+- Access rules are in `firestore.rules`. Deploying is automatic (`scripts/deployFirestoreRules.js`,
+  run by `predev`, `prepreview` and the Claude Code hook); `npm run deploy:rules` does it by hand.
 
 ### App
 

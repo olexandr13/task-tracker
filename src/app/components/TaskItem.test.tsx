@@ -13,6 +13,7 @@ import {
   moveToList,
   nextWeekDueDay,
   offsetDay,
+  scheduleOnce,
   setDueDate,
   setTimeGoal,
   toLocalDay,
@@ -111,6 +112,14 @@ function scheduleButton() {
   return screen.getByRole('button', { name: new RegExp(`^Schedule for "${TASK}":`) })
 }
 
+/**
+ * Inside the panel that control opens. Opening it wakes the row, whose strip
+ * carries the same quick day choices (UI-53), so a choice is looked for here.
+ */
+function schedulePanel() {
+  return within(screen.getByRole('dialog', { name: `Schedule for "${TASK}"` }))
+}
+
 describe('the repeat rule on a task row', () => {
   it('shows only the icon at rest, one control for the rule and its day, naming both (RPT-17, DUE-13)', () => {
     setup()
@@ -165,6 +174,26 @@ describe('the due date on a repeating task row', () => {
     expect(dueButton.className).toContain('text-blue-600')
   })
 
+  it('reads its rule again once an undo puts it back, the picker\'s draft following (DUE-17)', () => {
+    const daily = createTask(TASK, { kind: 'daily' }, NOW)
+    const row = (task: Task) => (
+      <ul>
+        <TaskItem actions={NO_TASK_ACTIONS} task={task} now={NOW} knownTags={[]} lists={[]} />
+      </ul>
+    )
+    const { rerender } = render(row(daily))
+
+    // A day picked ends the rule, and the button goes back to reading the day.
+    rerender(row(scheduleOnce(daily, offsetDay(toLocalDay(NOW), 1), NOW)))
+    expect(scheduleButton().getAttribute('aria-label')).toContain('Tomorrow')
+
+    // Undoing puts the task back as it was; the button must not go on reading
+    // the one-off the draft last held.
+    rerender(row(daily))
+
+    expect(scheduleButton().getAttribute('aria-label')).toBe(`Schedule for "${TASK}": Daily · Today`)
+  })
+
   it('reads red on an occurrence that went by undone, and not again once the tick is taken back (DUE-10, RPT-38)', () => {
     // Written the Monday before, so the Monday it missed is one it existed for (DUE-11).
     const mondays: Repeat = { kind: 'weekly', weekdays: [1] }
@@ -201,10 +230,34 @@ describe('the due date on a repeating task row', () => {
     )
 
     await user.click(scheduleButton())
-    await user.click(screen.getByRole('button', { name: /^Tomorrow/ }))
+    await user.click(schedulePanel().getByRole('button', { name: /^Tomorrow/ }))
 
     expect(onChangeDueDate).toHaveBeenCalledWith(expect.any(String), '2026-09-16')
     // The rule is gone from the button at once; the day itself arrives with the saved task.
+    expect(scheduleButton().getAttribute('aria-label')).not.toContain('Daily')
+  })
+
+  it('does not claim a daily rule the task was refused (WARM-4, WARM-8)', async () => {
+    const user = userEvent.setup()
+    // A warm-up holding the habit back leaves the task as it was (TasksScreen),
+    // which is what this row is handed back.
+    render(
+      <ul>
+        <TaskItem
+          actions={{ ...NO_TASK_ACTIONS, changeRepeat: vi.fn() }}
+          task={createTask(TASK, null, NOW)}
+          now={NOW}
+          knownTags={[]}
+          lists={[]}
+        />
+      </ul>,
+    )
+
+    // A task with no schedule brings its control out once the row is woken (UI-18).
+    await user.click(screen.getByRole('listitem'))
+    await user.click(scheduleButton())
+    await user.click(schedulePanel().getByRole('button', { name: 'Daily' }))
+
     expect(scheduleButton().getAttribute('aria-label')).not.toContain('Daily')
   })
 })
@@ -255,9 +308,27 @@ describe('task urgent', () => {
     )
 
     await user.pointer({ keys: '[MouseRight]', target: screen.getByRole('listitem') })
-    await user.click(screen.getByRole('menuitemradio', { name: 'Urgent' }))
+    // A mark that is on or off, heard as a toggle rather than one of a set (UI-31).
+    await user.click(screen.getByRole('menuitemcheckbox', { name: 'Urgent' }))
 
     expect(onChangeUrgent).toHaveBeenCalledWith(expect.any(String), true)
+  })
+
+  it('is heard and shown as a toggle in the menu, in line with the actions (UI-31)', async () => {
+    const user = userEvent.setup()
+    render(
+      <ul>
+        <TaskItem actions={NO_TASK_ACTIONS} task={{ ...createTask(TASK, null, NOW), urgent: true }} now={NOW} knownTags={[]} lists={[]} />
+      </ul>,
+    )
+
+    await user.pointer({ keys: '[MouseRight]', target: screen.getByRole('listitem') })
+
+    const urgent = screen.getByRole('menuitemcheckbox', { name: 'Urgent' })
+    expect(urgent.getAttribute('aria-checked')).toBe('true')
+    // No tick, which would be a column indenting it past Duplicate and Tags.
+    expect(urgent.textContent).toBe('Urgent')
+    expect(screen.getByRole('menuitem', { name: 'Duplicate' }).textContent).toBe('Duplicate')
   })
 
   it('is set from the woken row (TASK-63)', async () => {
@@ -324,6 +395,96 @@ describe('task urgent', () => {
 })
 
 describe('the menu actions on a woken row', () => {
+  /** The quick day choices on the strip, in the order they are drawn. */
+  function stripDates() {
+    const group = screen.getByRole('group', { name: `Date for "${TASK}"` })
+    return Array.from(group.querySelectorAll('button'), (icon) => icon.getAttribute('aria-label'))
+  }
+
+  it('offers the quick day choices once the row is opened, Select date apart (UI-53, DUE-14)', async () => {
+    const user = setup(null)
+
+    expect(screen.queryByRole('group', { name: `Date for "${TASK}"` })).toBeNull()
+
+    await user.click(screen.getByRole('listitem'))
+
+    // No Select date: the schedule control on the row's own line opens the calendar.
+    expect(stripDates()).toEqual(['Today', 'Tomorrow', 'Next week'])
+    expect(screen.getByRole('button', { name: 'Next week' }).title).toBe(
+      `Next week · ${describeShortDate(nextWeekDueDay(NOW), NOW)}`,
+    )
+  })
+
+  it('sets the day chosen from the strip and leaves the row open (UI-53, DUE-14)', async () => {
+    const onChangeDueDate = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <ul>
+        <TaskItem actions={{ ...NO_TASK_ACTIONS, changeDueDate: onChangeDueDate }} task={createTask(TASK, null, NOW)} now={NOW} knownTags={[]} lists={[]} />
+      </ul>,
+    )
+
+    await user.click(screen.getByRole('listitem'))
+    await user.click(screen.getByRole('button', { name: 'Tomorrow' }))
+
+    expect(onChangeDueDate).toHaveBeenCalledWith(expect.any(String), offsetDay(toLocalDay(NOW), 1))
+    expect(stripDates()).toBeDefined()
+  })
+
+  it('marks the day already set, and offers to take it away (UI-53, DUE-14)', async () => {
+    const user = userEvent.setup()
+    render(
+      <ul>
+        <TaskItem actions={NO_TASK_ACTIONS} task={setDueDate(createTask(TASK, null, NOW), offsetDay(toLocalDay(NOW), 1))} now={NOW} knownTags={[]} lists={[]} />
+      </ul>,
+    )
+
+    await user.click(screen.getByRole('listitem'))
+
+    expect(stripDates()).toEqual(['Today', 'Tomorrow', 'Next week', 'Remove date'])
+    expect(screen.getByRole('button', { name: 'Tomorrow' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Today' }).getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('offers to skip a repeating task\'s occurrence, and marks no day (UI-53, RPT-34)', async () => {
+    const onSkipOccurrence = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <ul>
+        <TaskItem actions={{ ...NO_TASK_ACTIONS, skip: onSkipOccurrence }} task={createTask(TASK, { kind: 'daily' }, NOW)} now={NOW} knownTags={[]} lists={[]} />
+      </ul>,
+    )
+
+    await user.click(screen.getByRole('listitem'))
+
+    expect(stripDates()).toEqual(['Today', 'Tomorrow', 'Next week', 'Skip occurrence'])
+    expect(screen.getByRole('button', { name: 'Today' }).getAttribute('aria-pressed')).toBe('false')
+
+    await user.click(screen.getByRole('button', { name: 'Skip occurrence' }))
+
+    expect(onSkipOccurrence).toHaveBeenCalledTimes(1)
+  })
+
+  it('warns in each day\'s tooltip that picking it turns off the repeat (UI-53, DUE-12)', async () => {
+    const user = userEvent.setup()
+    render(
+      <ul>
+        <TaskItem actions={NO_TASK_ACTIONS} task={createTask(TASK, { kind: 'daily' }, NOW)} now={NOW} knownTags={[]} lists={[]} />
+      </ul>,
+    )
+
+    await user.click(screen.getByRole('listitem'))
+
+    expect(screen.getByRole('button', { name: 'Today' }).title).toBe('Today · Turns off the repeat')
+    expect(screen.getByRole('button', { name: 'Next week' }).title).toBe(
+      `Next week · ${describeShortDate(nextWeekDueDay(NOW), NOW)} · Turns off the repeat`,
+    )
+    // Skipping passes the occurrence over and keeps the rule, so it says nothing of the sort.
+    expect(screen.getByRole('button', { name: 'Skip occurrence' }).title).toBe(
+      `Skip to ${describeShortDate(offsetDay(toLocalDay(NOW), 1), NOW)}`,
+    )
+  })
+
   it('offers tags, urgent and duplicate once the row is opened (UI-53)', async () => {
     const user = setup(null)
 
@@ -816,12 +977,29 @@ describe('the menu a right-click opens on a task row', () => {
       expect(screen.getByRole('menuitemradio', { name: 'Today' }).getAttribute('aria-checked')).toBe('false')
     })
 
+    it('warns in each day\'s tooltip that picking it turns off the repeat (DUE-12, DUE-14)', async () => {
+      const user = renderDated(createTask(TASK, { kind: 'daily' }, NOW))
+
+      await openMenu(user)
+
+      expect(screen.getByRole('menuitemradio', { name: 'Today' }).title).toBe('Today · Turns off the repeat')
+      expect(screen.getByRole('menuitemradio', { name: 'Next week' }).title).toBe(
+        `Next week · ${describeShortDate(nextWeekDueDay(NOW), NOW)} · Turns off the repeat`,
+      )
+      // Neither of these ends it: the skip keeps the rule, and Select date only opens
+      // the panel, whose note says it there.
+      expect(screen.getByRole('menuitem', { name: 'Skip occurrence' }).title).toBe(
+        `Skip to ${describeShortDate(TOMORROW, NOW)}`,
+      )
+      expect(screen.getByRole('menuitem', { name: 'Select date' }).title).toBe('Select date')
+    })
+
     it('is in the row\'s schedule panel too, skip and all (DUE-9, RPT-34)', async () => {
       const onSkipOccurrence = vi.fn()
       const user = renderDated(createTask(TASK, { kind: 'daily' }, NOW), { skip: onSkipOccurrence })
 
       await user.click(screen.getByRole('button', { name: /^Schedule for/ }))
-      await user.click(screen.getByRole('button', { name: 'Skip occurrence' }))
+      await user.click(schedulePanel().getByRole('button', { name: 'Skip occurrence' }))
 
       expect(onSkipOccurrence).toHaveBeenCalledTimes(1)
     })

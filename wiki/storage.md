@@ -101,6 +101,17 @@ changes shape.
 - **STORE-35** Deleting a tag is two changes — off every task, then every record of that name — and
   the tasks go first, so a tag is never left on a task with no record, to be kept all over again.
 
+## Warm-up
+
+- **STORE-44** The **warm-up** (WARM-1) is kept in the account as **one record**, named for itself
+  rather than by an id, so the devices that start or end it write the one record and the later write
+  wins. No record at all is no warm-up, whether there never was one or it was ended (WARM-9). All it
+  holds is the **day it began**; which day it is on and how many habits that allows are derived from
+  it and from now (WARM-3, WARM-4), so nothing is rewritten as the month goes by. It has **its own
+  version**, apart from everything else's, and one the app cannot read — an unknown version, a day
+  that is no day — is ignored with a warning and read as **no warm-up** (STORE-7), which asks
+  nothing of anyone.
+
 ## Tasks kept in the browser
 
 - **STORE-19** Tasks saved before they belonged to the account were kept in the browser's
@@ -113,10 +124,23 @@ changes shape.
   its tasks only once the account holds them. A move that fails, offline say, is tried again next
   time. Browser data the app cannot read is left where it is.
 
+## Procrastination mode
+
+- **STORE-45** **Procrastination mode** (JUST-1) is kept in the account as **one record**, named
+  for itself as the warm-up is (STORE-44), so a mode turned on at the laptop is on at the phone and
+  both show the **same one task**. It holds the phase (resting, focused, won), the task it is on
+  and the **day it was started**; no record at all is the mode off, whether it was never on or was
+  ended (JUST-8). It has **its own version**, and one the app cannot read is ignored with a warning
+  and read as **off** (STORE-7): a mode is a way through one afternoon, not a record worth guessing
+  at. What the mode settles to — off at a new day, a win when the task is finished — is derived and
+  then written down once (JUST-7, JUST-10), so the other device hears of it. It is **not in the
+  backup** (BAK-2): it is today's state rather than something worth restoring next month.
+
 ## Guest — this device only
 
-- **STORE-37** As guest (AUTH-15), tasks, lists, tags, the wishlist and the points ledger — the
-  bonuses and what a point is worth with it (STORE-41, STORE-42, STORE-43) — are kept in this
+- **STORE-37** As guest (AUTH-15), tasks, lists, tags, the wishlist, the points ledger — the
+  bonuses and what a point is worth with it (STORE-41, STORE-42, STORE-43), the warm-up
+  (STORE-44) and Procrastination mode (STORE-45) are kept in this
   browser's `localStorage`, under the same versioned shapes as the account's (STORE-4, STORE-24,
   STORE-27, STORE-34). A ledger kept before there were bonuses, or before a point had a value, holds
   none of them, rather than being unreadable for the lack of one. Nothing is sent to the account or any other device. A refresh or another tab
@@ -124,9 +148,10 @@ changes shape.
   quiet (OFF-7).
 - **STORE-38** The first time a Google account is open here online after guest data was kept, that
   data is **moved into the account** — tasks, lists, tags, prizes, points earned, redemptions, the
-  bonuses and what a point is worth — added alongside what the account already has, without
-  overwriting tasks it already holds (STORE-20) or a bonus or point value it has already set, then
-  forgotten by the browser. A move that fails, offline say, is tried again next time.
+  bonuses, what a point is worth and the warm-up — added alongside what the account already has,
+  without overwriting tasks it already holds (STORE-20), or a bonus, point value or warm-up it has
+  already set, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
+  signing in does not start its month again (WARM-10). A move that fails, offline say, is tried again next time.
 
 ## Kept on this device
 
@@ -233,7 +258,8 @@ copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgr
 `prizeRepository.ts`, `firestorePrizeRepository.ts`, `localPrizeRepository.ts` and `prizeSchema.ts`
 (the prizes and the wishlist), `listRepository.ts`, `firestoreListRepository.ts`, `localListRepository.ts` and
 `listSchema.ts` (the lists), `tagRepository.ts`, `firestoreTagRepository.ts`, `localTagRepository.ts` and `tagSchema.ts`
-(the kept tags), `localBackupRepository.ts` and `localSyncMonitor.ts` (guest export and the quiet sync notice),
+(the kept tags), `warmUpRepository.ts`, `firestoreWarmUpRepository.ts`, `localWarmUpRepository.ts`
+and `warmUpSchema.ts` (the warm-up), `localBackupRepository.ts` and `localSyncMonitor.ts` (guest export and the quiet sync notice),
 `src/storage/quoteRepository.ts` and `localStorageQuoteRepository.ts`,
 `src/storage/quoteSource.ts` and `quotableQuoteSource.ts`, `src/storage/viewOptionsRepository.ts`,
 `viewOptionsSchema.ts` and `localStorageViewOptionsRepository.ts` (the View options),
@@ -252,7 +278,7 @@ STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/S
 `src/storage/localTaskImport.test.ts` (the move, and upgrading older data),
 `src/storage/localTaskRepository.test.ts` (the guest's tasks),
 `src/storage/rewardSchema.test.ts`
-(reading the ledger back), `src/storage/prizeSchema.test.ts` and `src/app/usePrizes.test.ts`
+(reading the ledger back), `src/storage/warmUpSchema.test.ts` (reading the warm-up back), `src/storage/prizeSchema.test.ts` and `src/app/usePrizes.test.ts`
 (reading a prize or a wish back, and keeping them), `src/storage/listRepository.test.ts` and `src/storage/listSchema.test.ts`
 (what a change to the lists writes, and reading one back), `src/storage/tagRepository.test.ts`,
 `src/storage/tagSchema.test.ts` and `src/app/useTags.test.ts` (the same for the tags, and keeping the

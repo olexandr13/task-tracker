@@ -16,8 +16,10 @@ import {
   summarizeTags,
   trashedTasks,
   type ListId,
+  type LocalDay,
   type Prize,
   type RedemptionId,
+  type Repeat,
   type RewardKey,
   type SubtaskId,
   type Task,
@@ -34,8 +36,13 @@ import { BottomNav } from './components/BottomNav'
 import { FolderIcon } from './components/FolderIcon'
 import { HabitList } from './components/HabitList'
 import { HabitViewOptionsMenu } from './components/HabitViewOptionsMenu'
+import { WarmUpNoticeToast } from './components/WarmUpNoticeToast'
+import { WarmUpPanel } from './components/WarmUpPanel'
 import { ProcrastinationPanel } from './components/ProcrastinationMode'
 import { ListsPage } from './components/ListsPage'
+import { ModePage } from './components/ModePage'
+import { ModesNav } from './components/ModesNav'
+import { ModesPage } from './components/ModesPage'
 import { MorePage } from './components/MorePage'
 import { ProgressPanel } from './components/ProgressPanel'
 import { QuoteCard } from './components/QuoteCard'
@@ -50,6 +57,7 @@ import { StorageProblemNotice } from './components/StorageProblemNotice'
 import { SyncBadge } from './components/SyncBadge'
 import { RunningTimerChip } from './components/RunningTimerChip'
 import { GoalNoticeToast } from './components/GoalNoticeToast'
+import { NudgeToast } from './components/NudgeToast'
 import { TagList } from './components/TagList'
 import { TaskDragAndDrop } from './components/TaskDragAndDrop'
 import { TaskList } from './components/TaskList'
@@ -67,19 +75,23 @@ import { useDeviceSetting } from './useDeviceSetting'
 import { useLists } from './useLists'
 import { usePrizes } from './usePrizes'
 import { useProcrastination } from './useProcrastination'
+import { useWarmUp } from './useWarmUp'
 import { useQuote } from './useQuote'
 import { useRewards } from './useRewards'
 import { useStorageProblem } from './useStorageProblem'
 import { useSyncNotice } from './useSyncNotice'
 import { useTags } from './useTags'
 import { useTasks } from './useTasks'
+import { useNudge } from './useNudge'
 import { useTaskTimer } from './useTaskTimer'
 import { useUndoToast } from './useUndoToast'
+import { modeStates } from './modes'
 import { useView } from './useView'
 import {
   allDoneMessage,
   emptyMessage,
   doneSpans,
+  isModesView,
   isRewardsView,
   isTaskView,
   newTaskDueDay,
@@ -88,6 +100,7 @@ import {
   oneListView,
   showsTask,
   tagView,
+  UNDER_MODES,
   VIEW_LABELS,
   viewLabel,
   viewShowingTask,
@@ -179,6 +192,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     remove,
     duplicate,
     restore,
+    putBack,
     purge,
     emptyTrash,
   } = useTasks(storage.tasks, storage.rewards, storageProblem.report, rewards.bonuses, rewards.entries)
@@ -216,9 +230,23 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const live = liveTasks(tasks)
   const trashed = trashedTasks(tasks, now)
   const todayTasks = live.filter((task) => showsTask('today', task, now, lists.lists))
-  // Procrastination mode: kept on this device for today, restored on refresh, off
-  // tomorrow, and settled against Today's tasks once they have loaded (JUST-7, JUST-10).
-  const procrastination = useProcrastination(deviceStorage.procrastination, isLoading ? null : todayTasks, now, rewards)
+  // Procrastination mode: the account's, so a mode turned on here is on wherever
+  // else you are signed in (STORE-45); off tomorrow, and settled against Today's
+  // tasks once they have loaded (JUST-7, JUST-10).
+  const procrastination = useProcrastination(
+    storage.procrastination,
+    isLoading ? null : todayTasks,
+    now,
+    rewards,
+    storageProblem.report,
+  )
+  // The nudge: nothing finished for a while says so and points at Today's leader
+  // (NUDGE-1). The same set Procrastination mode works on, and null while it loads.
+  const nudge = useNudge(deviceStorage.nudge, isLoading ? null : todayTasks)
+  // Warm-up mode: the account's, so every device agrees which day it is on, and
+  // measured against every habit there is — null while those are still loading
+  // (WARM-1, WARM-4).
+  const warmUp = useWarmUp(storage.warmUp, isLoading ? null : tasks, now, storageProblem.report)
   const taskTimer = useTaskTimer(
     deviceStorage.taskTimer,
     (taskId) => {
@@ -233,6 +261,11 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     runningTimerTaskId === null
       ? null
       : live.find((task) => task.id === runningTimerTaskId) ?? null
+  // The task the nudge is pointing at, as it stands now: gone from the list,
+  // there is nothing left to open.
+  const nudgeNotice = nudge.notice
+  const nudgeTask =
+    nudgeNotice === null ? null : live.find((task) => task.id === nudgeNotice.taskId) ?? null
   const { stop: stopTaskTimer } = taskTimer
   // A timer whose task was deleted cannot be shown; stop it so it does not linger.
   useEffect(() => {
@@ -267,13 +300,44 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     ? groupByCompletion(sortForDisplay(shown, now), spans, now).flatMap((group) => group.tasks)
     : sortForDisplay(shown, now)
 
+  // Habits are the tasks themselves, in the order of the task list (HAB-2).
+  const habits = habitTasks(tasks)
+  // What a drag can pick up on the page open, in the order it is drawn: the habit
+  // cards on Habits, the rows anywhere else. Which side of a target a dropped one
+  // lands on is read from this order (`dropOutcome`), and it is the place a screen
+  // reader hears as one is carried, so it has to be the order on screen.
+  const draggable = view === 'habits' ? habits : ordered
+
   // Focus dims every other row; a win keeps the finished task highlighted until Rest / next.
   const focusId = view === 'today' ? procrastination.taskId : null
   // A finished focused task would sink with done work; keep it above the dimmed rows.
   const listed = pinFocusedFirst(ordered, focusId)
   const dimChrome = procrastination.phase !== 'off'
 
-  // Same as More's Procrastination control (JUST-1, JUST-8): start when off, end when on.
+  // The modes, as the Modes pages read them: on or off, where each stands, and
+  // the one way to turn it either way (MODE-2). Starting Procrastination opens
+  // Today, there being nothing to focus on anywhere else (JUST-1).
+  const modes = modeStates({
+    procrastination: {
+      phase: procrastination.phase,
+      available: procrastination.available,
+      loading: procrastination.isLoading,
+      onStart: () => {
+        procrastination.start()
+        setView('today')
+      },
+      onEnd: procrastination.end,
+    },
+    warmUp: {
+      progress: warmUp.progress,
+      loading: warmUp.isLoading,
+      onStart: warmUp.start,
+      onEnd: warmUp.end,
+    },
+  })
+  const modesOn = UNDER_MODES.filter((mode) => modes[mode].on).length
+
+  // Same as the Procrastination switch on Modes (JUST-1, JUST-8): start when off, end when on.
   useLetterShortcut('p', view === 'today' && procrastination.available && !adding, () => {
     if (procrastination.phase === 'off') procrastination.start()
     else procrastination.end()
@@ -311,6 +375,19 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     const deleted = remove(id)
     if (deleted !== null) {
       undo.show({ kind: 'task', task: deleted })
+    }
+  }
+
+  /**
+   * A day picked for a repeating task ends its rule (DUE-12), which is easy to
+   * do by accident from a row or a menu and lets go of more than the rule — the
+   * ticks and sessions of occurrences gone by go with it. So it offers to put
+   * the task back exactly as it was, for the few seconds the toast is up (DUE-17).
+   */
+  function handleChangeDueDate(id: TaskId, dueDate: LocalDay | null) {
+    const was = changeDueDate(id, dueDate)
+    if (was !== null) {
+      undo.show({ kind: 'repeatEnded', task: was })
     }
   }
 
@@ -371,6 +448,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       case 'completion':
         uncomplete(undo.pending.taskId)
         break
+      case 'repeatEnded':
+        putBack(undo.pending.task)
+        break
     }
     undo.dismiss()
   }
@@ -405,17 +485,23 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
 
   /**
    * What a row, a habit card or a task's sheet can do to its task: the rules
-   * from useTasks, with completing and deleting offering their undo, and tags
-   * spelled the way they already are.
+   * from useTasks, with completing, deleting and ending a repeat offering their
+   * undo, and tags spelled the way they already are.
    */
   const taskActions: TaskActions = {
     complete: handleComplete,
     uncomplete,
     rename,
     changeDescription,
-    changeDueDate,
+    changeDueDate: handleChangeDueDate,
     skip,
-    changeRepeat,
+    // A rule that would make one habit more is held to the warm-up's allowance,
+    // the same as adding one; turning a habit's own rule over is no new habit.
+    changeRepeat: (id, repeat) => {
+      const task = tasks.find((candidate) => candidate.id === id)
+      if (warmUp.holdsBack(repeat, task?.repeat ?? null)) return
+      changeRepeat(id, repeat)
+    },
     changeReward,
     changeUrgent,
     changeTimeGoal,
@@ -425,11 +511,36 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     addTag: (id, name) => { tag(id, name, tags) },
     removeTag: untag,
     remove: handleRemove,
-    duplicate,
+    // A copy of a habit is another habit (WARM-4).
+    duplicate: (id) => {
+      const task = tasks.find((candidate) => candidate.id === id)
+      if (warmUp.holdsBack(task?.repeat ?? null)) return
+      duplicate(id)
+    },
     addSubtask: addChecklistItem,
     setSubtaskDone: handleSetChecklistItemDone,
     renameSubtask: renameChecklistItem,
     removeSubtask: removeChecklistItem,
+  }
+
+  /**
+   * Adds a task, unless a warm-up holds the habit it would be back (WARM-4).
+   * Every way of adding goes through here, so the one-line box, the detailed
+   * sheet and Habits' own box are all held to the same allowance. Says whether
+   * the task was added, so a sheet knows whether to close.
+   */
+  function handleAddTask(
+    title: string,
+    repeat: Repeat | null,
+    dueDate: LocalDay | null,
+    taskTags: readonly string[],
+    listId: ListId | null,
+    details?: Parameters<typeof addTask>[5],
+  ): boolean {
+    if (warmUp.holdsBack(repeat)) return false
+
+    addTask(title, repeat, dueDate, taskTags, listId, details)
+    return true
   }
 
   /** Makes a list and opens it, so the next thing typed goes into it. */
@@ -457,7 +568,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       <h1 className="sr-only">{viewLabel(view, lists.lists)}</h1>
 
       {/* Around the navigation as well as the rows: a task can be dropped on a list in the sidebar to file it. */}
-      <TaskDragAndDrop tasks={ordered} onMove={move} onFile={changeList}>
+      <TaskDragAndDrop tasks={draggable} onMove={move} onFile={changeList}>
         <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-6">
           <SideNav
             view={view}
@@ -481,22 +592,22 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   onImport={(file) => { void backup.importFile(file) }}
                   theme={theme}
                   onThemeChange={onThemeChange}
+                  nudge={nudge}
                 />
               </section>
             ) : view === 'more' ? (
               <section aria-label="More">
-                <MorePage
-                  onOpen={setView}
-                  procrastination={{
-                    phase: procrastination.phase,
-                    available: procrastination.available,
-                    onStart: () => {
-                      procrastination.start()
-                      setView('today')
-                    },
-                    onEnd: procrastination.end,
-                  }}
-                />
+                <MorePage onOpen={setView} modesOn={modesOn} />
+              </section>
+            ) : view === 'modes' ? (
+              <section aria-label="Modes">
+                <ModesPage modes={modes} onOpen={setView} />
+              </section>
+            ) : isModesView(view) ? (
+              <section aria-label={viewLabel(view)} className="flex flex-col gap-5">
+                {/* Neither the sidebar nor the bar lists the modes, so the way back is here (MODE-7). */}
+                <ModesNav view={view} onChange={setView} />
+                <ModePage mode={modes[view]} />
               </section>
             ) : isRewardsView(view) ? (
               <section aria-label={viewLabel(view)} className="flex flex-col gap-5">
@@ -568,7 +679,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                       defaultDueDate={newTaskDueDay(view, now)}
                       onOpenSheet={() => { setAdding(true) }}
                       onAdd={(title, repeat, dueDate) => {
-                        addTask(title, repeat, dueDate, newTaskTags(view), newTaskListId(view))
+                        handleAddTask(title, repeat, dueDate, newTaskTags(view), newTaskListId(view))
                       }}
                     />
                   </div>
@@ -585,6 +696,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     pointsEarned={procrastination.pointsEarned}
                     onOtherTask={procrastination.pickNext}
                     onCreateTask={() => { setAdding(true) }}
+                    onMoreInfo={() => { setView('modes/procrastination') }}
                     onEnd={procrastination.end}
                     onRest={procrastination.rest}
                     onGetOneMore={procrastination.pickNext}
@@ -657,6 +769,13 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
               </section>
             ) : view === 'habits' ? (
               <>
+                {/* Where the warm-up is felt, so where it says where it stands (WARM-6). */}
+                <WarmUpPanel
+                  progress={warmUp.progress}
+                  onMoreInfo={() => { setView('modes/warm-up') }}
+                  onEnd={warmUp.end}
+                />
+
                 {/* The View button beside the box, as on the task views: the box is for a
                     new habit, the button is for how the cards below are shown. */}
                 <div className="flex gap-2">
@@ -668,7 +787,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                       label="Add habit"
                       onOpenSheet={() => { setAdding(true) }}
                       onAdd={(title, repeat, dueDate) => {
-                        addTask(title, repeat ?? { kind: 'daily' }, dueDate, [], null)
+                        handleAddTask(title, repeat ?? { kind: 'daily' }, dueDate, [], null)
                       }}
                     />
                   </div>
@@ -678,7 +797,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
 
                 <section aria-label="Habits">
                   <HabitList
-                    habits={habitTasks(tasks)}
+                    habits={habits}
                     now={now}
                     showDetails={habitViewOptions.showDetails}
                     knownTags={tags}
@@ -731,10 +850,20 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
           lists={lists.lists}
           onClose={() => { setAdding(false) }}
           onAdd={(title, repeat, dueDate, taskTags, listId, details) => {
-            addTask(title, repeat, dueDate, taskTags, listId, details)
-            setAdding(false)
+            // Held back by the warm-up, the sheet stays open with everything
+            // typed still in it, so the rule can be changed instead (WARM-8).
+            if (handleAddTask(title, repeat, dueDate, taskTags, listId, details)) setAdding(false)
           }}
         />
+      )}
+
+      {/* A habit held back is said at the top of the window, above the add sheet
+          (z-40) rather than under it: the sheet is left open with everything
+          typed still in it, so the notice has to be readable over it (WARM-8). */}
+      {warmUp.notice !== null && (
+        <div className="pointer-events-none fixed inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-50 flex justify-center px-4">
+          <WarmUpNoticeToast progress={warmUp.notice} onDismiss={warmUp.dismissNotice} />
+        </div>
       )}
 
       {/* What the screen has to say, stacked: above a phone's navigation bar — beside the Plus
@@ -761,6 +890,14 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
           <GoalNoticeToast
             title={taskTimer.goalNotice.title}
             onDismiss={taskTimer.dismissGoalNotice}
+          />
+        )}
+        {nudgeTask !== null && nudgeNotice !== null && (
+          <NudgeToast
+            title={nudgeNotice.title}
+            quietHours={nudgeNotice.quietHours}
+            onOpen={() => { revealTask(nudgeTask); nudge.dismiss() }}
+            onDismiss={nudge.dismiss}
           />
         )}
         {undo.pending !== null && (

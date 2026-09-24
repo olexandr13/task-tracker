@@ -1,3 +1,4 @@
+import { CSS } from '@dnd-kit/utilities'
 import { useEffect, useEffectEvent, useId, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import {
   habitLastDays,
@@ -14,14 +15,18 @@ import {
 } from '../../core'
 import { describeDays, describeRate, HABIT_DAY_LABELS } from '../habitLabels'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
-import { completionBoxOff, completionBoxOn, completionBoxReady } from '../rowControls'
+import { completionBoxOff, completionBoxOn, completionBoxReady, dragGrip } from '../rowControls'
 import { HABIT_DAY_TONES } from '../habitTones'
 import { textOffsetAtPoint } from '../textOffsetAtPoint'
+import { useSortableTask } from '../useSortableTask'
 import { ChevronIcon } from './ChevronIcon'
 import { FlameIcon } from './FlameIcon'
+import { GripIcon } from './GripIcon'
 import { HabitGrid } from './HabitGrid'
 import { MoreVerticalIcon } from './MoreVerticalIcon'
+import { SortableTasks } from './SortableTasks'
 import { TaskSheet } from './TaskSheet'
+import { TickIcon } from './TickIcon'
 import type { TaskActions } from '../taskActions'
 import type { TaskTimer } from '../useTaskTimer'
 
@@ -61,6 +66,17 @@ const RATE_WINDOWS: readonly (readonly [days: number, label: string])[] = [
 
 /** The title and the box that replaces it, at the head of the habit's sheet: the size is the caller's. */
 const titleBox = 'min-w-0 text-left'
+
+/**
+ * One drag group for the whole page (HAB-27). The task views keep done, overdue
+ * and urgent rows apart because that is how they draw them; here every habit is
+ * one flat list, ticked off or not (HAB-2), so every card is a place any other
+ * can land in.
+ */
+const HABIT_DRAG_GROUP = 'habits'
+
+/** Level with the card's first line, where the box and the title are. */
+const grip = `${dragGrip} top-3`
 
 /**
  * Every habit's record, one card each: whether today is done, how the streak
@@ -120,24 +136,26 @@ export function HabitList({
         Tasks that repeat every day.{' '}
       </p>
 
-      <ul className="flex flex-col gap-3">
-        {habits.map((habit) => (
-          <HabitCard
-            key={habit.id}
-            habit={habit}
-            now={now}
-            knownTags={knownTags}
-            lists={lists}
-            actions={actions}
-            onSetDay={onSetDay}
-            timer={timer}
-            revealed={revealId === habit.id}
-            onRevealed={onRevealed}
-            isOpen={isOpen(habit.id)}
-            onToggleOpen={() => { toggleOpen(habit.id) }}
-          />
-        ))}
-      </ul>
+      <SortableTasks tasks={habits}>
+        <ul className="flex flex-col gap-3">
+          {habits.map((habit) => (
+            <HabitCard
+              key={habit.id}
+              habit={habit}
+              now={now}
+              knownTags={knownTags}
+              lists={lists}
+              actions={actions}
+              onSetDay={onSetDay}
+              timer={timer}
+              revealed={revealId === habit.id}
+              onRevealed={onRevealed}
+              isOpen={isOpen(habit.id)}
+              onToggleOpen={() => { toggleOpen(habit.id) }}
+            />
+          ))}
+        </ul>
+      </SortableTasks>
 
       {anyOpen && (
         <ul aria-label="Legend" className="flex items-center gap-3 self-end">
@@ -167,6 +185,11 @@ export function HabitList({
  *
  * The ⋮ opens the task's sheet so the habit can be renamed, scheduled, timed
  * and the rest without leaving. The time is logged there, not on the card.
+ *
+ * A card can be picked up and dropped among the others to put the habits in a
+ * new order (HAB-27), the same way a row is (TASK-37): anywhere on it with a
+ * pointer, from the grip in the gutter with the keyboard. Its habit is a task,
+ * so the order it lands in is the task list's.
  */
 function HabitCard({
   habit,
@@ -197,6 +220,8 @@ function HabitCard({
   const card = useRef<HTMLLIElement>(null)
   const recordId = useId()
   const isTitleEditing = editedTitle !== null
+  const { setNodeRef, setActivatorNodeRef, listeners, attributes, isDragging, transform, transition } =
+    useSortableTask(habit, now, HABIT_DRAG_GROUP)
 
   useEffect(() => {
     const element = input.current
@@ -263,8 +288,14 @@ function HabitCard({
     }
 
     if (event.key === 'Escape') {
+      // The box only ever lives in the sheet, where dropping the edit on its own
+      // reads as nothing having happened — the box looks much like the title it
+      // replaced — so the sheet goes with it (HAB-26). Keeping the key here stops
+      // the sheet's own Escape from saving what was just dropped, and unmounting
+      // the box means the blur that follows cannot save it either.
       event.stopPropagation()
       setEditedTitle(null)
+      setIsEditing(false)
     }
   }
 
@@ -291,8 +322,39 @@ function HabitCard({
       />
     )
 
+  // Dashed and faded while it is being carried, as a row is, so what is left
+  // behind reads as the place it would land rather than the card itself.
+  const surface = isDragging
+    ? 'border-dashed border-neutral-300 opacity-50 dark:border-neutral-700'
+    : 'border-neutral-200 dark:border-neutral-800'
+
   return (
-    <li ref={card} className="flex flex-col rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+    <li
+      ref={(element) => {
+        card.current = element
+        setNodeRef(element)
+      }}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
+      // A pointer picks the card up anywhere on it; the keyboard only from the
+      // grip, which is where these listeners check a key press came from — so
+      // the grid's own arrow keys and Space (HAB-19) are left alone.
+      {...listeners}
+      className={`group relative flex touch-manipulation flex-col rounded-xl border bg-white dark:bg-neutral-900 ${surface}`}
+    >
+      {/* In the page's gutter, so it takes nothing from the card. Shown on hover, and where the keyboard reaches it. */}
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        {...attributes}
+        aria-label={`Move "${habit.title}"`}
+        title="Drag to move"
+        className={
+          isDragging ? `${grip} opacity-100` : `${grip} opacity-0 group-hover:opacity-100 focus-visible:opacity-100`
+        }
+      >
+        <GripIcon className="size-3.5" />
+      </button>
+
       <div className="relative flex items-start gap-2.5 px-4 py-3">
         {/* Above the toggle's hit area, so ticking off never unfolds the card. Level with the title's first line. */}
         <button
@@ -309,7 +371,7 @@ function HabitCard({
           title={ready ? 'Time goal reached: ready to tick off' : undefined}
           className={`relative z-10 mt-0.5 md:mt-0 ${done ? completionBoxOn : ready ? completionBoxReady : completionBoxOff}`}
         >
-          ✓
+          <TickIcon className="size-4" />
         </button>
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -318,10 +380,11 @@ function HabitCard({
         </div>
 
         {/*
-          Level with the title's first line, like the box, so folding does not move them. Not positioned
-          itself, so the chevron's hit area stretches over the whole line rather than this group.
+          Centred down the card, not level with the title: they act on the whole habit, and on a folded
+          card the streak line would leave them hanging above it. Not positioned itself, so the chevron's
+          hit area stretches over the whole line rather than this group.
         */}
-        <div className="flex shrink-0 items-center gap-2.5 md:-my-0.5">
+        <div className="flex shrink-0 self-center items-center gap-2.5 md:-my-0.5">
           <button
             type="button"
             onClick={() => { setIsEditing(true) }}

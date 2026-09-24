@@ -1,12 +1,12 @@
 import type { HabitViewOptionsRepository } from './habitViewOptionsRepository'
 import { localStorageHabitViewOptionsRepository } from './localStorageHabitViewOptionsRepository'
-import { localStorageProcrastinationRepository } from './localStorageProcrastinationRepository'
+import { localStorageNudgeRepository } from './localStorageNudgeRepository'
 import { localStorageQuoteRepository } from './localStorageQuoteRepository'
 import { localStorageSideNavRepository } from './localStorageSideNavRepository'
 import { localStorageTaskTimerRepository } from './localStorageTaskTimerRepository'
 import { localStorageThemeRepository } from './localStorageThemeRepository'
 import { localStorageViewOptionsRepository } from './localStorageViewOptionsRepository'
-import type { ProcrastinationRepository } from './procrastinationRepository'
+import type { NudgeRepository } from './nudgeRepository'
 import type { QuoteRepository } from './quoteRepository'
 import type { SideNavRepository } from './sideNavRepository'
 import type { TaskTimerRepository } from './taskTimerRepository'
@@ -23,8 +23,8 @@ export interface DeviceStorage {
   readonly viewOptions: ViewOptionsRepository
   readonly habitViewOptions: HabitViewOptionsRepository
   readonly sideNav: SideNavRepository
-  readonly procrastination: ProcrastinationRepository
   readonly taskTimer: TaskTimerRepository
+  readonly nudge: NudgeRepository
   readonly quote: QuoteRepository
   readonly theme: ThemeRepository
 }
@@ -33,8 +33,8 @@ export const deviceStorage: DeviceStorage = {
   viewOptions: localStorageViewOptionsRepository,
   habitViewOptions: localStorageHabitViewOptionsRepository,
   sideNav: localStorageSideNavRepository,
-  procrastination: localStorageProcrastinationRepository,
   taskTimer: localStorageTaskTimerRepository,
+  nudge: localStorageNudgeRepository,
   quote: localStorageQuoteRepository,
   theme: localStorageThemeRepository,
 }

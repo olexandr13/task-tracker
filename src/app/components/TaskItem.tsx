@@ -11,6 +11,8 @@ import {
   hasSubtasks,
   hasTags,
   isComplete,
+  isHabitRepeat,
+  sameRepeat,
   isOverdue,
   isTimeGoalReached,
   listOf,
@@ -40,6 +42,7 @@ import {
   controlOn,
   deleteControl,
   detailReached,
+  dragGrip,
   rowControlIcon,
 } from '../rowControls'
 import { isInTextEntry } from '../textEntry'
@@ -73,6 +76,7 @@ import { TagPanel } from './TagPanel'
 import { TagPicker } from './TagPicker'
 import { TaskDescription } from './TaskDescription'
 import { TaskSheet } from './TaskSheet'
+import { TickIcon } from './TickIcon'
 import { TimePicker } from './TimePicker'
 import { UrgentToggle } from './UrgentToggle'
 
@@ -151,9 +155,8 @@ const detail = 'row-start-2 pb-1 text-[10px] leading-3 whitespace-nowrap text-ne
 
 /** Shares the shape of the pickers beside them: small controls, not a row. */
 const rowButton = `${rowControlIcon} shrink-0`
-/** Sits in the page's gutter, just left of the row's border. */
-const grip =
-  'absolute top-1 -left-4 grid h-6 w-4 cursor-grab place-items-center rounded text-neutral-400 transition-opacity hover:text-neutral-900 active:cursor-grabbing dark:text-neutral-500 dark:hover:text-neutral-100'
+/** Level with the row's single line. */
+const grip = `${dragGrip} top-1`
 
 export function TaskItem({
   task,
@@ -191,6 +194,25 @@ export function TaskItem({
   // The picker edits a draft; every change is saved straight away, so there is
   // no separate confirm step and nothing to lose by closing the panel.
   const [draft, setDraft] = useState(() => toDraft(task.repeat, now))
+  // A rule the app refuses — a warm-up holding a habit back (WARM-4) — would
+  // otherwise leave the picker claiming a habit the task is not, so a draft
+  // that describes a habit while the task's own rule does not is put back to
+  // the task's. Adjusted while rendering, which React redoes at once.
+  if (isHabitRepeat(toRepeat(draft)) && !isHabitRepeat(task.repeat)) {
+    setDraft(toDraft(task.repeat, now))
+  }
+  // The task's rule can also change from outside the picker — an undo putting
+  // a repeat back (DUE-17), or another device — and the draft follows it when it
+  // does, or the button would go on reading the rule the draft last held. A rule
+  // the draft itself set already agrees with the task, so nothing moves and the
+  // weekday and month-day choices it is keeping are safe (RPT-21). The draft
+  // still leads the task the rest of the time, as it does the moment a day is
+  // picked for a repeating task (DUE-12).
+  const [ruleShown, setRuleShown] = useState(task.repeat)
+  if (!sameRepeat(ruleShown, task.repeat)) {
+    setRuleShown(task.repeat)
+    if (!sameRepeat(toRepeat(draft), task.repeat)) setDraft(toDraft(task.repeat, now))
+  }
   // Null unless the title is being edited. The text lives here rather than in the
   // task while it is being typed, so an abandoned edit leaves nothing behind.
   const [editedTitle, setEditedTitle] = useState<string | null>(null)
@@ -319,23 +341,28 @@ export function TaskItem({
   // Where skipping the occurrence in play would move the task on to, while it has one to skip.
   const skipTo = canSkipOccurrence(task, now) ? dueDay(skipOccurrence(task, now), now) : null
   const skip = skipTo === null ? undefined : { to: skipTo, onSkip: () => { actions.skip(task.id) } }
+  // The quick day choices, the same in the task's menu and on the woken row's strip
+  // (DUE-14, UI-53). The menu adds Select date, having no calendar of its own; the
+  // strip leaves it out, the row's own schedule control opening one beside it.
+  const dateOptions = {
+    dueDate: task.dueDate,
+    now,
+    repeats: task.repeat !== null,
+    skip,
+    onChange: changeDueDate,
+  }
   const menuItems: ContextMenuEntry[] = [
     // The same quick choices as the date panel; Select date opens that panel, calendar and all, where the menu was.
     {
       group: 'Date',
-      icons: dateChoices({
-        dueDate: task.dueDate,
-        now,
-        repeats: task.repeat !== null,
-        skip,
-        onChange: changeDueDate,
-        onSelectDate: () => { setDateAt(menuAt) },
-      }),
+      icons: dateChoices({ ...dateOptions, onSelectDate: () => { setDateAt(menuAt) } }),
     },
+    // A mark that is on or off, not one of a set: tinted rather than ticked, so it
+    // starts where Duplicate and Tags start (UI-31).
     {
       label: 'Urgent',
       icon: <FlagIcon />,
-      checked: task.urgent,
+      toggled: task.urgent,
       onSelect: () => { actions.changeUrgent(task.id, !task.urgent) },
     },
     { label: 'Duplicate', icon: <DuplicateIcon />, onSelect: () => { actions.duplicate(task.id) } },
@@ -715,7 +742,7 @@ export function TaskItem({
           aria-hidden={phone && isActive ? true : undefined}
           tabIndex={phone && isActive ? -1 : undefined}
         >
-          ✓
+          <TickIcon className="size-4" />
         </button>
 
         {/* On a phone the title is part of the tap that opens the sheet, not an
@@ -947,12 +974,34 @@ export function TaskItem({
         </div>
       )}
 
-      {/* The menu's actions, once the row is open — list, tags, urgent, duplicate —
-          so a wide screen need not right-click for what a phone's sheet already has. */}
+      {/* The menu's actions, once the row is open — the date, list, tags, urgent,
+          duplicate — so a wide screen need not right-click for what a phone's sheet
+          already has. */}
       {!phone && isActive && (
         <div
           className={`flex flex-wrap items-center gap-1 border-t border-neutral-200 py-1 pr-2 md:pr-2.5 ${indent} dark:border-neutral-800`}
         >
+          {/* The menu's Date row (DUE-14), less Select date: the schedule control on
+              the row's own line, out on every woken row (UI-18), opens the calendar. */}
+          <div role="group" aria-label={`Date for "${task.title}"`} className="flex items-center gap-1">
+            {dateChoices(dateOptions).map((choice) => (
+              <button
+                key={choice.label}
+                type="button"
+                onClick={choice.onSelect}
+                aria-label={choice.label}
+                aria-pressed={choice.checked}
+                title={choice.hint ?? choice.label}
+                className={choice.checked === true ? `${rowControlIcon} ${controlOn}` : `${rowControlIcon} ${controlOff}`}
+              >
+                {choice.icon}
+              </button>
+            ))}
+          </div>
+
+          {/* The line the menu draws between the Date row and the rest (UI-31). */}
+          <div aria-hidden="true" className="mx-0.5 h-4 w-px bg-neutral-200 dark:bg-neutral-800" />
+
           {lists.length > 0 && (
             <ListPicker
               listId={task.listId}

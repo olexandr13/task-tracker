@@ -22,6 +22,7 @@ const DATA: AccountData = {
   redemptions: [],
   bonuses: NO_BONUSES,
   pointValue: null,
+  warmUp: null,
 }
 
 const ADDED: ImportSummary = {

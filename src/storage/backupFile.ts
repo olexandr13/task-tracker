@@ -9,6 +9,7 @@ import {
   type RewardEntry,
   type Tag,
   type Task,
+  type WarmUp,
 } from '../core'
 import type { AccountData } from './backupRepository'
 import { readList, toStoredList, type StoredList } from './listSchema'
@@ -30,6 +31,7 @@ import {
 } from './rewardSchema'
 import { readTag, toStoredTag, type StoredTag } from './tagSchema'
 import { readStoredTask, toStoredTask, type StoredTask } from './taskSchema'
+import { readWarmUp, toStoredWarmUp, type StoredWarmUp } from './warmUpSchema'
 
 /** What a backup says it is, so any other JSON file is turned away rather than half read. */
 export const BACKUP_FORMAT = 'task-tracker-backup'
@@ -46,12 +48,13 @@ export const BACKUP_FORMAT = 'task-tracker-backup'
  * Version 2 held no bonus for clearing a period (RWD-24): a file made before
  * there was one is read as setting none. Version 3 held no wishlist and no
  * point value (RWD-31, RWD-33): a file made before those is read as holding no
- * prizes and setting no value.
+ * prizes and setting no value. Version 4 held no warm-up (WARM-1): a file made
+ * before there was one is read as having none under way.
  */
-export const BACKUP_VERSION = 4
+export const BACKUP_VERSION = 5
 
 /** The versions of the wrapper this app can still read, oldest first. */
-const READABLE_VERSIONS = [1, 2, 3, BACKUP_VERSION]
+const READABLE_VERSIONS = [1, 2, 3, 4, BACKUP_VERSION]
 
 interface BackupFile {
   format: typeof BACKUP_FORMAT
@@ -69,6 +72,8 @@ interface BackupFile {
   rewardGoals: StoredRewardGoal[]
   /** The standing settings of the points: what one is worth, where anything says (RWD-31). */
   rewardSettings: StoredPointValue[]
+  /** The warm-up under way, as its one record, or nothing at all for none (WARM-1). */
+  warmUp: StoredWarmUp[]
 }
 
 /** Why a file was not read at all. */
@@ -102,6 +107,7 @@ export function writeBackupFile(data: AccountData, now: Date): string {
       return points === null ? [] : [toStoredRewardGoal(period, points)]
     }),
     rewardSettings: data.pointValue === null ? [] : [toStoredPointValue(data.pointValue)],
+    warmUp: data.warmUp === null ? [] : [toStoredWarmUp(data.warmUp)],
   }
   return `${JSON.stringify(file, null, 2)}\n`
 }
@@ -129,6 +135,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
   const rewardGoals = file.version < 3 ? [] : file.rewardGoals
   const prizes = file.version < 4 ? [] : file.prizes
   const rewardSettings = file.version < 4 ? [] : file.rewardSettings
+  const warmUp = file.version < 5 ? [] : file.warmUp
   if (
     !Array.isArray(tasks) ||
     !Array.isArray(lists) ||
@@ -137,7 +144,8 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     !Array.isArray(rewardDays) ||
     !Array.isArray(redemptions) ||
     !Array.isArray(rewardGoals) ||
-    !Array.isArray(rewardSettings)
+    !Array.isArray(rewardSettings) ||
+    !Array.isArray(warmUp)
   ) {
     return 'not-a-backup'
   }
@@ -164,6 +172,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     redemptions: readEach<Redemption>(redemptions, readRedemption),
     bonuses: bonuses as PeriodBonuses,
     pointValue: readEach(rewardSettings, readPointValue)[0] ?? null,
+    warmUp: readEach<WarmUp>(warmUp, readWarmUp)[0] ?? null,
   }
   return { data, unreadable }
 }

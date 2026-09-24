@@ -251,12 +251,15 @@ describe('SchedulePicker, repeating', () => {
     expect(trigger().getAttribute('title')).toBe('Every 20th')
   })
 
-  it('says a day picked ends the repeat, marks no day and offers no Remove date (DUE-12)', async () => {
+  it('says a day picked turns off the repeat, marks no day and offers no Remove date (DUE-12)', async () => {
     const user = setup({ initial: '2026-09-16', initialDraft: { ...emptyDraft(WED_16), kind: 'daily' } })
 
     await user.click(trigger())
 
-    expect(screen.getByText('Picking a day ends the repeat.')).toBeDefined()
+    expect(screen.getByText('Picking a day turns off the repeat.')).toBeDefined()
+    // And again in each day's tooltip, which is all the menu and the row's strip have.
+    expect(screen.getByRole('button', { name: /^Today/ }).title).toBe('Today · Turns off the repeat')
+    expect(screen.getByRole('button', { name: /^Next week/ }).title).toBe('Next week · Sep 27 · Turns off the repeat')
     expect(screen.getByRole('button', { name: /^Today/ })).toHaveProperty('ariaPressed', 'false')
     expect(screen.queryByRole('button', { name: 'Remove date' })).toBeNull()
 
@@ -270,8 +273,20 @@ describe('SchedulePicker, repeating', () => {
     await user.click(trigger())
     expect(screen.queryAllByRole('gridcell', { selected: true })).toEqual([])
 
+    // Every day in the grid says what picking it costs, the note above being out of
+    // the way once the eye is on the calendar.
+    expect(screen.getByRole('button', { name: 'Friday, September 25, 2026' }).title).toBe('Turns off the repeat')
+
     await user.click(screen.getByRole('button', { name: 'Friday, September 25, 2026' }))
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Sep 25')
+  })
+
+  it('leaves a one-off\'s calendar days without a tooltip, there being nothing to warn of (DUE-15)', async () => {
+    const user = setup({ initial: '2026-09-16' })
+
+    await user.click(trigger())
+
+    expect(screen.getByRole('button', { name: 'Friday, September 25, 2026' }).title).toBe('')
   })
 
   it('closes on Daily, having nothing more to ask, and stays open for Weekly and Monthly (RPT-22)', async () => {

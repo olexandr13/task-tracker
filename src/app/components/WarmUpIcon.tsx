@@ -1,0 +1,11 @@
+/** Seedling — a habit taken on one at a time. Marks warm-up mode. */
+export function WarmUpIcon({ className }: { className?: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={className ?? 'inline-flex size-4 shrink-0 items-center justify-center text-base leading-none'}
+    >
+      🌱
+    </span>
+  )
+}

@@ -11,3 +11,9 @@ export const COMPLETION_SPAN_LABELS: Record<CompletionSpan, string> = {
   last30Days: 'Done in the last 30 days',
   earlier: 'Done earlier',
 }
+
+/**
+ * What heads one undivided run of done tasks, where the view keeps them
+ * together instead of dividing them by when they were finished.
+ */
+export const DONE_LABEL = 'Done'

@@ -53,3 +53,14 @@ export function offsetDay(day: LocalDay, days: number): LocalDay {
   const start = startOfLocalDay(day)
   return toLocalDay(new Date(start.getFullYear(), start.getMonth(), start.getDate() + days))
 }
+
+/**
+ * Whole days from one local day to the other — negative when `to` is the
+ * earlier of the two. Counted from midnight to midnight and rounded, so a
+ * clock going forward or back for summer time still leaves whole days between
+ * whole days.
+ */
+export function daysBetween(from: LocalDay, to: LocalDay): number {
+  const span = startOfLocalDay(to).getTime() - startOfLocalDay(from).getTime()
+  return Math.round(span / 86_400_000)
+}

@@ -1,14 +1,17 @@
 {
   "name": "task-tracker",
   "private": true,
-  "version": "0.35.0",
+  "version": "0.43.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "predev": "node scripts/deployFirestoreRules.js --auto",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run",
     "preview": "vite preview",
+    "prepreview": "node scripts/deployFirestoreRules.js --auto",
+    "deploy:rules": "node scripts/deployFirestoreRules.js",
     "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {

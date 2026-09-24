@@ -17,6 +17,12 @@ export interface ContextMenuItem {
    * marked and heard as a choice rather than an action. Left out for an action.
    */
   checked?: boolean
+  /**
+   * For a mark that is simply on or off, such as Urgent: heard as a toggle, and
+   * shown by tinting its name and glyph rather than by a tick. A tick's column
+   * would indent it alone, out of line with the actions beside it (UI-31).
+   */
+  toggled?: boolean
   /** A glyph drawn before the label, for an action found at a glance. */
   icon?: ReactNode
 }
@@ -79,7 +85,7 @@ interface ContextMenuProps {
 }
 
 /** Every kind of item the arrow keys move between. */
-const ITEMS = '[role="menuitem"], [role="menuitemradio"]'
+const ITEMS = '[role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"]'
 
 const itemLook =
   'group touch-manipulation whitespace-nowrap transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800'
@@ -102,6 +108,12 @@ const subItem =
 const itemOff =
   'text-neutral-700 hover:text-neutral-900 focus-visible:text-neutral-900 dark:text-neutral-200 dark:hover:text-neutral-100 dark:focus-visible:text-neutral-100'
 const iconItem = `${panelIcon} focus-visible:bg-neutral-100 focus-visible:outline-none dark:focus-visible:bg-neutral-800`
+/** The glyph before a name, sized with the words it marks. */
+const itemIcon = 'grid shrink-0 place-items-center [&>svg]:size-6 md:[&>svg]:size-4'
+/** Quieter than the words it marks, and up with them under the pointer. A glyph on
+ * an item that is on keeps the item's own tint instead. */
+const itemIconOff =
+  'text-neutral-400 transition-colors group-hover:text-neutral-600 group-focus-visible:text-neutral-600 dark:text-neutral-500 dark:group-hover:text-neutral-300 dark:group-focus-visible:text-neutral-300'
 const iconOff = `${panelIconOff} focus-visible:text-neutral-900 dark:focus-visible:text-neutral-100`
 const group = 'flex flex-col gap-1 md:gap-0.5'
 
@@ -228,21 +240,25 @@ function MenuItem({
   label,
   onSelect,
   checked,
+  toggled,
   icon,
   indented = false,
   onClose,
 }: ContextMenuItem & { indented?: boolean; onClose: () => void }) {
   const look = indented ? subItem : item
+  // One of a set is ticked; a mark that is on or off is tinted, and so starts
+  // where the actions beside it start, with no tick's column before its glyph.
+  const on = checked === true || toggled === true
   return (
     <button
       type="button"
-      role={checked === undefined ? 'menuitem' : 'menuitemradio'}
-      aria-checked={checked}
+      role={checked !== undefined ? 'menuitemradio' : toggled !== undefined ? 'menuitemcheckbox' : 'menuitem'}
+      aria-checked={checked ?? toggled}
       onClick={() => {
         onClose()
         onSelect()
       }}
-      className={checked === true ? `${look} ${panelOptionOn}` : `${look} ${itemOff}`}
+      className={on ? `${look} ${panelOptionOn}` : `${look} ${itemOff}`}
     >
       {checked !== undefined && (
         <span aria-hidden="true" className="w-5 shrink-0 md:w-3">
@@ -250,10 +266,7 @@ function MenuItem({
         </span>
       )}
       {icon !== undefined && (
-        <span
-          aria-hidden="true"
-          className="grid shrink-0 place-items-center text-neutral-400 transition-colors group-hover:text-neutral-600 group-focus-visible:text-neutral-600 [&>svg]:size-6 md:[&>svg]:size-4 dark:text-neutral-500 dark:group-hover:text-neutral-300 dark:group-focus-visible:text-neutral-300"
-        >
+        <span aria-hidden="true" className={toggled === true ? itemIcon : `${itemIcon} ${itemIconOff}`}>
           {icon}
         </span>
       )}

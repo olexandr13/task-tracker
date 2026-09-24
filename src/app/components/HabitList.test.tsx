@@ -184,6 +184,22 @@ describe('HabitList', () => {
     expect(screen.queryByRole('list', { name: 'Legend' })).toBeNull()
   })
 
+  it('offers a grip on every card to put the habits in a new order (HAB-27)', async () => {
+    const other = { ...createTask('read', { kind: 'daily' }, WED_16), id: 'read-id' }
+    const { user } = setup([stretch(), other])
+
+    expect(screen.getAllByRole('button', { name: /^Move "/ }).map((grip) => grip.getAttribute('aria-label')))
+      .toEqual(['Move "stretch"', 'Move "read"'])
+
+    // The grip is for carrying the card, not for opening it: it sits outside the line that folds.
+    await user.click(screen.getByRole('button', { name: 'Move "stretch"' }))
+    expect(screen.getByRole('button', { name: 'Record of "stretch"' }).getAttribute('aria-expanded')).toBe('false')
+
+    // And the card still unfolds on a tap, with the drag listeners on it.
+    await user.click(screen.getByRole('button', { name: 'Record of "stretch"' }))
+    expect(screen.getByRole('button', { name: 'Record of "stretch"' }).getAttribute('aria-expanded')).toBe('true')
+  })
+
   it('offers no day after today (HAB-18)', () => {
     setup([stretch()])
 
@@ -270,5 +286,29 @@ describe('HabitList', () => {
     await user.clear(box)
     await user.type(box, 'breathe{Enter}')
     expect(onRename).toHaveBeenCalledWith(habit.id, 'breathe')
+  })
+
+  it('drops the edit and closes the sheet on Escape in the title box (HAB-26)', async () => {
+    layOutTitle()
+    const { user, onRename } = setup([stretch()])
+
+    await user.click(screen.getByRole('button', { name: 'Edit "stretch"' }))
+    const sheet = screen.getByRole('dialog', { name: 'Details of "stretch"' })
+    await user.click(within(sheet).getByRole('button', { name: 'Edit "stretch"' }))
+    const box = screen.getByRole<HTMLInputElement>('textbox', { name: 'Title of "stretch"' })
+    await user.clear(box)
+    await user.type(box, 'breathe{Escape}')
+
+    expect(screen.queryByRole('dialog', { name: 'Details of "stretch"' })).toBeNull()
+    expect(onRename).not.toHaveBeenCalled()
+  })
+
+  it('closes the sheet on Escape outside the title box (HAB-26)', async () => {
+    const { user } = setup([stretch()])
+
+    await user.click(screen.getByRole('button', { name: 'Edit "stretch"' }))
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('dialog', { name: 'Details of "stretch"' })).toBeNull()
   })
 })

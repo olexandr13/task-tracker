@@ -16,6 +16,8 @@ export const ACCOUNT_COLLECTIONS = [
   'redemptions',
   'rewardGoals',
   'rewardSettings',
+  'warmUp',
+  'procrastination',
 ] as const
 
 export type AccountCollection = (typeof ACCOUNT_COLLECTIONS)[number]

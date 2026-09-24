@@ -16,6 +16,7 @@ import {
   type TagId,
   type Task,
   type TaskId,
+  type WarmUp,
 } from '../core'
 
 /**
@@ -42,6 +43,12 @@ export interface AccountData {
   readonly bonuses: PeriodBonuses
   /** What one point is worth (RWD-31), or null while nothing says. A setting, as the bonuses are. */
   readonly pointValue: PointValue | null
+  /**
+   * The warm-up under way, or null for none (WARM-1). A setting again: it is
+   * counted as none of the records, and an import takes it only where the
+   * account has none of its own.
+   */
+  readonly warmUp: WarmUp | null
 }
 
 /** How many of each kind of record there are. A completion is one entry of the ledger. */
@@ -99,6 +106,8 @@ export interface KnownRecords {
   readonly bonuses: PeriodBonuses
   /** What the account says a point is worth already, or null when it says nothing. */
   readonly pointValue: PointValue | null
+  /** The warm-up the account has already, or null when it has none. */
+  readonly warmUp: WarmUp | null
   /**
    * The tasks each saved day holds an entry for, or null for a day the app
    * cannot read — which is left as it is, so nothing is added to it.
@@ -130,7 +139,9 @@ export function countRecords(data: AccountData): RecordCounts {
  * so an import never makes a second record of one tag. The bonuses and what a
  * point is worth are the things in here that are no records: the file's are
  * taken only where the account has none, and count towards neither what was
- * added nor what was already here.
+ * added nor what was already here. So is the warm-up: a file's is taken only
+ * by an account with none of its own, which keeps a restored backup from
+ * starting a month that has already been served.
  */
 export function newRecords(
   incoming: AccountData,
@@ -185,6 +196,7 @@ export function newRecords(
       redemptions: unseen(incoming.redemptions, (redemption) => redemption.id, known.redemptionIds),
       bonuses,
       pointValue: known.pointValue === null ? incoming.pointValue : null,
+      warmUp: known.warmUp === null ? incoming.warmUp : null,
     },
     alreadyHere,
   }

@@ -31,6 +31,7 @@ import { SchedulePicker } from './SchedulePicker'
 import { SubtaskList } from './SubtaskList'
 import { TagPicker } from './TagPicker'
 import { TaskDescription } from './TaskDescription'
+import { TickIcon } from './TickIcon'
 import { TimePicker } from './TimePicker'
 import { TrashIcon } from './TrashIcon'
 import { UrgentToggle } from './UrgentToggle'
@@ -104,7 +105,7 @@ export function TaskSheet({
           title={ready ? 'Time goal reached: ready to tick off' : undefined}
           className={done ? completionBoxOn : ready ? completionBoxReady : completionBoxOff}
         >
-          ✓
+          <TickIcon className="size-4" />
         </button>
         <div className="flex min-h-8 min-w-0 flex-1 items-center">{title}</div>
       </div>

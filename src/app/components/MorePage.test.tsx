@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MorePage } from './MorePage'
 
-/* More's page. UI ids refer to wiki/interface.md; JUST ids to wiki/just-one.md. */
+/* More's page. UI ids refer to wiki/interface.md, MODE ids to wiki/modes.md. */
 
 afterEach(cleanup)
 
@@ -28,58 +28,28 @@ describe('MorePage', () => {
     expect(screen.queryByRole('button', { name: 'Rewards' })).toBeNull()
   })
 
-  it('offers Procrastination when available, and starts the mode (JUST-1)', async () => {
-    const onStart = vi.fn()
-    render(
-      <MorePage
-        onOpen={vi.fn()}
-        procrastination={{
-          phase: 'off',
-          available: true,
-          onStart,
-          onEnd: vi.fn(),
-        }}
-      />,
-    )
+  it('opens Modes, and says nothing of the modes while none is on (MODE-1)', async () => {
+    const onOpen = vi.fn()
+    render(<MorePage onOpen={onOpen} />)
 
-    const control = screen.getByRole('button', { name: 'Procrastination mode' })
-    expect(control.textContent).toContain('Procrastination')
-    await userEvent.click(control)
-    expect(onStart).toHaveBeenCalledOnce()
+    const modes = screen.getByRole('button', { name: 'Modes' })
+    expect(modes.textContent).not.toContain('on')
+
+    await userEvent.click(modes)
+    expect(onOpen).toHaveBeenCalledExactlyOnceWith('modes')
   })
 
-  it('ends Procrastination mode when pressed again while on (JUST-8)', async () => {
-    const onEnd = vi.fn()
-    render(
-      <MorePage
-        onOpen={vi.fn()}
-        procrastination={{
-          phase: 'focus',
-          available: true,
-          onStart: vi.fn(),
-          onEnd,
-        }}
-      />,
-    )
+  it('says how many modes are on, without being opened (MODE-1)', () => {
+    render(<MorePage onOpen={vi.fn()} modesOn={2} />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Procrastination mode on' }))
-    expect(onEnd).toHaveBeenCalledOnce()
+    expect(screen.getByRole('button', { name: 'Modes, 2 on' }).textContent).toContain('2 on')
   })
 
-  it('hides Procrastination when it is not available (JUST-2)', () => {
-    render(
-      <MorePage
-        onOpen={vi.fn()}
-        procrastination={{
-          phase: 'off',
-          available: false,
-          onStart: vi.fn(),
-          onEnd: vi.fn(),
-        }}
-      />,
-    )
+  it('switches no mode itself: the modes are a page now (MODE-1)', () => {
+    render(<MorePage onOpen={vi.fn()} modesOn={1} />)
 
-    expect(screen.queryByRole('button', { name: 'Procrastination mode' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Tags' })).toBeDefined()
+    expect(screen.queryByRole('switch')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Procrastination' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Warm-up' })).toBeNull()
   })
 })

@@ -10,6 +10,7 @@ import {
   type TaskTimerRepository,
   type TaskTimerState,
 } from '../storage/taskTimerRepository'
+import { askToNotify, notifyBrowser } from './browserNotification'
 
 export type TaskTimerInfo = {
   readonly title: string
@@ -34,21 +35,10 @@ export type TaskTimer = {
   readonly dismissGoalNotice: () => void
 }
 
-function notifyBrowser(title: string, body: string): void {
-  if (typeof Notification === 'undefined') return
-  if (Notification.permission !== 'granted') return
-  try {
-    new Notification(title, { body })
-  } catch {
-    // Some browsers reject Notification without a service worker; in-app toast covers it.
-  }
-}
-
+/** A task with a goal is one that will want to say so; ask before it does. */
 function requestNotificationIfNeeded(goal: number | null): void {
   if (goal === null) return
-  if (typeof Notification === 'undefined') return
-  if (Notification.permission !== 'default') return
-  void Notification.requestPermission()
+  void askToNotify()
 }
 
 function finishRun(

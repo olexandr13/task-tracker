@@ -36,6 +36,8 @@ interface ProcrastinationPanelProps {
   onOtherTask: () => void
   /** Only open task in play: open the add-task sheet (JUST-6). */
   onCreateTask: () => void
+  /** Opens Procrastination's own page, where what it does is written out (MODE-10). */
+  onMoreInfo: () => void
   /** Turn the mode off immediately (JUST-8). */
   onEnd: () => void
   /** Dismiss the win card but keep the mode on (idle). */
@@ -58,6 +60,7 @@ export function ProcrastinationPanel({
   pointsEarned,
   onOtherTask,
   onCreateTask,
+  onMoreInfo,
   onEnd,
   onRest,
   onGetOneMore,
@@ -82,6 +85,9 @@ export function ProcrastinationPanel({
                 Choose another task
               </button>
             )}
+            <button type="button" onClick={onMoreInfo} className={actionSmall}>
+              More info
+            </button>
             <button type="button" onClick={onEnd} className={actionSmall}>
               End mode
             </button>
@@ -109,6 +115,9 @@ export function ProcrastinationPanel({
                 Create new task
               </button>
             )}
+            <button type="button" onClick={onMoreInfo} className={actionSmall}>
+              More info
+            </button>
             <button type="button" onClick={onEnd} className={actionSmall}>
               End mode
             </button>

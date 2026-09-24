@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { InvalidDayError, isLocalDay, offsetDay, startOfLocalDay, toLocalDay } from './day'
+import { InvalidDayError, daysBetween, isLocalDay, offsetDay, startOfLocalDay, toLocalDay } from './day'
 
 describe('toLocalDay', () => {
   it('names the local day a moment falls in, padded', () => {
@@ -48,5 +48,28 @@ describe('offsetDay', () => {
     // Whichever zone the tests run in, a calendar step is a day, not 24 hours.
     expect(offsetDay('2026-03-28', 2)).toBe('2026-03-30')
     expect(offsetDay('2026-10-24', 2)).toBe('2026-10-26')
+  })
+})
+
+describe('daysBetween', () => {
+  it('counts the days from one day to another, and back', () => {
+    expect(daysBetween('2026-09-16', '2026-09-23')).toBe(7)
+    expect(daysBetween('2026-09-23', '2026-09-16')).toBe(-7)
+    expect(daysBetween('2026-09-16', '2026-09-16')).toBe(0)
+  })
+
+  it('counts across the end of a month and a year', () => {
+    expect(daysBetween('2026-09-30', '2026-10-01')).toBe(1)
+    expect(daysBetween('2026-12-31', '2027-01-01')).toBe(1)
+  })
+
+  it('counts whole days over a daylight saving change', () => {
+    // A day short or long of 24 hours is still one day.
+    expect(daysBetween('2026-03-28', '2026-03-30')).toBe(2)
+    expect(daysBetween('2026-10-24', '2026-10-26')).toBe(2)
+  })
+
+  it('throws on something that is not a day', () => {
+    expect(() => daysBetween('2026-02-30', '2026-03-01')).toThrow(InvalidDayError)
   })
 })

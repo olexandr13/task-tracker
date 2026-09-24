@@ -7,6 +7,7 @@ import {
   dueDay,
   isComplete,
   isOverdue,
+  logTime,
   setDueDate,
   setReward,
   BONUS_IDS,
@@ -250,6 +251,62 @@ describe('useTasks, reopening a missed occurrence', () => {
       { earned: [{ taskId: task.id, day: '2026-09-17', points: 5 }], revoked: [] },
       { earned: [], revoked: [{ taskId: task.id, day: '2026-09-17' }] },
     ])
+  })
+})
+
+describe('useTasks, a day picked for a repeating task', () => {
+  /** A week before, so there is an occurrence gone by to have logged time against. */
+  const THU_10 = new Date(2026, 8, 10, 9, 0)
+
+  it('hands back the task it was, so the day can be taken back (DUE-17)', () => {
+    const task = createTask('stretch', { kind: 'daily' }, THU_10)
+    const { result } = setUp([task])
+
+    let was: Task | null = null
+    act(() => { was = result.current.changeDueDate(task.id, '2026-09-25') })
+
+    expect(was).toEqual(task)
+    expect(result.current.tasks[0].repeat).toBeNull()
+    expect(result.current.tasks[0].dueDate).toBe('2026-09-25')
+  })
+
+  it('hands nothing back where no rule ended, there being nothing to take back (DUE-17)', () => {
+    const oneOff = setDueDate(createTask('call mum', null, THU_10), '2026-09-18')
+    const repeating = createTask('stretch', { kind: 'daily' }, THU_10)
+    const { result } = setUp([oneOff, repeating])
+
+    let moved: Task | null = null
+    let cleared: Task | null = null
+    act(() => { moved = result.current.changeDueDate(oneOff.id, '2026-09-25') })
+    // Taking a day away leaves a rule alone, so it is no undo either.
+    act(() => { cleared = result.current.changeDueDate(repeating.id, null) })
+
+    expect(moved).toBeNull()
+    expect(cleared).toBeNull()
+  })
+
+  it('puts back the sessions that ending the rule let go of (DUE-17, TIME-7)', () => {
+    // Logged under last Thursday's occurrence, so ending the rule drops it (currentEntries).
+    const task = logTime(createTask('stretch', { kind: 'daily' }, THU_10), 30, THU_10)
+    const { result } = setUp([task])
+
+    expect(result.current.tasks[0].timeLog).toHaveLength(1)
+
+    let was: Task | null = null
+    act(() => { was = result.current.changeDueDate(task.id, '2026-09-25') })
+
+    // The day is set, and last week's session went with the rule.
+    expect(result.current.tasks[0].timeLog).toEqual([])
+
+    // A const, so it is still the task it was inside the callback below.
+    const before: Task | null = was
+    expect(before).not.toBeNull()
+    act(() => { if (before !== null) result.current.putBack(before) })
+
+    expect(result.current.tasks[0]).toEqual(task)
+    expect(result.current.tasks[0].timeLog).toHaveLength(1)
+    expect(result.current.tasks[0].repeat).toEqual({ kind: 'daily' })
+    expect(result.current.tasks[0].dueDate).toBeNull()
   })
 })
 

@@ -103,6 +103,14 @@ describe('SideNav', () => {
     expect(marked().map((button) => button.textContent)).toEqual(['More'])
   })
 
+  it('keeps More marked while the Modes page or one mode\'s is open (UI-8, UI-45, MODE-1)', () => {
+    for (const view of ['modes', 'modes/procrastination', 'modes/warm-up'] as const) {
+      setup(view)
+      expect(marked().map((button) => button.textContent)).toEqual(['More'])
+      cleanup()
+    }
+  })
+
   it('marks Rewards itself, and not More, while the Rewards page is open (UI-8, UI-30, RWD-19)', () => {
     setup('rewards')
 

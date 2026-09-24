@@ -89,7 +89,7 @@ export const sheetAction =
  * (UI-47).
  */
 const completionBox =
-  'relative grid size-5 shrink-0 place-items-center rounded-md border-2 text-xs leading-none transition before:absolute before:-inset-3 active:scale-90 md:before:hidden'
+  'relative grid size-5 shrink-0 place-items-center rounded-md border-2 transition before:absolute before:-inset-3 active:scale-90 md:before:hidden'
 
 export const completionBoxOn = `${completionBox} border-green-600 bg-green-600 text-white hover:border-green-700 hover:bg-green-700`
 
@@ -103,3 +103,12 @@ export const completionBoxReady = `${completionBox} border-green-600 text-green-
 
 /** A control's detail that has reached what it was after, such as time spent meeting its goal. */
 export const detailReached = 'text-green-700 dark:text-green-500'
+
+/**
+ * The handle a row or a card is picked up by, sitting in the page's gutter just
+ * left of it so it takes nothing from the thing itself. Shown on hover and where
+ * the keyboard reaches it; how far down it sits is the caller's, since that
+ * depends on what it lines up with.
+ */
+export const dragGrip =
+  'absolute -left-4 grid h-6 w-4 cursor-grab place-items-center rounded text-neutral-400 transition-opacity hover:text-neutral-900 active:cursor-grabbing dark:text-neutral-500 dark:hover:text-neutral-100'

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { isSubtaskComplete, type Subtask, type SubtaskId, type Repeat } from '../../core'
 import { deleteControl } from '../rowControls'
+import { TickIcon } from './TickIcon'
 
 interface SubtaskItemProps {
   subtask: Subtask
@@ -27,7 +28,7 @@ interface SubtaskItemProps {
  * phone it answers a touch past its edge, as the task's box does (UI-47).
  */
 export const subtaskCheckbox =
-  'relative grid size-4.5 shrink-0 place-items-center rounded border-2 text-[10px] leading-none transition-colors before:absolute before:-inset-3 md:size-5 md:text-xs md:before:hidden'
+  'relative grid size-4.5 shrink-0 place-items-center rounded border-2 transition-colors before:absolute before:-inset-3 md:size-5 md:before:hidden'
 
 export const subtaskRow = 'flex items-center gap-2.5 py-2 md:py-1'
 
@@ -122,7 +123,7 @@ export function SubtaskItem({
             : `${subtaskCheckbox} border-neutral-300 text-transparent hover:border-neutral-900 dark:border-neutral-600 dark:hover:border-neutral-300`
         }
       >
-        ✓
+        <TickIcon className="size-3.5 md:size-4" />
       </button>
 
       {!isEditing ? (

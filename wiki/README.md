@@ -18,13 +18,16 @@ lets this be read as a description of the app rather than a wish list.
 | [Tags](tags.md) | Names a task carries, tagging by picker or by typing `#`, the Tags page and each tag's list |
 | [Lists](lists.md) | Somewhere to put a task: one list at a time, the Inbox, and the Lists page |
 | [Views](views.md) | Views of the tasks — Today, Week and Month, and what belongs in them |
+| [Modes](modes.md) | The parts of the app that are turned on and off: where they are listed, switched and explained |
 | [Just one](just-one.md) | Procrastination mode on Today: one task, a win, then rest or the next |
 | [Repeating tasks](repeating-tasks.md) | Daily, weekly and monthly rules, and how a repeat reads as done |
 | [Trash](trash.md) | Deleting, the undo window, retention and purging |
 | [Progress](progress.md) | The three bars: today, this week, this month |
 | [Habits](habits.md) | Daily tasks as habits: streaks, rates and the grid of days |
+| [Warm-up](warm-up.md) | The month that lets the habits in one at a time: one on day one, two on day two |
 | [Rewards](rewards.md) | Points a task earns on every completion, the bonus for clearing a period, the prizes and the wishlist they are spent on, and the Rewards pages |
 | [Time goals](time-goals.md) | A length of time a task asks for, sessions logged against it, and the hint to tick it off |
+| [Nudges](nudges.md) | The app noticing nothing is getting done: the quiet stretch, the task it points at, and the notification |
 | [Daily quote](daily-quote.md) | One quote a day, from the quote service, cached for the day |
 | [Interface](interface.md) | Layout, navigation, popovers, phone behaviour, accessibility |
 | [Offline](offline.md) | Opening with no connection, changes kept and synced later, the sync notice, installing |

@@ -1,5 +1,5 @@
 import type { LocalDay } from '../../core'
-import { dateChoices, type SkipChoice } from '../dateChoices'
+import { dateChoices, ENDS_REPEAT, type SkipChoice } from '../dateChoices'
 import { panelHeading, panelIcon, panelIconOff, panelIconOn, panelIconRow } from '../panelControls'
 import { DateCalendar } from './DateCalendar'
 
@@ -9,7 +9,8 @@ interface DueChoicesProps {
   /**
    * Whether the task repeats, so `dueDate` is the day its rule gives it rather
    * than one of its own: nothing is marked as chosen, there is no Remove date,
-   * and a note says that a day picked here ends the repeat.
+   * and a note above the choices — with every day's tooltip, the calendar's
+   * included — says that a day picked here turns off the repeat.
    */
   repeats: boolean
   /** Offered on a repeating task with an occurrence to pass over; left out elsewhere. */
@@ -56,7 +57,7 @@ export function DueChoices({ dueDate, now, repeats, skip, onChange, onDone }: Du
       {/* Said before the choices, since any of them ends the rule. */}
       {repeats && (
         <p className="border-b border-neutral-200 px-2 pt-1 pb-1.5 text-xs text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
-          Picking a day ends the repeat.
+          Picking a day turns off the repeat.
         </p>
       )}
 
@@ -83,7 +84,13 @@ export function DueChoices({ dueDate, now, repeats, skip, onChange, onDone }: Du
       </div>
 
       <div className="border-t border-neutral-200 px-0.5 pt-1.5 pb-1 dark:border-neutral-800">
-        <DateCalendar selected={repeats ? null : dueDate} opensOn={dueDate} now={now} onSelect={choose} />
+        <DateCalendar
+          selected={repeats ? null : dueDate}
+          opensOn={dueDate}
+          now={now}
+          hint={repeats ? ENDS_REPEAT : undefined}
+          onSelect={choose}
+        />
       </div>
     </>
   )

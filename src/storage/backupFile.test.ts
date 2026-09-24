@@ -9,6 +9,7 @@ import {
   createTask,
   deleteTask,
   NO_BONUSES,
+  startWarmUp,
   type PeriodBonuses,
   type RewardEntry,
 } from '../core'
@@ -37,6 +38,7 @@ const TREAT = createRedemption(3, 'Coffee', 12, AT)
 const CHOCOLATE = createPrize('Chocolate', 20, 'prize', AT)
 const BONUSES: PeriodBonuses = { today: 10, week: 40, month: null }
 const UAH = createPointValue(2.5)
+const WARMING_UP = startWarmUp(AT)
 
 const DATA: AccountData = {
   tasks: [DONE, TRASHED],
@@ -47,6 +49,7 @@ const DATA: AccountData = {
   redemptions: [TREAT],
   bonuses: BONUSES,
   pointValue: UAH,
+  warmUp: WARMING_UP,
 }
 
 function fileWith(changes: Record<string, unknown>): string {
@@ -113,27 +116,45 @@ describe('reading a backup', () => {
 
   it('reads a file from before tags were backed up as keeping none (BAK-12)', () => {
     const read = readBackupFile(
-      fileWith({ version: 1, tags: undefined, prizes: undefined, rewardGoals: undefined, rewardSettings: undefined }),
+      fileWith({
+        version: 1,
+        tags: undefined,
+        prizes: undefined,
+        rewardGoals: undefined,
+        rewardSettings: undefined,
+        warmUp: undefined,
+      }),
     )
 
     expect(read).toEqual({
-      data: { ...DATA, tags: [], prizes: [], bonuses: NO_BONUSES, pointValue: null },
+      data: { ...DATA, tags: [], prizes: [], bonuses: NO_BONUSES, pointValue: null, warmUp: null },
       unreadable: 0,
     })
   })
 
   it('reads a file from before there was a bonus as setting none (BAK-13)', () => {
     const read = readBackupFile(
-      fileWith({ version: 2, prizes: undefined, rewardGoals: undefined, rewardSettings: undefined }),
+      fileWith({ version: 2, prizes: undefined, rewardGoals: undefined, rewardSettings: undefined, warmUp: undefined }),
     )
 
-    expect(read).toEqual({ data: { ...DATA, prizes: [], bonuses: NO_BONUSES, pointValue: null }, unreadable: 0 })
+    expect(read).toEqual({
+      data: { ...DATA, prizes: [], bonuses: NO_BONUSES, pointValue: null, warmUp: null },
+      unreadable: 0,
+    })
   })
 
   it('reads a file from before the wishlist as holding no prizes and no point value (BAK-14)', () => {
-    const read = readBackupFile(fileWith({ version: 3, prizes: undefined, rewardSettings: undefined }))
+    const read = readBackupFile(
+      fileWith({ version: 3, prizes: undefined, rewardSettings: undefined, warmUp: undefined }),
+    )
 
-    expect(read).toEqual({ data: { ...DATA, prizes: [], pointValue: null }, unreadable: 0 })
+    expect(read).toEqual({ data: { ...DATA, prizes: [], pointValue: null, warmUp: null }, unreadable: 0 })
+  })
+
+  it('reads a file from before there was a warm-up as having none under way (BAK-15)', () => {
+    const read = readBackupFile(fileWith({ version: 4, warmUp: undefined }))
+
+    expect(read).toEqual({ data: { ...DATA, warmUp: null }, unreadable: 0 })
   })
 
   it('says so when a backup was made by a newer version of the app (BAK-9)', () => {
@@ -168,6 +189,7 @@ describe('reading a backup', () => {
         redemptions: [TREAT],
         bonuses: BONUSES,
         pointValue: UAH,
+        warmUp: WARMING_UP,
       },
       unreadable: 6,
     })

@@ -48,7 +48,8 @@ and whether it reads as done is derived from the occurrence currently in play ra
 
 - **RPT-12** An existing task can be given a rule, swapped to another, or have its rule dropped,
   and the change is saved straight away — no separate confirm step. Picking a date for it from its
-  schedule button drops the rule too (DUE-12).
+  schedule button drops the rule too (DUE-12), and that one offers to undo, being the easiest of
+  them to do by accident (DUE-17).
 - **RPT-13** Giving a rule to a one-off that was finished today keeps that completion: it is still
   done today.
 - **RPT-14** Dropping the rule while the task is **not** currently done clears the stale completion

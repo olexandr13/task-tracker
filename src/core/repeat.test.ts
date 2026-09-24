@@ -5,6 +5,7 @@ import {
   currentOccurrence,
   nextOccurrence,
   repeatsEveryDay,
+  sameRepeat,
   type Repeat,
 } from './repeat'
 
@@ -93,6 +94,29 @@ describe('assertValidRepeat', () => {
     expect(() => { assertValidRepeat({ kind: 'daily' }) }).not.toThrow()
     expect(() => { assertValidRepeat(MONDAYS) }).not.toThrow()
     expect(() => { assertValidRepeat({ kind: 'monthly', day: 31 }) }).not.toThrow()
+  })
+})
+
+describe('sameRepeat', () => {
+  it('counts two nulls as the same, a rule and a null as different', () => {
+    expect(sameRepeat(null, null)).toBe(true)
+    expect(sameRepeat({ kind: 'daily' }, null)).toBe(false)
+    expect(sameRepeat(null, MONDAYS)).toBe(false)
+  })
+
+  it('tells the kinds apart', () => {
+    expect(sameRepeat({ kind: 'daily' }, { kind: 'daily' })).toBe(true)
+    expect(sameRepeat({ kind: 'daily' }, MONDAYS)).toBe(false)
+    expect(sameRepeat({ kind: 'monthly', day: 5 }, { kind: 'monthly', day: 5 })).toBe(true)
+    expect(sameRepeat({ kind: 'monthly', day: 5 }, { kind: 'monthly', day: 6 })).toBe(false)
+  })
+
+  it('reads weekly days as a set, so the order they are in does not matter', () => {
+    const monWed: Repeat = { kind: 'weekly', weekdays: [1, 3] }
+
+    expect(sameRepeat(monWed, { kind: 'weekly', weekdays: [3, 1] })).toBe(true)
+    expect(sameRepeat(monWed, { kind: 'weekly', weekdays: [1, 4] })).toBe(false)
+    expect(sameRepeat(monWed, MONDAYS)).toBe(false)
   })
 })
 

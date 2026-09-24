@@ -112,10 +112,11 @@ export function HabitGrid({ task, now, onSetDay }: HabitGridProps) {
               {monthStartedBy(week[0].day)}
             </span>
 
-            {week.map(({ day, state }, row) =>
-              state === 'future' ? (
-                <span key={day} className="aspect-square" />
-              ) : (
+            {week.map(({ day, state }, row) => {
+              if (state === 'future') return <span key={day} className="aspect-square" />
+
+              const label = describeHabitDay(day, state)
+              return (
                 <button
                   key={day}
                   ref={(button) => {
@@ -125,15 +126,15 @@ export function HabitGrid({ task, now, onSetDay }: HabitGridProps) {
                   type="button"
                   tabIndex={day === stop ? 0 : -1}
                   aria-pressed={state === 'done'}
-                  aria-label={describeHabitDay(day, state)}
-                  title={describeHabitDay(day, state)}
+                  aria-label={label}
+                  title={label}
                   onClick={() => { onSetDay(day, state !== 'done') }}
                   onFocus={() => { setCurrent(day) }}
                   onKeyDown={(event) => { handleKeyDown(event, column, row) }}
                   className={`${dayButton} ${HABIT_DAY_TONES[state]}`}
                 />
-              ),
-            )}
+              )
+            })}
           </div>
         ))}
       </div>

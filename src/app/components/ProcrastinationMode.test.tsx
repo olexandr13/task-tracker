@@ -14,6 +14,7 @@ const panel = {
   pointsEarned: 0,
   onOtherTask: vi.fn(),
   onCreateTask: vi.fn(),
+  onMoreInfo: vi.fn(),
   onEnd: vi.fn(),
   onRest: vi.fn(),
   onGetOneMore: vi.fn(),
@@ -54,6 +55,20 @@ describe('ProcrastinationPanel', () => {
     expect(screen.queryByText('Some functionality dimmed to prevent distraction. Do just one highlighted task')).toBeNull()
     expect(screen.getByRole('button', { name: 'Choose another task' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'End mode' })).toBeDefined()
+  })
+
+  it('opens Procrastination’s own page from the focus and idle banners (MODE-10)', async () => {
+    const onMoreInfo = vi.fn()
+    render(<ProcrastinationPanel phase="focus" {...panel} onMoreInfo={onMoreInfo} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'More info' }))
+    expect(onMoreInfo).toHaveBeenCalledOnce()
+
+    cleanup()
+    render(<ProcrastinationPanel phase="idle" {...panel} onMoreInfo={onMoreInfo} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'More info' }))
+    expect(onMoreInfo).toHaveBeenCalledTimes(2)
   })
 
   it('End mode on the banner turns the mode off (JUST-8)', async () => {

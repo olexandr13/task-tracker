@@ -9,6 +9,7 @@ import {
   deleteTask,
   NO_BONUSES,
   renameTask,
+  startWarmUp,
   TRASH_RETENTION_MS,
 } from '../core'
 import { countRecords, newRecords, type AccountData, type KnownRecords } from './backupRepository'
@@ -26,6 +27,7 @@ const ERRANDS = createTag('errands', AT)
 const GARDEN = createTag('garden', AT)
 const CHOCOLATE = createPrize('Chocolate', 20, 'prize', AT)
 const UAH = createPointValue(2.5)
+const WARMING_UP = startWarmUp(AT)
 
 const EMPTY: AccountData = {
   tasks: [],
@@ -36,6 +38,7 @@ const EMPTY: AccountData = {
   redemptions: [],
   bonuses: NO_BONUSES,
   pointValue: null,
+  warmUp: null,
 }
 
 const NOTHING_KNOWN: KnownRecords = {
@@ -47,6 +50,7 @@ const NOTHING_KNOWN: KnownRecords = {
   redemptionIds: new Set(),
   bonuses: NO_BONUSES,
   pointValue: null,
+  warmUp: null,
   days: new Map(),
 }
 
@@ -61,6 +65,7 @@ describe('what an import adds', () => {
       redemptions: [COFFEE],
       bonuses: { today: 10, week: 40, month: null },
       pointValue: UAH,
+      warmUp: WARMING_UP,
     }
 
     expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
@@ -177,6 +182,17 @@ describe('what an import does with the bonuses and the point value', () => {
     })
   })
 
+  it('takes the file\u2019s warm-up only where the account has none (BAK-15)', () => {
+    const incoming: AccountData = { ...EMPTY, warmUp: WARMING_UP }
+
+    expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
+    // A warm-up of the account's own is left as it is: a file cannot start a month over.
+    expect(newRecords(incoming, { ...NOTHING_KNOWN, warmUp: { startedOn: '2026-09-01' } }, AT)).toEqual({
+      fresh: EMPTY,
+      alreadyHere: 0,
+    })
+  })
+
   it('adds a prize the account does not have, and leaves one it does (BAK-5, BAK-6)', () => {
     const incoming: AccountData = { ...EMPTY, prizes: [CHOCOLATE] }
 
@@ -202,9 +218,10 @@ describe('counting records', () => {
       redemptions: [],
       bonuses: { today: 10, week: null, month: null },
       pointValue: UAH,
+      warmUp: WARMING_UP,
     }
 
-    // The bonuses and the point value are settings rather than records, and are counted as none.
+    // The bonuses, the point value and the warm-up are settings rather than records, and are counted as none.
     expect(countRecords(data)).toEqual({ tasks: 2, lists: 1, tags: 1, prizes: 1, completions: 2, redemptions: 0 })
   })
 })

@@ -30,12 +30,21 @@ describe('viewFromHash', () => {
       'lists',
       'tags',
       'more',
+      'modes',
+      'modes/procrastination',
+      'modes/warm-up',
       'trash',
       'settings',
     ] as const
     for (const view of views) {
       expect(viewFromHash(viewHash(view))).toBe(view)
     }
+  })
+
+  it('names a mode\'s page after the mode, under Modes (MODE-1, UI-36)', () => {
+    expect(viewHash('modes/warm-up')).toBe('#/modes/warm-up')
+    expect(viewFromHash('#/modes/procrastination')).toBe('modes/procrastination')
+    expect(viewFromHash('#/modes/nothing')).toBeNull()
   })
 
   it('reads back a tag\'s list, whatever the tag is written in (TAG-13)', () => {

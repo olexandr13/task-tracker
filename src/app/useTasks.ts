@@ -232,14 +232,21 @@ export function useTasks(
     [apply],
   )
 
-  // A day picked for a repeating task ends its rule: only a one-off carries a date.
+  /**
+   * A day picked for a repeating task ends its rule: only a one-off carries a
+   * date. Hands back the task it was when a rule ended this way, so the caller
+   * can offer to put it back (DUE-17); null when no rule ended, there being
+   * nothing to take back.
+   */
   const changeDueDate = useCallback(
-    (id: TaskId, dueDate: LocalDay | null) => {
+    (id: TaskId, dueDate: LocalDay | null): Task | null => {
+      const target = latest.current.find((task) => task.id === id)
       apply((current) =>
         current.map((task) =>
           task.id !== id ? task : dueDate === null ? setDueDate(task, null) : scheduleOnce(task, dueDate),
         ),
       )
+      return target === undefined || target.repeat === null || dueDate === null ? null : target
     },
     [apply],
   )
@@ -430,6 +437,18 @@ export function useTasks(
     [apply],
   )
 
+  /**
+   * Puts a record back exactly as it was, for an undo its own rules cannot
+   * rebuild: ending a repeat lets go of the ticks and sessions of occurrences
+   * gone by (DUE-17), which setting the rule again would not bring back.
+   */
+  const putBack = useCallback(
+    (was: Task) => {
+      apply((current) => current.map((task) => (task.id === was.id ? was : task)))
+    },
+    [apply],
+  )
+
   /** The end of the line: gone from storage, with nothing left to restore. */
   const purge = useCallback(
     (id: TaskId) => {
@@ -475,6 +494,7 @@ export function useTasks(
     remove,
     duplicate,
     restore,
+    putBack,
     purge,
     emptyTrash,
   }

@@ -62,12 +62,18 @@ instead of in a long list of everything — see [Views](views.md).
   **Tomorrow** (the sunrise), **Next week** (the Sunday that closes next week, as in DUE-9), **Skip
   occurrence** on a repeating task (RPT-34), **Select date**, and **Remove date** once a one-off has
   a day. A tooltip is a few words: the name alone, with a short date only where the name does not
-  say the day — "Next week · Sep 27", and the skip's "Skip to Sep 20". That picking a day ends a
-  rule is said once, by the panel's note (DUE-12), not in every tooltip. The one-off's own day is
+  say the day — "Next week · Sep 27", and the skip's "Skip to Sep 20". On a repeating task each
+  day's tooltip ends with "· Turns off the repeat" (DUE-12) — "Today · Turns off the repeat",
+  "Next week · Sep 27 · Turns off the repeat" — since the menu and the strip have no panel note
+  to say it once.
+  **Skip occurrence** and **Select date** do not: skipping keeps the rule (RPT-34), and Select date
+  only opens the panel, which says it there. The one-off's own day is
   tinted and heard as chosen. Choosing an
   icon does it and closes the menu. **Select date** opens the date half of the schedule panel (DUE-9),
   quick choices and calendar, in the menu's place, the focus on the calendar's day in reach (DUE-16),
   so the arrow keys and Enter pick a day straight away.
+  The same row is on a **woken wide-screen row's strip** (UI-53), less Select date, the row's own
+  schedule control being the calendar there.
 
 ## The calendar
 
@@ -79,7 +85,9 @@ instead of in a long list of everything — see [Views](views.md).
   one-off's own day is **filled**, and days gone by and those of the months either side are faded,
   there to pick all the same. It opens on the month of the task's day, a repeating task's being the
   occurrence in play (DUE-12), and on today's with none. A click on a day picks it and closes the
-  panel (DUE-9). A screen reader hears each day in full — "Thursday, October 1, 2026" — today as the
+  panel (DUE-9). On a repeating task each day's tooltip reads "Turns off the repeat" (DUE-12); on a
+  one-off there is nothing to warn of and a day has no tooltip, the number being under the pointer
+  already. A screen reader hears each day in full — "Thursday, October 1, 2026" — today as the
   current date, the chosen day as selected, and the month's name again as it changes.
 - **DUE-16** The calendar is **one stop** for Tab, on the chosen day, else the day it opened on, else
   today. The **arrow keys** move a day or a week, **Home** and **End** to the ends of the week, **Page
@@ -101,22 +109,43 @@ instead of in a long list of everything — see [Views](views.md).
 
 - **DUE-12** A repeating task's schedule button shows the looping arrows and reads its rule with
   the **occurrence in play** — "Daily · Today" on a daily task — and is tinted, since the rule has
-  set the day; with no occurrence in play yet (DUE-11) it reads the rule alone. Its panel says first that a day picked there makes the task a one-off, marks no
-  quick choice and no day in the calendar as chosen, and has no **Remove date**, the day being the rule's rather than the task's own;
-  the calendar opens on the month of the occurrence in play.
+  set the day; with no occurrence in play yet (DUE-11) it reads the rule alone. Its panel says first
+  that picking a day there turns off the repeat, marks no quick choice and no day in the calendar as
+  chosen, and has no **Remove date**, the day being the rule's rather than the task's own; the
+  calendar opens on the month of the occurrence in play. Every day there is to pick says the same in
+  its own tooltip — the quick choices wherever the Date row is drawn (DUE-14) and the calendar's own
+  days (DUE-15) — since only the panel has the note above it, and by the time the eye is on the
+  calendar the note is out of the way.
   Picking a day — a quick choice or one in the calendar — **ends the rule** exactly as choosing Once would
   (RPT-12, RPT-14, RPT-30) and gives the task that day, so the button goes back to the calendar at the same time.
   Under the button a repeating task spells out its rule, not its date.
+- **DUE-17** Ending a rule that way **offers to undo it**: a toast reading `Ended the repeat on
+  “Stretch”` names the task and gives the rule back for a few seconds, in the same slot and on the
+  same terms as a deletion's (UI-38, TRASH-3, TRASH-5) — it can be dismissed, and letting it lapse
+  keeps the day. It is offered wherever the day was picked, a row, a menu, the panel, the sheet or
+  a habit card, and only where a rule actually ended: moving a one-off's day, or taking a day away,
+  has nothing to take back. Undoing puts the **whole task** back as it was, not the rule alone,
+  because ending a rule lets go of more than the rule — a stale completion (RPT-14), checklist ticks
+  that no longer counted and the sessions of occurrences gone by (TIME-7) — and setting the rule
+  again would not bring those back. The days done and skipped are kept either way (RPT-30). The
+  schedule button follows the rule back: the picker's draft gives way to a rule that changed from
+  outside it, an undo or another device, so the button never goes on reading the one-off the draft
+  last held. A rule the draft itself set already agrees, so the weekday and month-day choices it
+  keeps are safe (RPT-21).
 
 ---
 
-**Where it lives:** `src/core/day.ts` (local days), `src/core/task.ts` (`setDueDate`, `setRepeat`
-clearing it, and `scheduleOnce`, a day that ends a rule), `src/app/useTasks.ts` (`changeDueDate`), `src/core/due.ts` (which day a task is due, overdue, the two runs a list draws — `splitOverdue` — and the day Next week sets), `src/app/dueLabels.ts`
+**Where it lives:** `src/core/repeat.ts` (`sameRepeat`), `src/core/day.ts` (local days), `src/core/task.ts` (`setDueDate`, `setRepeat`
+clearing it, and `scheduleOnce`, a day that ends a rule), `src/app/useTasks.ts` (`changeDueDate`,
+which hands back the task it was, and `putBack`), `src/app/useUndoToast.ts` and
+`src/app/components/UndoToast.tsx` (the offer to undo, DUE-17), `src/app/TasksScreen.tsx`
+(`handleChangeDueDate`), `src/core/due.ts` (which day a task is due, overdue, the two runs a list draws — `splitOverdue` — and the day Next week sets), `src/app/dueLabels.ts`
 (wording, the **Overdue** heading with it), `src/app/components/TaskList.tsx` (the run it heads), `src/app/components/SchedulePicker.tsx` (the one control) and `DueChoices.tsx` (its
 date half), `DateCalendar.tsx` and `src/app/calendarMonth.ts` (the month calendar and the days it
-lays out), `src/app/dateChoices.tsx` (the Date row, shared by the panel and the menu), `AddTaskForm.tsx`,
+lays out), `src/app/dateChoices.tsx` (the Date row, shared by the panel, the menu and the woken row's strip), `AddTaskForm.tsx`,
 `TaskItem.tsx`, `ContextMenu.tsx` (a row of icons).
 **Tested in:** `src/core/day.test.ts`, `src/core/due.test.ts`, `src/core/task.test.ts`,
-`src/app/dueLabels.test.ts`, `src/app/calendarMonth.test.ts`, `src/app/components/SchedulePicker.test.tsx`,
+`src/app/dueLabels.test.ts`, `src/app/calendarMonth.test.ts`, `src/app/useTasks.test.ts` (the undo),
+`src/app/components/UndoToast.test.tsx` (what it says), `src/app/components/SchedulePicker.test.tsx`,
 `DateCalendar.test.tsx`, `AddTaskForm.test.tsx`, `TaskItem.test.tsx` (the Date row),
 `TaskList.test.tsx` (the Overdue run).

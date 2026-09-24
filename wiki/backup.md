@@ -12,9 +12,11 @@ in. Both are on **Settings**, under the account (UI-35).
 - **BAK-2** The file holds **everything the account keeps**: every task, those in the trash too, the
   lists, the kept tags — those no task carries any more too (TAG-6) — the wishlist (RWD-33), what
   completions earned (a *completion* in the counts is one task's points on one day), the
-  redemptions, what clearing each period is worth (RWD-24, RWD-29) and what a point is worth
-  (RWD-31). What is kept on this device alone — the View options (STORE-30), the sidebar
-  (STORE-31), the cached quote — is not the account's, and is not in it. A record the app cannot
+  redemptions, what clearing each period is worth (RWD-24, RWD-29), what a point is worth
+  (RWD-31) and the warm-up under way (WARM-1). What is kept on this device alone — the View options (STORE-30), the sidebar
+  (STORE-31), the cached quote — is not the account's, and is not in it. Neither is
+  **Procrastination mode** (STORE-45), which the account does keep: it is the state of one
+  afternoon, and a mode restored from a file made last month would be off by the time it was read. A record the app cannot
   read (STORE-7) is left out.
 - **BAK-3** The file is JSON, indented so a person can read it. It says what it is, the version of
   its own shape and when it was made, and holds each record **under the version it is saved with**
@@ -65,13 +67,19 @@ in. Both are on **Settings**, under the account (UI-35).
   import takes the file's bonus for a period, and its point value, only where the account has **none
   of its own**, and never changes one it has (BAK-6). Each period is its own: a file's week bonus
   can be taken while the account keeps its own for Today.
+- **BAK-15** A file holds the **warm-up** under way (WARM-1), as its one record: the day it began
+  on. A file made before there was a warm-up holds none, and is read as having none under way rather
+  than turned away (BAK-13). Like the bonuses it is **no record** (BAK-14): it is counted among
+  neither what was imported nor what was already here, and an import takes the file's warm-up only
+  where the account has **none of its own** — so restoring a backup cannot start a month that has
+  already been served, nor put back one that was ended.
 
 ---
 
 **Where it lives:** `src/storage/backupRepository.ts` (the interface, and what an import adds),
 `firestoreBackupRepository.ts` (reading and adding to the account in Firestore), `localBackupRepository.ts`
 (the guest's), `backupFile.ts` (the file and its version), `taskSchema.ts`, `listSchema.ts`, `tagSchema.ts`,
-`prizeSchema.ts`, `rewardSchema.ts` (each record's own shape),
+`prizeSchema.ts`, `rewardSchema.ts`, `warmUpSchema.ts` (each record's own shape),
 `src/app/useBackup.ts` (running them), `src/app/backupLabels.ts` (what is said),
 `src/app/downloadFile.ts`, `src/app/components/BackupCard.tsx`, `SettingsList.tsx`.
 **Tested in:** `src/storage/backupFile.test.ts` (the file, and reading one back),

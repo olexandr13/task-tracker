@@ -25,7 +25,7 @@ The backend is Firebase project `task-tracker-a6e9e`
   browser.
 - **Firestore** — the `(default)` database, Standard edition, in `eur3`, with delete protection on.
   Tasks live at `users/{uid}/tasks/{taskId}`, readable only by that account. `firebase.json` points
-  at `firestore.rules` and `firestore.indexes.json`; deploy the rules after changing them.
+  at `firestore.rules` and `firestore.indexes.json`. The rules deploy themselves: see below.
 - **Web app** "Task Tracker Web". Its settings are the `VITE_FIREBASE_*` variables in `.env.local`,
   which git ignores, so no key is kept in the repository. Print them with
   `npx -y firebase-tools@latest apps:sdkconfig WEB --project task-tracker-a6e9e`, and restart
@@ -38,12 +38,29 @@ npx -y firebase-tools@latest login                                          # on
 npx -y firebase-tools@latest deploy --only firestore --project task-tracker-a6e9e   # rules + indexes
 ```
 
+### Deploying the rules
+
+Rules only hold once they are up there, so an edit that is not deployed leaves the app refusing
+what it just learned to save ("Missing or insufficient permissions"). Nobody has to remember:
+`scripts/deployFirestoreRules.js` deploys `firestore.rules` whenever the file is no longer what
+was last deployed, and does nothing when it is. It runs
+
+- before `npm run dev` and `npm run preview` (the `predev` and `prepreview` scripts), where a
+  failed deploy only warns, so the server still starts offline;
+- after every edit Claude Code makes, through the hook in `.claude/settings.json`;
+- by hand: `npm run deploy:rules`, or `npm run deploy:rules -- --force` to deploy an unchanged
+  file anyway (say, after the console was edited by hand).
+
+What went up is remembered in `.firebase/deployed-rules.json`, which git ignores, so a fresh clone
+deploys once. Indexes are not part of this; deploy those with the CLI line above.
+
 ## Other commands
 
 ```bash
-npm run test    # the rules, storage and the UI's interactions
-npm run lint    # lint, including the layer boundary check
-npm run build   # type-check + production build
+npm run test           # the rules, storage and the UI's interactions
+npm run lint           # lint, including the layer boundary check
+npm run build          # type-check + production build
+npm run deploy:rules   # firestore.rules, if it changed since the last deploy
 ```
 
 Pull requests into `main` run `npm run lint`, `npm test` and `npm run build` via GitHub Actions

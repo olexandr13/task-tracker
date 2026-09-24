@@ -39,6 +39,22 @@ export function assertValidRepeat(repeat: Repeat): void {
 }
 
 /**
+ * Whether two rules say the same thing, null being "happens once". Weekly days
+ * are a set, so the same days in another order are the same rule.
+ */
+export function sameRepeat(a: Repeat | null, b: Repeat | null): boolean {
+  if (a === null || b === null) return a === b
+  if (a.kind === 'daily') return b.kind === 'daily'
+  if (a.kind === 'monthly') return b.kind === 'monthly' && a.day === b.day
+
+  return (
+    b.kind === 'weekly' &&
+    a.weekdays.length === b.weekdays.length &&
+    a.weekdays.every((weekday) => b.weekdays.includes(weekday))
+  )
+}
+
+/**
  * Whether the rule comes round every single day: a daily rule, or a weekly one
  * that has all seven weekdays and so is a daily rule under another name.
  */

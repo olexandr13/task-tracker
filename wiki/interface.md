@@ -9,7 +9,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   progress bars, with today's quote below them.
 - **UI-2** The rail belongs to the views that show tasks — Today, Week, Month, Tasks, the Inbox, each
   list's and each tag's — not to
-  the app: habits, rewards, More, the lists, the tags, the trash and settings do without it. The habits page is already a record of progress (HAB-15), and how much of
+  the app: habits, rewards, More, the modes, the lists, the tags, the trash and settings do without it. The habits page is already a record of progress (HAB-15), and how much of
   the week is cleared says nothing about what was thrown away. Nobody needs spurring on to empty a
   bin.
 - **UI-3** There is **no view heading** over the work. The navigation already marks which view you
@@ -75,8 +75,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   the middle of the window**, no wider than its fields need, rather than along the whole bottom of
   the screen. The one-line box at the top still adds a title on Enter (TASK-4). In the sheet,
   Enter in the title — including the phone keyboard's Done/Return — adds the same way (TASK-66).
-  Closing the sheet without adding keeps nothing. Procrastination mode is started from **More**
-  (JUST-1), not from beside the Plus. The sheet's action rows follow UI-59.
+  Closing the sheet without adding keeps nothing. Procrastination mode is started from **Modes**
+  (JUST-1, MODE-3), not from beside the Plus. The sheet's action rows follow UI-59.
 - **UI-55** On every page that lists tasks, pressing **N** opens the add sheet too, so a keyboard
   reaches it without Tabbing to the Plus. Typing in a box, or holding a modifier, leaves `N` alone —
   it is a letter then, not a shortcut. Habits has **H** instead (UI-56).
@@ -85,10 +85,10 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   modifier, leaves `H` alone, as with `N` (UI-55).
 - **UI-57** Pressing **R** opens **Rewards** (RWD-19). From anywhere in the app; typing in a box, or
   holding a modifier, leaves `R` alone, as with the other letter shortcuts (UI-55, UI-56).
-- **UI-58** Pressing **P** on **Today** starts **Procrastination mode** when More's control would
-  offer it (JUST-1), and ends it while the mode is on (JUST-8). Elsewhere, or when the control is
-  gone, `P` does nothing. Typing in a box, or holding a modifier, leaves `P` alone, as with the
-  other letter shortcuts (UI-55, UI-56, UI-57).
+- **UI-58** Pressing **P** on **Today** starts **Procrastination mode** whenever its switch on
+  Modes would (JUST-1), and ends it while the mode is on (JUST-8). Elsewhere, or while there is
+  nothing to focus on (MODE-6), `P` does nothing. Typing in a box, or holding a modifier, leaves
+  `P` alone, as with the other letter shortcuts (UI-55, UI-56, UI-57).
 - **UI-60** On a phone, **swiping a task row** is a shortcut to finish or remove it: **right**
   completes it (or takes a done one back), **left** deletes it the same way the sheet's Delete does
   — into the trash, with the undo toast (TRASH-1, TRASH-3). A short swipe snaps back and does
@@ -109,15 +109,17 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 ## Navigation
 
-- **UI-7** Sixteen views: **Today**, **Week**, **Month**, **Tasks**, **Inbox**, **Habits**,
+- **UI-7** Nineteen views: **Today**, **Week**, **Month**, **Tasks**, **Inbox**, **Habits**,
   **Rewards** with **History**, **Prizes**, **Wishlist** and **Rules** under it (RWD-30), **Lists**,
-  **Tags**, **More**, **Trash** and **Settings**, and a view for each list, opened from Lists, and one for
+  **Tags**, **More**, **Modes** with a page for each of **Procrastination** and **Warm-up** under
+  it (MODE-1), **Trash** and **Settings**, and a view for each list, opened from Lists, and one for
   each tag, opened from Tags. Each is named and carries an
-  icon — every tag's view the same `#` as Tags, and every list the same folder as Lists. **Tags**
-  and **Procrastination** are reached from **More** (UI-45); **Rewards** has an entry of its own in
+  icon — every tag's view the same `#` as Tags, and every list the same folder as Lists, and each
+  mode the glyph it wears everywhere else. **Tags** and **Modes** are reached from **More**
+  (UI-45); **Rewards** has an entry of its own in
   the sidebar and a tab of its own on a phone (UI-30, UI-32). See
   [Views](views.md), [Lists](lists.md), [Habits](habits.md),
-  [Rewards](rewards.md) and [Tags](tags.md).
+  [Rewards](rewards.md), [Tags](tags.md) and [Modes](modes.md).
 - **UI-30** In the sidebar the views come in four groups with a thin line between each: the period
   views (**Today**, **Week**, **Month**), then **Tasks**, **Habits**, **Lists**, **Rewards** and
   **More**, then **Trash**, then **Settings**. **Lists** and **Rewards** each keep their pages
@@ -125,8 +127,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   **Wishlist** and **Rules** (RWD-30) — and each has a **chevron at its end that folds them away** and opens them
   again, without leaving the view you are on. Open, the page you are on is marked itself; folded,
   the entry above stands for it. Both start open, and how they are left is kept on this device
-  (STORE-31). A tag's view has no entry of its own: **More** stays marked while Tags or a tag's
-  tasks are open.
+  (STORE-31). A tag's view has no entry of its own, and neither has a mode's: **More** stays marked
+  while Tags, a tag's tasks, Modes or one mode's page are open (MODE-1). A mode's page carries its
+  own strip back to Modes (MODE-7), the sidebar listing none of them.
 - **UI-8** The view you are on is marked, in the sidebar and in the bottom bar alike.
 - **UI-32** The bottom bar has six tabs, each an icon over its name, from left to right:
   **Settings**, **Rewards**, **More** (UI-45), **Tasks**, **Habits** and **the period** (UI-33).
@@ -161,14 +164,15 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   **Trash**, each entry with its icon — so any list is two taps from anywhere, however long Tasks
   runs, and no heading repeats the name of the entry above it. Choosing one goes there. From any
   other view, a list's included, a tap on Tasks goes to Tasks.
-- **UI-45** Neither the bar nor the sidebar has an entry for the tags: they are under **More**,
-  marked with three dots. **A tap opens More's page** — a link to **Tags**, with its icon, large
-  enough for a thumb (UI-49) and a chevron at its end marking it as a page to go to — and
-  **Procrastination** when it is available (JUST-1), which, being a switch rather than a page, has
-  none. The page is the same on a wide screen. Choosing Tags goes there; choosing Procrastination
-  starts (or ends) the mode and opens Today. **More** stays marked while its own page, the Tags page
-  or a tag's view is open. The rewards were here while a phone's bar had no room for them; they have
-  a tab of their own now (UI-32, RWD-19). Its address is `#/more` (UI-36).
+- **UI-45** Neither the bar nor the sidebar has an entry for the tags or the modes: they are under
+  **More**, marked with three dots. **A tap opens More's page** — two links, **Tags** and **Modes**,
+  each with its icon, large enough for a thumb (UI-49) and a chevron at its end marking it as a page
+  to go to. The Modes row says how many modes are on (MODE-1). The page is the same on a wide
+  screen, and choosing either goes there. **More** stays marked while its own page, the Tags page, a
+  tag's view, the Modes page or one mode's page is open. Procrastination and the warm-up were rows
+  here while they were switches with nothing to say; each has a page of its own now (MODE-5), as the
+  rewards took a tab of their own once a phone's bar had room (UI-32, RWD-19). Its address is
+  `#/more` (UI-36).
 
 ## Popovers
 
@@ -234,10 +238,14 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   there giving up room to it, so however long a rule is it never reaches the details beside it. A woken row with nothing to
   spell out has no such line. The line is part of the task's own line (UI-28).
 - **UI-53** On a wide screen, waking a row also brings a **strip of the menu's actions** under the
-  task's line — list (once there is one to choose), tags, urgent and Duplicate — so those need
-  not wait for a right-click (UI-31, LST-14, TAG-7, TASK-63, TASK-51). They sit as **icons on one
-  row**, each naming itself on hover, and rest with the row. A phone already has them in the
-  sheet (UI-48).
+  task's line — the **Date** row first, then list (once there is one to choose), tags, urgent and
+  Duplicate — so those need not wait for a right-click (UI-31, DUE-14, LST-14, TAG-7, TASK-63,
+  TASK-51). They sit as **icons on one row**, each naming itself on hover, and rest with the row.
+  The date choices are the menu's (DUE-14) **less Select date**: the schedule control on the row's
+  own line, out on every woken row (UI-18), opens the calendar. A thin line stands between them and
+  the rest, as the menu draws one under its Date group. The day already set is tinted like any set
+  control (UI-26), and choosing one leaves the row open — it is working on the task, not finishing
+  with it. A phone already has all of this in the sheet (UI-48).
 - **UI-51** A task still to do marked **urgent** carries a **thin amber bar on the left of its
   row** (TASK-64) — a quiet mark, not a badge or a tinted whole row — so the list stays readable and
   only urgent tasks stand out at a glance.
@@ -275,11 +283,14 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   sheet (UI-48).
 - **UI-31** **Right-clicking a row opens the task's menu** at the pointer — on the other side of it
   where the window runs out — and marks the row's border while it is open, so it is plain which
-  task the menu is for. It holds, first, the **Date** row of icons (DUE-14), then **Duplicate**
+  task the menu is for. It holds, first, the **Date** row of icons (DUE-14), then **Urgent**
+  (TASK-63), **Duplicate**
   (TASK-51), **Tags**, which opens the tag panel in the menu's place (TAG-7) — each marked with a
-  small glyph before its name, two sheets and the `#` — and, once there are
-  lists, a **List** group to file the task in, its own checked (LST-14). A group has a small heading
-  and a line above it;
+  small glyph before its name, a flag, two sheets and the `#` — and, once there are
+  lists, a **List** group to file the task in, its own checked (LST-14). Urgent is a mark that is
+  on or off rather than one of a set: it is **tinted when it is on**, heard as a toggle, and **not
+  ticked** — a tick's column would indent it alone, out of line with the actions beside it. A group
+  has a small heading and a line above it;
   a long menu scrolls rather than running off the window. The row stays as it was, at rest or awake:
   the menu is about the task as a whole, not working on it (as UI-19). Choosing an item, Escape, Tab,
   a click outside, scrolling the page or resizing the window closes it; scrolling a long menu itself does not. Right-clicking text being typed in —
@@ -347,6 +358,11 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   phone or an installed app draws around the page. The choice is kept on this device, not in the
   account (STORE-40), and the app **opens in it** — never in the other theme for a moment first.
   The arrow keys move along the three, as in any set of options where one is chosen.
+- **UI-64** The **tick** inside a box that is ticked off — a task's row, a habit's card, the head of
+  a task's sheet (UI-47), a checklist item — is drawn **thick, with rounded ends**, like the tick in
+  ✅ rather than the thin one a font draws, so it still reads as a tick at the small size a row draws
+  its box. It is the same mark wherever a box is ticked off, white on green when done and a faint
+  green when a time goal says the task is ready to be (TIME-5).
 
 ---
 
@@ -361,7 +377,7 @@ notch and the home indicator), `src/app/components/TaskList.tsx` (the room betwe
 add box and the Plus), `src/app/components/AddTaskSheet.tsx` (the detailed add sheet), `src/app/letterShortcut.ts`
 and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet, `R` opens Rewards, `P` toggles
 Procrastination mode), `src/app/components/MorePage.tsx` (More's list of
-links and Procrastination), `src/app/components/ViewMenu.tsx` (the View
+links), `src/app/components/ModesPage.tsx` and `ModePage.tsx` (the modes), `src/app/components/ViewMenu.tsx` (the View
 button and its panel), `src/app/components/ViewOptionsMenu.tsx` (the
 task views' options), `src/app/components/HabitViewOptionsMenu.tsx`
 (Habits'), `src/app/useDeviceSetting.ts` (keeping either on this device), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/useLongPress.ts` (a press told from a
@@ -370,7 +386,8 @@ delete), `src/app/components/SettingsList.tsx` (and the version on it, from `pac
 `vite.config.ts`), `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it),
 `ThemeCard.tsx` (the theme on it), `src/app/theme.ts` and `src/app/useTheme.ts` (the theme worn by the page),
 `index.html` (the theme put on before the page is first drawn), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
-view's icon), `src/app/rowControls.ts` (the shape and tones a row's controls share — larger on a phone for the
+view's icon), `src/app/components/TickIcon.tsx` (the tick in a box that is ticked off),
+`src/app/rowControls.ts` (the shape and tones a row's controls share — larger on a phone for the
 sheet, UI-59), `src/app/panelControls.ts` (the size a panel's buttons share — larger on a phone with
 the sheet's pickers), `src/styles.css`,
 `public/favicon.svg` (the app's icon; the PNGs beside it are the same icon for installing),

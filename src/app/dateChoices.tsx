@@ -31,7 +31,8 @@ interface DateChoicesOptions {
   now: Date
   /**
    * Whether the task repeats: its day is the rule's, so none is marked as chosen,
-   * there is no taking it away, and picking one ends the rule.
+   * there is no taking it away, and picking one ends the rule — which each day's
+   * tooltip says.
    */
   repeats: boolean
   /** Left out where there is no occurrence to skip. */
@@ -42,18 +43,27 @@ interface DateChoicesOptions {
 }
 
 /**
+ * What picking a day does to a repeating task, said in the tooltip of every day
+ * there is to pick — these choices and the calendar's own days (DUE-12).
+ */
+export const ENDS_REPEAT = 'Turns off the repeat'
+
+/**
  * The quick date choices, the same wherever a day is set — a task's menu and the
  * date panel: today, tomorrow, next week, skipping a repeating task's occurrence,
  * any other day where there is no calendar beside them, and taking a one-off's
  * day away. A tooltip is a few words: the day is spelled out only where the name
- * does not already say it, and that a day ends a rule is left to the panel's note.
+ * does not already say it, and on a repeating task every day says that it ends
+ * the rule, since the menu and the row's strip have no panel note to say it once.
  */
 export function dateChoices({ dueDate, now, repeats, skip, onChange, onSelectDate }: DateChoicesOptions): DateChoice[] {
   const today = toLocalDay(now)
   const day = (label: string, icon: ReactNode, choice: LocalDay, hint?: string): DateChoice => ({
     label,
     icon,
-    hint,
+    // Only a day ends the rule: skipping keeps it, and Select date opens the panel,
+    // whose note says it, rather than choosing anything yet.
+    hint: repeats ? `${hint ?? label} · ${ENDS_REPEAT}` : hint,
     checked: !repeats && choice === dueDate,
     onSelect: () => { onChange(choice) },
   })

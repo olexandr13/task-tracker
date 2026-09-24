@@ -20,6 +20,12 @@ rules_version = '2';
 // - Settings of the points: one document per setting, stored as
 //   { version, name, value } — what a point is worth is the only one so far —
 //   always filed under the name it carries.
+// - The warm-up: the one document it is ever kept as, stored as
+//   { version, name, warmUp } (src/storage/firestoreWarmUpRepository.ts),
+//   filed under that name, and no document at all is no warm-up.
+// - Procrastination mode: the one document it is ever kept as, stored as
+//   { version, name, state } (src/storage/firestoreProcrastinationRepository.ts),
+//   filed under that name, and no document at all is the mode off.
 service cloud.firestore {
   match /databases/{database}/documents {
     function isOwner(accountId) {
@@ -62,6 +68,16 @@ service cloud.firestore {
     }
 
     match /users/{accountId}/rewardSettings/{name} {
+      allow read, delete: if isOwner(accountId);
+      allow create, update: if isOwner(accountId) && request.resource.data.name == name;
+    }
+
+    match /users/{accountId}/warmUp/{name} {
+      allow read, delete: if isOwner(accountId);
+      allow create, update: if isOwner(accountId) && request.resource.data.name == name;
+    }
+
+    match /users/{accountId}/procrastination/{name} {
       allow read, delete: if isOwner(accountId);
       allow create, update: if isOwner(accountId) && request.resource.data.name == name;
     }

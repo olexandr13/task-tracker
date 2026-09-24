@@ -10,7 +10,7 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   with all seven days, which reads "Daily" anyway (RPT-25). A task that skips a day, a monthly
   task and a one-off are not habits.
 - **HAB-2** The page lists every habit not in the trash, **in the order of the task list**. Ticking
-  one off does not move it.
+  one off does not move it, and the order can be changed from here (HAB-27).
 - **HAB-3** With no habits, the page says a task given a daily repeat is tracked there.
 
 ## A habit's card
@@ -85,9 +85,9 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   today on the right, in the grid's shades (HAB-10); a screen reader hears them as `Last 7 days: done
   on 5 days`. **Tapping the card** — anywhere on it but the box and the ⋮ — unfolds the numbers
   (HAB-5 to HAB-8) and the grid (HAB-9) beneath it, and tapping it again folds them away. The
-  chevron points down while folded and up while open. The ⋮ and the chevron sit level with the
-  title's first line, like the box, so folding or unfolding never moves them. Open, the second line
-  goes, as the numbers and the grid below already give it. A list of year-long grids is a long way
+  chevron points down while folded and up while open. The ⋮ and the chevron sit **centred down the
+  card**, since they act on the whole habit rather than on the title. Open, the second line goes, as
+  the numbers and the grid below already give it. A list of year-long grids is a long way
   to scroll for a box to tick, and ticking is what the page is visited for.
 - **HAB-22** Ticking the box never unfolds a card, and neither does opening the edit sheet (HAB-25).
   Each card folds on its own, so opening one never moves one being reached for, and a card starts
@@ -101,12 +101,37 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   there. Its hint reads **Add habit**. Enter adds it unless another rule is chosen first. After
   adding, the box is daily again. The Plus — and pressing **H** from anywhere (UI-56) — opens the
   same detailed sheet as elsewhere (TASK-66), also starting daily and named for a habit. From a page
-  that is not Habits, **H** opens Habits first, then the sheet.
+  that is not Habits, **H** opens Habits first, then the sheet. While a warm-up is on, the page says
+  at its head how many habits may be taken on yet, and one past that allowance is held back — from
+  this box, the sheet and anywhere else a habit is made ([Warm-up](warm-up.md)).
 - **HAB-25** Each habit has a **⋮** on its line that opens the same sheet a phone uses for a task
   (UI-48): title, schedule, list, tags, checklist, description, reward, urgent, duplicate and
   delete. Editing stays on Habits; a change that stops the task being a habit (HAB-1) takes it off
   the page. Closing the sheet, or deleting the task from it, puts the card away again. A screen
   reader hears the ⋮ as `Edit "stretch"`.
+- **HAB-26** Escape closes that sheet (UI-9, UI-10), **including while the title is being edited**:
+  the edit is dropped as it is anywhere else (TASK-9) and the sheet goes in the same press. The box
+  looks much like the title it replaces, so dropping the edit alone would read as nothing having
+  happened.
+
+## Moving
+
+- **HAB-27** Habits are put in a new order by **dragging their cards**, the same way rows are
+  dragged (TASK-37 to TASK-40): a card is picked up anywhere on it with a pointer, or from the
+  **grip** in the margin to its left, which shows on hover and where the keyboard reaches it. The
+  habit's title rides with the pointer and the card stays where it was, faded, showing where it
+  will land. From the keyboard the grip picks a card up with Space or Enter, the arrow keys move
+  it, Space or Enter drops it and Escape puts it back.
+- **HAB-28** A habit **moves among every other habit**, whether or not today is ticked off: the
+  page is one flat list (HAB-2), not the bands a task view draws (TASK-41). The order it lands in
+  is the **task list's own**, so a habit moved here moves in every view that shows it, and a habit
+  moved in a view moves here. Nothing is stored for the order beyond the task's `order` (TASK-43),
+  so no move counts towards any period's bar.
+- **HAB-29** A card can also be dropped on a **list in the sidebar** to file its habit there
+  (LST-25), as a row can — the page has the same sidebar. Tapping a card to unfold it (HAB-21),
+  ticking it off and opening its sheet all still work: a pointer has to move a few pixels, or a
+  finger to hold for a moment, before a card is picked up at all (TASK-39), and letting go never
+  unfolds the card. The grip is outside the line that folds, so it only ever carries the card.
 
 ---
 
@@ -117,7 +142,10 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 (`setHabitDay`), `src/app/components/AddTaskForm.tsx` (the add box), `src/app/components/AddTaskSheet.tsx` (the detailed
 sheet, starting daily), `src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`H` opens it),
 `src/app/components/HabitViewOptionsMenu.tsx` and `src/app/useDeviceSetting.ts`
-(the View button and whether cards start folded).
+(the View button and whether cards start folded), `src/core/order.ts` (`moveTask`, the order itself),
+`src/app/useSortableTask.ts`, `src/app/components/SortableTasks.tsx` and
+`src/app/components/TaskDragAndDrop.tsx` (picking a card up and dropping it, shared with the rows),
+`src/app/components/GripIcon.tsx` and `src/app/rowControls.ts` (`dragGrip`).
 **Tested in:** `src/core/habit.test.ts`, `src/core/task.test.ts`,
 `src/app/components/HabitList.test.tsx`, `src/app/components/HabitViewOptionsMenu.test.tsx`,
 `src/app/components/AddTaskForm.test.tsx`, `src/app/letterShortcut.test.ts` and

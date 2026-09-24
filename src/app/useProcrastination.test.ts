@@ -13,20 +13,37 @@ import {
 import type { ProcrastinationRepository } from '../storage/procrastinationRepository'
 import { useProcrastination, type WinLedger } from './useProcrastination'
 
-/* Procrastination mode as the screen drives it. JUST ids refer to wiki/just-one.md. */
+/* Procrastination mode as the screen drives it. JUST ids refer to wiki/just-one.md,
+   STORE ids to wiki/storage.md. */
 
 const WED = new Date(2026, 8, 16, 9, 0)
 const THU = new Date(2026, 8, 17, 9, 0)
 
-function memory(initial: ProcrastinationState = PROCRASTINATION_OFF) {
+/** The account's mode, in memory: what it holds, and a way to push a change in as another device would. */
+type MemoryRepository = ProcrastinationRepository & {
+  saved: () => ProcrastinationState
+  push: (state: ProcrastinationState) => void
+}
+
+function memory(initial: ProcrastinationState = PROCRASTINATION_OFF): MemoryRepository {
   let saved = initial
-  const repository: ProcrastinationRepository = {
-    load: () => saved,
-    save: vi.fn((next: ProcrastinationState) => {
-      saved = next
+  const listeners = new Set<(state: ProcrastinationState | null) => void>()
+
+  return {
+    subscribe(onState) {
+      listeners.add(onState)
+      onState(saved.phase === 'off' ? null : saved)
+      return () => { listeners.delete(onState) }
+    },
+    save: vi.fn(async (next: ProcrastinationState | null) => {
+      saved = next ?? PROCRASTINATION_OFF
     }),
+    saved: () => saved,
+    push(state) {
+      saved = state
+      for (const listener of listeners) listener(state.phase === 'off' ? null : state)
+    },
   }
-  return repository
 }
 
 function ledger(entries: RewardEntry[] = []): WinLedger {
@@ -56,7 +73,7 @@ describe('useProcrastination', () => {
     const { result } = render(repository, null, THU)
 
     expect(result.current.phase).toBe('off')
-    expect(repository.save).toHaveBeenCalledWith(PROCRASTINATION_OFF)
+    expect(repository.save).toHaveBeenCalledWith(null)
   })
 
   it('starts on the easiest open Today task, and keeps it for the day (JUST-3, JUST-4)', () => {
@@ -66,7 +83,7 @@ describe('useProcrastination', () => {
     act(() => { result.current.start() })
 
     expect(result.current.taskId).toBe(EASY.id)
-    expect(repository.load()).toEqual({ phase: 'focus', taskId: EASY.id, day: '2026-09-16' })
+    expect(repository.saved()).toEqual({ phase: 'focus', taskId: EASY.id, day: '2026-09-16' })
   })
 
   it('switches to another open task, or rests when there is none (JUST-6)', () => {
@@ -89,7 +106,7 @@ describe('useProcrastination', () => {
     expect(result.current.phase).toBe('won')
     expect(result.current.wonTask?.id).toBe(EASY.id)
     expect(result.current.pointsEarned).toBe(2)
-    expect(repository.load()).toEqual({ phase: 'won', taskId: EASY.id, day: '2026-09-16' })
+    expect(repository.saved()).toEqual({ phase: 'won', taskId: EASY.id, day: '2026-09-16' })
 
     act(() => { result.current.grantPoints(3) })
     expect(points.saveEarning).toHaveBeenCalledWith({ taskId: EASY.id, day: '2026-09-16', points: 3 })
@@ -99,6 +116,30 @@ describe('useProcrastination', () => {
     expect(render(memory(), [EASY]).result.current.available).toBe(true)
     expect(render(memory(), [completeTask(EASY, WED)]).result.current.available).toBe(false)
     expect(render(memory({ phase: 'idle', day: '2026-09-16' }), []).result.current.available).toBe(true)
+  })
+
+  it('follows the mode turned on somewhere else (STORE-45)', () => {
+    const repository = memory()
+    const { result } = render(repository, [EASY, HARD])
+
+    expect(result.current.phase).toBe('off')
+
+    act(() => { repository.push({ phase: 'focus', taskId: HARD.id, day: '2026-09-16' }) })
+
+    expect(result.current.phase).toBe('focus')
+    expect(result.current.taskId).toBe(HARD.id)
+    // Heard, not echoed back: the account already holds what just arrived from it.
+    expect(repository.save).not.toHaveBeenCalled()
+  })
+
+  it('says it is still loading until the account has answered (MODE-8)', () => {
+    const repository = memory({ phase: 'idle', day: '2026-09-16' })
+    const { result, rerender } = render(repository, null)
+
+    expect(result.current.isLoading).toBe(true)
+
+    rerender({ tasks: [EASY] })
+    expect(result.current.isLoading).toBe(false)
   })
 
   it('rests and ends as asked (JUST-7, JUST-8)', () => {

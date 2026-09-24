@@ -117,6 +117,8 @@ goal is reached), `src/core/taskTimer.ts` (elapsed time and whether a run has re
 dropped), `src/app/components/TimePicker.tsx` (the clock and its panel), `src/app/components/TaskItem.tsx`
 (the slot, the detail and the box's hint), `src/app/components/HabitList.tsx` (the habit card's box),
 `src/app/components/RunningTimerChip.tsx`, `src/app/components/GoalNoticeToast.tsx`,
+`src/app/browserNotification.ts` (the browser's notification and its permission, shared with
+[Nudges](nudges.md)),
 `src/app/components/ClockIcon.tsx`, `src/app/components/PlayIcon.tsx`,
 `src/app/components/StopIcon.tsx`, `src/app/durationLabels.ts` (wording, and reading typed lengths),
 `src/app/rowControls.ts` (the ready box), `src/app/useTasks.ts`, `src/app/useTaskTimer.ts`,

@@ -178,7 +178,13 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   in the last 30 days** and **Done earlier**, most recent first. The spans count back in local days
   and each leaves out the ones before it, so a task is under exactly one; a span with nothing in it
   has no heading. Tasks still to do stay above, with no heading. Today, Week, Month, the Inbox, lists
-  and tags keep one run of done tasks.
+  and tags keep one run of done tasks, under the plain **Done** heading (TASK-69).
+- **TASK-69** The done tasks are set apart from the ones still to do by a heading of their own:
+  **Done**, in the same small, muted gray the spans read in (TASK-56), with its count beside it and
+  the same distance to the run above. Every list has it — Today, Week, Month, the Inbox, lists and
+  tags — bar **Tasks**, where the spans say when the work was finished and head the runs instead,
+  and bar Today in Procrastination mode, which draws one run (JUST-5). A list with nothing done has
+  no heading, and it goes the moment the last tick is taken back.
 - **TASK-57** A repeating task is under the span of its latest completion while that completion
   still covers the occurrence in play (TASK-18); once the next occurrence comes it is back among the
   tasks to do. A completion stamped later than today, by a device whose clock ran ahead, counts as
@@ -212,7 +218,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   un-completing it, marking it urgent (or clearing the mark), or a day turning overdue (or a date
   moving so it is no longer) is what moves it between them, and it goes back to its place in the
   order when it returns. On Tasks a done task moves only among those under
-  its own heading (TASK-56): a drag never changes when a task was finished.
+  its own heading (TASK-56): a drag never changes when a task was finished. Habits draws no such
+  bands, so there a card moves among every other habit (HAB-28).
 - **TASK-42** A task keeps its place while it is in the trash: restoring it puts it back where it
   was. New tasks still join the end (TASK-7).
 - **TASK-43** A move changes the moved task's `order` and nothing else, so it counts for nothing in
@@ -247,9 +254,9 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   that option shows **no Urgent label**, and there is **no urgent control** on the row at rest
   (unlike the date, checklist, time and reward). The one exception is an urgent task still to do,
   which is marked out quietly on the row itself (TASK-64).
-- **TASK-63** Urgent is set from the **task's menu** — a single Urgent choice that toggles the mark —
-  from a **flag on the woken wide-screen row** (UI-53), and on a phone from the sheet as well, as a
-  flag that toggles the same way. Every choice is saved as it is made; there is nothing to confirm.
+- **TASK-63** Urgent is set from the **task's menu** — a single Urgent choice that toggles the mark,
+  tinted while it is on rather than ticked (UI-31) — from a **flag on the woken wide-screen row**
+  (UI-53), and on a phone from the sheet as well, as a flag that toggles the same way. Every choice is saved as it is made; there is nothing to confirm.
 - **TASK-64** A task still to do marked **urgent** is highlighted by a **thin amber bar on the left
   of its row** — enough to catch the eye when scanning, not enough to turn the list into a column of
   warnings. Done tasks lose the highlight.
@@ -265,7 +272,8 @@ down and read back), `src/core/descriptionLists.ts` (lists, the same), `src/app/
 description is written in), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx` (ordering), `src/app/useUndoToast.ts`
 and `UndoToast.tsx` (undo after a completion or a deletion), `src/core/order.ts`
 (where a task sits, moving it, where a copy goes, and `sortForDisplay` — overdue above, urgent next, done below),
-`src/core/due.ts` (`splitOverdue`, the two runs still to do) and `src/app/dueLabels.ts` (the Overdue heading),
+`src/core/due.ts` (`splitOverdue`, the two runs still to do), `src/app/dueLabels.ts` (the Overdue heading)
+and `src/app/completionLabels.ts` (the Done one),
 `src/app/components/TaskDragAndDrop.tsx`,
 `src/app/taskDrop.ts`, `src/app/components/SortableTasks.tsx`, `src/app/useSortableTask.ts` and
 `src/app/dragSensors.ts` (dragging).

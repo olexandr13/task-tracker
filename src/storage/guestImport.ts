@@ -6,10 +6,12 @@ import { loadGuestPrizes } from './localPrizeRepository'
 import { loadGuestLedger } from './localRewardRepository'
 import { loadGuestTags } from './localTagRepository'
 import { loadGuestTasks } from './localTaskRepository'
+import { loadGuestWarmUp } from './localWarmUpRepository'
 import type { PrizeRepository } from './prizeRepository'
 import type { RewardRepository } from './rewardRepository'
 import type { TagRepository } from './tagRepository'
 import type { TaskRepository } from './taskRepository'
+import type { WarmUpRepository } from './warmUpRepository'
 
 /**
  * Moves the guest's records into a signed-in account, then forgets them here.
@@ -22,12 +24,14 @@ export async function importGuestAccount(
   tags: TagRepository,
   prizes: PrizeRepository,
   rewards: RewardRepository,
+  warmUp: WarmUpRepository,
 ): Promise<void> {
   const guestTasks = loadGuestTasks()
   const guestLists = loadGuestLists()
   const guestTags = loadGuestTags()
   const guestPrizes = loadGuestPrizes()
   const ledger = loadGuestLedger()
+  const guestWarmUp = loadGuestWarmUp()
 
   const empty =
     guestTasks.length === 0 &&
@@ -37,7 +41,8 @@ export async function importGuestAccount(
     ledger.entries.length === 0 &&
     ledger.redemptions.length === 0 &&
     BONUS_PERIODS.every((period) => ledger.bonuses[period] === null) &&
-    ledger.pointValue === null
+    ledger.pointValue === null &&
+    guestWarmUp === null
 
   if (empty) {
     clearGuestAccount()
@@ -66,6 +71,9 @@ export async function importGuestAccount(
     if (points !== null) await rewards.importBonus(period, points)
   }
   if (ledger.pointValue !== null) await rewards.importPointValue(ledger.pointValue)
+  // A warm-up begun as guest keeps the day it began on, so signing in does not
+  // start the month again (WARM-10).
+  if (guestWarmUp !== null) await warmUp.importWarmUp(guestWarmUp)
 
   clearGuestAccount()
 }

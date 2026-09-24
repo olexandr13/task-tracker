@@ -21,11 +21,14 @@ import {
  * task, the Inbox, one list's and the ones carrying a tag — and share everything
  * but which tasks they show, what a task added to them starts with and whether
  * their done tasks are divided by when they were finished. Habits, the rewards
- * pages, More, the lists, the tags, the trash and settings are screens of their own.
+ * pages, More, the modes, the lists, the tags, the trash and settings are
+ * screens of their own.
  *
  * Rewards is four screens rather than one: how the points stand, and under it the
  * history, the wishlist and the rules (RWD-19). They are named `rewards/…`, which
  * is what their addresses read as and what marks them as belonging under Rewards.
+ * Modes is three in the same way (MODE-1): the list of them, and a page for each
+ * mode explaining what it does, named `modes/…`.
  *
  * "View" is this file's word for a screen. What the owner calls a **list** is
  * somewhere tasks are filed (`../core/list`), which is a different thing: Today
@@ -46,6 +49,9 @@ export type FixedView =
   | 'lists'
   | 'tags'
   | 'more'
+  | 'modes'
+  | 'modes/procrastination'
+  | 'modes/warm-up'
   | 'trash'
   | 'settings'
 
@@ -67,7 +73,10 @@ export type TagView = `tag/${string}`
 export type View = FixedView | OneListView | TagView
 
 /** The views that show tasks: the box to add one, the rows, and the rail beside them. */
-export type TaskView = Exclude<View, 'habits' | RewardsView | 'lists' | 'tags' | 'more' | 'trash' | 'settings'>
+export type TaskView = Exclude<
+  View,
+  'habits' | RewardsView | 'lists' | 'tags' | 'more' | ModesView | 'trash' | 'settings'
+>
 
 /**
  * The pages under Rewards, in the order they are listed: what was earned and
@@ -90,11 +99,32 @@ export function isRewardsView(view: View): view is RewardsView {
 }
 
 /**
- * Pages reached from More, listed on More's own page — Tags alone, now that
- * Rewards has a place of its own everywhere (RWD-19). Procrastination is an
- * action on that page too, not a view of its own.
+ * The modes and what they do, in the order the Modes page lists them: the one
+ * that picks a single task out of Today, and the one that allows one more habit
+ * with each of its thirty days (MODE-2). Each is a page of its own, so a mode can say what it
+ * does rather than being a switch whose name has to carry the whole idea.
  */
-export const UNDER_MORE = ['tags'] as const satisfies readonly FixedView[]
+export const UNDER_MODES = [
+  'modes/procrastination',
+  'modes/warm-up',
+] as const satisfies readonly FixedView[]
+
+/** One mode, as the view of its own page. */
+export type ModeView = (typeof UNDER_MODES)[number]
+
+/** Modes and the pages under it: the list of the modes, and each mode's own page. */
+export type ModesView = 'modes' | ModeView
+
+export function isModesView(view: View): view is ModesView {
+  return view === 'modes' || (UNDER_MODES as readonly View[]).includes(view)
+}
+
+/**
+ * Pages reached from More, listed on More's own page: Tags, now that Rewards has
+ * a place of its own everywhere (RWD-19), and Modes, which holds the switches
+ * that were once rows on More itself (MODE-1).
+ */
+export const UNDER_MORE = ['tags', 'modes'] as const satisfies readonly FixedView[]
 
 /** The views named after a period, which a phone keeps behind a single tab. */
 export type PeriodView = 'today' | 'week' | 'month'
@@ -129,15 +159,16 @@ export function tagView(tag: string): TagView {
  * Whether being on `view` is being somewhere under `menu` in the navigation: on
  * it, or on one of the screens opened from it — a list or the Inbox under Lists,
  * a tag's tasks under Tags, the history, the wishlist and the rules under
- * Rewards, or Tags under More.
+ * Rewards, or Tags, Modes and each mode's page under More.
  */
 export function isUnder(view: View, menu: View): boolean {
   if (view === menu) return true
   if (menu === 'lists') return isOneListView(view) || view === 'inbox'
   if (menu === 'tags') return isTagView(view)
   if (menu === 'rewards') return isRewardsView(view)
+  if (menu === 'modes') return isModesView(view)
   if (menu === 'more') {
-    return (UNDER_MORE as readonly View[]).includes(view) || isTagView(view)
+    return (UNDER_MORE as readonly View[]).includes(view) || isTagView(view) || isModesView(view)
   }
   return false
 }
@@ -223,6 +254,9 @@ export const VIEW_LABELS: Record<FixedView, string> = {
   lists: 'Lists',
   tags: 'Tags',
   more: 'More',
+  modes: 'Modes',
+  'modes/procrastination': 'Procrastination',
+  'modes/warm-up': 'Warm-up',
   trash: 'Trash',
   settings: 'Settings',
 }

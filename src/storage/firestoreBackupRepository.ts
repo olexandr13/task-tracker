@@ -27,6 +27,7 @@ import {
 } from './rewardSchema'
 import { readTag, toStoredTag } from './tagSchema'
 import { readStoredTask, toStoredTask } from './taskSchema'
+import { readWarmUp, toStoredWarmUp, WARM_UP } from './warmUpSchema'
 
 /** Every document of each collection, from the server, or `NeedsConnectionError` without one. */
 async function fromServer(collections: readonly CollectionReference[]): Promise<QuerySnapshot[]> {
@@ -55,6 +56,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   const redemptions = accountCollection(firestore, accountId, 'redemptions')
   const goals = accountCollection(firestore, accountId, 'rewardGoals')
   const settings = accountCollection(firestore, accountId, 'rewardSettings')
+  const warmUps = accountCollection(firestore, accountId, 'warmUp')
 
   /** What the account earns for clearing each period, of everything its goals hold. */
   function bonusesIn(snapshot: QuerySnapshot): PeriodBonuses {
@@ -69,13 +71,28 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   const pointValueIn = (snapshot: QuerySnapshot) =>
     snapshot.docs.flatMap((saved) => (saved.id === POINT_VALUE ? (readPointValue(saved.data()) ?? []) : []))[0] ?? null
 
+  /** The warm-up the account has, of the one document it is ever kept as. */
+  const warmUpIn = (snapshot: QuerySnapshot) =>
+    snapshot.docs.flatMap((saved) => (saved.id === WARM_UP ? (readWarmUp(saved.data()) ?? []) : []))[0] ?? null
+
   return {
     // The server when there is a connection, the browser's copy when there is not.
     async exportAll() {
-      const [savedTasks, savedLists, savedTags, savedPrizes, savedDays, savedRedemptions, savedGoals, savedSettings] =
-        await Promise.all(
-          [tasks, lists, tags, prizes, days, redemptions, goals, settings].map((collection) => getDocs(collection)),
-        )
+      const [
+        savedTasks,
+        savedLists,
+        savedTags,
+        savedPrizes,
+        savedDays,
+        savedRedemptions,
+        savedGoals,
+        savedSettings,
+        savedWarmUp,
+      ] = await Promise.all(
+        [tasks, lists, tags, prizes, days, redemptions, goals, settings, warmUps].map((collection) =>
+          getDocs(collection),
+        ),
+      )
       const readAll = <T>(snapshot: QuerySnapshot, read: (data: unknown) => T | null): T[] =>
         snapshot.docs.flatMap((saved) => read(saved.data()) ?? [])
 
@@ -88,13 +105,23 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         redemptions: readAll(savedRedemptions, readRedemption),
         bonuses: bonusesIn(savedGoals),
         pointValue: pointValueIn(savedSettings),
+        warmUp: warmUpIn(savedWarmUp),
       }
     },
 
     async importAll(incoming, now) {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new NeedsConnectionError()
-      const [savedTasks, savedLists, savedTags, savedPrizes, savedDays, savedRedemptions, savedGoals, savedSettings] =
-        await fromServer([tasks, lists, tags, prizes, days, redemptions, goals, settings])
+      const [
+        savedTasks,
+        savedLists,
+        savedTags,
+        savedPrizes,
+        savedDays,
+        savedRedemptions,
+        savedGoals,
+        savedSettings,
+        savedWarmUp,
+      ] = await fromServer([tasks, lists, tags, prizes, days, redemptions, goals, settings, warmUps])
       const known: KnownRecords = {
         taskIds: ids(savedTasks),
         listIds: ids(savedLists),
@@ -104,6 +131,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         redemptionIds: ids(savedRedemptions),
         bonuses: bonusesIn(savedGoals),
         pointValue: pointValueIn(savedSettings),
+        warmUp: warmUpIn(savedWarmUp),
         days: new Map(
           savedDays.docs.map((saved): [LocalDay, ReadonlySet<TaskId> | null] => {
             const entries = readRewardDay(saved.data())
@@ -114,6 +142,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
 
       const { fresh, alreadyHere } = newRecords(incoming, known, now)
       const value = fresh.pointValue
+      const warmUp = fresh.warmUp
 
       // A day is merged, never replaced, as when points are earned: only the
       // entries it did not hold are added to it.
@@ -128,8 +157,8 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         ...fresh.redemptions.map((redemption) => (batch: WriteBatch) =>
           batch.set(doc(redemptions, redemption.id), toStoredRedemption(redemption)),
         ),
-        // The file's bonuses and point value are only ever set where the
-        // account has none of its own (`newRecords`).
+        // The file's bonuses, point value and warm-up are only ever set where
+        // the account has none of its own (`newRecords`).
         ...BONUS_PERIODS.flatMap((period) => {
           const points = fresh.bonuses[period]
           return points === null
@@ -139,6 +168,9 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         ...(value === null
           ? []
           : [(batch: WriteBatch) => batch.set(doc(settings, POINT_VALUE), toStoredPointValue(value))]),
+        ...(warmUp === null
+          ? []
+          : [(batch: WriteBatch) => batch.set(doc(warmUps, WARM_UP), toStoredWarmUp(warmUp))]),
       ])
 
       return { added: countRecords(fresh), alreadyHere }

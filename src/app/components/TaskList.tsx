@@ -8,7 +8,7 @@ import {
   type Task,
   type TaskId,
 } from '../../core'
-import { COMPLETION_SPAN_LABELS } from '../completionLabels'
+import { COMPLETION_SPAN_LABELS, DONE_LABEL } from '../completionLabels'
 import { OVERDUE_LABEL } from '../dueLabels'
 import { CelebrateIcon } from './CelebrateIcon'
 import { SortableTasks } from './SortableTasks'
@@ -63,8 +63,9 @@ interface TaskListProps {
   dimAll?: boolean
   /**
    * The spans the done tasks are divided into by when they were finished, each
-   * under a heading, or null for one run of them. The tasks are then given in that
-   * order too: to do, then done today, yesterday and so on (`groupByCompletion`).
+   * under a heading, or null for one run of them under a plain **Done**. The tasks
+   * are then given in that order too: to do, then done today, yesterday and so on
+   * (`groupByCompletion`).
    */
   doneSpans?: CompletionSpans | null
   /** What an empty list says, pointing at the box above it. */
@@ -111,10 +112,10 @@ export function TaskList({
    * to the top whatever its day (JUST-5), so no heading could speak for what
    * follows it — and headings are a distraction the mode is there to remove.
    */
-  const headOverdue = focusId === null && !dimAll
+  const headRuns = focusId === null && !dimAll
 
-  /** A row; one under a heading is dragged among that heading's rows alone. */
-  function row(task: Task, span?: CompletionSpan) {
+  /** A row; one under a span's heading is dragged among that heading's rows alone. */
+  function row(task: Task, dragGroup?: string) {
     return (
       <TaskItem
         key={task.id}
@@ -125,7 +126,7 @@ export function TaskList({
         showDetails={showDetails}
         dimmed={dimAll || (focusId !== null && focusId !== task.id)}
         emphasized={!dimAll && focusId !== null && focusId === task.id}
-        dragGroup={span === undefined ? undefined : `done:${span}`}
+        dragGroup={dragGroup}
         actions={actions}
         timer={timer}
         revealed={revealId === task.id}
@@ -139,7 +140,7 @@ export function TaskList({
    * with none. A list with nothing overdue is one plain run, as it was.
    */
   function todoRuns(group: readonly Task[]) {
-    const { overdue, rest } = headOverdue ? splitOverdue(group, now) : { overdue: [], rest: group }
+    const { overdue, rest } = headRuns ? splitOverdue(group, now) : { overdue: [], rest: group }
     if (overdue.length === 0) {
       return [
         <ul key="todo" className={rows}>
@@ -166,25 +167,37 @@ export function TaskList({
     ]
   }
 
-  /** A span of done work under its heading, faded by how long ago it was finished. */
+  /**
+   * The done work under its heading: a span of it, faded by how long ago it was
+   * finished, where the view divides it that way — otherwise all of it under a
+   * plain **Done**, so finished work reads as finished without the list being
+   * scanned row by row.
+   */
   function doneRun(span: CompletionSpan, group: readonly Task[]) {
+    const divided = doneSpans !== null
+    const label = divided ? COMPLETION_SPAN_LABELS[span] : DONE_LABEL
+
     return (
       <section
         key={span}
-        aria-label={COMPLETION_SPAN_LABELS[span]}
+        aria-label={label}
         className={[section, doneSpanClass(span)].filter(Boolean).join(' ')}
       >
         <h2 className={`${heading} text-neutral-400 dark:text-neutral-500`}>
-          {COMPLETION_SPAN_LABELS[span]}
+          {label}
           <span className="font-normal text-neutral-300 tabular-nums dark:text-neutral-600">{group.length}</span>
         </h2>
-        <ul className={rows}>{group.map((task) => row(task, span))}</ul>
+        <ul className={rows}>{group.map((task) => row(task, divided ? `done:${span}` : undefined))}</ul>
       </section>
     )
   }
 
-  // One run of done tasks unless the view divides them by when they were finished.
-  const groups = doneSpans === null ? [{ span: null, tasks }] : groupByCompletion(tasks, doneSpans, now)
+  /**
+   * The done tasks apart from the ones still to do: divided by when they were
+   * finished where the view asks for it, else one run of them (`earlier` holds
+   * whatever no span does, so no spans leaves every done task in it).
+   */
+  const groups = headRuns ? groupByCompletion(tasks, doneSpans ?? [], now) : [{ span: null, tasks }]
 
   return (
     <>

@@ -45,6 +45,12 @@ interface DateCalendarProps {
   /** The day it opens on: its month is shown and its day is the one the keys start from. Today when left out. */
   opensOn?: LocalDay | null
   now: Date
+  /**
+   * What picking a day does beyond setting it, as every day's tooltip — on a
+   * repeating task, that it ends the rule (DUE-12). Left out where a day only
+   * sets the day, which needs no telling.
+   */
+  hint?: string
   onSelect: (day: LocalDay) => void
 }
 
@@ -57,7 +63,7 @@ interface DateCalendarProps {
  * Home and End to the ends of the week, Page Up and Page Down a month (a year
  * with Shift), the month shown following along, and Enter picks.
  */
-export function DateCalendar({ selected, opensOn = selected, now, onSelect }: DateCalendarProps) {
+export function DateCalendar({ selected, opensOn = selected, now, hint, onSelect }: DateCalendarProps) {
   const today = toLocalDay(now)
   // The day in reach of the keys. The month shown is always the one it falls in.
   const [active, setActive] = useState(opensOn ?? today)
@@ -165,6 +171,8 @@ export function DateCalendar({ selected, opensOn = selected, now, onSelect }: Da
                   data-day={shown}
                   tabIndex={shown === active ? 0 : -1}
                   aria-label={describeFullDate(shown)}
+                  // The day is under the pointer already; the tooltip is for what picking it costs.
+                  title={hint}
                   aria-current={shown === today ? 'date' : undefined}
                   onClick={() => { onSelect(shown) }}
                   className={`${day} ${tone(shown)}`}

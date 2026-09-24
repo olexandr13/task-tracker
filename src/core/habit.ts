@@ -21,11 +21,19 @@
 import { InvalidDayError, isLocalDay, offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from './day'
 import { sortByOrder } from './order'
 import { periodRange } from './progress'
-import { repeatsEveryDay } from './repeat'
+import { repeatsEveryDay, type Repeat } from './repeat'
 import { completeTask, isDeleted, uncompleteTask, type Task } from './task'
 
+/**
+ * Whether a rule would make a habit of whatever carries it — asked of the rule
+ * alone, before there is a task to ask it of (../app: what a warm-up holds back).
+ */
+export function isHabitRepeat(repeat: Repeat | null): boolean {
+  return repeat !== null && repeatsEveryDay(repeat)
+}
+
 export function isHabit(task: Task): boolean {
-  return task.repeat !== null && repeatsEveryDay(task.repeat)
+  return isHabitRepeat(task.repeat)
 }
 
 /** The habits that are not in the trash, in the order of the list. */
