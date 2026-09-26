@@ -61,6 +61,7 @@ const tasksTab = () => screen.getByRole('button', { name: 'Tasks' })
 const tasksMenu = () => screen.queryByRole('menu', { name: 'Tasks' })
 const moreTab = () => screen.getByRole('button', { name: 'More' })
 const rewardsTab = () => screen.getByRole('button', { name: 'Rewards' })
+const rewardsMenu = () => screen.queryByRole('menu', { name: 'Rewards' })
 
 async function hold(user: ReturnType<typeof userEvent.setup>, target: HTMLElement, ms: number) {
   await user.pointer({ keys: '[TouchA>]', target })
@@ -318,6 +319,90 @@ describe('the Tasks tab', () => {
     await user.click(screen.getByRole('menuitem', { name: 'Trash' }))
 
     expect(onChange).toHaveBeenLastCalledWith('trash')
+  })
+})
+
+describe('the Rewards tab', () => {
+  it('opens its menu on a tap once Rewards is on screen: Rewards with its four pages under it (UI-67)', async () => {
+    const { user, onChange } = setup('rewards')
+
+    await user.click(rewardsTab())
+
+    const items = within(rewardsMenu() as HTMLElement).getAllByRole('menuitem').map((item) => item.textContent)
+    expect(items).toEqual(['Rewards', 'History', 'Prizes', 'Wishlist', 'Rules'])
+    const under = within(rewardsMenu() as HTMLElement).getByRole('group', { name: 'Rewards' })
+    expect(within(under).getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Rewards',
+      'History',
+      'Prizes',
+      'Wishlist',
+      'Rules',
+    ])
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('opens its menu when held, from anywhere, without also going to Rewards (UI-67)', async () => {
+    const { user, onChange } = setup('habits')
+
+    await hold(user, rewardsTab(), LONG_PRESS_MS)
+
+    expect(rewardsMenu()).not.toBeNull()
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('opens its menu on a double tap from a page under it: the first goes to the points (UI-67)', async () => {
+    const { user, onChange } = setup('rewards/history')
+
+    await user.dblClick(rewardsTab())
+
+    expect(onChange).toHaveBeenCalledExactlyOnceWith('rewards')
+    expect(rewardsMenu()).not.toBeNull()
+  })
+
+  it('goes where the menu says and closes it (UI-67)', async () => {
+    const { user, onChange } = setup('rewards')
+
+    await user.click(rewardsTab())
+    await user.click(screen.getByRole('menuitem', { name: 'Wishlist' }))
+
+    expect(onChange).toHaveBeenCalledExactlyOnceWith('rewards/wishlist')
+    expect(rewardsMenu()).toBeNull()
+
+    await hold(user, rewardsTab(), LONG_PRESS_MS)
+    await user.click(screen.getByRole('menuitem', { name: 'Rewards' }))
+
+    expect(onChange).toHaveBeenLastCalledWith('rewards')
+  })
+
+  it('closes its menu on a tap on Rewards, rather than opening it again (UI-67)', async () => {
+    const { user, onChange } = setup('habits')
+
+    await hold(user, rewardsTab(), LONG_PRESS_MS)
+    await user.click(rewardsTab())
+
+    expect(rewardsMenu()).toBeNull()
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('stays marked while its menu is open, wherever it was opened from (UI-67, UI-8)', async () => {
+    const { user } = setup('habits')
+
+    await hold(user, rewardsTab(), LONG_PRESS_MS)
+
+    expect(rewardsTab().getAttribute('aria-current')).toBe('page')
+  })
+
+  it('gives each page its own icon, indented under Rewards and large enough for a finger (UI-67, UI-49)', async () => {
+    const { user } = setup('rewards')
+
+    await user.click(rewardsTab())
+
+    for (const name of ['Rewards', 'History', 'Prizes', 'Wishlist', 'Rules']) {
+      expect(screen.getByRole('menuitem', { name }).querySelector('svg')).not.toBeNull()
+    }
+    const history = screen.getByRole('menuitem', { name: 'History' })
+    expect(history.className).toContain('min-h-14')
+    expect(history.className).toContain('pl-[3.125rem]')
   })
 })
 

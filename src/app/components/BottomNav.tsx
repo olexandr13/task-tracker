@@ -6,6 +6,7 @@ import {
   isUnder,
   oneListView,
   PERIOD_VIEWS,
+  UNDER_REWARDS,
   VIEW_LABELS,
   type FixedView,
   type PeriodView,
@@ -33,7 +34,7 @@ const pillOn = 'bg-neutral-200/80 dark:bg-neutral-800'
 const pillOff = 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
 
 /** The tabs that open a menu of their own. */
-type TabMenu = 'period' | 'tasks'
+type TabMenu = 'period' | 'tasks' | 'rewards'
 
 type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
 
@@ -46,21 +47,23 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * on a tap. The lists and the trash have no tab — they are reached from
  * Tasks, so Tasks stays marked while either is open, or one list or the Inbox.
  * **Rewards** has a tab of its own, which stays marked while any of its four
- * pages is open (RWD-19); the pages under it are reached from the strip across
- * the top of them (RWD-30), a phone having no sidebar to list them in. The tags
+ * pages is open (RWD-19), and a menu of those pages (UI-67), the strip across
+ * the top of them being the other way to them (RWD-30). The tags
  * have no tab: they are under More, which goes to its own page on a tap and
  * stays marked while that page, the Tags page or a tag's tasks are open. The
  * sidebar has the same More entry.
  *
- * The period tab and Tasks each have a menu of what the sidebar has in their
- * place: the three periods, and Lists with the Inbox and every list indented
- * under it, then the trash. Holding the tab opens it, and so does tapping it
- * again once its page is on screen, a tap there having nowhere further to go —
- * so a double tap opens it from anywhere. It opens as a panel across the width
- * of the screen, rising from the bar and resting on it (UI-66), whichever tab
- * asked for it. A tap on a tab while its menu is open closes it. A tab stays
- * marked while its menu is open, and the panel stops at the bar rather than
- * covering it, so it is plain which tab the menu belongs to.
+ * The period tab, Tasks and Rewards each have a menu of what the sidebar has in
+ * their place: the three periods; Lists with the Inbox and every list indented
+ * under it, then the trash; and Rewards with the history, the prizes, the
+ * wishlist and the rules indented under it. Holding the tab opens it, and so
+ * does tapping it again once its page is on screen, a tap there having nowhere
+ * further to go — so a double tap opens it from anywhere. It opens as a panel
+ * across the width of the screen, rising from the bar and resting on it
+ * (UI-66), whichever tab asked for it. A tap on a tab while its menu is open
+ * closes it. A tab stays marked while its menu is open, and the panel stops at
+ * the bar rather than covering it, so it is plain which tab the menu belongs
+ * to.
  */
 export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavProps) {
   // The period the period tab goes back to after leaving it: the last one on
@@ -122,6 +125,18 @@ export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavPr
     onLongPress: (button, fromKeyboard) => { openMenu('tasks', button, fromKeyboard) },
   })
 
+  const rewardsPress = useLongPress<HTMLButtonElement>({
+    onPress: (button, fromKeyboard) => {
+      if (closesMenu('rewards', fromKeyboard)) return
+      // From one of the pages under it a tap still goes to how the points stand,
+      // which is somewhere to go; from there it has nowhere further, so it opens
+      // the menu instead (UI-67).
+      if (view === 'rewards') openMenu('rewards', button, fromKeyboard)
+      else onChange('rewards')
+    },
+    onLongPress: (button, fromKeyboard) => { openMenu('rewards', button, fromKeyboard) },
+  })
+
   /** A page's entry in a tab's menu: its name and icon, going there. */
   function pageItem(value: FixedView): ContextMenuItem {
     const Icon = VIEW_ICONS[value]
@@ -151,9 +166,16 @@ export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavPr
     pageItem('trash'),
   ]
 
+  // Rewards with its four pages under it, as the sidebar keeps them (UI-30): the
+  // head goes to how the points stand, so all five are one tap from the menu.
+  const rewardsItems: ContextMenuEntry[] = [
+    { ...pageItem('rewards'), under: UNDER_REWARDS.map(pageItem) },
+  ]
+
   const menus: Record<TabMenu, { label: string; items: ContextMenuEntry[] }> = {
     period: { label: 'Period', items: periodItems },
     tasks: { label: VIEW_LABELS.tasks, items: tasksItems },
+    rewards: { label: VIEW_LABELS.rewards, items: rewardsItems },
   }
 
   return (
@@ -176,8 +198,9 @@ export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavPr
             <Tab
               label={VIEW_LABELS.rewards}
               icon={VIEW_ICONS.rewards}
-              active={isUnder(view, 'rewards')}
-              onClick={() => { onChange('rewards') }}
+              active={isUnder(view, 'rewards') || menu?.of === 'rewards'}
+              description="Hold, or tap again, for the history, the prizes, the wishlist and the rules"
+              {...noticingMenu(rewardsPress)}
             />
           </li>
           <li>

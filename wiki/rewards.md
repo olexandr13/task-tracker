@@ -162,7 +162,8 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
 - **RWD-19** **Rewards** has its own entry in the sidebar, with its three pages indented under it
   and a chevron that **folds them away** as Lists folds its lists (UI-30, LST-26); folded, Rewards
   itself is marked wherever you are under it, and open, each page is marked on its own. On a phone it
-  has a **tab of its own** in the bottom bar, marked on any of its pages (UI-32) — it is no
+  has a **tab of its own** in the bottom bar, marked on any of its pages (UI-32), and that tab has
+  **the same pages in a menu**, indented under Rewards as the sidebar indents them (UI-67) — it is no
   longer under **More** (UI-45). Pressing **R** opens it from anywhere (UI-57), on how the points
   stand.
 - **RWD-20** **Rewards** itself is **how the points stand**, top to bottom: a line on how points are
@@ -176,7 +177,8 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   **Prizes** and **Wishlist** (RWD-40) and **Rules** (RWD-39). Their addresses are `#/rewards`,
   `#/rewards/history`, `#/rewards/prizes`, `#/rewards/wishlist` and `#/rewards/rules` (UI-36). On a wide screen they are
   reached from the sidebar (RWD-19); on a phone, which has no sidebar, a **strip of them runs
-  across the top of whichever is open**, the one you are on marked. Each page answers one question:
+  across the top of whichever is open**, the one you are on marked, and the **Rewards tab's menu**
+  holds them too, so one is two taps away from anywhere in the app (UI-67). Each page answers one question:
   where am I, where did it all go, what can I have now, what am I saving for, and what earns it.
 - **RWD-38** **History** is everything that happened to the points in **one run**, most recent
   first: what was earned (RWD-23) and what was spent (RWD-18) together, each row its day, what it

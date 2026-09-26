@@ -133,7 +133,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   mode the glyph it wears everywhere else. **Tags** is reached from **More** (UI-45), and so is
   **Modes** on a phone — the sidebar gives Modes an entry of its own, with each mode under it
   (MODE-7); **Rewards** has an entry of its own in
-  the sidebar and a tab of its own on a phone (UI-30, UI-32). See
+  the sidebar and a tab of its own on a phone, with its pages under both (UI-30, UI-32, UI-67). See
   [Views](views.md), [Lists](lists.md), [Habits](habits.md),
   [Rewards](rewards.md), [Tags](tags.md) and [Modes](modes.md).
 - **UI-30** In the sidebar the views come in four groups with a thin line between each: the period
@@ -149,9 +149,10 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   its own (MODE-7).
 - **UI-8** The view you are on is marked, in the sidebar and in the bottom bar alike.
 - **UI-32** The bottom bar has six tabs, each an icon over its name, from left to right:
-  **Settings**, **Rewards**, **More** (UI-45), **Tasks**, **Habits** and **the period** (UI-33).
-  The Rewards tab goes to how the points stand and stays marked on any of the rewards pages, which
-  are reached from the strip across the top of them (RWD-30).
+  **Settings**, **Rewards** (UI-67), **More** (UI-45), **Tasks** (UI-43), **Habits** and **the
+  period** (UI-33). The Rewards tab goes to how the points stand and stays marked on any of the
+  rewards pages, which are reached from its own menu (UI-67) and from the strip across the top of
+  them (RWD-30).
 - **UI-33** Today, Week and Month share the last tab. It shows the one last on screen — Today to
   begin with — and a tap goes to it. **Holding it down**, or **tapping it again** while Today, Week or
   Month is on screen — so a double tap from anywhere — opens a menu above it, as a panel on the
@@ -183,7 +184,17 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   **Trash**, each entry with its icon — so any list is two taps from anywhere, however long Tasks
   runs, and no heading repeats the name of the entry above it. Choosing one goes there. From any
   other view, a list's included, a tap on Tasks goes to Tasks.
-- **UI-66** A tab's menu (UI-33, UI-43) opens as **a panel across the width of the screen, rising
+- **UI-67** The **Rewards** tab has a menu of its own, opened as the Tasks tab's is (UI-43): held
+  down, or tapped again while how the points stand is on screen, and closed by a tap on Rewards
+  while open. It holds what the sidebar has in its place, laid out as the sidebar lays it out
+  (UI-30, RWD-19) — **Rewards** itself, with **History**, **Prizes**, **Wishlist** and **Rules**
+  **indented under it**, each entry with its icon — so any of the five pages is two taps from
+  anywhere, however long a page of history runs. Choosing one goes there. From one of the pages
+  under Rewards a tap on the tab goes to how the points stand, as it did before the menu: a tap
+  only opens the menu where it has nowhere further to go. The strip across the top of the rewards
+  pages stays (RWD-30), for anyone who does not know the tab's menu is there, as **Lists** is on
+  More's page as well as in the Tasks tab's menu (UI-34, UI-45).
+- **UI-66** A tab's menu (UI-33, UI-43, UI-67) opens as **a panel across the width of the screen, rising
   from the bar and resting on it** — not as a slab floating over the middle of the page, which
   belongs to neither the list behind it nor the bar that opened it. It **stops at the bar** rather
   than covering it, so the tab it came from is still there and still marked (UI-8); the page above
