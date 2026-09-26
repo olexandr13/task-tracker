@@ -22,17 +22,21 @@ const dayChipOff =
 interface RepeatChoicesProps {
   draft: RepeatDraft
   onChange: (draft: RepeatDraft) => void
-  /** Called once a choice leaves nothing further to choose, so the panel can close. */
+  /**
+   * Whether the group names itself above its kinds. Off where what opened it
+   * already carries the name, as the schedule panel's Repeat row does.
+   */
+  named?: boolean
+  /** Called once a choice leaves nothing further to choose here, so the panel can move on. */
   onDone: () => void
 }
 
 /**
- * The repeat half of the schedule panel: how often, and on which days. There
- * is no confirm step. Every choice is saved as it is made, and choosing the
- * kind already chosen clears it, so a footer would only have offered a second
- * way to do that.
+ * How often a task comes round, and on which days. There is no confirm step.
+ * Every choice is saved as it is made, and choosing the kind already chosen
+ * clears it, so a footer would only have offered a second way to do that.
  */
-export function RepeatChoices({ draft, onChange, onDone }: RepeatChoicesProps) {
+export function RepeatChoices({ draft, onChange, named = true, onDone }: RepeatChoicesProps) {
   function toggleWeekday(weekday: Weekday) {
     const selected = draft.weekdays.includes(weekday)
     // A weekly repeat with no day would have no occurrences, so taking away the
@@ -53,10 +57,13 @@ export function RepeatChoices({ draft, onChange, onDone }: RepeatChoicesProps) {
   return (
     <>
       <div role="group" aria-label="Repeat" className="flex flex-col">
-        {/* The group's name is its label already; this is the same word for the eye. */}
-        <p aria-hidden="true" className={`${panelHeading} pb-0.5`}>
-          Repeat
-        </p>
+        {/* The group's name is its label already; this is the same word for the eye. Hidden
+            where the row or the link that opened the group is already showing it. */}
+        {named && (
+          <p aria-hidden="true" className={`${panelHeading} pb-0.5`}>
+            Repeat
+          </p>
+        )}
         {KINDS.map(({ value, label }) => {
           const chosen = draft.kind === value
           return (

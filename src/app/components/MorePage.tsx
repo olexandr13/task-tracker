@@ -1,4 +1,4 @@
-import { UNDER_MORE, VIEW_LABELS, type FixedView } from '../view'
+import { ON_MORE, VIEW_LABELS, type FixedView } from '../view'
 import { VIEW_ICONS } from '../viewIcons'
 import { ChevronIcon } from './ChevronIcon'
 
@@ -14,15 +14,17 @@ interface MorePageProps {
 }
 
 /**
- * More's page: the pages that have no tab or sidebar entry of their own — Tags,
- * and Modes, which holds Procrastination and the warm-up (MODE-1). The modes
- * were rows here while there were two of them and nothing to say about either;
- * they are a page of their own now, so each can say what it does.
+ * More's page: the pages a phone's bar has no tab for — Lists, Tags, and Modes,
+ * which holds Procrastination and the warm-up (MODE-1). Lists is here as well as
+ * behind the Tasks tab (UI-34), which takes a hold or a second tap to open, so
+ * it is reached the same way as everything else on a phone. The modes were rows
+ * here while there were two of them and nothing to say about either; they are a
+ * page of their own now, so each can say what it does.
  */
 export function MorePage({ onOpen, modesOn = 0 }: MorePageProps) {
   return (
     <ul className="flex flex-col gap-1">
-      {UNDER_MORE.map((value) => {
+      {ON_MORE.map((value) => {
         const Icon = VIEW_ICONS[value]
         const note = value === 'modes' && modesOn > 0 ? `${String(modesOn)} on` : null
 

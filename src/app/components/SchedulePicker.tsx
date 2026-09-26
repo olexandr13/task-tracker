@@ -1,17 +1,25 @@
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import type { LocalDay, LocalTime } from '../../core'
 import type { SkipChoice } from '../dateChoices'
-import { describeDueAt } from '../dueLabels'
+import { describeDueAt, describeTimeOfDay } from '../dueLabels'
 import { toRepeat, type RepeatDraft } from '../repeatDraft'
 import { describeRepeat, describeRepeatBriefly } from '../repeatLabels'
 import { controlOff, controlOn, rowControlIcon, rowControlLabel } from '../rowControls'
 import { CalendarIcon } from './CalendarIcon'
+import { ClockIcon } from './ClockIcon'
 import { DueChoices } from './DueChoices'
+import { DueTimeChoices } from './DueTimeChoices'
+import { PanelBack } from './PanelBack'
+import { PanelRow } from './PanelRow'
+import { PickerPanel } from './PickerPanel'
 import { RepeatChoices } from './RepeatChoices'
 import { RepeatIcon } from './RepeatIcon'
 
 /** A day gone by with the task still open reads as a warning, not as information. */
 const buttonOverdue = 'bg-red-600/10 text-red-600 hover:bg-red-600/20 dark:text-red-400'
+
+/** What the panel is showing: the day, or one of the groups that hang off it. */
+type PanelView = 'date' | 'time' | 'repeat'
 
 interface SchedulePickerProps {
   /**
@@ -48,22 +56,20 @@ interface SchedulePickerProps {
    * is the icon alone, still tinted, with them as its name and tooltip.
    */
   showSummary?: boolean
-  /**
-   * Whether a named button fills its row so the whole line is the hit target
-   * (sheet action rows, UI-59). Off in the one-line add box, where the date
-   * sits beside the title and must stay content-sized (DUE-4).
-   */
-  fill?: boolean
   /** Which edge of the button the panel lines up with: the one nearer the middle of the screen. */
   align?: 'left' | 'right'
 }
 
 /**
- * When a task is due: one small button for both the day and the repeat rule,
- * since a rule is what gives a repeating task its days. Its icon says which the
- * task has — the looping arrows for a rule, the calendar otherwise — and it
- * opens one panel with the date choices, a month calendar and the hour the task
- * is due at over the repeat ones.
+ * When a task is due: one small button for the day, the hour and the repeat
+ * rule, since a rule is what gives a repeating task its days. Its icon says
+ * which the task has — the looping arrows for a rule, the calendar otherwise.
+ *
+ * The panel it opens is **one screenful**, never a column to scroll: the day is
+ * on show — quick choices and a month calendar — and the hour and the rule are
+ * a line each, saying what they are set to now, opening in the panel's own place
+ * when they are asked for and handing it back once there is nothing more to
+ * choose. A × on either line takes what it holds away without opening it.
  *
  * There is nothing to confirm: each choice is saved as it is made.
  */
@@ -80,22 +86,36 @@ export function SchedulePicker({
   overdue = false,
   label = 'Schedule',
   showSummary = false,
-  fill = false,
   align = 'right',
 }: SchedulePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [view, setView] = useState<PanelView>('date')
   const root = useRef<HTMLDivElement>(null)
+  const timeRow = useRef<HTMLButtonElement>(null)
+  const repeatRow = useRef<HTMLButtonElement>(null)
+  const backLink = useRef<HTMLButtonElement>(null)
+  // Which row a view was opened from, so leaving it puts the focus back there.
+  const cameFrom = useRef<PanelView>('date')
 
-  useEffect(() => {
+  function close() {
+    setIsOpen(false)
+    setView('date')
+    cameFrom.current = 'date'
+  }
+
+  // A view opens in the panel's own place, so the focus goes with it — onto the
+  // way back out, and back onto the row that opened it on the way in.
+  useLayoutEffect(() => {
     if (!isOpen) return
 
-    function handlePointerDown(event: PointerEvent) {
-      if (!root.current?.contains(event.target as Node)) setIsOpen(false)
+    if (view !== 'date') {
+      backLink.current?.focus({ preventScroll: true })
+    } else if (cameFrom.current !== 'date') {
+      const row = cameFrom.current === 'time' ? timeRow.current : repeatRow.current
+      row?.focus({ preventScroll: true })
     }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    return () => { document.removeEventListener('pointerdown', handlePointerDown) }
-  }, [isOpen])
+    cameFrom.current = view
+  }, [isOpen, view])
 
   const rule = toRepeat(draft)
   // The hour rides with the day it falls on — "Tomorrow at 9:00 AM" — and has
@@ -107,27 +127,32 @@ export function SchedulePicker({
     rule === null ? (day ?? 'No date') : day === null ? describe(rule) : `${describe(rule)} · ${day}`
   const summary = summarize(describeRepeat)
   const scheduled = rule !== null || dueDate !== null
+  // A rule gives the task days of its own, so an hour has one to fall on from the start.
+  const hasDay = rule !== null || dueDate !== null
 
-  // Filling the row is the caller's (fill), not showSummary's: the add box spells
-  // the day out without taking the title's space (DUE-4, rowControls).
   const named = scheduled && showSummary
-  const button = `${showSummary ? rowControlLabel : rowControlIcon}${fill ? ' w-full' : ''}`
-  const rootClass = fill ? 'relative min-w-0 w-full' : 'relative min-w-0 shrink'
+  // The add box spells the day out beside the title without taking its space,
+  // so a named button is sized by its own content too (DUE-4, rowControls).
+  const button = showSummary ? rowControlLabel : rowControlIcon
 
   return (
     <div
       ref={root}
-      className={rootClass}
+      className="relative min-w-0 shrink"
       onKeyDown={(event) => {
-        if (event.key === 'Escape' && isOpen) {
-          event.stopPropagation()
-          setIsOpen(false)
-        }
+        if (event.key !== 'Escape' || !isOpen) return
+        event.stopPropagation()
+        // Escape steps back out of a group first, the panel itself being what it was opened from.
+        if (view === 'date') close()
+        else setView('date')
       }}
     >
       <button
         type="button"
-        onClick={() => { setIsOpen(!isOpen) }}
+        onClick={() => {
+          if (isOpen) close()
+          else setIsOpen(true)
+        }}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-label={`${label}: ${summary}${overdue ? ', overdue' : ''}`}
@@ -145,27 +170,87 @@ export function SchedulePicker({
       </button>
 
       {isOpen && (
-        <div
-          role="dialog"
-          aria-label={label}
-          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl md:w-64 md:p-1 dark:border-neutral-700 dark:bg-neutral-900`}
+        <PickerPanel
+          anchor={root}
+          label={label}
+          align={align}
+          width="w-[min(20rem,calc(100vw-2rem))] md:w-64"
+          content="gap-0.5 p-1.5 md:p-1"
+          showing={view}
+          onClose={close}
         >
-          <DueChoices
-            dueDate={dueDate}
-            chosen={rule === null ? dueDate : startDay}
-            now={now}
-            repeats={rule !== null}
-            skip={skip}
-            onChange={onChangeDay}
-            dueTime={dueTime}
-            onChangeTime={onChangeTime}
-            onDone={() => { setIsOpen(false) }}
-          />
+          {view === 'date' && (
+            <>
+              <DueChoices
+                dueDate={dueDate}
+                chosen={rule === null ? dueDate : startDay}
+                now={now}
+                repeats={rule !== null}
+                skip={skip}
+                onChange={onChangeDay}
+                onDone={close}
+              />
 
-          <div className="flex flex-col gap-0.5 border-t border-neutral-200 pt-1 dark:border-neutral-800">
-            <RepeatChoices draft={draft} onChange={onChangeRepeat} onDone={() => { setIsOpen(false) }} />
-          </div>
-        </div>
+              {/* What hangs on the day, a line each: on show as what it is set to,
+                  and a tap from the choices themselves, so the panel stays one screenful. */}
+              <div className="flex flex-col gap-0.5 border-t border-neutral-200 pt-1 dark:border-neutral-800">
+                <PanelRow
+                  ref={timeRow}
+                  icon={<ClockIcon />}
+                  name="Time"
+                  value={dueTime === null ? null : describeTimeOfDay(dueTime, now)}
+                  empty={hasDay ? 'Any time' : 'Pick a day first'}
+                  hint={
+                    hasDay
+                      ? undefined
+                      : 'Pick a day above, and you can set a time on it.'
+                  }
+                  onOpen={hasDay ? () => { setView('time') } : undefined}
+                  onClear={dueTime === null ? undefined : () => { onChangeTime(null) }}
+                />
+                <PanelRow
+                  ref={repeatRow}
+                  icon={<RepeatIcon />}
+                  name="Repeat"
+                  value={rule === null ? null : describeRepeat(rule)}
+                  empty="Once"
+                  onOpen={() => { setView('repeat') }}
+                  onClear={rule === null ? undefined : () => { onChangeRepeat({ ...draft, kind: 'once' }) }}
+                />
+              </div>
+            </>
+          )}
+
+          {view === 'time' && (
+            <>
+              <PanelBack ref={backLink} name="Time" onBack={() => { setView('date') }} />
+              <div className="border-t border-neutral-200 dark:border-neutral-800">
+                <DueTimeChoices
+                  dueTime={dueTime}
+                  now={now}
+                  hasDay={hasDay}
+                  named={false}
+                  onChange={onChangeTime}
+                  onDone={() => { setView('date') }}
+                />
+              </div>
+            </>
+          )}
+
+          {view === 'repeat' && (
+            <>
+              <PanelBack ref={backLink} name="Repeat" onBack={() => { setView('date') }} />
+              <div className="flex flex-col gap-0.5 border-t border-neutral-200 pt-1 dark:border-neutral-800">
+                <RepeatChoices
+                  draft={draft}
+                  onChange={onChangeRepeat}
+                  named={false}
+                  onDone={() => { setView('date') }}
+                />
+              </div>
+            </>
+          )}
+        </PickerPanel>
       )}
     </div>
   )

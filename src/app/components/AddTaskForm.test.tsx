@@ -65,6 +65,7 @@ describe('AddTaskForm', () => {
     const { user, onAdd } = setupForm('2026-09-16')
 
     await user.click(scheduleButton())
+    await user.click(screen.getByRole('button', { name: /^Repeat:/ }))
     await user.click(screen.getByRole('button', { name: 'Daily' }))
 
     expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Daily')
@@ -77,9 +78,12 @@ describe('AddTaskForm', () => {
     const { user, onAdd } = setupForm(null)
 
     await user.click(scheduleButton())
+    await user.click(screen.getByRole('button', { name: /^Repeat:/ }))
     await user.click(screen.getByRole('button', { name: 'Weekly' }))
-    // Weekly keeps its choices open (RPT-22), so the date row is still there.
+    // Weekly keeps its own choices open (RPT-22), so the days are still there.
     await user.click(screen.getByRole('button', { name: 'Monday' }))
+    // Back to the day, which the panel hands over as soon as there is nothing more to choose.
+    await user.click(screen.getByRole('button', { name: 'Back from repeat' }))
     await user.click(screen.getByRole('button', { name: /^Tomorrow/ }))
 
     // Weekly starts on today's weekday, so the rule is Mon and Wed; started on the

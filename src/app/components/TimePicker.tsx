@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useId, useRef, useState, type KeyboardEvent } from 'react'
 import {
   elapsedSeconds,
   isSessionLength,
@@ -16,8 +16,9 @@ import {
   describeTimeSummary,
   parseDuration,
 } from '../durationLabels'
-import { controlOff, controlOn, controlRunning, deleteControl, detailReached, rowControlIcon, rowControlLabel } from '../rowControls'
+import { controlOff, controlOn, controlRunning, deleteControl, detailReached, rowControlIcon } from '../rowControls'
 import { ClockIcon } from './ClockIcon'
+import { PickerPanel } from './PickerPanel'
 import { PlayIcon } from './PlayIcon'
 import { StopIcon } from './StopIcon'
 
@@ -33,9 +34,6 @@ const chip =
 
 /** The name over a part of the panel, for the eye; the part carries it for a screen reader. */
 const heading = 'px-1 text-xs font-medium text-neutral-400 md:text-[11px] dark:text-neutral-500'
-
-/** How close to the screen's side the panel may come: a phone page's own gutter. */
-const PANEL_GUTTER = 16
 
 /** The line between one part of the panel and the next. */
 const divider = 'border-t border-neutral-200 pt-3 md:pt-2 dark:border-neutral-800'
@@ -55,8 +53,6 @@ interface TimePickerProps {
   onChangeGoal: (minutes: number | null) => void
   /** What this picker is for, when there is more than one on screen. */
   label?: string
-  /** Whether the button spells the time out beside its clock, or a way to add some when there is none. */
-  showAmount?: boolean
   /** Which edge of the button the panel lines up with: the one nearer the middle of the screen. */
   align?: 'left' | 'right'
   /**
@@ -90,7 +86,6 @@ export function TimePicker({
   onRemove,
   onChangeGoal,
   label = 'Time',
-  showAmount = false,
   align = 'right',
   timer,
 }: TimePickerProps) {
@@ -101,7 +96,6 @@ export function TimePicker({
   const [goalText, setGoalText] = useState('')
   const [isSessionInvalid, setIsSessionInvalid] = useState(false)
   const root = useRef<HTMLDivElement>(null)
-  const panel = useRef<HTMLDivElement>(null)
   const ids = useId()
   const logHeading = `${ids}-log`
   const sessionsHeading = `${ids}-sessions`
@@ -123,9 +117,8 @@ export function TimePicker({
 
   // Named (sheet) fills its row so the whole line is the hit target (UI-59);
   // icon-only stays content-sized for a woken strip.
-  const button = `${showAmount ? rowControlLabel : rowControlIcon} w-full`
+  const button = `${rowControlIcon} w-full`
   const buttonTone = running ? controlRunning : isSet ? controlOn : controlOff
-  const rootClass = showAmount ? 'relative min-w-0 w-full' : 'relative min-w-0 shrink'
 
   /** Keeps the goal typed, when it is one; anything else goes back to what is saved. */
   function commitGoal() {
@@ -141,36 +134,6 @@ export function TimePicker({
     commitGoal()
     setIsOpen(false)
   }
-
-  const onPointerDownOutside = useEffectEvent(close)
-
-  useEffect(() => {
-    if (!isOpen) return
-
-    function handlePointerDown(event: PointerEvent) {
-      if (!root.current?.contains(event.target as Node)) onPointerDownOutside()
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    return () => { document.removeEventListener('pointerdown', handlePointerDown) }
-  }, [isOpen])
-
-  // The panel lines up with its clock, which on a habit card sits mid-line, so
-  // on a phone it can run past the screen's edge: nudge it back inside the
-  // page's gutter. It opens below the clock, which may be near the foot of a
-  // sheet or the window, so bring the whole of it into view too — on a page,
-  // clear of the bar, the timer's chip and the Plus (its scroll margin).
-  useLayoutEffect(() => {
-    const opened = panel.current
-    if (!isOpen || opened === null) return
-
-    const { left, right } = opened.getBoundingClientRect()
-    const edge = document.documentElement.clientWidth - PANEL_GUTTER
-    const shift = left < PANEL_GUTTER ? PANEL_GUTTER - left : right > edge ? edge - right : 0
-    opened.style.translate = shift === 0 ? '' : `${String(shift)}px 0`
-
-    if (typeof opened.scrollIntoView === 'function') opened.scrollIntoView({ block: 'nearest' })
-  }, [isOpen])
 
   function toggle() {
     if (isOpen) {
@@ -215,7 +178,7 @@ export function TimePicker({
   return (
     <div
       ref={root}
-      className={rootClass}
+      className="relative min-w-0 shrink"
       onKeyDown={(event) => {
         if (event.key === 'Escape' && isOpen) {
           // Escape drops the goal half-typed rather than keeping it.
@@ -234,19 +197,16 @@ export function TimePicker({
         className={`${button} ${buttonTone}`}
       >
         <ClockIcon />
-        {showAmount && (
-          <span className={reached ? `min-w-0 truncate ${detailReached}` : 'min-w-0 truncate'}>
-            {isSet ? (running ? describeElapsedClock(liveSeconds) : summary) : 'Log time'}
-          </span>
-        )}
       </button>
 
       {isOpen && (
-        <div
-          ref={panel}
-          role="dialog"
-          aria-label={label}
-          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-[min(22rem,calc(100vw-2rem))] scroll-mt-3 scroll-mb-[calc(10rem+env(safe-area-inset-bottom))] flex-col in-[[aria-modal=true]]:scroll-mb-3 gap-3 rounded-2xl border border-neutral-200 bg-white p-3 shadow-xl md:w-60 md:scroll-mb-3 md:gap-2 md:rounded-xl md:p-2 dark:border-neutral-700 dark:bg-neutral-900`}
+        <PickerPanel
+          anchor={root}
+          label={label}
+          align={align}
+          width="w-[min(22rem,calc(100vw-2rem))] md:w-60"
+          content="gap-3 rounded-2xl p-3 md:gap-2 md:rounded-xl md:p-2"
+          onClose={close}
         >
           <div className="flex flex-col gap-2 px-1 md:gap-1.5">
             <div className="flex items-baseline gap-2">
@@ -417,7 +377,7 @@ export function TimePicker({
               className={`${field} ml-auto w-24 text-right md:w-20`}
             />
           </label>
-        </div>
+        </PickerPanel>
       )}
     </div>
   )

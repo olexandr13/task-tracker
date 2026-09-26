@@ -31,11 +31,15 @@ describe('viewShowingTask', () => {
     expect(viewShowingTask(task, 'settings', NOW, [])).toBe('today')
   })
 
-  it('goes to Tasks for a task due another day or on none (TIME-20)', () => {
+  it('goes to Tasks for a task due another day (TIME-20)', () => {
     const later = setDueDate(createTask('report', null, NOW), '2026-10-30')
-    const undated = createTask('someday', null, NOW)
 
     expect(viewShowingTask(later, 'today', NOW, [])).toBe('tasks')
-    expect(viewShowingTask(undated, 'rewards', NOW, [])).toBe('tasks')
+  })
+
+  it('goes to Today for a task with no day, which Today shows (TIME-20, LIST-5)', () => {
+    const undated = createTask('someday', null, NOW)
+
+    expect(viewShowingTask(undated, 'rewards', NOW, [])).toBe('today')
   })
 })

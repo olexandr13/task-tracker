@@ -26,10 +26,19 @@ function Picker({ initial, repeat, onChange }: { initial: number | null; repeat:
   )
 }
 
-function setup({ initial = null as number | null, repeat = { kind: 'daily' } as Repeat | null } = {}) {
+function setup({ initial = null as number | null, repeat = { kind: 'daily' } as Repeat | null, inSheet = false } = {}) {
   const user = userEvent.setup()
   const onChange = vi.fn()
-  render(<Picker initial={initial} repeat={repeat} onChange={onChange} />)
+  const picker = <Picker initial={initial} repeat={repeat} onChange={onChange} />
+  render(
+    inSheet ? (
+      <div role="dialog" aria-modal="true" aria-label='Details of "write it up"'>
+        {picker}
+      </div>
+    ) : (
+      picker
+    ),
+  )
   return { user, onChange }
 }
 
@@ -161,6 +170,29 @@ describe('RewardPicker', () => {
     await user.keyboard('{Escape}')
 
     expect(panel()).toBeNull()
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('closes on a click outside it, beside its star (UI-40)', async () => {
+    const { user, onChange } = setup({ initial: 3 })
+
+    await user.click(trigger())
+    await user.click(document.body)
+
+    expect(panel()).toBeNull()
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('closes from inside a sheet, where it is a sheet of its own (UI-64)', async () => {
+    const { user, onChange } = setup({ initial: 3, inSheet: true })
+
+    await user.click(trigger())
+    expect(panel()?.getAttribute('aria-modal')).toBe('true')
+
+    await user.click(screen.getByRole('button', { name: 'Close' }))
+
+    expect(panel()).toBeNull()
+    expect(screen.getByRole('dialog', { name: 'Details of "write it up"' })).toBeDefined()
     expect(onChange).not.toHaveBeenCalled()
   })
 })

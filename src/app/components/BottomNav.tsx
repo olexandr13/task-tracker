@@ -23,9 +23,6 @@ interface BottomNavProps {
   onChange: (view: View) => void
 }
 
-/** Where a tab's menu opens: centred across the screen, and just clear of the tab's top. */
-const MENU_GAP = 4
-
 const tab =
   'group flex w-full touch-manipulation flex-col items-center gap-1 pt-2 pb-2.5 text-[11px] leading-none transition-colors select-none [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none]'
 const tabOn = 'font-medium text-neutral-900 dark:text-neutral-100'
@@ -59,10 +56,11 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * place: the three periods, and Lists with the Inbox and every list indented
  * under it, then the trash. Holding the tab opens it, and so does tapping it
  * again once its page is on screen, a tap there having nowhere further to go —
- * so a double tap opens it from anywhere. It opens centred across the screen,
- * whichever tab it belongs to. A tap on a tab while its menu is open closes it.
- * A tab stays marked while its menu is open, so it is plain which tab the menu
- * belongs to.
+ * so a double tap opens it from anywhere. It opens as a panel across the width
+ * of the screen, rising from the bar and resting on it (UI-66), whichever tab
+ * asked for it. A tap on a tab while its menu is open closes it. A tab stays
+ * marked while its menu is open, and the panel stops at the bar rather than
+ * covering it, so it is plain which tab the menu belongs to.
  */
 export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavProps) {
   // The period the period tab goes back to after leaving it: the last one on
@@ -74,14 +72,16 @@ export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavPr
 
   const [menu, setMenu] = useState<{
     of: TabMenu
-    x: number
-    y: number
+    /** The top edge of the bar, which the panel rises from and rests on (UI-66). */
+    top: number
     fromKeyboard: boolean
   } | null>(null)
 
   function openMenu(of: TabMenu, button: HTMLElement, fromKeyboard: boolean) {
-    const { top } = button.getBoundingClientRect()
-    setMenu({ of, x: window.innerWidth / 2, y: top - MENU_GAP, fromKeyboard })
+    // The bar rather than the tab: the panel spans the width, so it rests on the
+    // whole bar, not on the one tab that asked for it.
+    const { top } = (button.closest('nav') ?? button).getBoundingClientRect()
+    setMenu({ of, top, fromKeyboard })
   }
 
   // The menu that was open as a pointer came down on a tab. Coming down outside it
@@ -122,16 +122,15 @@ export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavPr
     onLongPress: (button, fromKeyboard) => { openMenu('tasks', button, fromKeyboard) },
   })
 
-  const periodItems: ContextMenuEntry[] = PERIOD_VIEWS.map((value) => ({
-    label: VIEW_LABELS[value],
-    onSelect: () => { onChange(value) },
-  }))
-
   /** A page's entry in a tab's menu: its name and icon, going there. */
   function pageItem(value: FixedView): ContextMenuItem {
     const Icon = VIEW_ICONS[value]
     return { label: VIEW_LABELS[value], icon: <Icon />, onSelect: () => { onChange(value) } }
   }
+
+  // Each with its icon, as every other entry of a tab's menu has one: three bare
+  // words across a panel the width of the screen would read as a gap in it.
+  const periodItems: ContextMenuEntry[] = PERIOD_VIEWS.map(pageItem)
 
   // Lists with the Inbox and every list under it, as the sidebar has them, then
   // the trash below the line the sidebar draws before it.
@@ -221,9 +220,7 @@ export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavPr
       {/* Outside the bar: its blur would hold the menu's fixed position to the bar instead of the window. */}
       {menu !== null && (
         <ContextMenu
-          x={menu.x}
-          y={menu.y}
-          align="center"
+          place={{ at: 'bar', top: menu.top }}
           label={menus[menu.of].label}
           fromKeyboard={menu.fromKeyboard}
           items={menus[menu.of].items}

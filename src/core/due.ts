@@ -15,7 +15,7 @@
 import { atLocalTime, offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from './day'
 import { periodRange, type Period } from './progress'
 import { currentOccurrence, nextOccurrence, occurrenceFrom, type Repeat } from './repeat'
-import { isComplete, isDeleted, startedOn, type Task, type TaskId } from './task'
+import { hasDueDay, isComplete, isDeleted, startedOn, type Task, type TaskId } from './task'
 
 /**
  * The day the task is due as of `now`, or null when it has none.
@@ -210,8 +210,10 @@ export function splitOverdue(tasks: readonly Task[], now: Date = new Date()): Ov
  *
  * To do, it belongs when it is due by the period's last day, overdue included —
  * a day missed does not let a task drop out of sight, and whatever is in Today
- * is in Week and Month too. A task still to do with no day is in none of them:
- * nothing asks for it on any particular day.
+ * is in Week and Month too. A task with **no day at all** — no date and no rule —
+ * is in every one of them: nothing asks for it on a particular day, which leaves
+ * every day as good as the next, and a task nobody is ever shown is a task
+ * nobody ever does.
  *
  * Done, it stays when it was due inside the period, whenever it was finished,
  * and otherwise when it was finished inside the period, so ticking something
@@ -232,6 +234,10 @@ export function isInPeriod(task: Task, period: Period, now: Date = new Date()): 
 
   const last = lastDayOf(period, now)
   if (!isComplete(task, now)) {
+    // No day and no rule: due by any day the period ends on, this one included.
+    // A repeating task whose rule has not come round yet has a day — just not
+    // one in play — so it is left out, as an occurrence still to come is.
+    if (!hasDueDay(task)) return true
     return due !== null && due <= last
   }
 

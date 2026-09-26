@@ -1,8 +1,7 @@
-import type { LocalDay, LocalTime } from '../../core'
+import type { LocalDay } from '../../core'
 import { dateChoices, STARTS_REPEAT, type SkipChoice } from '../dateChoices'
 import { panelHeading, panelIcon, panelIconOff, panelIconOn, panelIconRow } from '../panelControls'
 import { DateCalendar } from './DateCalendar'
-import { DueTimeChoices } from './DueTimeChoices'
 
 interface DueChoicesProps {
   /** The day the task is due: its own, or the one its rule gives it. The calendar opens there. */
@@ -15,36 +14,31 @@ interface DueChoicesProps {
   now: Date
   /**
    * Whether the task repeats, so a day picked here is the day its rule starts on
-   * rather than a date of its own — which a note above the choices says, with
-   * every day's tooltip, the calendar's included.
+   * rather than a date of its own — which every day's tooltip says, the calendar's
+   * included.
    */
   repeats: boolean
   /** Offered on a repeating task with an occurrence to pass over; left out elsewhere. */
   skip?: SkipChoice
   onChange: (day: LocalDay | null) => void
-  /** The hour the task is due at, where it is due at one. */
-  dueTime: LocalTime | null
-  /** The hour picked, or taken away. Unlike a day, it leaves the panel open (DUE-20). */
-  onChangeTime: (time: LocalTime | null) => void
   /** Called once a choice has said everything, so the panel can close. */
   onDone: () => void
 }
 
 /**
- * The date half of the schedule panel: a row of quick choices as icons — the same
- * as a task's menu has (dateChoices), less Select date, which the calendar under
- * them stands in for — and a month calendar for any other day. A choice, quick
- * or from the calendar, is saved and done in one click.
+ * Picking the day: a row of quick choices as icons — the same as a task's menu
+ * has (dateChoices), less Select date, which the calendar under them stands in
+ * for — and a month calendar for any other day. A choice, quick or from the
+ * calendar, is saved and done in one click.
  *
  * The calendar opens on the month of the day the task is due, a repeating task's
  * being the one its rule gives it, and on today's without one. The day marked as
  * chosen is the task's own: its date, or the day its rule starts on.
  *
- * Under it is the hour the task is due at, which hangs on that day — so it is
- * offered once there is a day to hang it on, and unlike a day it does not close
- * the panel, an hour usually being picked in the same breath as the day.
+ * What hangs on the day — the hour, the repeat rule — is the caller's to place:
+ * the schedule panel keeps each to a line of its own (SchedulePicker).
  */
-export function DueChoices({ dueDate, chosen, now, repeats, skip, onChange, dueTime, onChangeTime, onDone }: DueChoicesProps) {
+export function DueChoices({ dueDate, chosen, now, repeats, skip, onChange, onDone }: DueChoicesProps) {
   function choose(day: LocalDay | null) {
     onChange(day)
     onDone()
@@ -69,13 +63,6 @@ export function DueChoices({ dueDate, chosen, now, repeats, skip, onChange, dueT
 
   return (
     <>
-      {/* Said before the choices, since any of them is a day the repeat starts on. */}
-      {repeats && (
-        <p className="border-b border-neutral-200 px-2 pt-1 pb-1.5 text-xs text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
-          Picking a day starts the repeat on it. The repeat itself stays as it is.
-        </p>
-      )}
-
       <div role="group" aria-label="Date" className="flex flex-col">
         {/* The group's name is its label already; this is the same word for the eye. */}
         <p aria-hidden="true" className={`${panelHeading} pb-0.5`}>
@@ -106,12 +93,6 @@ export function DueChoices({ dueDate, chosen, now, repeats, skip, onChange, dueT
           hint={repeats ? STARTS_REPEAT : undefined}
           onSelect={choose}
         />
-      </div>
-
-      {/* Under the day, which is what an hour hangs on: a repeating task's days
-          come from its rule, so it has one to offer hours against from the start. */}
-      <div className="border-t border-neutral-200 dark:border-neutral-800">
-        <DueTimeChoices dueTime={dueTime} now={now} hasDay={repeats || dueDate !== null} onChange={onChangeTime} />
       </div>
     </>
   )

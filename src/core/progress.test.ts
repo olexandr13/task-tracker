@@ -79,12 +79,18 @@ describe('summarize, which tasks a period counts', () => {
     expect(summarize(tasks, 'month', TUE_15).total).toBe(1)
   })
 
-  it('leaves a task that happens once with no day out of every period, as the lists do (LIST-5)', () => {
+  it('counts a task that happens once with no day in every period, as the lists do (LIST-5)', () => {
     const tasks = [task(null)]
 
-    expect(summarize(tasks, 'today', TUE_15).total).toBe(0)
-    expect(summarize(tasks, 'week', TUE_15).total).toBe(0)
-    expect(summarize(tasks, 'month', TUE_15).total).toBe(0)
+    expect(summarize(tasks, 'today', TUE_15).total).toBe(1)
+    expect(summarize(tasks, 'week', TUE_15).total).toBe(1)
+    expect(summarize(tasks, 'month', TUE_15).total).toBe(1)
+  })
+
+  it('counts a task with no day once a period, however old it is', () => {
+    const written = createTask('a task', null, AUG_20)
+
+    expect(summarize([written], 'today', TUE_15)).toEqual({ completed: 0, total: 1, remaining: 1, percent: 0 })
   })
 
   it('drops a task that happens once once it is done and its period has passed', () => {

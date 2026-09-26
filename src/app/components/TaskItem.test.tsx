@@ -252,6 +252,7 @@ describe('the due date on a repeating task row', () => {
     // A task with no schedule brings its control out once the row is woken (UI-18).
     await user.click(screen.getByRole('listitem'))
     await user.click(scheduleButton())
+    await user.click(schedulePanel().getByRole('button', { name: /^Repeat:/ }))
     await user.click(schedulePanel().getByRole('button', { name: 'Daily' }))
 
     expect(scheduleButton().getAttribute('aria-label')).not.toContain('Daily')
@@ -1565,9 +1566,10 @@ describe('on a phone, tapping a task', () => {
   it('names the reward on the sheet (RWD-8)', async () => {
     const user = setup({ kind: 'daily' }, [], () => undefined, null, 5)
 
-    expect(screen.queryByText('5 points')).toBeNull()
+    expect(screen.queryByText(/\+5/)).toBeNull()
     await user.click(screen.getByRole('listitem'))
-    expect(within(sheet()).getByText('5 points')).toBeDefined()
+    // The icons say what the task has; the line under them spells it out (UI-63).
+    expect(within(sheet()).getByText(/\+5/)).toBeDefined()
   })
 
   it('marks what is set on the rest row, without controls (UI-50)', async () => {

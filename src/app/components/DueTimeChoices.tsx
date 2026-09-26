@@ -32,7 +32,18 @@ interface DueTimeChoicesProps {
    * do about it rather than offering hours that would go nowhere.
    */
   hasDay: boolean
+  /**
+   * Whether the group names itself above its hours. Off where what opened it
+   * already carries the name, as the schedule panel's Time row does.
+   */
+  named?: boolean
   onChange: (time: LocalTime | null) => void
+  /**
+   * Called once a choice leaves nothing further to choose here, so a panel
+   * showing the hours on their own can hand the panel back. Left out where the
+   * hours sit under the day already, there being nowhere to go (DUE-20).
+   */
+  onDone?: () => void
 }
 
 /**
@@ -40,11 +51,13 @@ interface DueTimeChoicesProps {
  * other, and a way to take the hour back off. Setting one is what asks the app
  * to say something when it comes round (REM-1).
  *
- * Nothing closes the panel here, unlike a date: an hour is usually picked right
- * after the day it hangs on, and closing the panel out from under that would
- * mean opening it again to finish the thought.
+ * Nothing here closes the panel: where the hours sit under the day (DUE-20) an
+ * hour is picked in the same breath as the day, and closing out from under that
+ * would mean opening the panel again to finish the thought. Where they are a
+ * view of their own, picking one hands that view back (onDone) — the day is
+ * what was left behind, not the panel.
  */
-export function DueTimeChoices({ dueTime, now, hasDay, onChange }: DueTimeChoicesProps) {
+export function DueTimeChoices({ dueTime, now, hasDay, named = true, onChange, onDone }: DueTimeChoicesProps) {
   const ids = useId()
   const heading = `${ids}-time`
 
@@ -65,8 +78,9 @@ export function DueTimeChoices({ dueTime, now, hasDay, onChange }: DueTimeChoice
 
   return (
     <div role="group" aria-labelledby={heading} className="flex flex-col gap-1 pt-0.5">
-      {/* The group's name is its label already; this is the same word for the eye. */}
-      <p id={heading} className={`${panelHeading} pb-0.5`}>
+      {/* The group's name is its label already; this is the same word for the eye. Hidden
+          where the row or the link that opened the group is already showing it. */}
+      <p id={heading} className={named ? `${panelHeading} pb-0.5` : 'sr-only'}>
         Time
       </p>
 
@@ -81,7 +95,10 @@ export function DueTimeChoices({ dueTime, now, hasDay, onChange }: DueTimeChoice
               <button
                 key={time}
                 type="button"
-                onClick={() => { onChange(time) }}
+                onClick={() => {
+                  onChange(time)
+                  onDone?.()
+                }}
                 aria-label={`${label}, ${describeTimeOfDay(time, now)}`}
                 aria-pressed={time === dueTime}
                 className={time === dueTime ? `${chip} ${chipOn}` : chip}
@@ -103,7 +120,10 @@ export function DueTimeChoices({ dueTime, now, hasDay, onChange }: DueTimeChoice
             {dueTime !== null && (
               <button
                 type="button"
-                onClick={() => { onChange(null) }}
+                onClick={() => {
+                  onChange(null)
+                  onDone?.()
+                }}
                 className={chip}
               >
                 Remove time

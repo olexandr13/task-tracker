@@ -9,6 +9,23 @@ import { MorePage } from './MorePage'
 afterEach(cleanup)
 
 describe('MorePage', () => {
+  it('links to Lists, Tags and Modes, in that order (UI-45, LST-24)', () => {
+    render(<MorePage onOpen={vi.fn()} />)
+
+    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Lists', 'Tags', 'Modes'])
+  })
+
+  it('opens the lists, which a phone reaches nowhere else without a hold (LST-24)', async () => {
+    const onOpen = vi.fn()
+    render(<MorePage onOpen={onOpen} />)
+
+    const lists = screen.getByRole('button', { name: 'Lists' })
+    expect(lists.className).toContain('min-h-14')
+
+    await userEvent.click(lists)
+    expect(onOpen).toHaveBeenCalledExactlyOnceWith('lists')
+  })
+
   it('lists Tags as a link large enough for a finger (UI-45, UI-49)', async () => {
     const user = userEvent.setup()
     const onOpen = vi.fn()

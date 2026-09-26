@@ -120,9 +120,20 @@ export function isModesView(view: View): view is ModesView {
 }
 
 /**
- * Pages reached from More, listed on More's own page: Tags, now that Rewards has
- * a place of its own everywhere (RWD-19), and Modes, which holds the switches
- * that were once rows on More itself (MODE-1).
+ * The pages More's own page lists, in the order it lists them: Lists, which a
+ * phone's bar has no tab for (UI-34), Tags, now that Rewards has a place of its
+ * own everywhere (RWD-19), and Modes, which holds the switches that were once
+ * rows on More itself (MODE-1).
+ */
+export const ON_MORE = ['lists', 'tags', 'modes'] as const satisfies readonly FixedView[]
+
+/**
+ * The pages More stands for while one of them is open — the ones on its page
+ * (`ON_MORE`) that are reached from nowhere else. Lists is listed on More but
+ * left out here: Tasks is the tab marked while it is open (UI-34) and the
+ * sidebar has an entry for it, so More standing for it too would mark two at
+ * once. Adding a page to More's page is deciding both: whether it is listed
+ * there, and whether it is reached only from there.
  */
 export const UNDER_MORE = ['tags', 'modes'] as const satisfies readonly FixedView[]
 

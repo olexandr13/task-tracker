@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useRef, useState, type KeyboardEvent } from 'react'
 import { isRewardAmount, MAX_REWARD, MIN_REWARD } from '../../core'
 import { panelStep as stepButton } from '../panelControls'
 import { describePoints } from '../rewardLabels'
 import { controlOff, controlOn, rowControlIcon, rowControlLabel } from '../rowControls'
+import { PickerPanel } from './PickerPanel'
 import { StarIcon } from './StarIcon'
 
 /** What the box can hold: a reward, or 0 for none. */
@@ -58,17 +59,6 @@ export function RewardPicker({
   const [typed, setTyped] = useState('')
   const root = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!isOpen) return
-
-    function handlePointerDown(event: PointerEvent) {
-      if (!root.current?.contains(event.target as Node)) setIsOpen(false)
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    return () => { document.removeEventListener('pointerdown', handlePointerDown) }
-  }, [isOpen])
-
   const settled = reward ?? 0
   const amount = Number(typed)
   const isValid = typed.trim() !== '' && isPoints(amount)
@@ -81,9 +71,13 @@ export function RewardPicker({
   const button = `${showAmount ? rowControlLabel : rowControlIcon} w-full`
   const rootClass = showAmount ? 'relative min-w-0 w-full' : 'relative min-w-0 shrink'
 
+  function close() {
+    setIsOpen(false)
+  }
+
   function toggle() {
     if (isOpen) {
-      setIsOpen(false)
+      close()
       return
     }
     // Reaching for the star while there are none is asking for some: they start
@@ -112,7 +106,7 @@ export function RewardPicker({
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== 'Enter') return
     event.preventDefault()
-    setIsOpen(false)
+    close()
   }
 
   return (
@@ -122,7 +116,7 @@ export function RewardPicker({
       onKeyDown={(event) => {
         if (event.key === 'Escape' && isOpen) {
           event.stopPropagation()
-          setIsOpen(false)
+          close()
         }
       }}
     >
@@ -140,10 +134,13 @@ export function RewardPicker({
       </button>
 
       {isOpen && (
-        <div
-          role="dialog"
-          aria-label={label}
-          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-60 flex-col gap-1.5 rounded-xl border border-neutral-200 bg-white p-2 shadow-xl md:w-52 md:gap-1 md:p-1.5 dark:border-neutral-700 dark:bg-neutral-900`}
+        <PickerPanel
+          anchor={root}
+          label={label}
+          align={align}
+          width="w-60 md:w-52"
+          content="gap-1.5 p-2 md:gap-1 md:p-1.5"
+          onClose={close}
         >
           <p className="px-1 pt-0.5 text-sm text-neutral-500 md:text-xs dark:text-neutral-400">{hint}</p>
 
@@ -182,7 +179,7 @@ export function RewardPicker({
               +
             </button>
           </div>
-        </div>
+        </PickerPanel>
       )}
     </div>
   )

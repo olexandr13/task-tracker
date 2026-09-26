@@ -62,6 +62,9 @@ function setup(props: PickerProps = {}) {
 const trigger = () => screen.getByRole('button', { name: /^Schedule:/ })
 const panel = () => screen.queryByRole('dialog', { name: 'Schedule' })
 const icon = () => trigger().querySelector('svg')?.innerHTML ?? ''
+/** The lines the hour and the rule sit behind, each reading what it holds (DUE-23). */
+const timeRow = () => screen.getByRole('button', { name: /^Time:/ })
+const repeatRow = () => screen.getByRole('button', { name: /^Repeat:/ })
 
 describe('SchedulePicker', () => {
   it('reads "No date" until a day is chosen (DUE-8)', () => {
@@ -196,7 +199,7 @@ describe('SchedulePicker', () => {
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Sep 14, overdue')
   })
 
-  it('spells the date out beside its icon when asked to', () => {
+  it('spells the date out beside its icon when asked to, staying content-sized (DUE-4)', () => {
     render(
       <SchedulePicker
         dueDate="2026-09-16"
@@ -212,23 +215,6 @@ describe('SchedulePicker', () => {
     expect(trigger().textContent).toBe('Today')
     expect(trigger().className).not.toMatch(/\bw-full\b/)
   })
-
-  it('fills its row when asked to (UI-59)', () => {
-    render(
-      <SchedulePicker
-        dueDate="2026-09-16"
-        draft={emptyDraft(WED_16)}
-        now={WED_16}
-        onChangeDay={vi.fn()}
-        onChangeTime={vi.fn()}
-        onChangeRepeat={vi.fn()}
-        showSummary
-        fill
-      />,
-    )
-
-    expect(trigger().className).toMatch(/\bw-full\b/)
-  })
 })
 
 describe('SchedulePicker, repeating', () => {
@@ -237,10 +223,11 @@ describe('SchedulePicker, repeating', () => {
     const calendar = icon()
 
     await user.click(trigger())
+    await user.click(repeatRow())
     await user.click(screen.getByRole('button', { name: 'Daily' }))
 
     expect(icon()).not.toBe(calendar)
-    await user.click(trigger())
+    await user.click(repeatRow())
     await user.click(screen.getByRole('button', { name: 'Daily' }))
     expect(icon()).toBe(calendar)
   })
@@ -268,8 +255,7 @@ describe('SchedulePicker, repeating', () => {
 
     await user.click(trigger())
 
-    expect(screen.getByText('Picking a day starts the repeat on it. The repeat itself stays as it is.')).toBeDefined()
-    // And again in each day's tooltip, which is all the menu and the row's strip have.
+    // Each day says it in its own tooltip, which is all the menu and the row's strip have.
     expect(screen.getByRole('button', { name: /^Today/ }).title).toBe('Today · Starts the repeat')
     expect(screen.getByRole('button', { name: /^Next week/ }).title).toBe('Next week · Sep 27 · Starts the repeat')
 
@@ -311,18 +297,21 @@ describe('SchedulePicker, repeating', () => {
     expect(screen.getByRole('button', { name: 'Friday, September 25, 2026' }).title).toBe('')
   })
 
-  it('closes on Daily, having nothing more to ask, and stays open for Weekly and Monthly (RPT-22)', async () => {
+  it('hands the panel back on Daily, having nothing more to ask, and stays for Weekly and Monthly (RPT-22)', async () => {
     const user = setup()
 
     await user.click(trigger())
+    await user.click(repeatRow())
     await user.click(screen.getByRole('button', { name: 'Weekly' }))
-    expect(panel()).not.toBeNull()
+    expect(screen.getByRole('group', { name: 'Repeat on' })).toBeDefined()
 
     await user.click(screen.getByRole('button', { name: 'Monthly' }))
-    expect(panel()).not.toBeNull()
+    expect(screen.getByRole('combobox', { name: 'On day' })).toBeDefined()
 
+    // Daily leaves nothing more to choose, so the day is what is in front of you again.
     await user.click(screen.getByRole('button', { name: 'Daily' }))
-    expect(panel()).toBeNull()
+    expect(repeatRow()).toHaveProperty('ariaLabel', 'Repeat: Daily')
+    expect(panel()).not.toBeNull()
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Daily')
   })
 
@@ -330,22 +319,24 @@ describe('SchedulePicker, repeating', () => {
     const user = setup({ initialDraft: { ...emptyDraft(WED_16), kind: 'daily' } })
 
     await user.click(trigger())
+    await user.click(repeatRow())
     await user.click(screen.getByRole('button', { name: 'Daily' }))
 
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: No date')
   })
 
-  it('clears a weekly rule when its last weekday is taken away, and closes (RPT-19)', async () => {
+  it('clears a weekly rule when its last weekday is taken away (RPT-19)', async () => {
     const user = setup({ initialDraft: { ...emptyDraft(WED_16), kind: 'weekly', weekdays: [3] } })
 
     await user.click(trigger())
+    await user.click(repeatRow())
     await user.click(screen.getByRole('button', { name: 'Wednesday' }))
 
-    expect(panel()).toBeNull()
+    expect(repeatRow()).toHaveProperty('ariaLabel', 'Repeat: Once')
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: No date')
 
     // The day is still there for Weekly chosen again (RPT-21).
-    await user.click(trigger())
+    await user.click(repeatRow())
     await user.click(screen.getByRole('button', { name: 'Weekly' }))
     expect(screen.getByRole('button', { name: 'Wednesday' })).toHaveProperty('ariaPressed', 'true')
   })
@@ -354,6 +345,7 @@ describe('SchedulePicker, repeating', () => {
     const user = setup({ initialDraft: { ...emptyDraft(WED_16), kind: 'monthly', monthDay: 20 } })
 
     await user.click(trigger())
+    await user.click(repeatRow())
     await user.selectOptions(screen.getByRole('combobox', { name: 'On day' }), '31/last')
 
     expect(screen.getByRole('option', { name: '31/last' })).toHaveProperty('selected', true)
@@ -364,35 +356,42 @@ describe('SchedulePicker, repeating', () => {
 describe('the hour a task is due at', () => {
   const timeField = () => screen.getByLabelText('Time of day')
 
-  it('waits for a day to hang on before offering an hour (DUE-19)', async () => {
+  it('waits for a day to hang on before offering an hour (DUE-19, DUE-21)', async () => {
     const user = setup()
     await user.click(trigger())
 
-    expect(screen.getByText('Pick a day above, and you can set a time on it.')).toBeTruthy()
+    // The line says why rather than opening on hours that would go nowhere.
+    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: Pick a day first')
+    expect(timeRow()).toHaveProperty('disabled', true)
+    expect(timeRow().title).toBe('Pick a day above, and you can set a time on it.')
     expect(screen.queryByRole('button', { name: /^Morning/ })).toBeNull()
   })
 
   it('offers hours once the task has a day, and sets one at a click (DUE-19)', async () => {
     const user = setup({ initial: '2026-09-16', showSummary: true })
     await user.click(trigger())
+    await user.click(timeRow())
     await user.click(screen.getByRole('button', { name: 'Morning, 9:00 AM' }))
 
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today at 9:00 AM')
     expect(trigger().textContent).toBe('Today at 9:00 AM')
   })
 
-  it('leaves the panel open, an hour being picked with the day it falls on (DUE-20)', async () => {
+  it('hands the panel back with the hour set on its line, the day still there (DUE-20, DUE-23)', async () => {
     const user = setup({ initial: '2026-09-16' })
     await user.click(trigger())
+    await user.click(timeRow())
     await user.click(screen.getByRole('button', { name: 'Evening, 6:00 PM' }))
 
     expect(panel()).not.toBeNull()
-    expect(screen.getByRole('button', { name: 'Evening, 6:00 PM' })).toHaveProperty('ariaPressed', 'true')
+    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: 6:00 PM')
+    expect(screen.getByRole('grid', { name: 'September 2026' })).toBeDefined()
   })
 
   it('takes the hour back off, leaving the day (DUE-19)', async () => {
     const user = setup({ initial: '2026-09-16', initialTime: '09:00', showSummary: true })
     await user.click(trigger())
+    await user.click(timeRow())
     await user.click(screen.getByRole('button', { name: 'Remove time' }))
 
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today')
@@ -401,9 +400,10 @@ describe('the hour a task is due at', () => {
   it('offers an hour on a repeating task with no day picked, its rule giving it days (DUE-19)', async () => {
     const user = setup({ initialDraft: { ...emptyDraft(WED_16), kind: 'daily' } })
     await user.click(trigger())
+    await user.click(timeRow())
     await user.click(screen.getByRole('button', { name: 'Midday, 12:00 PM' }))
 
-    expect(screen.getByRole('button', { name: 'Midday, 12:00 PM' })).toHaveProperty('ariaPressed', 'true')
+    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: 12:00 PM')
   })
 
   it('reads the hour with the day a rule gives the task (DUE-19)', async () => {
@@ -413,17 +413,85 @@ describe('the hour a task is due at', () => {
       showSummary: true,
     })
     await user.click(trigger())
+    await user.click(timeRow())
     await user.click(screen.getByRole('button', { name: 'Midday, 12:00 PM' }))
 
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Daily · Today at 12:00 PM')
   })
 
-  it('takes an hour typed into the clock field (DUE-19)', async () => {
+  it('takes an hour typed into the clock field, staying for the rest of it (DUE-19)', async () => {
     const user = setup({ initial: '2026-09-16', showSummary: true })
     await user.click(trigger())
+    await user.click(timeRow())
     await user.clear(timeField())
     await user.type(timeField(), '07:45')
 
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today at 7:45 AM')
+  })
+})
+
+describe('the schedule panel, one screenful (DUE-23)', () => {
+  it('keeps the hour and the rule to a line each, reading what each holds', async () => {
+    const user = setup({ initial: '2026-09-16', initialTime: '09:00', initialDraft: { ...emptyDraft(WED_16), kind: 'daily' } })
+
+    await user.click(trigger())
+
+    // The day is what is on show; the two that hang off it say where they are.
+    expect(screen.getByRole('grid', { name: 'September 2026' })).toBeDefined()
+    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: 9:00 AM')
+    expect(repeatRow()).toHaveProperty('ariaLabel', 'Repeat: Daily')
+    expect(screen.queryByRole('button', { name: 'Weekly' })).toBeNull()
+  })
+
+  it('reads an empty line as what there would be, not as a blank', async () => {
+    const user = setup({ initial: '2026-09-16' })
+
+    await user.click(trigger())
+
+    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: Any time')
+    expect(repeatRow()).toHaveProperty('ariaLabel', 'Repeat: Once')
+  })
+
+  it('takes the hour and the rule away from their lines, without opening either', async () => {
+    const user = setup({ initial: '2026-09-16', initialTime: '09:00', initialDraft: { ...emptyDraft(WED_16), kind: 'daily' } })
+
+    await user.click(trigger())
+    await user.click(screen.getByRole('button', { name: 'Remove time' }))
+    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: Any time')
+
+    await user.click(screen.getByRole('button', { name: 'Remove repeat' }))
+    expect(repeatRow()).toHaveProperty('ariaLabel', 'Repeat: Once')
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today')
+
+    // Nothing to take away is nothing to offer.
+    expect(screen.queryByRole('button', { name: 'Remove time' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Remove repeat' })).toBeNull()
+  })
+
+  it('steps back out of a group on Escape before closing the panel itself', async () => {
+    const user = setup({ initial: '2026-09-16' })
+
+    await user.click(trigger())
+    await user.click(repeatRow())
+    expect(screen.getByRole('button', { name: 'Weekly' })).toBeDefined()
+
+    await user.keyboard('{Escape}')
+    expect(panel()).not.toBeNull()
+    expect(screen.queryByRole('button', { name: 'Weekly' })).toBeNull()
+
+    await user.keyboard('{Escape}')
+    expect(panel()).toBeNull()
+  })
+
+  it('puts the focus on the way back in, and on the line it came from on the way out', async () => {
+    const user = setup({ initial: '2026-09-16' })
+
+    await user.click(trigger())
+    await user.click(repeatRow())
+    const back = screen.getByRole('button', { name: 'Back from repeat' })
+    expect(document.activeElement).toBe(back)
+
+    await user.click(back)
+    expect(document.activeElement).toBe(repeatRow())
   })
 })

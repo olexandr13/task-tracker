@@ -7,6 +7,7 @@ import {
   panelIconRow,
   panelOptionOn,
 } from '../panelControls'
+import { BarPanel } from './BarPanel'
 import { FloatingPanel } from './FloatingPanel'
 
 export interface ContextMenuItem {
@@ -67,12 +68,16 @@ function isGrouped(entry: ContextMenuEntry): boolean {
   return 'group' in entry || 'under' in entry
 }
 
+/**
+ * Where the menu opens: at the point it was asked for — where a right-click was —
+ * or along the phone's bottom bar, rising from the tab it belongs to (UI-66).
+ */
+export type ContextMenuPlace =
+  | { at: 'point'; x: number; y: number; align?: 'left' | 'right' | 'center' }
+  | { at: 'bar'; top: number }
+
 interface ContextMenuProps {
-  /** Where it was asked for, in window pixels. */
-  x: number
-  y: number
-  /** What of the menu sits at x: its left edge, its right edge, or its middle. */
-  align?: 'left' | 'right' | 'center'
+  place: ContextMenuPlace
   /** What the menu is for, when there could be more than one on screen. */
   label: string
   items: readonly ContextMenuEntry[]
@@ -143,8 +148,13 @@ function nextOption(key: string, at: number, count: number): number | null {
  * A menu of things to do, opened where the pointer was — what a right-click
  * brings up. It floats at the pointer and closes as a floating panel does
  * (FloatingPanel), and also when an item is chosen or on Tab.
+ *
+ * Asked for by a tab of the phone's bar it takes the bar's shape instead
+ * (BarPanel, UI-66): a panel across the width, rising from the tab, a floating
+ * slab dropped over the middle of a phone belonging to neither the list behind
+ * it nor the bar that opened it. The things to choose are the same either way.
  */
-export function ContextMenu({ x, y, align = 'left', label, items, fromKeyboard = false, onClose }: ContextMenuProps) {
+export function ContextMenu({ place, label, items, fromKeyboard = false, onClose }: ContextMenuProps) {
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === 'Tab') {
       event.preventDefault()
@@ -160,31 +170,50 @@ export function ContextMenu({ x, y, align = 'left', label, items, fromKeyboard =
     options[next].focus()
   }
 
+  const choices = items.map((entry, index) => (
+    <Fragment key={index}>
+      {/* A group is set off by a line from whatever is next to it, on either side. */}
+      {index > 0 && (isGrouped(entry) || isGrouped(items[index - 1])) && (
+        <div role="separator" className="my-0.5 border-t border-neutral-200 dark:border-neutral-800" />
+      )}
+      <MenuEntry entry={entry} onClose={onClose} />
+    </Fragment>
+  ))
+
+  // Opened from the keyboard it starts on its first item; by a pointer nothing is
+  // picked out, and the arrow keys start from the top.
+  const focusFirst = fromKeyboard ? ITEMS : undefined
+
+  if (place.at === 'bar') {
+    return (
+      <BarPanel
+        top={place.top}
+        role="menu"
+        label={label}
+        focusFirst={focusFirst}
+        onClose={onClose}
+        onKeyDown={handleKeyDown}
+      >
+        {choices}
+      </BarPanel>
+    )
+  }
+
   return (
     <FloatingPanel
-      x={x}
-      y={y}
-      align={align}
+      x={place.x}
+      y={place.y}
+      align={place.align ?? 'left'}
       role="menu"
       label={label}
-      // Opened from the keyboard it starts on its first item; by a pointer nothing is
-      // picked out, and the arrow keys start from the top.
-      focusFirst={fromKeyboard ? ITEMS : undefined}
+      focusFirst={focusFirst}
       onClose={onClose}
       onKeyDown={handleKeyDown}
       // A long run of choices scrolls inside it rather than running off the window.
       // On a phone it is wider, so the larger items (UI-49) have room for their names.
       className="max-w-[min(22rem,calc(100vw-1.5rem))] min-w-64 overflow-y-auto md:max-w-72 md:min-w-40"
     >
-      {items.map((entry, index) => (
-        <Fragment key={index}>
-          {/* A group is set off by a line from whatever is next to it, on either side. */}
-          {index > 0 && (isGrouped(entry) || isGrouped(items[index - 1])) && (
-            <div role="separator" className="my-0.5 border-t border-neutral-200 dark:border-neutral-800" />
-          )}
-          <MenuEntry entry={entry} onClose={onClose} />
-        </Fragment>
-      ))}
+      {choices}
     </FloatingPanel>
   )
 }

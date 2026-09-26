@@ -112,12 +112,14 @@ function completedWithin(task: Task, range: PeriodRange): boolean {
 
 function inPlayDuring(task: Task, range: PeriodRange, now: Date): boolean {
   if (task.repeat === null) {
-    // A one-off belongs from its day on: to the period it falls in, and to every
-    // later one it is still undone in, so letting it slip does not take it out of
-    // the count. One with no day of its own asks nothing of any period until it
-    // is done, which is how the lists read it too (LIST-5): a bar counts what its
-    // list shows.
-    if (task.dueDate === null || isComplete(task, now)) return false
+    if (isComplete(task, now)) return false
+    // One with no day of its own can be done on any of the period's days, so it
+    // belongs to all three — which is how the lists read it too (LIST-5): a bar
+    // counts what its list shows.
+    if (task.dueDate === null) return true
+    // Otherwise a one-off belongs from its day on: to the period it falls in, and
+    // to every later one it is still undone in, so letting it slip does not take
+    // it out of the count.
     return startOfLocalDay(task.dueDate) < range.end
   }
 

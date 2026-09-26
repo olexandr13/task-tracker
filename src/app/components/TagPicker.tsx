@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
-import { controlOff, controlOn, rowControlIcon, rowControlLabel } from '../rowControls'
+import { useRef, useState } from 'react'
+import { controlOff, controlOn, rowControlIcon } from '../rowControls'
+import { PickerPanel } from './PickerPanel'
 import { TagIcon } from './TagIcon'
 import { TagPanel } from './TagPanel'
 
@@ -12,8 +13,6 @@ interface TagPickerProps {
   onRemove: (name: string) => void
   /** What this picker is for, when there is more than one on screen. */
   label?: string
-  /** Whether the button names the tags beside its icon, or a way to add one when there are none. */
-  showNames?: boolean
   /** Which edge of the button the panel lines up with: the one nearer the middle of the screen. */
   align?: 'left' | 'right'
 }
@@ -32,34 +31,19 @@ export function TagPicker({
   onAdd,
   onRemove,
   label = 'Tags',
-  showNames = false,
   align = 'right',
 }: TagPickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!isOpen) return
-
-    function handlePointerDown(event: PointerEvent) {
-      if (!root.current?.contains(event.target as Node)) setIsOpen(false)
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    return () => { document.removeEventListener('pointerdown', handlePointerDown) }
-  }, [isOpen])
-
   const summary = tags.length === 0 ? 'No tags' : tags.join(', ')
 
-  // Named (sheet) fills its row so the whole line is the hit target (UI-59);
-  // icon-only stays content-sized for a woken strip.
-  const button = `${showNames ? rowControlLabel : rowControlIcon} w-full`
-  const rootClass = showNames ? 'relative min-w-0 w-full' : 'relative min-w-0 shrink'
+  const button = `${rowControlIcon} w-full`
 
   return (
     <div
       ref={root}
-      className={rootClass}
+      className="relative min-w-0 shrink"
       onKeyDown={(event) => {
         if (event.key === 'Escape' && isOpen) {
           event.stopPropagation()
@@ -77,17 +61,19 @@ export function TagPicker({
         className={tags.length === 0 ? `${button} ${controlOff}` : `${button} ${controlOn}`}
       >
         <TagIcon />
-        {showNames && <span className="min-w-0 truncate">{tags.length === 0 ? 'Add a tag' : summary}</span>}
       </button>
 
       {isOpen && (
-        <div
-          role="dialog"
-          aria-label={label}
-          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-64 flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl md:w-56 md:p-1 dark:border-neutral-700 dark:bg-neutral-900`}
+        <PickerPanel
+          anchor={root}
+          label={label}
+          align={align}
+          width="w-64 md:w-56"
+          content="gap-0.5 p-1.5 md:p-1"
+          onClose={() => { setIsOpen(false) }}
         >
           <TagPanel tags={tags} known={known} onAdd={onAdd} onRemove={onRemove} autoFocus />
-        </div>
+        </PickerPanel>
       )}
     </div>
   )

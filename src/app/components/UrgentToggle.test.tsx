@@ -10,7 +10,7 @@ describe('UrgentToggle', () => {
   it('marks a task urgent (TASK-63)', async () => {
     const onChange = vi.fn()
     const user = userEvent.setup()
-    render(<UrgentToggle urgent={false} onChange={onChange} label="Urgent" showName />)
+    render(<UrgentToggle urgent={false} onChange={onChange} label="Urgent" />)
 
     await user.click(screen.getByRole('button', { name: 'Urgent' }))
 
@@ -20,7 +20,7 @@ describe('UrgentToggle', () => {
   it('clears the mark when it is already on', async () => {
     const onChange = vi.fn()
     const user = userEvent.setup()
-    render(<UrgentToggle urgent onChange={onChange} label="Urgent" showName />)
+    render(<UrgentToggle urgent onChange={onChange} label="Urgent" />)
 
     expect(screen.getByRole('button', { name: 'Urgent' }).getAttribute('aria-pressed')).toBe('true')
     await user.click(screen.getByRole('button', { name: 'Urgent' }))

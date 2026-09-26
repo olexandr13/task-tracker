@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { sortLists, type List, type ListId } from '../../core'
 import { panelOption as option, panelOptionOff as optionOff, panelOptionOn as optionOn } from '../panelControls'
-import { controlOff, controlOn, rowControlIcon, rowControlLabel } from '../rowControls'
+import { controlOff, controlOn, rowControlIcon } from '../rowControls'
 import { FolderIcon } from './FolderIcon'
 import { InboxIcon } from './InboxIcon'
+import { PickerPanel } from './PickerPanel'
 
 const hint = 'px-2 py-1.5 text-xs text-neutral-400 dark:text-neutral-500'
 
@@ -15,8 +16,6 @@ interface ListPickerProps {
   onChange: (listId: ListId | null) => void
   /** What this picker is for, when there is more than one on screen. */
   label?: string
-  /** Whether the button names the list beside its icon, or a way to file it when it is in none. */
-  showName?: boolean
   /** Which edge of the button the panel lines up with: the one nearer the middle of the screen. */
   align?: 'left' | 'right'
 }
@@ -41,22 +40,10 @@ export function ListPicker({
   lists,
   onChange,
   label = 'List',
-  showName = false,
   align = 'right',
 }: ListPickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!isOpen) return
-
-    function handlePointerDown(event: PointerEvent) {
-      if (!root.current?.contains(event.target as Node)) setIsOpen(false)
-    }
-
-    document.addEventListener('pointerdown', handlePointerDown)
-    return () => { document.removeEventListener('pointerdown', handlePointerDown) }
-  }, [isOpen])
 
   const shown = sortLists(lists)
   // A task naming a list that has gone reads as being in the Inbox, here as
@@ -64,10 +51,7 @@ export function ListPicker({
   const filed = listId === null ? null : (shown.find((list) => list.id === listId) ?? null)
   const summary = filed?.name ?? 'Inbox'
 
-  // Named (sheet) fills its row so the whole line is the hit target (UI-59);
-  // icon-only stays content-sized for a woken strip.
-  const button = `${showName ? rowControlLabel : rowControlIcon} w-full`
-  const rootClass = showName ? 'relative min-w-0 w-full' : 'relative min-w-0 shrink'
+  const button = `${rowControlIcon} w-full`
 
   function choose(next: ListId | null) {
     onChange(next)
@@ -77,7 +61,7 @@ export function ListPicker({
   return (
     <div
       ref={root}
-      className={rootClass}
+      className="relative min-w-0 shrink"
       onKeyDown={(event) => {
         if (event.key === 'Escape' && isOpen) {
           event.stopPropagation()
@@ -95,14 +79,16 @@ export function ListPicker({
         className={filed === null ? `${button} ${controlOff}` : `${button} ${controlOn}`}
       >
         <FolderIcon />
-        {showName && <span className="min-w-0 truncate">{filed === null ? 'Select list' : summary}</span>}
       </button>
 
       {isOpen && (
-        <div
-          role="dialog"
-          aria-label={label}
-          className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex w-64 flex-col gap-0.5 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl md:w-56 md:p-1 dark:border-neutral-700 dark:bg-neutral-900`}
+        <PickerPanel
+          anchor={root}
+          label={label}
+          align={align}
+          width="w-64 md:w-56"
+          content="gap-0.5 p-1.5 md:p-1"
+          onClose={() => { setIsOpen(false) }}
         >
           <div role="group" aria-label="Lists" className="flex max-h-60 flex-col overflow-y-auto">
             <Choice
@@ -123,7 +109,7 @@ export function ListPicker({
           </div>
 
           {shown.length === 0 && <p className={hint}>No lists yet. Make one on the Lists page.</p>}
-        </div>
+        </PickerPanel>
       )}
     </div>
   )

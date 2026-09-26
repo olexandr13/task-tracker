@@ -83,6 +83,15 @@ describe('BottomNav', () => {
     expect(screen.getByRole('button', { name: 'Tasks' }).getAttribute('aria-current')).toBe('page')
   })
 
+  it('keeps Tasks marked, and More not, while the lists are open — More only links to them (UI-34, LST-24)', () => {
+    for (const view of ['lists', 'inbox', `list/${LISTS[0].id}`] as const) {
+      setup(view, LISTS)
+      expect(tasksTab().getAttribute('aria-current')).toBe('page')
+      expect(moreTab().getAttribute('aria-current')).toBeNull()
+      cleanup()
+    }
+  })
+
   it('has a tab of its own for the rewards, marked on any of their pages (RWD-19, RWD-30)', () => {
     for (const view of ['rewards', 'rewards/history', 'rewards/wishlist', 'rewards/rules'] as const) {
       setup(view)
@@ -309,6 +318,72 @@ describe('the Tasks tab', () => {
     await user.click(screen.getByRole('menuitem', { name: 'Trash' }))
 
     expect(onChange).toHaveBeenLastCalledWith('trash')
+  })
+})
+
+describe('a tab\'s menu as a panel on the bar (UI-66)', () => {
+  /** The panel itself: the menu's own sheet, which the handle and the choices sit in. */
+  const sheet = (open: HTMLElement | null) => (open as HTMLElement).closest('.sheet-enter') as HTMLElement
+
+  it('rests on the bar rather than floating over the middle of the screen', async () => {
+    const { user } = setup('week')
+    const bar = screen.getByRole('navigation', { name: 'Views' })
+    vi.spyOn(bar, 'getBoundingClientRect').mockReturnValue({ top: 700 } as DOMRect)
+
+    await user.click(periodTab())
+
+    // The whole of the screen above the bar: the panel at its foot, the dimming above it.
+    const area = sheet(menu()).parentElement as HTMLElement
+    expect(area.style.height).toBe('700px')
+    expect(area.contains(bar)).toBe(false)
+    expect(sheet(menu()).className).toContain('rounded-t-2xl')
+  })
+
+  it('keeps the tab marked under it, so it is plain whose menu it is (UI-33, UI-8)', async () => {
+    const { user } = setup('week')
+
+    await user.click(periodTab())
+
+    expect(periodTab().getAttribute('aria-current')).toBe('page')
+  })
+
+  it('closes on a tap on the dimmed page above it (UI-9)', async () => {
+    const { user, onChange } = setup('tasks', LISTS)
+
+    await user.click(tasksTab())
+    const dim = sheet(tasksMenu()).previousElementSibling as HTMLElement
+    await user.click(dim)
+
+    expect(tasksMenu()).toBeNull()
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('closes on a tap on its handle, which a screen reader reaches as a button (UI-48)', async () => {
+    const { user, onChange } = setup('tasks', LISTS)
+
+    await user.click(tasksTab())
+    await user.click(screen.getByRole('button', { name: 'Close' }))
+
+    expect(tasksMenu()).toBeNull()
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('holds nothing but the things to choose: the handle is outside the menu', async () => {
+    const { user } = setup('tasks', LISTS)
+
+    await user.click(tasksTab())
+
+    expect(within(tasksMenu() as HTMLElement).queryByRole('button', { name: 'Close' })).toBeNull()
+  })
+
+  it('gives the periods their icons, as every other entry of a menu has one', async () => {
+    const { user } = setup('week')
+
+    await user.click(periodTab())
+
+    for (const name of ['Today', 'Week', 'Month']) {
+      expect(screen.getByRole('menuitem', { name }).querySelector('svg')).not.toBeNull()
+    }
   })
 })
 

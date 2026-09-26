@@ -304,9 +304,13 @@ describe('isInToday, to do', () => {
     expect(isInToday(dueOn('2026-09-10'), WED_16)).toBe(true)
   })
 
-  it('leaves out what is due later, and what has no day and is still to do', () => {
+  it('leaves out what is due later', () => {
     expect(isInToday(dueOn('2026-09-17'), WED_16)).toBe(false)
-    expect(isInToday(dueOn(null), WED_16)).toBe(false)
+  })
+
+  it('holds a task with no day at all, which today suits as well as any other day', () => {
+    expect(isInToday(undated(), WED_16)).toBe(true)
+    expect(isInToday(undated(new Date(2026, 7, 20, 9, 0)), WED_16)).toBe(true)
   })
 
   it('holds a daily task every day, and a weekly one on its days and after them until done', () => {
@@ -317,6 +321,10 @@ describe('isInToday, to do', () => {
 
   it('leaves out a repeating task that has not come round since it was written', () => {
     expect(isInToday(repeating(MONDAYS, TUE_15), WED_16)).toBe(false)
+  })
+
+  it('leaves out a rule that starts later: a day still to come is a day, unlike none at all', () => {
+    expect(isInToday(startedOnDay(DAILY, '2026-09-18'), WED_16)).toBe(false)
   })
 
   it('leaves out the trash', () => {
@@ -367,9 +375,9 @@ describe('isInWeek, to do', () => {
     expect(isInWeek(dueOn('2026-09-01'), WED_16)).toBe(true)
   })
 
-  it('leaves out what is due next week, and what has no day and is still to do', () => {
+  it('leaves out what is due next week, and holds what has no day at all', () => {
     expect(isInWeek(dueOn('2026-09-21'), WED_16)).toBe(false)
-    expect(isInWeek(dueOn(null), WED_16)).toBe(false)
+    expect(isInWeek(undated(), WED_16)).toBe(true)
   })
 
   it('holds a repeating task on its occurrence in play, not on one still to come', () => {
@@ -417,9 +425,9 @@ describe('isInMonth', () => {
     expect(isInMonth(dueOn('2026-08-20'), WED_16)).toBe(true)
   })
 
-  it('leaves out what is due next month, and what has no day and is still to do', () => {
+  it('leaves out what is due next month, and holds what has no day at all', () => {
     expect(isInMonth(dueOn('2026-10-01'), WED_16)).toBe(false)
-    expect(isInMonth(dueOn(null), WED_16)).toBe(false)
+    expect(isInMonth(undated(), WED_16)).toBe(true)
   })
 
   it('keeps what was due this month, and an overdue task finished this month', () => {

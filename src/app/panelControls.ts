@@ -38,3 +38,25 @@ export const panelIconOn = `${panelOptionOn} bg-blue-600/10`
 /** A small square button beside a field, such as a stepper's − and +. */
 export const panelStep =
   'grid size-9 shrink-0 place-items-center rounded-xl text-lg leading-none text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:pointer-events-none disabled:opacity-40 md:size-6 md:rounded-lg md:text-base dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+
+/**
+ * Room to leave around a panel brought into view (`usePanelPlacement`): clear of
+ * the page's top, and at its foot clear of the bottom bar, the timer's chip and
+ * the Plus. Inside a sheet none of those are over it, so its own padding is enough.
+ */
+export const panelScrollMargin =
+  'scroll-mt-3 scroll-mb-[calc(10rem+env(safe-area-inset-bottom))] in-[[aria-modal=true]]:scroll-mb-3 md:scroll-mb-3'
+
+/**
+ * One line of a panel that stands for a group of choices of its own — the hour a
+ * task is due at, how it repeats — holding the group's name and what it is set to
+ * now, and opening it. A whole line is the target, a thumb's height tall.
+ */
+export const panelRow = `${panelItem} min-h-11 justify-start transition-colors hover:bg-neutral-100 disabled:pointer-events-none md:min-h-8 dark:hover:bg-neutral-800`
+
+/** The head of a group's own view: what it is, and the way back out of it. */
+export const panelBack = `${panelItem} min-h-11 font-medium transition-colors hover:bg-neutral-100 md:min-h-8 dark:hover:bg-neutral-800`
+
+/** A small × beside a row, taking away what the row holds without opening it. */
+export const panelClear =
+  'grid size-11 shrink-0 place-items-center rounded-xl text-base leading-none text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900 md:size-8 md:rounded-lg md:text-sm dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'

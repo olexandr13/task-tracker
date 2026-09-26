@@ -72,14 +72,6 @@ export const deleteControl =
 export const deleteAction =
   'text-red-600 transition-colors hover:bg-red-50 active:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 dark:active:bg-red-950/40'
 
-/**
- * One line of a sheet's action rows — the schedule, the list, the time, the tags,
- * urgent, the reward (UI-59). On a phone the control in it fills the line, so the
- * whole line is the target, a thumb's height tall; on a wide screen it stays compact.
- */
-export const sheetAction =
-  'flex min-h-11 w-full min-w-0 items-center max-md:[&>button]:h-11 max-md:[&>div>button]:h-11'
-
 /** A control's detail that has reached what it was after, such as time spent meeting its goal. */
 export const detailReached = 'text-green-700 dark:text-green-500'
 
@@ -91,3 +83,11 @@ export const detailReached = 'text-green-700 dark:text-green-500'
  */
 export const dragGrip =
   'absolute -left-4 grid h-6 w-4 cursor-grab place-items-center rounded text-neutral-400 transition-opacity hover:text-neutral-900 active:cursor-grabbing dark:text-neutral-500 dark:hover:text-neutral-100'
+
+/**
+ * One of a sheet's actions drawn as its icon alone (UI-63): a column of the row,
+ * with the control in it a thumb's square whatever it would size itself to, and
+ * its name under it when the row is asked to say what its icons are.
+ */
+export const sheetIconAction =
+  'flex min-w-0 flex-1 flex-col items-center gap-1 [&>button]:size-11 [&>button]:justify-center [&>div>button]:size-11 [&>div>button]:justify-center md:[&>button]:size-9 md:[&>div>button]:size-9'

@@ -26,7 +26,9 @@ describe('WarmUpPanel', () => {
   it('says what happens next once the day’s habits are in (WARM-6)', () => {
     render(<WarmUpPanel progress={progress({ used: 3, remaining: 0 })} onMoreInfo={vi.fn()} onEnd={vi.fn()} />)
 
-    expect(screen.getByRole('status').textContent).toContain('Tomorrow allows one more.')
+    expect(screen.getByRole('status').textContent).toContain(
+      'No new habit today. The warm-up allows one new habit a day, so tomorrow allows one more.',
+    )
   })
 
   it('promises no tomorrow on the last day, the warm-up being over then (WARM-10)', () => {
@@ -34,7 +36,7 @@ describe('WarmUpPanel', () => {
 
     const said = screen.getByRole('status').textContent ?? ''
     expect(said).toContain('Day 30 of 30')
-    expect(said).toContain('Every habit today allows is in. From tomorrow there is no limit.')
+    expect(said).toContain('No new habit today. From tomorrow there is no limit.')
   })
 
   it('counts every habit, even past what the day allows (WARM-4, WARM-7)', () => {

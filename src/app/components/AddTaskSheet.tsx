@@ -4,6 +4,8 @@ import {
   defaultReward,
   firstDueDay,
   sameTag,
+  sessionSeconds,
+  wholeMinutes,
   type List,
   type ListId,
   type LocalDay,
@@ -12,12 +14,16 @@ import {
   type Subtask,
   type TimeEntry,
 } from '../../core'
+import { describeTimeProgress } from '../durationLabels'
+import { describeDueDate, describeTimeOfDay } from '../dueLabels'
 import { emptyDraft, toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
-import { sheetAction } from '../rowControls'
+import { describeRepeatBriefly } from '../repeatLabels'
+import { describeReward } from '../rewardLabels'
 import { BottomSheet } from './BottomSheet'
 import { ListPicker } from './ListPicker'
 import { RewardPicker } from './RewardPicker'
 import { SchedulePicker } from './SchedulePicker'
+import { SheetActions } from './SheetActions'
 import { SubtaskList } from './SubtaskList'
 import { TagPicker } from './TagPicker'
 import { TaskDescription } from './TaskDescription'
@@ -100,6 +106,18 @@ export function AddTaskSheet({
   const canAdd = trimmed.length > 0
   const namedFor = trimmed.length > 0 ? trimmed : label
 
+  // What the icons hold, for the line under them (UI-63), read the same way as on
+  // a saved task: a repeating task's days come from its rule, so the rule is what
+  // is said, and the hour rides with whichever of the two that is (DUE-19).
+  const due = repeat === null ? day : day === null ? null : firstDueDay(repeat, day)
+  const scheduleWords =
+    repeat !== null ? describeRepeatBriefly(repeat) : due === null ? null : describeDueDate(due, now)
+  const scheduleLabel =
+    scheduleWords === null ? null : time === null ? scheduleWords : `${scheduleWords} at ${describeTimeOfDay(time, now)}`
+  const listName = listId === null ? null : (lists.find((list) => list.id === listId)?.name ?? null)
+  const spent = wholeMinutes(sessionSeconds(sessions))
+  const timeLabel = timeGoal === null && spent === 0 ? null : describeTimeProgress(spent, timeGoal)
+
   useLayoutEffect(() => {
     titleInput.current?.focus()
   }, [])
@@ -167,92 +185,106 @@ export function AddTaskSheet({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        <div className="flex flex-col items-stretch gap-1 border-t border-neutral-200 px-4 py-2 md:gap-0.5 dark:border-neutral-800">
-          <div className={sheetAction}>
-            <SchedulePicker
-              dueDate={repeat === null || day === null ? day : firstDueDay(repeat, day)}
-              startDay={repeat === null ? null : day}
-              draft={draft}
-              now={now}
-              onChangeDay={handleDayChange}
-              dueTime={time}
-              onChangeTime={setTime}
-              onChangeRepeat={handleRepeatChange}
-              label={`Schedule for "${namedFor}"`}
-              showSummary
-              fill
-              align="left"
-            />
-          </div>
-          <div className={sheetAction}>
-            <ListPicker
-              listId={listId}
-              lists={lists}
-              onChange={setListId}
-              label={`List for "${namedFor}"`}
-              showName
-              align="left"
-            />
-          </div>
-          <div className={sheetAction}>
-            <TimePicker
-              goal={timeGoal}
-              sessions={sessions}
-              now={now}
-              onLog={(minutes) => {
-                setSessions((current) => [
-                  ...current,
-                  {
-                    id: crypto.randomUUID(),
-                    seconds: minutes * 60,
-                    loggedAt: now.toISOString(),
-                  },
-                ])
-              }}
-              onRemove={(entryId) => {
-                setSessions((current) => current.filter((entry) => entry.id !== entryId))
-              }}
-              onChangeGoal={setTimeGoal}
-              label={`Time for "${namedFor}"`}
-              showAmount
-              align="left"
-            />
-          </div>
-          <div className={sheetAction}>
-            <TagPicker
-              tags={tags}
-              known={knownTags}
-              onAdd={(name) => {
-                if (tags.some((tag) => sameTag(tag, name))) return
-                setTags((current) => [...current, name])
-              }}
-              onRemove={(name) => {
-                setTags((current) => current.filter((tag) => !sameTag(tag, name)))
-              }}
-              label={`Tags for "${namedFor}"`}
-              showNames
-              align="left"
-            />
-          </div>
-          <div className={sheetAction}>
-            <UrgentToggle
-              urgent={urgent}
-              onChange={setUrgent}
-              label={`Urgent for "${namedFor}"`}
-              showName
-            />
-          </div>
-          <div className={sheetAction}>
-            <RewardPicker
-              reward={reward}
-              startAt={defaultReward(repeat)}
-              onChange={setReward}
-              label={`Reward for "${namedFor}"`}
-              showAmount
-              align="left"
-            />
-          </div>
-        </div>
+        <SheetActions
+          label={`What "${namedFor}" has`}
+          actions={[
+            {
+              name: 'Date',
+              detail: scheduleLabel,
+              control: (
+                <SchedulePicker
+                  dueDate={repeat === null || day === null ? day : firstDueDay(repeat, day)}
+                  startDay={repeat === null ? null : day}
+                  draft={draft}
+                  now={now}
+                  onChangeDay={handleDayChange}
+                  dueTime={time}
+                  onChangeTime={setTime}
+                  onChangeRepeat={handleRepeatChange}
+                  label={`Schedule for "${namedFor}"`}
+                  align="left"
+                />
+              ),
+            },
+            {
+              name: 'List',
+              detail: listName,
+              control: (
+                <ListPicker
+                  listId={listId}
+                  lists={lists}
+                  onChange={setListId}
+                  label={`List for "${namedFor}"`}
+                  align="left"
+                />
+              ),
+            },
+            {
+              name: 'Time',
+              detail: timeLabel,
+              control: (
+                <TimePicker
+                  goal={timeGoal}
+                  sessions={sessions}
+                  now={now}
+                  onLog={(minutes) => {
+                    setSessions((current) => [
+                      ...current,
+                      {
+                        id: crypto.randomUUID(),
+                        seconds: minutes * 60,
+                        loggedAt: now.toISOString(),
+                      },
+                    ])
+                  }}
+                  onRemove={(entryId) => {
+                    setSessions((current) => current.filter((entry) => entry.id !== entryId))
+                  }}
+                  onChangeGoal={setTimeGoal}
+                  label={`Time for "${namedFor}"`}
+                  align="left"
+                />
+              ),
+            },
+            {
+              name: 'Tags',
+              detail: tags.length === 0 ? null : tags.join(', '),
+              control: (
+                <TagPicker
+                  tags={tags}
+                  known={knownTags}
+                  onAdd={(name) => {
+                    if (tags.some((tag) => sameTag(tag, name))) return
+                    setTags((current) => [...current, name])
+                  }}
+                  onRemove={(name) => {
+                    setTags((current) => current.filter((tag) => !sameTag(tag, name)))
+                  }}
+                  label={`Tags for "${namedFor}"`}
+                  align="right"
+                />
+              ),
+            },
+            {
+              name: 'Urgent',
+              detail: urgent ? 'Urgent' : null,
+              control: <UrgentToggle urgent={urgent} onChange={setUrgent} label={`Urgent for "${namedFor}"`} />,
+            },
+            {
+              name: 'Reward',
+              detail: reward === null ? null : describeReward(reward),
+              control: (
+                <RewardPicker
+                  reward={reward}
+                  startAt={defaultReward(repeat)}
+                  onChange={setReward}
+                  label={`Reward for "${namedFor}"`}
+                  align="right"
+                />
+              ),
+            },
+          ]}
+        />
 
         <div className="border-t border-neutral-200 px-4 py-1 dark:border-neutral-800">
           <SubtaskList

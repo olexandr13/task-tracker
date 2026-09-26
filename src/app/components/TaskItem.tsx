@@ -58,6 +58,7 @@ import { ClockIcon } from './ClockIcon'
 import { CompletionBox } from './CompletionBox'
 import { ContextMenu, type ContextMenuEntry } from './ContextMenu'
 import { DueChoices } from './DueChoices'
+import { DueTimeChoices } from './DueTimeChoices'
 import { DuplicateIcon } from './DuplicateIcon'
 import { FlagIcon } from './FlagIcon'
 import { FloatingPanel } from './FloatingPanel'
@@ -1088,8 +1089,7 @@ export function TaskItem({
 
       {menuAt !== null && (
         <ContextMenu
-          x={menuAt.x}
-          y={menuAt.y}
+          place={{ at: 'point', x: menuAt.x, y: menuAt.y }}
           label={`Actions for "${task.title}"`}
           fromKeyboard={menuAt.fromKeyboard}
           items={menuItems}
@@ -1115,10 +1115,18 @@ export function TaskItem({
             repeats={task.repeat !== null}
             skip={skip}
             onChange={changeDay}
-            dueTime={task.dueTime}
-            onChangeTime={changeTime}
             onDone={() => { setDateAt(null) }}
           />
+          {/* The hour hangs on the day, so it is under it here as well — spelled out
+              rather than a line to open, this panel being the day's alone (DUE-14). */}
+          <div className="border-t border-neutral-200 dark:border-neutral-800">
+            <DueTimeChoices
+              dueTime={task.dueTime}
+              now={now}
+              hasDay={task.repeat !== null || dueDay(task, now) !== null}
+              onChange={changeTime}
+            />
+          </div>
         </FloatingPanel>
       )}
 
