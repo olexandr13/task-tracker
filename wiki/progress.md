@@ -20,9 +20,10 @@ separately, on the [Rewards](rewards.md) pages — where clearing a bar of its o
   before the rule starts (DUE-18): a habit that starts next month is no part of this month's count.
 - **PROG-5** A task that happens once with a due date belongs to the period its day falls in and,
   while it is still to do, to every later period as well — letting it slip does not take it out of
-  the count. One with **no due date** belongs to no period while it is still to do, so a bar counts
-  what its list shows (LIST-5, LIST-13, LIST-18). Done, either kind counts in the period it was
-  completed in.
+  the count. One with **no due date** belongs to **all three** while it is still to do, being work
+  any of their days would take, so a bar counts what its list shows (LIST-5, LIST-13, LIST-18) —
+  which means today's bar, and the bonus that follows it (RWD-25), ask for the undated backlog along
+  with the day's own work. Done, either kind counts in the period it was completed in.
 - **PROG-6** A task counts as done for a period when its completion time falls inside that period.
   Yesterday's tick is out of today, and still in this week and this month.
 - **PROG-7** A task completed inside a period always counts towards it, even where the occurrence

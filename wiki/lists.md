@@ -107,15 +107,19 @@ reasons; requirements here are `LST-`.
 
 ## On a phone
 
-- **LST-23** On a phone the **sheet** a tap opens (UI-48) carries a list button, naming the task's
-  list — or offering to file it — so filing is a tap away rather than a menu away (UI-44). It opens
+- **LST-23** On a phone the **sheet** a tap opens (UI-48) carries a list button, in its row of
+  icons (UI-63) — the task's list named in the line under them, unless it is in the Inbox, which is
+  where a task is without being put anywhere — so filing is a tap away rather than a menu away
+  (UI-44). It opens
   a panel of the same choices as the menu (LST-14, LST-15), the task's own marked, and closes on a
   choice or as the other pickers do (UI-9, UI-10); with no lists yet, the panel says where to make
   one.
 - **LST-24** The Lists page is reached from a **Lists** button at the foot of Tasks, beside the Trash
-  button, and from the Tasks tab's menu, which offers the Inbox and every list as well
-  (UI-43). Tasks stays marked in the bottom bar while the Lists page, a list's view or the Inbox is
-  open (UI-34).
+  button, from the Tasks tab's menu, which offers the Inbox and every list as well
+  (UI-43), and from a **Lists** link at the top of **More's page**, which is a tap rather than a
+  hold and is where the pages with no tab of their own are looked for (UI-45). Tasks stays marked in
+  the bottom bar while the Lists page, a list's view or the Inbox is open, whichever way it was
+  reached (UI-34).
 
 ---
 
@@ -130,7 +134,8 @@ task, and what dropping it does),
 `src/app/components/ListsPage.tsx` (the Lists page), `src/app/useLists.ts` (the lists on screen), `src/app/useTasks.ts` (filing a
 task, emptying a list), `src/app/view.ts` (the Lists page, a list's view and the Inbox, their
 addresses and what they say), `src/app/TasksScreen.tsx`, `src/app/components/SideNav.tsx`,
-`src/app/components/BottomNav.tsx`, `src/app/components/FolderIcon.tsx`,
+`src/app/components/BottomNav.tsx`, `src/app/components/MorePage.tsx` (the Lists link on More),
+`src/app/components/FolderIcon.tsx`,
 `src/app/components/InboxIcon.tsx`, `src/app/components/PencilIcon.tsx`.
 **Saved in:** `src/storage/listSchema.ts` and `src/storage/firestoreListRepository.ts` (one document
 per list), with `listId` on the task itself; whether the sidebar's lists are folded in
@@ -139,5 +144,7 @@ per list), with `listId` on the task itself; whether the sidebar's lists are fol
 `src/app/taskDrop.test.ts` (dropping a task on a list),
 `src/app/components/ListPicker.test.tsx`,
 `src/app/components/ListsPage.test.tsx`, `src/app/components/SideNav.test.tsx`,
+`src/app/components/MorePage.test.tsx` (the Lists link),
+`src/app/components/BottomNav.test.tsx` (Tasks staying marked, not More),
 `src/app/useView.test.ts` (the address), `src/storage/listRepository.test.ts`,
 `src/storage/listSchema.test.ts`, `src/storage/sideNavSchema.test.ts`.

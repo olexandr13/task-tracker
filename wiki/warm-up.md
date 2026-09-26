@@ -39,10 +39,13 @@ there is never a limit on them.
   info** for the warm-up's own page (MODE-10), and **End warm-up** (WARM-9). Nothing is drawn there
   while no warm-up is under way.
 - **WARM-11** What today leaves is said **plainly**, an allowance being easy to read as a threat:
-  *One more habit can be taken on today*, *Every habit today allows is in*, and — for an account
-  with more habits than the day allows (WARM-7) — *You have more habits than today allows, so no
-  new one today. None of the habits you have is removed.* It says outright that nothing is taken
-  away, which is the thing a limit makes people fear.
+  *One more habit can be taken on today*; with nothing left, the rule itself — *No new habit today.
+  The warm-up allows one new habit a day, so tomorrow allows one more.*, which on the last day ends
+  *From tomorrow there is no limit.* instead; and — for an account with more habits than the day
+  allows (WARM-7) — *You have more habits than today allows, so no new one today. None of the
+  habits you have is removed.* It says outright that nothing is taken away, which is the thing a
+  limit makes people fear, and it says when the next habit can be added rather than only that
+  today's allowance is full.
 - **WARM-7** A habit's **own** rule can always be changed: turning it from daily to weekly-on-all-
   seven, or away from daily altogether, is never one habit more, so it is never held back. Nothing a
   warm-up does deletes or changes a habit that already exists. An account that keeps more habits

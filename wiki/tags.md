@@ -88,9 +88,10 @@ it is deleted, whether or not a task carries it.
 
 ## On a phone
 
-- **TAG-16** On a phone the sheet a tap opens (UI-48) has a **tag button**, naming the task's tags
-  — or offering to add one — and opening the same panel (TAG-7) under it, a tap away rather than a
-  menu away (UI-44). A resting row still shows the tag mark when the task carries any (UI-50).
+- **TAG-16** On a phone the sheet a tap opens (UI-48) has a **tag button**, in its row of icons
+  (UI-63) — the task's tags listed in the line under them — and it opens the same panel (TAG-7), a
+  tap away rather than a menu away (UI-44). A resting row still shows the tag mark when the task
+  carries any (UI-50).
 - **TAG-17** The Tags page is reached from the **More** page's list (UI-45), in the sidebar as on a
   phone. More stays marked in the navigation while the Tags page or a tag's list is open.
 

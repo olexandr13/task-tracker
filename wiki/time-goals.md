@@ -56,8 +56,8 @@ ticked off. The tick itself stays the owner's.
   tinted while the task has a goal or time counting (UI-26), and with neither it waits for the row
   to be woken (UI-18). A screen reader hears how the time
   stands: `Time for "sport": 20m of 1h`. On a phone the line has no room for the *control*, so the
-  sheet a tap opens (UI-48) has it, spelling the time out — `20m of 1h` — or offering **Log time**;
-  a resting row still shows the clock as a mark when time is set (UI-50).
+  sheet a tap opens (UI-48) has it, in its row of icons (UI-63) — the time spelled out as `20m/1h`
+  in the line under them; a resting row still shows the clock as a mark when time is set (UI-50).
 - **TIME-21** The clock's panel opens with **how the time stands**: the time spent, large, against
   the goal (`20m of 1h`, or `20m spent` without one), beside it what is **left** (`40m left`) or
   that the goal is reached (TIME-5), and under it a bar toward the goal. A running timer counts in
@@ -94,8 +94,8 @@ ticked off. The tick itself stays the owner's.
   not stop the timer**. Starting on a task whose logged time already meets the goal notices at
   once. A task with no goal never notices this way.
 - **TIME-20** A tap on the chip's title and clock **goes to the task**. The page open stays when it
-  shows the task (Habits does for a habit); otherwise the app goes to Today when the task is due
-  today, or else to Tasks, which shows every task. There the task is scrolled into view and opened
+  shows the task (Habits does for a habit); otherwise the app goes to Today when Today shows the
+  task, or else to Tasks, which shows every task. There the task is scrolled into view and opened
   as a tap on it would: its sheet on a phone, its woken row on a wide window, and a habit's sheet on
   Habits. **Stop** beside it only stops the timer.
 

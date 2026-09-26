@@ -10,8 +10,9 @@ requirements were written with, so older references to them still mean what they
 
 - **LIST-1** The navigation carries **Today**, **Week** and **Month**, in that order, above
   **Tasks**. Tasks is every live task; Today, Week and Month are the parts of it due today, this
-  week and this month. Each tag has a view of its own as well — see [Tags](tags.md) — and so does
-  each list and the Inbox, see [Lists](lists.md). The app opens on **Today**, unless the address names another view (UI-36). On a phone Today, Week
+  week and this month, and in all three whatever has no day at all (LIST-5). Each tag has a view of
+  its own as well — see [Tags](tags.md) — and so does each list and the Inbox, see
+  [Lists](lists.md). The app opens on **Today**, unless the address names another view (UI-36). On a phone Today, Week
   and Month share one tab of the bottom bar (UI-33).
 
 ## Today
@@ -26,10 +27,12 @@ requirements were written with, so older references to them still mean what they
 - **LIST-4** A done task stays for the day it was due, and an overdue one finished today stays for
   today, so ticking something off does not make it vanish. A task finished ahead of its day stays on
   its own day.
-- **LIST-5** A task with **no day** is in Today once it is **done today**, and only then: the day it
-  was finished is the only day it has, and work done is work to show. Still to do it is in none of
-  the views — nothing asks for it on any particular day — and taking the tick back takes it out of
-  Today again. Finished on an earlier day, it is that day's, not today's.
+- **LIST-5** A task with **no day at all** — no date and no repeat rule — is in Today while it is
+  still to do, alongside what is due today: nothing asks for it on a particular day, so today suits
+  it as well as any other, and a task shown on no day is a task that never gets done. It sits among
+  the rest still to do, never under **Overdue** (TASK-68), being late for nothing. Done, the day it
+  was finished is the only day it has: ticked today it stays in Today, ticked on an earlier day it
+  is that day's, and taking the tick back puts it back among the tasks still to do.
 - **LIST-6** A task added in Today is **due today**, unless another day or a repeat rule is chosen
   for it before Enter.
 - **LIST-7** Otherwise Today shows what Tasks shows: the same rows, overdue floating to the top
@@ -55,8 +58,8 @@ requirements were written with, so older references to them still mean what they
   week's, so a repeat does not appear early.
 - **LIST-12** A done task stays when it was due this week, whenever it was finished, and an overdue
   one stays when it was finished this week. A task finished ahead of a later week stays in that week.
-- **LIST-13** A task with no day is in Week once it was **done this week**, as in Today (LIST-5), so
-  what Today shows Week shows too. Still to do it is never in Week.
+- **LIST-13** A task with no day goes as in Today (LIST-5), so what Today shows Week shows too:
+  still to do it is in Week, and done it stays when it was **done this week**.
 - **LIST-14** A task added in Week is **due this Sunday**, the day the week closes, unless another
   day or a repeat rule is chosen for it before Enter.
 - **LIST-15** Otherwise Week is the same list as Today (LIST-7): the same rows, order and rail. An
@@ -71,7 +74,8 @@ requirements were written with, so older references to them still mean what they
   so everything in Week is in Month too — bar the days of a week that run into next month.
 - **LIST-18** Repeating tasks, done tasks and tasks with no day go as in Week (LIST-11 – LIST-13),
   over the month: a monthly task joins it on its day, a done task stays when it was due this month
-  or was overdue and finished this month, and one with no day stays when it was done this month.
+  or was overdue and finished this month, and one with no day is in while it is still to do and
+  stays once it was done this month.
 - **LIST-19** A task added in Month is **due on the month's last day**, unless another day or a
   repeat rule is chosen for it before Enter.
 - **LIST-20** Otherwise Month is the same list as Today (LIST-7), says nothing is due this month yet

@@ -32,8 +32,9 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
 - **RWD-7** The star sits in a slot of its own after the clock (UI-27). A woken row spells the
   reward out under it: `+5`.
 - **RWD-8** On a phone the row's line has no room for the star *button*, so the sheet a tap opens
-  (UI-48) has it, naming the reward — `5 points` — or offering **Add reward**, and opens the same
-  panel; a resting row still shows the star as a mark when a reward is set (UI-50).
+  (UI-48) has it, in its row of icons (UI-63) — tinted when there is a reward, spelled out as `+5`
+  in the line under them, named **Reward** by that row's **i** — and it opens the same panel; a
+  resting row still shows the star as a mark when a reward is set (UI-50).
 
 ## Earning
 
@@ -69,7 +70,7 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   checklist, or leaving Today by being deleted or put off. A day with **nothing on it earns
   nothing**: there was nothing to clear.
 - **RWD-26** It is earned **once a day**, however many more tasks are finished after it. **Anything
-  that leaves Today unclear again takes it back** — unticking a task, or adding one for today — and
+  that leaves Today unclear again takes it back** — unticking a task, or adding one Today shows — and
   clearing the day again earns it again. Taking back takes the whole of what that day was given,
   whatever the bonus is now (RWD-11). Only **today's** bonus is ever reached: what an earlier day
   earned stays as it was (RWD-13). As with every other earning, the device that makes the change

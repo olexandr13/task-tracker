@@ -268,7 +268,9 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   which is marked out quietly on the row itself (TASK-64).
 - **TASK-63** Urgent is set from the **task's menu** — a single Urgent choice that toggles the mark,
   tinted while it is on rather than ticked (UI-31) — from a **flag on the woken wide-screen row**
-  (UI-53), and on a phone from the sheet as well, as a flag that toggles the same way. Every choice is saved as it is made; there is nothing to confirm.
+  (UI-53), and on a phone from the sheet's row of icons as well (UI-63), as a flag that toggles the
+  same way — the mark read as **Urgent** in the line under them. Every choice is saved as it is
+  made; there is nothing to confirm.
 - **TASK-64** A task still to do marked **urgent** is highlighted by a **thin amber bar on the left
   of its row** — enough to catch the eye when scanning, not enough to turn the list into a column of
   warnings. Done tasks lose the highlight.

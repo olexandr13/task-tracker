@@ -32,8 +32,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-5** Stacked, the rail comes **after** the work — the bars, then the quote at the very bottom
   of the page.
 - **UI-6** Nothing is reachable only on a wide screen. On a phone a tap on a task opens a sheet
-  with its details and the action buttons (UI-48), so the list, the tags, the clock and the reward
-  are there (LST-23, TAG-16, TIME-10, RWD-8); a wide screen has the last two on the row and the first
+  with its details and its row of action icons (UI-63), so the list, the tags, the clock and the
+  reward are there (LST-23, TAG-16, TIME-10, RWD-8); a wide screen has the last two on the row and the first
   two on the woken strip and in the task's menu (UI-53). The Lists page (UI-34), the Tags page
   (UI-45) and every rewards page (RWD-30) is on a phone too. The task's menu itself needs no right-click: a finger
   opens it by holding a row (UI-44).
@@ -55,19 +55,34 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   Lists grow with them. On a wide screen they stay compact with the rest of a panel (UI-40).
 - **UI-48** On a phone, tapping a task — the title or the rest of the row, not the completion box —
   opens a **sheet from the bottom of the screen**, overlapping the bar (UI-4). It holds the title,
-  which is the only place a title is edited (TASK-8), the checklist and the description, and the
-  action buttons: the schedule, the list, the time, the tags, urgent, the reward, Duplicate and Delete. The
+  which is the only place a title is edited (TASK-8), the checklist and the description, the row of
+  action icons (UI-63) — the schedule, the list, the time, the tags, urgent, the reward — and
+  Duplicate and Delete. The
   row behind it stays a single line. The sheet **rises** from the bottom as the page behind dims.
   It closes on a tap on the dimmed page or on Escape (UI-9, UI-10), or **pulled down by its handle**
   — the bar at its top: let go far enough down, or with a flick, and it closes; a shorter pull lets
   it settle back. A tap on the handle closes it too, so a screen reader has a **Close** button. The
   title at its head is larger than the row's. Opening it never takes the caret (UI-22). Its controls
   and the panels they open are sized for a thumb (UI-59).
-- **UI-59** On a phone the **task sheet's action rows** (UI-48) — and the same rows on the add sheet
-  (UI-54) — are large enough for a thumb: larger type and icons, and each **whole row**, 44 pixels
-  tall, is the control that opens its picker, not only the pill of text. The panels those rows open (schedule, list,
-  time, tags, reward) grow with them, as menus do (UI-49). On a wide screen the same controls stay
-  compact on the woken strip (UI-53, UI-40).
+- **UI-59** A control in a sheet (UI-63) is large enough for a thumb: larger type and icons, and a
+  **44-pixel square** to hit rather than the glyph it draws. The panels those controls open
+  (schedule, list, time, tags, reward) grow with them, as menus do (UI-49). On a wide screen the
+  same controls stay compact on the woken strip (UI-53, UI-40).
+- **UI-63** What a task carries is **one row of icons** in the sheet (UI-48) — and the same row in
+  the add sheet (UI-54): the schedule, the list, the time, the tags, urgent and the reward, each
+  tinted when it holds something, in that order. A line each of name and value would be most of a
+  phone's screen before the checklist was reached, so the names go and **what is set is spelled
+  out in one line under them** — "Tomorrow at 9:00 AM · Work · 20m/1h · home · +5" — in the icons'
+  own order, leaving out what is not set. An icon says nothing by itself the first time it is met
+  and a tooltip never reaches a thumb, so an **i** at the end of the row **names every icon**
+  under it for as long as it is left on. Nothing else about the task moves: the title, the
+  checklist, the description, Duplicate and Delete are where they were.
+- **UI-64** A picker's panel opened from **inside a sheet** is a **sheet of its own** over the one
+  it came from, rather than an aside hanging off its icon: a sheet is only as tall as what it
+  holds, so an aside dropped inside it would be cut off at the sheet's edge with no room to scroll
+  to the rest. It closes on its backdrop, on Escape, or pulled down (UI-48), leaving the sheet it
+  came from open. On a row, where there is a page behind it, the same panel is the aside it always
+  was (UI-40). Which of the two it is, is not the caller's to say: it is where the control ended up.
 - **UI-54** Every page with the add box also has a **Plus** button in the bottom-right corner — above
   the bar on a phone (UI-4), and in the same corner on a wide screen. A tap opens a **sheet** for
   adding a task with the same fields the edit sheet has (TASK-66), so more than a title can be set
@@ -76,7 +91,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   the screen. The one-line box at the top still adds a title on Enter (TASK-4). In the sheet,
   Enter in the title — including the phone keyboard's Done/Return — adds the same way (TASK-66).
   Closing the sheet without adding keeps nothing. Procrastination mode is started from **Modes**
-  (JUST-1, MODE-3), not from beside the Plus. The sheet's action rows follow UI-59.
+  (JUST-1, MODE-3), not from beside the Plus. Its actions are the same row of icons (UI-63).
 - **UI-55** On every page that lists tasks, pressing **N** opens the add sheet too, so a keyboard
   reaches it without Tabbing to the Plus. Typing in a box, or holding a modifier, leaves `N` alone —
   it is a letter then, not a shortcut. Habits has **H** instead (UI-56).
@@ -139,14 +154,16 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   are reached from the strip across the top of them (RWD-30).
 - **UI-33** Today, Week and Month share the last tab. It shows the one last on screen — Today to
   begin with — and a tap goes to it. **Holding it down**, or **tapping it again** while Today, Week or
-  Month is on screen — so a double tap from anywhere — opens a menu above it, **centred across
-  the screen**, to switch between Today, Week and Month; letting go of a hold does not also go to
+  Month is on screen — so a double tap from anywhere — opens a menu above it, as a panel on the
+  bar (UI-66), to switch between Today, Week and Month, **each with its icon**; letting go of a hold
+  does not also go to
   the tab. A right-click, the context-menu key or Shift+F10 open the same menu, and so does Enter
   on the tab while its period is on screen, from the keyboard starting on its first item. It closes
   as a task's menu does (UI-31), and on a tap on the tab while it is open, which does not open it
   again.
 - **UI-34** The bar has no tab for the lists or the trash. **Tasks** ends with a **Lists** and a
-  **Trash** button instead, the Tasks tab's menu has them too (UI-43), and **Tasks** stays marked
+  **Trash** button instead, the Tasks tab's menu has them too (UI-43), **More's page links to
+  Lists** for anyone who does not know the tab's menu is there (UI-45), and **Tasks** stays marked
   while either is open, or one list or the Inbox. The sidebar keeps its own entries, so the buttons
   are only on a phone.
 - **UI-35** **Settings** holds the signed-in account and the way out (AUTH-9), and under it
@@ -166,11 +183,24 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   **Trash**, each entry with its icon — so any list is two taps from anywhere, however long Tasks
   runs, and no heading repeats the name of the entry above it. Choosing one goes there. From any
   other view, a list's included, a tap on Tasks goes to Tasks.
+- **UI-66** A tab's menu (UI-33, UI-43) opens as **a panel across the width of the screen, rising
+  from the bar and resting on it** — not as a slab floating over the middle of the page, which
+  belongs to neither the list behind it nor the bar that opened it. It **stops at the bar** rather
+  than covering it, so the tab it came from is still there and still marked (UI-8); the page above
+  it is **dimmed** instead, which says the panel is the thing to answer and leaves somewhere plain
+  to tap it away. A strip of that dimming is always left, however many lists the panel runs to: past
+  that it scrolls inside itself. It has a **handle** at its top, as a sheet does (UI-48) — pulled
+  down it goes, and a tap on it closes it, so a screen reader has a button for it. It closes on the
+  dimming, on Escape, on a tap on the bar, and on choosing something (UI-9). The items are the
+  thumb-sized ones every phone menu has (UI-49). A task's menu is unchanged: it still opens at the
+  pointer (UI-31).
 - **UI-45** The bar has no entry for the tags or the modes, and the sidebar none for the tags:
   they are under **More**, marked with three dots; the sidebar lists the modes itself (MODE-7).
-  **A tap opens More's page** — two links, **Tags** and **Modes**, each with its icon, large enough
+  **A tap opens More's page** — three links, **Lists**, **Tags** and **Modes**, each with its icon, large enough
   for a thumb (UI-49) and a chevron at its end marking it as a page to go to. The Modes row says how many modes are on (MODE-1). The page is the same on a wide
-  screen, and choosing either goes there. **More** stays marked while its own page, the Tags page or
+  screen, and choosing any of them goes there. **Lists** is only a way in: it is reached from the
+  Tasks tab as well (UI-34, LST-24), so **Tasks** is what stays marked once it is open, and More is
+  not, or two tabs would be marked at once. **More** stays marked while its own page, the Tags page or
   a tag's view is open, and in the bar while the Modes page or one mode's page is; in the sidebar
   those mark **Modes** instead (MODE-7). Procrastination and the warm-up were rows
   here while they were switches with nothing to say; each has a page of its own now (MODE-5), as the
@@ -179,14 +209,15 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 ## Popovers
 
-- **UI-9** Panels that open in place — the schedule (date and repeat), time and tag pickers, a task's menu, the menus
-  of the bottom bar's tabs, the View panel (UI-41, UI-46), a phone's task sheet (UI-48), and the add
+- **UI-9** Panels that open in place — the schedule (date and repeat), time, tag, list and reward pickers, a task's menu, the menus
+  of the bottom bar's tabs (UI-66), the View panel (UI-41, UI-46), a phone's task sheet (UI-48), and the add
   sheet (UI-54) — close on a click outside them or on Escape. The tags offered while typing
   `#` in a description close on Escape too, but a click outside is leaving the description (TAG-9).
 - **UI-10** Escape inside an open panel closes the panel rather than reaching anything behind it.
 - **UI-40** A panel's buttons are **compact** and the same in every panel — its choices, a
-  stepper's **−** and **+**. A panel is a quick aside, so nothing in it outweighs the screen
-  behind it. On a phone a menu's items are the exception (UI-49).
+  stepper's **−** and **+**. A panel is a quick aside beside its button, kept inside the window's
+  gutter and brought into view, so nothing in it outweighs the screen behind it. On a phone a
+  menu's items are the exception (UI-49), and so is a panel opened from inside a sheet (UI-64).
 - **UI-15** A description is **not** a popover: on a wide screen it opens as an area inside the row, pushing the list
   down rather than floating over it, and a click outside keeps what was written instead of
   dismissing it. On a phone it is in the sheet (UI-48).
@@ -382,7 +413,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 **Where it lives:** `src/app/TasksScreen.tsx` (the three areas), `src/app/taskActions.ts` (everything a
 row, a habit card or a task's sheet can do to its task), `src/app/components/TaskItem.tsx` (the
 row at rest and awake), `src/app/components/TaskSheet.tsx` and `src/app/components/BottomSheet.tsx` (a
-phone's look at a task, and a wide screen's dialog), `src/app/sheetDrag.ts` and `src/app/useSheetDrag.ts`
+phone's look at a task, and a wide screen's dialog), `src/app/components/SheetActions.tsx` and
+`src/app/components/InfoIcon.tsx` (the row of icons, the line of what is set, and the **i** that
+names them, UI-63), `src/app/sheetDrag.ts` and `src/app/useSheetDrag.ts`
 (pulling a sheet down to close it), `src/app/usePhoneLayout.ts` (whether the screen is a phone's, and
 how high above the bar the Plus and the notices float), `index.html` (the page running under the
 notch and the home indicator), `src/app/components/TaskList.tsx` (the room between rows), `src/app/components/ContextMenu.tsx` (a task's menu), `src/app/components/FloatingPanel.tsx` (a menu or panel floating where the pointer was), `src/app/textOffsetAtPoint.ts` (which character a click landed on), `src/app/components/SideNav.tsx`,
@@ -393,20 +426,21 @@ Procrastination mode), `src/app/components/MorePage.tsx` (More's list of
 links), `src/app/components/ModesPage.tsx` and `ModePage.tsx` (the modes), `src/app/components/ViewMenu.tsx` (the View
 button and its panel), `src/app/components/ViewOptionsMenu.tsx` (the
 task views' options), `src/app/components/HabitViewOptionsMenu.tsx`
-(Habits'), `src/app/useDeviceSetting.ts` (keeping either on this device), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/useLongPress.ts` (a press told from a
+(Habits'), `src/app/useDeviceSetting.ts` (keeping either on this device), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/components/PickerPanel.tsx` (what all of them open: the aside beside a row, the sheet inside a sheet, UI-64), `src/app/usePanelPlacement.ts` (an aside kept inside the window and brought into view), `src/app/useLongPress.ts` (a press told from a
 long press), `src/app/useRowSwipe.ts` and `src/app/rowSwipe.ts` (a phone's swipe to complete or
 delete), `src/app/components/SettingsList.tsx` (and the version on it, from `package.json` via
 `vite.config.ts`), `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it),
 `ThemeCard.tsx` (the theme on it), `src/app/theme.ts` and `src/app/useTheme.ts` (the theme worn by the page),
 `index.html` (the theme put on before the page is first drawn), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
 view's icon), `src/app/components/TickIcon.tsx` (the tick in a box that is ticked off),
-`src/app/rowControls.ts` (the shape and tones a row's controls share — larger on a phone for the
+`src/app/rowControls.ts` (the shape and tones a row's controls share — a thumb's square in a
 sheet, UI-59), `src/app/components/CompletionBox.tsx` (the box a task is ticked off in, wherever it
-is: how it is drawn, what it is called, and a tick left to land before the task is really done), `src/app/panelControls.ts` (the size a panel's buttons share — larger on a phone with
-the sheet's pickers), `src/styles.css`,
+is: how it is drawn, what it is called, and a tick left to land before the task is really done), `src/app/panelControls.ts` (the size a panel's buttons and lines share — larger on a phone with
+the sheet's pickers), `src/app/components/PanelRow.tsx` and `src/app/components/PanelBack.tsx` (a
+line standing for a group of choices, and the way back out of the ones it opens), `src/styles.css`,
 `public/favicon.svg` (the app's icon; the PNGs beside it are the same icon for installing),
 `src/app/components/AppLogo.tsx` (the mark in the sidebar).
-**Tested in:** `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
+**Tested in:** `src/app/components/SheetActions.test.tsx` (the row of icons and its **i**), `src/app/components/PickerPanel.test.tsx` (the aside and the sheet), `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
 items are large enough for a finger), `src/app/components/MorePage.test.tsx` (More's links), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
 view in the address), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel), `src/app/components/HabitViewOptionsMenu.test.tsx`
 (Habits'), `src/app/components/SettingsList.test.tsx` (the version on Settings),

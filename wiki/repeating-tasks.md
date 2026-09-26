@@ -61,8 +61,9 @@ and whether it reads as done is derived from the occurrence currently in play ra
 ## The picker
 
 - **RPT-16** Repeat is **one control**, not a row of them — and the same one as the date (DUE-13):
-  its choices sit under a **Repeat** heading in the schedule panel, below the date choices, so the
-  add row stays a single line.
+  its choices are behind the schedule panel's **Repeat** line (DUE-23), under the day, so the add
+  row stays a single line and the panel stays one screenful. The line reads the rule the task has
+  now — "Daily", "Every Mon, Wed" — or "Once", and the **×** beside it drops the rule in a tap.
 - **RPT-17** The schedule button shows the looping arrows, tinted, when there is a rule, and the
   calendar when there is not (DUE-13). In the add row it spells the rule out beside its icon. On a
   task row the button is the **icon alone** — enough to say the task repeats, and the rule, with
@@ -79,11 +80,13 @@ and whether it reads as done is derived from the occurrence currently in play ra
   month's last day, and warns from 29 up that shorter months fall back to their last day.
 - **RPT-21** The weekday and month-day choices survive switching between kinds inside the panel, so
   flipping to Daily and back does not lose them.
-- **RPT-22** The panel closes itself once there is nothing more to choose — on Daily, and on
-  clearing the rule, however it is cleared. Weekly and monthly open their own choices below and
-  stay for them, closing on a click outside or Escape. There is no **OK**: every choice is already saved as it is made, so a
-  confirm step would only have been a second way to do nothing.
-- **RPT-23** Clicking outside the panel, or pressing Escape, closes it.
+- **RPT-22** The choices hand the panel back to the day once there is nothing more to choose —
+  on Daily, and on clearing the rule, however it is cleared — so what was set is in front of you on
+  the Repeat line (DUE-23). Weekly and monthly open their own choices below and stay for them.
+  There is no **OK**: every choice is already saved as it is made, so a confirm step would only
+  have been a second way to do nothing.
+- **RPT-23** Clicking outside the panel closes it; Escape steps back out of the repeat choices
+  first and closes the panel from the day (DUE-23).
 
 ## How a rule reads
 
