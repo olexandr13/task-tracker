@@ -36,7 +36,6 @@ import { AddTaskSheet } from './components/AddTaskSheet'
 import { BottomNav } from './components/BottomNav'
 import { FolderIcon } from './components/FolderIcon'
 import { HabitList } from './components/HabitList'
-import { HabitViewOptionsMenu } from './components/HabitViewOptionsMenu'
 import { WarmUpNoticeToast } from './components/WarmUpNoticeToast'
 import { WarmUpPanel } from './components/WarmUpPanel'
 import { ProcrastinationPanel } from './components/ProcrastinationMode'
@@ -216,7 +215,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   })
   // How the task views are shown: one set for all of them, kept on this device.
   const [viewOptions, setViewOptions] = useDeviceSetting(deviceStorage.viewOptions)
-  // How the habits view is shown, kept on this device too, apart from the task views'.
+  // How the habits view is shown, set on Settings (HAB-23) and kept on this
+  // device too, apart from the task views'.
   const [habitViewOptions, setHabitViewOptions] = useDeviceSetting(deviceStorage.habitViewOptions)
   // Which of the sidebar's groups are folded away, kept on this device too.
   const [sideNav, setSideNav] = useDeviceSetting(deviceStorage.sideNav)
@@ -606,6 +606,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   theme={theme}
                   onThemeChange={onThemeChange}
                   nudge={nudge}
+                  habitView={habitViewOptions}
+                  onHabitViewChange={setHabitViewOptions}
                 />
               </section>
             ) : view === 'more' ? (
@@ -786,16 +788,14 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   onEnd={warmUp.end}
                 />
 
-                {/* The View button beside the box, as on the task views: the box is for a
-                    new habit, the button is for how the cards below are shown. A phone has
-                    no box, so its button is at the foot of the cards instead (UI-46). */}
+                {/* The box alone, for a new habit: how the cards below start is set on
+                    Settings (HAB-23), so no View button stands beside it. */}
                 <AddTaskForm
                   now={now}
                   defaultDueDate={null}
                   defaultRepeat={{ kind: 'daily' }}
                   label="Add habit"
                   onOpenSheet={() => { setAdding(true) }}
-                  viewButton={phone ? null : <HabitViewOptionsMenu options={habitViewOptions} onChange={setHabitViewOptions} />}
                   onAdd={(title, repeat, dueDate, dueTime) => {
                     handleAddTask(title, repeat ?? { kind: 'daily' }, dueDate, dueTime, [], null)
                   }}
@@ -815,13 +815,6 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     onRevealed={revealed}
                   />
                 </section>
-
-                {/* Where a phone keeps the View button, a card opening there as it does
-                    anywhere (HAB-23): under the cards it is about, rather than in a row of
-                    its own above them, and its panel opens upwards clear of the bar (UI-46). */}
-                {phone && (
-                  <HabitViewOptionsMenu options={habitViewOptions} onChange={setHabitViewOptions} atFoot />
-                )}
               </>
             ) : (
               <section aria-label="Trash">

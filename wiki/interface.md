@@ -178,7 +178,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   are only on a phone.
 - **UI-35** **Settings** holds the signed-in account and the way out (AUTH-9), and under it
   **Backup**: exporting the account to a file and importing one back (BAK-1, BAK-4), then the
-  **Theme** (UI-63). Under those, the **version** of the app that is open — `MAJOR.MINOR.PATCH` from `package.json`,
+  **Nudge** (NUDGE-9), the **Theme** (UI-63) and **Habits**: whether the habit cards start open
+  (HAB-23). Under those, the **version** of the app that is open — `MAJOR.MINOR.PATCH` from `package.json`,
   baked in when the app is built. The number is bumped with each change to the app (patch for a
   small fix, minor for a feature, major when something breaks for the person using it).
 - **UI-36** The view you are on is **in the address** — `#/week`, `#/habits`, `#/inbox`,
@@ -230,7 +231,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 ## Popovers
 
 - **UI-9** Panels that open in place — the schedule (date and repeat), time, tag, list and reward pickers, a task's menu, the menus
-  of the bottom bar's tabs (UI-66), the View panel (UI-41, UI-46), a phone's task sheet (UI-48), and the add
+  of the bottom bar's tabs (UI-66), the View panel (UI-41), a phone's task sheet (UI-48), and the add
   sheet (UI-54) — close on a click outside them or on Escape. The tags offered while typing
   `#` in a description close on Escape too, but a click outside is leaving the description (TAG-9).
 - **UI-10** Escape inside an open panel closes the panel rather than reaching anything behind it.
@@ -379,15 +380,6 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   screen's** option: a phone's row has no room for a line of words, so it never spells them out
   whatever is set here. There the tinted marks say what a task carries (UI-50) and the words are in
   the sheet a tap opens (UI-48, UI-6).
-- **UI-46** **Habits** has a View settings button of the same shape, beside its add box. Its option is how
-  the habit cards start — folded or open — and is kept on this device apart from the task views'
-  (HAB-23, STORE-36). The switch there is its **name alone**: no line under it saying what it does,
-  unlike the task views' (UI-41). This one **stays on a phone**, a card opening there as it does anywhere — but
-  with no box to stand beside it is at the **foot of the page**, under the cards it is about, rather
-  than alone in a row of its own above them. There it is a line the width of its words rather than a
-  square: the sliders with **View settings** beside them, as the Lists and Trash buttons under Tasks
-  are (UI-34, UI-61), a thumb's height tall and lit while its panel is open. The panel opens
-  **upwards** from it, clear of the bottom bar and the Plus.
 
 ## Everywhere
 
@@ -453,12 +445,11 @@ and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet, `R` opens Reward
 Procrastination mode), `src/app/components/MorePage.tsx` (More's list of
 links), `src/app/components/ModesPage.tsx` and `ModePage.tsx` (the modes), `src/app/components/ViewMenu.tsx` (the View
 button and its panel), `src/app/components/ViewOptionsMenu.tsx` (the
-task views' options), `src/app/components/HabitViewOptionsMenu.tsx`
-(Habits'), `src/app/useDeviceSetting.ts` (keeping either on this device), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/components/PickerPanel.tsx` (what all of them open: the aside beside a row, the sheet inside a sheet, UI-64), `src/app/usePanelPlacement.ts` (an aside kept inside the window and brought into view), `src/app/useLongPress.ts` (a press told from a
+task views' options), `src/app/useDeviceSetting.ts` (keeping them on this device), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/components/PickerPanel.tsx` (what all of them open: the aside beside a row, the sheet inside a sheet, UI-64), `src/app/usePanelPlacement.ts` (an aside kept inside the window and brought into view), `src/app/useLongPress.ts` (a press told from a
 long press), `src/app/useRowSwipe.ts` and `src/app/rowSwipe.ts` (a phone's swipe to complete or
 delete), `src/app/components/SettingsList.tsx` (and the version on it, from `package.json` via
 `vite.config.ts`), `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it),
-`ThemeCard.tsx` (the theme on it), `src/app/theme.ts` and `src/app/useTheme.ts` (the theme worn by the page),
+`ThemeCard.tsx` (the theme on it), `HabitsCard.tsx` (the habits switch on it, HAB-23), `src/app/theme.ts` and `src/app/useTheme.ts` (the theme worn by the page),
 `index.html` (the theme put on before the page is first drawn), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
 view's icon), `src/app/components/TickIcon.tsx` (the tick in a box that is ticked off),
 `src/app/rowControls.ts` (the shape and tones a row's controls share — a thumb's square in a
@@ -470,8 +461,8 @@ line standing for a group of choices, and the way back out of the ones it opens)
 `src/app/components/AppLogo.tsx` (the mark in the sidebar).
 **Tested in:** `src/app/components/SheetActions.test.tsx` (the row of icons and its **i**), `src/app/components/PickerPanel.test.tsx` (the aside and the sheet), `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
 items are large enough for a finger), `src/app/components/MorePage.test.tsx` (More's links), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
-view in the address), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel), `src/app/components/HabitViewOptionsMenu.test.tsx`
-(Habits'), `src/app/components/SettingsList.test.tsx` (the version on Settings),
+view in the address), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel),
+`src/app/components/SettingsList.test.tsx` (the version on Settings, and the habits switch on it),
 `src/app/components/ThemeCard.test.tsx` (picking a theme, by click and by arrow keys),
 `src/app/theme.test.ts` (the theme on the page and the bar, and `index.html` reading it back), `src/app/components/TaskItem.test.tsx`
 (a row with Show task details on, a finger on a row, a phone's sheet and the sizes a thumb needs on
