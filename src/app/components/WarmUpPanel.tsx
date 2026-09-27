@@ -17,18 +17,17 @@ interface WarmUpPanelProps {
   progress: WarmUpProgress | null
   /** Opens the warm-up's own page, where what it does is written out (MODE-10). */
   onMoreInfo: () => void
-  /** Ends the warm-up at once (WARM-9). */
-  onEnd: () => void
 }
 
 /**
  * The warm-up at the head of Habits: which day it is on, how much of that day's
- * allowance is taken, the way to read more, and the way out (WARM-6). It sits
- * where habits are added, which is the only place the allowance is ever felt.
- * The buttons sit under the text rather than beside it, so the sentences have
- * the full width of the banner to read across.
+ * allowance is taken, and the way to read more (WARM-6). It sits where habits
+ * are added, which is the only place the allowance is ever felt. Ending it is
+ * done from its own page, not from here (WARM-9): the banner says where things
+ * stand and no more. The button sits under the text rather than beside it, so
+ * the line has the full width of the banner to read across.
  */
-export function WarmUpPanel({ progress, onMoreInfo, onEnd }: WarmUpPanelProps) {
+export function WarmUpPanel({ progress, onMoreInfo }: WarmUpPanelProps) {
   if (progress === null) return null
 
   return (
@@ -42,12 +41,9 @@ export function WarmUpPanel({ progress, onMoreInfo, onEnd }: WarmUpPanelProps) {
         </p>
         <p className={hint}>{describeRemaining(progress)}</p>
 
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <div className="mt-2">
           <button type="button" onClick={onMoreInfo} className={action}>
             More info
-          </button>
-          <button type="button" onClick={onEnd} className={action}>
-            End warm-up
           </button>
         </div>
       </div>

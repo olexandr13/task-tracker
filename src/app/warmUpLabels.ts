@@ -22,27 +22,21 @@ export function describeAllowance({ used, allowed }: WarmUpProgress): string {
 }
 
 /**
- * What the warm-up has to say about today: how many more can be taken on, that
- * there is no room for another one, or — for an account that already keeps more
- * habits than the day allows (WARM-7) — that the days have yet to catch up.
- * That case says in so many words that no habit is taken away, which is the
- * fear a limit raises; "none of them goes anywhere" said it in a way that could
- * be read either way. With nothing left for today it spells the rule out — one
- * new habit a day — rather than reporting the day's allowance as filled, which
- * said nothing about when the next one can be added. On the last day of all
- * there is no tomorrow to promise one more, so it says what happens instead.
+ * What the warm-up has to say about today, in one short line (WARM-11): how many
+ * more can be taken on, or that there is no room for another one and when there
+ * will be. An account that already keeps more habits than the day allows
+ * (WARM-7) is told so, since "tomorrow allows one more" would not be true of it.
+ * The rule itself and the reassurance that nothing is taken away belong on the
+ * warm-up's own page, one button away (MODE-10), not in the banner.
  */
 export function describeRemaining({ used, allowed, remaining, daysLeft }: WarmUpProgress): string {
-  if (remaining === 1) return 'One more habit can be taken on today.'
-  if (remaining > 1) return `${String(remaining)} more habits can be taken on today.`
+  if (remaining === 1) return 'One more habit today.'
+  if (remaining > 1) return `${String(remaining)} more habits today.`
 
-  const next =
-    daysLeft === 0
-      ? 'From tomorrow there is no limit.'
-      : 'The warm-up allows one new habit a day, so tomorrow allows one more.'
-  return used > allowed
-    ? `You have more habits than today allows, so no new one today. None of the habits you have is removed. ${next}`
-    : `No new habit today. ${next}`
+  if (used > allowed) return 'More habits than today allows, so no new one today.'
+  return daysLeft === 0
+    ? 'No new habit today. From tomorrow there is no limit.'
+    : 'No new habit today. Tomorrow allows one more.'
 }
 
 /** What is said when a habit is held back (WARM-8). */

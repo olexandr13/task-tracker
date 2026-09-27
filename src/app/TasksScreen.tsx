@@ -785,7 +785,6 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                 <WarmUpPanel
                   progress={warmUp.progress}
                   onMoreInfo={() => { setView('modes/warm-up') }}
-                  onEnd={warmUp.end}
                 />
 
                 {/* The box alone, for a new habit: how the cards below start is set on
