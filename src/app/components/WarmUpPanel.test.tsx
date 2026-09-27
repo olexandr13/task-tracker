@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { WarmUpProgress } from '../../core'
 import { WarmUpPanel } from './WarmUpPanel'
 
-/* The warm-up at the head of Habits. WARM ids refer to wiki/warm-up.md. */
+/* The warm-up at the head of Habits. WARM ids refer to wiki/warm-up.md, MODE ids to wiki/modes.md. */
 
 afterEach(cleanup)
 
@@ -14,35 +14,20 @@ function progress(changes: Partial<WarmUpProgress> = {}): WarmUpProgress {
 }
 
 describe('WarmUpPanel', () => {
-  it('says which day it is on and how much of it is taken (WARM-6)', () => {
+  it('says which day it is on and how much of it is taken, in one line (WARM-6)', () => {
     render(<WarmUpPanel progress={progress()} onMoreInfo={vi.fn()} />)
 
     const said = screen.getByRole('status').textContent ?? ''
     expect(said).toContain('Day 3 of 30')
     expect(said).toContain('2 habits · 3 allowed today')
-    expect(said).toContain('One more habit today.')
-  })
-
-  it('says when the next habit can come once the day’s are in (WARM-11)', () => {
-    render(<WarmUpPanel progress={progress({ used: 3, remaining: 0 })} onMoreInfo={vi.fn()} />)
-
-    expect(screen.getByRole('status').textContent).toContain('No new habit today. Tomorrow allows one more.')
-  })
-
-  it('promises no tomorrow on the last day, the warm-up being over then (WARM-10)', () => {
-    render(<WarmUpPanel progress={progress({ day: 30, daysLeft: 0, allowed: 30, used: 30, remaining: 0 })} onMoreInfo={vi.fn()} />)
-
-    const said = screen.getByRole('status').textContent ?? ''
-    expect(said).toContain('Day 30 of 30')
-    expect(said).toContain('No new habit today. From tomorrow there is no limit.')
+    // What today leaves is for the warm-up's own page, not the banner.
+    expect(said).not.toMatch(/more habit|No new habit/)
   })
 
   it('counts every habit, even past what the day allows (WARM-4, WARM-7)', () => {
     render(<WarmUpPanel progress={progress({ used: 7, remaining: 0 })} onMoreInfo={vi.fn()} />)
 
-    const said = screen.getByRole('status').textContent ?? ''
-    expect(said).toContain('7 habits · 3 allowed today')
-    expect(said).toContain('More habits than today allows, so no new one today.')
+    expect(screen.getByRole('status').textContent).toContain('7 habits · 3 allowed today')
   })
 
   it('offers no way out: the warm-up is ended from its own page (WARM-9)', () => {

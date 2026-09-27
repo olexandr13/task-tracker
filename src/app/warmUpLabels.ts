@@ -21,24 +21,6 @@ export function describeAllowance({ used, allowed }: WarmUpProgress): string {
   return `${habits} · ${String(allowed)} allowed today`
 }
 
-/**
- * What the warm-up has to say about today, in one short line (WARM-11): how many
- * more can be taken on, or that there is no room for another one and when there
- * will be. An account that already keeps more habits than the day allows
- * (WARM-7) is told so, since "tomorrow allows one more" would not be true of it.
- * The rule itself and the reassurance that nothing is taken away belong on the
- * warm-up's own page, one button away (MODE-10), not in the banner.
- */
-export function describeRemaining({ used, allowed, remaining, daysLeft }: WarmUpProgress): string {
-  if (remaining === 1) return 'One more habit today.'
-  if (remaining > 1) return `${String(remaining)} more habits today.`
-
-  if (used > allowed) return 'More habits than today allows, so no new one today.'
-  return daysLeft === 0
-    ? 'No new habit today. From tomorrow there is no limit.'
-    : 'No new habit today. Tomorrow allows one more.'
-}
-
 /** What is said when a habit is held back (WARM-8). */
 export function describeHeldBack({ day, allowed, daysLeft }: WarmUpProgress): string {
   const kept = allowed === 1 ? '1 habit' : `${String(allowed)} habits`

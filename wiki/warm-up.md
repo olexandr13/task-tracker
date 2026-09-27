@@ -34,20 +34,13 @@ there is never a limit on them.
 - **WARM-5** Tasks that are not habits are **never** held back, however many there are. Neither is
   anything at all once no warm-up is under way.
 - **WARM-6** **Habits** carries the warm-up at the head of the page, where habits are added and so
-  the only place the allowance is ever felt: the day it is on (`Day 3 of 30`), how much of that
-  day's allowance is taken (`2 habits · 3 allowed today`), what that leaves for today, and under
-  that text **More info** for the warm-up's own page (MODE-10), the button sitting below rather
-  than beside so the line reads across the full width. There is no way to end it from the panel:
-  that is done on its own page (WARM-9), and the panel only says where things stand. Nothing is
-  drawn there while no warm-up is under way.
-- **WARM-11** What today leaves is said **plainly and in one short line**, an allowance being easy
-  to read as a threat and a banner being no place for the rule at length: *One more habit today*
-  or *3 more habits today*; with nothing left, when the next one can come — *No new habit today.
-  Tomorrow allows one more.*, which on the last day ends *From tomorrow there is no limit.*
-  instead; and for an account with more habits than the day allows (WARM-7), *More habits than
-  today allows, so no new one today.*, since a promise of one more tomorrow would not be true of
-  it. How the allowance works and that nothing already there is touched are for the warm-up's own
-  page, one button away.
+  the only place the allowance is ever felt: **one line** — the day it is on (`Day 3 of 30`) and
+  how much of that day's allowance is taken (`2 habits · 3 allowed today`) — and under it
+  **More info** for the warm-up's own page (MODE-10). Nothing else is said there: what today
+  leaves, how the allowance works and that nothing already there is touched are for that page, one
+  button away, and there is no way to end it from the panel either — that is done on its own page
+  (WARM-9). The panel only says where things stand. Nothing is drawn there while no warm-up is
+  under way.
 - **WARM-7** A habit's **own** rule can always be changed: turning it from daily to weekly-on-all-
   seven, or away from daily altogether, is never one habit more, so it is never held back. Nothing a
   warm-up does deletes or changes a habit that already exists. An account that keeps more habits
