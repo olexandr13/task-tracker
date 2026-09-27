@@ -3,12 +3,14 @@ import { panelHeading } from '../panelControls'
 import { SlidersIcon } from './SlidersIcon'
 
 /**
- * As tall as the add box beside it, so the two read as one line, and padded to
- * as wide: a square. Padding rather than an aspect ratio, which the space the
- * button is given is worked out before, and so would not make room for.
+ * On a wide screen, as tall as the add box beside it, so the two read as one line,
+ * and padded to as wide: a square. Padding rather than an aspect ratio, which the
+ * space the button is given is worked out before, and so would not make room for.
+ * On a phone there is no box (UI-54) and nothing to match: the button stands on
+ * its own above the list, and is a smaller square of its own (UI-46).
  */
 const button =
-  'grid place-items-center rounded-lg border px-3.5 outline-offset-2 transition-colors focus-visible:outline-2 focus-visible:outline-blue-500'
+  'grid size-9 place-items-center rounded-lg border outline-offset-2 transition-colors focus-visible:outline-2 focus-visible:outline-blue-500 md:size-auto md:px-3.5'
 
 /** At rest, dressed as the add box is. */
 const buttonClosed =

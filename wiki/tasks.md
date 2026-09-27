@@ -35,7 +35,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 ## Adding
 
 - **TASK-4** Adding is one line: type the title and press Enter. There is no Add button, and Enter
-  on an empty box does nothing.
+  on an empty box does nothing. The one-line box is a wide screen's; on a phone a task is added from
+  the Plus and its sheet (TASK-66, UI-54).
 - **TASK-5** A task can be given a repeat rule, or a day it is due, in the same row, before it is
   added.
 - **TASK-6** After adding, the box clears, the repeat choice goes back to "once" and the date to the
@@ -43,8 +44,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-7** New tasks join the end of the list.
 - **TASK-66** A **Plus** button opens a **sheet** for adding with every field the edit sheet has —
   title, schedule, list, time, tags, urgent, reward, checklist and description (UI-54). Pressing **N**
-  opens the same sheet from the keyboard on a task page (UI-55). The one-line box still adds a title
-  in a hurry (TASK-4). In the sheet, **Enter** in the title (or the phone keyboard's Done/Return)
+  opens the same sheet from the keyboard on a task page (UI-55). On a wide screen the one-line box
+  still adds a title in a hurry (TASK-4); on a phone the sheet is the only way in. In the sheet, **Enter** in the title (or the phone keyboard's Done/Return)
   adds when there is a title, as does the Add button; without a title neither does. Closing the
   sheet without adding keeps nothing. A habit is added with **H** instead (UI-56, HAB-24).
 
@@ -269,7 +270,7 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-63** Urgent is set from the **task's menu** — a single Urgent choice that toggles the mark,
   tinted while it is on rather than ticked (UI-31) — from a **flag on the woken wide-screen row**
   (UI-53), and on a phone from the sheet's row of icons as well (UI-63), as a flag that toggles the
-  same way — the mark read as **Urgent** in the line under them. Every choice is saved as it is
+  same way — the mark read as **Urgent** under the flag itself. Every choice is saved as it is
   made; there is nothing to confirm.
 - **TASK-64** A task still to do marked **urgent** is highlighted by a **thin amber bar on the left
   of its row** — enough to catch the eye when scanning, not enough to turn the list into a column of

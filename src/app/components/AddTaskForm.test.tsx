@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { LocalDay } from '../../core'
+import { PHONE_QUERY } from '../usePhoneLayout'
 import { AddTaskForm } from './AddTaskForm'
 import { AddTaskSheet } from './AddTaskSheet'
 
@@ -127,6 +128,60 @@ describe('AddTaskForm', () => {
     await user.click(plus())
 
     expect(onOpenSheet).toHaveBeenCalledOnce()
+  })
+})
+
+describe('AddTaskForm on a phone', () => {
+  const originalMatchMedia = window.matchMedia
+
+  beforeEach(() => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: (query: string) => ({
+        matches: query === PHONE_QUERY,
+        media: query,
+        addEventListener() {},
+        removeEventListener() {},
+        addListener() {},
+        removeListener() {},
+        dispatchEvent() { return false },
+        onchange: null,
+      }),
+    })
+  })
+
+  afterEach(() => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      writable: true,
+      value: originalMatchMedia,
+    })
+  })
+
+  it('adds from the Plus alone, the one-line box being a wide screen\u2019s (UI-54)', async () => {
+    const { user, onOpenSheet } = setupForm('2026-09-16')
+
+    expect(screen.queryByRole('textbox', { name: 'Add task' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Schedule:/ })).toBeNull()
+
+    await user.click(plus())
+    expect(onOpenSheet).toHaveBeenCalledOnce()
+  })
+
+  it('leaves a View button standing on its own where the box was (UI-46)', () => {
+    render(
+      <AddTaskForm
+        now={WED_16}
+        defaultDueDate={null}
+        onAdd={vi.fn()}
+        onOpenSheet={vi.fn()}
+        viewButton={<button type="button">View settings</button>}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'View settings' })).toBeDefined()
+    expect(screen.queryByRole('textbox', { name: 'Add task' })).toBeNull()
   })
 })
 

@@ -106,15 +106,16 @@ export function AddTaskSheet({
   const canAdd = trimmed.length > 0
   const namedFor = trimmed.length > 0 ? trimmed : label
 
-  // What the icons hold, for the line under them (UI-63), read the same way as on
+  // What the icons hold, spelled out under them (UI-63), read the same way as on
   // a saved task: a repeating task's days come from its rule, so the rule is what
-  // is said, and the hour rides with whichever of the two that is (DUE-19).
+  // is said, and the hour rides with whichever of the two that is (DUE-19), on a
+  // line of its own under the day. The list and the tags are spelled out nowhere
+  // here (UI-63): their icons and panels say it in the width they have.
   const due = repeat === null ? day : day === null ? null : firstDueDay(repeat, day)
   const scheduleWords =
     repeat !== null ? describeRepeatBriefly(repeat) : due === null ? null : describeDueDate(due, now)
   const scheduleLabel =
-    scheduleWords === null ? null : time === null ? scheduleWords : `${scheduleWords} at ${describeTimeOfDay(time, now)}`
-  const listName = listId === null ? null : (lists.find((list) => list.id === listId)?.name ?? null)
+    scheduleWords === null ? null : time === null ? scheduleWords : `${scheduleWords} ${describeTimeOfDay(time)}`
   const spent = wholeMinutes(sessionSeconds(sessions))
   const timeLabel = timeGoal === null && spent === 0 ? null : describeTimeProgress(spent, timeGoal)
 
@@ -208,7 +209,6 @@ export function AddTaskSheet({
             },
             {
               name: 'List',
-              detail: listName,
               control: (
                 <ListPicker
                   listId={listId}
@@ -248,7 +248,6 @@ export function AddTaskSheet({
             },
             {
               name: 'Tags',
-              detail: tags.length === 0 ? null : tags.join(', '),
               control: (
                 <TagPicker
                   tags={tags}

@@ -354,8 +354,6 @@ describe('SchedulePicker, repeating', () => {
 })
 
 describe('the hour a task is due at', () => {
-  const timeField = () => screen.getByLabelText('Time of day')
-
   it('waits for a day to hang on before offering an hour (DUE-19, DUE-21)', async () => {
     const user = setup()
     await user.click(trigger())
@@ -371,20 +369,20 @@ describe('the hour a task is due at', () => {
     const user = setup({ initial: '2026-09-16', showSummary: true })
     await user.click(trigger())
     await user.click(timeRow())
-    await user.click(screen.getByRole('button', { name: 'Morning, 9:00 AM' }))
+    await user.click(screen.getByRole('button', { name: 'Morning, 09:00' }))
 
-    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today at 9:00 AM')
-    expect(trigger().textContent).toBe('Today at 9:00 AM')
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today at 09:00')
+    expect(trigger().textContent).toBe('Today at 09:00')
   })
 
   it('hands the panel back with the hour set on its line, the day still there (DUE-20, DUE-23)', async () => {
     const user = setup({ initial: '2026-09-16' })
     await user.click(trigger())
     await user.click(timeRow())
-    await user.click(screen.getByRole('button', { name: 'Evening, 6:00 PM' }))
+    await user.click(screen.getByRole('button', { name: 'Evening, 18:00' }))
 
     expect(panel()).not.toBeNull()
-    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: 6:00 PM')
+    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: 18:00')
     expect(screen.getByRole('grid', { name: 'September 2026' })).toBeDefined()
   })
 
@@ -401,9 +399,9 @@ describe('the hour a task is due at', () => {
     const user = setup({ initialDraft: { ...emptyDraft(WED_16), kind: 'daily' } })
     await user.click(trigger())
     await user.click(timeRow())
-    await user.click(screen.getByRole('button', { name: 'Midday, 12:00 PM' }))
+    await user.click(screen.getByRole('button', { name: 'Midday, 12:00' }))
 
-    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: 12:00 PM')
+    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: 12:00')
   })
 
   it('reads the hour with the day a rule gives the task (DUE-19)', async () => {
@@ -414,19 +412,31 @@ describe('the hour a task is due at', () => {
     })
     await user.click(trigger())
     await user.click(timeRow())
-    await user.click(screen.getByRole('button', { name: 'Midday, 12:00 PM' }))
+    await user.click(screen.getByRole('button', { name: 'Midday, 12:00' }))
 
-    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Daily · Today at 12:00 PM')
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Daily · Today at 12:00')
   })
 
-  it('takes an hour typed into the clock field, staying for the rest of it (DUE-19)', async () => {
+  it('takes any other hour off the clock face, the minutes after it (DUE-19, DUE-24)', async () => {
     const user = setup({ initial: '2026-09-16', showSummary: true })
     await user.click(trigger())
     await user.click(timeRow())
-    await user.clear(timeField())
-    await user.type(timeField(), '07:45')
 
-    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today at 7:45 AM')
+    await user.click(screen.getByRole('button', { name: '07' }))
+    await user.click(screen.getByRole('button', { name: '45 minutes' }))
+
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today at 07:45')
+  })
+
+  it('stays on the face while the hand is being moved round it (DUE-20, DUE-24)', async () => {
+    const user = setup({ initial: '2026-09-16' })
+    await user.click(trigger())
+    await user.click(timeRow())
+    await user.click(screen.getByRole('button', { name: '07' }))
+
+    // The day is a step back, not where picking an hour leaves you: the minutes are still to say.
+    expect(screen.getByRole('group', { name: 'Minutes' })).toBeDefined()
+    expect(screen.queryByRole('grid', { name: 'September 2026' })).toBeNull()
   })
 })
 
@@ -438,7 +448,7 @@ describe('the schedule panel, one screenful (DUE-23)', () => {
 
     // The day is what is on show; the two that hang off it say where they are.
     expect(screen.getByRole('grid', { name: 'September 2026' })).toBeDefined()
-    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: 9:00 AM')
+    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: 09:00')
     expect(repeatRow()).toHaveProperty('ariaLabel', 'Repeat: Daily')
     expect(screen.queryByRole('button', { name: 'Weekly' })).toBeNull()
   })

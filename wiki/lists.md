@@ -108,10 +108,9 @@ reasons; requirements here are `LST-`.
 ## On a phone
 
 - **LST-23** On a phone the **sheet** a tap opens (UI-48) carries a list button, in its row of
-  icons (UI-63) — the task's list named in the line under them, unless it is in the Inbox, which is
-  where a task is without being put anywhere — so filing is a tap away rather than a menu away
-  (UI-44). It opens
-  a panel of the same choices as the menu (LST-14, LST-15), the task's own marked, and closes on a
+  icons (UI-63) — tinted when the task is in a list, the name itself left to the panel it opens,
+  a row of icons having no width for it — so filing is a tap away rather than a menu away (UI-44).
+  It opens a panel of the same choices as the menu (LST-14, LST-15), the task's own marked, and closes on a
   choice or as the other pickers do (UI-9, UI-10); with no lists yet, the panel says where to make
   one.
 - **LST-24** The Lists page is reached from a **Lists** button at the foot of Tasks, beside the Trash

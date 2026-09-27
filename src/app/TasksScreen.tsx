@@ -71,7 +71,7 @@ import { describeEarningTitle } from './rewardLabels'
 import { POINTS_NOT_LOADED, TASKS_NOT_LOADED } from './storageProblem'
 import type { TaskActions } from './taskActions'
 import { useLetterShortcut } from './useLetterShortcut'
-import { ABOVE_PHONE_BAR } from './usePhoneLayout'
+import { ABOVE_PHONE_BAR, usePhoneLayout } from './usePhoneLayout'
 import { useBackup } from './useBackup'
 import { useDeviceSetting } from './useDeviceSetting'
 import { useLists } from './useLists'
@@ -223,6 +223,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const [habitViewOptions, setHabitViewOptions] = useDeviceSetting(deviceStorage.habitViewOptions)
   // Which of the sidebar's groups are folded away, kept on this device too.
   const [sideNav, setSideNav] = useDeviceSetting(deviceStorage.sideNav)
+  // A phone has no add box and no task View settings (UI-54, UI-41): both are a
+  // wide screen's, where a row of details has room under every task.
+  const phone = usePhoneLayout()
   const undo = useUndoToast()
   const syncNotice = useSyncNotice(storage.sync)
 
@@ -682,23 +685,20 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
             ) : isTaskView(view) ? (
               <>
                 {/* The View button beside the box rather than in it: the box's own controls are
-                    for the task being added, the button is for how the tasks below are shown. */}
-                <div className="flex gap-2">
-                  <div className="min-w-0 flex-1">
-                    {/* Keyed by the view, so switching views starts the box on that view's day. */}
-                    <AddTaskForm
-                      key={view}
-                      now={now}
-                      defaultDueDate={newTaskDueDay(view, now)}
-                      onOpenSheet={() => { setAdding(true) }}
-                      onAdd={(title, repeat, dueDate, dueTime) => {
-                        handleAddTask(title, repeat, dueDate, dueTime, newTaskTags(view), newTaskListId(view))
-                      }}
-                    />
-                  </div>
-
-                  <ViewOptionsMenu options={viewOptions} onChange={setViewOptions} />
-                </div>
+                    for the task being added, the button is for how the tasks below are shown.
+                    A phone has neither — it adds from the Plus (UI-54), and its details belong
+                    to the sheet (UI-42) — so only the Plus is left of the form.
+                    Keyed by the view, so switching views starts the box on that view's day. */}
+                <AddTaskForm
+                  key={view}
+                  now={now}
+                  defaultDueDate={newTaskDueDay(view, now)}
+                  onOpenSheet={() => { setAdding(true) }}
+                  viewButton={phone ? null : <ViewOptionsMenu options={viewOptions} onChange={setViewOptions} />}
+                  onAdd={(title, repeat, dueDate, dueTime) => {
+                    handleAddTask(title, repeat, dueDate, dueTime, newTaskTags(view), newTaskListId(view))
+                  }}
+                />
 
                 {view === 'today' && procrastination.phase !== 'off' && (
                   <ProcrastinationPanel
@@ -790,23 +790,20 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                 />
 
                 {/* The View button beside the box, as on the task views: the box is for a
-                    new habit, the button is for how the cards below are shown. */}
-                <div className="flex gap-2">
-                  <div className="min-w-0 flex-1">
-                    <AddTaskForm
-                      now={now}
-                      defaultDueDate={null}
-                      defaultRepeat={{ kind: 'daily' }}
-                      label="Add habit"
-                      onOpenSheet={() => { setAdding(true) }}
-                      onAdd={(title, repeat, dueDate, dueTime) => {
-                        handleAddTask(title, repeat ?? { kind: 'daily' }, dueDate, dueTime, [], null)
-                      }}
-                    />
-                  </div>
-
-                  <HabitViewOptionsMenu options={habitViewOptions} onChange={setHabitViewOptions} />
-                </div>
+                    new habit, the button is for how the cards below are shown. A phone keeps
+                    the button — a card opening on a phone as it does anywhere (HAB-23) — and
+                    it stands on its own where the box was (UI-46). */}
+                <AddTaskForm
+                  now={now}
+                  defaultDueDate={null}
+                  defaultRepeat={{ kind: 'daily' }}
+                  label="Add habit"
+                  onOpenSheet={() => { setAdding(true) }}
+                  viewButton={<HabitViewOptionsMenu options={habitViewOptions} onChange={setHabitViewOptions} />}
+                  onAdd={(title, repeat, dueDate, dueTime) => {
+                    handleAddTask(title, repeat ?? { kind: 'daily' }, dueDate, dueTime, [], null)
+                  }}
+                />
 
                 <section aria-label="Habits">
                   <HabitList

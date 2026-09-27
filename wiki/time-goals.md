@@ -57,7 +57,7 @@ ticked off. The tick itself stays the owner's.
   to be woken (UI-18). A screen reader hears how the time
   stands: `Time for "sport": 20m of 1h`. On a phone the line has no room for the *control*, so the
   sheet a tap opens (UI-48) has it, in its row of icons (UI-63) — the time spelled out as `20m/1h`
-  in the line under them; a resting row still shows the clock as a mark when time is set (UI-50).
+  under the clock itself; a resting row still shows the clock as a mark when time is set (UI-50).
 - **TIME-21** The clock's panel opens with **how the time stands**: the time spent, large, against
   the goal (`20m of 1h`, or `20m spent` without one), beside it what is **left** (`40m left`) or
   that the goal is reached (TIME-5), and under it a bar toward the goal. A running timer counts in

@@ -92,10 +92,11 @@ export function TaskSheet({
   const skip: SkipChoice | undefined =
     skipTo === null ? undefined : { to: skipTo, onSkip: () => { actions.skip(task.id) } }
 
-  // What the icons hold, for the line under them (UI-63). A repeating task's days
+  // What the icons hold, spelled out under them (UI-63). A repeating task's days
   // come from its rule, so the rule is what is said, and the hour rides with
-  // whichever of the two that is (DUE-19). The Inbox is where a task is without
-  // being put there, so it is not worth a word.
+  // whichever of the two that is (DUE-19) — under the icon it sits on a line of
+  // its own, which says "at" without the word. The list and the tags are spelled
+  // out nowhere here (UI-63): their icons and panels say it in the width they have.
   const due = dueDay(task, now)
   const scheduleWords =
     task.repeat !== null ? describeRepeatBriefly(task.repeat) : due === null ? null : describeDueDate(due, now)
@@ -104,8 +105,7 @@ export function TaskSheet({
       ? null
       : task.dueTime === null
         ? scheduleWords
-        : `${scheduleWords} at ${describeTimeOfDay(task.dueTime, now)}`
-  const listName = task.listId === null ? null : (lists.find((list) => list.id === task.listId)?.name ?? null)
+        : `${scheduleWords} ${describeTimeOfDay(task.dueTime)}`
   const spent = wholeMinutes(sessionSeconds(sessions))
   const timeLabel = task.timeGoal === null && spent === 0 ? null : describeTimeProgress(spent, task.timeGoal)
 
@@ -148,7 +148,6 @@ export function TaskSheet({
             },
             {
               name: 'List',
-              detail: listName,
               control: (
                 <ListPicker
                   listId={task.listId}
@@ -188,7 +187,6 @@ export function TaskSheet({
             },
             {
               name: 'Tags',
-              detail: task.tags.length === 0 ? null : task.tags.join(', '),
               control: (
                 <TagPicker
                   tags={task.tags}

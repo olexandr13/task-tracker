@@ -33,7 +33,7 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   reward out under it: `+5`.
 - **RWD-8** On a phone the row's line has no room for the star *button*, so the sheet a tap opens
   (UI-48) has it, in its row of icons (UI-63) — tinted when there is a reward, spelled out as `+5`
-  in the line under them, named **Reward** by that row's **i** — and it opens the same panel; a
+  under the star itself, named **Reward** by that row's **i** — and it opens the same panel; a
   resting row still shows the star as a mark when a reward is set (UI-50).
 
 ## Earning

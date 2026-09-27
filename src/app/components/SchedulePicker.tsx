@@ -198,7 +198,7 @@ export function SchedulePicker({
                   ref={timeRow}
                   icon={<ClockIcon />}
                   name="Time"
-                  value={dueTime === null ? null : describeTimeOfDay(dueTime, now)}
+                  value={dueTime === null ? null : describeTimeOfDay(dueTime)}
                   empty={hasDay ? 'Any time' : 'Pick a day first'}
                   hint={
                     hasDay

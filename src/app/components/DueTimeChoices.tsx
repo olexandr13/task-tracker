@@ -1,7 +1,8 @@
-import { useId, type ChangeEvent } from 'react'
-import { isLocalTime, type LocalTime } from '../../core'
+import { useId } from 'react'
+import type { LocalTime } from '../../core'
 import { describeTimeOfDay } from '../dueLabels'
 import { panelHeading } from '../panelControls'
+import { ClockDial } from './ClockDial'
 
 /** The hours offered at a click, being the ones most days are shaped around. */
 const QUICK_TIMES: readonly { readonly time: LocalTime; readonly label: string }[] = [
@@ -18,9 +19,6 @@ const chip =
   'grid h-10 min-w-0 place-items-center rounded-xl bg-neutral-100 px-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-200 hover:text-neutral-900 md:h-7 md:rounded-lg md:text-xs dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:text-neutral-100'
 
 const chipOn = 'bg-blue-600/10 text-blue-600 hover:bg-blue-600/20 dark:bg-blue-400/10 dark:text-blue-400'
-
-const field =
-  'min-w-0 rounded-xl border border-neutral-300 bg-transparent px-3 py-2 text-base text-neutral-900 tabular-nums focus:border-blue-500 focus:outline-none md:rounded-lg md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100'
 
 interface DueTimeChoicesProps {
   /** The hour the task is due at, or null for one due on the day with no hour to it. */
@@ -47,34 +45,20 @@ interface DueTimeChoicesProps {
 }
 
 /**
- * The time half of the schedule panel: three quick hours, a clock field for any
- * other, and a way to take the hour back off. Setting one is what asks the app
- * to say something when it comes round (REM-1).
+ * The time half of the schedule panel: three quick hours, a clock face for any
+ * other (DUE-24), and a way to take the hour back off. Setting one is what asks
+ * the app to say something when it comes round (REM-1).
  *
- * Nothing here closes the panel: where the hours sit under the day (DUE-20) an
- * hour is picked in the same breath as the day, and closing out from under that
- * would mean opening the panel again to finish the thought. Where they are a
- * view of their own, picking one hands that view back (onDone) — the day is
- * what was left behind, not the panel.
+ * Nothing here closes the panel of its own accord: where the hours sit under the
+ * day (DUE-20) an hour is picked in the same breath as the day, and closing out
+ * from under that would mean opening the panel again to finish the thought.
+ * Where they are a view of their own, a quick hour — which leaves nothing more
+ * to say — hands that view back (onDone), while the face stays open for as long
+ * as the hand is being moved round it. The day is what was left behind, not the panel.
  */
 export function DueTimeChoices({ dueTime, now, hasDay, named = true, onChange, onDone }: DueTimeChoicesProps) {
   const ids = useId()
   const heading = `${ids}-time`
-
-  function handleFieldChange(event: ChangeEvent<HTMLInputElement>) {
-    // The field reads empty both when it is cleared and while it is half-typed —
-    // an hour entered with the minutes still to come — and neither is an hour, so
-    // both leave the task without one until the pair is complete. The browser
-    // keeps what has been typed meanwhile, so entering an hour is uninterrupted.
-    const typed = event.target.value
-    if (typed === '') {
-      onChange(null)
-      return
-    }
-    // Browsers hand back `HH:MM` or `HH:MM:SS`; seconds are past what an hour means here.
-    const time = typed.slice(0, 5)
-    if (isLocalTime(time)) onChange(time)
-  }
 
   return (
     <div role="group" aria-labelledby={heading} className="flex flex-col gap-1 pt-0.5">
@@ -99,7 +83,7 @@ export function DueTimeChoices({ dueTime, now, hasDay, named = true, onChange, o
                   onChange(time)
                   onDone?.()
                 }}
-                aria-label={`${label}, ${describeTimeOfDay(time, now)}`}
+                aria-label={`${label}, ${describeTimeOfDay(time)}`}
                 aria-pressed={time === dueTime}
                 className={time === dueTime ? `${chip} ${chipOn}` : chip}
               >
@@ -108,28 +92,20 @@ export function DueTimeChoices({ dueTime, now, hasDay, named = true, onChange, o
             ))}
           </div>
 
-          <div className="flex items-center gap-1.5 md:gap-1">
-            <input
-              type="time"
-              value={dueTime ?? ''}
-              onChange={handleFieldChange}
-              aria-label="Time of day"
-              title="The time of day the task is due. Empty for no time."
-              className={`${field} w-full flex-1`}
-            />
-            {dueTime !== null && (
-              <button
-                type="button"
-                onClick={() => {
-                  onChange(null)
-                  onDone?.()
-                }}
-                className={chip}
-              >
-                Remove time
-              </button>
-            )}
-          </div>
+          <ClockDial value={dueTime} now={now} onChange={onChange} />
+
+          {dueTime !== null && (
+            <button
+              type="button"
+              onClick={() => {
+                onChange(null)
+                onDone?.()
+              }}
+              className={chip}
+            >
+              Remove time
+            </button>
+          )}
         </div>
       )}
     </div>

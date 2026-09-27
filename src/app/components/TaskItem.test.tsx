@@ -296,13 +296,13 @@ describe('a task row with Show task details on', () => {
   it('spells the hour out with the day it falls on (DUE-19)', () => {
     const row = renderRow({ ...createTask(TASK, null, NOW), dueDate: '2026-09-16', dueTime: '09:00' })
 
-    expect(row.getByText('Tomorrow at 9:00 AM')).toBeDefined()
+    expect(row.getByText('Tomorrow at 09:00')).toBeDefined()
   })
 
   it('spells the hour out with a repeating task\'s rule, which gives it its days (DUE-19)', () => {
     const row = renderRow({ ...createTask(TASK, { kind: 'daily' }, NOW), dueTime: '09:00' })
 
-    expect(row.getByText('Daily at 9:00 AM')).toBeDefined()
+    expect(row.getByText('Daily at 09:00')).toBeDefined()
   })
 })
 
@@ -1598,6 +1598,26 @@ describe('on a phone, tapping a task', () => {
     setup(null)
 
     expect(screen.queryByRole('group', { name: /Daily|Checklist|Description|Tags/ })).toBeNull()
+  })
+
+  it('keeps the details in the sheet, whatever the view asks for (UI-42)', async () => {
+    const user = userEvent.setup()
+    let task = setTimeGoal(createTask(TASK, { kind: 'daily' }, NOW), 30)
+    task = { ...task, reward: 5, tags: ['home'] }
+    render(
+      <ul>
+        <TaskItem actions={NO_TASK_ACTIONS} task={task} now={NOW} knownTags={['home']} lists={[]} showDetails />
+      </ul>,
+    )
+
+    // The marks say what is set (UI-50); the words are nowhere on the row.
+    expect(screen.getByRole('group', { name: /^Daily/ })).toBeDefined()
+    expect(screen.queryByText('Daily')).toBeNull()
+    expect(screen.queryByText('+5')).toBeNull()
+    expect(screen.queryByRole('list', { name: 'Tags' })).toBeNull()
+
+    await user.click(screen.getByRole('listitem'))
+    expect(within(sheet()).getByText(/\+5/)).toBeDefined()
   })
 
   describe('swiping a row (UI-60)', () => {

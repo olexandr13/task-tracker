@@ -1,7 +1,7 @@
-import { useState, type KeyboardEvent } from 'react'
+import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import { firstDueDay, type LocalDay, type LocalTime, type Repeat } from '../../core'
 import { emptyDraft, toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
-import { ABOVE_PHONE_BAR } from '../usePhoneLayout'
+import { ABOVE_PHONE_BAR, usePhoneLayout } from '../usePhoneLayout'
 import { PlusIcon } from './PlusIcon'
 import { SchedulePicker } from './SchedulePicker'
 
@@ -16,6 +16,12 @@ interface AddTaskFormProps {
   /** Opens the detailed add sheet (UI-54). */
   onOpenSheet: () => void
   /**
+   * The View settings button, standing beside the box (UI-41). A phone has no
+   * box, so a button given there stands on its own above the list; one whose
+   * options a phone cannot use is not given there at all.
+   */
+  viewButton?: ReactNode
+  /**
    * The day picked: the task is due on it, or its rule starts there (DUE-6) —
    * and the hour on that day, where one was picked too (DUE-19).
    */
@@ -28,8 +34,10 @@ export function AddTaskForm({
   defaultRepeat,
   label = 'Add task',
   onOpenSheet,
+  viewButton = null,
   onAdd,
 }: AddTaskFormProps) {
+  const phone = usePhoneLayout()
   const [title, setTitle] = useState('')
   const [draft, setDraft] = useState(() => defaultRepeat !== undefined ? toDraft(defaultRepeat ?? null, now) : emptyDraft(now))
   const [day, setDay] = useState(defaultDueDate)
@@ -75,41 +83,52 @@ export function AddTaskForm({
 
   return (
     <>
-      <div className="flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2.5 focus-within:border-blue-500 dark:border-neutral-700 dark:bg-neutral-900 dark:focus-within:border-blue-500">
-        <span aria-hidden="true" className="shrink-0 text-lg leading-none text-neutral-400 dark:text-neutral-500">
-          +
-        </span>
+      {/* A phone adds from the Plus alone (UI-54): the one-line box is a wide screen's,
+          where there is room for it and for the button beside it. The row is there on a
+          phone only to hold a button that still has something to say there (UI-46). */}
+      {(!phone || viewButton !== null) && (
+        <div className="flex justify-end gap-2">
+          {!phone && (
+            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 focus-within:border-blue-500 dark:border-neutral-700 dark:bg-neutral-900 dark:focus-within:border-blue-500">
+              <span aria-hidden="true" className="shrink-0 text-lg leading-none text-neutral-400 dark:text-neutral-500">
+                +
+              </span>
 
-        <input
-          type="text"
-          value={title}
-          onChange={(event) => { setTitle(event.target.value) }}
-          onKeyDown={handleKeyDown}
-          placeholder={label}
-          aria-label={label}
-          autoComplete="off"
-          enterKeyHint="done"
-          className="min-w-0 flex-1 bg-transparent text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none dark:text-neutral-100 dark:placeholder:text-neutral-500"
-        />
+              <input
+                type="text"
+                value={title}
+                onChange={(event) => { setTitle(event.target.value) }}
+                onKeyDown={handleKeyDown}
+                placeholder={label}
+                aria-label={label}
+                autoComplete="off"
+                enterKeyHint="done"
+                className="min-w-0 flex-1 bg-transparent text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none dark:text-neutral-100 dark:placeholder:text-neutral-500"
+              />
 
-        {/* A rule says which days the task is due, so the button reads the rule with the
-            first day it comes round on. A day picked is the task's date, or the day its
-            rule starts on, as it is on a task row (DUE-6). */}
-        <SchedulePicker
-          dueDate={repeat === null || day === null ? day : firstDueDay(repeat, day)}
-          startDay={repeat === null ? null : day}
-          draft={draft}
-          now={now}
-          onChangeDay={handleDayChange}
-          dueTime={time}
-          onChangeTime={setTime}
-          onChangeRepeat={handleRepeatChange}
-          showSummary
-        />
-      </div>
+              {/* A rule says which days the task is due, so the button reads the rule with the
+                  first day it comes round on. A day picked is the task's date, or the day its
+                  rule starts on, as it is on a task row (DUE-6). */}
+              <SchedulePicker
+                dueDate={repeat === null || day === null ? day : firstDueDay(repeat, day)}
+                startDay={repeat === null ? null : day}
+                draft={draft}
+                now={now}
+                onChangeDay={handleDayChange}
+                dueTime={time}
+                onChangeTime={setTime}
+                onChangeRepeat={handleRepeatChange}
+                showSummary
+              />
+            </div>
+          )}
 
-      {/* The detailed add sheet is a stretch from the one-line box (UI-54). On a phone it
-          also sits in reach of a thumb, above the bottom bar (UI-4). */}
+          {viewButton}
+        </div>
+      )}
+
+      {/* The detailed add sheet is a stretch from the one-line box (UI-54), and on a phone
+          the only way to add. It sits in reach of a thumb, above the bottom bar (UI-4). */}
       <button
         type="button"
         aria-label={label}

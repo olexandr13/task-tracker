@@ -48,7 +48,7 @@ puts a task in front of you on the right day instead of in a long list of everyt
 
 - **DUE-8** The button reads the day in words: "Today", "Tomorrow", "Yesterday", and otherwise a
   short date — "Sep 20" — with the year only when it is not this one. An hour is read with the day
-  it falls on — "Today at 9:00 AM" — since an hour on its own says nothing about when. With no day it
+  it falls on — "Today at 09:00" — since an hour on its own says nothing about when. With no day it
   is a plain calendar.
 - **DUE-9** It opens a panel whose **Date** group is the row of icons of a task's menu (DUE-14) —
   **Today**, **Tomorrow**, **Next week** (the Sunday that closes next week; weeks run Monday to
@@ -88,7 +88,7 @@ puts a task in front of you on the right day instead of in a long list of everyt
 - **DUE-23** The panel is **one screenful**, never a column to scroll. The day is what is on show —
   the quick choices and the calendar — and the two things that hang off a day are a **line each**
   under it: **Time** and **Repeat**, with the glyph they carry everywhere, their name, and what
-  they are set to now — "9:00 AM", "Daily" — or what there would be if they were: "Any time",
+  they are set to now — "09:00", "Daily" — or what there would be if they were: "Any time",
   "Once". A tap opens that line's choices **in the panel's own place**, under a heading that is
   also the way back, and they hand the panel back to the day as soon as there is nothing more to
   choose (DUE-20, RPT-22). Beside a line holding something, a **×** takes it away without opening
@@ -117,21 +117,23 @@ puts a task in front of you on the right day instead of in a long list of everyt
 
 ## The hour
 
-- **DUE-19** A task that is due on a day can also be due **at an hour** on it — "Today at 9:00 AM".
+- **DUE-19** A task that is due on a day can also be due **at an hour** on it — "Today at 09:00".
   The hour says when in the day the task is wanted, and is what the app goes by in saying something
   when it comes round ([Reminders](reminders.md)). It reads the same way whichever shape the task
   is: a task that happens once is due at that hour on its date, and a repeating task at that hour on
   whichever day its rule gives it, so a daily task set to nine is due at nine every morning. It is
   spelled out wherever the day is — on the schedule button (DUE-8) and under the row (DUE-5) — and
-  never on its own, an hour with no day saying nothing about when.
+  never on its own, an hour with no day saying nothing about when. It is written as a **twenty-four
+  hour** clock throughout — "09:00", "18:30", midnight "00:00" — so an hour says which hour of the
+  day it is without an AM or a PM after it, the face it is picked off included (DUE-24).
 - **DUE-20** The hour is set from the schedule panel's **Time** line (DUE-23), which opens over the
-  day: three hours at a click — **Morning** (9:00 AM), **Midday** (12:00 PM) and **Evening**
-  (6:00 PM) — a clock field for any other, and **Remove time**. Unlike a day, choosing an hour
-  **does not close the panel**: it hands it back to the day, with the hour on its line, since an
-  hour is usually picked in the same breath as the day it falls on. Typing into the clock field
-  stays put until the hour is finished. A change is saved as it is made, the same as a day. Where
-  the hours sit under the day instead of behind a line — the menu's **Select date** (DUE-14) —
-  nothing moves at all.
+  day: three hours at a click — **Morning** (09:00), **Midday** (12:00) and **Evening**
+  (18:00) — a **clock face** for any other (DUE-24), and **Remove time**. Unlike a day, choosing
+  an hour **does not close the panel**: a quick hour, which leaves nothing more to say, hands it
+  back to the day with the hour on its line, since an hour is usually picked in the same breath as
+  the day it falls on. The face stays where it is for as long as the hand is being moved round it.
+  A change is saved as it is made, the same as a day. Where the hours sit under the day instead of
+  behind a line — the menu's **Select date** (DUE-14) — nothing moves at all.
 - **DUE-21** An hour needs a **day to fall on**, since an hour on no day is due at no moment at all.
   Until the task has one — a date, or a repeat rule, which gives it days of its own — the Time line
   reads "Pick a day first" and will not open, the day being a click away above it. It follows that the hour
@@ -140,6 +142,27 @@ puts a task in front of you on the right day instead of in a long list of everyt
   task repeat keeps the hour, the rule going on to give it days.
 - **DUE-22** Setting, moving or clearing the hour changes the hour and nothing else — it never gives
   a task a day it did not have, and never moves the day it has.
+- **DUE-24** Any hour beyond the quick ones is picked off a **clock face**, the app's own rather
+  than the browser's. It is a **twenty-four hour** clock, as the hours are written everywhere else
+  in the app: the whole day is on the face in **two rings** — `00` to `11` on the outer one, `12`
+  to `23` on the inner, so a ring in is twelve hours on and the same angle stands for a morning
+  hour and an evening one. The hour picked is the hour of the day, with no half of the day left to
+  say after it. The minutes follow on the same face once the hour is said, so setting an hour is
+  picking the hour, then the minutes. The readout above shows the two halves of the hour —
+  `09:45` — each of which puts the face back on its own half, so an hour set a moment ago is
+  changed without starting again. The number the hand rests on is filled, as the chosen day is in
+  the calendar (DUE-15), and the hand reaches as far as that number's ring.
+  - A **click on a number** picks it, and picking the hour hands the face to the minutes. The
+    **hand itself can be dragged**, which reads every minute rather than the fives written on the
+    face, so 7:07 is a movement away rather than something to type. Dragging the hand in or out
+    across the hours crosses between the rings, an hour in the morning to the same hour at night.
+  - The face is **one stop** for Tab, on the number the hand rests on. The arrow keys move the
+    hand an hour or a minute at a time and come round the **day** rather than round the face, so
+    an hour on from `11` is noon, a ring in at the top, and an hour on from `23` is midnight.
+    Enter picks the number reached.
+  - Until the task has an hour the face stands **empty**: the readout reads `--`, no hand is drawn
+    and no number is filled, and the minutes wait for an hour to hang on. The keys start out on
+    the **hour coming**, that being the likeliest hour to want; resting there sets nothing.
 
 ## Overdue
 
@@ -167,7 +190,7 @@ puts a task in front of you on the right day instead of in a long list of everyt
   wherever the Date row is drawn (DUE-14) and the calendar's own days (DUE-15) — which is where it is
   said, the panel carrying no note of its own above the choices.
   Under the button a repeating task spells out its rule, not its date. An hour (DUE-19) is read with
-  whichever of the two is said — "Daily · Today at 9:00 AM" on the button, "Daily at 9:00 AM" under
+  whichever of the two is said — "Daily · Today at 09:00" on the button, "Daily at 09:00" under
   the row — since the rule gives the days and the hour is the same on each of them.
 - **DUE-18** A day picked for a repeating task is the day its rule **starts** on. The rule is
   untouched — a Monday task started on a Thursday is still a Monday task — so the task is due on the
@@ -187,10 +210,12 @@ puts a task in front of you on the right day instead of in a long list of everyt
 choices and calendar), `DueTimeChoices.tsx` (the hours), `PanelRow.tsx` and `PanelBack.tsx` (a line
 and the way back out of what it opens), `PickerPanel.tsx` (the aside or the sheet it all sits in),
 `DateCalendar.tsx` and `src/app/calendarMonth.ts` (the month calendar and the days it
-lays out), `src/app/dateChoices.tsx` (the Date row, shared by the panel, the menu and the woken row's strip), `AddTaskForm.tsx`,
+lays out), `ClockDial.tsx` and `src/app/clockDial.ts` (the clock face, which ring and
+angle each hour sits at on it, and the hour picked off it), `src/app/dateChoices.tsx` (the Date row, shared by the panel, the menu and the woken row's strip), `AddTaskForm.tsx`,
 `TaskItem.tsx`, `ContextMenu.tsx` (a row of icons).
 **Tested in:** `src/core/day.test.ts`, `src/core/due.test.ts`, `src/core/task.test.ts`,
 `src/app/dueLabels.test.ts`, `src/app/calendarMonth.test.ts`, `src/app/useTasks.test.ts` (the day
 picked), `src/app/components/SchedulePicker.test.tsx` (the day, the hour and the rule),
-`DateCalendar.test.tsx`, `AddTaskForm.test.tsx`, `TaskItem.test.tsx` (the Date row),
+`DateCalendar.test.tsx`, `src/app/clockDial.test.ts` and `ClockDial.test.tsx` (the face and the
+hour picked off it), `AddTaskForm.test.tsx`, `TaskItem.test.tsx` (the Date row),
 `TaskList.test.tsx` (the Overdue run).

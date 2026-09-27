@@ -71,24 +71,33 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-63** What a task carries is **one row of icons** in the sheet (UI-48) — and the same row in
   the add sheet (UI-54): the schedule, the list, the time, the tags, urgent and the reward, each
   tinted when it holds something, in that order. A line each of name and value would be most of a
-  phone's screen before the checklist was reached, so the names go and **what is set is spelled
-  out in one line under them** — "Tomorrow at 9:00 AM · Work · 20m/1h · home · +5" — in the icons'
-  own order, leaving out what is not set. An icon says nothing by itself the first time it is met
-  and a tooltip never reaches a thumb, so an **i** at the end of the row **names every icon**
-  under it for as long as it is left on. Nothing else about the task moves: the title, the
-  checklist, the description, Duplicate and Delete are where they were.
+  phone's screen before the checklist was reached, so the names go and **what is set is spelled out
+  under the icon it belongs to**: `Tomorrow` under the calendar with the hour `09:00` on the line
+  below it, `20m/1h` under the clock, `Urgent` under the flag, `+5` under the star. Nobody has to
+  count along a line to see which value came from which icon, and what is not set says nothing.
+  A column is a seventh of a phone wide, though, which is enough for a day, an hour or a reward but
+  not for **what a person names themselves**: a list's name and a row of tags are as long as they
+  were typed. Those two are **spelled out nowhere in the row** — the tinted icon says the task has
+  one, and the panel a tap opens says which, which is worth more than words wrapped three deep under
+  an icon or trailed along a line beneath them all. An icon says nothing by itself the first time it
+  is met and a tooltip never reaches a thumb, so an **i** at the end of the row **names every icon**,
+  above whatever that icon holds, for as long as it is left on. Nothing else about the task moves:
+  the title, the checklist, the description, Duplicate and Delete are where they were.
 - **UI-64** A picker's panel opened from **inside a sheet** is a **sheet of its own** over the one
   it came from, rather than an aside hanging off its icon: a sheet is only as tall as what it
   holds, so an aside dropped inside it would be cut off at the sheet's edge with no room to scroll
   to the rest. It closes on its backdrop, on Escape, or pulled down (UI-48), leaving the sheet it
   came from open. On a row, where there is a page behind it, the same panel is the aside it always
   was (UI-40). Which of the two it is, is not the caller's to say: it is where the control ended up.
-- **UI-54** Every page with the add box also has a **Plus** button in the bottom-right corner — above
-  the bar on a phone (UI-4), and in the same corner on a wide screen. A tap opens a **sheet** for
+- **UI-54** The one-line add box is a **wide screen's**: on a phone the line it sits on is given back
+  to the list, and a task is added from the **Plus** instead. Every page with the box also has a Plus
+  button in the bottom-right corner — above the bar on a phone (UI-4), and in the same corner on a
+  wide screen. A tap opens a **sheet** for
   adding a task with the same fields the edit sheet has (TASK-66), so more than a title can be set
   before it is saved. On a wide screen the sheet — like a habit's (HAB-25) — opens as a **dialog in
   the middle of the window**, no wider than its fields need, rather than along the whole bottom of
-  the screen. The one-line box at the top still adds a title on Enter (TASK-4). In the sheet,
+  the screen. On a wide screen the one-line box at the top still adds a title on Enter (TASK-4);
+  on a phone the sheet is the only way in. In the sheet,
   Enter in the title — including the phone keyboard's Done/Return — adds the same way (TASK-66).
   Closing the sheet without adding keeps nothing. Procrastination mode is started from **Modes**
   (JUST-1, MODE-3), not from beside the Plus. Its actions are the same row of icons (UI-63).
@@ -117,7 +126,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   box shrink a touch — rather than the browser's grey flash. Buttons that are a page's only way on —
   Settings' **Sign out**, **Export** and **Import**, the **Lists** and **Trash** at the foot of Tasks
   (UI-34), **Add** beside a new list or tag — are a thumb's height.
-- **UI-62** On a phone every box that takes typing — the add box, a title, a checklist item, a tag, a
+- **UI-62** On a phone every box that takes typing — the add sheet's title, a task's title, a checklist item, a tag, a
   list's name, a redemption, the time and the reward — is set in type at least 16 pixels high, so the
   phone does not zoom the page in when one is tapped. On a wide screen they stay compact with the
   rest of their panel (UI-40).
@@ -259,8 +268,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   description and the tags — **set ones only**, and **not as buttons**: a tap on them is a tap on
   the row and opens the sheet (UI-48). Empty ones stay off, so a task with nothing set stays the
   box and the title alone. An overdue date is red, as on a wide screen (DUE-10). The words those
-  icons stand for still come up under the title only with **Show task details** (UI-42), or inside
-  the sheet.
+  icons stand for are not spelled out on the row at all: the words are inside the sheet (UI-42, UI-48).
 - **UI-27** The controls **line up down the list**: each is its icon alone, in a slot of its own
   that sits in the same place on every row, whatever the rows beside it hold — and whether or not
   the control is there, an unset one leaving its slot empty at rest (UI-18). A slot is **no wider than the button in it** — an icon with no words
@@ -270,14 +278,15 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   from a strip on the woken row (UI-53), and so is urgent (TASK-63). On a phone the rest row
   has no control slots; the clock, the reward, the list, the tags and urgent are set from the sheet a tap opens
   (UI-48, TIME-10, RWD-8, LST-23, TAG-16, TASK-63), and set ones still read at a glance as marks on the row
-  (UI-50) — urgent being the exception: it has no resting mark, only its label in details and the
+  (UI-50) — urgent being the exception: it has no resting mark, only its label in the sheet and the
   amber bar (TASK-62, TASK-64). What a control holds — the due date
   (DUE-5) or the repeat rule (RPT-17), the checklist count (CHK-5), the time (TIME-12), the reward (RWD-7) — is not put
   beside its icon but on a **line of details under the task's line**, in muted small text, each
   detail **under its own button**, centred on it and free to run wider than it. The task's tags and
   urgent, having no button at rest, are on that line under the title, starting where it does (TAG-12,
   TASK-62). The line belongs
-  to the **woken row** only, unless **Show task details** is on (UI-42): at rest the tinted icons say
+  to the **woken row** only, unless **Show task details** is on (UI-42) — and on a phone to no row at
+  all: at rest the tinted icons say
   what is set, so every resting row is the same single line high, dated or not. The schedule's detail, the first,
   ends under its button instead of centring on it and runs left over the title's column, the tags
   there giving up room to it, so however long a rule is it never reaches the details beside it. A woken row with nothing to
@@ -353,8 +362,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 ## The View settings button
 
-- **UI-41** Every view that lists tasks has a **View settings** button beside the add box: a square as tall
-  as the box, marked with sliders, opening a panel of how the tasks are shown. The options hold for
+- **UI-41** On a wide screen, every view that lists tasks has a **View settings** button beside the add box: a square as tall
+  as the box, marked with sliders, opening a panel of how the tasks are shown. A phone has neither the
+  box (UI-54) nor this button: what it holds is a wide screen's (UI-42). The options hold for
   **every** such view at once — Today, Week, Month, Tasks, the Inbox, each list and each tag — and
   are kept on this device (STORE-30). Each option is a **switch**: the whole line is the switch —
   an icon, its name, a line under the name saying what it does, and the track at the end, blue when
@@ -365,12 +375,15 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-42** **Show task details** puts the line of details (UI-27) under **every row**, at rest as
   well as woken: the date or the repeat rule, the checklist count, the time, the reward and the tags. Nothing
   else changes — a row's checklist and description still come up only when it is clicked into
-  (UI-17), and on a phone they come up in the sheet (UI-48), with the time and the reward named
-  there (UI-6). Off, which is how the app starts, the details are the woken row's alone — or, on a
-  phone, the sheet's.
+  (UI-17). Off, which is how the app starts, the details are the woken row's alone. It is a **wide
+  screen's** option: a phone's row has no room for a line of words, so it never spells them out
+  whatever is set here. There the tinted marks say what a task carries (UI-50) and the words are in
+  the sheet a tap opens (UI-48, UI-6).
 - **UI-46** **Habits** has a View settings button of the same shape, beside its add box. Its option is how
   the habit cards start — folded or open — and is kept on this device apart from the task views'
-  (HAB-23, STORE-36).
+  (HAB-23, STORE-36). This one **stays on a phone**, a card opening there as it does anywhere: with
+  no box to match it stands on its own at the end of the line above the cards, and is drawn as a
+  **smaller square** than the box would have made it.
 
 ## Everywhere
 
@@ -431,7 +444,7 @@ names them, UI-63), `src/app/sheetDrag.ts` and `src/app/useSheetDrag.ts`
 how high above the bar the Plus and the notices float), `index.html` (the page running under the
 notch and the home indicator), `src/app/components/TaskList.tsx` (the room between rows), `src/app/components/ContextMenu.tsx` (a task's menu), `src/app/components/FloatingPanel.tsx` (a menu or panel floating where the pointer was), `src/app/textOffsetAtPoint.ts` (which character a click landed on), `src/app/components/SideNav.tsx`,
 `src/app/components/BottomNav.tsx` (the phone's bar), `src/app/components/AddTaskForm.tsx` (the one-line
-add box and the Plus), `src/app/components/AddTaskSheet.tsx` (the detailed add sheet), `src/app/letterShortcut.ts`
+add box, the View button beside it and the Plus), `src/app/components/AddTaskSheet.tsx` (the detailed add sheet), `src/app/letterShortcut.ts`
 and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet, `R` opens Rewards, `P` toggles
 Procrastination mode), `src/app/components/MorePage.tsx` (More's list of
 links), `src/app/components/ModesPage.tsx` and `ModePage.tsx` (the modes), `src/app/components/ViewMenu.tsx` (the View
@@ -461,7 +474,8 @@ view in the address), `src/app/components/ViewOptionsMenu.test.tsx` (the View pa
 it, and a swipe to complete or delete), `src/app/rowSwipe.test.ts` (how far a swipe must travel),
 `src/app/components/CompletionBox.test.tsx` (a tick landing where it was clicked, taken back before
 it lands, and gone through at once where less motion is asked for),
-`src/app/components/AddTaskForm.test.tsx` (the one-line box, the Plus and the detailed sheet),
+`src/app/components/AddTaskForm.test.tsx` (the one-line box, the Plus, what a phone is left with, and
+the detailed sheet),
 `src/app/letterShortcut.test.ts` and `src/app/useLetterShortcut.test.ts` (`N`, `H`, `R` and `P`),
 `src/app/components/BottomSheet.test.tsx` and `src/app/sheetDrag.test.ts` (closing a sheet by its
 handle, pulled or tapped).

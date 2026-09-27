@@ -14,9 +14,10 @@ function setup() {
     <SheetActions
       label='What "write it up" has'
       actions={[
-        { name: 'Date', detail: 'Tomorrow at 9:00 AM', control: <button type="button">Schedule</button> },
-        { name: 'List', detail: 'Work', control: <button type="button">List</button> },
-        { name: 'Tags', detail: null, control: <button type="button">Tag picker</button> },
+        { name: 'Date', detail: 'Tomorrow 09:00', control: <button type="button">Schedule</button> },
+        { name: 'List', control: <button type="button">List</button> },
+        { name: 'Tags', control: <button type="button">Tag picker</button> },
+        { name: 'Reward', detail: '+5', control: <button type="button">Reward</button> },
       ]}
     />,
   )
@@ -24,6 +25,9 @@ function setup() {
 }
 
 const names = () => screen.getByRole('button', { name: 'What each button does' })
+const column = (name: string) => screen.getByRole('button', { name }).parentElement as HTMLElement
+/** What is written under a control, in the order it is read; the controls here are stubs with words of their own. */
+const under = (name: string) => [...column(name).querySelectorAll('span')].map((span) => span.textContent)
 
 describe('SheetActions', () => {
   it('is one row of the task\'s controls, named for a screen reader (UI-63)', () => {
@@ -34,34 +38,39 @@ describe('SheetActions', () => {
       'Schedule',
       'List',
       'Tag picker',
+      'Reward',
       '',
     ])
   })
 
-  it('spells out what is set under the icons, and leaves out what is not (UI-63)', () => {
+  it('spells each value out under the icon it belongs to (UI-63)', () => {
     setup()
 
-    expect(screen.getByText('Tomorrow at 9:00 AM · Work')).toBeDefined()
+    expect(within(column('Schedule')).getByText('Tomorrow 09:00')).toBeDefined()
+    expect(within(column('Reward')).getByText('+5')).toBeDefined()
   })
 
-  it('names every icon while the i is on, and stops when it is off (UI-63)', async () => {
+  it('leaves a control with no value to spell out as its icon alone (UI-63)', () => {
+    setup()
+
+    // A list and a row of tags are as long as they were typed, so the icon says
+    // the task has one and the panel it opens says which.
+    expect(under('List')).toEqual([])
+    expect(under('Tag picker')).toEqual([])
+  })
+
+  it('names every icon while the i is on, above what it holds, and stops when it is off (UI-63)', async () => {
     const user = setup()
 
     expect(screen.queryByText('Date')).toBeNull()
 
     await user.click(names())
     expect(names()).toHaveProperty('ariaPressed', 'true')
-    expect(screen.getByText('Date')).toBeDefined()
+    expect(under('Schedule')).toEqual(['Date', 'Tomorrow 09:00'])
     expect(screen.getByText('Tags')).toBeDefined()
 
     await user.click(names())
     expect(names()).toHaveProperty('ariaPressed', 'false')
     expect(screen.queryByText('Date')).toBeNull()
-  })
-
-  it('says nothing under a row with nothing set', () => {
-    render(<SheetActions label="What it has" actions={[{ name: 'Date', control: <button type="button">Schedule</button> }]} />)
-
-    expect(screen.getByRole('group', { name: 'What it has' }).parentElement?.querySelector('p')).toBeNull()
   })
 })

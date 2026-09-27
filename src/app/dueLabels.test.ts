@@ -44,17 +44,17 @@ describe('describeShortDate', () => {
 })
 
 describe('describeTimeOfDay', () => {
-  it('reads the hour as the clock does, morning and evening apart', () => {
-    expect(describeTimeOfDay('09:00', WED_16)).toBe('9:00 AM')
-    expect(describeTimeOfDay('18:30', WED_16)).toBe('6:30 PM')
-    expect(describeTimeOfDay('00:00', WED_16)).toBe('12:00 AM')
+  it('reads the hour off a twenty-four hour clock, the whole day told apart', () => {
+    expect(describeTimeOfDay('09:00')).toBe('09:00')
+    expect(describeTimeOfDay('18:30')).toBe('18:30')
+    expect(describeTimeOfDay('00:00')).toBe('00:00')
   })
 })
 
 describe('describeDueAt', () => {
   it('reads the hour with the day it falls on', () => {
-    expect(describeDueAt('2026-09-16', '09:00', WED_16)).toBe('Today at 9:00 AM')
-    expect(describeDueAt('2026-09-20', '18:30', WED_16)).toBe('Sep 20 at 6:30 PM')
+    expect(describeDueAt('2026-09-16', '09:00', WED_16)).toBe('Today at 09:00')
+    expect(describeDueAt('2026-09-20', '18:30', WED_16)).toBe('Sep 20 at 18:30')
   })
 
   it('is the day alone where the task is due at no hour', () => {

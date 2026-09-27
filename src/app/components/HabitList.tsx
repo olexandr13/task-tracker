@@ -58,6 +58,15 @@ const LEGEND: readonly HabitDayState[] = ['done', 'missed', 'untracked']
 /** How many days a folded card's run shows beside its streak. */
 const GLANCE_DAYS = 7
 
+/**
+ * The width the streak keeps on a folded card, whatever it says. "1 day" and
+ * "12 days" are not the same width, so without it every card's week of squares
+ * would start somewhere else and the rows would not line up down the page. Wide
+ * enough for a year of days; a longer streak than that pushes its own week
+ * along rather than being cut off.
+ */
+const GLANCE_STREAK_WIDTH = 'min-w-[5.25rem]'
+
 /** How far back each rate looks, in days, today included, and what it is called. */
 const RATE_WINDOWS: readonly (readonly [days: number, label: string])[] = [
   [7, 'Last 7 days'],
@@ -470,7 +479,9 @@ function Glance({ habit, streak, now }: { habit: Task; streak: number; now: Date
 
   return (
     <div className="flex items-center gap-3">
-      <span className="flex items-center gap-1 text-sm font-medium whitespace-nowrap tabular-nums text-neutral-700 dark:text-neutral-300">
+      <span
+        className={`flex items-center gap-1 text-sm font-medium whitespace-nowrap tabular-nums text-neutral-700 dark:text-neutral-300 ${GLANCE_STREAK_WIDTH}`}
+      >
         <Flame streak={streak} />
         <span className="sr-only">Current streak: </span>
         {describeDays(streak)}

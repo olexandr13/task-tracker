@@ -5,7 +5,11 @@ import { InfoIcon } from './InfoIcon'
 export interface SheetAction {
   /** What the control sets, in a word: the name its icon is given when asked for. */
   name: string
-  /** What it holds now, spelled out under the row; null for nothing set. */
+  /**
+   * What it holds now, spelled out under its icon; nothing where there is nothing
+   * set, and nothing where the value is as long as something the user names — a
+   * list, a row of tags — which no column of this row has the width for.
+   */
   detail?: string | null
   /** The control itself, drawn as its icon alone. */
   control: ReactNode
@@ -21,8 +25,15 @@ interface SheetActionsProps {
  * What a task carries, as **one row of icons** rather than a line each: the
  * schedule, the list, the time, the tags, urgent and the reward. Six lines of
  * names and values is most of a phone's screen before the checklist is reached,
- * so the names go and what is set is spelled out in a line under them instead —
- * everything still readable at a glance, in a sixth of the height.
+ * so the names go and what is set is spelled out **under the icon it belongs to**
+ * — everything readable at a glance, in a fraction of the height, with nothing to
+ * trace back along a line to the icon it came from.
+ *
+ * A column is a seventh of a phone wide, which is enough for a day, an hour, a
+ * reward, and not for what a person names themselves. A list and a row of tags
+ * are therefore **not spelled out at all**: the tinted icon says the task has one,
+ * and the panel a tap opens says which — worth more than a line of text wrapped
+ * three deep under a row of icons.
  *
  * An icon says nothing by itself the first time it is met, and a tooltip never
  * reaches a thumb, so the **i** at the end of the row names every icon under it
@@ -30,42 +41,38 @@ interface SheetActionsProps {
  */
 export function SheetActions({ actions, label }: SheetActionsProps) {
   const [named, setNamed] = useState(false)
-  const details = actions.map((action) => action.detail).filter((detail) => detail !== null && detail !== undefined)
 
   return (
-    <div className="flex flex-col gap-1 px-2 py-2 md:gap-0.5">
-      <div role="group" aria-label={label} className="flex items-start">
-        {actions.map((action) => (
-          <div key={action.name} className={sheetIconAction}>
-            {action.control}
-            {named && (
-              <span aria-hidden="true" className="max-w-full truncate text-[10px] leading-3 text-neutral-400 dark:text-neutral-500">
-                {action.name}
-              </span>
-            )}
-          </div>
-        ))}
-
-        {/* Last, past the controls, since it changes nothing about the task. */}
-        <div className={sheetIconAction}>
-          <button
-            type="button"
-            onClick={() => { setNamed(!named) }}
-            aria-pressed={named}
-            aria-label="What each button does"
-            title="What each button does"
-            className={named ? `${rowControlIcon} ${controlOn}` : `${rowControlIcon} ${controlOff}`}
-          >
-            <InfoIcon />
-          </button>
+    <div role="group" aria-label={label} className="flex items-start px-2 py-2">
+      {actions.map((action) => (
+        <div key={action.name} className={sheetIconAction}>
+          {action.control}
+          {named && (
+            <span aria-hidden="true" className="max-w-full truncate text-[10px] leading-3 text-neutral-400 dark:text-neutral-500">
+              {action.name}
+            </span>
+          )}
+          {action.detail !== null && action.detail !== undefined && (
+            <span className="max-w-full text-center text-[11px] leading-tight break-words text-neutral-500 dark:text-neutral-400">
+              {action.detail}
+            </span>
+          )}
         </div>
-      </div>
+      ))}
 
-      {details.length > 0 && (
-        <p className="px-1 text-xs text-neutral-500 md:text-[11px] dark:text-neutral-400">
-          {details.join(' · ')}
-        </p>
-      )}
+      {/* Last, past the controls, since it changes nothing about the task. */}
+      <div className={sheetIconAction}>
+        <button
+          type="button"
+          onClick={() => { setNamed(!named) }}
+          aria-pressed={named}
+          aria-label="What each button does"
+          title="What each button does"
+          className={named ? `${rowControlIcon} ${controlOn}` : `${rowControlIcon} ${controlOff}`}
+        >
+          <InfoIcon />
+        </button>
+      </div>
     </div>
   )
 }

@@ -84,7 +84,10 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   card's width to itself and **wraps rather than being cut off**. Under it a second line gives the
   **current streak** as a flame and days (`6 days`) and the **last 7 days** as a small square each,
   today on the right, in the grid's shades (HAB-10); a screen reader hears them as `Last 7 days: done
-  on 5 days`. **Tapping the card** — anywhere on it but the box and the ⋮ — unfolds the numbers
+  on 5 days`. The streak keeps the **same width whatever it says**, so every card's week starts in
+  the same place down the page rather than after its own `1 day` or `12 days`; a streak past a
+  year's days pushes its own week along instead of being cut off. **Tapping the card** — anywhere
+  on it but the box and the ⋮ — unfolds the numbers
   (HAB-5 to HAB-8) and the grid (HAB-9) beneath it, and tapping it again folds them away. The
   chevron points down while folded and up while open. The ⋮ and the chevron sit **centred down the
   card**, since they act on the whole habit rather than on the title. Open, the second line goes, as
@@ -95,12 +98,14 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   in the default again when the page is next opened. A screen reader hears the fold as a button
   named for its habit (`Record of "stretch"`), reporting whether it is open.
 - **HAB-23** Habits has a **View** button beside the add box, the same shape as the task views'
-  (UI-41, UI-46). **Show habit details by default** starts each card open, showing its numbers and
+  (UI-41, UI-46) — and the one button of the two that a phone keeps, where it stands alone above the
+  cards (UI-46). **Show habit details by default** starts each card open, showing its numbers and
   grid (HAB-21). Off, every card starts folded. The change is shown at once — every card resets to
   the default — and is kept on this device (STORE-36). Off is how the page starts.
-- **HAB-24** The Habits page has the add box, starting on a **daily** rule, so a habit can be made
-  there. Its hint reads **Add habit**. Enter adds it unless another rule is chosen first. After
-  adding, the box is daily again. The Plus — and pressing **H** from anywhere (UI-56) — opens the
+- **HAB-24** On a wide screen the Habits page has the add box, starting on a **daily** rule, so a habit
+  can be made there. Its hint reads **Add habit**. Enter adds it unless another rule is chosen first. After
+  adding, the box is daily again. A phone has no box (UI-54), and adds a habit from the Plus alone.
+  The Plus — and pressing **H** from anywhere (UI-56) — opens the
   same detailed sheet as elsewhere (TASK-66), also starting daily and named for a habit. From a page
   that is not Habits, **H** opens Habits first, then the sheet. While a warm-up is on, the page says
   at its head how many habits may be taken on yet, and one past that allowance is held back — from

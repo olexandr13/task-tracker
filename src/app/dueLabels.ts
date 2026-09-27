@@ -1,4 +1,4 @@
-import { atLocalTime, offsetDay, startOfLocalDay, toLocalDay, type LocalDay, type LocalTime } from '../core'
+import { offsetDay, startOfLocalDay, toLocalDay, type LocalDay, type LocalTime } from '../core'
 
 /**
  * How a due date reads on screen. The days themselves live in ../core; wording
@@ -37,18 +37,20 @@ export function describeShortDate(day: LocalDay, now: Date): string {
     : new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
 }
 
-/** An hour as the clock reads it here — "9:00 AM" — with no day around it. */
-export function describeTimeOfDay(time: LocalTime, now: Date): string {
-  return new Intl.DateTimeFormat('en', { hour: 'numeric', minute: '2-digit' }).format(
-    atLocalTime(toLocalDay(now), time),
-  )
+/**
+ * An hour as the clock reads it here — "09:00", "18:30" — with no day around it.
+ * The app keeps a twenty-four hour clock throughout, the face it is picked off
+ * included (DUE-24), so an hour says which hour of the day it is on its own.
+ */
+export function describeTimeOfDay(time: LocalTime): string {
+  return time
 }
 
 /**
- * A day with the hour it is due at, where it is due at one: "Today at 9:00 AM".
+ * A day with the hour it is due at, where it is due at one: "Today at 09:00".
  * Without an hour it is the day alone, which is what most tasks have.
  */
 export function describeDueAt(day: LocalDay, time: LocalTime | null, now: Date): string {
   const date = describeDueDate(day, now)
-  return time === null ? date : `${date} at ${describeTimeOfDay(time, now)}`
+  return time === null ? date : `${date} at ${describeTimeOfDay(time)}`
 }

@@ -255,10 +255,11 @@ export function TaskItem({
   // icons say what is set, so every resting row is one line high. A repeating task's
   // day is its rule's, and the rule is what is spelled out, so the date is a one-off's
   // alone here.
-  // On a phone the sheet holds the details and the action buttons; the rest row still
-  // shows tinted marks for what is set (UI-50), and spells the words out under the
-  // title only when the view asks for details on every row.
-  const detailed = phone ? showDetails : isActive || showDetails
+  // On a phone there is no detailed row at all: the sheet a tap opens holds the words,
+  // the action buttons and the rest (UI-48), and the resting row says what is set with
+  // tinted marks alone (UI-50). Spelling them out there would need a line the phone has
+  // no room for, so the view's option is a wide screen's (UI-42) and is not asked here.
+  const detailed = phone ? false : isActive || showDetails
   const day = dueDay(task, now)
   const scheduled = task.repeat !== null || day !== null
   const timed = task.timeGoal !== null || spentSeconds > 0 || timerRunning
@@ -287,7 +288,7 @@ export function TaskItem({
   // on every day the task falls on — "Today at 8:14 PM", "Daily at 9:00 AM".
   const scheduleLabel =
     scheduleDay !== null && task.dueTime !== null
-      ? `${scheduleDay} at ${describeTimeOfDay(task.dueTime, now)}`
+      ? `${scheduleDay} at ${describeTimeOfDay(task.dueTime)}`
       : scheduleDay
   const timeProgress = describeTimeProgress(spent, task.timeGoal)
   const timeLabel = (separator: string) =>
