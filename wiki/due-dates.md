@@ -131,7 +131,9 @@ puts a task in front of you on the right day instead of in a long list of everyt
   (18:00) — a **clock face** for any other (DUE-24), and **Remove time**. Unlike a day, choosing
   an hour **does not close the panel**: a quick hour, which leaves nothing more to say, hands it
   back to the day with the hour on its line, since an hour is usually picked in the same breath as
-  the day it falls on. The face stays where it is for as long as the hand is being moved round it.
+  the day it falls on. The face stays where it is for as long as the hand is being moved round it —
+  an hour that has already gone by included, which makes the task overdue and moves its row
+  (DUE-10) without taking the face, or a phone's sheet, with it (TASK-68).
   A change is saved as it is made, the same as a day. Where the hours sit under the day instead of
   behind a line — the menu's **Select date** (DUE-14) — nothing moves at all.
 - **DUE-21** An hour needs a **day to fall on**, since an hour on no day is due at no moment at all.
