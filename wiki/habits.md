@@ -97,11 +97,13 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   Each card folds on its own, so opening one never moves one being reached for, and a card starts
   in the default again when the page is next opened. A screen reader hears the fold as a button
   named for its habit (`Record of "stretch"`), reporting whether it is open.
-- **HAB-23** Habits has a **View** button beside the add box, the same shape as the task views'
-  (UI-41, UI-46) — and the one button of the two that a phone keeps, where it is at the foot of the
-  cards instead, named in words (UI-46). **Show habit details by default** starts each card open,
-  showing its numbers and grid (HAB-21). Off, every card starts folded. The change is shown at once — every card resets to
-  the default — and is kept on this device (STORE-36). Off is how the page starts.
+- **HAB-23** How the cards start is set on **Settings**, on a **Habits** card of its own (UI-35):
+  one switch, **Show habit details by default**, its name alone with no line under it saying what
+  it does. On, each card starts open, showing its numbers and grid (HAB-21); off, every card starts
+  folded, which is how it begins. The choice is kept on this device (STORE-36), and Habits is drawn
+  to it when next opened, every card in the default again; a card opened or folded by hand does not
+  outlive a change of the switch. Habits itself has no View button, on a wide screen or a phone:
+  the add box stands alone (HAB-24), and nothing is at the foot of the cards.
 - **HAB-24** On a wide screen the Habits page has the add box, starting on a **daily** rule, so a habit
   can be made there. Its hint reads **Add habit**. Enter adds it unless another rule is chosen first. After
   adding, the box is daily again. A phone has no box (UI-54), and adds a habit from the Plus alone.
@@ -155,12 +157,12 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 `src/app/habitTones.ts` (the shades), `src/app/components/FlameIcon.tsx`, `src/app/useTasks.ts`
 (`setHabitDay`, and `changeRepeat` putting a task taken on at the end), `src/app/components/AddTaskForm.tsx` (the add box), `src/app/components/AddTaskSheet.tsx` (the detailed
 sheet, starting daily), `src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`H` opens it),
-`src/app/components/HabitViewOptionsMenu.tsx` and `src/app/useDeviceSetting.ts`
-(the View button and whether cards start folded), `src/core/order.ts` (`moveTask`, the order itself),
+`src/app/components/HabitsCard.tsx` and `src/app/useDeviceSetting.ts`
+(the switch on Settings, and keeping whether cards start folded on this device), `src/core/order.ts` (`moveTask`, the order itself),
 `src/app/useSortableTask.ts`, `src/app/components/SortableTasks.tsx` and
 `src/app/components/TaskDragAndDrop.tsx` (picking a card up and dropping it, shared with the rows),
 `src/app/components/GripIcon.tsx` and `src/app/rowControls.ts` (`dragGrip`).
 **Tested in:** `src/core/habit.test.ts`, `src/core/task.test.ts`, `src/app/useTasks.test.ts`,
-`src/app/components/HabitList.test.tsx`, `src/app/components/HabitViewOptionsMenu.test.tsx`,
+`src/app/components/HabitList.test.tsx`, `src/app/components/HabitsCard.test.tsx`,
 `src/app/components/AddTaskForm.test.tsx`, `src/app/letterShortcut.test.ts` and
 `src/app/useLetterShortcut.test.ts` (`H` opens the sheet).
