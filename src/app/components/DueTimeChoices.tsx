@@ -1,7 +1,7 @@
 import { useId } from 'react'
 import type { LocalTime } from '../../core'
 import { describeTimeOfDay } from '../dueLabels'
-import { panelHeading } from '../panelControls'
+import { panelChip as chip, panelHeading } from '../panelControls'
 import { ClockDial } from './ClockDial'
 
 /** The hours offered at a click, being the ones most days are shaped around. */
@@ -10,13 +10,6 @@ const QUICK_TIMES: readonly { readonly time: LocalTime; readonly label: string }
   { time: '12:00', label: 'Midday' },
   { time: '18:00', label: 'Evening' },
 ]
-
-/**
- * A quick hour. Filled rather than bare, so on a phone — where nothing hovers —
- * it still reads as a button and not as a label.
- */
-const chip =
-  'grid h-10 min-w-0 place-items-center rounded-xl bg-neutral-100 px-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-200 hover:text-neutral-900 md:h-7 md:rounded-lg md:text-xs dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:text-neutral-100'
 
 const chipOn = 'bg-blue-600/10 text-blue-600 hover:bg-blue-600/20 dark:bg-blue-400/10 dark:text-blue-400'
 
