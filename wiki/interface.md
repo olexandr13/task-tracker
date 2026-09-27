@@ -185,8 +185,15 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-36** The view you are on is **in the address** — `#/week`, `#/habits`, `#/inbox`,
   `#/rewards/wishlist`, `#/list/{id}`, `#/tag/work` — so reloading the page
   keeps you on it, and a bookmark or a link opens on it. An address naming no view opens on Today.
-- **UI-37** Each switch of view is a step in the browser's history: **back and forward** move
-  between the views you went through.
+- **UI-37** **Back goes one level up**, not to the view before. The views make a tree: at the top
+  the bar's tabs — the period views, Tasks, Habits, Rewards, More and Settings; under Tasks the
+  Lists page and the Trash (UI-34), and under Lists the Inbox and each list; under Rewards its four
+  pages (RWD-19); under More Tags and Modes (UI-45), under Tags each tag's tasks, and under Modes
+  each mode's page (MODE-7). So from a mode's page back goes to Modes, then to More; from a list to
+  Lists, then to Tasks; and from a tab back **leaves the app**, as it leaves any other. It is the
+  same wherever you came from — a phone's back button, the browser's, or a keyboard's — and the
+  same after a reload or from a link: nothing is kept of the views you went through, so back never
+  retraces them, and the history does not pile up as you move around.
 - **UI-43** The **Tasks** tab has a menu of its own, opened as the period tab's is (UI-33): held
   down, or tapped again while Tasks is on screen, and closed by a tap on Tasks while open. It holds
   what the sidebar has in its place, laid out as the sidebar lays it out (UI-30) — **Lists**, with
@@ -215,6 +222,11 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   dimming, on Escape, on a tap on the bar, and on choosing something (UI-9). The items are the
   thumb-sized ones every phone menu has (UI-49). A task's menu is unchanged: it still opens at the
   pointer (UI-31).
+- **UI-68** While a sheet (UI-48, UI-54) or a tab's panel (UI-66) is over the page, **the page does
+  not scroll**; the moment the last of them is gone, it scrolls again. This holds however they were
+  stacked and in whatever order they closed — a picker's sheet over a task's sheet (UI-64), a
+  sheet and a panel at once, all of them closing in one go — so the page is never left stuck until
+  a reload. The page is held once, by a count of what is over it, not once per sheet.
 - **UI-45** The bar has no entry for the tags or the modes, and the sidebar none for the tags:
   they are under **More**, marked with three dots; the sidebar lists the modes itself (MODE-7).
   **A tap opens More's page** — three links, **Lists**, **Tags** and **Modes**, each with its icon, large enough
@@ -450,18 +462,18 @@ long press), `src/app/useRowSwipe.ts` and `src/app/rowSwipe.ts` (a phone's swipe
 delete), `src/app/components/SettingsList.tsx` (and the version on it, from `package.json` via
 `vite.config.ts`), `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it),
 `ThemeCard.tsx` (the theme on it), `HabitsCard.tsx` (the habits switch on it, HAB-23), `src/app/theme.ts` and `src/app/useTheme.ts` (the theme worn by the page),
-`index.html` (the theme put on before the page is first drawn), `src/app/view.ts`, `src/app/useView.ts` (the view kept in the address), `src/app/viewIcons.ts` (each
+`index.html` (the theme put on before the page is first drawn), `src/app/view.ts` (the views, and which is above which), `src/app/useView.ts` (the view kept in the address, and back climbing a level), `src/app/viewIcons.ts` (each
 view's icon), `src/app/components/TickIcon.tsx` (the tick in a box that is ticked off),
 `src/app/rowControls.ts` (the shape and tones a row's controls share — a thumb's square in a
 sheet, UI-59), `src/app/components/CompletionBox.tsx` (the box a task is ticked off in, wherever it
 is: how it is drawn, what it is called, and a tick left to land before the task is really done), `src/app/panelControls.ts` (the size a panel's buttons and lines share — larger on a phone with
 the sheet's pickers), `src/app/components/PanelRow.tsx` and `src/app/components/PanelBack.tsx` (a
-line standing for a group of choices, and the way back out of the ones it opens), `src/styles.css`,
+line standing for a group of choices, and the way back out of the ones it opens), `src/app/usePageLock.ts` (the page held still under a sheet or a panel, UI-68), `src/styles.css`,
 `public/favicon.svg` (the app's icon; the PNGs beside it are the same icon for installing),
 `src/app/components/AppLogo.tsx` (the mark in the sidebar).
 **Tested in:** `src/app/components/SheetActions.test.tsx` (the row of icons and its **i**), `src/app/components/PickerPanel.test.tsx` (the aside and the sheet), `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
 items are large enough for a finger), `src/app/components/MorePage.test.tsx` (More's links), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
-view in the address), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel),
+view in the address, and back going a level up), `src/app/view.test.ts` (which view is above which), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel),
 `src/app/components/SettingsList.test.tsx` (the version on Settings, and the habits switch on it),
 `src/app/components/ThemeCard.test.tsx` (picking a theme, by click and by arrow keys),
 `src/app/theme.test.ts` (the theme on the page and the bar, and `index.html` reading it back), `src/app/components/TaskItem.test.tsx`
@@ -473,4 +485,5 @@ it lands, and gone through at once where less motion is asked for),
 the detailed sheet),
 `src/app/letterShortcut.test.ts` and `src/app/useLetterShortcut.test.ts` (`N`, `H`, `R` and `P`),
 `src/app/components/BottomSheet.test.tsx` and `src/app/sheetDrag.test.ts` (closing a sheet by its
-handle, pulled or tapped).
+handle, pulled or tapped), `src/app/usePageLock.test.tsx` (the page scrolling again once every sheet
+and panel is gone, whatever order they closed in).

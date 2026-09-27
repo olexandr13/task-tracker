@@ -2,6 +2,7 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  addTag,
   completeTask,
   createTask,
   dueDay,
@@ -367,6 +368,17 @@ describe('useTasks, changes made in one go', () => {
 
     expect(result.current.tasks).toMatchObject([{ title: 'walk', description: 'round the park' }])
     expect(written.at(-1)?.saved).toMatchObject([{ title: 'walk', description: 'round the park' }])
+  })
+
+  it('renames a tag on every task carrying it, in any case, and on nothing else (TAG-24)', () => {
+    const work = addTag(createTask('email'), 'Work')
+    const home = addTag(createTask('sweep'), 'home')
+    const { result } = setUp([work, home])
+
+    act(() => { result.current.renameTagEverywhere('work', 'office') })
+
+    expect(result.current.tasks.map((task) => task.tags)).toEqual([['office'], ['home']])
+    expect(result.current.tasks[1]).toBe(home)
   })
 
   it('hands back the task a deletion took, even straight after another change', () => {

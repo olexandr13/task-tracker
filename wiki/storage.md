@@ -100,6 +100,8 @@ changes shape.
   like the tasks (STORE-18).
 - **STORE-35** Deleting a tag is two changes — off every task, then every record of that name — and
   the tasks go first, so a tag is never left on a task with no record, to be kept all over again.
+  Renaming one (TAG-24) is the same two changes in the same order: the new name on every task
+  carrying it, then every record of the old name kept under the new one.
 
 ## Warm-up
 

@@ -35,6 +35,14 @@ export const panelIconOff =
 /** The icon already chosen: tinted rather than ticked, there being no room beside it for a mark. */
 export const panelIconOn = `${panelOptionOn} bg-blue-600/10`
 
+/**
+ * A short action offered in a panel — a quick hour, **Remove reward**, **Done**.
+ * Filled rather than bare, so on a phone, where nothing hovers, it still reads
+ * as a button and not as a label. Tone for one that is chosen is added by the caller.
+ */
+export const panelChip =
+  'grid h-10 min-w-0 place-items-center rounded-xl bg-neutral-100 px-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-200 hover:text-neutral-900 md:h-7 md:rounded-lg md:text-xs dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:text-neutral-100'
+
 /** A small square button beside a field, such as a stepper's − and +. */
 export const panelStep =
   'grid size-9 shrink-0 place-items-center rounded-xl text-lg leading-none text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:pointer-events-none disabled:opacity-40 md:size-6 md:rounded-lg md:text-base dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'

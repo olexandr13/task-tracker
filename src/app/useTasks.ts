@@ -25,6 +25,7 @@ import {
   removeTag,
   removeTimeEntry,
   renameSubtask,
+  renameTag,
   renameTask,
   restoreTask,
   rewardChanges,
@@ -367,6 +368,14 @@ export function useTasks(
     [apply],
   )
 
+  /** Renames a tag on every task that carries it, the tasks themselves staying (TAG-24). */
+  const renameTagEverywhere = useCallback(
+    (from: string, to: string) => {
+      apply((current) => renameTag(current, from, to))
+    },
+    [apply],
+  )
+
   /** Files a task under a list, or in no list — the Inbox — with null. */
   const changeList = useCallback(
     (id: TaskId, listId: ListId | null) => {
@@ -497,6 +506,7 @@ export function useTasks(
     tag,
     untag,
     removeTagEverywhere,
+    renameTagEverywhere,
     changeList,
     clearListEverywhere,
     setHabitDay,

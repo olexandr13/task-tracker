@@ -184,6 +184,33 @@ export function isUnder(view: View, menu: View): boolean {
   return false
 }
 
+/**
+ * The view one level above `view`, or null at the top (UI-37). The views make a
+ * tree whose top is the bar's tabs — the periods, Tasks, Habits, Rewards, More
+ * and Settings. Under Tasks are Lists and the Trash, its two buttons (UI-34);
+ * under Lists the Inbox and each list; under Rewards its four pages (RWD-19);
+ * under More Tags and Modes (UI-45), under Tags each tag's tasks, and under
+ * Modes each mode's page (MODE-7). This is what the back button climbs, so a
+ * page is left the way it was reached rather than the way it happened to be
+ * arrived at.
+ */
+export function parentView(view: View): View | null {
+  if (isOneListView(view) || view === 'inbox') return 'lists'
+  if (isTagView(view)) return 'tags'
+  if (view === 'lists' || view === 'trash') return 'tasks'
+  if (view === 'tags' || view === 'modes') return 'more'
+  if ((UNDER_REWARDS as readonly View[]).includes(view)) return 'rewards'
+  if ((UNDER_MODES as readonly View[]).includes(view)) return 'modes'
+  return null
+}
+
+/** The view at the top of `view`'s branch: itself when nothing is above it. */
+export function rootView(view: View): View {
+  let root = view
+  for (let above = parentView(root); above !== null; above = parentView(root)) root = above
+  return root
+}
+
 /** The list one list's view is of. */
 export function viewListId(view: OneListView): ListId {
   return view.slice('list/'.length)

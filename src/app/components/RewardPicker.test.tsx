@@ -163,6 +163,42 @@ describe('RewardPicker', () => {
     expect(typed.onChange).toHaveBeenLastCalledWith(null)
   })
 
+  it('closes on Done from inside, and hands the focus back to the star (RWD-42)', async () => {
+    const { user, onChange } = setup({ initial: 3 })
+
+    await user.click(trigger())
+    await user.click(screen.getByRole('button', { name: 'Done' }))
+
+    expect(panel()).toBeNull()
+    expect(onChange).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(trigger())
+  })
+
+  it('takes the reward away in one tap with Remove, and closes (RWD-42)', async () => {
+    const { user, onChange } = setup({ initial: 10 })
+
+    await user.click(trigger())
+    await user.click(screen.getByRole('button', { name: 'Remove reward' }))
+
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange).toHaveBeenCalledWith(null)
+    expect(trigger()).toHaveProperty('ariaLabel', 'Reward: No reward')
+    expect(panel()).toBeNull()
+    expect(document.activeElement).toBe(trigger())
+  })
+
+  it('offers Remove only while there is a reward to remove (RWD-42)', async () => {
+    const { user } = setup({ initial: 1 })
+
+    await user.click(trigger())
+    expect(screen.queryByRole('button', { name: 'Remove reward' })).not.toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Fewer points' }))
+
+    expect(screen.queryByRole('button', { name: 'Remove reward' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Done' })).toBeDefined()
+  })
+
   it('closes on Escape without changing anything (UI-9, UI-10)', async () => {
     const { user, onChange } = setup({ initial: 3 })
 

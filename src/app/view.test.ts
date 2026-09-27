@@ -1,11 +1,45 @@
 import { describe, expect, it } from 'vitest'
 import { createList, createTask, moveToList, setDueDate, toLocalDay } from '../core'
-import { oneListView, tagView, viewShowingTask } from './view'
+import { oneListView, parentView, rootView, tagView, viewShowingTask } from './view'
 
-/* Which view a task is gone to on. TIME ids refer to wiki/time-goals.md. */
+/* Which view a task is gone to on, and which view is above which. TIME ids refer to
+   wiki/time-goals.md, UI ids to wiki/interface.md. */
 
 const NOW = new Date(2026, 8, 16, 9, 0)
 const TODAY = toLocalDay(NOW)
+
+describe('parentView', () => {
+  it('puts the bar\'s tabs at the top (UI-37, UI-32)', () => {
+    for (const view of ['today', 'week', 'month', 'tasks', 'habits', 'rewards', 'more', 'settings'] as const) {
+      expect(parentView(view)).toBeNull()
+      expect(rootView(view)).toBe(view)
+    }
+  })
+
+  it('puts Lists and the Trash under Tasks, and the Inbox and each list under Lists (UI-34, UI-43)', () => {
+    expect(parentView('lists')).toBe('tasks')
+    expect(parentView('trash')).toBe('tasks')
+    expect(parentView('inbox')).toBe('lists')
+    expect(parentView(oneListView('6f1b2c3d-0f3a-4a1b-9c2e-8d7f6a5b4c3d'))).toBe('lists')
+    expect(rootView(oneListView('6f1b2c3d-0f3a-4a1b-9c2e-8d7f6a5b4c3d'))).toBe('tasks')
+  })
+
+  it('puts the rewards pages under Rewards (RWD-19)', () => {
+    for (const view of ['rewards/history', 'rewards/prizes', 'rewards/wishlist', 'rewards/rules'] as const) {
+      expect(parentView(view)).toBe('rewards')
+    }
+  })
+
+  it('puts Tags and Modes under More, a tag\'s tasks under Tags and a mode\'s page under Modes (UI-45, MODE-7)', () => {
+    expect(parentView('tags')).toBe('more')
+    expect(parentView('modes')).toBe('more')
+    expect(parentView(tagView('work'))).toBe('tags')
+    expect(parentView('modes/procrastination')).toBe('modes')
+    expect(parentView('modes/warm-up')).toBe('modes')
+    expect(rootView(tagView('work'))).toBe('more')
+    expect(rootView('modes/warm-up')).toBe('more')
+  })
+})
 
 describe('viewShowingTask', () => {
   it('stays on the view open when it shows the task (TIME-20)', () => {

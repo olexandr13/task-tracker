@@ -1,6 +1,6 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { isRewardAmount, MAX_REWARD, MIN_REWARD } from '../../core'
-import { panelStep as stepButton } from '../panelControls'
+import { panelChip, panelStep as stepButton } from '../panelControls'
 import { describePoints } from '../rewardLabels'
 import { controlOff, controlOn, rowControlIcon, rowControlLabel } from '../rowControls'
 import { PickerPanel } from './PickerPanel'
@@ -27,6 +27,8 @@ interface RewardPickerProps {
   addLabel?: string
   /** How no points read where the button is named: `Reward: No reward`. */
   noneLabel?: string
+  /** What the panel's button for taking the points away says. */
+  removeLabel?: string
   /** Which edge of the button the panel lines up with: the one nearer the middle of the screen. */
   align?: 'left' | 'right'
 }
@@ -41,6 +43,11 @@ interface RewardPickerProps {
  * as it is made, with nothing to confirm. 0 is none, so stepping down to it or
  * typing it takes the points away. A step up from 0 lands on `startAt` rather
  * than on 1, so a monthly task is not 25 clicks from its reward.
+ *
+ * Under the number, **Remove** takes the points away in one tap — ten of them
+ * are not ten presses of − — and **Done** closes the panel from inside it, for
+ * a hand that has set the number and is looking for the way out rather than
+ * for somewhere beside the panel to click.
  */
 export function RewardPicker({
   reward,
@@ -51,6 +58,7 @@ export function RewardPicker({
   showAmount = false,
   addLabel = 'Add reward',
   noneLabel = 'No reward',
+  removeLabel = 'Remove reward',
   align = 'right',
 }: RewardPickerProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -58,6 +66,7 @@ export function RewardPicker({
   // it until that is a number of points or given up.
   const [typed, setTyped] = useState('')
   const root = useRef<HTMLDivElement>(null)
+  const trigger = useRef<HTMLButtonElement>(null)
 
   const settled = reward ?? 0
   const amount = Number(typed)
@@ -73,6 +82,22 @@ export function RewardPicker({
 
   function close() {
     setIsOpen(false)
+  }
+
+  /**
+   * Closed from inside the panel — Enter, Done, Remove — the focus goes back to
+   * the star it came from rather than being dropped, so the keyboard is not lost
+   * with the panel. A sheet gives it back by itself; the aside does not.
+   */
+  function finish() {
+    close()
+    trigger.current?.focus({ preventScroll: true })
+  }
+
+  function remove() {
+    setTyped('0')
+    onChange(null)
+    finish()
   }
 
   function toggle() {
@@ -106,7 +131,7 @@ export function RewardPicker({
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== 'Enter') return
     event.preventDefault()
-    close()
+    finish()
   }
 
   return (
@@ -121,6 +146,7 @@ export function RewardPicker({
       }}
     >
       <button
+        ref={trigger}
         type="button"
         onClick={toggle}
         aria-haspopup="dialog"
@@ -177,6 +203,17 @@ export function RewardPicker({
               className={stepButton}
             >
               +
+            </button>
+          </div>
+
+          <div className="flex gap-1.5 px-1 pb-0.5 md:gap-1">
+            {reward !== null && (
+              <button type="button" onClick={remove} className={`${panelChip} flex-1`}>
+                {removeLabel}
+              </button>
+            )}
+            <button type="button" onClick={finish} className={`${panelChip} flex-1`}>
+              Done
             </button>
           </div>
         </PickerPanel>
