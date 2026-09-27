@@ -13,10 +13,12 @@ import {
   insertSubtask,
   insertTask,
   isDeleted,
+  isHabit,
   liveTasks,
   logSeconds,
   logTime,
   moveTask,
+  moveToEndOfHabits,
   moveToList,
   purgeExpired,
   removeSubtask,
@@ -272,9 +274,18 @@ export function useTasks(
     [apply],
   )
 
+  /**
+   * Changes a task's rule. A task taken on as a habit joins the habits at the
+   * end (HAB-30), where one added on the page itself lands; a habit whose rule
+   * changes while it stays a habit keeps its place.
+   */
   const changeRepeat = useCallback(
     (id: TaskId, repeat: Repeat | null) => {
-      apply((current) => current.map((task) => (task.id === id ? setRepeat(task, repeat) : task)))
+      apply((current) => {
+        const before = current.find((task) => task.id === id)
+        const next = current.map((task) => (task.id === id ? setRepeat(task, repeat) : task))
+        return before !== undefined && !isHabit(before) ? moveToEndOfHabits(next, id) : next
+      })
     },
     [apply],
   )

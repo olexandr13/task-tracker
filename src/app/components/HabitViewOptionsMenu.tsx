@@ -5,6 +5,8 @@ import { ViewMenu } from './ViewMenu'
 
 interface HabitViewOptionsMenuProps {
   options: HabitViewOptions
+  /** At the foot of the page, which is where a phone keeps it (UI-46). */
+  atFoot?: boolean
   onChange: (options: HabitViewOptions) => void
 }
 
@@ -18,10 +20,12 @@ function isChanged(options: HabitViewOptions): boolean {
 /**
  * The Habits page's View button and the panel that chooses how its cards start.
  * The change is immediate and kept on this device, like the task View options.
+ * On a wide screen it stands beside the add box; on a phone, which has no box,
+ * at the foot of the cards (UI-46).
  */
-export function HabitViewOptionsMenu({ options, onChange }: HabitViewOptionsMenuProps) {
+export function HabitViewOptionsMenu({ options, atFoot = false, onChange }: HabitViewOptionsMenuProps) {
   return (
-    <ViewMenu label="View settings" changed={isChanged(options)}>
+    <ViewMenu label="View settings" changed={isChanged(options)} atFoot={atFoot}>
       <OptionSwitch
         icon={<ChevronIcon />}
         label="Show habit details by default"

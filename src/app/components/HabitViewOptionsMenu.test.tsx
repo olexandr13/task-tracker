@@ -15,6 +15,12 @@ function setup(options: HabitViewOptions = { showDetails: false }, onChange = vi
   return { user, onChange }
 }
 
+function setupAtFoot(options: HabitViewOptions = { showDetails: false }, onChange = vi.fn()) {
+  const user = userEvent.setup()
+  render(<HabitViewOptionsMenu options={options} onChange={onChange} atFoot />)
+  return { user, onChange }
+}
+
 const viewButton = () => screen.getByRole('button', { name: 'View settings' })
 const detailsSwitch = () => screen.getByRole('switch', { name: 'Show habit details by default' })
 
@@ -38,6 +44,17 @@ describe('the Habits View button', () => {
 
     expect(onChange).toHaveBeenCalledWith({ showDetails: true })
     expect(screen.getByRole('dialog', { name: 'View settings' })).toBeDefined()
+  })
+
+  it('names itself in words at the foot of a phone\u2019s page, opening the same panel (UI-46)', async () => {
+    const { user, onChange } = setupAtFoot()
+
+    // The words are on the line, so the button needs no label of its own.
+    expect(viewButton().textContent).toContain('View settings')
+    await user.click(viewButton())
+    await user.click(detailsSwitch())
+
+    expect(onChange).toHaveBeenCalledWith({ showDetails: true })
   })
 
   it('says what the option does (HAB-23)', async () => {

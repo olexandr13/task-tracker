@@ -4,7 +4,7 @@ import { WarmUpIcon } from './WarmUpIcon'
 
 /** A growing thing, not a warning: the warm-up is encouragement, not a telling-off. */
 const banner =
-  'flex items-center gap-2 rounded-xl border border-green-200/90 bg-green-50/90 px-3 py-2.5 dark:border-green-700/40 dark:bg-green-950/25'
+  'flex items-start gap-2 rounded-xl border border-green-200/90 bg-green-50/90 px-3 py-2.5 dark:border-green-700/40 dark:bg-green-950/25'
 
 const title = 'text-sm font-medium text-green-950 dark:text-green-100'
 const hint = 'text-xs text-green-900/70 dark:text-green-200/65'
@@ -25,13 +25,15 @@ interface WarmUpPanelProps {
  * The warm-up at the head of Habits: which day it is on, how much of that day's
  * allowance is taken, the way to read more, and the way out (WARM-6). It sits
  * where habits are added, which is the only place the allowance is ever felt.
+ * The buttons sit under the text rather than beside it, so the sentences have
+ * the full width of the banner to read across.
  */
 export function WarmUpPanel({ progress, onMoreInfo, onEnd }: WarmUpPanelProps) {
   if (progress === null) return null
 
   return (
     <div role="status" className={banner}>
-      <WarmUpIcon />
+      <WarmUpIcon className="mt-0.5 inline-flex size-4 shrink-0 items-center justify-center text-base leading-none" />
 
       <div className="min-w-0 flex-1">
         <p className={title}>
@@ -39,15 +41,15 @@ export function WarmUpPanel({ progress, onMoreInfo, onEnd }: WarmUpPanelProps) {
           <span className="font-normal"> · {describeAllowance(progress)}</span>
         </p>
         <p className={hint}>{describeRemaining(progress)}</p>
-      </div>
 
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-        <button type="button" onClick={onMoreInfo} className={action}>
-          More info
-        </button>
-        <button type="button" onClick={onEnd} className={action}>
-          End warm-up
-        </button>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <button type="button" onClick={onMoreInfo} className={action}>
+            More info
+          </button>
+          <button type="button" onClick={onEnd} className={action}>
+            End warm-up
+          </button>
+        </div>
       </div>
     </div>
   )

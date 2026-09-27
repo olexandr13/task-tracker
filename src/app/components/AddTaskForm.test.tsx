@@ -169,7 +169,7 @@ describe('AddTaskForm on a phone', () => {
     expect(onOpenSheet).toHaveBeenCalledOnce()
   })
 
-  it('leaves a View button standing on its own where the box was (UI-46)', () => {
+  it('leaves out the row the box stood in, button and all (UI-46)', () => {
     render(
       <AddTaskForm
         now={WED_16}
@@ -180,7 +180,7 @@ describe('AddTaskForm on a phone', () => {
       />,
     )
 
-    expect(screen.getByRole('button', { name: 'View settings' })).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'View settings' })).toBeNull()
     expect(screen.queryByRole('textbox', { name: 'Add task' })).toBeNull()
   })
 })

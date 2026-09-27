@@ -5,6 +5,7 @@ import {
   completeTask,
   createTask,
   dueDay,
+  habitTasks,
   isComplete,
   isOverdue,
   logTime,
@@ -293,6 +294,50 @@ describe('useTasks, a day picked for a task (DUE-18)', () => {
     expect(result.current.tasks[0].dueDate).toBeNull()
     expect(result.current.tasks[1].startDay).toBeNull()
     expect(result.current.tasks[1].repeat).toEqual({ kind: 'daily' })
+  })
+})
+
+describe('useTasks, a task taken on as a habit (HAB-30)', () => {
+  const DAILY: Repeat = { kind: 'daily' }
+
+  /** A one-off ahead of two habits, which is where a task written before them sits. */
+  function saved() {
+    const oneOff = { ...createTask('call the bank'), order: 0 }
+    const stretch = { ...createTask('stretch', DAILY), order: 1024 }
+    const read = { ...createTask('read', DAILY), order: 2048 }
+    return { oneOff, stretch, read, tasks: [oneOff, stretch, read] }
+  }
+
+  /** The live habits as the Habits page reads them, in the order of the list. */
+  function habits(tasks: readonly Task[]) {
+    return habitTasks(tasks).map((task) => task.title)
+  }
+
+  it('puts it after the habits already kept, wherever it sat', () => {
+    const { oneOff, tasks } = saved()
+    const { result } = setUp(tasks)
+
+    act(() => { result.current.changeRepeat(oneOff.id, DAILY) })
+
+    expect(habits(result.current.tasks)).toEqual(['stretch', 'read', 'call the bank'])
+  })
+
+  it('leaves a habit where it is when its rule changes and it stays a habit', () => {
+    const { stretch, tasks } = saved()
+    const { result } = setUp(tasks)
+
+    act(() => { result.current.changeRepeat(stretch.id, { kind: 'weekly', weekdays: [0, 1, 2, 3, 4, 5, 6] }) })
+
+    expect(habits(result.current.tasks)).toEqual(['stretch', 'read'])
+  })
+
+  it('leaves the order alone when a task is given a rule that is not a habit’s', () => {
+    const { oneOff, tasks } = saved()
+    const { result } = setUp(tasks)
+
+    act(() => { result.current.changeRepeat(oneOff.id, { kind: 'weekly', weekdays: [1, 3] }) })
+
+    expect(result.current.tasks.map((task) => task.order)).toEqual([0, 1024, 2048])
   })
 })
 

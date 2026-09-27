@@ -17,8 +17,8 @@ interface AddTaskFormProps {
   onOpenSheet: () => void
   /**
    * The View settings button, standing beside the box (UI-41). A phone has no
-   * box, so a button given there stands on its own above the list; one whose
-   * options a phone cannot use is not given there at all.
+   * box and so no row for it: what it keeps of it is at the foot of the page
+   * instead (UI-46).
    */
   viewButton?: ReactNode
   /**
@@ -84,44 +84,42 @@ export function AddTaskForm({
   return (
     <>
       {/* A phone adds from the Plus alone (UI-54): the one-line box is a wide screen's,
-          where there is room for it and for the button beside it. The row is there on a
-          phone only to hold a button that still has something to say there (UI-46). */}
-      {(!phone || viewButton !== null) && (
+          where there is room for it and for the button beside it. With no box there is
+          no row either, so nothing empty is left above the list. */}
+      {!phone && (
         <div className="flex justify-end gap-2">
-          {!phone && (
-            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 focus-within:border-blue-500 dark:border-neutral-700 dark:bg-neutral-900 dark:focus-within:border-blue-500">
-              <span aria-hidden="true" className="shrink-0 text-lg leading-none text-neutral-400 dark:text-neutral-500">
-                +
-              </span>
+          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 focus-within:border-blue-500 dark:border-neutral-700 dark:bg-neutral-900 dark:focus-within:border-blue-500">
+            <span aria-hidden="true" className="shrink-0 text-lg leading-none text-neutral-400 dark:text-neutral-500">
+              +
+            </span>
 
-              <input
-                type="text"
-                value={title}
-                onChange={(event) => { setTitle(event.target.value) }}
-                onKeyDown={handleKeyDown}
-                placeholder={label}
-                aria-label={label}
-                autoComplete="off"
-                enterKeyHint="done"
-                className="min-w-0 flex-1 bg-transparent text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none dark:text-neutral-100 dark:placeholder:text-neutral-500"
-              />
+            <input
+              type="text"
+              value={title}
+              onChange={(event) => { setTitle(event.target.value) }}
+              onKeyDown={handleKeyDown}
+              placeholder={label}
+              aria-label={label}
+              autoComplete="off"
+              enterKeyHint="done"
+              className="min-w-0 flex-1 bg-transparent text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none dark:text-neutral-100 dark:placeholder:text-neutral-500"
+            />
 
-              {/* A rule says which days the task is due, so the button reads the rule with the
-                  first day it comes round on. A day picked is the task's date, or the day its
-                  rule starts on, as it is on a task row (DUE-6). */}
-              <SchedulePicker
-                dueDate={repeat === null || day === null ? day : firstDueDay(repeat, day)}
-                startDay={repeat === null ? null : day}
-                draft={draft}
-                now={now}
-                onChangeDay={handleDayChange}
-                dueTime={time}
-                onChangeTime={setTime}
-                onChangeRepeat={handleRepeatChange}
-                showSummary
-              />
-            </div>
-          )}
+            {/* A rule says which days the task is due, so the button reads the rule with the
+                first day it comes round on. A day picked is the task's date, or the day its
+                rule starts on, as it is on a task row (DUE-6). */}
+            <SchedulePicker
+              dueDate={repeat === null || day === null ? day : firstDueDay(repeat, day)}
+              startDay={repeat === null ? null : day}
+              draft={draft}
+              now={now}
+              onChangeDay={handleDayChange}
+              dueTime={time}
+              onChangeTime={setTime}
+              onChangeRepeat={handleRepeatChange}
+              showSummary
+            />
+          </div>
 
           {viewButton}
         </div>

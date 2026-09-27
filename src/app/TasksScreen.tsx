@@ -67,6 +67,7 @@ import { TrashIcon } from './components/TrashIcon'
 import { TrashList } from './components/TrashList'
 import { UndoToast } from './components/UndoToast'
 import { ViewOptionsMenu } from './components/ViewOptionsMenu'
+import { footLink } from './footControls'
 import { describeEarningTitle } from './rewardLabels'
 import { POINTS_NOT_LOADED, TASKS_NOT_LOADED } from './storageProblem'
 import type { TaskActions } from './taskActions'
@@ -108,10 +109,6 @@ import {
   viewLabel,
   viewShowingTask,
 } from './view'
-
-/** A way on from the foot of Tasks, where a phone's bar has no tab for it. */
-const footLink =
-  'flex min-h-11 items-center gap-2 rounded-lg px-3 text-base text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100 dark:active:bg-neutral-800/60'
 
 interface TasksScreenProps {
   account: Account
@@ -790,16 +787,15 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                 />
 
                 {/* The View button beside the box, as on the task views: the box is for a
-                    new habit, the button is for how the cards below are shown. A phone keeps
-                    the button — a card opening on a phone as it does anywhere (HAB-23) — and
-                    it stands on its own where the box was (UI-46). */}
+                    new habit, the button is for how the cards below are shown. A phone has
+                    no box, so its button is at the foot of the cards instead (UI-46). */}
                 <AddTaskForm
                   now={now}
                   defaultDueDate={null}
                   defaultRepeat={{ kind: 'daily' }}
                   label="Add habit"
                   onOpenSheet={() => { setAdding(true) }}
-                  viewButton={<HabitViewOptionsMenu options={habitViewOptions} onChange={setHabitViewOptions} />}
+                  viewButton={phone ? null : <HabitViewOptionsMenu options={habitViewOptions} onChange={setHabitViewOptions} />}
                   onAdd={(title, repeat, dueDate, dueTime) => {
                     handleAddTask(title, repeat ?? { kind: 'daily' }, dueDate, dueTime, [], null)
                   }}
@@ -819,6 +815,13 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     onRevealed={revealed}
                   />
                 </section>
+
+                {/* Where a phone keeps the View button, a card opening there as it does
+                    anywhere (HAB-23): under the cards it is about, rather than in a row of
+                    its own above them, and its panel opens upwards clear of the bar (UI-46). */}
+                {phone && (
+                  <HabitViewOptionsMenu options={habitViewOptions} onChange={setHabitViewOptions} atFoot />
+                )}
               </>
             ) : (
               <section aria-label="Trash">

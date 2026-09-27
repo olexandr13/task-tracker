@@ -20,10 +20,10 @@
  */
 
 import { InvalidDayError, isLocalDay, offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from './day'
-import { sortByOrder } from './order'
+import { moveTask, sortByOrder } from './order'
 import { periodRange } from './progress'
 import { repeatsEveryDay, type Repeat } from './repeat'
-import { completeTask, isDeleted, startedOn, uncompleteTask, type Task } from './task'
+import { completeTask, isDeleted, startedOn, uncompleteTask, type Task, type TaskId } from './task'
 
 /**
  * Whether a rule would make a habit of whatever carries it — asked of the rule
@@ -40,6 +40,34 @@ export function isHabit(task: Task): boolean {
 /** The habits that are not in the trash, in the order of the list. */
 export function habitTasks(tasks: readonly Task[]): Task[] {
   return sortByOrder(tasks.filter((task) => !isDeleted(task) && isHabit(task)))
+}
+
+/**
+ * Puts a habit after every other habit, where a habit added on the page lands
+ * (HAB-30). A task taken on as a habit is a habit from today, whatever it was
+ * before, so it joins the record below the ones already kept rather than at
+ * whatever place among the tasks it happens to have.
+ *
+ * It moves as a drag moves it (./order), so only its own number changes and it
+ * lands after the last habit rather than at the end of the task list: anything
+ * filed after the habits stays after them.
+ *
+ * A task that is not a habit, is in the trash, is not in the list, or is
+ * already the last habit is left where it is. Returns a new list; the one
+ * passed in is never modified.
+ */
+export function moveToEndOfHabits(tasks: readonly Task[], id: TaskId): Task[] {
+  const moving = tasks.find((task) => task.id === id)
+  if (moving === undefined || isDeleted(moving) || !isHabit(moving)) {
+    return [...tasks]
+  }
+
+  const last = habitTasks(tasks).at(-1)
+  if (last === undefined || last.id === id) {
+    return [...tasks]
+  }
+
+  return moveTask(tasks, id, last.id, 'after')
 }
 
 /**

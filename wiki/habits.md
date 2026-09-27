@@ -98,9 +98,9 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   in the default again when the page is next opened. A screen reader hears the fold as a button
   named for its habit (`Record of "stretch"`), reporting whether it is open.
 - **HAB-23** Habits has a **View** button beside the add box, the same shape as the task views'
-  (UI-41, UI-46) — and the one button of the two that a phone keeps, where it stands alone above the
-  cards (UI-46). **Show habit details by default** starts each card open, showing its numbers and
-  grid (HAB-21). Off, every card starts folded. The change is shown at once — every card resets to
+  (UI-41, UI-46) — and the one button of the two that a phone keeps, where it is at the foot of the
+  cards instead, named in words (UI-46). **Show habit details by default** starts each card open,
+  showing its numbers and grid (HAB-21). Off, every card starts folded. The change is shown at once — every card resets to
   the default — and is kept on this device (STORE-36). Off is how the page starts.
 - **HAB-24** On a wide screen the Habits page has the add box, starting on a **daily** rule, so a habit
   can be made there. Its hint reads **Add habit**. Enter adds it unless another rule is chosen first. After
@@ -138,21 +138,29 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   ticking it off and opening its sheet all still work: a pointer has to move a few pixels, or a
   finger to hold for a moment, before a card is picked up at all (TASK-39), and letting go never
   unfolds the card. The grip is outside the line that folds, so it only ever carries the card.
+- **HAB-30** A habit taken on **joins the habits at the end**, so the page reads in the order they
+  were taken on. One written in the add box or the sheet goes at the end of the task list, as any
+  new task does (TASK-17). A task **given a daily rule**, which is what makes it a habit (HAB-1),
+  moves to just after the last habit instead of keeping the place it had among the tasks (RPT-12).
+  Only the task's own `order` changes (TASK-43), as a drag changes it: a task filed after the
+  habits stays after them, and a habit whose rule changes while it stays a habit — daily swapped
+  for all seven weekdays (HAB-1) — keeps its place.
 
 ---
 
-**Where it lives:** `src/core/habit.ts` (what a habit is, streaks, rates, the weeks, the last days, `setDoneOnDay`),
+**Where it lives:** `src/core/habit.ts` (what a habit is, streaks, rates, the weeks, the last days, `setDoneOnDay`,
+`moveToEndOfHabits`),
 `src/core/task.ts` (`doneDays`, kept in step by `settleHistory`), `src/app/components/HabitList.tsx`
 (the page and its cards, and a timed habit's clock — see [Time goals](time-goals.md)), `src/app/components/HabitGrid.tsx`, `src/app/components/ChevronIcon.tsx`, `src/app/components/MoreVerticalIcon.tsx`, `src/app/components/TaskSheet.tsx` (editing a habit), `src/app/habitLabels.ts` (wording),
 `src/app/habitTones.ts` (the shades), `src/app/components/FlameIcon.tsx`, `src/app/useTasks.ts`
-(`setHabitDay`), `src/app/components/AddTaskForm.tsx` (the add box), `src/app/components/AddTaskSheet.tsx` (the detailed
+(`setHabitDay`, and `changeRepeat` putting a task taken on at the end), `src/app/components/AddTaskForm.tsx` (the add box), `src/app/components/AddTaskSheet.tsx` (the detailed
 sheet, starting daily), `src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`H` opens it),
 `src/app/components/HabitViewOptionsMenu.tsx` and `src/app/useDeviceSetting.ts`
 (the View button and whether cards start folded), `src/core/order.ts` (`moveTask`, the order itself),
 `src/app/useSortableTask.ts`, `src/app/components/SortableTasks.tsx` and
 `src/app/components/TaskDragAndDrop.tsx` (picking a card up and dropping it, shared with the rows),
 `src/app/components/GripIcon.tsx` and `src/app/rowControls.ts` (`dragGrip`).
-**Tested in:** `src/core/habit.test.ts`, `src/core/task.test.ts`,
+**Tested in:** `src/core/habit.test.ts`, `src/core/task.test.ts`, `src/app/useTasks.test.ts`,
 `src/app/components/HabitList.test.tsx`, `src/app/components/HabitViewOptionsMenu.test.tsx`,
 `src/app/components/AddTaskForm.test.tsx`, `src/app/letterShortcut.test.ts` and
 `src/app/useLetterShortcut.test.ts` (`H` opens the sheet).

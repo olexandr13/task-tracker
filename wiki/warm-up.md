@@ -35,9 +35,10 @@ there is never a limit on them.
   anything at all once no warm-up is under way.
 - **WARM-6** **Habits** carries the warm-up at the head of the page, where habits are added and so
   the only place the allowance is ever felt: the day it is on (`Day 3 of 30`), how much of that
-  day's allowance is taken (`2 habits · 3 allowed today`), what that leaves for today, **More
-  info** for the warm-up's own page (MODE-10), and **End warm-up** (WARM-9). Nothing is drawn there
-  while no warm-up is under way.
+  day's allowance is taken (`2 habits · 3 allowed today`), what that leaves for today, and under
+  that text **More info** for the warm-up's own page (MODE-10) and **End warm-up** (WARM-9), the
+  buttons sitting below rather than beside so the sentences read across the full width. Nothing is
+  drawn there while no warm-up is under way.
 - **WARM-11** What today leaves is said **plainly**, an allowance being easy to read as a threat:
   *One more habit can be taken on today*; with nothing left, the rule itself — *No new habit today.
   The warm-up allows one new habit a day, so tomorrow allows one more.*, which on the last day ends

@@ -1,9 +1,27 @@
 import { describe, expect, it } from 'vitest'
-import { habitLastDays, habitRate, habitStats, habitTasks, habitWeeks, isHabit, setDoneOnDay } from './habit'
+import {
+  habitLastDays,
+  habitRate,
+  habitStats,
+  habitTasks,
+  habitWeeks,
+  isHabit,
+  moveToEndOfHabits,
+  setDoneOnDay,
+} from './habit'
 import { InvalidDayError, type LocalDay } from './day'
 import type { Repeat } from './repeat'
-import { appendTask } from './order'
-import { addSubtask, completeTask, createTask, deleteTask, isComplete, setStartDay, type Task } from './task'
+import { appendTask, sortByOrder } from './order'
+import {
+  addSubtask,
+  completeTask,
+  createTask,
+  deleteTask,
+  isComplete,
+  setRepeat,
+  setStartDay,
+  type Task,
+} from './task'
 
 /*
  * HAB ids refer to wiki/habits.md. Local dates on purpose: a habit is kept day by
@@ -42,6 +60,62 @@ describe('habitTasks (HAB-2)', () => {
     const tasks = [first, oneOff, second, trashed].reduce<Task[]>(appendTask, [])
 
     expect(habitTasks([...tasks].reverse()).map((task) => task.title)).toEqual(['stretch', 'read'])
+  })
+})
+
+describe('moveToEndOfHabits (HAB-30)', () => {
+  /** A one-off, two habits and a one-off, in that order, each with a number of its own. */
+  function list(): Task[] {
+    return [
+      createTask('buy milk', null, WED_16),
+      createTask('stretch', DAILY, WED_16),
+      createTask('read', DAILY, WED_16),
+      createTask('call the bank', null, WED_16),
+    ].reduce<Task[]>(appendTask, [])
+  }
+
+  it('puts a habit after every other habit', () => {
+    const tasks = list()
+    const taken = tasks.map((task) => (task.title === 'buy milk' ? setRepeat(task, DAILY, WED_16) : task))
+
+    expect(habitTasks(moveToEndOfHabits(taken, taken[0].id)).map((task) => task.title)).toEqual([
+      'stretch',
+      'read',
+      'buy milk',
+    ])
+  })
+
+  it('leaves it before the tasks filed after the habits', () => {
+    const tasks = list()
+    const taken = tasks.map((task) => (task.title === 'buy milk' ? setRepeat(task, DAILY, WED_16) : task))
+
+    expect(sortByOrder(moveToEndOfHabits(taken, taken[0].id)).map((task) => task.title)).toEqual([
+      'stretch',
+      'read',
+      'buy milk',
+      'call the bank',
+    ])
+  })
+
+  it('leaves the list alone for the last habit, a task that is not a habit, one in the trash and one it does not hold', () => {
+    const tasks = list()
+    const [oneOff, stretch, read] = tasks
+    const trashed = tasks.map((task) => (task.id === read.id ? deleteTask(task, WED_16) : task))
+
+    expect(moveToEndOfHabits(tasks, read.id)).toEqual(tasks)
+    expect(moveToEndOfHabits(tasks, oneOff.id)).toEqual(tasks)
+    expect(moveToEndOfHabits(trashed, read.id)).toEqual(trashed)
+    expect(moveToEndOfHabits([stretch], read.id)).toEqual([stretch])
+  })
+
+  it('never modifies the list it is given', () => {
+    const tasks = list()
+    const taken = tasks.map((task) => (task.title === 'buy milk' ? setRepeat(task, DAILY, WED_16) : task))
+    const orders = taken.map((task) => task.order)
+
+    moveToEndOfHabits(taken, taken[0].id)
+
+    expect(taken.map((task) => task.order)).toEqual(orders)
   })
 })
 
