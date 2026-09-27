@@ -11,6 +11,8 @@ import {
   matchTags,
   normalizeTag,
   removeTag,
+  renameKeptTag,
+  renameTag,
   summarizeTags,
   suggestTags,
   tagsInUse,
@@ -100,6 +102,54 @@ describe('deleteTag', () => {
     const untagged = tagged('home')
 
     expect(deleteTag([untagged], 'work')[0]).toBe(untagged)
+  })
+})
+
+describe('renameTag', () => {
+  it('renames the tag on every task carrying it, in any case and in the trash, where it stood (TAG-24)', () => {
+    const trashed = deleteTask(tagged('work'), NOW)
+    const renamed = renameTag([tagged('Work', 'home'), trashed, tagged('home')], 'work', 'office')
+
+    expect(renamed.map((task) => task.tags)).toEqual([['office', 'home'], ['office'], ['home']])
+    expect(renamed[1].deletedAt).toBe(trashed.deletedAt)
+  })
+
+  it('takes the name as typed, without a # in front, and refuses one a tag cannot have (TAG-3)', () => {
+    expect(renameTag([tagged('work')], 'work', '#office')[0].tags).toEqual(['office'])
+    expect(() => renameTag([tagged('work')], 'work', 'two words')).toThrow(InvalidTagError)
+  })
+
+  it('respells a tag when the new name is the old one in another case (TAG-4)', () => {
+    expect(renameTag([tagged('work', 'home')], 'work', 'Work')[0].tags).toEqual(['Work', 'home'])
+  })
+
+  it('leaves a task carrying both names with the tag once, where the first stood', () => {
+    expect(renameTag([tagged('work', 'home'), tagged('home', 'work')], 'work', 'Home').map((task) => task.tags)).toEqual([
+      ['Home'],
+      ['home'],
+    ])
+  })
+
+  it('leaves a task without the tag as the very same task, so only the tagged ones are saved', () => {
+    const untagged = tagged('home')
+
+    expect(renameTag([untagged], 'work', 'office')[0]).toBe(untagged)
+  })
+})
+
+describe('renameKeptTag', () => {
+  it('keeps the record under the new name, without a # in front (TAG-24)', () => {
+    const kept = createTag('work', NOW)
+    const renamed = renameKeptTag(kept, '#office')
+
+    expect(renamed).toEqual({ ...kept, name: 'office' })
+    expect(kept.name).toBe('work')
+  })
+
+  it('hands back the very same record when the name is unchanged', () => {
+    const kept = createTag('work', NOW)
+
+    expect(renameKeptTag(kept, 'work')).toBe(kept)
   })
 })
 

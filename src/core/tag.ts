@@ -122,6 +122,34 @@ export function deleteTag(tasks: readonly Task[], name: string): Task[] {
   return tasks.map((task) => removeTag(task, name))
 }
 
+/**
+ * Renames a tag on every task carrying it, in the trash too, so restoring one
+ * never brings the old name back (TAG-24). The tag keeps its place among the
+ * task's tags, and nothing else about the task changes. A task carrying both
+ * names — the new one is another tag it has, or a case of the old one — is left
+ * with the tag once, where the first of them stood. A task without the tag is
+ * handed back as it was, so only the ones that carried it are saved.
+ *
+ * Returns a new list; the one passed in is never modified.
+ */
+export function renameTag(tasks: readonly Task[], from: string, to: string): Task[] {
+  const name = normalizeTag(to)
+
+  return tasks.map((task) => {
+    if (!hasTag(task, from)) return task
+
+    const renamed = task.tags.map((tag) => (sameTag(tag, from) ? name : tag))
+    const tags = renamed.filter((tag, index) => renamed.findIndex((other) => sameTag(other, tag)) === index)
+    return { ...task, tags }
+  })
+}
+
+/** The record of a tag, kept under a new name (TAG-24). A `#` typed in front is not part of it. */
+export function renameKeptTag(tag: Tag, name: string): Tag {
+  const renamed = normalizeTag(name)
+  return renamed === tag.name ? tag : { ...tag, name: renamed }
+}
+
 /** Every tag the tasks carry, once each, in alphabetical order. */
 export function tagsInUse(tasks: readonly Task[]): string[] {
   return distinctTags(tasks.flatMap((task) => task.tags))

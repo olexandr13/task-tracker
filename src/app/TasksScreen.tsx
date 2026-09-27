@@ -182,6 +182,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     tag,
     untag,
     removeTagEverywhere,
+    renameTagEverywhere,
     changeList,
     clearListEverywhere,
     setHabitDay,
@@ -487,6 +488,19 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   }
 
   /**
+   * Renaming a tag is two changes, as deleting one is: on every task carrying
+   * it, then its record (TAG-24). The tasks go first for the same reason. A name
+   * another tag has is refused, and the page says so; the old name in another
+   * case is the same tag respelled, which is allowed (TAG-4).
+   */
+  function handleRenameTag(from: string, to: string): boolean {
+    if (tags.some((tag) => sameTag(tag, to) && !sameTag(tag, from))) return false
+
+    renameTagEverywhere(from, to)
+    return savedTags.rename(from, to)
+  }
+
+  /**
    * What a row, a habit card or a task's sheet can do to its task: the rules
    * from useTasks, with completing, deleting and ending a repeat offering their
    * undo, and tags spelled the way they already are.
@@ -775,6 +789,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     tags={summarizeTags(tags, live, now)}
                     onOpen={(name) => { setView(tagView(name)) }}
                     onAdd={handleAddTag}
+                    onRename={handleRenameTag}
                     onDelete={handleDeleteTag}
                   />
                 )}

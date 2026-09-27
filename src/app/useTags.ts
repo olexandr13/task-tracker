@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createTag, isTagSaved, sameTag, unsavedTags, type Tag, type Task } from '../core'
+import { createTag, isTagSaved, normalizeTag, renameKeptTag, sameTag, unsavedTags, type Tag, type Task } from '../core'
 import { changesBetween, hasChanges } from '../storage/recordChanges'
 import type { TagChanges, TagRepository } from '../storage/tagRepository'
 import { ignoreProblems, type ReportProblem } from './storageProblem'
@@ -108,5 +108,25 @@ export function useTags(repository: TagRepository, tasks: readonly Task[] | null
     [apply],
   )
 
-  return { tags, isLoading: status === 'loading', add, remove }
+  /**
+   * Keeps a tag under a new name: every record of the old name, whatever its
+   * case (TAG-24). False, keeping everything as it was, when another tag is
+   * called that already — the old name in another case is not another tag, so
+   * respelling one is allowed. Renaming it on the tasks is the caller's to do
+   * first (`renameTagEverywhere` in useTasks), or the old name would be kept
+   * again for the tasks still carrying it.
+   */
+  const rename = useCallback(
+    (from: string, to: string): boolean => {
+      const renamed = normalizeTag(to)
+      const taken = latest.current.some((tag) => sameTag(tag.name, renamed) && !sameTag(tag.name, from))
+      if (taken) return false
+
+      apply((current) => current.map((tag) => (sameTag(tag.name, from) ? renameKeptTag(tag, to) : tag)))
+      return true
+    },
+    [apply],
+  )
+
+  return { tags, isLoading: status === 'loading', add, remove, rename }
 }

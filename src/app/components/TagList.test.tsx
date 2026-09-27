@@ -9,9 +9,12 @@ import { TagList } from './TagList'
 
 afterEach(cleanup)
 
-function setUp(tags: readonly TagSummary[], { onAdd = vi.fn(() => true), onOpen = vi.fn(), onDelete = vi.fn() } = {}) {
-  render(<TagList tags={tags} onOpen={onOpen} onAdd={onAdd} onDelete={onDelete} />)
-  return { onAdd, onOpen, onDelete }
+function setUp(
+  tags: readonly TagSummary[],
+  { onAdd = vi.fn(() => true), onRename = vi.fn(() => true), onOpen = vi.fn(), onDelete = vi.fn() } = {},
+) {
+  render(<TagList tags={tags} onOpen={onOpen} onAdd={onAdd} onRename={onRename} onDelete={onDelete} />)
+  return { onAdd, onRename, onOpen, onDelete }
 }
 
 describe('TagList', () => {
@@ -46,6 +49,66 @@ describe('TagList', () => {
     expect(onDelete).toHaveBeenCalledWith('work')
     expect(onOpen).not.toHaveBeenCalled()
     confirm.mockRestore()
+  })
+
+  it('turns a tag\'s name into a box with the caret in it from its rename button (TAG-24)', async () => {
+    const user = userEvent.setup()
+    setUp([{ name: 'work', open: 1 }])
+
+    await user.click(screen.getByRole('button', { name: 'Rename the tag "work"' }))
+
+    const box = screen.getByRole('textbox', { name: 'Name of the tag "work"' })
+    expect(box).toHaveProperty('value', 'work')
+    expect(document.activeElement).toBe(box)
+  })
+
+  it('renames on Enter, without a # in front, and closes the box (TAG-24)', async () => {
+    const user = userEvent.setup()
+    const { onRename } = setUp([{ name: 'work', open: 1 }])
+
+    await user.click(screen.getByRole('button', { name: 'Rename the tag "work"' }))
+    await user.keyboard('{Control>}a{/Control}#office{Enter}')
+
+    expect(onRename).toHaveBeenCalledWith('work', 'office')
+    expect(screen.queryByRole('textbox', { name: 'Name of the tag "work"' })).toBeNull()
+  })
+
+  it('leaves the tag named as it was on Escape, and renames nothing onto its own name (TAG-25)', async () => {
+    const user = userEvent.setup()
+    const { onRename } = setUp([{ name: 'work', open: 1 }])
+
+    await user.click(screen.getByRole('button', { name: 'Rename the tag "work"' }))
+    await user.keyboard('{Control>}a{/Control}office{Escape}')
+    expect(screen.getByRole('button', { name: 'work: 1 to do' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Rename the tag "work"' }))
+    await user.keyboard('{Enter}')
+
+    expect(onRename).not.toHaveBeenCalled()
+    expect(screen.queryByRole('textbox', { name: 'Name of the tag "work"' })).toBeNull()
+  })
+
+  it('says so rather than renaming onto another tag\'s name, keeping the box open (TAG-24)', async () => {
+    const user = userEvent.setup()
+    setUp([{ name: 'home', open: 0 }, { name: 'work', open: 1 }], { onRename: vi.fn(() => false) })
+
+    await user.click(screen.getByRole('button', { name: 'Rename the tag "work"' }))
+    await user.keyboard('{Control>}a{/Control}Home{Enter}')
+
+    expect(screen.getByRole('alert').textContent).toBe('There is a tag called that already.')
+    expect(screen.getByRole('textbox', { name: 'Name of the tag "work"' })).toHaveProperty('value', 'Home')
+  })
+
+  it('renames nothing to a name a tag cannot have, and says why (TAG-3, TAG-24)', async () => {
+    const user = userEvent.setup()
+    const { onRename } = setUp([{ name: 'work', open: 1 }])
+
+    await user.click(screen.getByRole('button', { name: 'Rename the tag "work"' }))
+    await user.keyboard('{Control>}a{/Control}two words{Enter}')
+
+    expect(onRename).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert').textContent).toMatch(/A tag is one word/)
+    expect(screen.getByRole('textbox', { name: 'Name of the tag "work"' })).toHaveProperty('value', 'two words')
   })
 
   it('says how to make a tag when there are none (TAG-20)', () => {
