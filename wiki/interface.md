@@ -222,6 +222,11 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   dimming, on Escape, on a tap on the bar, and on choosing something (UI-9). The items are the
   thumb-sized ones every phone menu has (UI-49). A task's menu is unchanged: it still opens at the
   pointer (UI-31).
+- **UI-68** While a sheet (UI-48, UI-54) or a tab's panel (UI-66) is over the page, **the page does
+  not scroll**; the moment the last of them is gone, it scrolls again. This holds however they were
+  stacked and in whatever order they closed — a picker's sheet over a task's sheet (UI-64), a
+  sheet and a panel at once, all of them closing in one go — so the page is never left stuck until
+  a reload. The page is held once, by a count of what is over it, not once per sheet.
 - **UI-45** The bar has no entry for the tags or the modes, and the sidebar none for the tags:
   they are under **More**, marked with three dots; the sidebar lists the modes itself (MODE-7).
   **A tap opens More's page** — three links, **Lists**, **Tags** and **Modes**, each with its icon, large enough
@@ -463,7 +468,7 @@ view's icon), `src/app/components/TickIcon.tsx` (the tick in a box that is ticke
 sheet, UI-59), `src/app/components/CompletionBox.tsx` (the box a task is ticked off in, wherever it
 is: how it is drawn, what it is called, and a tick left to land before the task is really done), `src/app/panelControls.ts` (the size a panel's buttons and lines share — larger on a phone with
 the sheet's pickers), `src/app/components/PanelRow.tsx` and `src/app/components/PanelBack.tsx` (a
-line standing for a group of choices, and the way back out of the ones it opens), `src/styles.css`,
+line standing for a group of choices, and the way back out of the ones it opens), `src/app/usePageLock.ts` (the page held still under a sheet or a panel, UI-68), `src/styles.css`,
 `public/favicon.svg` (the app's icon; the PNGs beside it are the same icon for installing),
 `src/app/components/AppLogo.tsx` (the mark in the sidebar).
 **Tested in:** `src/app/components/SheetActions.test.tsx` (the row of icons and its **i**), `src/app/components/PickerPanel.test.tsx` (the aside and the sheet), `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
@@ -480,4 +485,5 @@ it lands, and gone through at once where less motion is asked for),
 the detailed sheet),
 `src/app/letterShortcut.test.ts` and `src/app/useLetterShortcut.test.ts` (`N`, `H`, `R` and `P`),
 `src/app/components/BottomSheet.test.tsx` and `src/app/sheetDrag.test.ts` (closing a sheet by its
-handle, pulled or tapped).
+handle, pulled or tapped), `src/app/usePageLock.test.tsx` (the page scrolling again once every sheet
+and panel is gone, whatever order they closed in).

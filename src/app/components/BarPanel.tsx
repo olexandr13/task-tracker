@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { usePageLock } from '../usePageLock'
 import { useSheetDrag } from '../useSheetDrag'
 
 interface BarPanelProps {
@@ -61,12 +62,8 @@ export function BarPanel({ top, role, label, focusFirst, onClose, onKeyDown, chi
     }
   }, [focusFirst])
 
-  useLayoutEffect(() => {
-    // The page behind is for reading, not for scrolling, while the panel is over it.
-    const overflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = overflow }
-  }, [])
+  // The page behind is for reading, not for scrolling, while the panel is over it.
+  usePageLock()
 
   useEffect(() => {
     // Everything but the bar is covered; this is the tap on the bar itself.
