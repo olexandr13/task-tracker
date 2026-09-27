@@ -137,33 +137,44 @@ export function TaskList({
   /**
    * The tasks still to do: the overdue under their own heading, then the rest
    * with none. A list with nothing overdue is one plain run, as it was.
+   *
+   * Both runs are **one list**, and one flat set of keyed items in it — the
+   * heading an item among the rows rather than a section around the overdue,
+   * the rows of both runs siblings in the same array: a task that turns overdue
+   * while its row is open — an hour before now picked for it (DUE-10) — then
+   * moves within that set, and React keeps its row, and the sheet and the
+   * picker open on it, rather than drawing a new row elsewhere and closing them
+   * with the old one. Two arrays, or a section each, would be two places, and
+   * a row crossing between them a new row.
    */
-  function todoRuns(group: readonly Task[]) {
+  function todoRun(group: readonly Task[]) {
     const { overdue, rest } = headRuns ? splitOverdue(group, now) : { overdue: [], rest: group }
-    if (overdue.length === 0) {
-      return [
-        <ul key="todo" className={rows}>
-          {rest.map((task) => row(task))}
-        </ul>,
-      ]
-    }
 
-    return [
-      <section key="overdue" aria-label={OVERDUE_LABEL} className={section}>
-        <h2 className={`${heading} text-red-600 dark:text-red-400`}>
-          {OVERDUE_LABEL}
-          <span className="font-normal text-red-600/60 tabular-nums dark:text-red-400/60">{overdue.length}</span>
-        </h2>
-        <ul className={rows}>{overdue.map((task) => row(task))}</ul>
-      </section>,
-      ...(rest.length === 0
+    const items = [
+      ...(overdue.length === 0
         ? []
         : [
-            <ul key="todo" className={rows}>
-              {rest.map((task) => row(task))}
-            </ul>,
+            <li key="overdue" role="presentation">
+              <h2 className={`${heading} text-red-600 dark:text-red-400`}>
+                {OVERDUE_LABEL}
+                <span className="font-normal text-red-600/60 tabular-nums dark:text-red-400/60">{overdue.length}</span>
+              </h2>
+            </li>,
           ]),
+      ...overdue.map((task) => row(task)),
+      // The runs as far apart as the sections are (TASK-68): the list's own gap
+      // either side of an item with nothing in it.
+      ...(overdue.length > 0 && rest.length > 0
+        ? [<li key="gap" role="presentation" aria-hidden="true" className="h-0 md:h-1" />]
+        : []),
+      ...rest.map((task) => row(task)),
     ]
+
+    return (
+      <ul key="todo" className={rows}>
+        {items}
+      </ul>
+    )
   }
 
   /**
@@ -210,9 +221,7 @@ export function TaskList({
       )}
       <div className="flex flex-col gap-3">
         <SortableTasks tasks={tasks}>
-          {groups.flatMap(({ span, tasks: group }) =>
-            span === null ? todoRuns(group) : [doneRun(span, group)],
-          )}
+          {groups.map(({ span, tasks: group }) => (span === null ? todoRun(group) : doneRun(span, group)))}
         </SortableTasks>
       </div>
     </>

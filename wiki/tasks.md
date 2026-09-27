@@ -175,6 +175,10 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   nothing overdue is one run, as it was, and the heading goes the moment the last one is done or
   moved. Every list draws the two runs — Today, Week, Month, Tasks, the Inbox, lists and tags — bar
   Today in Procrastination mode, which draws one run so the chosen task still leads it (JUST-5).
+  The two runs are **one list**, the heading standing among the rows rather than boxing the overdue
+  in, so a task that turns overdue while its row is open — an hour before now picked for it
+  (DUE-10), say — moves up into the Overdue run with everything open on it still open: the row's
+  panel, a phone's sheet (UI-48) and the clock face in it (DUE-24) stay where they were.
 - **TASK-19** An empty list encourages a start and points at the box above it.
 - **TASK-50** A list whose tasks are all done shows a praise banner above the done tasks: a soft
   green panel with a spark icon and clear, high-contrast praise. The moment one is open again, the
