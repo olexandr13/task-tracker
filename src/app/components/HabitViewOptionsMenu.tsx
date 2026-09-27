@@ -29,7 +29,6 @@ export function HabitViewOptionsMenu({ options, atFoot = false, onChange }: Habi
       <OptionSwitch
         icon={<ChevronIcon />}
         label="Show habit details by default"
-        description="Start each habit open, with its numbers and days in view"
         checked={options.showDetails}
         onChange={(showDetails) => { onChange({ ...options, showDetails }) }}
       />

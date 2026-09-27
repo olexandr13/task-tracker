@@ -100,7 +100,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 - **HAB-23** Habits has a **View** button beside the add box, the same shape as the task views'
   (UI-41, UI-46) — and the one button of the two that a phone keeps, where it is at the foot of the
   cards instead, named in words (UI-46). **Show habit details by default** starts each card open,
-  showing its numbers and grid (HAB-21). Off, every card starts folded. The change is shown at once — every card resets to
+  showing its numbers and grid (HAB-21); it is its name alone, with no line under it saying what it
+  does. Off, every card starts folded. The change is shown at once — every card resets to
   the default — and is kept on this device (STORE-36). Off is how the page starts.
 - **HAB-24** On a wide screen the Habits page has the add box, starting on a **daily** rule, so a habit
   can be made there. Its hint reads **Add habit**. Enter adds it unless another rule is chosen first. After

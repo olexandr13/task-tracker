@@ -57,12 +57,12 @@ describe('the Habits View button', () => {
     expect(onChange).toHaveBeenCalledWith({ showDetails: true })
   })
 
-  it('says what the option does (HAB-23)', async () => {
+  it('names the option alone, with no line under it (HAB-23)', async () => {
     const { user } = setup()
 
     await user.click(viewButton())
 
-    expect(detailsSwitch().getAttribute('aria-describedby')).not.toBeNull()
-    expect(screen.getByText('Start each habit open, with its numbers and days in view')).toBeDefined()
+    expect(detailsSwitch().getAttribute('aria-describedby')).toBeNull()
+    expect(detailsSwitch().textContent).toBe('Show habit details by default')
   })
 })

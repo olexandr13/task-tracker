@@ -381,7 +381,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   the sheet a tap opens (UI-48, UI-6).
 - **UI-46** **Habits** has a View settings button of the same shape, beside its add box. Its option is how
   the habit cards start — folded or open — and is kept on this device apart from the task views'
-  (HAB-23, STORE-36). This one **stays on a phone**, a card opening there as it does anywhere — but
+  (HAB-23, STORE-36). The switch there is its **name alone**: no line under it saying what it does,
+  unlike the task views' (UI-41). This one **stays on a phone**, a card opening there as it does anywhere — but
   with no box to stand beside it is at the **foot of the page**, under the cards it is about, rather
   than alone in a row of its own above them. There it is a line the width of its words rather than a
   square: the sliders with **View settings** beside them, as the Lists and Trash buttons under Tasks
