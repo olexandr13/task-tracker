@@ -89,8 +89,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   year's days pushes its own week along instead of being cut off. **Tapping the card** — anywhere
   on it but the box and the ⋮ — unfolds the numbers
   (HAB-5 to HAB-8) and the grid (HAB-9) beneath it, and tapping it again folds them away. The
-  chevron points down while folded and up while open. The ⋮ and the chevron sit **centred down the
-  card**, since they act on the whole habit rather than on the title. Open, the second line goes, as
+  chevron points down while folded and up while open. The ⋮ and the chevron sit **level with the
+  title**, so they stay put when the card unfolds. Open, the second line goes, as
   the numbers and the grid below already give it. A list of year-long grids is a long way
   to scroll for a box to tick, and ticking is what the page is visited for.
 - **HAB-22** Ticking the box never unfolds a card, and neither does opening the edit sheet (HAB-25).

@@ -389,11 +389,11 @@ function HabitCard({
         </div>
 
         {/*
-          Centred down the card, not level with the title: they act on the whole habit, and on a folded
-          card the streak line would leave them hanging above it. Not positioned itself, so the chevron's
-          hit area stretches over the whole line rather than this group.
+          Level with the title, not centred in the header: unfolding hides the streak
+          line, and centering would jump the icons with it. Not positioned itself, so
+          the chevron's hit area stretches over the whole line rather than this group.
         */}
-        <div className="flex shrink-0 self-center items-center gap-2.5 md:-my-0.5">
+        <div className="flex shrink-0 self-start items-center gap-2.5 md:-my-0.5">
           <button
             type="button"
             onClick={() => { setIsEditing(true) }}

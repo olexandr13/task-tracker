@@ -128,6 +128,10 @@ describe('HabitList', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     // The title is never cut off to make room: the streak and the week are on a line under it.
     expect(title.className).not.toContain('truncate')
+    // The ⋮ and chevron sit with the title, not centred in the header, so they
+    // do not jump when the glance line goes (HAB-21).
+    expect(toggle.parentElement?.className).not.toContain('self-center')
+    expect(toggle.parentElement?.className).toContain('self-start')
     expect(screen.getByText('Current streak:').parentElement?.textContent).toBe('Current streak: 2 days')
     const week = screen.getByRole('img', { name: 'Last 7 days: done on 2 days' })
     expect(week.children).toHaveLength(7)
