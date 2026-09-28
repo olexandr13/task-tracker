@@ -143,6 +143,7 @@ export function SubtaskItem({
         <input
           ref={input}
           type="text"
+          name="subtask-title"
           value={editedTitle}
           onChange={(event) => { setDraft(event.target.value) }}
           onKeyDown={handleKeyDown}

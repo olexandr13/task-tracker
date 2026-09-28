@@ -82,7 +82,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   an icon or trailed along a line beneath them all. An icon says nothing by itself the first time it
   is met and a tooltip never reaches a thumb, so an **i** at the end of the row **names every icon**,
   above whatever that icon holds, for as long as it is left on. Nothing else about the task moves:
-  the title, the checklist, the description, Duplicate and Delete are where they were.
+  the title, the checklist, the description, Duplicate and Delete are where they were. The schedule
+  panel's Date row has an **i** of its own, for the same reason (DUE-25).
 - **UI-64** A picker's panel opened from **inside a sheet** is a **sheet of its own** over the one
   it came from, rather than an aside hanging off its icon: a sheet is only as tall as what it
   holds, so an aside dropped inside it would be cut off at the sheet's edge with no room to scroll
@@ -396,6 +397,11 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   several of the same control are on screen at once.
 - **UI-13** Toggles report whether they are on — the completion box, the repeat kinds, the weekday
   chips.
+- **UI-68** Every box that is typed into or chosen from — a title, a tag, a list's name, a number of
+  points, the day of the month, the backup file — carries a **name for the browser** as well as one
+  for a screen reader (UI-12), so its autofill and its developer tools can tell one box from another
+  and raise no issue about one they cannot. The same kind of box has the same name wherever it
+  appears: a task's title in the add box, in the sheet and in the row alike.
 - **UI-24** The box a description is written in reads as a multi-line text box, and the emphasis
   in it is marked up as well as drawn: bold words are heard as bold rather than only seen.
 - **UI-25** Lists in that box are marked up as lists, so an item is heard as one of so many rather
@@ -472,7 +478,9 @@ items are large enough for a finger), `src/app/components/MorePage.test.tsx` (Mo
 view in the address), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel), `src/app/components/HabitViewOptionsMenu.test.tsx`
 (Habits'), `src/app/components/SettingsList.test.tsx` (the version on Settings),
 `src/app/components/ThemeCard.test.tsx` (picking a theme, by click and by arrow keys),
-`src/app/theme.test.ts` (the theme on the page and the bar, and `index.html` reading it back), `src/app/components/TaskItem.test.tsx`
+`src/app/theme.test.ts` (the theme on the page and the bar, and `index.html` reading it back), `src/test/formFields.test.ts`
+(that every box in `src/app` carries a name for the browser, UI-68, read from the components' source by
+`src/test/formFields.ts`), `src/app/components/TaskItem.test.tsx`
 (a row with Show task details on, a finger on a row, a phone's sheet and the sizes a thumb needs on
 it, and a swipe to complete or delete), `src/app/rowSwipe.test.ts` (how far a swipe must travel),
 `src/app/components/CompletionBox.test.tsx` (a tick landing where it was clicked, taken back before

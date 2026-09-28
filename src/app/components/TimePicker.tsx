@@ -302,6 +302,7 @@ export function TimePicker({
             <div className="flex gap-1.5 md:gap-1">
               <input
                 type="text"
+                name="time-session"
                 value={session}
                 onChange={(event) => {
                   setSession(event.target.value)
@@ -366,6 +367,7 @@ export function TimePicker({
             Goal
             <input
               type="text"
+              name="time-goal"
               value={goalText}
               onChange={(event) => { setGoalText(event.target.value) }}
               onKeyDown={handleGoalKeyDown}

@@ -1,14 +1,8 @@
 import { Fragment, type KeyboardEvent, type ReactNode } from 'react'
-import {
-  panelHeading as heading,
-  panelIcon,
-  panelIconOff,
-  panelIconOn,
-  panelIconRow,
-  panelOptionOn,
-} from '../panelControls'
+import { panelHeading as heading, panelIcon, panelIconOff, panelIconOn, panelOptionOn } from '../panelControls'
 import { BarPanel } from './BarPanel'
 import { FloatingPanel } from './FloatingPanel'
+import { PanelIconRow } from './PanelIconRow'
 
 export interface ContextMenuItem {
   label: string
@@ -226,11 +220,11 @@ function MenuEntry({ entry, onClose }: { entry: ContextMenuEntry; onClose: () =>
         <p aria-hidden="true" className={heading}>
           {entry.group}
         </p>
-        <div className={panelIconRow}>
+        <PanelIconRow>
           {entry.icons.map((choice, at) => (
             <MenuIcon key={at} {...choice} onClose={onClose} />
           ))}
-        </div>
+        </PanelIconRow>
       </div>
     )
   }

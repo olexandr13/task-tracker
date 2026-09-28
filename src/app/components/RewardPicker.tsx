@@ -156,6 +156,7 @@ export function RewardPicker({
             </button>
             <input
               type="number"
+              name="reward-points"
               inputMode="numeric"
               min={0}
               max={MAX_REWARD}

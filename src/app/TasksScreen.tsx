@@ -783,7 +783,6 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                 <WarmUpPanel
                   progress={warmUp.progress}
                   onMoreInfo={() => { setView('modes/warm-up') }}
-                  onEnd={warmUp.end}
                 />
 
                 {/* The View button beside the box, as on the task views: the box is for a

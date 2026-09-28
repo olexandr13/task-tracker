@@ -348,8 +348,10 @@ export function TaskItem({
   // The quick day choices, the same in the task's menu and on the woken row's strip
   // (DUE-14, UI-53). The menu adds Select date, having no calendar of its own; the
   // strip leaves it out, the row's own schedule control opening one beside it.
+  // The day marked is the one the task is due on, as the schedule button reads it.
   const dateOptions = {
-    chosen: scheduledDay(task),
+    due: day,
+    scheduled: scheduledDay(task),
     now,
     repeats: task.repeat !== null,
     skip,
@@ -608,6 +610,7 @@ export function TaskItem({
       <input
         ref={input}
         type="text"
+        name="task-title"
         value={editedTitle}
         onChange={(event) => { setEditedTitle(event.target.value) }}
         onKeyDown={handleKeyDown}
@@ -1110,8 +1113,8 @@ export function TaskItem({
           className="w-64"
         >
           <DueChoices
-            dueDate={dueDay(task, now)}
-            chosen={scheduledDay(task)}
+            dueDate={day}
+            scheduled={scheduledDay(task)}
             now={now}
             repeats={task.repeat !== null}
             skip={skip}

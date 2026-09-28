@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { InvalidDayError, InvalidTimeOfDayError, toLocalDay } from './day'
+import { skipOccurrence } from './due'
 import { InvalidRepeatError, type Repeat } from './repeat'
 import { setReward } from './reward'
 import { setUrgent } from './urgent'
@@ -399,6 +400,29 @@ describe('setStartDay', () => {
 
     expect(setRepeat(daily, null, LATER).startDay).toBeNull()
     expect(setRepeat(daily, { kind: 'weekly', weekdays: [1] }, LATER).startDay).toBe('2026-09-20')
+  })
+
+  it('puts the occurrences passed over from that day on back in play, and leaves the earlier ones (DUE-26)', () => {
+    // Skipped on the 15th, 16th and 17th, so due on the 18th.
+    const skipped = skipOccurrence(
+      skipOccurrence(skipOccurrence(createTask('stretch', { kind: 'daily' }, NOW), NOW), NOW),
+      NOW,
+    )
+    expect(skipped.skippedDays).toEqual(['2026-09-15', '2026-09-16', '2026-09-17'])
+
+    expect(setStartDay(skipped, '2026-09-16').skippedDays).toEqual(['2026-09-15'])
+    expect(setStartDay(skipped, '2026-09-10').skippedDays).toEqual([])
+    expect(setStartDay(skipped, '2026-09-20').skippedDays).toEqual(['2026-09-15', '2026-09-16', '2026-09-17'])
+  })
+
+  it('puts a day back in play even when it is the start already, and touches none when the start is let go', () => {
+    const started = setStartDay(createTask('stretch', { kind: 'daily' }, NOW), '2026-09-15')
+    const skipped = skipOccurrence(started, NOW)
+    expect(skipped.skippedDays).toEqual(['2026-09-15'])
+
+    // Picking the same day again is asking for the task on it after all.
+    expect(setStartDay(skipped, '2026-09-15').skippedDays).toEqual([])
+    expect(setStartDay(skipped, null).skippedDays).toEqual(['2026-09-15'])
   })
 })
 

@@ -158,6 +158,7 @@ export function SubtaskList({
         <input
           ref={addInput}
           type="text"
+          name="subtask-title"
           value={title}
           onChange={(event) => { setTitle(event.target.value) }}
           onKeyDown={handleKeyDown}

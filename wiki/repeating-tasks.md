@@ -110,16 +110,21 @@ and whether it reads as done is derived from the occurrence currently in play ra
   panel (DUE-9): passed over
   without being done. The task is then due on the rule's **next** day — a daily task skipped today is
   due tomorrow, a Monday task missed and skipped on Wednesday is due next Monday — so it is no
-  longer overdue, and is in Today, Week or Month by that day (LIST-2, LIST-3, LIST-11). It stays to do, records
-  nothing in its history and earns nothing. Only a task still to do, with an occurrence in play
-  (DUE-11), can skip; a one-off has no next day to move on to.
+  longer overdue, and is in Today, Week or Month by that day (LIST-2, LIST-3, LIST-11). The day marked
+  as chosen in its menu and panel moves on with it (DUE-14, DUE-15), as the schedule button's
+  reading does (DUE-12); the day its rule was told to start on stays what it was (DUE-18). It stays
+  to do, records nothing in its history and earns nothing. Only a task still to do, with an
+  occurrence in play (DUE-11), can skip; a one-off has no next day to move on to. Picking the
+  skipped day again takes the skip back (DUE-26).
 - **RPT-35** Skipping again passes over the next occurrence too.
 - **RPT-36** **Done wins**: ticking a skipped task off does the occurrence in play after all — it
   reads as done on that day, as it would have without the skip. Taking the tick back skips it again,
   which is what reopening does with any occurrence gone by (RPT-38); a day is passed over once,
   however often it is ticked and unticked.
-- **RPT-37** The days skipped are kept on the task beside the days done, oldest first. The Habits
-  page does not read them yet: a skipped day on a habit shows, and counts, as missed (HAB-5, HAB-10).
+- **RPT-37** The days skipped are kept on the task beside the days done, oldest first — a day
+  picked for the rule to start on being the one thing that takes the days from it on back off
+  (DUE-26). The Habits page does not read them yet: a skipped day on a habit shows, and counts, as
+  missed (HAB-5, HAB-10).
 
 ## History
 

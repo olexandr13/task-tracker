@@ -63,7 +63,8 @@ export interface Task {
    * that day. A day is passed over by being skipped outright, or by reopening a
    * task whose occurrence has gone by (`passOverMissedOccurrence`). Done wins:
    * an occurrence ticked off after all reads as done, and the day stays here
-   * only so that taking the tick back passes it over again.
+   * only so that taking the tick back passes it over again. Picking a day for
+   * the rule to start on puts the days from it on back in play (`setStartDay`).
    */
   readonly skippedDays: readonly LocalDay[]
   /**
@@ -502,6 +503,11 @@ export class StartDayOnOneOffError extends Error {
  * is untouched: a Monday task started on a Thursday is still a Monday task, and
  * is due on the Monday after (see `dueDay` in ./due).
  *
+ * A day picked is a day the owner wants the task due from, so an occurrence
+ * passed over from that day on — skipped, or missed and reopened — is back in
+ * play: a day skipped and then picked again is due again. Occurrences passed
+ * over before it stay passed over, and letting the start go touches none of them.
+ *
  * Returns a new task; the one passed in is never modified.
  */
 export function setStartDay(task: Task, startDay: LocalDay | null): Task {
@@ -509,15 +515,16 @@ export function setStartDay(task: Task, startDay: LocalDay | null): Task {
     throw new InvalidDayError(startDay)
   }
 
-  if (startDay === task.startDay) {
-    return task
-  }
-
   if (startDay !== null && task.repeat === null) {
     throw new StartDayOnOneOffError()
   }
 
-  return { ...task, startDay }
+  const skippedDays = startDay === null ? task.skippedDays : task.skippedDays.filter((day) => day < startDay)
+  if (startDay === task.startDay && skippedDays.length === task.skippedDays.length) {
+    return task
+  }
+
+  return { ...task, startDay, skippedDays }
 }
 
 /**

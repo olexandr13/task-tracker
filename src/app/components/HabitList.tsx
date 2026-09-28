@@ -326,6 +326,7 @@ function HabitCard({
       <input
         ref={input}
         type="text"
+        name="habit-title"
         value={editedTitle}
         onChange={(event) => { setEditedTitle(event.target.value) }}
         onKeyDown={handleKeyDown}

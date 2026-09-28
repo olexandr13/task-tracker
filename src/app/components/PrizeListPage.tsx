@@ -173,6 +173,7 @@ export function PrizeListPage({
         <div className="flex items-center gap-1.5">
           <input
             type="text"
+            name="prize-name"
             value={name}
             onChange={(event) => {
               setName(event.target.value)
@@ -192,6 +193,7 @@ export function PrizeListPage({
           />
           <input
             type="number"
+            name="prize-points"
             inputMode="numeric"
             min={1}
             max={MAX_PRIZE_POINTS}
@@ -243,6 +245,7 @@ export function PrizeListPage({
                       <Icon className={glyph} />
                       <input
                         type="text"
+                        name="prize-name"
                         value={editing.name}
                         onChange={(event) => {
                           setEditing({ ...editing, name: event.target.value })
@@ -258,6 +261,7 @@ export function PrizeListPage({
                       />
                       <input
                         type="number"
+                        name="prize-points"
                         inputMode="numeric"
                         min={1}
                         max={MAX_PRIZE_POINTS}

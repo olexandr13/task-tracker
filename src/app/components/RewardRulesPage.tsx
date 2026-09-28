@@ -134,6 +134,7 @@ function PointValueRow({ value, onChange }: { value: PointValue | null; onChange
         <span className="shrink-0 text-sm text-neutral-500 dark:text-neutral-400">1 point =</span>
         <input
           type="number"
+          name="point-amount"
           inputMode="decimal"
           min={0}
           max={MAX_POINT_AMOUNT}
@@ -150,6 +151,7 @@ function PointValueRow({ value, onChange }: { value: PointValue | null; onChange
         />
         <input
           type="text"
+          name="point-currency"
           value={currency}
           onChange={(event) => {
             setCurrency(event.target.value)

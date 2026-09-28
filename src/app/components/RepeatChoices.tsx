@@ -118,6 +118,7 @@ export function RepeatChoices({ draft, onChange, named = true, onDone }: RepeatC
           <label className="flex items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
             On day
             <select
+              name="repeat-month-day"
               value={draft.monthDay}
               onChange={(event) => { onChange({ ...draft, monthDay: Number(event.target.value) }) }}
               className="rounded-lg border border-neutral-300 bg-transparent px-2 py-1 text-neutral-900 focus:border-blue-500 focus:outline-none dark:border-neutral-700 dark:text-neutral-100"

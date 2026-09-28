@@ -55,7 +55,8 @@ puts a task in front of you on the right day instead of in a long list of everyt
   Sunday), **Skip occurrence** on a task row's repeating task (RPT-34) and **Remove date** — on a
   repeating task **Remove start date** (DUE-18) — once there is a day to take away, each named by a
   short tooltip (DUE-14) — less **Select date**, since
-  a **month calendar** (DUE-15) is on show under them for any other day. Under the calendar the
+  a **month calendar** (DUE-15) is on show under them for any other day, and with an **i** at its
+  end that spells the icons out under the row (DUE-25). Under the calendar the
   **hour** (DUE-20) and the **repeat rule** (RPT-16) are a line each rather than groups of their
   own (DUE-23). A quick choice, a day in the calendar, the skip and Remove date each close the
   panel: one click says everything. There is no OK, and a click outside or Escape closes it.
@@ -67,8 +68,11 @@ puts a task in front of you on the right day instead of in a long list of everyt
 
 - **DUE-14** A task's menu (UI-31) opens with a **Date** row of icons — the same row, from the same
   place, as the date panel's (DUE-9), with **Select date** added since the menu has no calendar of
-  its own, spread across the full width so its ends line up with the
-  rest of the panel — each named by a tooltip on hover: **Today** (the sun),
+  its own and without the panel's **i** (DUE-25), spread across the full width so its ends line up
+  with the rest of the panel — though
+  **never further apart than one of them is wide**, so a short row (three icons on a task with no
+  day yet) sits together at the right, where the panel's other controls are, rather than an icon
+  in each corner — each named by a tooltip on hover: **Today** (the sun),
   **Tomorrow** (the sunrise), **Next week** (the Sunday that closes next week, as in DUE-9), **Skip
   occurrence** on a repeating task (RPT-34), **Select date**, and **Remove date** — **Remove start
   date** on a repeating task (DUE-18) — once the task has a day. A tooltip is a few words: the name
@@ -76,9 +80,10 @@ puts a task in front of you on the right day instead of in a long list of everyt
   skip's "Skip to Sep 20". On a repeating task each day's tooltip ends with "· Starts the repeat"
   (DUE-18) — "Today · Starts the repeat", "Next week · Sep 27 · Starts the repeat".
   **Skip occurrence** and **Select date** do not: skipping moves the task on inside the rule
-  (RPT-34), and Select date only opens the panel, whose own days say it. The task's own day — its
-  date, or the day its rule starts on — is tinted and heard as chosen. Choosing an
-  icon does it and closes the menu. **Select date** opens the date half of the schedule panel (DUE-9),
+  (RPT-34), and Select date only opens the panel, whose own days say it. The day the task is
+  **due** — its date, or the day its rule gives it (DUE-12) — is tinted and heard as chosen, so the
+  mark says the same as the schedule button: a daily task's Today until it is skipped, and Tomorrow
+  from then on. Choosing an icon does it and closes the menu. **Select date** opens the date half of the schedule panel (DUE-9),
   quick choices and calendar, in the menu's place, the focus on the calendar's day in reach (DUE-16),
   so the arrow keys and Enter pick a day straight away. The menu has no lines to open (DUE-23): the
   hours are spelled out under the calendar there, the menu being the day's alone.
@@ -94,21 +99,36 @@ puts a task in front of you on the right day instead of in a long list of everyt
   choose (DUE-20, RPT-22). Beside a line holding something, a **×** takes it away without opening
   anything. Escape steps back out of a line's choices first and closes the panel from the day.
   A line and the choices it opens are the same wherever the panel is (DUE-13).
+- **DUE-25** The Date row ends with a grey **i** — past the choices, since it changes nothing about
+  the task, and a shade quieter than they are, so the eye does not count it as one of them. An icon
+  says nothing by itself the first time it is met and a tooltip never reaches a thumb (UI-63), so a
+  tap on it **spells the row out under itself**, a line an icon: the icon again beside the words
+  its tooltip would say — "Today", "Tomorrow", "Next week · Sep 27", "Remove date", the skip's
+  "Skip to Sep 20" and, on a repeating task, "· Starts the repeat" after each day (DUE-18) — so the
+  two can never disagree. The lines stay for as long as the **i** is left on, which tints it as a
+  set control is (UI-26); a second tap puts them away, and the panel opens with them away. The
+  **i** is a note, not a choice: it sets nothing and leaves the panel open. The lines are for the
+  eye alone; a screen reader hears the same words from each icon already (UI-12). The menu's row
+  (DUE-14) and the woken row's strip (UI-53) keep to their tooltips.
 
 ## The calendar
 
 - **DUE-15** Any day beyond the quick ones is picked from a **month calendar** in the panel, in place
   of the browser's own date field: the month and year at its head, **‹** and **›** to page a month
-  back or on, and a dot, **Go to today**, back to today's month. Weeks run **Monday to Sunday**,
-  under their initials, and a month is always drawn in six weeks — the days either side belonging to
-  the months around it — so paging never changes the panel's height. **Today** is marked in blue, the
-  task's own day — its date, or the day its rule starts on (DUE-18) — is **filled**, and days gone by
-  and those of the months either side are faded,
-  there to pick all the same. It opens on the month of the day the task is due, a repeating task's
-  being the occurrence in play (DUE-12), and on today's with none. A click on a day picks it and
+  back or on, and a dot, **Select today**, which picks today from wherever the calendar has been
+  paged to — the quick **Today** again, within reach of the calendar — and closes the panel like
+  any other day picked (DUE-9). Weeks run **Monday to Sunday**,
+  under their initials, and a month is drawn in **the weeks it spans** — four to six, from the one
+  holding its 1st to the one holding its last day, the days either side on those two belonging to
+  the months around it, never a whole week of another month's — so the calendar is as tall as the
+  month needs, a row taller or shorter as paging moves between months. **Today** is marked in blue, the
+  day the task is **due** — its date, or the day its rule gives it (DUE-12) — is **filled**, and days
+  gone by and those of the months either side are faded,
+  there to pick all the same. It opens on the month of that day, and on today's with none. A click on a day picks it and
   closes the panel (DUE-9). On a repeating task each day's tooltip reads "Starts the repeat"
-  (DUE-18); on a one-off there is nothing to say and a day has no tooltip, the number being under
-  the pointer already. A screen reader hears each day in full — "Thursday, October 1, 2026" — today as the
+  (DUE-18), the dot's "Select today · Starts the repeat"; on a one-off there is nothing to say and a
+  day has no tooltip, the number being under the pointer already — the dot, which shows no day, is
+  named in its own. A screen reader hears each day in full — "Thursday, October 1, 2026" — today as the
   current date, the chosen day as selected, and the month's name again as it changes.
 - **DUE-16** The calendar is **one stop** for Tab, on the chosen day, else the day it opened on, else
   today. The **arrow keys** move a day or a week, **Home** and **End** to the ends of the week, **Page
@@ -184,10 +204,14 @@ puts a task in front of you on the right day instead of in a long list of everyt
 - **DUE-12** A repeating task's schedule button shows the looping arrows and reads its rule with
   the **occurrence in play** — "Daily · Today" on a daily task — and is tinted, since the rule has
   set the day; with no occurrence in play yet (DUE-11, DUE-18) it reads the rule alone. In its panel
-  the day the rule starts on is marked as chosen, among the quick choices and in the calendar, and
-  **Remove start date** takes that day away (DUE-18). The calendar opens on the month of the day the
+  the day the task is **due** is marked as chosen, among the quick choices and in the calendar — the
+  same day the button reads: the occurrence in play, the first day the rule comes round on from a
+  day picked for it (DUE-18), or the day a skip moved it on to (RPT-34) — so a Monday task started on
+  a Thursday marks the Monday, and a daily task skipped today marks Tomorrow. **Remove start date**
+  takes away the day picked, where one was (DUE-18); a rule gives the task its day whether or not
+  one was, so the mark does not wait for it. The calendar opens on the month of the day the
   task is due. Every day there is to pick says what it does in its own tooltip — the quick choices
-  wherever the Date row is drawn (DUE-14) and the calendar's own days (DUE-15) — which is where it is
+  wherever the Date row is drawn (DUE-14) and the calendar's own days and dot (DUE-15) — which is where it is
   said, the panel carrying no note of its own above the choices.
   Under the button a repeating task spells out its rule, not its date. An hour (DUE-19) is read with
   whichever of the two is said — "Daily · Today at 09:00" on the button, "Daily at 09:00" under
@@ -198,7 +222,14 @@ puts a task in front of you on the right day instead of in a long list of everyt
   not overdue and is in no period before it (PROG-4), and on the Habits page its days begin there
   rather than at the day it was written (HAB-12). A rule with no day chosen starts where the task
   was written, which is what **Remove start date** goes back to; nothing is lost either way, so
-  there is nothing to undo. The days done and skipped are kept throughout (RPT-30).
+  there is nothing to undo. The days done and skipped are kept throughout (RPT-30), save the
+  skipped days the day picked puts back in play (DUE-26).
+- **DUE-26** A day picked for a repeating task is a day the owner wants the task **due from**, so an
+  occurrence passed over from that day on — skipped (RPT-34), or missed and reopened (RPT-38) — is
+  back in play: a daily task skipped today and then given Today again is due today again, marked
+  and in Today (LIST-2), with a skip on offer once more. Occurrences passed over before the day
+  picked stay passed over, a day picked after them changes nothing about them, and **Remove start
+  date** takes away the start alone, leaving every skip standing.
 
 ---
 
@@ -207,7 +238,8 @@ puts a task in front of you on the right day instead of in a long list of everyt
 `startedOn`, `setDueTime` and `hasDueDay` — the hour and the day it needs — and `setRepeat`, which lets the day go with the shape it belonged to), `src/app/useTasks.ts` (`changeDay`, `changeTime`),
 `src/core/due.ts` (which day a task is due — `firstDueDay` for a rule that has not come round yet — the moment it is due at — `dueMoment` — overdue, the two runs a list draws — `splitOverdue` — and the day Next week sets), `src/app/dueLabels.ts`
 (wording, the hour with its day — `describeDueAt` — and the **Overdue** heading), `src/app/components/TaskList.tsx` (the run it heads), `src/app/components/SchedulePicker.tsx` (the one control), `DueChoices.tsx` (the day: quick
-choices and calendar), `DueTimeChoices.tsx` (the hours), `PanelRow.tsx` and `PanelBack.tsx` (a line
+choices, the **i** that spells them out, and calendar), `InfoIcon.tsx` (the i), `PanelIconRow.tsx` and `src/app/panelControls.ts` (the row of icons, spread by how
+many it holds, and the tones an icon, a chosen one and the quiet i wear), `DueTimeChoices.tsx` (the hours), `PanelRow.tsx` and `PanelBack.tsx` (a line
 and the way back out of what it opens), `PickerPanel.tsx` (the aside or the sheet it all sits in),
 `DateCalendar.tsx` and `src/app/calendarMonth.ts` (the month calendar and the days it
 lays out), `ClockDial.tsx` and `src/app/clockDial.ts` (the clock face, which ring and
@@ -215,7 +247,7 @@ angle each hour sits at on it, and the hour picked off it), `src/app/dateChoices
 `TaskItem.tsx`, `ContextMenu.tsx` (a row of icons).
 **Tested in:** `src/core/day.test.ts`, `src/core/due.test.ts`, `src/core/task.test.ts`,
 `src/app/dueLabels.test.ts`, `src/app/calendarMonth.test.ts`, `src/app/useTasks.test.ts` (the day
-picked), `src/app/components/SchedulePicker.test.tsx` (the day, the hour and the rule),
-`DateCalendar.test.tsx`, `src/app/clockDial.test.ts` and `ClockDial.test.tsx` (the face and the
+picked), `src/app/components/SchedulePicker.test.tsx` (the day, the hour, the rule and the **i**),
+`PanelIconRow.test.tsx` (the row's count), `DateCalendar.test.tsx`, `src/app/clockDial.test.ts` and `ClockDial.test.tsx` (the face and the
 hour picked off it), `AddTaskForm.test.tsx`, `TaskItem.test.tsx` (the Date row),
 `TaskList.test.tsx` (the Overdue run).

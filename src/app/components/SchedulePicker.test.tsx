@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -115,6 +115,17 @@ describe('SchedulePicker', () => {
     expect(panel()).toBeNull()
   })
 
+  it('picks today with the calendar\'s dot, wherever it has been paged to, and closes (DUE-9, DUE-15)', async () => {
+    const user = setup()
+
+    await user.click(trigger())
+    await user.click(screen.getByRole('button', { name: 'Next month' }))
+    await user.click(screen.getByRole('button', { name: 'Select today' }))
+
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today')
+    expect(panel()).toBeNull()
+  })
+
   it('takes the day away with Remove date, which is only offered when there is one (DUE-9)', async () => {
     const user = setup({ initial: '2026-09-20' })
 
@@ -132,13 +143,17 @@ describe('SchedulePicker', () => {
     await user.click(trigger())
 
     const row = screen.getByRole('group', { name: 'Date' })
+    // The i at the end is not a choice, but it stands in the row all the same (DUE-25).
     expect(Array.from(row.querySelectorAll('button'), (button) => button.getAttribute('aria-label'))).toEqual([
       'Today',
       'Tomorrow',
       'Next week',
       'Remove date',
+      'What each icon means',
     ])
     expect(screen.getByRole('button', { name: 'Tomorrow' }).title).toBe('Tomorrow')
+    // Drawn through the row that knows its count, so a short row is not spread to the panel's corners.
+    expect(screen.getByRole('button', { name: 'Tomorrow' }).parentElement?.style.getPropertyValue('--icons')).toBe('5')
   })
 
   it('opens the calendar on today\'s month with no day, nothing marked chosen (DUE-15)', async () => {
@@ -263,7 +278,7 @@ describe('SchedulePicker, repeating', () => {
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Daily · Tomorrow')
   })
 
-  it('marks the day its rule starts on, and takes that day away again (DUE-18)', async () => {
+  it('marks the day it is due from the start picked, and takes that start away again (DUE-18)', async () => {
     const user = setup({ initial: '2026-09-16', initialDraft: { ...emptyDraft(WED_16), kind: 'daily' } })
 
     await user.click(trigger())
@@ -275,14 +290,25 @@ describe('SchedulePicker, repeating', () => {
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Daily')
   })
 
+  it('marks the first day the rule comes round on from its start, not the start itself (DUE-15, DUE-18)', async () => {
+    // A Monday rule started on the Friday is due on the Monday after, which is the day filled.
+    const user = setup({ initial: '2026-09-25', initialDraft: { ...emptyDraft(WED_16), kind: 'weekly', weekdays: [1] } })
+
+    await user.click(trigger())
+
+    expect(screen.getByRole('gridcell', { selected: true }).textContent).toBe('28')
+    expect(screen.getByRole('button', { name: 'Remove start date' })).toBeDefined()
+  })
+
   it('starts the rule on a day picked in the calendar, the rule saying which day is due (DUE-18)', async () => {
     const user = setup({ initialDraft: { ...emptyDraft(WED_16), kind: 'weekly', weekdays: [1] } })
 
     await user.click(trigger())
 
     // Every day in the grid says what picking it does, the note above being out of
-    // the way once the eye is on the calendar.
+    // the way once the eye is on the calendar — the dot that picks today included.
     expect(screen.getByRole('button', { name: 'Friday, September 25, 2026' }).title).toBe('Starts the repeat')
+    expect(screen.getByRole('button', { name: 'Select today' }).title).toBe('Select today · Starts the repeat')
 
     // Started on the Friday, a Monday rule is first due on the Monday after it.
     await user.click(screen.getByRole('button', { name: 'Friday, September 25, 2026' }))
@@ -503,5 +529,77 @@ describe('the schedule panel, one screenful (DUE-23)', () => {
 
     await user.click(back)
     expect(document.activeElement).toBe(repeatRow())
+  })
+})
+
+describe('the i that spells the Date row out (DUE-25)', () => {
+  const explain = () => screen.getByRole('button', { name: 'What each icon means' })
+  /** The lines under the row, in order — for the eye alone, each button saying the same to a screen reader already. */
+  const legend = () =>
+    within(screen.getByRole('group', { name: 'Date' }))
+      .queryAllByRole('listitem', { hidden: true })
+      .map((line) => line.textContent)
+
+  it('stands grey at the end of the row while off, and is tinted while on', async () => {
+    const user = setup({ initial: '2026-09-17' })
+    await user.click(trigger())
+
+    expect(explain()).toHaveProperty('ariaPressed', 'false')
+    expect(explain().className).toContain('text-neutral-400')
+    expect(explain().className).not.toContain('text-blue-600')
+
+    await user.click(explain())
+    expect(explain()).toHaveProperty('ariaPressed', 'true')
+    expect(explain().className).toContain('text-blue-600')
+  })
+
+  it('spells each icon out under the row in the words of its tooltip while on, and puts them away again', async () => {
+    const user = setup({ initial: '2026-09-17' })
+    await user.click(trigger())
+    expect(legend()).toEqual([])
+
+    await user.click(explain())
+    expect(legend()).toEqual(['Today', 'Tomorrow', 'Next week · Sep 27', 'Remove date'])
+
+    await user.click(explain())
+    expect(legend()).toEqual([])
+  })
+
+  it('says on a repeating task that each day starts the repeat, and where the skip leads (DUE-18, RPT-34)', async () => {
+    const user = setup({
+      initial: '2026-09-16',
+      initialDraft: { ...emptyDraft(WED_16), kind: 'daily' },
+      skip: { to: '2026-09-17', onSkip: vi.fn() },
+    })
+    await user.click(trigger())
+    await user.click(explain())
+
+    expect(legend()).toEqual([
+      'Today · Starts the repeat',
+      'Tomorrow · Starts the repeat',
+      'Next week · Sep 27 · Starts the repeat',
+      'Skip to Sep 17',
+      'Remove start date',
+    ])
+  })
+
+  it('changes nothing about the task and leaves the panel open, being a note rather than a choice', async () => {
+    const user = setup({ initial: '2026-09-17' })
+    await user.click(trigger())
+    await user.click(explain())
+
+    expect(panel()).not.toBeNull()
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Tomorrow')
+  })
+
+  it('is off again each time the panel opens', async () => {
+    const user = setup({ initial: '2026-09-17' })
+    await user.click(trigger())
+    await user.click(explain())
+    await user.keyboard('{Escape}')
+
+    await user.click(trigger())
+    expect(explain()).toHaveProperty('ariaPressed', 'false')
+    expect(legend()).toEqual([])
   })
 })

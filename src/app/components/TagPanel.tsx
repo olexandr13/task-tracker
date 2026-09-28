@@ -51,6 +51,7 @@ export function TagPanel({ tags, known, onAdd, onRemove, autoFocus = false }: Ta
     <>
       <input
         type="text"
+        name="tag-name"
         value={query}
         onChange={(event) => { setQuery(event.target.value) }}
         onKeyDown={handleKeyDown}

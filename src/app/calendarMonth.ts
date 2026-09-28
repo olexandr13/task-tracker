@@ -30,13 +30,20 @@ export function offsetMonth(day: LocalDay, months: number): LocalDay {
 }
 
 /**
- * The weeks a month is drawn in, from the one holding its 1st, the days either
- * side belonging to the months around it. Always six, so paging from month to
- * month never changes the calendar's height.
+ * The weeks a month is drawn in: from the one holding its 1st to the one holding
+ * its last day — four to six — the days either side, on the first and the last
+ * of them, belonging to the months around it. Never a week of another month's
+ * days alone: the calendar is as tall as the month needs, and grows or shrinks
+ * by a row as paging moves between months.
  */
 export function calendarWeeks(month: LocalDay): LocalDay[][] {
-  const start = startOfWeek(monthOf(month))
-  return Array.from({ length: 6 }, (_, week) =>
-    Array.from({ length: 7 }, (_, weekday) => offsetDay(start, week * 7 + weekday)),
-  )
+  const first = monthOf(month)
+  // The day before the next month's 1st: the month's last, whatever its length.
+  const last = offsetDay(offsetMonth(first, 1), -1)
+  const weeks: LocalDay[][] = []
+  // A week is drawn while it opens on or before the last day, so the last one drawn holds it.
+  for (let monday = startOfWeek(first); monday <= last; monday = offsetDay(monday, 7)) {
+    weeks.push(Array.from({ length: 7 }, (_, weekday) => offsetDay(monday, weekday)))
+  }
+  return weeks
 }

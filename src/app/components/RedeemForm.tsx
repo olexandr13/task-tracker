@@ -59,6 +59,7 @@ export function RedeemForm({ balance, onRedeem }: RedeemFormProps) {
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
           type="number"
+          name="redeem-points"
           inputMode="numeric"
           min={1}
           step={1}
@@ -71,6 +72,7 @@ export function RedeemForm({ balance, onRedeem }: RedeemFormProps) {
         />
         <input
           type="text"
+          name="redeem-note"
           value={note}
           onChange={(event) => { setNote(event.target.value) }}
           onKeyDown={handleKeyDown}

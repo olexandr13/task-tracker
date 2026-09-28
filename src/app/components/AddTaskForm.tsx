@@ -95,6 +95,7 @@ export function AddTaskForm({
 
             <input
               type="text"
+              name="task-title"
               value={title}
               onChange={(event) => { setTitle(event.target.value) }}
               onKeyDown={handleKeyDown}

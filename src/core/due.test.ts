@@ -537,6 +537,34 @@ describe('skipOccurrence', () => {
   it('is not carried over to a copy (TASK-51)', () => {
     expect(duplicateTask(skipOccurrence(repeating(DAILY), WED_16), WED_16).skippedDays).toEqual([])
   })
+
+  it('is undone by picking the skipped day again, which puts the task back on it (DUE-26)', () => {
+    const skipped = skipOccurrence(repeating(DAILY), WED_16)
+    expect(dueDay(skipped, WED_16)).toBe('2026-09-17')
+
+    const pickedAgain = setStartDay(skipped, '2026-09-16')
+
+    expect(dueDay(pickedAgain, WED_16)).toBe('2026-09-16')
+    expect(isInToday(pickedAgain, WED_16)).toBe(true)
+    expect(canSkipOccurrence(pickedAgain, WED_16)).toBe(true)
+  })
+
+  it('stands when a day after it is picked, and when the start is taken away (DUE-26, DUE-18)', () => {
+    const skipped = skipOccurrence(startedOnDay(DAILY, '2026-09-16'), WED_16)
+
+    expect(dueDay(setStartDay(skipped, '2026-09-18'), WED_16)).toBe('2026-09-18')
+    expect(dueDay(setStartDay(skipped, null), WED_16)).toBe('2026-09-17')
+  })
+
+  it('brings back a missed occurrence passed over by reopening, once that day is picked (DUE-26, RPT-38)', () => {
+    const reopened = uncompleteTask(completeTask(repeating(MONDAYS), WED_16), WED_16)
+    expect(dueDay(reopened, WED_16)).toBe('2026-09-21')
+
+    const pickedAgain = setStartDay(reopened, '2026-09-14')
+
+    expect(dueDay(pickedAgain, WED_16)).toBe('2026-09-14')
+    expect(isOverdue(pickedAgain, WED_16)).toBe(true)
+  })
 })
 
 describe('reopening a missed occurrence', () => {

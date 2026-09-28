@@ -16,6 +16,7 @@ import {
   setStartDay,
   setDueDate,
   setTimeGoal,
+  skipOccurrence,
   toLocalDay,
   type List,
   type ListId,
@@ -455,7 +456,7 @@ describe('the menu actions on a woken row', () => {
     expect(screen.getByRole('button', { name: 'Today' }).getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('offers to skip a repeating task\'s occurrence, and marks no day (UI-53, RPT-34)', async () => {
+  it('offers to skip a repeating task\'s occurrence, and marks the day it is due (UI-53, RPT-34)', async () => {
     const onSkipOccurrence = vi.fn()
     const user = userEvent.setup()
     render(
@@ -467,11 +468,28 @@ describe('the menu actions on a woken row', () => {
     await user.click(screen.getByRole('listitem'))
 
     expect(stripDates()).toEqual(['Today', 'Tomorrow', 'Next week', 'Skip occurrence'])
-    expect(screen.getByRole('button', { name: 'Today' }).getAttribute('aria-pressed')).toBe('false')
+    // A daily task is due today: the mark says so, as the schedule button does.
+    expect(screen.getByRole('button', { name: 'Today' }).getAttribute('aria-pressed')).toBe('true')
 
     await user.click(screen.getByRole('button', { name: 'Skip occurrence' }))
 
     expect(onSkipOccurrence).toHaveBeenCalledTimes(1)
+  })
+
+  it('moves the mark on to the day a skip led to (UI-53, RPT-34)', async () => {
+    const user = userEvent.setup()
+    render(
+      <ul>
+        <TaskItem actions={NO_TASK_ACTIONS} task={skipOccurrence(createTask(TASK, { kind: 'daily' }, NOW), NOW)} now={NOW} knownTags={[]} lists={[]} />
+      </ul>,
+    )
+
+    await user.click(screen.getByRole('listitem'))
+
+    expect(screen.getByRole('button', { name: 'Tomorrow' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Today' }).getAttribute('aria-pressed')).toBe('false')
+    // No start was picked, so there is none to take away: the skip moved the task inside its rule.
+    expect(stripDates()).not.toContain('Remove start date')
   })
 
   it('says in each day\'s tooltip that picking it starts the repeat (UI-53, DUE-18)', async () => {
@@ -960,6 +978,10 @@ describe('the menu a right-click opens on a task row', () => {
         `Next week · ${describeShortDate(nextWeekDueDay(NOW), NOW)}`,
       )
       expect(screen.getByRole('menuitemradio', { name: 'Today' }).title).toBe('Today')
+      // The same row as the panel's, told its count so it spreads no further than that allows.
+      expect(
+        screen.getByRole('menuitemradio', { name: 'Today' }).parentElement?.style.getPropertyValue('--icons'),
+      ).toBe('5')
     })
 
     it('marks the one-off\'s own day as chosen (DUE-14)', async () => {
@@ -1013,11 +1035,13 @@ describe('the menu a right-click opens on a task row', () => {
       expect(onSkipOccurrence).toHaveBeenCalledTimes(1)
     })
 
-    it('marks the day a repeating task\'s rule starts on, and none while it has none (DUE-18)', async () => {
+    it('marks the day a repeating task is due: the occurrence in play, or the first from the start picked (DUE-14, DUE-18)', async () => {
       const user = renderDated(createTask(TASK, { kind: 'daily' }, NOW))
 
       await openMenu(user)
-      expect(screen.getByRole('menuitemradio', { name: 'Today' }).getAttribute('aria-checked')).toBe('false')
+      expect(screen.getByRole('menuitemradio', { name: 'Today' }).getAttribute('aria-checked')).toBe('true')
+      // The rule gives the task its day; no start was picked, so there is none to take away.
+      expect(icons()).not.toContain('Remove start date')
       await user.keyboard('{Escape}')
       cleanup()
 
@@ -1025,6 +1049,18 @@ describe('the menu a right-click opens on a task row', () => {
       await openMenu(started)
 
       expect(screen.getByRole('menuitemradio', { name: 'Tomorrow' }).getAttribute('aria-checked')).toBe('true')
+      expect(screen.getByRole('menuitemradio', { name: 'Today' }).getAttribute('aria-checked')).toBe('false')
+      expect(icons()).toContain('Remove start date')
+    })
+
+    it('moves the mark on with a skip, so it says the same as the schedule button (DUE-14, RPT-34)', async () => {
+      const user = renderDated(skipOccurrence(setStartDay(createTask(TASK, { kind: 'daily' }, NOW), TODAY), NOW))
+
+      await openMenu(user)
+
+      expect(screen.getByRole('menuitemradio', { name: 'Tomorrow' }).getAttribute('aria-checked')).toBe('true')
+      expect(screen.getByRole('menuitemradio', { name: 'Today' }).getAttribute('aria-checked')).toBe('false')
+      // The start picked stays what Remove start date takes away.
       expect(icons()).toContain('Remove start date')
     })
 

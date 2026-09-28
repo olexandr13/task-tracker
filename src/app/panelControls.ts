@@ -22,8 +22,19 @@ export const panelOptionOn = 'font-medium text-blue-600 dark:text-blue-400'
 
 export const panelOptionOff = 'text-neutral-700 dark:text-neutral-200'
 
-/** A row of icon choices, spread across the panel so its ends line up with the fields under it. */
-export const panelIconRow = 'flex justify-between gap-1 px-1 md:gap-0.5'
+/**
+ * A row of icon choices, spread across the panel so its ends line up with the
+ * fields under it — but never further apart than one of them is wide, so a short
+ * row sits together at the right, where the panel's other controls are, rather
+ * than an icon in each corner. The cap is on the row's width: its icons
+ * (`panelIcon`'s size), a gap of an icon's width between each pair, and its own
+ * padding, for as many icons as `--icons` says it holds — which PanelIconRow
+ * sets, so the row is drawn through it. The width is spelled out (`w-full`)
+ * because the row sits in a column: with a margin of auto alone it would shrink
+ * to its icons instead of filling up to the cap.
+ */
+export const panelIconRow =
+  'ml-auto flex w-full max-w-[calc((2*var(--icons)-1)*2.5rem+0.5rem)] justify-between gap-1 px-1 md:max-w-[calc((2*var(--icons)-1)*2rem+0.5rem)] md:gap-0.5'
 
 /** A choice drawn as an icon alone, such as the quick date choices. Tone is added by the caller. */
 export const panelIcon =
@@ -34,6 +45,14 @@ export const panelIconOff =
 
 /** The icon already chosen: tinted rather than ticked, there being no room beside it for a mark. */
 export const panelIconOn = `${panelOptionOn} bg-blue-600/10`
+
+/**
+ * An icon in a row of choices that is not one of them — the **i** at the row's
+ * end, which only offers to say what the others are (DUE-25). A shade quieter
+ * than a choice, so the eye does not count it as one, and up with them under the pointer.
+ */
+export const panelIconQuiet =
+  'text-neutral-400 hover:text-neutral-900 dark:text-neutral-500 dark:hover:text-neutral-100'
 
 /** A small square button beside a field, such as a stepper's − and +. */
 export const panelStep =

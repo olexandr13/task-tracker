@@ -35,14 +35,33 @@ describe('offsetMonth', () => {
 })
 
 describe('calendarWeeks', () => {
-  it('lays a month out in six weeks from the Monday before its 1st', () => {
+  it('lays a month out from the Monday of its 1st to the Sunday of its last day, whole weeks', () => {
     const weeks = calendarWeeks('2026-09-16')
 
-    expect(weeks).toHaveLength(6)
+    // September 2026 runs Tuesday the 1st to Wednesday the 30th: five weeks, the
+    // months either side filling the ends, and no sixth week of October's alone.
+    expect(weeks).toHaveLength(5)
     expect(weeks.every((week) => week.length === 7)).toBe(true)
     expect(weeks[0][0]).toBe('2026-08-31')
     expect(weeks[0][1]).toBe('2026-09-01')
-    expect(weeks[5][6]).toBe('2026-10-11')
+    expect(weeks[4][6]).toBe('2026-10-04')
+  })
+
+  it('draws as many weeks as the month spans, four to six', () => {
+    // February 2027 opens on a Monday and is four weeks to the day.
+    expect(calendarWeeks('2027-02-10').map((week) => week[0])).toEqual([
+      '2027-02-01',
+      '2027-02-08',
+      '2027-02-15',
+      '2027-02-22',
+    ])
+    expect(calendarWeeks('2027-02-10').at(-1)?.at(-1)).toBe('2027-02-28')
+
+    // August 2026 opens on a Saturday and runs 31 days, over into a sixth week.
+    const august = calendarWeeks('2026-08-01')
+    expect(august).toHaveLength(6)
+    expect(august[0][0]).toBe('2026-07-27')
+    expect(august[5][6]).toBe('2026-09-06')
   })
 
   it('starts on the 1st itself when the month opens on a Monday', () => {

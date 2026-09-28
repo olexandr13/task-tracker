@@ -47,6 +47,7 @@ export function BackupCard({ status, onExport, onImport }: BackupCardProps) {
           {working && status.action === 'import' ? 'Importing…' : 'Import'}
           <input
             type="file"
+            name="backup-file"
             accept=".json,application/json"
             disabled={working}
             className="sr-only"

@@ -58,6 +58,7 @@ export function TagList({ tags, onOpen, onAdd, onDelete }: TagListProps) {
         <div className="flex items-center gap-1.5">
           <input
             type="text"
+            name="tag-name"
             value={typed}
             onChange={(event) => {
               setTyped(event.target.value)

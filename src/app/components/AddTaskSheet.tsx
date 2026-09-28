@@ -174,6 +174,7 @@ export function AddTaskSheet({
         <input
           ref={titleInput}
           type="text"
+          name="task-title"
           value={title}
           onChange={(event) => { setTitle(event.target.value) }}
           onKeyDown={handleTitleKeyDown}

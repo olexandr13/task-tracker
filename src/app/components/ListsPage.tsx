@@ -112,6 +112,7 @@ export function ListsPage({
         <div className="flex items-center gap-1.5">
           <input
             type="text"
+            name="list-name"
             value={typed}
             onChange={(event) => {
               setTyped(event.target.value)
@@ -172,6 +173,7 @@ export function ListsPage({
                   <FolderIcon className={glyph} />
                   <input
                     type="text"
+                    name="list-name"
                     value={editing.name}
                     onChange={(event) => {
                       setEditing({ id: list.id, name: event.target.value })

@@ -27,11 +27,19 @@ export interface SkipChoice {
 
 interface DateChoicesOptions {
   /**
-   * The day the task carries itself: a one-off's date, or the day a repeating
-   * task's rule starts on — `scheduledDay`. It is the one marked as chosen, and
-   * the one **Remove date** (**Remove start date** on a repeating task) takes away.
+   * The day the task is due — a one-off's date, or the day a repeating task's
+   * rule gives it (`dueDay`) — which is the one marked as chosen. A skip moves
+   * the task on to the rule's next day (RPT-34), so the mark moves with it.
    */
-  chosen: LocalDay | null
+  due: LocalDay | null
+  /**
+   * The day the task carries itself — a one-off's date, or the day a repeating
+   * task's rule was told to start on (`scheduledDay`) — which is what **Remove
+   * date** (**Remove start date** on a repeating task) takes away. On a one-off
+   * it is the due day; a repeating task's rule gives it a day whether or not a
+   * start was picked, so there the two part.
+   */
+  scheduled: LocalDay | null
   now: Date
   /**
    * Whether the task repeats: a day picked is the day its rule starts on rather
@@ -58,8 +66,12 @@ export const STARTS_REPEAT = 'Starts the repeat'
  * A tooltip is a few words: the day is spelled out only where the name does not
  * already say it, and on a repeating task every day says that it starts the rule,
  * since the menu and the row's strip have no panel note to say it once.
+ *
+ * The day marked is the one the task is due on, so it says the same as the
+ * schedule button does: a daily task reads Today until it is skipped, and
+ * Tomorrow from then on.
  */
-export function dateChoices({ chosen, now, repeats, skip, onChange, onSelectDate }: DateChoicesOptions): DateChoice[] {
+export function dateChoices({ due, scheduled, now, repeats, skip, onChange, onSelectDate }: DateChoicesOptions): DateChoice[] {
   const today = toLocalDay(now)
   const day = (label: string, icon: ReactNode, choice: LocalDay, hint?: string): DateChoice => ({
     label,
@@ -67,7 +79,7 @@ export function dateChoices({ chosen, now, repeats, skip, onChange, onSelectDate
     // Only a day starts the rule: skipping moves the task on inside it, and
     // Select date opens the panel, whose note says it, rather than choosing yet.
     hint: repeats ? `${hint ?? label} · ${STARTS_REPEAT}` : hint,
-    checked: choice === chosen,
+    checked: choice === due,
     onSelect: () => { onChange(choice) },
   })
   const nextWeek = nextWeekDueDay(now)
@@ -92,7 +104,7 @@ export function dateChoices({ chosen, now, repeats, skip, onChange, onSelectDate
     // On a repeating task what goes is the day its rule was told to start on —
     // the rule stays and runs from the day the task was written, as it did
     // before a day was picked — so the choice says which date it takes away.
-    ...(chosen === null
+    ...(scheduled === null
       ? []
       : [
           {

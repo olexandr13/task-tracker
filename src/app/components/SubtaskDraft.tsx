@@ -62,6 +62,7 @@ export function SubtaskDraft({ taskTitle, onAdd, onClose, onBackspaceWhenEmpty }
 
       <input
         type="text"
+        name="subtask-title"
         value={title}
         onChange={(event) => { setTitle(event.target.value) }}
         onKeyDown={handleKeyDown}

@@ -57,7 +57,9 @@ interface DateCalendarProps {
 /**
  * A month of days, one of them picked with a click. Weeks run Monday to Sunday,
  * as everywhere else. Today is marked, the chosen day filled, and days gone by
- * and those of the months either side faded — there to pick all the same.
+ * and those of the months either side faded — there to pick all the same. The
+ * head pages a month either way, and its dot picks today from wherever the grid
+ * has been paged to.
  *
  * It is one stop for Tab, as a grid is: the arrow keys move a day or a week,
  * Home and End to the ends of the week, Page Up and Page Down a month (a year
@@ -128,9 +130,14 @@ export function DateCalendar({ selected, opensOn = selected, now, hint, onSelect
           </button>
           <button
             type="button"
-            aria-label="Go to today"
-            title="Go to today"
-            onClick={() => { setActive(today) }}
+            aria-label="Select today"
+            // A way to pick a day like any in the grid, so it too says what picking one costs.
+            title={hint === undefined ? 'Select today' : `Select today · ${hint}`}
+            onClick={() => {
+              // The grid follows to today's month, in case picking a day leaves it on show.
+              setActive(today)
+              onSelect(today)
+            }}
             className={panelStep}
           >
             <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />

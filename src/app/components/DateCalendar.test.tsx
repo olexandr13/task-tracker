@@ -20,11 +20,13 @@ function setup(selected: LocalDay | null = null, opensOn?: LocalDay | null) {
 
 const grid = () => screen.getByRole('grid')
 const day = (name: string) => screen.getByRole('button', { name })
+/** The dot at the head, between the month arrows. */
+const dot = () => screen.getByRole('button', { name: 'Select today' })
 /** The one day Tab stops on. */
 const inReach = () => grid().querySelector('[tabindex="0"]')
 
 describe('DateCalendar', () => {
-  it('lays the month out Monday to Sunday, six weeks, headed by its name (DUE-15)', () => {
+  it('lays the month out Monday to Sunday, in the weeks it spans, headed by its name (DUE-15)', () => {
     setup()
 
     expect(screen.getByRole('grid', { name: 'September 2026' })).toBeDefined()
@@ -37,8 +39,23 @@ describe('DateCalendar', () => {
       'Saturday',
       'Sunday',
     ])
+    // Five weeks, from August's Monday the 31st to October's Sunday the 4th: no week of October's alone.
+    const cells = screen.getAllByRole('gridcell')
+    expect(cells).toHaveLength(35)
+    expect(cells[0].textContent).toBe('31')
+    expect(cells.at(-1)?.textContent).toBe('4')
+  })
+
+  it('grows and shrinks by a row as paging moves between months (DUE-15)', async () => {
+    const { user } = setup()
+
+    // August 2026 opens on a Saturday and runs 31 days: a sixth week.
+    await user.click(screen.getByRole('button', { name: 'Previous month' }))
+    expect(screen.getByRole('grid', { name: 'August 2026' })).toBeDefined()
     expect(screen.getAllByRole('gridcell')).toHaveLength(42)
-    expect(screen.getAllByRole('gridcell')[0].textContent).toBe('31')
+
+    await user.click(screen.getByRole('button', { name: 'Next month' }))
+    expect(screen.getAllByRole('gridcell')).toHaveLength(35)
   })
 
   it('marks today, and the chosen day as selected (DUE-15)', () => {
@@ -57,7 +74,7 @@ describe('DateCalendar', () => {
     expect(onSelect.mock.calls).toEqual([['2026-09-14'], ['2026-10-03']])
   })
 
-  it('pages from month to month, and back to today\'s (DUE-15)', async () => {
+  it('pages from month to month (DUE-15)', async () => {
     const { user } = setup()
 
     await user.click(screen.getByRole('button', { name: 'Next month' }))
@@ -66,9 +83,26 @@ describe('DateCalendar', () => {
 
     await user.click(screen.getByRole('button', { name: 'Previous month' }))
     expect(screen.getByRole('grid', { name: 'October 2026' })).toBeDefined()
+  })
 
-    await user.click(screen.getByRole('button', { name: 'Go to today' }))
+  it('picks today with the dot from whichever month is on show, the grid following (DUE-15)', async () => {
+    const { user, onSelect } = setup()
+
+    await user.click(screen.getByRole('button', { name: 'Next month' }))
+    await user.click(dot())
+
+    expect(onSelect.mock.calls).toEqual([['2026-09-16']])
     expect(screen.getByRole('grid', { name: 'September 2026' })).toBeDefined()
+    expect(inReach()?.getAttribute('data-day')).toBe('2026-09-16')
+  })
+
+  it('has the dot say what picking a day does, where there is something to say (DUE-15)', () => {
+    setup()
+    expect(dot().title).toBe('Select today')
+    cleanup()
+
+    render(<DateCalendar selected={null} now={WED_16} hint="Starts the repeat" onSelect={vi.fn()} />)
+    expect(dot().title).toBe('Select today · Starts the repeat')
   })
 
   it('opens on the month of the day it is given, whether or not that day is chosen (DUE-15)', () => {

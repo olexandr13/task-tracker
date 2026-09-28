@@ -28,8 +28,9 @@ interface SchedulePickerProps {
    */
   dueDate: LocalDay | null
   /**
-   * The day a repeating task's rule starts on, where one was picked for it. Null
-   * on a one-off, whose own day is `dueDate` already.
+   * The day a repeating task's rule was told to start on, where one was picked
+   * for it — what **Remove start date** takes away. Null on a one-off, whose own
+   * day is `dueDate` already. The day marked as chosen is `dueDate` either way.
    */
   startDay?: LocalDay | null
   /** The repeat rule being chosen, `once` when the task happens once. */
@@ -183,7 +184,7 @@ export function SchedulePicker({
             <>
               <DueChoices
                 dueDate={dueDate}
-                chosen={rule === null ? dueDate : startDay}
+                scheduled={rule === null ? dueDate : startDay}
                 now={now}
                 repeats={rule !== null}
                 skip={skip}

@@ -34,19 +34,13 @@ there is never a limit on them.
 - **WARM-5** Tasks that are not habits are **never** held back, however many there are. Neither is
   anything at all once no warm-up is under way.
 - **WARM-6** **Habits** carries the warm-up at the head of the page, where habits are added and so
-  the only place the allowance is ever felt: the day it is on (`Day 3 of 30`), how much of that
-  day's allowance is taken (`2 habits · 3 allowed today`), what that leaves for today, and under
-  that text **More info** for the warm-up's own page (MODE-10) and **End warm-up** (WARM-9), the
-  buttons sitting below rather than beside so the sentences read across the full width. Nothing is
-  drawn there while no warm-up is under way.
-- **WARM-11** What today leaves is said **plainly**, an allowance being easy to read as a threat:
-  *One more habit can be taken on today*; with nothing left, the rule itself — *No new habit today.
-  The warm-up allows one new habit a day, so tomorrow allows one more.*, which on the last day ends
-  *From tomorrow there is no limit.* instead; and — for an account with more habits than the day
-  allows (WARM-7) — *You have more habits than today allows, so no new one today. None of the
-  habits you have is removed.* It says outright that nothing is taken away, which is the thing a
-  limit makes people fear, and it says when the next habit can be added rather than only that
-  today's allowance is full.
+  the only place the allowance is ever felt, in **one line**: the mode's name, the day it is on
+  (`Day 3/30`) and how many habits there are over how many the day allows (`2/3 habits`), with
+  **More info** beside it for the warm-up's own page (MODE-10). The count is never capped: an
+  account past the allowance (WARM-7) reads `7/3 habits`, so every habit is seen to be counted and
+  none to be taken away. Nothing more is said there — what today leaves is the notice's to say,
+  when a habit is actually held back (WARM-8) — and the way out is the switch on Modes (WARM-9).
+  Nothing is drawn there while no warm-up is under way.
 - **WARM-7** A habit's **own** rule can always be changed: turning it from daily to weekly-on-all-
   seven, or away from daily altogether, is never one habit more, so it is never held back. Nothing a
   warm-up does deletes or changes a habit that already exists. An account that keeps more habits
@@ -60,9 +54,8 @@ there is never a limit on them.
 
 ## Leaving it
 
-- **WARM-9** Turning the switch on **Modes** off (MODE-3), or **End warm-up** on the panel, ends it
-  at once — no confirm — and nothing is held back from then on. It can be started again later, which
-  begins a new month from that day.
+- **WARM-9** Turning the switch on **Modes** off (MODE-3) ends it at once — no confirm — and nothing
+  is held back from then on. It can be started again later, which begins a new month from that day.
 - **WARM-10** A warm-up ends **by itself** after its thirty days. Nothing runs at midnight and
   nothing is rewritten to end it: the day it is on is asked for as it is needed, so a page left open
   across midnight allows one more habit on its next render (PRIN-2). The day it began is kept, and
