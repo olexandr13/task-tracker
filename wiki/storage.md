@@ -100,6 +100,8 @@ changes shape.
   like the tasks (STORE-18).
 - **STORE-35** Deleting a tag is two changes — off every task, then every record of that name — and
   the tasks go first, so a tag is never left on a task with no record, to be kept all over again.
+  Renaming one (TAG-24) is the same two changes in the same order: the new name on every task
+  carrying it, then every record of the old name kept under the new one.
 
 ## Warm-up
 
@@ -168,8 +170,8 @@ changes shape.
   browser's `localStorage`, not in the account, under a version of its own, read at once when the
   app opens, and back to the default — unfolded — when it cannot be read. A layout saved before
   there were pages under Rewards, or before the modes were listed, is read as leaving those open.
-- **STORE-36** How the habits view is shown — whether cards start open (HAB-23) — is kept the same
-  way again, under a version of its own, apart from the task View options (STORE-30). A phone and a
+- **STORE-36** How the habits view is shown — whether cards start open, set on Settings (HAB-23) — is
+  kept the same way again, under a version of its own, apart from the task View options (STORE-30). A phone and a
   desktop have different room, so each is set its own way. Options the app cannot read fall back to
   the default: folded.
 - **STORE-40** The theme (UI-63) is kept the same way again, under a version of its own: a phone

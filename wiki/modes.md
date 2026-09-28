@@ -60,9 +60,11 @@ and each mode a page of its own that says what it does.
   hinted at.
 - **MODE-10** Wherever a mode **shows itself at work** — the warm-up panel at the head of Habits
   (WARM-6), the focus and idle banners on Today (JUST-5) — the banner carries a **More info**
-  button, which opens that mode's own page. A banner has room for a line; the
-  page is where the whole of it is written down, and there is no other way to it from the page the
-  mode is being felt on. The win card (JUST-9) carries none: a win is not the moment to read.
+  button, which opens that mode's own page. A banner has room for a line; the page is where the
+  whole of it is written down, and there is no other way to it from the page the mode is being felt
+  on. Whether the banner also carries a way out is the mode's own call: Procrastination's does
+  (JUST-5), the warm-up's does not (WARM-9). The win card (JUST-9) carries none: a win is not the
+  moment to read.
 - **MODE-7** **Modes has an entry of its own in the sidebar**, with a page for each mode indented
   under it — **Procrastination**, **Warm-up**, each wearing its own glyph — and a chevron that
   **folds them away** as Lists folds its lists (UI-30, LST-26); folded, Modes itself is marked

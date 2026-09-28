@@ -17,8 +17,7 @@ interface AddTaskFormProps {
   onOpenSheet: () => void
   /**
    * The View settings button, standing beside the box (UI-41). A phone has no
-   * box and so no row for it: what it keeps of it is at the foot of the page
-   * instead (UI-46).
+   * box, and so no row for it either (UI-54).
    */
   viewButton?: ReactNode
   /**

@@ -1,20 +1,32 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { useView } from './useView'
 import { oneListView, tagView, viewFromHash, viewHash } from './view'
 
 /* The view kept in the address. LIST ids refer to wiki/views.md, LST ids to wiki/lists.md,
    UI ids to wiki/interface.md. */
 
-afterEach(() => {
-  cleanup()
-  window.history.replaceState(null, '', '/')
+beforeEach(() => {
+  // A fresh entry at the end of jsdom's one history, as a page opened from elsewhere is.
+  window.history.pushState(null, '', '/')
 })
 
-/** jsdom fires `hashchange` asynchronously, as a browser does. */
-async function hashSettles() {
-  await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+afterEach(() => {
+  cleanup()
+})
+
+/** jsdom fires `popstate` asynchronously, as a browser does, and moves through the history in two hops. */
+async function historySettles() {
+  for (let hop = 0; hop < 3; hop++) {
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+  }
+}
+
+/** The browser's back button. */
+async function back() {
+  act(() => { window.history.back() })
+  await historySettles()
 }
 
 describe('viewFromHash', () => {
@@ -94,15 +106,86 @@ describe('useView', () => {
   it('puts the view switched to into the address (UI-36)', async () => {
     const { result } = renderHook(() => useView())
     act(() => { result.current[1]('habits') })
-    await hashSettles()
+    await historySettles()
     expect(result.current[0]).toBe('habits')
     expect(window.location.hash).toBe('#/habits')
   })
 
-  it('follows the address when it changes from outside, as with back (UI-37)', async () => {
+  it('follows an address typed in (UI-36)', async () => {
     const { result } = renderHook(() => useView())
     act(() => { window.location.hash = '#/trash' })
-    await hashSettles()
+    await historySettles()
     expect(result.current[0]).toBe('trash')
+  })
+
+  it('goes one level up on back, not to the view before (UI-37)', async () => {
+    const { result } = renderHook(() => useView())
+    act(() => { result.current[1]('rewards/history') })
+    act(() => { result.current[1]('modes/warm-up') })
+    await historySettles()
+
+    await back()
+    expect(result.current[0]).toBe('modes')
+    expect(window.location.hash).toBe('#/modes')
+
+    await back()
+    expect(result.current[0]).toBe('more')
+    expect(window.location.hash).toBe('#/more')
+  })
+
+  it('climbs from a list to Lists and from Lists to Tasks (UI-37, UI-34)', async () => {
+    const id = '6f1b2c3d-0f3a-4a1b-9c2e-8d7f6a5b4c3d'
+    const { result } = renderHook(() => useView())
+    act(() => { result.current[1](oneListView(id)) })
+    await historySettles()
+
+    await back()
+    expect(result.current[0]).toBe('lists')
+    await back()
+    expect(result.current[0]).toBe('tasks')
+  })
+
+  it('climbs from where a reload or a link lands, too (UI-36, UI-37)', async () => {
+    window.history.replaceState(null, '', '/#/rewards/wishlist')
+    const { result } = renderHook(() => useView())
+    await historySettles()
+    expect(result.current[0]).toBe('rewards/wishlist')
+
+    await back()
+    expect(result.current[0]).toBe('rewards')
+  })
+
+  it('does not pile the views visited onto the history (UI-37)', async () => {
+    const { result } = renderHook(() => useView())
+    const before = window.history.length
+    act(() => { result.current[1]('habits') })
+    act(() => { result.current[1]('today') })
+    act(() => { result.current[1]('settings') })
+    await historySettles()
+    expect(window.history.length).toBe(before)
+
+    act(() => { result.current[1]('tags') })
+    act(() => { result.current[1](tagView('work')) })
+    act(() => { result.current[1]('modes/procrastination') })
+    await historySettles()
+    expect(window.history.length).toBe(before + 1)
+  })
+
+  it('keeps the address right after leaving a page for a tab (UI-36, UI-37)', async () => {
+    const { result } = renderHook(() => useView())
+    act(() => { result.current[1]('rewards/rules') })
+    await historySettles()
+    const before = window.history.length
+
+    act(() => { result.current[1]('habits') })
+    expect(result.current[0]).toBe('habits')
+    await historySettles()
+    expect(window.location.hash).toBe('#/habits')
+    expect(window.history.state).toEqual({ level: 'root' })
+
+    // The page rung was dropped, so the next page pushed is the only one above the root.
+    act(() => { result.current[1]('tags') })
+    await historySettles()
+    expect(window.history.length).toBe(before)
   })
 })

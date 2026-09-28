@@ -169,7 +169,7 @@ describe('AddTaskForm on a phone', () => {
     expect(onOpenSheet).toHaveBeenCalledOnce()
   })
 
-  it('leaves out the row the box stood in, button and all (UI-46)', () => {
+  it('leaves out the row the box stood in, button and all (UI-41, UI-54)', () => {
     render(
       <AddTaskForm
         now={WED_16}

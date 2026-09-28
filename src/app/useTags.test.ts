@@ -152,6 +152,36 @@ describe('changing the kept tags', () => {
     expect(written).toEqual([])
   })
 
+  it('keeps every record of a renamed tag under the new name, in any case (TAG-24)', () => {
+    const twice = createTag('work', AT)
+    const { result, arrive, written } = setUp()
+    arrive([WORK, HOME, twice])
+
+    let renamed = false
+    act(() => { renamed = result.current.rename('WORK', '#office') })
+
+    expect(renamed).toBe(true)
+    expect(result.current.tags).toEqual([{ ...WORK, name: 'office' }, HOME, { ...twice, name: 'office' }])
+    expect(written[0]).toEqual({ saved: [{ ...WORK, name: 'office' }, { ...twice, name: 'office' }], removed: [] })
+  })
+
+  it('respells a tag, but renames none onto another tag\'s name, in any case (TAG-4, TAG-24)', () => {
+    const { result, arrive, written } = setUp()
+    arrive([WORK, HOME])
+
+    let onto = true
+    let respelled = false
+    act(() => {
+      onto = result.current.rename('work', 'Home')
+      respelled = result.current.rename('work', 'WORK')
+    })
+
+    expect(onto).toBe(false)
+    expect(respelled).toBe(true)
+    expect(result.current.tags).toEqual([{ ...WORK, name: 'WORK' }, HOME])
+    expect(written).toHaveLength(1)
+  })
+
   it('stops keeping every record of a deleted tag, in any case (TAG-22)', () => {
     const twice = createTag('work', AT)
     const { result, arrive, written } = setUp()

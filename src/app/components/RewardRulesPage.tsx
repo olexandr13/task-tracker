@@ -68,6 +68,7 @@ export function RewardRulesPage({ bonuses, pointValue, onChangeBonus, onChangePo
                   showAmount
                   addLabel="Add bonus"
                   noneLabel="No bonus"
+                  removeLabel="Remove bonus"
                 />
               </div>
             </li>

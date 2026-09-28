@@ -85,6 +85,18 @@ it is deleted, whether or not a task carries it.
   on Enter or its **Add** button, a `#` in front ignored (TAG-3). The new tag is listed at once, with
   nothing to do, and the box empties, staying on the page for the next one. A name some tag has
   already, in any case (TAG-4), makes nothing, and the box says so and keeps what was typed.
+- **TAG-24** Beside each tag is a button that **renames it in place**, as a list is renamed
+  (LST-19): the name turns into a box with the caret in it, and Enter, or leaving the box, renames
+  the tag, a `#` in front ignored (TAG-3). A task carries its tags by name, so the new name is
+  written on **every task carrying the tag** — tasks in the trash too, so restoring one does not
+  bring the old name back — where the old one stood among the task's tags; nothing else about a
+  task changes, and a task without the tag is not touched. The tag's record is kept under the new
+  name (STORE-33). A name **another tag has**, in any case, is refused, and the row says so and
+  keeps what was typed; the same name in another case is the tag **respelled**, not another tag
+  (TAG-4), and goes through. A name a tag cannot have is not taken, and the row says why.
+- **TAG-25** Giving up a rename with Escape leaves the tag named as it was, as dropping a title
+  edit does (TASK-11); so does Enter on the name unchanged. A tag's list is at its new name from
+  then on (`#/tag/name`, TAG-13); an address kept for the old one opens a list with nothing tagged.
 
 ## On a phone
 
@@ -97,15 +109,16 @@ it is deleted, whether or not a task carries it.
 
 ---
 
-**Where it lives:** `src/core/tag.ts` (names, the kept tag, putting on and taking off, deleting,
-every tag there is, matching and suggesting, the tag being typed), `src/app/useTags.ts` (keeping tags,
-and keeping the ones tasks carry; saving: [Storage](storage.md)),
+**Where it lives:** `src/core/tag.ts` (names, the kept tag, putting on and taking off, renaming,
+deleting, every tag there is, matching and suggesting, the tag being typed), `src/app/useTags.ts`
+(keeping tags, renaming and deleting them, and keeping the ones tasks carry; saving:
+[Storage](storage.md)),
 `src/app/components/TagPanel.tsx` (the panel), `src/app/components/TagPicker.tsx` (the woken row's
 and the phone's button), `src/app/components/TaskDescription.tsx` and `src/app/descriptionBox.ts` (typing `#`),
 `src/app/components/TaskItem.tsx` (labels on the line of details, the menu's Tags, the woken strip and the phone's sheet), `src/app/components/TaskSheet.tsx`, `src/app/components/TagList.tsx`
-(the Tags page and its box), `src/app/view.ts` (the Tags page and a tag's list, their addresses and what they say), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx`,
+(the Tags page, its box, renaming and deleting), `src/app/view.ts` (the Tags page and a tag's list, their addresses and what they say), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx`,
 `src/app/components/SideNav.tsx`, `src/app/components/BottomNav.tsx`, `src/app/components/TagIcon.tsx`.
 **Tested in:** `src/core/tag.test.ts`, `src/app/useTags.test.ts` (keeping tags), `src/app/components/TagPicker.test.tsx`,
 `src/app/components/TaskDescription.test.tsx` (typing `#`), `src/app/components/TaskItem.test.tsx`
-(labels on the line of details, tagging from the menu), `src/app/components/TagList.test.tsx` (the Tags page and its box), `src/app/components/SideNav.test.tsx`,
+(labels on the line of details, tagging from the menu), `src/app/components/TagList.test.tsx` (the Tags page, its box, renaming and deleting), `src/app/useTasks.test.ts` (renaming a tag on the tasks), `src/app/components/SideNav.test.tsx`,
 `src/app/useView.test.ts` (the address), `src/app/components/BottomNav.test.tsx`.

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, type KeyboardEvent, type ReactNode, type SyntheticEvent } from 'react'
 import { createPortal } from 'react-dom'
+import { usePageLock } from '../usePageLock'
 import { useSheetDrag } from '../useSheetDrag'
 
 interface BottomSheetProps {
@@ -31,16 +32,15 @@ export function BottomSheet({ label, onClose, children }: BottomSheetProps) {
   const root = useRef<HTMLDivElement>(null)
   const drag = useSheetDrag(root, onClose)
 
+  // The page behind is dimmed and does not scroll (UI-48).
+  usePageLock()
+
   useLayoutEffect(() => {
     const previous = document.activeElement
     // Into the sheet, so its keys and Escape work straight away.
     root.current?.focus({ preventScroll: true })
 
-    const overflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
     return () => {
-      document.body.style.overflow = overflow
       if (previous instanceof HTMLElement) previous.focus({ preventScroll: true })
     }
   }, [])

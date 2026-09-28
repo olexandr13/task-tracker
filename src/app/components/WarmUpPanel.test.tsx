@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { WarmUpProgress } from '../../core'
 import { WarmUpPanel } from './WarmUpPanel'
 
-/* The warm-up at the head of Habits. WARM ids refer to wiki/warm-up.md. */
+/* The warm-up at the head of Habits. WARM ids refer to wiki/warm-up.md, MODE ids to wiki/modes.md. */
 
 afterEach(cleanup)
 

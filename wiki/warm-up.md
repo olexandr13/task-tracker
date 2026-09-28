@@ -54,8 +54,10 @@ there is never a limit on them.
 
 ## Leaving it
 
-- **WARM-9** Turning the switch on **Modes** off (MODE-3) ends it at once — no confirm — and nothing
-  is held back from then on. It can be started again later, which begins a new month from that day.
+- **WARM-9** Turning the switch on **Modes** off (MODE-3), on its row or on its own page, ends it
+  at once — no confirm — and nothing is held back from then on. That switch is the only way out:
+  the panel on Habits (WARM-6) has none, so a warm-up is not ended by a stray tap where habits are
+  added. It can be started again later, which begins a new month from that day.
 - **WARM-10** A warm-up ends **by itself** after its thirty days. Nothing runs at midnight and
   nothing is rewritten to end it: the day it is on is asked for as it is needed, so a page left open
   across midnight allows one more habit on its next render (PRIN-2). The day it began is kept, and

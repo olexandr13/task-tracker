@@ -2,7 +2,7 @@ import ts from 'typescript'
 
 /**
  * Finds the form fields in a component's source that the browser has no name for
- * (UI-68 in wiki/interface.md).
+ * (UI-69 in wiki/interface.md).
  *
  * Chrome's Issues panel raises "A form field element should have an id or name
  * attribute" for every `<input>`, `<select>` and `<textarea>` with neither, and its

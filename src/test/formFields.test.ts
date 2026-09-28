@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { describeUnnamedFormFields, unnamedFormFields } from './formFields'
 
 /*
- * Every form field in the app carries a name for the browser (UI-68 in
+ * Every form field in the app carries a name for the browser (UI-69 in
  * wiki/interface.md). The check reads the components' source rather than
  * rendering them, so it needs no props and misses no box, however deep in a
  * panel it opens — the same way the browser's own Issues panel would find it.
@@ -101,7 +101,7 @@ describe("the app's form fields", () => {
     expect(files.some((file) => components[file]?.includes('<input'))).toBe(true)
   })
 
-  it('every one carries a name or an id, so the browser can tell them apart (UI-68)', () => {
+  it('every one carries a name or an id, so the browser can tell them apart (UI-69)', () => {
     const unnamed = Object.entries(components).flatMap(([file, source]) => unnamedFormFields(file, source))
 
     expect(describeUnnamedFormFields(unnamed)).toEqual([])

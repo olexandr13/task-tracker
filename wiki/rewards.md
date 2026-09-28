@@ -29,6 +29,10 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   away**, and **−** stops there. A number that is neither 0 nor a reward is not saved, and the box goes
   back to what is saved on leaving it. Enter closes the panel, as do a click outside and Escape
   (UI-9, UI-10).
+- **RWD-42** Under the number the panel has **Done**, which closes it from inside, and — while there is
+  a reward — **Remove reward**, which takes it away in **one tap** and closes the panel, so 10 points
+  are not 10 presses of **−**. Closed either way, or with Enter, the focus goes back to the star.
+  The panel opened from the Rules page says **Remove bonus** (RWD-27).
 - **RWD-7** The star sits in a slot of its own after the clock (UI-27). A woken row spells the
   reward out under it: `+5`.
 - **RWD-8** On a phone the row's line has no room for the star *button*, so the sheet a tap opens
@@ -76,7 +80,7 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   earned stays as it was (RWD-13). As with every other earning, the device that makes the change
   records it (STORE-25).
 - **RWD-27** The bonuses are set on **Rules** (RWD-39), with the same star panel a task's reward
-  uses (RWD-5, RWD-6): **0 is no bonus**, every step and number typed is saved as it is made, and
+  uses (RWD-5, RWD-6, RWD-42): **0 is no bonus**, every step and number typed is saved as it is made, and
   **+** from 0 gives **5** for Today, **20** for the week and **50** for the month — a longer
   stretch asks more. Changing one or taking it away only affects **periods from then on**; with no
   bonus set, clearing that period earns nothing and nothing is taken back.

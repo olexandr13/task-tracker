@@ -65,7 +65,7 @@ Dependencies point inwards only.
   (STORE-39).
 - Hooks holding account data report refused loads and saves through `ReportProblem` (STORE-13), not
  just logs.
-- Every `input`, `select` and `textarea` carries a `name` (UI-68), the same for the same kind of box
+- Every `input`, `select` and `textarea` carries a `name` (UI-69), the same for the same kind of box
  (`task-title`, `tag-name`, `prize-points`); `src/test/formFields.test.ts` fails on one without.
 
 ### Config
