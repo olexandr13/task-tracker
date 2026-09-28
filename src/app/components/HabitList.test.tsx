@@ -78,6 +78,14 @@ describe('HabitList', () => {
     expect(screen.getByText(/Give a task a daily repeat/)).toBeTruthy()
   })
 
+  it('says under the cards that they are the daily tasks (HAB-2)', () => {
+    setup([stretch()])
+
+    const caption = screen.getByText('Tasks that repeat every day.')
+    const card = screen.getByRole('heading', { name: 'stretch' })
+    expect(card.compareDocumentPosition(caption) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('ticks today off, and takes it back (HAB-4)', async () => {
     const habit = createTask('stretch', { kind: 'daily' }, WED_16)
     const { user, onComplete } = setup([habit])

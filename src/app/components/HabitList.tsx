@@ -108,9 +108,9 @@ export function HabitList({
   onRevealed,
 }: HabitListProps) {
   // Per-card folds override the page default; clearing them when the default
-  // changes is what "every card resets" means (HAB-23). The legend sits under
-  // the list and only while at least one grid is open — it names shades that
-  // otherwise are not on the page.
+  // changes is what "every card resets" means (HAB-23). A line under the cards
+  // says what they are. The legend sits under that, and only while at least
+  // one grid is open — it names shades that otherwise are not on the page.
   const [openOverrides, setOpenOverrides] = useState<ReadonlyMap<TaskId, boolean>>(() => new Map())
   const [appliedDefault, setAppliedDefault] = useState(showDetails)
   if (appliedDefault !== showDetails) {
@@ -142,10 +142,6 @@ export function HabitList({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-        Tasks that repeat every day.{' '}
-      </p>
-
       <SortableTasks tasks={habits}>
         <ul className="flex flex-col gap-3">
           {habits.map((habit) => (
@@ -166,6 +162,10 @@ export function HabitList({
           ))}
         </ul>
       </SortableTasks>
+
+      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        Tasks that repeat every day.
+      </p>
 
       {anyOpen && (
         <ul aria-label="Legend" className="flex items-center gap-3 self-end">

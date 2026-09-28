@@ -9,8 +9,9 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 - **HAB-1** A habit is a task whose rule comes round **every day**: a daily rule, or a weekly rule
   with all seven days, which reads "Daily" anyway (RPT-25). A task that skips a day, a monthly
   task and a one-off are not habits.
-- **HAB-2** The page lists every habit not in the trash, **in the order of the task list**. Ticking
-  one off does not move it, and the order can be changed from here (HAB-27).
+- **HAB-2** The page lists every habit not in the trash, **in the order of the task list**. Under
+  the cards a line says they are the tasks that repeat every day. Ticking one off does not move
+  it, and the order can be changed from here (HAB-27).
 - **HAB-3** With no habits, the page says a task given a daily repeat is tracked there.
 
 ## A habit's card
