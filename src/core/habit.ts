@@ -17,6 +17,10 @@
  *   asked of it, so an unticked day is not tracked — and a day marked done back
  *   then is done without turning the days around it into misses. The same
  *   reading ./due gives a repeating task's occurrences from before its rule started.
+ * - **A day skipped is a rest, not a miss.** A day passed over on purpose
+ *   (`Task.skippedDays`) asked nothing of the habit: the streak runs on across
+ *   it, and it is not among the days a rate counts. Done wins over it, as it
+ *   does everywhere (RPT-36).
  */
 
 import { InvalidDayError, isLocalDay, offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from './day'
@@ -74,12 +78,13 @@ export function moveToEndOfHabits(tasks: readonly Task[], id: TaskId): Task[] {
  * How one day of a habit reads:
  *
  * - `done` — it was done that day.
+ * - `skipped` — passed over on purpose, and not done after all: a rest.
  * - `missed` — a day since the habit started that went by without it.
  * - `pending` — today, not done yet.
  * - `untracked` — a day before the habit started, and not done.
  * - `future` — not here yet.
  */
-export type HabitDayState = 'done' | 'missed' | 'pending' | 'untracked' | 'future'
+export type HabitDayState = 'done' | 'skipped' | 'missed' | 'pending' | 'untracked' | 'future'
 
 export interface HabitDay {
   readonly day: LocalDay
@@ -109,10 +114,11 @@ export function habitStats(task: Task, now: Date = new Date()): HabitStats {
   const today = toLocalDay(now)
   const done = recordedDays(task, today)
   const set = new Set(done)
+  const rested = restedDays(task, today, set)
 
   return {
-    currentStreak: runEndingAt(set, set.has(today) ? today : offsetDay(today, -1)),
-    bestStreak: longestRun(done),
+    currentStreak: runEndingAt(set, rested, set.has(today) ? today : offsetDay(today, -1)),
+    bestStreak: longestRun(done, rested),
   }
 }
 
@@ -120,7 +126,7 @@ export function habitStats(task: Task, now: Date = new Date()): HabitStats {
  * How the last `days` days went, today included — the last 7, the last 30, the
  * last year. The days that count are the ones that could be missed, since the
  * habit started, and the ones it was done on before that; today only once it
- * is done.
+ * is done. A day skipped asked nothing, so it is not among them.
  */
 export function habitRate(task: Task, days: number, now: Date = new Date()): HabitRate {
   const today = toLocalDay(now)
@@ -132,9 +138,10 @@ export function habitRate(task: Task, days: number, now: Date = new Date()): Hab
   const started = startedOn(task)
   const trackedFrom = started > windowStart ? started : windowStart
   const tracked = Math.max(0, daysBetween(trackedFrom, windowEnd) + 1)
+  const rested = [...restedDays(task, today, new Set(done))].filter((day) => day >= trackedFrom && day <= windowEnd).length
   const kept = done.filter(inWindow).length
   const doneBefore = done.filter((day) => inWindow(day) && day < trackedFrom).length
-  const counted = tracked + doneBefore
+  const counted = tracked - rested + doneBefore
 
   return { done: kept, days: counted, percent: counted === 0 ? 0 : Math.floor((kept / counted) * 100) }
 }
@@ -201,6 +208,7 @@ export function setDoneOnDay(task: Task, day: LocalDay, done: boolean, now: Date
 export function habitWeeks(task: Task, weeks: number, now: Date = new Date()): HabitDay[][] {
   const today = toLocalDay(now)
   const set = new Set(recordedDays(task, today))
+  const rested = restedDays(task, today, set)
   const started = startedOn(task)
   const thisMonday = toLocalDay(periodRange('week', now).start)
 
@@ -208,7 +216,7 @@ export function habitWeeks(task: Task, weeks: number, now: Date = new Date()): H
     const monday = offsetDay(thisMonday, (week - weeks + 1) * 7)
     return Array.from({ length: 7 }, (_, offset) => {
       const day = offsetDay(monday, offset)
-      return { day, state: stateOf(day, today, set, started) }
+      return { day, state: stateOf(day, today, set, rested, started) }
     })
   })
 }
@@ -220,19 +228,35 @@ export function habitWeeks(task: Task, weeks: number, now: Date = new Date()): H
 export function habitLastDays(task: Task, days: number, now: Date = new Date()): HabitDay[] {
   const today = toLocalDay(now)
   const set = new Set(recordedDays(task, today))
+  const rested = restedDays(task, today, set)
   const started = startedOn(task)
 
   return Array.from({ length: days }, (_, at) => {
     const day = offsetDay(today, at - days + 1)
-    return { day, state: stateOf(day, today, set, started) }
+    return { day, state: stateOf(day, today, set, rested, started) }
   })
 }
 
-function stateOf(day: LocalDay, today: LocalDay, done: ReadonlySet<LocalDay>, started: LocalDay): HabitDayState {
+function stateOf(
+  day: LocalDay,
+  today: LocalDay,
+  done: ReadonlySet<LocalDay>,
+  rested: ReadonlySet<LocalDay>,
+  started: LocalDay,
+): HabitDayState {
   if (day > today) return 'future'
   if (done.has(day)) return 'done'
+  if (rested.has(day)) return 'skipped'
   if (day === today) return 'pending'
   return day >= started ? 'missed' : 'untracked'
+}
+
+/**
+ * The days passed over on purpose, up to today, less any done after all: done
+ * wins (RPT-36), and a day still to come is not a rest yet.
+ */
+function restedDays(task: Task, today: LocalDay, done: ReadonlySet<LocalDay>): Set<LocalDay> {
+  return new Set(task.skippedDays.filter((day) => day <= today && !done.has(day)))
 }
 
 /**
@@ -244,21 +268,28 @@ function recordedDays(task: Task, today: LocalDay): LocalDay[] {
   return [...new Set(task.doneDays)].filter((day) => day <= today).sort()
 }
 
-function runEndingAt(done: ReadonlySet<LocalDay>, last: LocalDay): number {
+/** The days done in a row back from `last`, a rested day carrying the run across without counting. */
+function runEndingAt(done: ReadonlySet<LocalDay>, rested: ReadonlySet<LocalDay>, last: LocalDay): number {
   let run = 0
-  for (let day = last; done.has(day); day = offsetDay(day, -1)) {
-    run += 1
+  for (let day = last; done.has(day) || rested.has(day); day = offsetDay(day, -1)) {
+    if (done.has(day)) run += 1
   }
   return run
 }
 
-function longestRun(done: readonly LocalDay[]): number {
+/** The longest run of days done in a row, rested days bridging it as in `runEndingAt`. */
+function longestRun(done: readonly LocalDay[], rested: ReadonlySet<LocalDay>): number {
+  const doneSet = new Set(done)
+  const days = [...new Set([...done, ...rested])].sort()
   let best = 0
   let run = 0
-  done.forEach((day, at) => {
-    run = at > 0 && offsetDay(done[at - 1], 1) === day ? run + 1 : 1
+  let previous: LocalDay | null = null
+  for (const day of days) {
+    if (previous === null || offsetDay(previous, 1) !== day) run = 0
+    if (doneSet.has(day)) run += 1
     best = Math.max(best, run)
-  })
+    previous = day
+  }
   return best
 }
 

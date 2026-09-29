@@ -88,6 +88,26 @@ export function skipOccurrence(task: Task, now: Date = new Date()): Task {
   return { ...task, skippedDays: [...task.skippedDays, day].sort() }
 }
 
+/** Whether today was passed over: what a habit's card asks before offering a skip, or the way back from one (HAB-31). */
+export function isSkippedToday(task: Task, now: Date = new Date()): boolean {
+  return task.skippedDays.includes(toLocalDay(now))
+}
+
+/**
+ * Takes back a skip of today, so the task is due today again — a habit card's
+ * way of undoing its own skip (HAB-31); the schedule panel's is picking the day
+ * again (DUE-26). Nothing else recorded is touched: a skip of another day
+ * stands. Returns the task itself when today was not skipped.
+ */
+export function unskipToday(task: Task, now: Date = new Date()): Task {
+  const today = toLocalDay(now)
+  if (!task.skippedDays.includes(today)) {
+    return task
+  }
+
+  return { ...task, skippedDays: task.skippedDays.filter((day) => day !== today) }
+}
+
 /**
  * The exact moment the task is due, or null where there is no such moment: a
  * task with no day, or one due on a day with no hour to it (`dueTime`), which is

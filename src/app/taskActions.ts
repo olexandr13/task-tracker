@@ -23,6 +23,8 @@ export interface TaskActions {
   readonly changeTime: (id: TaskId, time: LocalTime | null) => void
   /** Passes over a repeating task's occurrence, so it is due on the rule's next day. */
   readonly skip: (id: TaskId) => void
+  /** Takes back a skip of today, so the task is due today again — a habit card's way back from its skip (HAB-31). */
+  readonly unskip: (id: TaskId) => void
   readonly changeRepeat: (id: TaskId, repeat: Repeat | null) => void
   readonly changeReward: (id: TaskId, reward: number | null) => void
   readonly changeUrgent: (id: TaskId, urgent: boolean) => void

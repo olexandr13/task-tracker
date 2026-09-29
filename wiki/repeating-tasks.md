@@ -123,8 +123,9 @@ and whether it reads as done is derived from the occurrence currently in play ra
   however often it is ticked and unticked.
 - **RPT-37** The days skipped are kept on the task beside the days done, oldest first — a day
   picked for the rule to start on being the one thing that takes the days from it on back off
-  (DUE-26). The Habits page does not read them yet: a skipped day on a habit shows, and counts, as
-  missed (HAB-5, HAB-10).
+  (DUE-26). The Habits page reads them: a skipped day on a habit is a rest, not a miss — the
+  streak runs on across it and the rates leave it out — and a habit's card has a skip of its own
+  (HAB-31).
 
 ## History
 

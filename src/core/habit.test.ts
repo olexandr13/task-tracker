@@ -63,6 +63,55 @@ describe('habitTasks (HAB-2)', () => {
   })
 })
 
+describe('a skipped day (HAB-31)', () => {
+  /** Done Mon 14 and Wed 16 with Tue 15 skipped, read on Wed 16: the day after a rest. */
+  function rested(): Task {
+    return { ...habit(['2026-09-14', '2026-09-16']), skippedDays: ['2026-09-15'] }
+  }
+
+  it('is read as skipped, not missed — nor pending when it is today (HAB-10)', () => {
+    expect(habitLastDays(rested(), 3, WED_16).map((day) => day.state)).toEqual(['done', 'skipped', 'done'])
+
+    const today = { ...habit(['2026-09-15']), skippedDays: ['2026-09-16'] }
+    expect(habitLastDays(today, 2, WED_16).map((day) => day.state)).toEqual(['done', 'skipped'])
+    // Wed 16 is the third day of this week's column.
+    expect(habitWeeks(today, 1, WED_16)[0][2]).toEqual({ day: '2026-09-16', state: 'skipped' })
+  })
+
+  it('neither adds to the streak nor ends it (HAB-5, HAB-6)', () => {
+    expect(habitStats(rested(), WED_16)).toEqual({ currentStreak: 2, bestStreak: 2 })
+
+    // Today skipped and still to do: the streak counts back from yesterday, as it would anyway.
+    const today = { ...habit(['2026-09-14', '2026-09-15']), skippedDays: ['2026-09-16'] }
+    expect(habitStats(today, WED_16).currentStreak).toBe(2)
+
+    // Two rests in a row are still one run.
+    const twice = { ...habit(['2026-09-13', '2026-09-16']), skippedDays: ['2026-09-14', '2026-09-15'] }
+    expect(habitStats(twice, WED_16)).toEqual({ currentStreak: 2, bestStreak: 2 })
+  })
+
+  it('does not save a streak from a day missed beside it (HAB-5)', () => {
+    // Done Sat 12, skipped Sun 13, missed Mon 14, then done Tue 15 and Wed 16.
+    const broken = { ...habit(['2026-09-12', '2026-09-15', '2026-09-16']), skippedDays: ['2026-09-13'] }
+
+    expect(habitStats(broken, WED_16)).toEqual({ currentStreak: 2, bestStreak: 2 })
+  })
+
+  it('is left out of the days a rate counts (HAB-8)', () => {
+    // Started Mon 14, done Mon and Wed with Tue skipped: two of two, not two of three.
+    const task = { ...habit(['2026-09-14', '2026-09-16'], DAILY, new Date(2026, 8, 14, 8, 0)), skippedDays: ['2026-09-15'] }
+
+    expect(habitRate(task, 7, WED_16)).toEqual({ done: 2, days: 2, percent: 100 })
+  })
+
+  it('reads as done once ticked off after all, the skip standing behind it (RPT-36)', () => {
+    const task = { ...habit(['2026-09-15']), skippedDays: ['2026-09-15'] }
+
+    expect(habitLastDays(task, 2, WED_16).map((day) => day.state)).toEqual(['done', 'pending'])
+    expect(habitStats(task, WED_16).currentStreak).toBe(1)
+  })
+})
+
 describe('moveToEndOfHabits (HAB-30)', () => {
   /** A one-off, two habits and a one-off, in that order, each with a number of its own. */
   function list(): Task[] {

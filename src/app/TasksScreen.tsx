@@ -172,6 +172,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     changeDay,
     changeTime,
     skip,
+    unskip,
     changeRepeat,
     changeReward,
     changeUrgent,
@@ -519,6 +520,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       changeTime(id, time)
     },
     skip,
+    unskip,
     // A rule that would make one habit more is held to the warm-up's allowance,
     // the same as adding one; turning a habit's own rule over is no new habit.
     changeRepeat: (id, repeat) => {

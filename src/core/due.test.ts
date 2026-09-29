@@ -7,11 +7,13 @@ import {
   firstDueDay,
   isInPeriod,
   isOverdue,
+  isSkippedToday,
   lastDayOf,
   nextWeekDueDay,
   skipOccurrence,
   splitOverdue,
   standingReminders,
+  unskipToday,
 } from './due'
 import type { Repeat } from './repeat'
 import {
@@ -476,6 +478,26 @@ describe('nextWeekDueDay', () => {
 
   it('crosses the end of a month and a year', () => {
     expect(nextWeekDueDay(new Date(2026, 11, 30, 9, 0))).toBe('2027-01-10')
+  })
+})
+
+describe('unskipToday (HAB-31)', () => {
+  it('puts a skipped today back in play, a skip of another day standing', () => {
+    const skipped = skipOccurrence(skipOccurrence(repeating(DAILY), WED_16), WED_16)
+    expect(isSkippedToday(skipped, WED_16)).toBe(true)
+
+    const back = unskipToday(skipped, WED_16)
+
+    expect(isSkippedToday(back, WED_16)).toBe(false)
+    expect(back.skippedDays).toEqual(['2026-09-17'])
+    expect(dueDay(back, WED_16)).toBe('2026-09-16')
+  })
+
+  it('leaves a task whose today was not skipped as it is', () => {
+    const task = repeating(DAILY)
+
+    expect(isSkippedToday(task, WED_16)).toBe(false)
+    expect(unskipToday(task, WED_16)).toBe(task)
   })
 })
 

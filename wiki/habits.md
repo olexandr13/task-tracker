@@ -22,19 +22,23 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   invites a tick once today's time is in (TIME-13).
 - **HAB-5** **Current streak**: the days in a row it was done, counting back from today. While
   today is still to do, the count starts from yesterday instead: today is still in play until it
-  is over, so it breaks nothing yet. A day that went by without it ends the streak. The flame
+  is over, so it breaks nothing yet. A day that went by without it ends the streak; a day
+  **skipped** (HAB-31) neither adds to it nor ends it — the streak runs on across a rest. The flame
   beside the count is lit while there is a streak.
-- **HAB-6** **Best streak**: the longest run of days in a row it was ever done.
+- **HAB-6** **Best streak**: the longest run of days in a row it was ever done, skipped days
+  bridged the same way (HAB-31).
 - **HAB-8** **Last 7 days**, **last 30 days** and **last year** (the last 365 days): a percentage,
   with the days behind it (`25/30`). The days that count are every day since the habit started,
-  and any day it was done on before that (HAB-12). Today counts only once it is done. The percentage is rounded down, so 100% only ever means every day was kept. A
+  and any day it was done on before that (HAB-12), less any day skipped (HAB-31), which asked
+  nothing of it. Today counts only once it is done. The percentage is rounded down, so 100% only ever means every day was kept. A
   habit with no record yet shows a dash.
 - **HAB-9** Below the numbers is a grid of days: a column per week, Monday to Sunday, with this
   week on the right. Every other row names its weekday, and a month's name sits over the week that
   holds its first Monday. As many weeks show as the card has room for, up to a year. A phone shows
   about four months.
-- **HAB-10** A day in the grid is **done** (green), **missed** (a darker gap), **not tracked** (a
-  pale square, before the habit started) or **today still to do** (an outlined square). Days after
+- **HAB-10** A day in the grid is **done** (green), **missed** (a darker gap), **skipped** (a pale
+  blue square, HAB-31), **not tracked** (a pale square, before the habit started) or **today still
+  to do** (an outlined square). Days after
   today are left empty. A legend at the bottom of the page names the shades, and only while any
   habit's card is open (HAB-21) — a folded card shows no grid, only its last week (HAB-21), whose
   green reads without one.
@@ -64,7 +68,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 
 - **HAB-16** Clicking a day in the grid marks it **done**, or takes it back if it was. Any day up to
   today can be changed, so a day that was kept but never ticked can still be recorded, and one ticked
-  by mistake taken back. Clicking it again undoes the change.
+  by mistake taken back. Clicking it again undoes the change. A skipped day (HAB-31) clicked is
+  done after all, done winning (RPT-36); taking that tick back leaves it skipped again.
 - **HAB-17** Today in the grid is the same as the box on the card (HAB-4): the task is ticked off or
   reopened, checklist and all.
 - **HAB-18** A day after today cannot be marked. It is not a button at all.
@@ -81,7 +86,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 ## The record
 
 - **HAB-21** A card starts **folded**, unless Show habit details by default is on (HAB-23): the box
-  for today (HAB-4), the title, a ⋮ to edit the task (HAB-25) and a chevron. The title has the
+  for today (HAB-4), the title, a **skip** while today is still to do (HAB-31), a ⋮ to edit the
+  task (HAB-25) and a chevron. The title has the
   card's width to itself and **wraps rather than being cut off**. Under it a second line gives the
   **current streak** as a flame and days (`6 days`) and the **last 7 days** as a small square each,
   today on the right, in the grid's shades (HAB-10); a screen reader hears them as `Last 7 days: done
@@ -149,21 +155,35 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   habits stays after them, and a habit whose rule changes while it stays a habit — daily swapped
   for all seven weekdays (HAB-1) — keeps its place.
 
+## Skipping a day
+
+- **HAB-31** While today is still to do, a card carries a **skip** beside its ⋮. Pressing it passes
+  today over (RPT-34): the habit is due tomorrow, leaves Today, and records nothing — and today
+  reads as **skipped** on the card and in the grid rather than as missed. A rest is not a miss: the
+  streak runs on across it (HAB-5, HAB-6) and it is left out of the days the rates count (HAB-8).
+  The skip stays pressed for the day, and pressing it again takes the skip back, so today is in
+  play once more; ticking the box while today is skipped does it after all, done winning (RPT-36).
+  Once today is done the card offers no skip. The same skip is on the habit's schedule in its
+  sheet (DUE-9), and a day skipped there — or on the task's row elsewhere — reads the same way. A
+  screen reader hears the control as `Skip "stretch" today`, and as pressed, `Skipped "stretch"
+  today`, while today is skipped.
+
 ---
 
 **Where it lives:** `src/core/habit.ts` (what a habit is, streaks, rates, the weeks, the last days, `setDoneOnDay`,
 `moveToEndOfHabits`),
 `src/core/task.ts` (`doneDays`, kept in step by `settleHistory`), `src/app/components/HabitList.tsx`
 (the page and its cards, and a timed habit's clock — see [Time goals](time-goals.md)), `src/app/components/HabitGrid.tsx`, `src/app/components/ChevronIcon.tsx`, `src/app/components/MoreVerticalIcon.tsx`, `src/app/components/TaskSheet.tsx` (editing a habit), `src/app/habitLabels.ts` (wording),
-`src/app/habitTones.ts` (the shades), `src/app/components/FlameIcon.tsx`, `src/app/useTasks.ts`
-(`setHabitDay`, and `changeRepeat` putting a task taken on at the end), `src/app/components/AddTaskForm.tsx` (the add box), `src/app/components/AddTaskSheet.tsx` (the detailed
+`src/app/habitTones.ts` (the shades), `src/app/components/FlameIcon.tsx`, `src/app/components/SkipIcon.tsx`,
+`src/core/due.ts` (`isSkippedToday`, `unskipToday`), `src/app/useTasks.ts`
+(`setHabitDay`, `unskip`, and `changeRepeat` putting a task taken on at the end), `src/app/components/AddTaskForm.tsx` (the add box), `src/app/components/AddTaskSheet.tsx` (the detailed
 sheet, starting daily), `src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`H` opens it),
 `src/app/components/HabitsCard.tsx` and `src/app/useDeviceSetting.ts`
 (the switch on Settings, and keeping whether cards start folded on this device), `src/core/order.ts` (`moveTask`, the order itself),
 `src/app/useSortableTask.ts`, `src/app/components/SortableTasks.tsx` and
 `src/app/components/TaskDragAndDrop.tsx` (picking a card up and dropping it, shared with the rows),
 `src/app/components/GripIcon.tsx` and `src/app/rowControls.ts` (`dragGrip`).
-**Tested in:** `src/core/habit.test.ts`, `src/core/task.test.ts`, `src/app/useTasks.test.ts`,
+**Tested in:** `src/core/habit.test.ts`, `src/core/due.test.ts` (a skip taken back), `src/core/task.test.ts`, `src/app/useTasks.test.ts`,
 `src/app/components/HabitList.test.tsx`, `src/app/components/HabitsCard.test.tsx`,
 `src/app/components/AddTaskForm.test.tsx`, `src/app/letterShortcut.test.ts` and
 `src/app/useLetterShortcut.test.ts` (`H` opens the sheet).

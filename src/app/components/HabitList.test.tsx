@@ -40,9 +40,11 @@ function setup(habits: Task[], showDetails = false) {
   const onLogTime = vi.fn()
   const onRename = vi.fn()
   const onRemove = vi.fn()
+  const onSkip = vi.fn()
+  const onUnskip = vi.fn()
   const view = render(
     <HabitList
-      actions={{ ...NO_TASK_ACTIONS, complete: onComplete, uncomplete: onUncomplete, rename: onRename, logTime: onLogTime, remove: onRemove }}
+      actions={{ ...NO_TASK_ACTIONS, complete: onComplete, uncomplete: onUncomplete, rename: onRename, logTime: onLogTime, remove: onRemove, skip: onSkip, unskip: onUnskip }}
       habits={habits}
       now={WED_16}
       showDetails={showDetails}
@@ -51,7 +53,7 @@ function setup(habits: Task[], showDetails = false) {
       onSetDay={onSetDay}
     />,
   )
-  return { user, onComplete, onUncomplete, onSetDay, onLogTime, onRename, onRemove, rerender: view.rerender }
+  return { user, onComplete, onUncomplete, onSetDay, onLogTime, onRename, onRemove, onSkip, onUnskip, rerender: view.rerender }
 }
 
 /** Props shared when a test re-renders the list after the default changes. */
@@ -70,6 +72,38 @@ function listProps(habits: Task[]) {
 function stretch(): Task {
   return { ...createTask('stretch', { kind: 'daily' }, WED_16), doneDays: ['2026-09-14', '2026-09-15'] }
 }
+
+describe('skipping today (HAB-31)', () => {
+  it('passes today over from the card while today is still to do', async () => {
+    const habit = stretch()
+    const { user, onSkip } = setup([habit])
+
+    await user.click(screen.getByRole('button', { name: 'Skip "stretch" today' }))
+
+    expect(onSkip).toHaveBeenCalledWith(habit.id)
+  })
+
+  it('reads today as skipped, stays pressed, and takes the skip back on the next press', async () => {
+    const habit = { ...stretch(), skippedDays: ['2026-09-16'] }
+    const { user, onUnskip } = setup([habit], true)
+
+    const skip = screen.getByRole('button', { name: 'Skipped "stretch" today' })
+    expect(skip.getAttribute('aria-pressed')).toBe('true')
+    // In the grid the day is a rest, not a miss and not still to do (HAB-10).
+    expect(screen.getByRole('button', { name: 'Wed, Sep 16 · Skipped' })).toBeTruthy()
+
+    await user.click(skip)
+
+    expect(onUnskip).toHaveBeenCalledWith(habit.id)
+  })
+
+  it('offers no skip once today is done', () => {
+    setup([completeTask(stretch(), WED_16)])
+
+    expect(screen.queryByRole('button', { name: /^Skip "stretch"/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Skipped "stretch"/ })).toBeNull()
+  })
+})
 
 describe('HabitList', () => {
   it('says how to make a habit when there are none (HAB-3)', () => {
@@ -162,7 +196,7 @@ describe('HabitList', () => {
     expect(screen.queryByRole('img', { name: /Last 7 days/ })).toBeNull()
     // The legend names the grid's shades once a card is open (HAB-10).
     const legend = screen.getByRole('list', { name: 'Legend' })
-    expect(legend.textContent).toBe('DoneMissedNot tracked')
+    expect(legend.textContent).toBe('DoneMissedSkippedNot tracked')
     expect(record).toBeTruthy()
     expect(record!.compareDocumentPosition(legend) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
