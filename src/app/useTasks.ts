@@ -17,6 +17,7 @@ import {
   liveTasks,
   logSeconds,
   logTime,
+  moveSubtask,
   moveTask,
   moveToEndOfHabits,
   moveToList,
@@ -404,7 +405,7 @@ export function useTasks(
   )
 
   /**
-   * The four ways a checklist changes. Each one is a rule in ../core that also
+   * The ways a checklist changes. Each one is a rule in ../core that also
    * settles whether the task itself is done, so there is nothing to decide here.
    */
   const addChecklistItem = useCallback(
@@ -431,6 +432,15 @@ export function useTasks(
   const removeChecklistItem = useCallback(
     (id: TaskId, subtaskId: SubtaskId) => {
       apply((current) => current.map((task) => (task.id === id ? removeSubtask(task, subtaskId) : task)))
+    },
+    [apply],
+  )
+
+  const moveChecklistItem = useCallback(
+    (id: TaskId, subtaskId: SubtaskId, targetId: SubtaskId, placement: Placement) => {
+      apply((current) =>
+        current.map((task) => (task.id === id ? moveSubtask(task, subtaskId, targetId, placement) : task)),
+      )
     },
     [apply],
   )
@@ -514,6 +524,7 @@ export function useTasks(
     setChecklistItemDone,
     renameChecklistItem,
     removeChecklistItem,
+    moveChecklistItem,
     remove,
     duplicate,
     restore,

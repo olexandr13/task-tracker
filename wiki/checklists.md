@@ -19,8 +19,8 @@ count.
 - **CHK-1** A task starts with no checklist. Most tasks never get one, and one is never required.
 - **CHK-2** An item needs only a title. It is trimmed, and a blank or whitespace-only one is refused
   rather than added as an empty line.
-- **CHK-3** Items keep the order they were written in. New ones join the end, unless written on a
-  line opened under an item (CHK-26), which puts them there.
+- **CHK-3** Items keep the order they were written in until one is moved (CHK-27). New ones join
+  the end, unless written on a line opened under an item (CHK-26), which puts them there.
 
 ## Adding
 
@@ -93,6 +93,31 @@ both directions, and nothing can leave a task reading done with an item still op
   middle as well as from the foot. Clicking away keeps what was typed; Escape drops it; Enter on the
   empty line closes it, and Backspace on it closes it and goes back to the item above, as CHK-25.
 
+## Moving
+
+- **CHK-27** Items are put in a new order by **dragging** them, the way tasks are (TASK-37): the
+  item rides up and down with the pointer while the others slide aside to show where it will land,
+  and the new order is saved when it is dropped. It lands where it was let go — below the item it
+  was dropped on coming down the list, above it going up. It rides straight up and down, having
+  nowhere else to go: an item belongs to its own checklist, and cannot be dropped on another task,
+  on a list in the sidebar, or anywhere off the list. This works wherever the checklist is drawn —
+  a row, a phone's sheet, and the sheet a task is added from, where the order of a checklist
+  written before the task exists can be changed just the same.
+- **CHK-28** An item is picked up anywhere on it, or by the grip in the margin to its left, which
+  shows when the pointer is over the item and once the keyboard reaches it. A press in its text box
+  is selecting text. A press anywhere on the checklist never picks the **task** up (TASK-38): the
+  checklist answers for it, and the row behind it stays where it is.
+- **CHK-29** With a mouse the drag starts once the pointer has moved a few pixels, so a click still
+  opens the item for editing; with a finger you hold for a moment first, so the page still scrolls.
+  A phone draws no grip, having no pointer to show one to — there an item is picked up by holding
+  it. From the keyboard the grip picks the item up with Space or Enter, the arrow keys move it,
+  Space or Enter drops it, and Escape puts it back and leaves the checklist open rather than resting
+  the row around it. Screen readers hear the item's title and its position as it moves.
+- **CHK-30** A move changes the order **alone** — same ids, same ticks — so it can neither finish a
+  task nor reopen one, and counts for nothing in any period's bar. A ticked item stays where it was
+  put rather than sinking to the foot of the list the way a done task does (TASK-70), and nothing
+  reorders a checklist on its own.
+
 ## What a checklist is not
 
 - **CHK-22** Items **count for nothing in any period's bar**. The unit is the task: one with five
@@ -103,9 +128,11 @@ both directions, and nothing can leave a task reading done with an item still op
 
 ---
 
-**Where it lives:** `src/core/subtask.ts` (the item and how a tick is read), `src/core/task.ts` (the
-rule binding a checklist to its task), `src/app/components/SubtaskList.tsx`, `SubtaskItem.tsx`,
-`SubtaskDraft.tsx` (the line Enter opens), `TaskItem.tsx` (the button and the block),
+**Where it lives:** `src/core/subtask.ts` (the item, how a tick is read, and the reordering),
+`src/core/task.ts` (the rule binding a checklist to its task), `src/app/components/SubtaskList.tsx`,
+`SubtaskItem.tsx`, `SubtaskDraft.tsx` (the line Enter opens), `TaskItem.tsx` (the button and the
+block), `src/app/dragSensors.ts` (what a press on a checklist does to the row around it),
 `src/app/useTasks.ts`.
-**Tested in:** `src/core/subtask.test.ts` (the rules), `src/app/components/SubtaskList.test.tsx`
-(the keyboard: adding, editing, Enter and Backspace — CHK-6, 7, 19, 25, 26).
+**Tested in:** `src/core/subtask.test.ts` (the rules, moving among them),
+`src/app/components/SubtaskList.test.tsx` (the keyboard: adding, editing, Enter and Backspace —
+CHK-6, 7, 19, 25, 26), `src/app/dragSensors.test.ts` (which press picks what up — CHK-28).

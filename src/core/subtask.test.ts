@@ -8,6 +8,7 @@ import {
   hasSubtasks,
   insertSubtask,
   isComplete,
+  moveSubtask,
   removeSubtask,
   renameSubtask,
   setRepeat,
@@ -235,6 +236,76 @@ describe('removeSubtask', () => {
     const task = withChecklist(['crate it'])
 
     expect(removeSubtask(task, 'not-an-id', LATER)).toBe(task)
+  })
+})
+
+describe('moveSubtask', () => {
+  /** The checklist as it reads, which is the only thing a move is about. */
+  function titles(task: Task): string[] {
+    return task.subtasks.map((subtask) => subtask.title)
+  }
+
+  it('puts an item after another, dragged down the list', () => {
+    const task = withChecklist(['crate it', 'label it', 'post it'])
+    const moved = moveSubtask(task, task.subtasks[0].id, task.subtasks[2].id, 'after')
+
+    expect(titles(moved)).toEqual(['label it', 'post it', 'crate it'])
+  })
+
+  it('puts an item before another, dragged up the list', () => {
+    const task = withChecklist(['crate it', 'label it', 'post it'])
+    const moved = moveSubtask(task, task.subtasks[2].id, task.subtasks[0].id, 'before')
+
+    expect(titles(moved)).toEqual(['post it', 'crate it', 'label it'])
+  })
+
+  it('lands between the target and its neighbour, not on the target', () => {
+    const task = withChecklist(['crate it', 'label it', 'post it'])
+    const moved = moveSubtask(task, task.subtasks[0].id, task.subtasks[1].id, 'after')
+
+    expect(titles(moved)).toEqual(['label it', 'crate it', 'post it'])
+  })
+
+  it('keeps every id and every tick, so a move cannot finish or reopen a task', () => {
+    const task = withChecklist(['crate it', 'label it'])
+    const ticked = setSubtaskDone(task, task.subtasks[0].id, true, LATER)
+    const moved = moveSubtask(ticked, ticked.subtasks[0].id, ticked.subtasks[1].id, 'after')
+
+    expect(moved.subtasks.map((subtask) => subtask.id).sort()).toEqual(
+      ticked.subtasks.map((subtask) => subtask.id).sort(),
+    )
+    expect(titles(moved)).toEqual(['label it', 'crate it'])
+    expect(moved.subtasks[1].completedAt).toBe(ticked.subtasks[0].completedAt)
+    expect(isComplete(moved, LATER)).toBe(false)
+  })
+
+  it('leaves a ticked item where it was put rather than sinking it', () => {
+    const task = withChecklist(['crate it', 'label it', 'post it'])
+    const ticked = setSubtaskDone(task, task.subtasks[2].id, true, LATER)
+    const moved = moveSubtask(ticked, ticked.subtasks[2].id, ticked.subtasks[0].id, 'before')
+
+    expect(titles(moved)).toEqual(['post it', 'crate it', 'label it'])
+  })
+
+  it('does nothing when the item is already where it would land', () => {
+    const task = withChecklist(['crate it', 'label it'])
+
+    expect(moveSubtask(task, task.subtasks[0].id, task.subtasks[1].id, 'before')).toBe(task)
+  })
+
+  it('does nothing for an item or a target that is not on the list, or for itself', () => {
+    const task = withChecklist(['crate it', 'label it'])
+
+    expect(moveSubtask(task, 'not-an-id', task.subtasks[0].id, 'after')).toBe(task)
+    expect(moveSubtask(task, task.subtasks[0].id, 'not-an-id', 'after')).toBe(task)
+    expect(moveSubtask(task, task.subtasks[0].id, task.subtasks[0].id, 'after')).toBe(task)
+  })
+
+  it('never modifies the task it is given', () => {
+    const task = withChecklist(['crate it', 'label it'])
+    moveSubtask(task, task.subtasks[0].id, task.subtasks[1].id, 'after')
+
+    expect(titles(task)).toEqual(['crate it', 'label it'])
   })
 })
 

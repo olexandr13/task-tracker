@@ -3,6 +3,7 @@ import {
   createSubtask,
   defaultReward,
   firstDueDay,
+  reorderSubtasks,
   sameTag,
   sessionSeconds,
   wholeMinutes,
@@ -317,6 +318,9 @@ export function AddTaskSheet({
             }}
             onRemove={(subtaskId) => {
               setSubtasks((current) => current.filter((subtask) => subtask.id !== subtaskId))
+            }}
+            onMove={(subtaskId, targetId, placement) => {
+              setSubtasks((current) => [...reorderSubtasks(current, subtaskId, targetId, placement)])
             }}
           />
         </div>

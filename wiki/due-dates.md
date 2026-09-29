@@ -87,8 +87,8 @@ puts a task in front of you on the right day instead of in a long list of everyt
   quick choices and calendar, in the menu's place, the focus on the calendar's day in reach (DUE-16),
   so the arrow keys and Enter pick a day straight away. The menu has no lines to open (DUE-23): the
   hours are spelled out under the calendar there, the menu being the day's alone.
-  The same row is on a **woken wide-screen row's strip** (UI-53), less Select date, the row's own
-  schedule control being the calendar there.
+  A woken wide-screen row's strip carries no day of its own (UI-53): every day a task has to pick
+  is in the panel its schedule control opens, and nothing offers the same days a row apart.
 
 - **DUE-23** The panel is **one screenful**, never a column to scroll. The day is what is on show —
   the quick choices and the calendar — and the two things that hang off a day are a **line each**
@@ -109,7 +109,7 @@ puts a task in front of you on the right day instead of in a long list of everyt
   set control is (UI-26); a second tap puts them away, and the panel opens with them away. The
   **i** is a note, not a choice: it sets nothing and leaves the panel open. The lines are for the
   eye alone; a screen reader hears the same words from each icon already (UI-12). The menu's row
-  (DUE-14) and the woken row's strip (UI-53) keep to their tooltips.
+  (DUE-14) keeps to its tooltips.
 
 ## The calendar
 
@@ -245,7 +245,7 @@ many it holds, and the tones an icon, a chosen one and the quiet i wear), `DueTi
 and the way back out of what it opens), `PickerPanel.tsx` (the aside or the sheet it all sits in),
 `DateCalendar.tsx` and `src/app/calendarMonth.ts` (the month calendar and the days it
 lays out), `ClockDial.tsx` and `src/app/clockDial.ts` (the clock face, which ring and
-angle each hour sits at on it, and the hour picked off it), `src/app/dateChoices.tsx` (the Date row, shared by the panel, the menu and the woken row's strip), `AddTaskForm.tsx`,
+angle each hour sits at on it, and the hour picked off it), `src/app/dateChoices.tsx` (the Date row, shared by the panel and the menu), `AddTaskForm.tsx`,
 `TaskItem.tsx`, `ContextMenu.tsx` (a row of icons).
 **Tested in:** `src/core/day.test.ts`, `src/core/due.test.ts`, `src/core/task.test.ts`,
 `src/app/dueLabels.test.ts`, `src/app/calendarMonth.test.ts`, `src/app/useTasks.test.ts` (the day

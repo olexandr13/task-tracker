@@ -1,4 +1,4 @@
-import type { ListId, LocalDay, LocalTime, Repeat, SubtaskId, TaskId, TimeEntryId } from '../core'
+import type { ListId, LocalDay, LocalTime, Placement, Repeat, SubtaskId, TaskId, TimeEntryId } from '../core'
 
 /**
  * Everything a task's row, card or sheet can do to it, handed down as one object
@@ -39,4 +39,6 @@ export interface TaskActions {
   readonly setSubtaskDone: (id: TaskId, subtaskId: SubtaskId, done: boolean) => void
   readonly renameSubtask: (id: TaskId, subtaskId: SubtaskId, title: string) => void
   readonly removeSubtask: (id: TaskId, subtaskId: SubtaskId) => void
+  /** Puts a checklist item just before or just after another on the same task. */
+  readonly moveSubtask: (id: TaskId, subtaskId: SubtaskId, targetId: SubtaskId, placement: Placement) => void
 }

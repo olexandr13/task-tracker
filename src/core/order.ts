@@ -14,13 +14,11 @@
  */
 
 import { isOverdue } from './due'
+import type { Placement } from './placement'
 import { isComplete, type Task, type TaskId } from './task'
 
 /** The gap left between neighbours whenever numbers are handed out. */
 export const ORDER_STEP = 1024
-
-/** Which side of the target a moved task lands on. */
-export type Placement = 'before' | 'after'
 
 /**
  * Lower numbers first. Ties, which only a merge could produce, fall back to age

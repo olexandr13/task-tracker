@@ -190,6 +190,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     setChecklistItemDone,
     renameChecklistItem,
     removeChecklistItem,
+    moveChecklistItem,
     remove,
     duplicate,
     restore,
@@ -544,6 +545,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     setSubtaskDone: handleSetChecklistItemDone,
     renameSubtask: renameChecklistItem,
     removeSubtask: removeChecklistItem,
+    moveSubtask: moveChecklistItem,
   }
 
   /**

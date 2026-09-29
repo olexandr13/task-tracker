@@ -1,6 +1,9 @@
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { isSubtaskComplete, type Subtask, type SubtaskId, type Repeat } from '../../core'
-import { deleteControl } from '../rowControls'
+import { deleteControl, dragGrip } from '../rowControls'
+import { GripIcon } from './GripIcon'
 import { TickIcon } from './TickIcon'
 
 interface SubtaskItemProps {
@@ -32,10 +35,19 @@ export const subtaskCheckbox =
 
 export const subtaskRow = 'flex items-center gap-2.5 py-2 md:py-1'
 
+/**
+ * Where the grip sits: in the gutter the checklist is already indented by, so
+ * it takes nothing from the item itself. A phone has no pointer to show it to
+ * and no gutter to spare, and picks an item up by holding it instead (CHK-29).
+ */
+const grip = `${dragGrip} max-md:hidden`
+
 export const subtaskTitleBox = 'min-w-0 flex-1 text-left text-base md:text-sm'
 
 /**
- * One item on a checklist: tick it, rename it in place, take it off the list.
+ * One item on a checklist: tick it, rename it in place, move it, take it off the
+ * list. It is picked up anywhere on it but its text box, or by the grip in the
+ * gutter; where it can land is the list's business (./SubtaskList).
  *
  * The in-place edit repeats what ./TaskItem does with a title and what
  * ./TaskDescription does with its text. Three copies is two too many, and
@@ -56,6 +68,8 @@ export function SubtaskItem({
   onBackspaceWhenEmpty,
 }: SubtaskItemProps) {
   const done = isSubtaskComplete(subtask, repeat, now)
+  const { setNodeRef, setActivatorNodeRef, listeners, attributes, isDragging, transform, transition } =
+    useSortable({ id: subtask.id })
   // Null until something is typed. The text lives here rather than in the record
   // while it is being typed, so an abandoned edit leaves nothing behind.
   const [draft, setDraft] = useState<string | null>(null)
@@ -107,7 +121,39 @@ export function SubtaskItem({
   }
 
   return (
-    <li className={subtaskRow}>
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
+      // A mouse or a finger picks the item up anywhere on it; the keyboard only
+      // from its grip, which is where these listeners check a key press came from.
+      {...listeners}
+      onKeyDown={(event) => {
+        listeners?.onKeyDown?.(event)
+        // Escape cancels the move. It must not travel on to the row behind the
+        // checklist, which would rest it and take the whole list away.
+        if (isDragging) event.stopPropagation()
+      }}
+      className={
+        isDragging ? `group/item relative ${subtaskRow} opacity-50` : `group/item relative ${subtaskRow}`
+      }
+    >
+      {/* In the gutter the checklist is indented by, shown on hover and once the
+          keyboard reaches it — the same grip a task's row has (TASK-38). */}
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        {...attributes}
+        aria-label={`Move "${subtask.title}" on "${taskTitle}"`}
+        title="Drag to move"
+        className={
+          isDragging
+            ? `${grip} opacity-100`
+            : `${grip} opacity-0 group-hover/item:opacity-100 focus-visible:opacity-100`
+        }
+      >
+        <GripIcon className="size-3" />
+      </button>
+
       <button
         type="button"
         onClick={() => { onSetDone(subtask.id, !done) }}

@@ -12,6 +12,7 @@
  * ./task import it rather than the other way round.
  */
 
+import type { Placement } from './placement'
 import { countsForCurrentOccurrence, type Repeat } from './repeat'
 import { normalizeTitle } from './title'
 
@@ -66,8 +67,48 @@ export function isSubtaskComplete(subtask: Subtask, repeat: Repeat | null, now: 
 }
 
 /**
- * Ticking, renaming and removing an item are all operations on the **task** that
- * holds it — a tick can finish the task, and removing the last open item can
- * too — so they live in ./task with the rule that keeps the two in step, rather
- * than here where a subtask cannot see the task it belongs to.
+ * Puts one item just before or just after another. Order is all that changes —
+ * same ids, same ticks — so a move can neither finish a task nor reopen one,
+ * and a ticked item stays where it was put rather than sinking to the foot of
+ * the list the way a done task does. Nothing moves against an item that is not
+ * on the list, against itself, or into the place it is already in.
+ *
+ * A plain reordering of the array, unlike the numbers tasks carry (./order):
+ * the whole task is one saved record, so there is nothing to merge item by item
+ * and no number to hand out. This is the one operation on an item that cannot
+ * change the task around it, which is why it can live here; ./task has the
+ * task-shaped `moveSubtask` that call sites reach for.
+ *
+ * Returns a new list; the one passed in is never modified.
+ */
+export function reorderSubtasks(
+  subtasks: readonly Subtask[],
+  id: SubtaskId,
+  targetId: SubtaskId,
+  placement: Placement,
+): readonly Subtask[] {
+  const from = subtasks.findIndex((subtask) => subtask.id === id)
+  if (from === -1 || id === targetId) {
+    return subtasks
+  }
+
+  const rest = [...subtasks.slice(0, from), ...subtasks.slice(from + 1)]
+  const target = rest.findIndex((subtask) => subtask.id === targetId)
+  if (target === -1) {
+    return subtasks
+  }
+
+  const at = placement === 'before' ? target : target + 1
+  if (at === from) {
+    return subtasks
+  }
+
+  return [...rest.slice(0, at), subtasks[from], ...rest.slice(at)]
+}
+
+/**
+ * Ticking, renaming and removing an item are all operations on the **task**
+ * that holds it — a tick can finish the task, and removing the last open item
+ * can too — so they live in ./task with the rule that keeps the two in step,
+ * rather than here where a subtask cannot see the task it belongs to.
  */

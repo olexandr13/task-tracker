@@ -59,5 +59,14 @@ export function dropOutcome(
   const from = order.indexOf(String(id))
   const to = order.indexOf(String(over.id))
   if (from === -1 || to === -1 || from === to) return null
-  return { kind: 'move', id: String(id), targetId: String(over.id), placement: from < to ? 'after' : 'before' }
+  return { kind: 'move', id: String(id), targetId: String(over.id), placement: placementFor(from, to) }
+}
+
+/**
+ * Which side of the row it was dropped on a dragged row lands: dragged down the
+ * list, below it; dragged up, above it. A task's row among the rows and an item
+ * on a checklist (CHK-27) both land by this.
+ */
+export function placementFor(from: number, to: number): Placement {
+  return from < to ? 'after' : 'before'
 }

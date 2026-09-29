@@ -45,7 +45,7 @@ interface RewardPickerProps {
  * typing it takes the points away. A step up from 0 lands on `startAt` rather
  * than on 1, so a monthly task is not 25 clicks from its reward.
  *
- * A muted trash under the number takes the points away in one tap — ten of
+ * A muted trash beside the number takes the points away in one tap — ten of
  * them are not ten presses of − — and a **×** at the top right closes the
  * panel from inside it, for a hand that has set the number and is looking for
  * the way out rather than for somewhere beside the panel to click.
@@ -165,7 +165,7 @@ export function RewardPicker({
           anchor={root}
           label={label}
           align={align}
-          width="w-60 md:w-52"
+          width="w-64 md:w-52"
           content="gap-1.5 p-2 md:gap-1 md:p-1.5"
           onClose={close}
         >
@@ -178,56 +178,65 @@ export function RewardPicker({
             </button>
           </div>
 
-          <div role="group" aria-label="Points" className="flex items-center justify-center gap-1.5 md:gap-1">
-            <button
-              type="button"
-              onClick={() => { choose(base - 1) }}
-              disabled={base <= 0}
-              aria-label="Fewer points"
-              className={stepButton}
-            >
-              −
-            </button>
-            <input
-              type="number"
-              name="reward-points"
-              inputMode="numeric"
-              min={0}
-              max={MAX_REWARD}
-              step={1}
-              value={typed}
-              onChange={(event) => { handleType(event.target.value) }}
-              onKeyDown={handleKeyDown}
-              // A number that cannot be points is not kept: the box goes back to what is.
-              onBlur={() => { if (!isValid) setTyped(String(settled)) }}
-              aria-label="Points"
-              enterKeyHint="done"
-              className="w-16 [appearance:textfield] rounded-xl border border-neutral-300 bg-transparent px-2.5 py-2 text-center text-base tabular-nums text-neutral-900 focus:border-blue-500 focus:outline-none md:w-14 md:rounded-lg md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-            <button
-              type="button"
-              onClick={() => { choose(base === 0 ? startAt : base + 1) }}
-              disabled={base >= MAX_REWARD}
-              aria-label="More points"
-              className={stepButton}
-            >
-              +
-            </button>
-          </div>
+          {/*
+            The number, and the trash at the panel's right edge under the ×. The
+            row is three columns — an empty one, the stepper, the trash — so the
+            number stays in the middle of the panel whether or not there is a
+            reward to remove, rather than sliding across as the trash comes and goes.
+          */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 pb-0.5 md:gap-1">
+            <div role="group" aria-label="Points" className="col-start-2 flex items-center gap-1.5 md:gap-1">
+              <button
+                type="button"
+                onClick={() => { choose(base - 1) }}
+                disabled={base <= 0}
+                aria-label="Fewer points"
+                className={stepButton}
+              >
+                −
+              </button>
+              <input
+                type="number"
+                name="reward-points"
+                inputMode="numeric"
+                min={0}
+                max={MAX_REWARD}
+                step={1}
+                value={typed}
+                onChange={(event) => { handleType(event.target.value) }}
+                onKeyDown={handleKeyDown}
+                // A number that cannot be points is not kept: the box goes back to what is.
+                onBlur={() => { if (!isValid) setTyped(String(settled)) }}
+                aria-label="Points"
+                enterKeyHint="done"
+                className="w-16 [appearance:textfield] rounded-xl border border-neutral-300 bg-transparent px-2.5 py-2 text-center text-base tabular-nums text-neutral-900 focus:border-blue-500 focus:outline-none md:w-14 md:rounded-lg md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <button
+                type="button"
+                onClick={() => { choose(base === 0 ? startAt : base + 1) }}
+                disabled={base >= MAX_REWARD}
+                aria-label="More points"
+                className={stepButton}
+              >
+                +
+              </button>
+            </div>
 
-          {reward !== null && (
-            <div className="flex justify-center pb-0.5">
+            {reward !== null && (
               <button
                 type="button"
                 onClick={remove}
                 aria-label={removeLabel}
                 title={removeLabel}
-                className={`grid size-10 shrink-0 place-items-center rounded-xl md:size-8 md:rounded-lg ${deleteControl}`}
+                // As wide as the × above it, so the two line up, and no taller than
+                // the number box beside it, so the panel keeps its height as the
+                // trash comes and goes.
+                className={`col-start-3 grid h-10 w-11 shrink-0 place-items-center justify-self-end rounded-xl md:h-7 md:w-8 md:rounded-lg ${deleteControl}`}
               >
                 <TrashIcon />
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </PickerPanel>
       )}
     </div>

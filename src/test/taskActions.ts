@@ -26,4 +26,5 @@ export const NO_TASK_ACTIONS: TaskActions = {
   setSubtaskDone: nothing,
   renameSubtask: nothing,
   removeSubtask: nothing,
+  moveSubtask: nothing,
 }

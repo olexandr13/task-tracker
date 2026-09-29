@@ -313,14 +313,13 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   there giving up room to it, so however long a rule is it never reaches the details beside it. A woken row with nothing to
   spell out has no such line. The line is part of the task's own line (UI-28).
 - **UI-53** On a wide screen, waking a row also brings a **strip of the menu's actions** under the
-  task's line — the **Date** row first, then list (once there is one to choose), tags, urgent and
-  Duplicate — so those need not wait for a right-click (UI-31, DUE-14, LST-14, TAG-7, TASK-63,
-  TASK-51). They sit as **icons on one row**, each naming itself on hover, and rest with the row.
-  The date choices are the menu's (DUE-14) **less Select date**: the schedule control on the row's
-  own line, out on every woken row (UI-18), opens the calendar. A thin line stands between them and
-  the rest, as the menu draws one under its Date group. The day already set is tinted like any set
-  control (UI-26), and choosing one leaves the row open — it is working on the task, not finishing
-  with it. A phone already has all of this in the sheet (UI-48).
+  task's line — list (once there is one to choose), tags, urgent and Duplicate — so those need not
+  wait for a right-click (UI-31, LST-14, TAG-7, TASK-63, TASK-51). They sit as **icons on one row**,
+  each naming itself on hover, and rest with the row. **No day is set from the strip**: the schedule
+  control on the row's own line, out on every woken row (UI-18), opens the date panel (DUE-9), which
+  holds the quick days, the calendar and the skip in one place, so the same days are not offered
+  twice a row apart. Using a control here leaves the row open — it is working on the task, not
+  finishing with it. A phone already has all of this in the sheet (UI-48).
 - **UI-51** A task still to do marked **urgent** carries a **thin amber bar on the left of its
   row** (TASK-64) — a quiet mark, not a badge or a tinted whole row — so the list stays readable and
   only urgent tasks stand out at a glance.

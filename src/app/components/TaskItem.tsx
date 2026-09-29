@@ -346,10 +346,9 @@ export function TaskItem({
   // Where skipping the occurrence in play would move the task on to, while it has one to skip.
   const skipTo = canSkipOccurrence(task, now) ? dueDay(skipOccurrence(task, now), now) : null
   const skip = skipTo === null ? undefined : { to: skipTo, onSkip: () => { actions.skip(task.id) } }
-  // The quick day choices, the same in the task's menu and on the woken row's strip
-  // (DUE-14, UI-53). The menu adds Select date, having no calendar of its own; the
-  // strip leaves it out, the row's own schedule control opening one beside it.
-  // The day marked is the one the task is due on, as the schedule button reads it.
+  // The quick day choices of the task's menu (DUE-14), which adds Select date,
+  // having no calendar of its own. The day marked is the one the task is due on,
+  // as the schedule button reads it.
   const dateOptions = {
     due: day,
     scheduled: scheduledDay(task),
@@ -978,34 +977,14 @@ export function TaskItem({
         </div>
       )}
 
-      {/* The menu's actions, once the row is open — the date, list, tags, urgent,
+      {/* The menu's actions, once the row is open — the list, tags, urgent,
           duplicate — so a wide screen need not right-click for what a phone's sheet
-          already has. */}
+          already has. The day is not among them: the row's own schedule control
+          (UI-18) opens the date panel, which holds every day there is to pick. */}
       {!phone && isActive && (
         <div
           className={`flex flex-wrap items-center gap-1 border-t border-neutral-200 py-1 pr-2 md:pr-2.5 ${indent} dark:border-neutral-800`}
         >
-          {/* The menu's Date row (DUE-14), less Select date: the schedule control on
-              the row's own line, out on every woken row (UI-18), opens the calendar. */}
-          <div role="group" aria-label={`Date for "${task.title}"`} className="flex items-center gap-1">
-            {dateChoices(dateOptions).map((choice) => (
-              <button
-                key={choice.label}
-                type="button"
-                onClick={choice.onSelect}
-                aria-label={choice.label}
-                aria-pressed={choice.checked}
-                title={choice.hint ?? choice.label}
-                className={choice.checked === true ? `${rowControlIcon} ${controlOn}` : `${rowControlIcon} ${controlOff}`}
-              >
-                {choice.icon}
-              </button>
-            ))}
-          </div>
-
-          {/* The line the menu draws between the Date row and the rest (UI-31). */}
-          <div aria-hidden="true" className="mx-0.5 h-4 w-px bg-neutral-200 dark:bg-neutral-800" />
-
           {lists.length > 0 && (
             <ListPicker
               listId={task.listId}
@@ -1052,6 +1031,7 @@ export function TaskItem({
             onSetDone={(subtaskId, done) => { actions.setSubtaskDone(task.id, subtaskId, done) }}
             onRename={(subtaskId, title) => { actions.renameSubtask(task.id, subtaskId, title) }}
             onRemove={(subtaskId) => { actions.removeSubtask(task.id, subtaskId) }}
+            onMove={(subtaskId, targetId, placement) => { actions.moveSubtask(task.id, subtaskId, targetId, placement) }}
           />
         </div>
       )}

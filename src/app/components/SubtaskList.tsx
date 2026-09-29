@@ -1,5 +1,18 @@
+import {
+  DndContext,
+  KeyboardSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type Announcements,
+  type DragEndEvent,
+  type Modifier,
+} from '@dnd-kit/core'
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useRef, useState, type KeyboardEvent } from 'react'
-import type { Subtask, SubtaskId, Repeat } from '../../core'
+import type { Placement, Subtask, SubtaskId, Repeat } from '../../core'
+import { NestedMouseSensor, NestedTouchSensor, nestedDragArea } from '../dragSensors'
+import { placementFor } from '../taskDrop'
 import { SubtaskDraft } from './SubtaskDraft'
 import { SubtaskItem, subtaskRow } from './SubtaskItem'
 
@@ -14,7 +27,16 @@ interface SubtaskListProps {
   onSetDone: (subtaskId: SubtaskId, done: boolean) => void
   onRename: (subtaskId: SubtaskId, title: string) => void
   onRemove: (subtaskId: SubtaskId) => void
+  /** Puts an item just before or just after another — what a drag and drop asks for. */
+  onMove: (subtaskId: SubtaskId, targetId: SubtaskId, placement: Placement) => void
 }
+
+/**
+ * An item only ever changes places within its own list, so it rides straight up
+ * and down: sideways it would look like it could leave the checklist, which it
+ * cannot.
+ */
+const straightUpAndDown: Modifier = ({ transform }) => ({ ...transform, x: 0 })
 
 /**
  * The checklist, and the line that adds to it.
@@ -29,6 +51,11 @@ interface SubtaskListProps {
  * rather than by each item, so the caret can be handed along the list: Enter in
  * an item opens a line under it, and Backspace in an emptied one takes it away
  * and opens its neighbour.
+ *
+ * The items are also dragged among themselves, which is a drag of its own inside
+ * the one the row behind it belongs to: the list brings its own context rather
+ * than asking for one, so a checklist reorders wherever it is drawn — a row on a
+ * wide screen, a sheet on a phone.
  */
 export function SubtaskList({
   subtasks,
@@ -39,6 +66,7 @@ export function SubtaskList({
   onSetDone,
   onRename,
   onRemove,
+  onMove,
 }: SubtaskListProps) {
   const [title, setTitle] = useState('')
   const [editingId, setEditingId] = useState<SubtaskId | null>(null)
@@ -109,6 +137,45 @@ export function SubtaskList({
     }
   }
 
+  // The row this checklist sits in is picked up the same way, so an item asks for
+  // the same press: a few pixels with a mouse, a held moment with a finger.
+  const sensors = useSensors(
+    useSensor(NestedMouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(NestedTouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  function titleOf(id: string): string {
+    return subtasks.find((subtask) => subtask.id === id)?.title ?? 'item'
+  }
+
+  /** Where an item is, as a person counts: the defaults would read out its UUID. */
+  function placeOf(id: string): string {
+    return `position ${String(subtasks.findIndex((subtask) => subtask.id === id) + 1)} of ${String(subtasks.length)}`
+  }
+
+  const announcements: Announcements = {
+    onDragStart: ({ active }) => `Picked up "${titleOf(String(active.id))}", ${placeOf(String(active.id))}.`,
+    onDragOver: ({ active, over }) =>
+      over === null
+        ? `"${titleOf(String(active.id))}" is not over the checklist.`
+        : `"${titleOf(String(active.id))}" is over ${placeOf(String(over.id))}.`,
+    onDragEnd: ({ active, over }) =>
+      over === null
+        ? `"${titleOf(String(active.id))}" dropped.`
+        : `"${titleOf(String(active.id))}" dropped at ${placeOf(String(over.id))}.`,
+    onDragCancel: ({ active }) => `Moving "${titleOf(String(active.id))}" was cancelled.`,
+  }
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    if (over === null) return
+    const from = subtasks.findIndex((subtask) => subtask.id === active.id)
+    const to = subtasks.findIndex((subtask) => subtask.id === over.id)
+    if (from === -1 || to === -1 || from === to) return
+
+    onMove(String(active.id), String(over.id), placementFor(from, to))
+  }
+
   const rows = subtasks.map((subtask) => (
     <SubtaskItem
       key={subtask.id}
@@ -143,11 +210,23 @@ export function SubtaskList({
   }
 
   return (
-    <div>
+    // Marked as its own drag area, so a press on an item is not the row behind
+    // the checklist being picked up (CHK-28).
+    <div {...nestedDragArea}>
       {!isEmpty && (
-        <ul aria-label={`Checklist for "${taskTitle}"`} className="flex flex-col">
-          {rows}
-        </ul>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          modifiers={[straightUpAndDown]}
+          accessibility={{ announcements }}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={subtasks.map((subtask) => subtask.id)} strategy={verticalListSortingStrategy}>
+            <ul aria-label={`Checklist for "${taskTitle}"`} className="flex flex-col">
+              {rows}
+            </ul>
+          </SortableContext>
+        </DndContext>
       )}
 
       <div className={subtaskRow}>

@@ -17,8 +17,9 @@ import {
 } from './day'
 // Type-only: ./list reads the task's rules, so nothing is imported back from it.
 import type { ListId } from './list'
+import type { Placement } from './placement'
 import { assertValidRepeat, countsForCurrentOccurrence, currentOccurrence, type Repeat } from './repeat'
-import { createSubtask, isSubtaskComplete, type Subtask, type SubtaskId } from './subtask'
+import { createSubtask, isSubtaskComplete, reorderSubtasks, type Subtask, type SubtaskId } from './subtask'
 import { currentEntries, type TimeEntry } from './timeLog'
 import { normalizeTitle } from './title'
 
@@ -698,6 +699,19 @@ export function removeSubtask(task: Task, subtaskId: SubtaskId, now: Date = new 
   }
 
   return syncWithSubtasks({ ...task, subtasks: kept }, now)
+}
+
+/**
+ * Moves one item on the checklist to just before or just after another. The
+ * rule is `reorderSubtasks` in ./subtask, and it is the one change to a
+ * checklist that cannot change the task: the task is handed back untouched
+ * where nothing moved, and never settled afresh where something did.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function moveSubtask(task: Task, subtaskId: SubtaskId, targetId: SubtaskId, placement: Placement): Task {
+  const subtasks = reorderSubtasks(task.subtasks, subtaskId, targetId, placement)
+  return subtasks === task.subtasks ? task : { ...task, subtasks }
 }
 
 /**

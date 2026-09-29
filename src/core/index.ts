@@ -1,4 +1,5 @@
 export * from './title'
+export * from './placement'
 export * from './day'
 export * from './emphasis'
 export * from './descriptionLists'

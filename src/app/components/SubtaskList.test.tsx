@@ -3,7 +3,15 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { addSubtask, createTask, insertSubtask, removeSubtask, renameSubtask, setSubtaskDone } from '../../core'
+import {
+  addSubtask,
+  createTask,
+  insertSubtask,
+  moveSubtask,
+  removeSubtask,
+  renameSubtask,
+  setSubtaskDone,
+} from '../../core'
 import { SubtaskList } from './SubtaskList'
 
 /*
@@ -33,6 +41,9 @@ function Checklist({ titles }: { titles: readonly string[] }) {
       onSetDone={(id, done) => { setTask((current) => setSubtaskDone(current, id, done, NOW)) }}
       onRename={(id, title) => { setTask((current) => renameSubtask(current, id, title)) }}
       onRemove={(id) => { setTask((current) => removeSubtask(current, id, NOW)) }}
+      onMove={(id, targetId, placement) => {
+        setTask((current) => moveSubtask(current, id, targetId, placement))
+      }}
     />
   )
 }

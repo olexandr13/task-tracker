@@ -217,7 +217,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-38** A row still to do can be picked up anywhere on it, or by the grip in the margin to its
   left. The grip shows when the pointer is over the row, and on a woken row; a done row has none
   (TASK-71). A press inside a text box being
-  typed in selects text instead.
+  typed in selects text instead, and a press on the row's checklist moves an item on it rather than
+  the row (CHK-28).
 - **TASK-39** With a mouse, a drag starts only once the pointer has moved a few pixels, so a click
   is still a click. With a finger, you hold for a moment first, so a vertical swipe still scrolls
   the page and a horizontal one can complete or delete the task (UI-60); let go there without
@@ -295,7 +296,7 @@ and `UndoToast.tsx` (undo after a completion or a deletion), `src/core/order.ts`
 and `src/app/completionLabels.ts` (the Done one),
 `src/app/components/TaskDragAndDrop.tsx`,
 `src/app/taskDrop.ts`, `src/app/components/SortableTasks.tsx`, `src/app/useSortableTask.ts` and
-`src/app/dragSensors.ts` (dragging).
+`src/app/dragSensors.ts` (dragging, and what it leaves to a text box or a checklist).
 
 **Tested in:** `src/core/task.test.ts`, `src/core/urgent.test.ts`, `src/core/completed.test.ts`, `src/core/emphasis.test.ts`, `src/core/descriptionLists.test.ts`,
 `src/core/order.test.ts`, `src/app/taskDrop.test.ts` (what a drop does), `src/app/components/TaskList.test.tsx` (what a list says),

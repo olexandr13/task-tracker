@@ -235,6 +235,7 @@ export function TaskSheet({
             onSetDone={(subtaskId, next) => { actions.setSubtaskDone(task.id, subtaskId, next) }}
             onRename={(subtaskId, next) => { actions.renameSubtask(task.id, subtaskId, next) }}
             onRemove={(subtaskId) => { actions.removeSubtask(task.id, subtaskId) }}
+            onMove={(subtaskId, targetId, placement) => { actions.moveSubtask(task.id, subtaskId, targetId, placement) }}
           />
         </div>
 

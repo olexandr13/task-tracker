@@ -114,8 +114,8 @@ function scheduleButton() {
 }
 
 /**
- * Inside the panel that control opens. Opening it wakes the row, whose strip
- * carries the same quick day choices (UI-53), so a choice is looked for here.
+ * Inside the panel that control opens — the one place a day is picked from on a
+ * row, the woken strip carrying none of its own (UI-53).
  */
 function schedulePanel() {
   return within(screen.getByRole('dialog', { name: `Schedule for "${TASK}"` }))
@@ -405,94 +405,23 @@ describe('task urgent', () => {
 })
 
 describe('the menu actions on a woken row', () => {
-  /** The quick day choices on the strip, in the order they are drawn. */
-  function stripDates() {
-    const group = screen.getByRole('group', { name: `Date for "${TASK}"` })
-    return Array.from(group.querySelectorAll('button'), (icon) => icon.getAttribute('aria-label'))
-  }
-
-  it('offers the quick day choices once the row is opened, Select date apart (UI-53, DUE-14)', async () => {
+  it('sets no day from the strip, the schedule control opening the panel instead (UI-53, DUE-9)', async () => {
     const user = setup(null)
 
+    await user.click(screen.getByRole('listitem'))
+
+    // Every day a task has to pick is in the panel, so none is offered a row apart from it.
     expect(screen.queryByRole('group', { name: `Date for "${TASK}"` })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Today' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Tomorrow' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Next week' })).toBeNull()
 
-    await user.click(screen.getByRole('listitem'))
+    await user.click(scheduleButton())
 
-    // No Select date: the schedule control on the row's own line opens the calendar.
-    expect(stripDates()).toEqual(['Today', 'Tomorrow', 'Next week'])
-    expect(screen.getByRole('button', { name: 'Next week' }).title).toBe(
-      `Next week · ${describeShortDate(nextWeekDueDay(NOW), NOW)}`,
-    )
+    expect(schedulePanel().getByRole('button', { name: 'Tomorrow' })).toBeDefined()
   })
 
-  it('sets the day chosen from the strip and leaves the row open (UI-53, DUE-14)', async () => {
-    const onChangeDay = vi.fn()
-    const user = userEvent.setup()
-    render(
-      <ul>
-        <TaskItem actions={{ ...NO_TASK_ACTIONS, changeDay: onChangeDay }} task={createTask(TASK, null, NOW)} now={NOW} knownTags={[]} lists={[]} />
-      </ul>,
-    )
-
-    await user.click(screen.getByRole('listitem'))
-    await user.click(screen.getByRole('button', { name: 'Tomorrow' }))
-
-    expect(onChangeDay).toHaveBeenCalledWith(expect.any(String), offsetDay(toLocalDay(NOW), 1))
-    expect(stripDates()).toBeDefined()
-  })
-
-  it('marks the day already set, and offers to take it away (UI-53, DUE-14)', async () => {
-    const user = userEvent.setup()
-    render(
-      <ul>
-        <TaskItem actions={NO_TASK_ACTIONS} task={setDueDate(createTask(TASK, null, NOW), offsetDay(toLocalDay(NOW), 1))} now={NOW} knownTags={[]} lists={[]} />
-      </ul>,
-    )
-
-    await user.click(screen.getByRole('listitem'))
-
-    expect(stripDates()).toEqual(['Today', 'Tomorrow', 'Next week', 'Remove date'])
-    expect(screen.getByRole('button', { name: 'Tomorrow' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByRole('button', { name: 'Today' }).getAttribute('aria-pressed')).toBe('false')
-  })
-
-  it('offers to skip a repeating task\'s occurrence, and marks the day it is due (UI-53, RPT-34)', async () => {
-    const onSkipOccurrence = vi.fn()
-    const user = userEvent.setup()
-    render(
-      <ul>
-        <TaskItem actions={{ ...NO_TASK_ACTIONS, skip: onSkipOccurrence }} task={createTask(TASK, { kind: 'daily' }, NOW)} now={NOW} knownTags={[]} lists={[]} />
-      </ul>,
-    )
-
-    await user.click(screen.getByRole('listitem'))
-
-    expect(stripDates()).toEqual(['Today', 'Tomorrow', 'Next week', 'Skip occurrence'])
-    // A daily task is due today: the mark says so, as the schedule button does.
-    expect(screen.getByRole('button', { name: 'Today' }).getAttribute('aria-pressed')).toBe('true')
-
-    await user.click(screen.getByRole('button', { name: 'Skip occurrence' }))
-
-    expect(onSkipOccurrence).toHaveBeenCalledTimes(1)
-  })
-
-  it('moves the mark on to the day a skip led to (UI-53, RPT-34)', async () => {
-    const user = userEvent.setup()
-    render(
-      <ul>
-        <TaskItem actions={NO_TASK_ACTIONS} task={skipOccurrence(createTask(TASK, { kind: 'daily' }, NOW), NOW)} now={NOW} knownTags={[]} lists={[]} />
-      </ul>,
-    )
-
-    await user.click(screen.getByRole('listitem'))
-
-    expect(screen.getByRole('button', { name: 'Tomorrow' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByRole('button', { name: 'Today' }).getAttribute('aria-pressed')).toBe('false')
-    // No start was picked, so there is none to take away: the skip moved the task inside its rule.
-    expect(stripDates()).not.toContain('Remove start date')
-  })
-
-  it('says in each day\'s tooltip that picking it starts the repeat (UI-53, DUE-18)', async () => {
+  it('offers no skip on the strip of a repeating task either (UI-53, RPT-34)', async () => {
     const user = userEvent.setup()
     render(
       <ul>
@@ -502,14 +431,8 @@ describe('the menu actions on a woken row', () => {
 
     await user.click(screen.getByRole('listitem'))
 
-    expect(screen.getByRole('button', { name: 'Today' }).title).toBe('Today · Starts the repeat')
-    expect(screen.getByRole('button', { name: 'Next week' }).title).toBe(
-      `Next week · ${describeShortDate(nextWeekDueDay(NOW), NOW)} · Starts the repeat`,
-    )
-    // Skipping moves the task on inside the rule, so it says nothing of the sort.
-    expect(screen.getByRole('button', { name: 'Skip occurrence' }).title).toBe(
-      `Skip to ${describeShortDate(offsetDay(toLocalDay(NOW), 1), NOW)}`,
-    )
+    expect(screen.queryByRole('button', { name: 'Skip occurrence' })).toBeNull()
+    expect(screen.getByRole('button', { name: `Duplicate "${TASK}"` })).toBeDefined()
   })
 
   it('offers tags, urgent and duplicate once the row is opened (UI-53)', async () => {
