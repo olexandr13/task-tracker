@@ -36,9 +36,9 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   week on the right. Every other row names its weekday, and a month's name sits over the week that
   holds its first Monday. As many weeks show as the card has room for, up to a year. A phone shows
   about four months.
-- **HAB-10** A day in the grid is **done** (green), **missed** (a darker gap), **skipped** (a pale
-  blue square, HAB-31), **not tracked** (a pale square, before the habit started) or **today still
-  to do** (an outlined square). Days after
+- **HAB-10** A day in the grid is **done** (green), **missed** (a darker gap), **skipped** (a soft
+  yellow square, HAB-31), **not tracked** (a pale square, before the habit started) or **today
+  still to do** (an outlined square). Days after
   today are left empty. A legend at the bottom of the page names the shades, and only while any
   habit's card is open (HAB-21) — a folded card shows no grid, only its last week (HAB-21), whose
   green reads without one.
@@ -86,8 +86,7 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 ## The record
 
 - **HAB-21** A card starts **folded**, unless Show habit details by default is on (HAB-23): the box
-  for today (HAB-4), the title, a **skip** while today is still to do (HAB-31), a ⋮ to edit the
-  task (HAB-25) and a chevron. The title has the
+  for today (HAB-4), the title, a ⋮ to edit the task (HAB-25) and a chevron. The title has the
   card's width to itself and **wraps rather than being cut off**. Under it a second line gives the
   **current streak** as a flame and days (`6 days`) and the **last 7 days** as a small square each,
   today on the right, in the grid's shades (HAB-10); a screen reader hears them as `Last 7 days: done
@@ -120,8 +119,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   at its head how many habits may be taken on yet, and one past that allowance is held back — from
   this box, the sheet and anywhere else a habit is made ([Warm-up](warm-up.md)).
 - **HAB-25** Each habit has a **⋮** on its line that opens the same sheet a phone uses for a task
-  (UI-48): title, schedule, list, tags, checklist, description, reward, urgent, duplicate and
-  delete. Editing stays on Habits; a change that stops the task being a habit (HAB-1) takes it off
+  (UI-48): title, schedule, list, tags, checklist, description, reward, urgent, duplicate, skip
+  (HAB-31) and delete. Editing stays on Habits; a change that stops the task being a habit (HAB-1) takes it off
   the page. Closing the sheet, or deleting the task from it, puts the card away again. A screen
   reader hears the ⋮ as `Edit "stretch"`.
 - **HAB-26** Escape closes that sheet (UI-9, UI-10), **including while the title is being edited**:
@@ -157,16 +156,18 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 
 ## Skipping a day
 
-- **HAB-31** While today is still to do, a card carries a **skip** beside its ⋮. Pressing it passes
-  today over (RPT-34): the habit is due tomorrow, leaves Today, and records nothing — and today
-  reads as **skipped** on the card and in the grid rather than as missed. A rest is not a miss: the
-  streak runs on across it (HAB-5, HAB-6) and it is left out of the days the rates count (HAB-8).
-  The skip stays pressed for the day, and pressing it again takes the skip back, so today is in
-  play once more; ticking the box while today is skipped does it after all, done winning (RPT-36).
-  Once today is done the card offers no skip. The same skip is on the habit's schedule in its
-  sheet (DUE-9), and a day skipped there — or on the task's row elsewhere — reads the same way. A
-  screen reader hears the control as `Skip "stretch" today`, and as pressed, `Skipped "stretch"
-  today`, while today is skipped.
+- **HAB-31** A habit's sheet (HAB-25) carries a **Skip** in the row at its foot, between
+  **Duplicate** and **Delete**, while today is still to do. Pressing it passes today over
+  (RPT-34): the habit is due tomorrow, leaves Today, and records nothing — and today reads as
+  **skipped** on the card and in the grid rather than as missed. A rest is not a miss: the streak
+  runs on across it (HAB-5, HAB-6) and it is left out of the days the rates count (HAB-8). For the
+  rest of the day the button reads **Skipped**, pressed, and pressing it again takes the skip back,
+  so today is in play once more; ticking the box while today is skipped does it after all, done
+  winning (RPT-36). Once today is done the sheet offers no skip. The same skip is on the sheet's
+  schedule (DUE-9), and a day skipped there — or on the task's row elsewhere — reads the same way.
+  A screen reader hears the button as `Skip "stretch"`, and as pressed, `Skipped "stretch" today`,
+  while today is skipped. Every task's sheet has the button while its occurrence can be skipped
+  (RPT-34), a habit's being the one whose page reads the rest.
 
 ---
 

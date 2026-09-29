@@ -6,6 +6,7 @@ import {
   dueDay,
   isComplete,
   isOverdue,
+  isSkippedToday,
   isTimeGoalReached,
   sessionSeconds,
   skipOccurrence,
@@ -18,7 +19,7 @@ import {
 import type { SkipChoice } from '../dateChoices'
 import type { RepeatDraft } from '../repeatDraft'
 import { describeTimeProgress } from '../durationLabels'
-import { describeDueDate, describeTimeOfDay } from '../dueLabels'
+import { describeDueDate, describeShortDate, describeTimeOfDay } from '../dueLabels'
 import { describeRepeatBriefly } from '../repeatLabels'
 import { describeReward, describeRewardHint } from '../rewardLabels'
 import {
@@ -33,6 +34,7 @@ import { ListPicker } from './ListPicker'
 import { RewardPicker } from './RewardPicker'
 import { SchedulePicker } from './SchedulePicker'
 import { SheetActions } from './SheetActions'
+import { SkipIcon } from './SkipIcon'
 import { SubtaskList } from './SubtaskList'
 import { TagPicker } from './TagPicker'
 import { TaskDescription } from './TaskDescription'
@@ -41,6 +43,14 @@ import { TrashIcon } from './TrashIcon'
 import { UrgentToggle } from './UrgentToggle'
 import type { TaskActions } from '../taskActions'
 import type { TaskTimer } from '../useTaskTimer'
+
+/**
+ * The sheet's Skip while today is skipped: pressed, in the soft yellow a rested
+ * day is drawn in on the Habits page (HAB-10, HAB-31), so the button and the
+ * grid say the same thing.
+ */
+const skippedAction =
+  'bg-amber-500/10 text-amber-700 transition-colors hover:bg-amber-500/15 active:bg-amber-500/15 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:bg-amber-400/15 dark:active:bg-amber-400/15'
 
 interface TaskSheetProps {
   task: Task
@@ -91,6 +101,8 @@ export function TaskSheet({
   const skipTo = canSkipOccurrence(task, now) ? dueDay(skipOccurrence(task, now), now) : null
   const skip: SkipChoice | undefined =
     skipTo === null ? undefined : { to: skipTo, onSkip: () => { actions.skip(task.id) } }
+  // Today passed over and not done after all: the foot's Skip reads as pressed and takes it back (HAB-31).
+  const skippedToday = !done && isSkippedToday(task, now)
 
   // What the icons hold, spelled out under them (UI-63). A repeating task's days
   // come from its rule, so the rule is what is said, and the hour rides with
@@ -260,6 +272,35 @@ export function TaskSheet({
             <DuplicateIcon />
             Duplicate
           </button>
+
+          {/* The occurrence passed over (RPT-34), or today's skip taken back — where a habit
+              rests for the day (HAB-31). Nothing while there is no occurrence to skip. */}
+          {skippedToday ? (
+            <button
+              type="button"
+              onClick={() => { actions.unskip(task.id) }}
+              aria-pressed
+              aria-label={`Skipped "${task.title}" today`}
+              title="Skipped today · press to take it back"
+              className={`${rowControlLabel} min-h-12 md:min-h-11 ${skippedAction}`}
+            >
+              <SkipIcon />
+              Skipped
+            </button>
+          ) : skipTo !== null ? (
+            <button
+              type="button"
+              onClick={() => { actions.skip(task.id) }}
+              aria-pressed={false}
+              aria-label={`Skip "${task.title}"`}
+              title={`Skip to ${describeShortDate(skipTo, now)}`}
+              className={`${rowControlLabel} min-h-12 md:min-h-11 ${controlOff}`}
+            >
+              <SkipIcon />
+              Skip
+            </button>
+          ) : null}
+
           <button
             type="button"
             onClick={() => { actions.remove(task.id) }}

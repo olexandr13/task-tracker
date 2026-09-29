@@ -56,8 +56,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-48** On a phone, tapping a task — the title or the rest of the row, not the completion box —
   opens a **sheet from the bottom of the screen**, overlapping the bar (UI-4). It holds the title,
   which is the only place a title is edited (TASK-8), the checklist and the description, the row of
-  action icons (UI-63) — the schedule, the list, the time, the tags, urgent, the reward — and
-  Duplicate and Delete. The
+  action icons (UI-63) — the schedule, the list, the time, the tags, urgent, the reward — and, at
+  its foot, Duplicate, a Skip while the task's occurrence can be passed over (RPT-34, HAB-31), and
+  Delete. The
   row behind it stays a single line. The sheet **rises** from the bottom as the page behind dims.
   It closes on a tap on the dimmed page or on Escape (UI-9, UI-10), on **back** (UI-71), or **pulled down by its handle**
   — the bar at its top: let go far enough down, or with a flick, and it closes; a shorter pull lets

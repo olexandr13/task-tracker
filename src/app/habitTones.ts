@@ -5,11 +5,12 @@ import type { HabitDayState } from '../core'
  * explains it. Done is the green a ticked box already is; a missed day is a
  * plain gap, darker than the days before the record started, and never red — a
  * miss is a fact to see, not an alarm to answer. A skipped day is a rest, so it
- * is neither the green nor a gap: a pale blue of its own.
+ * is neither the green nor a gap: a soft yellow of its own, kept well short of
+ * bright.
  */
 export const HABIT_DAY_TONES: Record<HabitDayState, string> = {
   done: 'bg-green-600 dark:bg-green-500',
-  skipped: 'bg-sky-200 dark:bg-sky-800/70',
+  skipped: 'bg-amber-200 dark:bg-amber-800/70',
   missed: 'bg-neutral-300 dark:bg-neutral-700',
   pending: 'bg-white ring-1 ring-inset ring-neutral-400 dark:bg-neutral-900 dark:ring-neutral-500',
   untracked: 'bg-neutral-100 dark:bg-neutral-800/50',
