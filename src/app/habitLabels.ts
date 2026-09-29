@@ -7,6 +7,7 @@ import { startOfLocalDay, type HabitDayState, type HabitRate, type LocalDay } fr
 
 export const HABIT_DAY_LABELS: Record<HabitDayState, string> = {
   done: 'Done',
+  skipped: 'Skipped',
   missed: 'Missed',
   pending: 'Not done yet',
   untracked: 'Not tracked',

@@ -42,6 +42,7 @@ import {
   skipOccurrence,
   tagsInUse,
   uncompleteTask,
+  unskipToday,
   withPeriodBonuses,
   NO_BONUSES,
   type ListId,
@@ -256,7 +257,6 @@ export function useTasks(
     [apply],
   )
 
-  /** Passes over a repeating task's occurrence, so it is due on the rule's next day. It earns nothing. */
   /**
    * The hour picked for a task, or taken away: it is due at that hour on the day
    * it already falls on (DUE-19), which is what the reminder goes off at. The
@@ -269,9 +269,18 @@ export function useTasks(
     [apply],
   )
 
+  /** Passes over a repeating task's occurrence, so it is due on the rule's next day. It earns nothing. */
   const skip = useCallback(
     (id: TaskId) => {
       apply((current) => current.map((task) => (task.id === id ? skipOccurrence(task) : task)))
+    },
+    [apply],
+  )
+
+  /** Takes a skip of today back, so the task is due today again (HAB-31). */
+  const unskip = useCallback(
+    (id: TaskId) => {
+      apply((current) => current.map((task) => (task.id === id ? unskipToday(task) : task)))
     },
     [apply],
   )
@@ -506,6 +515,7 @@ export function useTasks(
     changeDay,
     changeTime,
     skip,
+    unskip,
     changeRepeat,
     changeReward,
     changeUrgent,

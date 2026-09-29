@@ -5,6 +5,7 @@ import {
   habitRate,
   habitStats,
   isComplete,
+  isSkippedToday,
   isTimeGoalReached,
   type HabitDayState,
   type HabitRate,
@@ -26,6 +27,7 @@ import { FlameIcon } from './FlameIcon'
 import { GripIcon } from './GripIcon'
 import { HabitGrid } from './HabitGrid'
 import { MoreVerticalIcon } from './MoreVerticalIcon'
+import { SkipIcon } from './SkipIcon'
 import { SortableTasks } from './SortableTasks'
 import { TaskSheet } from './TaskSheet'
 import type { TaskActions } from '../taskActions'
@@ -53,7 +55,7 @@ interface HabitListProps {
   onRevealed?: () => void
 }
 
-const LEGEND: readonly HabitDayState[] = ['done', 'missed', 'untracked']
+const LEGEND: readonly HabitDayState[] = ['done', 'missed', 'skipped', 'untracked']
 
 /** How many days a folded card's run shows beside its streak. */
 const GLANCE_DAYS = 7
@@ -87,6 +89,18 @@ const HABIT_DRAG_GROUP = 'habits'
 
 /** Level with the card's first line, where the box and the title are. */
 const grip = `${dragGrip} top-3`
+
+/**
+ * A control on the card's line — the skip and the ⋮: a thumb's size on a phone
+ * (UI-47), without growing the card, the margin giving back what it takes.
+ */
+const lineControl =
+  'relative z-20 -m-2 grid size-10 shrink-0 place-items-center rounded-lg outline-offset-2 transition-colors focus-visible:outline-2 focus-visible:outline-blue-500 active:bg-neutral-100 md:m-0 md:size-6 md:rounded-md dark:active:bg-neutral-800'
+
+const lineControlOff = 'text-neutral-400 dark:text-neutral-500'
+
+/** The skip while today is skipped: pressed, in the shade the day is drawn in (HAB-31). */
+const lineControlOn = 'text-sky-600 dark:text-sky-400'
 
 /**
  * Every habit's record, one card each: whether today is done, how the streak
@@ -195,6 +209,8 @@ export function HabitList({
  *
  * The ⋮ opens the task's sheet so the habit can be renamed, scheduled, timed
  * and the rest without leaving. The time is logged there, not on the card.
+ * Beside it, while today is still to do, a skip passes today over as a rest
+ * rather than a miss, and pressed again takes the rest back (HAB-31).
  *
  * A card can be picked up and dropped among the others to put the habits in a
  * new order (HAB-27), the same way a row is (TASK-37): anywhere on it with a
@@ -220,6 +236,7 @@ function HabitCard({
   revealed: boolean
 } & Omit<HabitListProps, 'habits' | 'showDetails' | 'revealId'>) {
   const done = isComplete(habit, now)
+  const skipped = isSkippedToday(habit, now)
   const ready = !done && isTimeGoalReached(habit, now)
   const { currentStreak, bestStreak } = habitStats(habit, now)
   const [isEditing, setIsEditing] = useState(false)
@@ -393,7 +410,21 @@ function HabitCard({
           line, and centering would jump the icons with it. Not positioned itself, so
           the chevron's hit area stretches over the whole line rather than this group.
         */}
-        <div className="flex shrink-0 self-start items-center gap-2.5 md:-my-0.5">
+        <div className="flex shrink-0 self-start items-center gap-4 md:gap-2.5 md:-my-0.5">
+          {/* A rest is offered while today is still to do (HAB-31); done, there is nothing to skip. */}
+          {!done && (
+            <button
+              type="button"
+              onClick={() => { if (skipped) actions.unskip(habit.id); else actions.skip(habit.id) }}
+              aria-pressed={skipped}
+              aria-label={skipped ? `Skipped "${habit.title}" today` : `Skip "${habit.title}" today`}
+              title={skipped ? 'Skipped today · press to take it back' : 'Skip today'}
+              className={`${lineControl} ${skipped ? lineControlOn : lineControlOff}`}
+            >
+              <SkipIcon className="size-4" />
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => { setIsEditing(true) }}
@@ -403,8 +434,7 @@ function HabitCard({
             tabIndex={isEditing ? -1 : undefined}
             aria-label={`Edit "${habit.title}"`}
             title="Edit"
-            // A thumb's size on a phone (UI-47), without growing the card: the margin gives back what it takes.
-            className="relative z-20 -m-2 grid size-10 shrink-0 place-items-center rounded-lg text-neutral-400 outline-offset-2 transition-colors focus-visible:outline-2 focus-visible:outline-blue-500 active:bg-neutral-100 md:m-0 md:size-6 md:rounded-md dark:text-neutral-500 dark:active:bg-neutral-800"
+            className={`${lineControl} ${lineControlOff}`}
           >
             <MoreVerticalIcon className="size-4" />
           </button>

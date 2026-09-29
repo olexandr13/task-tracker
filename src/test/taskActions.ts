@@ -11,6 +11,7 @@ export const NO_TASK_ACTIONS: TaskActions = {
   changeDay: nothing,
   changeTime: nothing,
   skip: nothing,
+  unskip: nothing,
   changeRepeat: nothing,
   changeReward: nothing,
   changeUrgent: nothing,
