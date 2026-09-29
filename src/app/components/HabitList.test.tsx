@@ -92,8 +92,9 @@ describe('skipping today (HAB-31)', () => {
     const habit = { ...stretch(), skippedDays: ['2026-09-16'] }
     const { user, onUnskip } = setup([habit], true)
 
-    // In the grid the day is a rest, not a miss and not still to do (HAB-10).
+    // In the grid the day is a rest, not a miss and not still to do (HAB-10), and the box says so too.
     expect(screen.getByRole('button', { name: 'Wed, Sep 16 · Skipped' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Mark "stretch" as done today: skipped today' })).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Edit "stretch"' }))
     const skipped = screen.getByRole('button', { name: 'Skipped "stretch" today' })

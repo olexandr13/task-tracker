@@ -14,6 +14,7 @@ import {
   isHabitRepeat,
   sameRepeat,
   isOverdue,
+  isSkippedToday,
   isTimeGoalReached,
   listOf,
   scheduledDay,
@@ -744,6 +745,7 @@ export function TaskItem({
           title={task.title}
           done={done}
           ready={ready}
+          skipped={!done && isSkippedToday(task, now)}
           onComplete={() => { actions.complete(task.id) }}
           onUncomplete={() => { actions.uncomplete(task.id) }}
           inert={phone && isActive}

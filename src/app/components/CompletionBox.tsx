@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { SkipIcon } from './SkipIcon'
 import { TickIcon } from './TickIcon'
 
 /**
@@ -22,6 +23,14 @@ const completionBoxOff = `${completionBox} border-neutral-300 text-transparent h
  */
 const completionBoxReady = `${completionBox} border-green-600 text-green-600/60 hover:border-green-700 hover:text-green-700 dark:border-green-500 dark:text-green-500/60 dark:hover:border-green-400 dark:hover:text-green-400`
 
+/**
+ * Today passed over (HAB-31): the soft yellow a rested day is drawn in on the
+ * Habits page, with the skip's own mark in it rather than a tick, so the box
+ * says the day is a rest, not a miss and not yet done. Still a box to tick —
+ * done wins over a skip (RPT-36).
+ */
+const completionBoxSkipped = `${completionBox} border-amber-400 bg-amber-100 text-amber-600 hover:border-amber-500 hover:text-amber-700 dark:border-amber-500/70 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:border-amber-400 dark:hover:text-amber-200`
+
 /** The flourish a tick lands with, drawn in `src/styles.css` (UI-65). */
 const completionBoxLanding = 'completion-box-landing'
 
@@ -39,10 +48,13 @@ function wantsLessMotion(): boolean {
 }
 
 /** What the box is called for a screen reader, which names its task (UI-12). */
-function boxLabel(title: string, { done, ready, today }: { done: boolean; ready: boolean; today: boolean }): string {
+function boxLabel(
+  title: string,
+  { done, ready, skipped, today }: { done: boolean; ready: boolean; skipped: boolean; today: boolean },
+): string {
   const mark = done ? 'as not done' : 'as done'
   const when = today ? ' today' : ''
-  const why = !done && ready ? ': its time goal is reached' : ''
+  const why = done ? '' : skipped ? ': skipped today' : ready ? ': its time goal is reached' : ''
   return `Mark "${title}" ${mark}${when}${why}`
 }
 
@@ -53,6 +65,8 @@ interface CompletionBoxProps {
   done: boolean
   /** Its time goal is met, so the box invites a tick (TIME-5). */
   ready?: boolean
+  /** Today was passed over and not done after all (HAB-31): the box reads as a rest, and still ticks. */
+  skipped?: boolean
   /** A habit's box, which speaks for today rather than for the task as a whole. */
   today?: boolean
   /**
@@ -75,6 +89,7 @@ export function CompletionBox({
   title,
   done,
   ready = false,
+  skipped = false,
   today = false,
   onComplete,
   onUncomplete,
@@ -136,15 +151,22 @@ export function CompletionBox({
         }
       }}
       aria-pressed={ticked}
-      aria-label={boxLabel(title, { done: ticked, ready, today })}
-      title={!ticked && ready ? 'Time goal reached: ready to tick off' : undefined}
+      aria-label={boxLabel(title, { done: ticked, ready, skipped, today })}
+      title={
+        ticked ? undefined : skipped ? 'Skipped today: tick to do it after all' : ready ? 'Time goal reached: ready to tick off' : undefined
+      }
       aria-hidden={inert ? true : undefined}
       tabIndex={inert ? -1 : undefined}
-      className={[ticked ? completionBoxOn : ready ? completionBoxReady : completionBoxOff, landing && completionBoxLanding, className]
+      className={[
+        ticked ? completionBoxOn : skipped ? completionBoxSkipped : ready ? completionBoxReady : completionBoxOff,
+        landing && completionBoxLanding,
+        className,
+      ]
         .filter(Boolean)
         .join(' ')}
     >
-      <TickIcon className="size-4" />
+      {/* The rest's mark while today is skipped; the tick the moment it is ticked, landing and all. */}
+      {!ticked && skipped ? <SkipIcon className="size-3" /> : <TickIcon className="size-4" />}
     </button>
   )
 }

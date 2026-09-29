@@ -15,7 +15,7 @@ interface Watchers {
   onUncomplete: ReturnType<typeof vi.fn>
 }
 
-function setup(props: { done?: boolean; ready?: boolean; today?: boolean } = {}): Watchers {
+function setup(props: { done?: boolean; ready?: boolean; skipped?: boolean; today?: boolean } = {}): Watchers {
   const watchers = { onComplete: vi.fn(), onUncomplete: vi.fn() }
   render(<CompletionBox title={TASK} done={false} {...props} {...watchers} />)
   return watchers
@@ -108,6 +108,25 @@ describe('what a completion box is called and how it is drawn', () => {
     expect(ready.className).toContain('border-green-600')
     expect(ready.className).not.toContain('bg-green-600')
     expect(ready.getAttribute('title')).toBe('Time goal reached: ready to tick off')
+  })
+
+  it('reads as a rest while today is skipped, and still ticks the task off (HAB-31)', async () => {
+    const user = userEvent.setup()
+    const { onComplete } = setup({ skipped: true, today: true })
+
+    const rested = box(`Mark "${TASK}" as done today: skipped today`)
+    expect(rested.className).toContain('border-amber-400')
+    expect(rested.className).not.toContain('bg-green-600')
+    expect(rested.getAttribute('title')).toBe('Skipped today: tick to do it after all')
+
+    await user.click(rested)
+    await waitFor(() => { expect(onComplete).toHaveBeenCalledOnce() })
+  })
+
+  it('reads as done, not as a rest, once ticked off after all (RPT-36)', () => {
+    setup({ done: true, skipped: true, today: true })
+
+    expect(box(`Mark "${TASK}" as not done today`).className).toContain('bg-green-600')
   })
 
   it("speaks for today on a habit's card (HAB-24)", () => {
