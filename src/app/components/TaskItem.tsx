@@ -32,7 +32,7 @@ import { describeDueDate, describeTimeOfDay } from '../dueLabels'
 import { describeTimeProgress, describeTimerRunning } from '../durationLabels'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { describeRepeatBriefly } from '../repeatLabels'
-import { describeReward } from '../rewardLabels'
+import { describeReward, describeRewardHint } from '../rewardLabels'
 import {
   controlMarker,
   controlMarkerOverdue,
@@ -875,6 +875,7 @@ export function TaskItem({
                 <RewardPicker
                   reward={task.reward}
                   startAt={defaultReward(task.repeat)}
+                  hint={describeRewardHint(task.repeat)}
                   onChange={(reward) => { actions.changeReward(task.id, reward) }}
                   label={`Reward for "${task.title}"`}
                 />

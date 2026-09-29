@@ -19,7 +19,7 @@ import { describeTimeProgress } from '../durationLabels'
 import { describeDueDate, describeTimeOfDay } from '../dueLabels'
 import { emptyDraft, toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { describeRepeatBriefly } from '../repeatLabels'
-import { describeReward } from '../rewardLabels'
+import { describeReward, describeRewardHint } from '../rewardLabels'
 import { BottomSheet } from './BottomSheet'
 import { ListPicker } from './ListPicker'
 import { RewardPicker } from './RewardPicker'
@@ -278,6 +278,7 @@ export function AddTaskSheet({
                 <RewardPicker
                   reward={reward}
                   startAt={defaultReward(repeat)}
+                  hint={describeRewardHint(repeat)}
                   onChange={setReward}
                   label={`Reward for "${namedFor}"`}
                   align="right"

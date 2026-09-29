@@ -29,6 +29,9 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   away**, and **−** stops there. A number that is neither 0 nor a reward is not saved, and the box goes
   back to what is saved on leaving it. Enter closes the panel, as do a click outside and Escape
   (UI-9, UI-10).
+- **RWD-43** The line above the number says what the points are for, and it matches the task: a
+  task that comes round reads **"Points each time it is done"**, a task that happens once reads
+  **"Points when it is done"**. The Rules page says what its bonus is for instead (RWD-27).
 - **RWD-42** The panel has a **×** at its top right, which closes it from inside, and — while there is
   a reward — a muted **trash** icon **beside the number**, at the panel's right edge under the **×**,
   which takes the reward away in **one tap** and closes the panel, so 10 points

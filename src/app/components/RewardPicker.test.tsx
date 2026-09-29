@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { defaultReward, type Repeat } from '../../core'
+import { describeRewardHint } from '../rewardLabels'
 import { RewardPicker } from './RewardPicker'
 
 /* Giving a task a reward, changing it and taking it away. RWD ids refer to wiki/rewards.md, UI ids to wiki/interface.md. */
@@ -18,6 +19,7 @@ function Picker({ initial, repeat, onChange }: { initial: number | null; repeat:
     <RewardPicker
       reward={reward}
       startAt={defaultReward(repeat)}
+      hint={describeRewardHint(repeat)}
       onChange={(next) => {
         onChange(next)
         setReward(next)
@@ -66,6 +68,21 @@ describe('RewardPicker', () => {
       expect(panel()).not.toBeNull()
       cleanup()
     }
+  })
+
+  it('says the points come again only where the task does (RWD-43)', async () => {
+    const { user } = setup({ initial: 5, repeat: { kind: 'daily' } })
+
+    await user.click(trigger())
+
+    expect(screen.getByText('Points each time it is done')).not.toBeNull()
+    cleanup()
+
+    const once = setup({ initial: 5, repeat: null })
+
+    await once.user.click(trigger())
+
+    expect(screen.getByText('Points when it is done')).not.toBeNull()
   })
 
   it('gives nothing more for opening the panel of a task that has a reward (RWD-5)', async () => {

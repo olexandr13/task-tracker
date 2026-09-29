@@ -20,8 +20,8 @@ interface RewardPickerProps {
   onChange: (reward: number | null) => void
   /** What this picker is for, when there is more than one on screen. */
   label?: string
-  /** What the points are for, as the panel says it above them. */
-  hint?: string
+  /** What the points are for, as the panel says it above them (RWD-43). */
+  hint: string
   /** Whether the button spells the points out beside its star, or a way to add some when there are none. */
   showAmount?: boolean
   /** What the button says while there are no points, where it spells them out. */
@@ -55,7 +55,7 @@ export function RewardPicker({
   startAt,
   onChange,
   label = 'Reward',
-  hint = 'Points each time it is done',
+  hint,
   showAmount = false,
   addLabel = 'Add reward',
   noneLabel = 'No reward',

@@ -1,4 +1,4 @@
-import { bonusPeriod, moneyFor, toLocalDay, type LocalDay, type Period, type PointValue, type TaskId } from '../core'
+import { bonusPeriod, moneyFor, toLocalDay, type LocalDay, type Period, type PointValue, type Repeat, type TaskId } from '../core'
 import { describeDueDate } from './dueLabels'
 
 /**
@@ -44,6 +44,16 @@ export function describeEarningTitle(taskId: TaskId, taskTitles: ReadonlyMap<Tas
 /** `1 point`, `5 points`, `-3 points`. */
 export function describePoints(points: number): string {
   return `${String(points)} ${Math.abs(points) === 1 ? 'point' : 'points'}`
+}
+
+/**
+ * What the reward panel says the points are for, on the line above the number
+ * (RWD-43). A task that comes round earns them again on every completion; a
+ * task that happens once earns them the once, so it is not told about times
+ * there will not be.
+ */
+export function describeRewardHint(repeat: Repeat | null): string {
+  return repeat === null ? 'Points when it is done' : 'Points each time it is done'
 }
 
 /** What a completion earns, as a row spells it out under its star: `+5`. */

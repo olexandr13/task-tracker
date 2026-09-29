@@ -20,7 +20,7 @@ import type { RepeatDraft } from '../repeatDraft'
 import { describeTimeProgress } from '../durationLabels'
 import { describeDueDate, describeTimeOfDay } from '../dueLabels'
 import { describeRepeatBriefly } from '../repeatLabels'
-import { describeReward } from '../rewardLabels'
+import { describeReward, describeRewardHint } from '../rewardLabels'
 import {
   controlOff,
   deleteAction,
@@ -216,6 +216,7 @@ export function TaskSheet({
                 <RewardPicker
                   reward={task.reward}
                   startAt={defaultReward(task.repeat)}
+                  hint={describeRewardHint(task.repeat)}
                   onChange={(reward) => { actions.changeReward(task.id, reward) }}
                   label={`Reward for "${task.title}"`}
                   align="right"
