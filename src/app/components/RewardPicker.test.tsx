@@ -163,18 +163,18 @@ describe('RewardPicker', () => {
     expect(typed.onChange).toHaveBeenLastCalledWith(null)
   })
 
-  it('closes on Done from inside, and hands the focus back to the star (RWD-42)', async () => {
+  it('closes on the × from inside, and hands the focus back to the star (RWD-42)', async () => {
     const { user, onChange } = setup({ initial: 3 })
 
     await user.click(trigger())
-    await user.click(screen.getByRole('button', { name: 'Done' }))
+    await user.click(screen.getByRole('button', { name: 'Close' }))
 
     expect(panel()).toBeNull()
     expect(onChange).not.toHaveBeenCalled()
     expect(document.activeElement).toBe(trigger())
   })
 
-  it('takes the reward away in one tap with Remove, and closes (RWD-42)', async () => {
+  it('takes the reward away in one tap with the trash, and closes (RWD-42)', async () => {
     const { user, onChange } = setup({ initial: 10 })
 
     await user.click(trigger())
@@ -187,7 +187,7 @@ describe('RewardPicker', () => {
     expect(document.activeElement).toBe(trigger())
   })
 
-  it('offers Remove only while there is a reward to remove (RWD-42)', async () => {
+  it('offers the trash only while there is a reward to remove (RWD-42)', async () => {
     const { user } = setup({ initial: 1 })
 
     await user.click(trigger())
@@ -196,7 +196,7 @@ describe('RewardPicker', () => {
     await user.click(screen.getByRole('button', { name: 'Fewer points' }))
 
     expect(screen.queryByRole('button', { name: 'Remove reward' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Done' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Close' })).toBeDefined()
   })
 
   it('closes on Escape without changing anything (UI-9, UI-10)', async () => {
@@ -225,7 +225,8 @@ describe('RewardPicker', () => {
     await user.click(trigger())
     expect(panel()?.getAttribute('aria-modal')).toBe('true')
 
-    await user.click(screen.getByRole('button', { name: 'Close' }))
+    // The sheet's handle and the panel's × are both named Close.
+    await user.click(screen.getAllByRole('button', { name: 'Close' })[0])
 
     expect(panel()).toBeNull()
     expect(screen.getByRole('dialog', { name: 'Details of "write it up"' })).toBeDefined()

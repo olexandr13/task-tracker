@@ -48,7 +48,8 @@ function settleEntries(view: View) {
  *
  * The browser's history is not a record of where one has been but a ladder of
  * at most two rungs: the root of the branch on screen and, while a view under
- * it is open, that view as a page above the root. Switching views rewrites the
+ * it is open, that view as a page above the root. A sheet over the page sits on
+ * a rung of its own above those (UI-71). Switching views rewrites the
  * rungs in place, so nothing piles up. Back drops the page rung; what is shown
  * then is the parent of the view that was open, pushed as a fresh page when it
  * is itself under something, or written into the root when it is the top. From

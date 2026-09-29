@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SHEET_CLOSE_DISTANCE } from '../sheetDrag'
@@ -63,5 +63,15 @@ describe('BottomSheet', () => {
     await user.click(screen.getByRole('dialog', { name: 'Details' }).previousElementSibling as HTMLElement)
 
     expect(onClose).toHaveBeenCalledTimes(2)
+  })
+
+  it('closes on back, so a phone’s back does not leave the app (UI-71)', async () => {
+    const { onClose } = renderSheet()
+
+    act(() => { window.history.back() })
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+
+    expect(onClose).toHaveBeenCalledOnce()
   })
 })

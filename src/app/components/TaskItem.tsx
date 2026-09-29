@@ -135,7 +135,8 @@ const slot = 'flex w-6 shrink-0 items-center'
  * title; its time and reward are set from the sheet a tap opens instead, and the
  * rest row shows tinted marks for what is set (UI-50). The list
  * and the tags have no slot anywhere: a task is filed and tagged from its menu,
- * or on a phone from that sheet as well. Urgent is the same: set from the menu
+ * or on a phone from that sheet as well — and tags have no resting mark there
+ * either (TAG-16). Urgent is the same: set from the menu
  * or the sheet, never a control on the resting row (TASK-62).
  */
 const lineColumns =
@@ -304,9 +305,10 @@ export function TaskItem({
   const points = detailed ? rewardLabel : null
   const urgentLabel = detailed && task.urgent ? 'Urgent' : null
   // On a phone, marks for what the task carries — set ones only, not buttons.
-  // A tap on them is a tap on the row and opens the sheet.
+  // A tap on them is a tap on the row and opens the sheet. Tags have none: they
+  // live in the sheet, as urgent does (TAG-16, TASK-62).
   const marks =
-    phone && (scheduled || timed || rewarded || checklisted || described || tagged)
+    phone && (scheduled || timed || rewarded || checklisted || described)
       ? {
           label: [
             scheduleLabel,
@@ -314,7 +316,6 @@ export function TaskItem({
             timed ? timeLabel(', ') : null,
             rewardLabel,
             described ? 'Description' : null,
-            tagged ? `Tags ${task.tags.join(', ')}` : null,
           ]
             .filter((part): part is string => part !== null)
             .join(', '),
@@ -817,11 +818,6 @@ export function TaskItem({
             {described && (
               <span className={controlMarker}>
                 <NoteIcon />
-              </span>
-            )}
-            {tagged && (
-              <span className={controlMarker}>
-                <TagIcon />
               </span>
             )}
           </div>

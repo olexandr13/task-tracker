@@ -1620,7 +1620,7 @@ describe('on a phone, tapping a task', () => {
     )
 
     const marks = screen.getByRole('group', {
-      name: 'Daily, Checklist 0 of 1, 0m/30m, +5, Description, Tags home',
+      name: 'Daily, Checklist 0 of 1, 0m/30m, +5, Description',
     })
     expect(within(marks).queryAllByRole('button')).toHaveLength(0)
     expect(screen.queryByRole('button', { name: /^Schedule for/ })).toBeNull()
@@ -1634,6 +1634,27 @@ describe('on a phone, tapping a task', () => {
     setup(null)
 
     expect(screen.queryByRole('group', { name: /Daily|Checklist|Description|Tags/ })).toBeNull()
+  })
+
+  it('leaves tags off the rest row, keeping the button for the sheet (TAG-16)', async () => {
+    const user = userEvent.setup()
+    render(
+      <ul>
+        <TaskItem
+          actions={NO_TASK_ACTIONS}
+          task={addTag(createTask(TASK, null, NOW), 'home')}
+          now={NOW}
+          knownTags={['home']}
+          lists={[]}
+        />
+      </ul>,
+    )
+
+    expect(screen.queryByRole('group', { name: /Tags/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Tags for/ })).toBeNull()
+
+    await user.click(screen.getByRole('listitem'))
+    expect(within(sheet()).getByRole('button', { name: `Tags for "${TASK}": home` })).toBeDefined()
   })
 
   it('keeps the details in the sheet, whatever the view asks for (UI-42)', async () => {

@@ -55,7 +55,7 @@ export const panelIconQuiet =
   'text-neutral-400 hover:text-neutral-900 dark:text-neutral-500 dark:hover:text-neutral-100'
 
 /**
- * A short action offered in a panel — a quick hour, **Remove reward**, **Done**.
+ * A short action offered in a panel — a quick hour.
  * Filled rather than bare, so on a phone, where nothing hovers, it still reads
  * as a button and not as a label. Tone for one that is chosen is added by the caller.
  */

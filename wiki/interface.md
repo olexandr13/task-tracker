@@ -59,7 +59,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   action icons (UI-63) — the schedule, the list, the time, the tags, urgent, the reward — and
   Duplicate and Delete. The
   row behind it stays a single line. The sheet **rises** from the bottom as the page behind dims.
-  It closes on a tap on the dimmed page or on Escape (UI-9, UI-10), or **pulled down by its handle**
+  It closes on a tap on the dimmed page or on Escape (UI-9, UI-10), on **back** (UI-71), or **pulled down by its handle**
   — the bar at its top: let go far enough down, or with a flick, and it closes; a shorter pull lets
   it settle back. A tap on the handle closes it too, so a screen reader has a **Close** button. The
   title at its head is larger than the row's. Opening it never takes the caret (UI-22). Its controls
@@ -87,7 +87,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-64** A picker's panel opened from **inside a sheet** is a **sheet of its own** over the one
   it came from, rather than an aside hanging off its icon: a sheet is only as tall as what it
   holds, so an aside dropped inside it would be cut off at the sheet's edge with no room to scroll
-  to the rest. It closes on its backdrop, on Escape, or pulled down (UI-48), leaving the sheet it
+  to the rest. It closes on its backdrop, on Escape, pulled down (UI-48), or on back (UI-71), leaving the sheet it
   came from open. On a row, where there is a page behind it, the same panel is the aside it always
   was (UI-40). Which of the two it is, is not the caller's to say: it is where the control ended up.
 - **UI-54** The one-line add box is a **wide screen's**: on a phone the line it sits on is given back
@@ -194,7 +194,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   Lists, then to Tasks; and from a tab back **leaves the app**, as it leaves any other. It is the
   same wherever you came from — a phone's back button, the browser's, or a keyboard's — and the
   same after a reload or from a link: nothing is kept of the views you went through, so back never
-  retraces them, and the history does not pile up as you move around.
+  retraces them, and the history does not pile up as you move around. A sheet over the page sits
+  **above** that ladder (UI-71): back closes it first.
 - **UI-43** The **Tasks** tab has a menu of its own, opened as the period tab's is (UI-33): held
   down, or tapped again while Tasks is on screen, and closed by a tap on Tasks while open. It holds
   what the sidebar has in its place, laid out as the sidebar lays it out (UI-30) — **Lists**, with
@@ -228,6 +229,11 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   stacked and in whatever order they closed — a picker's sheet over a task's sheet (UI-64), a
   sheet and a panel at once, all of them closing in one go — so the page is never left stuck until
   a reload. The page is held once, by a count of what is over it, not once per sheet.
+- **UI-71** While a sheet is over the page (UI-48, UI-54, UI-64), **back closes the sheet** rather
+  than climbing a view or leaving the app (UI-37). A picker's sheet over a task's sheet (UI-64)
+  closes first, leaving the one it came from. Closing the sheet any other way (UI-9, UI-48) drops
+  that extra step, so the next back is the same as if the sheet had not been opened. It is the same
+  wherever back comes from — a phone's back button, the browser's, or a keyboard's.
 - **UI-45** The bar has no entry for the tags or the modes, and the sidebar none for the tags:
   they are under **More**, marked with three dots; the sidebar lists the modes itself (MODE-7).
   **A tap opens More's page** — three links, **Lists**, **Tags** and **Modes**, each with its icon, large enough
@@ -245,7 +251,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 - **UI-9** Panels that open in place — the schedule (date and repeat), time, tag, list and reward pickers, a task's menu, the menus
   of the bottom bar's tabs (UI-66), the View panel (UI-41), a phone's task sheet (UI-48), and the add
-  sheet (UI-54) — close on a click outside them or on Escape. The tags offered while typing
+  sheet (UI-54) — close on a click outside them or on Escape. A sheet also closes on back (UI-71). The tags offered while typing
   `#` in a description close on Escape too, but a click outside is leaving the description (TAG-9).
 - **UI-10** Escape inside an open panel closes the panel rather than reaching anything behind it.
 - **UI-40** A panel's buttons are **compact** and the same in every panel — its choices, a
@@ -278,10 +284,11 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   row wakes and rests. On a phone the rest row is the box, the title and **marks** for what is set
   (UI-50); the controls themselves live in the sheet a tap opens (UI-48).
 - **UI-50** On a phone, a resting row shows **tinted icons** for what the task carries — the
-  schedule (calendar, or looping arrows once it repeats), the checklist, the clock, the star, the
-  description and the tags — **set ones only**, and **not as buttons**: a tap on them is a tap on
+  schedule (calendar, or looping arrows once it repeats), the checklist, the clock, the star and the
+  description — **set ones only**, and **not as buttons**: a tap on them is a tap on
   the row and opens the sheet (UI-48). Empty ones stay off, so a task with nothing set stays the
-  box and the title alone. An overdue date is red, as on a wide screen (DUE-10). The words those
+  box and the title alone. Tags have no resting mark: they are in the sheet (TAG-16), as urgent is
+  (TASK-62). An overdue date is red, as on a wide screen (DUE-10). The words those
   icons stand for are not spelled out on the row at all: the words are inside the sheet (UI-42, UI-48).
 - **UI-27** The controls **line up down the list**: each is its icon alone, in a slot of its own
   that sits in the same place on every row, whatever the rows beside it hold — and whether or not
@@ -292,8 +299,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   from a strip on the woken row (UI-53), and so is urgent (TASK-63). On a phone the rest row
   has no control slots; the clock, the reward, the list, the tags and urgent are set from the sheet a tap opens
   (UI-48, TIME-10, RWD-8, LST-23, TAG-16, TASK-63), and set ones still read at a glance as marks on the row
-  (UI-50) — urgent being the exception: it has no resting mark, only its label in the sheet and the
-  amber bar (TASK-62, TASK-64). What a control holds — the due date
+  (UI-50) — urgent and the tags being the exceptions: urgent has no resting mark, only its label in the sheet and the
+  amber bar (TASK-62, TASK-64), and tags none either, only the button in the sheet (TAG-16). What a control holds — the due date
   (DUE-5) or the repeat rule (RPT-17), the checklist count (CHK-5), the time (TIME-12), the reward (RWD-7) — is not put
   beside its icon but on a **line of details under the task's line**, in muted small text, each
   detail **under its own button**, centred on it and free to run wider than it. The task's tags and
@@ -468,7 +475,7 @@ long press), `src/app/useRowSwipe.ts` and `src/app/rowSwipe.ts` (a phone's swipe
 delete), `src/app/components/SettingsList.tsx` (and the version on it, from `package.json` via
 `vite.config.ts`), `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it),
 `ThemeCard.tsx` (the theme on it), `HabitsCard.tsx` (the habits switch on it, HAB-23), `src/app/theme.ts` and `src/app/useTheme.ts` (the theme worn by the page),
-`index.html` (the theme put on before the page is first drawn), `src/app/view.ts` (the views, and which is above which), `src/app/useView.ts` (the view kept in the address, and back climbing a level), `src/app/viewIcons.ts` (each
+`index.html` (the theme put on before the page is first drawn), `src/app/view.ts` (the views, and which is above which), `src/app/useView.ts` (the view kept in the address, and back climbing a level), `src/app/overlayHistory.ts` (back closing a sheet rather than leaving the app, UI-71), `src/app/viewIcons.ts` (each
 view's icon), `src/app/components/TickIcon.tsx` (the tick in a box that is ticked off),
 `src/app/rowControls.ts` (the shape and tones a row's controls share — a thumb's square in a
 sheet, UI-59), `src/app/components/CompletionBox.tsx` (the box a task is ticked off in, wherever it
@@ -479,7 +486,7 @@ line standing for a group of choices, and the way back out of the ones it opens)
 `src/app/components/AppLogo.tsx` (the mark in the sidebar).
 **Tested in:** `src/app/components/SheetActions.test.tsx` (the row of icons and its **i**), `src/app/components/PickerPanel.test.tsx` (the aside and the sheet), `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
 items are large enough for a finger), `src/app/components/MorePage.test.tsx` (More's links), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
-view in the address, and back going a level up), `src/app/view.test.ts` (which view is above which), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel),
+view in the address, and back going a level up), `src/app/overlayHistory.test.ts` (back closing a sheet, and a sheet over a sheet first), `src/app/view.test.ts` (which view is above which), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel),
 `src/app/components/SettingsList.test.tsx` (the version on Settings, and the habits switch on it),
 `src/app/components/ThemeCard.test.tsx` (picking a theme, by click and by arrow keys),
 `src/app/theme.test.ts` (the theme on the page and the bar, and `index.html` reading it back), `src/test/formFields.test.ts`
@@ -493,5 +500,5 @@ it lands, and gone through at once where less motion is asked for),
 the detailed sheet),
 `src/app/letterShortcut.test.ts` and `src/app/useLetterShortcut.test.ts` (`N`, `H`, `R` and `P`),
 `src/app/components/BottomSheet.test.tsx` and `src/app/sheetDrag.test.ts` (closing a sheet by its
-handle, pulled or tapped), `src/app/usePageLock.test.tsx` (the page scrolling again once every sheet
+handle, pulled or tapped, and on back), `src/app/usePageLock.test.tsx` (the page scrolling again once every sheet
 and panel is gone, whatever order they closed in).

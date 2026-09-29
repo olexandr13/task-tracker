@@ -29,10 +29,10 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   away**, and **−** stops there. A number that is neither 0 nor a reward is not saved, and the box goes
   back to what is saved on leaving it. Enter closes the panel, as do a click outside and Escape
   (UI-9, UI-10).
-- **RWD-42** Under the number the panel has **Done**, which closes it from inside, and — while there is
-  a reward — **Remove reward**, which takes it away in **one tap** and closes the panel, so 10 points
+- **RWD-42** The panel has a **×** at its top right, which closes it from inside, and — while there is
+  a reward — a muted **trash** icon, which takes it away in **one tap** and closes the panel, so 10 points
   are not 10 presses of **−**. Closed either way, or with Enter, the focus goes back to the star.
-  The panel opened from the Rules page says **Remove bonus** (RWD-27).
+  The trash opened from the Rules page is named **Remove bonus** (RWD-27).
 - **RWD-7** The star sits in a slot of its own after the clock (UI-27). A woken row spells the
   reward out under it: `+5`.
 - **RWD-8** On a phone the row's line has no room for the star *button*, so the sheet a tap opens

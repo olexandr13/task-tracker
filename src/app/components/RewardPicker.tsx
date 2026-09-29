@@ -1,10 +1,11 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { isRewardAmount, MAX_REWARD, MIN_REWARD } from '../../core'
-import { panelChip, panelStep as stepButton } from '../panelControls'
+import { panelClear, panelStep as stepButton } from '../panelControls'
 import { describePoints } from '../rewardLabels'
-import { controlOff, controlOn, rowControlIcon, rowControlLabel } from '../rowControls'
+import { controlOff, controlOn, deleteControl, rowControlIcon, rowControlLabel } from '../rowControls'
 import { PickerPanel } from './PickerPanel'
 import { StarIcon } from './StarIcon'
+import { TrashIcon } from './TrashIcon'
 
 /** What the box can hold: a reward, or 0 for none. */
 function isPoints(points: number): boolean {
@@ -27,7 +28,7 @@ interface RewardPickerProps {
   addLabel?: string
   /** How no points read where the button is named: `Reward: No reward`. */
   noneLabel?: string
-  /** What the panel's button for taking the points away says. */
+  /** What the trash is named, for a screen reader: **Remove reward**, or **Remove bonus**. */
   removeLabel?: string
   /** Which edge of the button the panel lines up with: the one nearer the middle of the screen. */
   align?: 'left' | 'right'
@@ -44,10 +45,10 @@ interface RewardPickerProps {
  * typing it takes the points away. A step up from 0 lands on `startAt` rather
  * than on 1, so a monthly task is not 25 clicks from its reward.
  *
- * Under the number, **Remove** takes the points away in one tap — ten of them
- * are not ten presses of − — and **Done** closes the panel from inside it, for
- * a hand that has set the number and is looking for the way out rather than
- * for somewhere beside the panel to click.
+ * A muted trash under the number takes the points away in one tap — ten of
+ * them are not ten presses of − — and a **×** at the top right closes the
+ * panel from inside it, for a hand that has set the number and is looking for
+ * the way out rather than for somewhere beside the panel to click.
  */
 export function RewardPicker({
   reward,
@@ -85,9 +86,9 @@ export function RewardPicker({
   }
 
   /**
-   * Closed from inside the panel — Enter, Done, Remove — the focus goes back to
-   * the star it came from rather than being dropped, so the keyboard is not lost
-   * with the panel. A sheet gives it back by itself; the aside does not.
+   * Closed from inside the panel — Enter, the ×, the trash — the focus goes
+   * back to the star it came from rather than being dropped, so the keyboard is
+   * not lost with the panel. A sheet gives it back by itself; the aside does not.
    */
   function finish() {
     close()
@@ -168,7 +169,14 @@ export function RewardPicker({
           content="gap-1.5 p-2 md:gap-1 md:p-1.5"
           onClose={close}
         >
-          <p className="px-1 pt-0.5 text-sm text-neutral-500 md:text-xs dark:text-neutral-400">{hint}</p>
+          <div className="flex items-start gap-0.5">
+            <p className="min-w-0 flex-1 px-1 pt-0.5 text-sm text-neutral-500 md:text-xs dark:text-neutral-400">
+              {hint}
+            </p>
+            <button type="button" onClick={finish} aria-label="Close" className={panelClear}>
+              ×
+            </button>
+          </div>
 
           <div role="group" aria-label="Points" className="flex items-center justify-center gap-1.5 md:gap-1">
             <button
@@ -207,16 +215,19 @@ export function RewardPicker({
             </button>
           </div>
 
-          <div className="flex gap-1.5 px-1 pb-0.5 md:gap-1">
-            {reward !== null && (
-              <button type="button" onClick={remove} className={`${panelChip} flex-1`}>
-                {removeLabel}
+          {reward !== null && (
+            <div className="flex justify-center pb-0.5">
+              <button
+                type="button"
+                onClick={remove}
+                aria-label={removeLabel}
+                title={removeLabel}
+                className={`grid size-10 shrink-0 place-items-center rounded-xl md:size-8 md:rounded-lg ${deleteControl}`}
+              >
+                <TrashIcon />
               </button>
-            )}
-            <button type="button" onClick={finish} className={`${panelChip} flex-1`}>
-              Done
-            </button>
-          </div>
+            </div>
+          )}
         </PickerPanel>
       )}
     </div>

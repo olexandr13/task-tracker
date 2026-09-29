@@ -103,7 +103,8 @@ it is deleted, whether or not a task carries it.
 - **TAG-16** On a phone the sheet a tap opens (UI-48) has a **tag button**, in its row of icons
   (UI-63) — tinted when the task carries any, the tags themselves left to the panel it opens, a row
   of icons having no width for them — and that is the same panel (TAG-7), a tap away rather than a
-  menu away (UI-44). A resting row still shows the tag mark when the task carries any (UI-50).
+  menu away (UI-44). A resting row shows **no tag mark**: tags are in the sheet, as urgent is
+  (TASK-62), not among the tinted icons for what is set (UI-50).
 - **TAG-17** The Tags page is reached from the **More** page's list (UI-45), in the sidebar as on a
   phone. More stays marked in the navigation while the Tags page or a tag's list is open.
 

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, type KeyboardEvent, type ReactNode, type SyntheticEvent } from 'react'
 import { createPortal } from 'react-dom'
+import { useOverlayHistory } from '../overlayHistory'
 import { usePageLock } from '../usePageLock'
 import { useSheetDrag } from '../useSheetDrag'
 
@@ -23,17 +24,19 @@ function keepInside(event: SyntheticEvent) {
 /**
  * A panel that slides up from the bottom of the screen, covering the phone's
  * bar. The page behind it is dimmed and does not scroll. It closes on a tap on
- * that dimming, on Escape, or pulled down by its handle — which a tap closes too,
- * so a screen reader has a button for it (UI-48). On a wide screen it is a
- * dialog in the middle of the window instead, as wide as its contents need
+ * that dimming, on Escape, on back (UI-71), or pulled down by its handle — which a
+ * tap closes too, so a screen reader has a button for it (UI-48). On a wide screen
+ * it is a dialog in the middle of the window instead, as wide as its contents need
  * rather than the whole screen (UI-54).
  */
 export function BottomSheet({ label, onClose, children }: BottomSheetProps) {
   const root = useRef<HTMLDivElement>(null)
   const drag = useSheetDrag(root, onClose)
 
-  // The page behind is dimmed and does not scroll (UI-48).
+  // The page behind is dimmed and does not scroll (UI-48). Back closes the sheet
+  // rather than leaving the app (UI-71).
   usePageLock()
+  useOverlayHistory(onClose)
 
   useLayoutEffect(() => {
     const previous = document.activeElement
