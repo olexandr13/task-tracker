@@ -5,6 +5,7 @@ import {
   habitRate,
   habitStats,
   isComplete,
+  isSkippedToday,
   isTimeGoalReached,
   type HabitDayState,
   type HabitRate,
@@ -385,6 +386,7 @@ function HabitCard({
           title={habit.title}
           done={done}
           ready={ready}
+          skipped={!done && isSkippedToday(habit, now)}
           today
           onComplete={() => { actions.complete(habit.id) }}
           onUncomplete={() => { actions.uncomplete(habit.id) }}

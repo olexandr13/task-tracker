@@ -159,7 +159,10 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 - **HAB-31** A habit's sheet (HAB-25) carries a **Skip** in the row at its foot, between
   **Duplicate** and **Delete**, while today is still to do. Pressing it passes today over
   (RPT-34): the habit is due tomorrow, leaves Today, and records nothing — and today reads as
-  **skipped** on the card and in the grid rather than as missed. A rest is not a miss: the streak
+  **skipped** on the card and in the grid rather than as missed. The card's **box** turns the same
+  soft yellow with the skip's mark in it instead of a tick, as does the box at the head of the
+  sheet and on the task's row; a screen reader hears `Mark "stretch" as done today: skipped
+  today`, and ticking it does today after all. A rest is not a miss: the streak
   runs on across it (HAB-5, HAB-6) and it is left out of the days the rates count (HAB-8). For the
   rest of the day the button reads **Skipped**, pressed, and pressing it again takes the skip back,
   so today is in play once more; ticking the box while today is skipped does it after all, done

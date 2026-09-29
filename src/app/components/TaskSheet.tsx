@@ -128,6 +128,7 @@ export function TaskSheet({
           title={task.title}
           done={done}
           ready={ready}
+          skipped={skippedToday}
           onComplete={() => { actions.complete(task.id) }}
           onUncomplete={() => { actions.uncomplete(task.id) }}
         />
