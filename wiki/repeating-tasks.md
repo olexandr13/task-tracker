@@ -106,8 +106,8 @@ and whether it reads as done is derived from the occurrence currently in play ra
 
 ## Skipping an occurrence
 
-- **RPT-34** A repeating task's occurrence can be **skipped** from its menu (DUE-14) or its schedule
-  panel (DUE-9): passed over
+- **RPT-34** A repeating task's occurrence can be **skipped** from its menu (DUE-14), its schedule
+  panel (DUE-9) or the foot of its sheet (UI-48, HAB-31): passed over
   without being done. The task is then due on the rule's **next** day — a daily task skipped today is
   due tomorrow, a Monday task missed and skipped on Wednesday is due next Monday — so it is no
   longer overdue, and is in Today, Week or Month by that day (LIST-2, LIST-3, LIST-11). The day marked

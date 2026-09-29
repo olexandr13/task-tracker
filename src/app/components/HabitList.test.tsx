@@ -74,34 +74,41 @@ function stretch(): Task {
 }
 
 describe('skipping today (HAB-31)', () => {
-  it('passes today over from the card while today is still to do', async () => {
+  it('passes today over from the foot of the sheet while today is still to do', async () => {
     const habit = stretch()
     const { user, onSkip } = setup([habit])
 
-    await user.click(screen.getByRole('button', { name: 'Skip "stretch" today' }))
+    // The card itself carries no skip: it is the sheet's, between Duplicate and Delete.
+    expect(screen.queryByRole('button', { name: /^Skip/ })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Edit "stretch"' }))
+    const skip = screen.getByRole('button', { name: 'Skip "stretch"' })
+    expect(skip.getAttribute('aria-pressed')).toBe('false')
+    await user.click(skip)
 
     expect(onSkip).toHaveBeenCalledWith(habit.id)
   })
 
-  it('reads today as skipped, stays pressed, and takes the skip back on the next press', async () => {
+  it('reads today as skipped, the sheet’s button pressed and taking the skip back', async () => {
     const habit = { ...stretch(), skippedDays: ['2026-09-16'] }
     const { user, onUnskip } = setup([habit], true)
 
-    const skip = screen.getByRole('button', { name: 'Skipped "stretch" today' })
-    expect(skip.getAttribute('aria-pressed')).toBe('true')
     // In the grid the day is a rest, not a miss and not still to do (HAB-10).
     expect(screen.getByRole('button', { name: 'Wed, Sep 16 · Skipped' })).toBeTruthy()
 
-    await user.click(skip)
+    await user.click(screen.getByRole('button', { name: 'Edit "stretch"' }))
+    const skipped = screen.getByRole('button', { name: 'Skipped "stretch" today' })
+    expect(skipped.getAttribute('aria-pressed')).toBe('true')
+    await user.click(skipped)
 
     expect(onUnskip).toHaveBeenCalledWith(habit.id)
   })
 
-  it('offers no skip once today is done', () => {
-    setup([completeTask(stretch(), WED_16)])
+  it('offers no skip once today is done', async () => {
+    const { user } = setup([completeTask(stretch(), WED_16)])
 
-    expect(screen.queryByRole('button', { name: /^Skip "stretch"/ })).toBeNull()
-    expect(screen.queryByRole('button', { name: /^Skipped "stretch"/ })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Edit "stretch"' }))
+
+    expect(screen.queryByRole('button', { name: /^Skip/ })).toBeNull()
   })
 })
 
