@@ -321,9 +321,21 @@ describe('SideNav', () => {
     expect(marked().map((button) => button.textContent)).toEqual(['Lists'])
   })
 
-  it('dims while Procrastination mode is on (JUST-5)', () => {
+  it('dims while Procrastination mode is on, Today apart (JUST-5)', () => {
     setup('today', [], true, true)
 
-    expect(screen.getByRole('navigation', { name: 'Views' }).className).toMatch(/opacity-25/)
+    const entry = (name: string) => screen.getByRole('button', { name }).closest('li')
+    expect(entry('Today')?.className ?? '').not.toMatch(/opacity-25/)
+    expect(entry('Week')?.className).toMatch(/opacity-25/)
+    expect(entry('Lists')?.className).toMatch(/opacity-25/)
+    expect(screen.getByText('PickMe').closest('div')?.className).toMatch(/opacity-25/)
+  })
+
+  it('leaves every entry at full strength while the mode is off (JUST-5)', () => {
+    setup('today')
+
+    for (const name of ['Today', 'Week', 'Lists', 'Settings']) {
+      expect(screen.getByRole('button', { name }).closest('li')?.className ?? '').not.toMatch(/opacity-25/)
+    }
   })
 })

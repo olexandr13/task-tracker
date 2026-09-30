@@ -28,7 +28,8 @@ describe('ProcrastinationPanel', () => {
     expect(screen.getByText('Procrastination mode')).toBeDefined()
     expect(screen.getByText('Some functionality dimmed to prevent distraction. Do just one highlighted task')).toBeDefined()
     expect(screen.getByRole('button', { name: 'Other task' })).toBeDefined()
-    expect(screen.getByRole('button', { name: 'End mode' })).toBeDefined()
+    // Ending is a decision taken on the mode's own page, not a button beside the one task (JUST-8).
+    expect(screen.queryByRole('button', { name: 'End mode' })).toBeNull()
   })
 
   it('offers Create task when only one open task is left (JUST-6)', async () => {
@@ -71,9 +72,9 @@ describe('ProcrastinationPanel', () => {
     expect(onMoreInfo).toHaveBeenCalledTimes(2)
   })
 
-  it('End mode on the banner turns the mode off (JUST-8)', async () => {
+  it('End mode on the idle banner turns the mode off (JUST-8)', async () => {
     const onEnd = vi.fn()
-    render(<ProcrastinationPanel phase="focus" {...panel} onEnd={onEnd} />)
+    render(<ProcrastinationPanel phase="idle" {...panel} onEnd={onEnd} />)
 
     await userEvent.click(screen.getByRole('button', { name: 'End mode' }))
     expect(onEnd).toHaveBeenCalledOnce()

@@ -22,6 +22,9 @@ bars, which changes once a day.
 - **QUOTE-10** The card shows the quote and its attribution, and nothing else.
 - **QUOTE-11** Nothing is shown until today's quote has settled, so the card never flashes one
   quote and swaps it for another.
+- **QUOTE-12** While **Procrastination mode** is on the card is dimmed to a quarter opacity with
+  the rest of what is not the one task (JUST-5). A quote is worth reading on any other day; on this
+  one it is something else to read instead of starting.
 
 ---
 

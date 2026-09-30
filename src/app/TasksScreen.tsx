@@ -875,7 +875,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                 {!isLoading && <ProgressPanel tasks={live} now={now} dimmed={dimChrome} />}
               </aside>
 
-              <QuoteCard quote={quote} />
+              <QuoteCard quote={quote} dimmed={dimChrome} />
             </div>
           )}
         </div>

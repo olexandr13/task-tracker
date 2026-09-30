@@ -66,7 +66,9 @@ and each mode a page of its own that says what it does, and sets what it has to 
   is summed up in, where it stands, and the same switch (MODE-3) — and under that **What it does**:
   what being on actually does, in **plain sentences, one thing each**, naming the controls they
   mean in quotes (*Press "Other task" to pick a different one*). Procrastination: what is picked,
-  what is dimmed, what each control does, what finishing one wins, and the **P** shortcut. The
+  what is dimmed, what each control does, what finishing one wins, the **P** shortcut, and **how the
+  mode is ended** — the focus banner carrying no **End mode** (JUST-8), this page is where that is
+  said and where the switch to do it sits. The
   warm-up: **why going gradually is the point** — no rush, no extra effort, no promises to
   yourself you end up breaking — then what each day allows, that only new habits are held back,
   what counts against the allowance, that nothing already there is touched, where it is shown, and

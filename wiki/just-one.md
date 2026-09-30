@@ -38,14 +38,17 @@ task to do, fade the rest, and earn a rest by finishing it. One of the two
   above the dimmed rows instead of sinking with other done work. The list is **one run** while the
   mode is on: the **Overdue** (TASK-68) and **Done** (TASK-69) headings would speak for rows the
   chosen task sits above, and a heading is a distraction besides.
-  Every other row on Today — done included — is shown at a quarter opacity. The view navigation
-  (sidebar or phone bar) and the progress bars are dimmed the same way, so attention stays on the
-  one task. After **Rest**, the banner becomes **Resting** (😌) with a calm note (**No rush —
-  pick another only if you want to**) and an optional **Choose another task**; every row stays
-  dimmed, and so do the navigation and the bars. Focus and idle banners also offer **More info**,
-  which opens Procrastination's own page (MODE-10), and **End mode**
-  (JUST-8). The mode banner uses a calm sky tint, not a warning colour. Nothing is hidden or
-  filtered.
+  Every other row on Today — done included — is shown at a quarter opacity. The progress bars, the
+  quote (QUOTE-12) and the view navigation are dimmed the same way, so attention stays on the one
+  task. In the sidebar **Today is the one entry left at full strength**: it is where the task is,
+  so the way back from anywhere else stays readable while the mark, the other entries and the rules
+  between them soften. The phone bar dims whole, its last tab standing for whichever period was
+  last open rather than for Today alone. After **Rest**, the banner becomes **Resting** (😌) with a
+  calm note (**No rush — pick another only if you want to**) and an optional **Choose another
+  task**; every row stays dimmed, and so do the navigation, the bars and the quote. Both banners
+  offer **More info**, which opens Procrastination's own page (MODE-10); only the idle one offers
+  **End mode** (JUST-8). The mode banner uses a calm sky tint, not a warning colour. Nothing is
+  hidden or filtered.
 - **JUST-6** **Other task** (a smaller control) picks again among open Today tasks, skipping the
   current one when there is another to choose. When only one open Today task is left, the same
   control becomes **Create new task** and opens the add-task sheet (UI-54) instead.
@@ -58,9 +61,11 @@ task to do, fade the rest, and earn a rest by finishing it. One of the two
 ## Leaving without a win
 
 - **JUST-8** There is no free **Show all**. Turning the switch on **Modes** off (MODE-3), pressing
-  **P** again on Today (UI-58), or **End mode** on the focus or idle banner or the win card, turns
-  the mode off at once and brings the list back to normal — no confirm. The mode can be started
-  again later the same day.
+  **P** again on Today (UI-58), or **End mode** on the idle banner or the win card, turns the mode
+  off at once and brings the list back to normal — no confirm. The **focus banner carries no End
+  mode**: while there is one task to do, leaving is a decision taken on the mode's own page — which
+  **More info** opens — or with **P**, rather than a button sat beside the task. The mode can be
+  started again later the same day.
 
 ## After a win
 
@@ -83,6 +88,7 @@ guest's), `procrastinationSchema.ts` (the saved shape and its version),
 `src/app/modes.ts` and `src/app/components/ModesPage.tsx` (the switch that turns it on),
 `src/app/components/TaskList.tsx` / `TaskItem.tsx` (dimming),
 `src/app/components/SideNav.tsx`, `src/app/components/BottomNav.tsx`, `src/app/components/ProgressPanel.tsx`,
+`src/app/components/QuoteCard.tsx`,
 `src/app/TasksScreen.tsx`, `src/styles.css` (win animation).
 **Tested in:** `src/core/justOne.test.ts`, `src/app/useProcrastination.test.ts`,
 `src/app/components/ProcrastinationMode.test.tsx`, `src/app/modes.test.ts`,

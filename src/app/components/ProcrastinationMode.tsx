@@ -38,7 +38,7 @@ interface ProcrastinationPanelProps {
   onCreateTask: () => void
   /** Opens Procrastination's own page, where what it does is written out (MODE-10). */
   onMoreInfo: () => void
-  /** Turn the mode off immediately (JUST-8). */
+  /** Turn the mode off immediately, from the idle banner or the win card (JUST-8). */
   onEnd: () => void
   /** Dismiss the win card but keep the mode on (idle). */
   onRest: () => void
@@ -117,9 +117,6 @@ export function ProcrastinationPanel({
             )}
             <button type="button" onClick={onMoreInfo} className={actionSmall}>
               More info
-            </button>
-            <button type="button" onClick={onEnd} className={actionSmall}>
-              End mode
             </button>
           </div>
         </div>

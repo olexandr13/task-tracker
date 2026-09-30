@@ -61,6 +61,14 @@ const subGlyph = 'size-3.5 shrink-0'
 /** A mode wears an emoji rather than a drawing, which needs a box of its own to sit in the middle of. */
 const subEmoji = 'inline-flex size-3.5 shrink-0 items-center justify-center text-[0.8125rem] leading-none'
 
+/**
+ * How an entry is softened while Procrastination mode is on (JUST-5). It sits on
+ * each entry rather than on the sidebar itself: opacity fades a whole box and
+ * everything in it at once, so a lit Today inside a faded sidebar is not a thing
+ * a child can ask for.
+ */
+const dim = 'opacity-25'
+
 /** The chevron at the end of Lists, Rewards or Modes that folds what is under it: quiet until pointed at. */
 const foldButton =
   'absolute inset-y-0 right-1.5 my-auto grid size-6 place-items-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-200/70 hover:text-neutral-900 dark:text-neutral-500 dark:hover:bg-neutral-700/60 dark:hover:text-neutral-100'
@@ -75,7 +83,7 @@ interface SideNavProps {
   rewardsOpen: boolean
   /** Whether each mode's page is shown under Modes, or folded away. */
   modesOpen: boolean
-  /** Soften the sidebar while Procrastination mode is on (JUST-5). */
+  /** Soften the sidebar, Today apart, while Procrastination mode is on (JUST-5). */
   dimmed?: boolean
   onChange: (view: View) => void
   onListsOpenChange: (open: boolean) => void
@@ -111,17 +119,21 @@ export function SideNav({
   const rewardsId = useId()
   const modesId = useId()
 
+  // Today is where the one task is, so it stays at full strength while the rest
+  // of the sidebar softens: the way back is always readable (JUST-5).
+  const soften = (value: FixedView) => (dimmed && value !== 'today' ? dim : undefined)
+
   return (
-    <nav
-      aria-label="Views"
-      className={`hidden md:block md:w-44 md:shrink-0${dimmed ? ' opacity-25' : ''}`}
-    >
-      <AppLogo className="mb-3 flex items-center gap-2.5 px-3" />
+    <nav aria-label="Views" className="hidden md:block md:w-44 md:shrink-0">
+      <AppLogo className={`mb-3 flex items-center gap-2.5 px-3${dimmed ? ` ${dim}` : ''}`} />
       <ul className="flex flex-col gap-0.5">
         {VIEW_GROUPS.map((group, index) => (
           <Fragment key={group[0]}>
             {index > 0 && (
-              <li aria-hidden="true" className="mx-3 my-1.5 border-t border-neutral-200 dark:border-neutral-800" />
+              <li
+                aria-hidden="true"
+                className={`mx-3 my-1.5 border-t border-neutral-200 dark:border-neutral-800${dimmed ? ` ${dim}` : ''}`}
+              />
             )}
             {group.map((value) =>
               value === 'lists' ? (
@@ -132,6 +144,7 @@ export function SideNav({
                   active={listsOpen ? view === 'lists' : isUnder(view, 'lists')}
                   open={listsOpen}
                   id={listsId}
+                  dimmed={dimmed}
                   foldLabel="Show lists"
                   onSelect={onChange}
                   onOpenChange={onListsOpenChange}
@@ -161,6 +174,7 @@ export function SideNav({
                   active={rewardsOpen ? view === 'rewards' : isUnder(view, 'rewards')}
                   open={rewardsOpen}
                   id={rewardsId}
+                  dimmed={dimmed}
                   foldLabel="Show rewards pages"
                   onSelect={onChange}
                   onOpenChange={onRewardsOpenChange}
@@ -176,6 +190,7 @@ export function SideNav({
                   active={modesOpen ? view === 'modes' : isUnder(view, 'modes')}
                   open={modesOpen}
                   id={modesId}
+                  dimmed={dimmed}
                   foldLabel="Show modes"
                   onSelect={onChange}
                   onOpenChange={onModesOpenChange}
@@ -191,7 +206,7 @@ export function SideNav({
                   ))}
                 </FoldableEntry>
               ) : (
-                <li key={value}>
+                <li key={value} className={soften(value)}>
                   <NavButton value={value} active={isOn(view, value)} onSelect={onChange} />
                 </li>
               ),
@@ -208,6 +223,8 @@ interface FoldableEntryProps {
   active: boolean
   /** Whether what is under it is shown, or folded away. */
   open: boolean
+  /** Softened with the rest of the sidebar while Procrastination mode is on (JUST-5). */
+  dimmed: boolean
   /** What the chevron controls, for a screen reader. */
   id: string
   foldLabel: string
@@ -221,9 +238,9 @@ interface FoldableEntryProps {
  * a chevron that folds them away when they are not wanted (LST-26, RWD-19,
  * MODE-7). The entry itself still goes to its own page.
  */
-function FoldableEntry({ value, active, open, id, foldLabel, onSelect, onOpenChange, children }: FoldableEntryProps) {
+function FoldableEntry({ value, active, open, id, dimmed, foldLabel, onSelect, onOpenChange, children }: FoldableEntryProps) {
   return (
-    <li>
+    <li className={dimmed ? dim : undefined}>
       <div className="relative">
         <NavButton value={value} active={active} onSelect={onSelect} />
         <button

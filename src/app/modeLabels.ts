@@ -29,8 +29,9 @@ export const MODE_SUMMARY: Record<ModeView, string> = {
 export const MODE_POINTS: Record<ModeView, readonly string[]> = {
   'modes/procrastination': [
     'Focus on just one important task.',
-    'Dims everything else — the other tasks, the menu, the progress bars — so nothing distracts you.',
+    'Dims everything else — the other tasks, the progress bars, the quote, and the menu apart from "Today", which stays lit as the way back to the task.',
     'Could be activated by pressing "P" button.',
+    'Ends here: turn the switch above off, or press "P" again on "Today". The banner beside the task carries no way out, so the mode is left on purpose rather than by reflex.',
   ],
   'modes/warm-up': [
     'Lets you increase your productivity gradually. No rush, no extra effort, and no promises to yourself you end up breaking.',
