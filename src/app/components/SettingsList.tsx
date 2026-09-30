@@ -1,14 +1,11 @@
-import type { QuietHours } from '../../core'
 import type { Account } from '../../storage/authService'
 import type { HabitViewOptions } from '../../storage/habitViewOptionsRepository'
 import type { Theme } from '../../storage/themeRepository'
-import type { NudgeControl } from '../useNudge'
 import type { BackupStatus } from '../useBackup'
 import { AccountCard } from './AccountCard'
 import { BackupCard } from './BackupCard'
-import { HabitsCard } from './HabitsCard'
-import { NudgeCard } from './NudgeCard'
 import { ThemeCard } from './ThemeCard'
+import { ViewSettingsCard } from './ViewSettingsCard'
 
 interface SettingsListProps {
   account: Account
@@ -18,16 +15,18 @@ interface SettingsListProps {
   onImport: (file: File) => void
   theme: Theme
   onThemeChange: (theme: Theme) => void
-  nudge: NudgeControl
   habitView: HabitViewOptions
   onHabitViewChange: (options: HabitViewOptions) => void
 }
 
 /**
  * The settings page: who is signed in and the way out, then the account's data
- * as a file to keep and a file to bring back, then the nudge, the theme and how
- * the habit cards start, then which build of the app this is. Anything else
- * there is to set goes above the version.
+ * as a file to keep and a file to bring back, then the theme and the view
+ * settings — how the pages start out — then which build of the app this is.
+ * Anything else there is to set goes above the version.
+ *
+ * What belongs to one mode is set on that mode's own page rather than here
+ * (MODE-12): the nudge's span and hours are read beside what the nudge does.
  */
 export function SettingsList({
   account,
@@ -37,7 +36,6 @@ export function SettingsList({
   onImport,
   theme,
   onThemeChange,
-  nudge,
   habitView,
   onHabitViewChange,
 }: SettingsListProps) {
@@ -45,15 +43,8 @@ export function SettingsList({
     <div className="flex flex-col gap-4">
       <AccountCard account={account} onSignOut={onSignOut} />
       <BackupCard status={backup} onExport={onExport} onImport={onImport} />
-      <NudgeCard
-        on={nudge.setting.on}
-        quietHours={nudge.setting.quietHours}
-        permission={nudge.permission}
-        onTurnOn={nudge.turnOn}
-        onQuietHoursChange={(hours: QuietHours) => { nudge.changeQuietHours(hours) }}
-      />
       <ThemeCard theme={theme} onChange={onThemeChange} />
-      <HabitsCard options={habitView} onChange={onHabitViewChange} />
+      <ViewSettingsCard habitView={habitView} onHabitViewChange={onHabitViewChange} />
       <p className="px-1 text-xs text-neutral-500 dark:text-neutral-400">Version {__APP_VERSION__}</p>
     </div>
   )

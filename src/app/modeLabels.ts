@@ -1,4 +1,5 @@
-import type { WarmUpProgress } from '../core'
+import type { NudgeWindow, QuietHours, WarmUpProgress } from '../core'
+import { describeNudgeWindow, describeQuietSpan } from './nudgeLabels'
 import { describeDaysLeft, describeWarmUpDay } from './warmUpLabels'
 import { VIEW_LABELS, type ModeView } from './view'
 
@@ -6,16 +7,17 @@ import { VIEW_LABELS, type ModeView } from './view'
  * How the modes read on screen: the line each one is summed up in, what it does
  * at length on its own page, and how its state is said.
  *
- * The modes are the two parts of the app that are turned on and off rather than
- * used — Procrastination and the warm-up. Both change how the rest of the app
- * behaves for a while, which is exactly what is hard to guess from a switch, so
- * each says what it does in its own words (MODE-5).
+ * The modes are the parts of the app that are turned on and off rather than
+ * used — Procrastination, the warm-up and the nudge. Each changes how the rest
+ * of the app behaves for a while, which is exactly what is hard to guess from a
+ * switch, so each says what it does in its own words (MODE-5).
  */
 
 /** What a mode is for, in the one line its row on the Modes page has (MODE-2). */
 export const MODE_SUMMARY: Record<ModeView, string> = {
   'modes/procrastination': 'One task out of Today, and everything else dimmed until it is done.',
   'modes/warm-up': 'Increase your productivity gradually: one new habit a day, for thirty days.',
+  'modes/nudge': 'Speaks up when nothing has been finished for a while, and names the task to pick up.',
 }
 
 /**
@@ -34,6 +36,14 @@ export const MODE_POINTS: Record<ModeView, readonly string[]> = {
     'Lets you increase your productivity gradually. No rush, no extra effort, and no promises to yourself you end up breaking.',
     'Allows only one new habit a day: 1 habit on day one, 2 habits on day two and so on.',
     'Ends automatically after 30 days.',
+  ],
+  'modes/nudge': [
+    'Watches for a stretch with nothing finished, and says something once it has run as long as you set under "Settings".',
+    'Names the one task to pick up next — the one Today leads with. Press the notice to go straight to it.',
+    'Says it at the foot of the app, and as a browser notification too where the browser allows one.',
+    'Reaches you while the app is open — a tab here, or the installed app running. Nothing arrives once it is closed, because nothing is left running to send it.',
+    'Can be held to certain hours, so it says nothing overnight. Set them under "Settings".',
+    'Is kept on this device only: the browser is what allows notifications, so being nudged here is not being nudged everywhere.',
   ],
 }
 
@@ -90,6 +100,25 @@ export const NOTHING_TO_FOCUS_ON = 'Nothing to do in Today'
  */
 export const MODE_LOADING: ModeStatus = { state: 'Loading…', detail: null }
 export const MODE_NOT_LOADED = 'Still loading.'
+
+/**
+ * Where the nudge stands: the span it is waiting for, and the hours it keeps to
+ * where it keeps to any (MODE-3). Off, there is nothing to add — a span nothing
+ * is being measured against says nothing about the app as it is now.
+ */
+export function describeNudgeStatus(
+  on: boolean,
+  quietHours: QuietHours,
+  window: NudgeWindow | null,
+): ModeStatus {
+  if (!on) return { state: MODE_DISABLED, detail: null }
+
+  const span = `After ${describeQuietSpan(quietHours)} with nothing done`
+  return {
+    state: MODE_ENABLED,
+    detail: window === null ? span : `${span} · ${describeNudgeWindow(window)}`,
+  }
+}
 
 /** Where the warm-up stands: how far through its month it is, or that there is none (MODE-3). */
 export function describeWarmUpStatus(progress: WarmUpProgress | null): ModeStatus {

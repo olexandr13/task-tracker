@@ -1,7 +1,8 @@
+import type { ReactNode } from 'react'
 import { MODE_POINTS, MODE_SUMMARY } from '../modeLabels'
 import type { ModeState } from '../modes'
 import { VIEW_LABELS } from '../view'
-import { VIEW_ICONS } from '../viewIcons'
+import { MODE_PAGE_ICONS } from '../viewIcons'
 import { ModeSwitch } from './ModeSwitch'
 
 const card =
@@ -20,9 +21,15 @@ const heading = 'text-sm font-medium text-neutral-700 dark:text-neutral-300'
  * A switch on a list says only its name, and the name of a mode cannot carry a
  * spell of the whole app behaving differently. This page is where that is said,
  * so turning one on is a decision rather than a guess.
+ *
+ * A mode with something to set carries it here too (MODE-12), under what it
+ * does: what a mode does and how it is set are one thing, and the page that
+ * explains the one is where the other belongs. A mode with nothing to set — or
+ * one that is off, there being nothing to tune about it — shows no such section.
  */
-export function ModePage({ mode }: { mode: ModeState }) {
-  const Icon = VIEW_ICONS[mode.view]
+export function ModePage({ mode, settings }: { mode: ModeState; settings?: ReactNode }) {
+  // The head says where the mode stands, not only which mode it is (MODE-11).
+  const Icon = MODE_PAGE_ICONS[mode.view][mode.on ? 'on' : 'off']
   const label = VIEW_LABELS[mode.view]
 
   return (
@@ -62,6 +69,13 @@ export function ModePage({ mode }: { mode: ModeState }) {
           ))}
         </ul>
       </section>
+
+      {settings !== undefined && (
+        <section aria-label="Settings" className="flex flex-col gap-2">
+          <h2 className={heading}>Settings</h2>
+          {settings}
+        </section>
+      )}
     </div>
   )
 }

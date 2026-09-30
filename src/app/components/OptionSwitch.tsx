@@ -1,7 +1,8 @@
 import { useId, type ReactNode } from 'react'
 
 interface OptionSwitchProps {
-  icon: ReactNode
+  /** The picture beside the name; left out, the name starts the line. */
+  icon?: ReactNode
   label: string
   /** What turning it on does, in a line under the label; left out, the label stands alone. */
   description?: string
@@ -12,7 +13,7 @@ interface OptionSwitchProps {
 /**
  * One option: the whole line is the switch, so it is one easy target, and it
  * says what it does under its name where it is given a description. On, its
- * icon takes the tint a set control has.
+ * icon takes the tint a set control has; without one the name starts the line.
  */
 export function OptionSwitch({ icon, label, description, checked, onChange }: OptionSwitchProps) {
   // Named by its label alone; the line under it is its description, heard after.
@@ -27,18 +28,20 @@ export function OptionSwitch({ icon, label, description, checked, onChange }: Op
       aria-labelledby={labelledBy}
       aria-describedby={description === undefined ? undefined : describedBy}
       onClick={() => { onChange(!checked) }}
-      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800"
+      className="flex min-h-12 w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-neutral-100 focus-visible:bg-neutral-100 focus-visible:outline-none dark:hover:bg-neutral-800 dark:focus-visible:bg-neutral-800"
     >
-      <span
-        aria-hidden="true"
-        className={
-          checked
-            ? 'grid size-8 shrink-0 place-items-center rounded-lg bg-blue-600/10 text-blue-600 transition-colors dark:bg-blue-400/10 dark:text-blue-300'
-            : 'grid size-8 shrink-0 place-items-center rounded-lg bg-neutral-100 text-neutral-500 transition-colors dark:bg-neutral-800 dark:text-neutral-400'
-        }
-      >
-        {icon}
-      </span>
+      {icon !== undefined && (
+        <span
+          aria-hidden="true"
+          className={
+            checked
+              ? 'grid size-8 shrink-0 place-items-center rounded-lg bg-blue-600/10 text-blue-600 transition-colors dark:bg-blue-400/10 dark:text-blue-300'
+              : 'grid size-8 shrink-0 place-items-center rounded-lg bg-neutral-100 text-neutral-500 transition-colors dark:bg-neutral-800 dark:text-neutral-400'
+          }
+        >
+          {icon}
+        </span>
+      )}
 
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span id={labelledBy} className="text-sm leading-5 text-neutral-900 dark:text-neutral-100">

@@ -45,12 +45,12 @@ import type { TaskActions } from '../taskActions'
 import type { TaskTimer } from '../useTaskTimer'
 
 /**
- * The sheet's Skip while today is skipped: pressed, in the soft yellow a rested
- * day is drawn in on the Habits page (HAB-10, HAB-31), so the button and the
- * grid say the same thing.
+ * The sheet's Skip while today is skipped: pressed, in the same soft yellow as
+ * the box beside it at the head of the sheet (HAB-31), so the button and the box
+ * say the same thing.
  */
 const skippedAction =
-  'bg-amber-500/10 text-amber-700 transition-colors hover:bg-amber-500/15 active:bg-amber-500/15 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:bg-amber-400/15 dark:active:bg-amber-400/15'
+  'bg-yellow-500/10 text-yellow-700 transition-colors hover:bg-yellow-500/15 active:bg-yellow-500/15 dark:bg-yellow-400/10 dark:text-yellow-300 dark:hover:bg-yellow-400/15 dark:active:bg-yellow-400/15'
 
 interface TaskSheetProps {
   task: Task

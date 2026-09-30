@@ -7,8 +7,13 @@
  * how a nudge is shown, and nothing counts down: a quiet stretch is measured
  * from when work last happened, so a page left open, a refresh, or a device
  * asleep for an hour all read the same.
+ *
+ * What the owner sets is the span of quiet worth speaking up about and, where
+ * they want one, the hours of the day it may be spoken in — a night being a
+ * night rather than eight hours of nothing getting done.
  */
 
+import { atLocalTime, isLocalTime, offsetDay, toLocalDay, toLocalTime, type LocalTime } from './day'
 import { sortForDisplay } from './order'
 import { isComplete, type Task, type TaskId } from './task'
 
@@ -23,6 +28,64 @@ export const DEFAULT_QUIET_HOURS: QuietHours = 2
 
 export function isQuietHours(value: unknown): value is QuietHours {
   return QUIET_HOURS.includes(value as QuietHours)
+}
+
+/**
+ * The hours of the day the nudge may speak in — from one time of day to another,
+ * in the owner's local clock — so a night is a night rather than a stretch of
+ * quiet worth saying something about.
+ *
+ * Written as two `LocalTime`s and not as a pair of moments, for the reason a due
+ * time is (`LocalTime`): nine in the morning is nine in the morning wherever the
+ * device is, and every day, where a stored moment would be one morning only.
+ */
+export interface NudgeWindow {
+  readonly from: LocalTime
+  readonly to: LocalTime
+}
+
+/** Waking hours: late enough not to be the alarm clock, early enough to still be the day. */
+export const DEFAULT_NUDGE_WINDOW: NudgeWindow = { from: '09:00', to: '22:00' }
+
+export function isNudgeWindow(value: unknown): value is NudgeWindow {
+  if (typeof value !== 'object' || value === null) return false
+  const { from, to } = value as Partial<NudgeWindow>
+  return typeof from === 'string' && isLocalTime(from) && typeof to === 'string' && isLocalTime(to)
+}
+
+/**
+ * Whether `now` falls inside the hours the nudge may speak in — always, where
+ * there are none to keep to.
+ *
+ * A window whose end is **before** its start runs past midnight, 22:00 to 07:00
+ * being the night; one whose two ends are the **same** hour is the whole day,
+ * there being no hour it shuts out. Times compare as text, in clock order, which
+ * is what writing them as `HH:MM` is for.
+ */
+export function isWithinNudgeWindow(window: NudgeWindow | null, now: Date = new Date()): boolean {
+  if (window === null) return true
+
+  const at = toLocalTime(now)
+  return window.from < window.to
+    ? at >= window.from && at < window.to
+    : at >= window.from || at < window.to
+}
+
+/**
+ * The last moment the hours opened at or before `now` — today's opening, or
+ * yesterday's while today's is still to come — or null where there are no hours
+ * and so nothing to open.
+ *
+ * This is what a quiet stretch is counted from once hours are kept to
+ * (`quietSince`): a night of nothing finished is the night, not a case to answer
+ * at nine in the morning.
+ */
+export function nudgeWindowOpenedAt(window: NudgeWindow | null, now: Date = new Date()): Date | null {
+  if (window === null) return null
+
+  const today = toLocalDay(now)
+  const opened = atLocalTime(today, window.from)
+  return opened.getTime() <= now.getTime() ? opened : atLocalTime(offsetDay(today, -1), window.from)
 }
 
 const HOUR_MS = 60 * 60 * 1000
@@ -56,6 +119,11 @@ export interface QuietInput {
   readonly nudgedAt: Date | null
   /** When this device started watching — the screen opening. */
   readonly watchingSince: Date
+  /**
+   * When the hours the nudge may speak in last opened (`nudgeWindowOpenedAt`),
+   * or null where it may speak at any hour.
+   */
+  readonly openedAt: Date | null
 }
 
 /**
@@ -65,11 +133,16 @@ export interface QuietInput {
  *
  * A nudge already shown starts the quiet again from itself, so one quiet stretch
  * is nudged once and then once more each span it runs on, rather than on every
- * tick and every refresh.
+ * tick and every refresh. The hours opening start it again too: a stretch that
+ * ran while the app was told to keep quiet was never the owner's to answer for,
+ * so the morning begins a span of its own rather than arriving hours behind.
  */
-export function quietSince({ finishedAt, nudgedAt, watchingSince }: QuietInput): Date {
-  const began = finishedAt ?? watchingSince
-  return nudgedAt !== null && nudgedAt > began ? nudgedAt : began
+export function quietSince({ finishedAt, nudgedAt, watchingSince, openedAt }: QuietInput): Date {
+  let since = finishedAt ?? watchingSince
+  for (const moment of [nudgedAt, openedAt]) {
+    if (moment !== null && moment > since) since = moment
+  }
+  return since
 }
 
 /** How long the quiet has run at `now`, in whole milliseconds, never below zero. */
@@ -122,15 +195,20 @@ export interface Nudge {
 }
 
 /**
- * The nudge to show at `now`, or null when there is none: the quiet is not long
- * enough yet, or there is nothing left to do.
+ * The nudge to show at `now`, or null when there is none: the hours it may speak
+ * in are shut, the quiet is not long enough yet, or there is nothing left to do.
+ *
+ * Outside the hours nothing is said at all — not held back to be said later,
+ * since what a nudge has to say is about the hour it is said in.
  */
 export function findNudge(
   tasks: readonly Task[],
   quiet: QuietInput,
   hours: QuietHours,
+  window: NudgeWindow | null,
   now: Date = new Date(),
 ): Nudge | null {
+  if (!isWithinNudgeWindow(window, now)) return null
   if (!isQuietEnough(quiet, hours, now)) return null
 
   const task = pickMostImportant(tasks, now)

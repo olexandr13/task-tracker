@@ -45,6 +45,7 @@ describe('viewFromHash', () => {
       'modes',
       'modes/procrastination',
       'modes/warm-up',
+      'modes/nudge',
       'trash',
       'settings',
     ] as const

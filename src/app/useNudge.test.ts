@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { completeTask, createTask, setDueDate, toLocalDay, type Task } from '../core'
+import { completeTask, createTask, DEFAULT_NUDGE_WINDOW, setDueDate, toLocalDay, type Task } from '../core'
 import { NUDGE_RESTING, type NudgeRepository, type NudgeSetting } from '../storage/nudgeRepository'
 import { useNudge } from './useNudge'
 
@@ -9,6 +9,11 @@ import { useNudge } from './useNudge'
 
 const NOON = new Date(2026, 8, 16, 12, 0)
 const WED_16 = toLocalDay(NOON)
+
+/** The nudge as it is once turned on: the default span, at any hour, nothing said yet. */
+function watching(over: Partial<NudgeSetting> = {}): NudgeSetting {
+  return { ...NUDGE_RESTING, on: true, ...over }
+}
 
 function memory(initial: NudgeSetting = NUDGE_RESTING): NudgeRepository & { saved: () => NudgeSetting } {
   let saved = initial
@@ -54,7 +59,7 @@ describe('useNudge', () => {
   it('names the task to pick up once the quiet has run (NUDGE-1, NUDGE-4)', () => {
     vi.useFakeTimers({ now: NOON })
     const notify = allowNotifications()
-    const repo = memory({ on: true, quietHours: 2, nudgedAt: null, standing: null })
+    const repo = memory(watching({ quietHours: 2 }))
     const tasks = [finished('wash', 5), due('write')]
 
     const { result } = renderHook(() => useNudge(repo, tasks))
@@ -66,7 +71,7 @@ describe('useNudge', () => {
   it('does not nudge again on a refresh inside the same quiet stretch (NUDGE-6)', () => {
     vi.useFakeTimers({ now: NOON })
     const notify = allowNotifications()
-    const repo = memory({ on: true, quietHours: 2, nudgedAt: null, standing: null })
+    const repo = memory(watching({ quietHours: 2 }))
     const tasks = [finished('wash', 5), due('write')]
 
     const first = renderHook(() => useNudge(repo, tasks))
@@ -83,7 +88,7 @@ describe('useNudge', () => {
   it('keeps a notice that has already spent its quiet stretch through a remount (NUDGE-8)', () => {
     vi.useFakeTimers({ now: NOON })
     allowNotifications()
-    const repo = memory({ on: true, quietHours: 2, nudgedAt: null, standing: null })
+    const repo = memory(watching({ quietHours: 2 }))
     const tasks = [finished('wash', 5), due('write')]
 
     const first = renderHook(() => useNudge(repo, tasks))
@@ -99,7 +104,7 @@ describe('useNudge', () => {
   it('takes the notice away once its task is done (NUDGE-8)', () => {
     vi.useFakeTimers({ now: NOON })
     allowNotifications()
-    const repo = memory({ on: true, quietHours: 2, nudgedAt: null, standing: null })
+    const repo = memory(watching({ quietHours: 2 }))
     const write = due('write')
 
     const { result, rerender } = renderHook(({ tasks }) => useNudge(repo, tasks), {
@@ -115,7 +120,7 @@ describe('useNudge', () => {
   it('says it again once another whole span has gone by (NUDGE-6)', () => {
     vi.useFakeTimers({ now: NOON })
     const notify = allowNotifications()
-    const repo = memory({ on: true, quietHours: 1, nudgedAt: null, standing: null })
+    const repo = memory(watching({ quietHours: 1 }))
     const tasks = [finished('wash', 5), due('write')]
 
     renderHook(() => useNudge(repo, tasks))
@@ -127,7 +132,7 @@ describe('useNudge', () => {
 
   it('says nothing while the tasks are still loading (NUDGE-5)', () => {
     vi.useFakeTimers({ now: NOON })
-    const repo = memory({ on: true, quietHours: 2, nudgedAt: null, standing: null })
+    const repo = memory(watching({ quietHours: 2 }))
 
     const { result } = renderHook(() => useNudge(repo, null))
 
@@ -136,7 +141,7 @@ describe('useNudge', () => {
 
   it('says nothing when there is nothing left to do (NUDGE-5)', () => {
     vi.useFakeTimers({ now: NOON })
-    const repo = memory({ on: true, quietHours: 2, nudgedAt: null, standing: null })
+    const repo = memory(watching({ quietHours: 2 }))
 
     const { result } = renderHook(() => useNudge(repo, [finished('wash', 5)]))
 
@@ -160,7 +165,7 @@ describe('useNudge', () => {
   it('keeps the span and takes the notice away when turned off (NUDGE-9)', () => {
     vi.useFakeTimers({ now: NOON })
     allowNotifications()
-    const repo = memory({ on: true, quietHours: 2, nudgedAt: null, standing: null })
+    const repo = memory(watching({ quietHours: 2 }))
     const tasks = [finished('wash', 5), due('write')]
     const { result } = renderHook(() => useNudge(repo, tasks))
     expect(result.current.notice).not.toBeNull()
@@ -174,7 +179,7 @@ describe('useNudge', () => {
   it('shows on screen even where the browser will not post a notification (NUDGE-10)', () => {
     vi.useFakeTimers({ now: NOON })
     vi.stubGlobal('Notification', undefined)
-    const repo = memory({ on: true, quietHours: 2, nudgedAt: null, standing: null })
+    const repo = memory(watching({ quietHours: 2 }))
     const tasks = [finished('wash', 5), due('write')]
 
     const { result } = renderHook(() => useNudge(repo, tasks))
@@ -186,7 +191,7 @@ describe('useNudge', () => {
   it('a dismissed notice stays dismissed, through a refresh as well (NUDGE-8)', () => {
     vi.useFakeTimers({ now: NOON })
     allowNotifications()
-    const repo = memory({ on: true, quietHours: 2, nudgedAt: null, standing: null })
+    const repo = memory(watching({ quietHours: 2 }))
     const tasks = [finished('wash', 5), due('write')]
     const { result, unmount } = renderHook(() => useNudge(repo, tasks))
 
@@ -201,9 +206,52 @@ describe('useNudge', () => {
     expect(again.result.current.notice).toBeNull()
   })
 
+  it('says nothing outside the hours it may speak in (NUDGE-12)', () => {
+    vi.useFakeTimers({ now: NOON })
+    const notify = allowNotifications()
+    // Noon is outside the night, so the same quiet stretch says nothing.
+    const repo = memory(watching({ quietHours: 2, window: { from: '22:00', to: '07:00' } }))
+    const tasks = [finished('wash', 5), due('write')]
+
+    const { result } = renderHook(() => useNudge(repo, tasks))
+
+    expect(result.current.notice).toBeNull()
+    expect(notify).not.toHaveBeenCalled()
+  })
+
+  it('counts the quiet from the hours opening, not from before them (NUDGE-13)', () => {
+    // Ten in the morning, with the hours open since nine and nothing finished
+    // since last night: the span runs from nine, so there is nothing to answer yet.
+    const TEN = new Date(2026, 8, 16, 10, 0)
+    vi.useFakeTimers({ now: TEN })
+    allowNotifications()
+    const repo = memory(watching({ quietHours: 2, window: DEFAULT_NUDGE_WINDOW }))
+    const tasks = [completeTask(due('wash'), new Date(2026, 8, 15, 20, 0)), due('write')]
+
+    const { result } = renderHook(() => useNudge(repo, tasks))
+    expect(result.current.notice).toBeNull()
+
+    // Eleven, a whole span after the hours opened.
+    act(() => { vi.advanceTimersByTime(61 * 60 * 1000) })
+    expect(result.current.notice).toMatchObject({ title: 'write' })
+  })
+
+  it('takes on hours and gives them up again (NUDGE-12)', () => {
+    vi.useFakeTimers({ now: NOON })
+    const repo = memory(watching({ quietHours: 2, nudgedAt: NOON.toISOString() }))
+    const { result } = renderHook(() => useNudge(repo, [due('write')]))
+
+    act(() => { result.current.changeWindow(DEFAULT_NUDGE_WINDOW) })
+    expect(result.current.setting.window).toEqual(DEFAULT_NUDGE_WINDOW)
+    expect(repo.saved().window).toEqual(DEFAULT_NUDGE_WINDOW)
+
+    act(() => { result.current.changeWindow(null) })
+    expect(repo.saved().window).toBeNull()
+  })
+
   it('changes the span it waits for (NUDGE-9)', () => {
     vi.useFakeTimers({ now: NOON })
-    const repo = memory({ on: true, quietHours: 2, nudgedAt: NOON.toISOString(), standing: null })
+    const repo = memory(watching({ quietHours: 2, nudgedAt: NOON.toISOString() }))
     const { result } = renderHook(() => useNudge(repo, [due('write')]))
 
     act(() => { result.current.changeQuietHours(4) })

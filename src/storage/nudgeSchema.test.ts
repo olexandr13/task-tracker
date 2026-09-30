@@ -7,6 +7,7 @@ import { NUDGE_SCHEMA_VERSION, readNudge, toStoredNudge } from './nudgeSchema'
 const ON = {
   on: true,
   quietHours: 3,
+  window: { from: '09:00', to: '22:00' },
   nudgedAt: '2026-09-16T10:00:00.000Z',
   standing: { taskId: 'task-1', quietHours: 3 },
 } as const
@@ -45,9 +46,28 @@ describe('readNudge', () => {
     expect(readNudge({ version: NUDGE_SCHEMA_VERSION, on: true, quietHours: 9, nudgedAt: null })).toEqual({
       on: true,
       quietHours: NUDGE_RESTING.quietHours,
+      window: null,
       nudgedAt: null,
       standing: null,
     })
+  })
+
+  it('reads a setting saved before there were hours as any hour (NUDGE-12)', () => {
+    // Version 1 knew no hours to keep to, and spoke at whatever hour the quiet ran out.
+    expect(readNudge({ version: 1, on: true, quietHours: 3, nudgedAt: null })).toEqual({
+      on: true,
+      quietHours: 3,
+      window: null,
+      nudgedAt: null,
+      standing: null,
+    })
+  })
+
+  it('refuses hours it cannot read rather than speaking at any hour (NUDGE-12)', () => {
+    // Taking a broken window as none would nudge at three in the morning, which
+    // is the one thing setting hours asked against.
+    expect(readNudge({ ...ON, version: NUDGE_SCHEMA_VERSION, window: { from: '09:00', to: '25:00' } })).toBeNull()
+    expect(readNudge({ ...ON, version: NUDGE_SCHEMA_VERSION, window: 'evenings' })).toBeNull()
   })
 
   it('shows no notice rather than a standing one it cannot read', () => {

@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { findNudge, lastFinishedAt, settleNudge, type Nudge, type QuietHours, type Task } from '../core'
+import {
+  findNudge,
+  lastFinishedAt,
+  nudgeWindowOpenedAt,
+  settleNudge,
+  type Nudge,
+  type NudgeWindow,
+  type QuietHours,
+  type Task,
+} from '../core'
 import type { NudgeRepository, NudgeSetting } from '../storage/nudgeRepository'
 import { askToNotify, notifyBrowser, notifyPermission, type NotifyPermission } from './browserNotification'
 
@@ -11,7 +20,9 @@ export interface NudgeControl {
   /** Turning it on asks the browser for permission, once. */
   readonly turnOn: (on: boolean) => void
   readonly changeQuietHours: (hours: QuietHours) => void
-  /** Whether the browser will post notifications, so Settings can say when it will not. */
+  /** The hours it may speak in, or null for any hour (NUDGE-12). */
+  readonly changeWindow: (window: NudgeWindow | null) => void
+  /** Whether the browser will post notifications, so the mode's page can say when it will not. */
   readonly permission: NotifyPermission
   readonly notice: Nudge | null
   readonly dismiss: () => void
@@ -20,7 +31,8 @@ export interface NudgeControl {
 /**
  * The nudge on this device: while it is on, the tasks are measured against the
  * clock every minute, and a quiet stretch of the chosen span says so — an
- * on-screen notice, and a browser notification where one is allowed.
+ * on-screen notice, and a browser notification where one is allowed. Inside the
+ * hours it is held to, where it is held to any (NUDGE-12).
  *
  * `tasks` is the set in play (Today's) — null while it is still loading, when a
  * quiet app is a loading one rather than an idle owner.
@@ -77,8 +89,12 @@ export function useNudge(repository: NudgeRepository, tasks: readonly Task[] | n
         finishedAt: lastFinishedAt(inPlay, clock),
         nudgedAt: setting.nudgedAt === null ? null : new Date(setting.nudgedAt),
         watchingSince: watchingSince.current,
+        // The hours opening start the quiet again, so a night is not answered
+        // for the moment the morning comes round (NUDGE-13).
+        openedAt: nudgeWindowOpenedAt(setting.window, clock),
       },
       setting.quietHours,
+      setting.window,
       clock,
     )
     if (found === null) return
@@ -111,7 +127,14 @@ export function useNudge(repository: NudgeRepository, tasks: readonly Task[] | n
     [persist, setting],
   )
 
+  // Hours taken on are hours from now: the quiet is counted from the opening
+  // (NUDGE-13), and the stretch already behind them was never theirs to answer.
+  const changeWindow = useCallback(
+    (window: NudgeWindow | null) => { persist({ ...setting, window }) },
+    [persist, setting],
+  )
+
   const dismiss = useCallback(() => { persist({ ...setting, standing: null }) }, [persist, setting])
 
-  return { setting, turnOn, changeQuietHours, permission, notice, dismiss }
+  return { setting, turnOn, changeQuietHours, changeWindow, permission, notice, dismiss }
 }

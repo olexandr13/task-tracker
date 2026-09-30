@@ -1,6 +1,7 @@
-import type { WarmUpProgress } from '../core'
+import type { NudgeWindow, QuietHours, WarmUpProgress } from '../core'
 import type { ProcrastinationPhase } from './components/ProcrastinationMode'
 import {
+  describeNudgeStatus,
   describeProcrastinationStatus,
   describeWarmUpStatus,
   MODE_LOADING,
@@ -50,10 +51,17 @@ interface ModeSources {
     onStart: () => void
     onEnd: () => void
   }
+  nudge: {
+    on: boolean
+    /** The span of quiet it waits for, and the hours it may speak in (NUDGE-12). */
+    quietHours: QuietHours
+    window: NudgeWindow | null
+    onTurnOn: (on: boolean) => void
+  }
 }
 
 /** Every mode, as the Modes pages read it, from what the hooks hold. */
-export function modeStates({ procrastination, warmUp }: ModeSources): Record<ModeView, ModeState> {
+export function modeStates({ procrastination, warmUp, nudge }: ModeSources): Record<ModeView, ModeState> {
   return {
     'modes/procrastination': {
       view: 'modes/procrastination',
@@ -77,6 +85,18 @@ export function modeStates({ procrastination, warmUp }: ModeSources): Record<Mod
       // fresh month over the one already running (WARM-2).
       blocked: warmUp.loading ? MODE_NOT_LOADED : null,
       toggle: (on) => { if (on) warmUp.onStart(); else warmUp.onEnd() },
+    },
+    'modes/nudge': {
+      view: 'modes/nudge',
+      on: nudge.on,
+      status: describeNudgeStatus(nudge.on, nudge.quietHours, nudge.window),
+      // Nothing blocks it and nothing is waited for: the setting is this
+      // device's and is read the moment the app opens (STORE-30), and what the
+      // nudge watches — the tasks — it waits for itself (NUDGE-5). A browser
+      // that will post no notification does not stand in its way either: the
+      // notice is at the foot of the app whatever the browser allows (NUDGE-10).
+      blocked: null,
+      toggle: nudge.onTurnOn,
     },
   }
 }

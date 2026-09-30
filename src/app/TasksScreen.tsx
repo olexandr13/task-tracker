@@ -57,6 +57,7 @@ import { StorageProblemNotice } from './components/StorageProblemNotice'
 import { SyncBadge } from './components/SyncBadge'
 import { RunningTimerChip } from './components/RunningTimerChip'
 import { GoalNoticeToast } from './components/GoalNoticeToast'
+import { NudgeSettings } from './components/NudgeSettings'
 import { NudgeToast } from './components/NudgeToast'
 import { ReminderToast } from './components/ReminderToast'
 import { TagList } from './components/TagList'
@@ -350,6 +351,12 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       onStart: warmUp.start,
       onEnd: warmUp.end,
     },
+    nudge: {
+      on: nudge.setting.on,
+      quietHours: nudge.setting.quietHours,
+      window: nudge.setting.window,
+      onTurnOn: nudge.turnOn,
+    },
   })
   const modesOn = UNDER_MODES.filter((mode) => modes[mode].on).length
 
@@ -623,7 +630,6 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   onImport={(file) => { void backup.importFile(file) }}
                   theme={theme}
                   onThemeChange={onThemeChange}
-                  nudge={nudge}
                   habitView={habitViewOptions}
                   onHabitViewChange={setHabitViewOptions}
                 />
@@ -640,7 +646,23 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
               <section aria-label={viewLabel(view)} className="flex flex-col gap-5">
                 {/* A phone has no sidebar listing the modes, so the way back is here (MODE-7). */}
                 <ModesBackLink onBack={() => { setView('modes') }} />
-                <ModePage mode={modes[view]} />
+                <ModePage
+                  mode={modes[view]}
+                  settings={
+                    // The nudge is the one mode with something to set (MODE-12),
+                    // and nothing to set while it is off.
+                    view === 'modes/nudge' && nudge.setting.on ? (
+                      <NudgeSettings
+                        quietHours={nudge.setting.quietHours}
+                        window={nudge.setting.window}
+                        permission={nudge.permission}
+                        now={now}
+                        onQuietHoursChange={nudge.changeQuietHours}
+                        onWindowChange={nudge.changeWindow}
+                      />
+                    ) : undefined
+                  }
+                />
               </section>
             ) : isRewardsView(view) ? (
               <section aria-label={viewLabel(view)} className="flex flex-col gap-5">

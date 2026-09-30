@@ -36,10 +36,13 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   week on the right. Every other row names its weekday, and a month's name sits over the week that
   holds its first Monday. As many weeks show as the card has room for, up to a year. A phone shows
   about four months.
-- **HAB-10** A day in the grid is **done** (green), **missed** (a darker gap), **skipped** (a soft
-  yellow square, HAB-31), **not tracked** (a pale square, before the habit started) or **today
-  still to do** (an outlined square). Days after
-  today are left empty. A legend at the bottom of the page names the shades, and only while any
+- **HAB-10** A day in the grid is **done** (green), **missed** (a darker gap), **skipped** (pale,
+  drawn as an outline rather than filled in, HAB-31), **not tracked** (pale in the same way but with
+  no outline, before the habit started) or **today still to do** (a lighter outlined square). A rest
+  is pale because it asked nothing of the habit (HAB-8), and a square this small says it with no
+  colour of its own — the yellow a rest is drawn in is on the box that ticks today off, not here —
+  so the outline is what keeps it from being read as a miss or as a day before the habit began.
+  Days after today are left empty. A legend at the bottom of the page names the shades, and only while any
   habit's card is open (HAB-21) — a folded card shows no grid, only its last week (HAB-21), whose
   green reads without one.
   A day can be clicked (on a folded card: that a habit is tapped to see its days, HAB-21). Pointing at a day shows its date and what it was: `Wed, Sep 16 · Done`.
@@ -103,9 +106,10 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   Each card folds on its own, so opening one never moves one being reached for, and a card starts
   in the default again when the page is next opened. A screen reader hears the fold as a button
   named for its habit (`Record of "stretch"`), reporting whether it is open.
-- **HAB-23** How the cards start is set on **Settings**, on a **Habits** card of its own (UI-35):
-  one switch, **Show habit details by default**, its name alone with no line under it saying what
-  it does. On, each card starts open, showing its numbers and grid (HAB-21); off, every card starts
+- **HAB-23** How the cards start is set on **Settings**, under **View settings** with the rest of
+  how the pages start out (UI-35):
+  one switch, **Show habit details by default**, its name alone with no picture beside it and no line
+  under it saying what it does. On, each card starts open, showing its numbers and grid (HAB-21); off, every card starts
   folded, which is how it begins. The choice is kept on this device (STORE-36), and Habits is drawn
   to it when next opened, every card in the default again; a card opened or folded by hand does not
   outlive a change of the switch. Habits itself has no View button, on a wide screen or a phone:
@@ -159,9 +163,10 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 - **HAB-31** A habit's sheet (HAB-25) carries a **Skip** in the row at its foot, between
   **Duplicate** and **Delete**, while today is still to do. Pressing it passes today over
   (RPT-34): the habit is due tomorrow, leaves Today, and records nothing — and today reads as
-  **skipped** on the card and in the grid rather than as missed. The card's **box** turns the same
-  soft yellow with the skip's mark in it instead of a tick, as does the box at the head of the
-  sheet and on the task's row; a screen reader hears `Mark "stretch" as done today: skipped
+  **skipped** on the card and in the grid rather than as missed. The card's **box** turns a soft
+  yellow with the skip's mark in it instead of a tick, as does the box at the head of the
+  sheet and on the task's row; the grid draws the day pale instead (HAB-10), a square that size
+  having no room for a mark. A screen reader hears `Mark "stretch" as done today: skipped
   today`, and ticking it does today after all. A rest is not a miss: the streak
   runs on across it (HAB-5, HAB-6) and it is left out of the days the rates count (HAB-8). For the
   rest of the day the button reads **Skipped**, pressed, and pressing it again takes the skip back,
@@ -182,12 +187,12 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 `src/core/due.ts` (`isSkippedToday`, `unskipToday`), `src/app/useTasks.ts`
 (`setHabitDay`, `unskip`, and `changeRepeat` putting a task taken on at the end), `src/app/components/AddTaskForm.tsx` (the add box), `src/app/components/AddTaskSheet.tsx` (the detailed
 sheet, starting daily), `src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`H` opens it),
-`src/app/components/HabitsCard.tsx` and `src/app/useDeviceSetting.ts`
-(the switch on Settings, and keeping whether cards start folded on this device), `src/core/order.ts` (`moveTask`, the order itself),
+`src/app/components/ViewSettingsCard.tsx` and `src/app/useDeviceSetting.ts`
+(the switch under Settings' View settings, and keeping whether cards start folded on this device), `src/core/order.ts` (`moveTask`, the order itself),
 `src/app/useSortableTask.ts`, `src/app/components/SortableTasks.tsx` and
 `src/app/components/TaskDragAndDrop.tsx` (picking a card up and dropping it, shared with the rows),
 `src/app/components/GripIcon.tsx` and `src/app/rowControls.ts` (`dragGrip`).
 **Tested in:** `src/core/habit.test.ts`, `src/core/due.test.ts` (a skip taken back), `src/core/task.test.ts`, `src/app/useTasks.test.ts`,
-`src/app/components/HabitList.test.tsx`, `src/app/components/HabitsCard.test.tsx`,
+`src/app/components/HabitList.test.tsx`, `src/app/components/ViewSettingsCard.test.tsx`,
 `src/app/components/AddTaskForm.test.tsx`, `src/app/letterShortcut.test.ts` and
 `src/app/useLetterShortcut.test.ts` (`H` opens the sheet).

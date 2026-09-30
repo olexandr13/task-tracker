@@ -115,7 +115,7 @@ describe('what a completion box is called and how it is drawn', () => {
     const { onComplete } = setup({ skipped: true, today: true })
 
     const rested = box(`Mark "${TASK}" as done today: skipped today`)
-    expect(rested.className).toContain('border-amber-400')
+    expect(rested.className).toContain('border-yellow-400')
     expect(rested.className).not.toContain('bg-green-600')
     expect(rested.getAttribute('title')).toBe('Skipped today: tick to do it after all')
 

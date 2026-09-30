@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { toLocalDay } from './day'
 import {
+  DEFAULT_NUDGE_WINDOW,
   DEFAULT_QUIET_HOURS,
   findNudge,
+  isNudgeWindow,
   isQuietEnough,
   isQuietHours,
+  isWithinNudgeWindow,
   lastFinishedAt,
+  nudgeWindowOpenedAt,
   pickMostImportant,
   quietSince,
   QUIET_HOURS,
@@ -51,6 +55,59 @@ describe('the span', () => {
   })
 })
 
+describe('the hours it may speak in', () => {
+  const at = (hour: number, minute = 0) => new Date(2026, 8, 16, hour, minute)
+
+  it('keeps to waking hours by default, and knows a window from anything else', () => {
+    expect(DEFAULT_NUDGE_WINDOW).toEqual({ from: '09:00', to: '22:00' })
+    expect(isNudgeWindow(DEFAULT_NUDGE_WINDOW)).toBe(true)
+    expect(isNudgeWindow({ from: '09:00', to: '24:00' })).toBe(false)
+    expect(isNudgeWindow({ from: '09:00' })).toBe(false)
+    expect(isNudgeWindow('09:00–22:00')).toBe(false)
+    expect(isNudgeWindow(null)).toBe(false)
+  })
+
+  it('speaks at any hour while there are none to keep to (NUDGE-12)', () => {
+    expect(isWithinNudgeWindow(null, at(3))).toBe(true)
+    expect(nudgeWindowOpenedAt(null, at(3))).toBeNull()
+  })
+
+  it('is inside from its first minute up to its last (NUDGE-12)', () => {
+    const day = { from: '09:00', to: '22:00' } as const
+
+    expect(isWithinNudgeWindow(day, at(8, 59))).toBe(false)
+    expect(isWithinNudgeWindow(day, at(9))).toBe(true)
+    expect(isWithinNudgeWindow(day, at(21, 59))).toBe(true)
+    // The end is the moment it shuts, not the last minute it is open.
+    expect(isWithinNudgeWindow(day, at(22))).toBe(false)
+  })
+
+  it('runs past midnight where its end comes before its start (NUDGE-12)', () => {
+    const night = { from: '22:00', to: '07:00' } as const
+
+    expect(isWithinNudgeWindow(night, at(23))).toBe(true)
+    expect(isWithinNudgeWindow(night, at(3))).toBe(true)
+    expect(isWithinNudgeWindow(night, at(7))).toBe(false)
+    expect(isWithinNudgeWindow(night, at(12))).toBe(false)
+  })
+
+  it('shuts no hour out where both its ends are the same (NUDGE-12)', () => {
+    const whole = { from: '09:00', to: '09:00' } as const
+
+    expect(isWithinNudgeWindow(whole, at(9))).toBe(true)
+    expect(isWithinNudgeWindow(whole, at(3))).toBe(true)
+  })
+
+  it('opens today, or yesterday while today’s opening is still to come (NUDGE-13)', () => {
+    const day = { from: '09:00', to: '22:00' } as const
+
+    expect(nudgeWindowOpenedAt(day, at(12))).toEqual(at(9))
+    // Three in the morning is inside last night’s window, which opened yesterday.
+    expect(nudgeWindowOpenedAt({ from: '22:00', to: '07:00' }, at(3))).toEqual(new Date(2026, 8, 15, 22, 0))
+    expect(nudgeWindowOpenedAt(day, at(9))).toEqual(at(9))
+  })
+})
+
 describe('lastFinishedAt', () => {
   it('is null when nothing has ever been finished', () => {
     expect(lastFinishedAt([due('write')], WED_16_NOON)).toBeNull()
@@ -79,23 +136,35 @@ describe('quietSince', () => {
 
   it('measures from the last thing finished (NUDGE-2)', () => {
     const finishedAt = hoursBefore(WED_16_NOON, 3)
-    expect(quietSince({ finishedAt, nudgedAt: null, watchingSince })).toEqual(finishedAt)
+    expect(quietSince({ finishedAt, nudgedAt: null, watchingSince, openedAt: null })).toEqual(finishedAt)
   })
 
   it('measures from when this device started watching when nothing was ever finished (NUDGE-3)', () => {
-    expect(quietSince({ finishedAt: null, nudgedAt: null, watchingSince })).toEqual(watchingSince)
+    expect(quietSince({ finishedAt: null, nudgedAt: null, watchingSince, openedAt: null })).toEqual(watchingSince)
   })
 
   it('starts again from a nudge already shown (NUDGE-6)', () => {
     const nudgedAt = hoursBefore(WED_16_NOON, 1)
     const finishedAt = hoursBefore(WED_16_NOON, 4)
-    expect(quietSince({ finishedAt, nudgedAt, watchingSince })).toEqual(nudgedAt)
+    expect(quietSince({ finishedAt, nudgedAt, watchingSince, openedAt: null })).toEqual(nudgedAt)
   })
 
   it('leaves a nudge older than the last completion alone (NUDGE-6)', () => {
     const nudgedAt = hoursBefore(WED_16_NOON, 4)
     const finishedAt = hoursBefore(WED_16_NOON, 1)
-    expect(quietSince({ finishedAt, nudgedAt, watchingSince })).toEqual(finishedAt)
+    expect(quietSince({ finishedAt, nudgedAt, watchingSince, openedAt: null })).toEqual(finishedAt)
+  })
+
+  it('starts again from the hours opening, so a night is not counted (NUDGE-13)', () => {
+    const openedAt = hoursBefore(WED_16_NOON, 3)
+    const finishedAt = hoursBefore(WED_16_NOON, 14)
+    expect(quietSince({ finishedAt, nudgedAt: null, watchingSince, openedAt })).toEqual(openedAt)
+  })
+
+  it('leaves an opening older than the last completion alone (NUDGE-13)', () => {
+    const openedAt = hoursBefore(WED_16_NOON, 3)
+    const finishedAt = hoursBefore(WED_16_NOON, 1)
+    expect(quietSince({ finishedAt, nudgedAt: null, watchingSince, openedAt })).toEqual(finishedAt)
   })
 })
 
@@ -103,20 +172,20 @@ describe('isQuietEnough', () => {
   const watchingSince = hoursBefore(WED_16_NOON, 9)
 
   it('waits for the whole span, then says so (NUDGE-1)', () => {
-    const almost = { finishedAt: hoursBefore(WED_16_NOON, 2), nudgedAt: null, watchingSince }
+    const almost = { finishedAt: hoursBefore(WED_16_NOON, 2), nudgedAt: null, watchingSince, openedAt: null }
     expect(isQuietEnough(almost, 3, WED_16_NOON)).toBe(false)
     expect(isQuietEnough(almost, 2, WED_16_NOON)).toBe(true)
     expect(isQuietEnough(almost, 1, WED_16_NOON)).toBe(true)
   })
 
   it('counts the span to the moment it is reached (NUDGE-1)', () => {
-    const exactly = { finishedAt: hoursBefore(WED_16_NOON, 2), nudgedAt: null, watchingSince }
+    const exactly = { finishedAt: hoursBefore(WED_16_NOON, 2), nudgedAt: null, watchingSince, openedAt: null }
     expect(isQuietEnough(exactly, 2, WED_16_NOON)).toBe(true)
     expect(isQuietEnough(exactly, 2, new Date(WED_16_NOON.getTime() - 1))).toBe(false)
   })
 
   it('is never quiet on a clock that has run backwards', () => {
-    const ahead = { finishedAt: new Date(2026, 8, 16, 18, 0), nudgedAt: null, watchingSince }
+    const ahead = { finishedAt: new Date(2026, 8, 16, 18, 0), nudgedAt: null, watchingSince, openedAt: null }
     expect(isQuietEnough(ahead, 1, WED_16_NOON)).toBe(false)
   })
 })
@@ -154,20 +223,44 @@ describe('pickMostImportant', () => {
 
 describe('findNudge', () => {
   const watchingSince = hoursBefore(WED_16_NOON, 9)
-  const quiet = { finishedAt: hoursBefore(WED_16_NOON, 3), nudgedAt: null, watchingSince }
+  const quiet = { finishedAt: hoursBefore(WED_16_NOON, 3), nudgedAt: null, watchingSince, openedAt: null }
 
   it('names the task to pick up once the quiet has run (NUDGE-1, NUDGE-4)', () => {
     const tasks = withOrder([due('write'), setUrgent(due('call'), true)])
-    expect(findNudge(tasks, quiet, 2, WED_16_NOON)).toMatchObject({ title: 'call', quietHours: 2 })
+    expect(findNudge(tasks, quiet, 2, null, WED_16_NOON)).toMatchObject({ title: 'call', quietHours: 2 })
   })
 
   it('says nothing before the span has run (NUDGE-1)', () => {
-    expect(findNudge(withOrder([due('write')]), quiet, 4, WED_16_NOON)).toBeNull()
+    expect(findNudge(withOrder([due('write')]), quiet, 4, null, WED_16_NOON)).toBeNull()
   })
 
   it('says nothing when there is nothing left to do (NUDGE-5)', () => {
     const done = withOrder([completeTask(due('write'), hoursBefore(WED_16_NOON, 3))])
-    expect(findNudge(done, quiet, 2, WED_16_NOON)).toBeNull()
+    expect(findNudge(done, quiet, 2, null, WED_16_NOON)).toBeNull()
+  })
+
+  it('says nothing outside the hours it may speak in (NUDGE-12)', () => {
+    const tasks = withOrder([due('write')])
+    const night = { from: '22:00', to: '07:00' } as const
+
+    expect(findNudge(tasks, quiet, 2, night, WED_16_NOON)).toBeNull()
+    // The same quiet stretch, inside hours that are open at noon.
+    expect(findNudge(tasks, quiet, 2, { from: '09:00', to: '22:00' }, WED_16_NOON)).not.toBeNull()
+  })
+
+  it('counts the span from the opening rather than from the night before (NUDGE-13)', () => {
+    const tasks = withOrder([due('write')])
+    const day = { from: '09:00', to: '22:00' } as const
+    // Nothing finished since yesterday evening, and the hours opened at nine.
+    const overnight = {
+      finishedAt: new Date(2026, 8, 15, 20, 0),
+      nudgedAt: null,
+      watchingSince: hoursBefore(WED_16_NOON, 9),
+      openedAt: nudgeWindowOpenedAt(day, new Date(2026, 8, 16, 10, 0)),
+    }
+
+    expect(findNudge(tasks, overnight, 2, day, new Date(2026, 8, 16, 10, 0))).toBeNull()
+    expect(findNudge(tasks, overnight, 2, day, WED_16_NOON)).not.toBeNull()
   })
 })
 

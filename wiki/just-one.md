@@ -76,7 +76,7 @@ task to do, fade the rest, and earn a rest by finishing it. One of the two
 
 **Where it lives:** `src/core/justOne.ts` (the pick, and how the mode settles as its task is done or
 moves on), `src/app/components/ProcrastinationMode.tsx`,
-`src/app/components/ProcrastinationIcon.tsx`, `src/app/components/RestingIcon.tsx`, `src/app/components/CelebrateIcon.tsx`,
+`src/app/components/ProcrastinationIcon.tsx`, `src/app/components/CalmIcon.tsx`, `src/app/components/CelebrateIcon.tsx`,
 `src/app/useProcrastination.ts`, `src/storage/procrastinationRepository.ts` (the interface),
 `firestoreProcrastinationRepository.ts` (the account's), `localProcrastinationRepository.ts` (the
 guest's), `procrastinationSchema.ts` (the saved shape and its version),

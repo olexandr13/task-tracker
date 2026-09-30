@@ -24,12 +24,14 @@ const completionBoxOff = `${completionBox} border-neutral-300 text-transparent h
 const completionBoxReady = `${completionBox} border-green-600 text-green-600/60 hover:border-green-700 hover:text-green-700 dark:border-green-500 dark:text-green-500/60 dark:hover:border-green-400 dark:hover:text-green-400`
 
 /**
- * Today passed over (HAB-31): the soft yellow a rested day is drawn in on the
- * Habits page, with the skip's own mark in it rather than a tick, so the box
- * says the day is a rest, not a miss and not yet done. Still a box to tick —
- * done wins over a skip (RPT-36).
+ * Today passed over (HAB-31): a soft yellow with the skip's own mark in it
+ * rather than a tick, so the box says the day is a rest, not a miss and not yet
+ * done. A yellow rather than an amber, so that beside the green boxes it reads
+ * as a rest and not as a warning; the colour is the box's own, the grid drawing
+ * a rest as a pale day instead (HAB-10). Still a box to tick — done wins over a
+ * skip (RPT-36).
  */
-const completionBoxSkipped = `${completionBox} border-amber-400 bg-amber-100 text-amber-600 hover:border-amber-500 hover:text-amber-700 dark:border-amber-500/70 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:border-amber-400 dark:hover:text-amber-200`
+const completionBoxSkipped = `${completionBox} border-yellow-400 bg-yellow-100 text-yellow-600 hover:border-yellow-500 hover:text-yellow-700 dark:border-yellow-500/70 dark:bg-yellow-900/40 dark:text-yellow-300 dark:hover:border-yellow-400 dark:hover:text-yellow-200`
 
 /** The flourish a tick lands with, drawn in `src/styles.css` (UI-65). */
 const completionBoxLanding = 'completion-box-landing'

@@ -27,7 +27,7 @@ import {
  * Rewards is four screens rather than one: how the points stand, and under it the
  * history, the wishlist and the rules (RWD-19). They are named `rewards/…`, which
  * is what their addresses read as and what marks them as belonging under Rewards.
- * Modes is three in the same way (MODE-1): the list of them, and a page for each
+ * Modes is four in the same way (MODE-1): the list of them, and a page for each
  * mode explaining what it does, named `modes/…`.
  *
  * "View" is this file's word for a screen. What the owner calls a **list** is
@@ -52,6 +52,7 @@ export type FixedView =
   | 'modes'
   | 'modes/procrastination'
   | 'modes/warm-up'
+  | 'modes/nudge'
   | 'trash'
   | 'settings'
 
@@ -100,13 +101,15 @@ export function isRewardsView(view: View): view is RewardsView {
 
 /**
  * The modes and what they do, in the order the Modes page lists them: the one
- * that picks a single task out of Today, and the one that allows one more habit
- * with each of its thirty days (MODE-2). Each is a page of its own, so a mode can say what it
+ * that picks a single task out of Today, the one that allows one more habit
+ * with each of its thirty days, and the one that speaks up when nothing is
+ * getting done (MODE-2). Each is a page of its own, so a mode can say what it
  * does rather than being a switch whose name has to carry the whole idea.
  */
 export const UNDER_MODES = [
   'modes/procrastination',
   'modes/warm-up',
+  'modes/nudge',
 ] as const satisfies readonly FixedView[]
 
 /** One mode, as the view of its own page. */
@@ -295,6 +298,7 @@ export const VIEW_LABELS: Record<FixedView, string> = {
   modes: 'Modes',
   'modes/procrastination': 'Procrastination',
   'modes/warm-up': 'Warm-up',
+  'modes/nudge': 'Nudge',
   trash: 'Trash',
   settings: 'Settings',
 }

@@ -180,8 +180,13 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   are only on a phone.
 - **UI-35** **Settings** holds the signed-in account and the way out (AUTH-9), and under it
   **Backup**: exporting the account to a file and importing one back (BAK-1, BAK-4), then the
-  **Nudge** (NUDGE-9), the **Theme** (UI-63) and **Habits**: whether the habit cards start open
-  (HAB-23). Under those, the **version** of the app that is open — `MAJOR.MINOR.PATCH` from `package.json`,
+  **Theme** (UI-63) and **View settings**: how the pages start out, kept
+  on this device, one switch to a line, each naming the page it speaks for. It holds **Show habit
+  details by default** (HAB-23), and anything later about how a page starts out belongs there
+  rather than on a card of its own. It is not the task views' **View settings** panel (UI-41),
+  which stands beside the add box and changes those views as you read them. What belongs to one
+  **mode** is set on that mode's own page instead, not here (MODE-12): the nudge's span and the hours
+  it may speak in are read beside what the nudge does (NUDGE-9). Under those, the **version** of the app that is open — `MAJOR.MINOR.PATCH` from `package.json`,
   baked in when the app is built. The number is bumped with each change to the app (patch for a
   small fix, minor for a feature, major when something breaks for the person using it).
 - **UI-36** The view you are on is **in the address** — `#/week`, `#/habits`, `#/inbox`,
@@ -474,7 +479,7 @@ task views' options), `src/app/useDeviceSetting.ts` (keeping them on this device
 long press), `src/app/useRowSwipe.ts` and `src/app/rowSwipe.ts` (a phone's swipe to complete or
 delete), `src/app/components/SettingsList.tsx` (and the version on it, from `package.json` via
 `vite.config.ts`), `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it),
-`ThemeCard.tsx` (the theme on it), `HabitsCard.tsx` (the habits switch on it, HAB-23), `src/app/theme.ts` and `src/app/useTheme.ts` (the theme worn by the page),
+`ThemeCard.tsx` (the theme on it), `ViewSettingsCard.tsx` (the View settings on it, holding the habits switch, HAB-23), `src/app/theme.ts` and `src/app/useTheme.ts` (the theme worn by the page),
 `index.html` (the theme put on before the page is first drawn), `src/app/view.ts` (the views, and which is above which), `src/app/useView.ts` (the view kept in the address, and back climbing a level), `src/app/overlayHistory.ts` (back closing a sheet rather than leaving the app, UI-71), `src/app/viewIcons.ts` (each
 view's icon), `src/app/components/TickIcon.tsx` (the tick in a box that is ticked off),
 `src/app/rowControls.ts` (the shape and tones a row's controls share — a thumb's square in a

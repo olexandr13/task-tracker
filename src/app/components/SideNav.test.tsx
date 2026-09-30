@@ -80,6 +80,7 @@ describe('SideNav', () => {
       'Modes',
       '🫠Procrastination',
       '🌱Warm-up',
+      '🔔Nudge',
       'More',
       'Trash',
       'Settings',
@@ -149,6 +150,7 @@ describe('SideNav', () => {
     expect(under.getAllByRole('button').map((button) => button.textContent)).toEqual([
       '🫠Procrastination',
       '🌱Warm-up',
+      '🔔Nudge',
     ])
   })
 

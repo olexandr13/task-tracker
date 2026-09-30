@@ -10,6 +10,7 @@ import { ModePage } from './ModePage'
 /* One mode's own page. MODE ids refer to wiki/modes.md. */
 
 const OFF = { state: 'Disabled', detail: null } as const
+const ON = { state: 'Enabled', detail: null } as const
 
 function mode(view: ModeView, over: Partial<ModeState> = {}): ModeState {
   return { view, on: false, status: OFF, blocked: null, toggle: vi.fn(), ...over }
@@ -46,6 +47,43 @@ describe('ModePage', () => {
 
     await userEvent.click(screen.getByRole('switch', { name: 'Warm-up' }))
     expect(toggle).toHaveBeenCalledExactlyOnceWith(true)
+  })
+
+  it('wears the face the mode puts you in (MODE-11)', () => {
+    const { container, rerender } = render(<ModePage mode={mode('modes/procrastination')} />)
+
+    // Off, the mode's own melting face, as wherever else it is listed (MODE-2).
+    expect(container.textContent).toContain('🫠')
+
+    rerender(<ModePage mode={mode('modes/procrastination', { on: true, status: ON })} />)
+    expect(container.textContent).toContain('😌')
+    expect(container.textContent).not.toContain('🫠')
+
+    // A mode with one face keeps it either way.
+    rerender(<ModePage mode={mode('modes/warm-up')} />)
+    expect(container.textContent).toContain('🌱')
+    rerender(<ModePage mode={mode('modes/warm-up', { on: true, status: ON })} />)
+    expect(container.textContent).toContain('🌱')
+  })
+
+  it('carries a mode’s own settings under what it does (MODE-12)', () => {
+    render(
+      <ModePage
+        mode={mode('modes/nudge', { on: true, status: ON })}
+        settings={<p>After this long with nothing finished</p>}
+      />,
+    )
+
+    const sections = screen.getAllByRole('region').map((section) => section.getAttribute('aria-label'))
+    expect(sections).toEqual(['What it does', 'Settings'])
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeDefined()
+    expect(screen.getByText('After this long with nothing finished')).toBeDefined()
+  })
+
+  it('shows no Settings for a mode with nothing to set (MODE-12)', () => {
+    render(<ModePage mode={mode('modes/warm-up')} />)
+
+    expect(screen.queryByRole('region', { name: 'Settings' })).toBeNull()
   })
 
   it('reads even while the mode cannot be turned on (MODE-6)', () => {

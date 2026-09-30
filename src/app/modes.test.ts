@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { WarmUpProgress } from '../core'
+import { DEFAULT_NUDGE_WINDOW, type NudgeWindow, type QuietHours, type WarmUpProgress } from '../core'
 import { modeStates } from './modes'
 
 /* The modes as the Modes pages read them. MODE ids refer to wiki/modes.md;
@@ -12,6 +12,9 @@ function sources(over: {
   available?: boolean
   progress?: WarmUpProgress | null
   loading?: boolean
+  nudgeOn?: boolean
+  quietHours?: QuietHours
+  window?: NudgeWindow | null
 } = {}) {
   const loading = over.loading ?? false
   return {
@@ -23,17 +26,23 @@ function sources(over: {
       onEnd: vi.fn(),
     },
     warmUp: { progress: over.progress ?? null, loading, onStart: vi.fn(), onEnd: vi.fn() },
+    nudge: {
+      on: over.nudgeOn ?? false,
+      quietHours: over.quietHours ?? 2,
+      window: over.window ?? null,
+      onTurnOn: vi.fn(),
+    },
   }
 }
 
 describe('modeStates', () => {
-  it('reads both modes as disabled while neither is on, with nothing more to say (MODE-3)', () => {
+  it('reads every mode as disabled while none is on, with nothing more to say (MODE-3)', () => {
     const modes = modeStates(sources())
 
-    expect(modes['modes/procrastination'].on).toBe(false)
-    expect(modes['modes/procrastination'].status).toEqual({ state: 'Disabled', detail: null })
-    expect(modes['modes/warm-up'].on).toBe(false)
-    expect(modes['modes/warm-up'].status).toEqual({ state: 'Disabled', detail: null })
+    for (const mode of ['modes/procrastination', 'modes/warm-up', 'modes/nudge'] as const) {
+      expect(modes[mode].on).toBe(false)
+      expect(modes[mode].status).toEqual({ state: 'Disabled', detail: null })
+    }
   })
 
   it('says which part of Procrastination mode is on, beside the mode (MODE-3, JUST-5)', () => {
@@ -61,6 +70,22 @@ describe('modeStates', () => {
     expect(modes['modes/warm-up'].blocked).toBeNull()
   })
 
+  it('says what the nudge is waiting for, and the hours it keeps to (MODE-3, NUDGE-12)', () => {
+    const anyHour = modeStates(sources({ nudgeOn: true, quietHours: 3 }))['modes/nudge']
+    expect(anyHour.on).toBe(true)
+    expect(anyHour.status).toEqual({ state: 'Enabled', detail: 'After 3h with nothing done' })
+
+    const daytime = modeStates(sources({ nudgeOn: true, quietHours: 2, window: DEFAULT_NUDGE_WINDOW }))
+    expect(daytime['modes/nudge'].status).toEqual({
+      state: 'Enabled',
+      detail: 'After 2h with nothing done · 09:00–22:00',
+    })
+  })
+
+  it('never blocks the nudge: its notice shows on screen whatever the browser allows (MODE-6, NUDGE-10)', () => {
+    expect(modeStates(sources({ loading: true }))['modes/nudge'].blocked).toBeNull()
+  })
+
   it('says a mode is still loading rather than disabled, and will not switch it (MODE-8)', () => {
     // A warm-up not read yet reads as no warm-up; turning it on here would start
     // a fresh month over the one already running.
@@ -82,5 +107,8 @@ describe('modeStates', () => {
     modes['modes/warm-up'].toggle(false)
     expect(given.warmUp.onEnd).toHaveBeenCalledOnce()
     expect(given.warmUp.onStart).not.toHaveBeenCalled()
+
+    modes['modes/nudge'].toggle(true)
+    expect(given.nudge.onTurnOn).toHaveBeenCalledExactlyOnceWith(true)
   })
 })

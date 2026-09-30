@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { Task } from '../../core'
 import { describePoints, describeReward } from '../rewardLabels'
+import { CalmIcon } from './CalmIcon'
 import { CelebrateIcon } from './CelebrateIcon'
-import { RestingIcon } from './RestingIcon'
 
 const action =
   'rounded-lg border border-neutral-200 px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
@@ -72,7 +72,7 @@ export function ProcrastinationPanel({
     return (
       <div role="status" className={modeBanner}>
         <div className="flex items-center gap-2">
-          <RestingIcon className="inline-flex size-4 shrink-0 items-center justify-center self-start text-base leading-none" />
+          <CalmIcon className="inline-flex size-4 shrink-0 items-center justify-center self-start text-base leading-none" />
           <div className="min-w-0 flex-1">
             <p className={modeTitle}>Resting</p>
             <p className={modeHint}>
@@ -228,7 +228,7 @@ function ProcrastinationWin({
           className={`inline-flex flex-1 items-center justify-center gap-1.5 ${actionPrimary}`}
           aria-label="Rest"
         >
-          <RestingIcon />
+          <CalmIcon />
           Rest
         </button>
       </div>
