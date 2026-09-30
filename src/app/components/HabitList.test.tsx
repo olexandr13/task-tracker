@@ -2,7 +2,7 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { completeTask, createTask, logTime, setTimeGoal, type Task } from '../../core'
+import { completeTask, createSubtask, createTask, logTime, setTimeGoal, type Task } from '../../core'
 import { NO_TASK_ACTIONS } from '../../test/taskActions'
 import { HabitList } from './HabitList'
 
@@ -72,6 +72,47 @@ function listProps(habits: Task[]) {
 function stretch(): Task {
   return { ...createTask('stretch', { kind: 'daily' }, WED_16), doneDays: ['2026-09-14', '2026-09-15'] }
 }
+
+describe("a habit's box against its checklist (CHK-11, CHK-16)", () => {
+  it('turns the tick down and says so, the card shaking with it', async () => {
+    const habit: Task = { ...stretch(), subtasks: [createSubtask('hamstrings', WED_16)] }
+    const { user, onComplete } = setup([habit])
+
+    await user.click(screen.getByRole('button', { name: 'Mark "stretch" as done today' }))
+
+    expect(screen.getByRole('alert')).toHaveProperty('textContent', 'Complete subtasks first')
+    expect(screen.getByRole('listitem').className).toContain('completion-refusal-shake')
+    expect(onComplete).not.toHaveBeenCalled()
+  })
+
+  it("asks again today for a list ticked yesterday, the occurrence's being what counts", async () => {
+    // Ticked on Tue 15: done for that day's occurrence, open again for today's.
+    const yesterday = new Date(2026, 8, 15, 9, 0)
+    const habit: Task = {
+      ...stretch(),
+      subtasks: [{ ...createSubtask('hamstrings', yesterday), completedAt: yesterday.toISOString() }],
+    }
+    const { user, onComplete } = setup([habit])
+
+    await user.click(screen.getByRole('button', { name: 'Mark "stretch" as done today' }))
+
+    expect(screen.getByRole('alert')).toHaveProperty('textContent', 'Complete subtasks first')
+    expect(onComplete).not.toHaveBeenCalled()
+  })
+
+  it('ticks the day off as it always did once the list is done for today', async () => {
+    const habit: Task = {
+      ...stretch(),
+      subtasks: [{ ...createSubtask('hamstrings', WED_16), completedAt: WED_16.toISOString() }],
+    }
+    const { user, onComplete } = setup([habit])
+
+    await user.click(screen.getByRole('button', { name: 'Mark "stretch" as done today' }))
+
+    expect(screen.queryByRole('alert')).toBeNull()
+    await waitFor(() => { expect(onComplete).toHaveBeenCalledWith(habit.id) })
+  })
+})
 
 describe('skipping today (HAB-31)', () => {
   it('passes today over from the foot of the sheet while today is still to do', async () => {

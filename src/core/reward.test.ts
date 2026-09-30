@@ -142,11 +142,14 @@ describe('rewardChanges, earning (RWD-9, RWD-10)', () => {
     expect(changeOf(task, completeTask(task, MON_14))).toEqual(NOTHING)
   })
 
-  it("earns when a checklist's last tick finishes the task", () => {
+  it('earns nothing for a checklist ticked through, and earns when the box finishes it (CHK-9)', () => {
     const task = setReward(addSubtask(createTask('pack', null, MON_14), 'socks', MON_14), 2)
     const ticked = setSubtaskDone(task, task.subtasks[0].id, true, TUE_15)
 
-    expect(changeOf(task, ticked).earned).toEqual([{ taskId: task.id, day: '2026-09-15', points: 2 }])
+    expect(changeOf(task, ticked)).toEqual(NOTHING)
+    expect(changeOf(ticked, completeTask(ticked, TUE_15)).earned).toEqual([
+      { taskId: task.id, day: '2026-09-15', points: 2 },
+    ])
   })
 
   it('earns for an earlier day marked done on a habit', () => {

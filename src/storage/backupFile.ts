@@ -13,6 +13,8 @@ import {
 } from '../core'
 import type { AccountData } from './backupRepository'
 import { readList, toStoredList, type StoredList } from './listSchema'
+import type { NudgePreference } from './nudgeRepository'
+import { readNudge, toStoredNudge, type StoredNudge } from './nudgeSchema'
 import { isRecord } from './plainData'
 import { readPrize, toStoredPrize, type StoredPrize } from './prizeSchema'
 import {
@@ -49,12 +51,14 @@ export const BACKUP_FORMAT = 'task-tracker-backup'
  * there was one is read as setting none. Version 3 held no wishlist and no
  * point value (RWD-31, RWD-33): a file made before those is read as holding no
  * prizes and setting no value. Version 4 held no warm-up (WARM-1): a file made
- * before there was one is read as having none under way.
+ * before there was one is read as having none under way. Version 5 held no
+ * nudge setting (NUDGE-9), which was the device's then rather than the
+ * account's (STORE-46): a file made before it synced is read as asking for none.
  */
-export const BACKUP_VERSION = 5
+export const BACKUP_VERSION = 6
 
 /** The versions of the wrapper this app can still read, oldest first. */
-const READABLE_VERSIONS = [1, 2, 3, 4, BACKUP_VERSION]
+const READABLE_VERSIONS = [1, 2, 3, 4, 5, BACKUP_VERSION]
 
 interface BackupFile {
   format: typeof BACKUP_FORMAT
@@ -74,6 +78,8 @@ interface BackupFile {
   rewardSettings: StoredPointValue[]
   /** The warm-up under way, as its one record, or nothing at all for none (WARM-1). */
   warmUp: StoredWarmUp[]
+  /** How the owner asked to be nudged, as its one record, or nothing at all where it is off (NUDGE-9). */
+  nudge: StoredNudge[]
 }
 
 /** Why a file was not read at all. */
@@ -83,6 +89,12 @@ export interface BackupRead {
   readonly data: AccountData
   /** Records in the file the app could not read — an unknown version, or not shaped as they should be. */
   readonly unreadable: number
+}
+
+/** The nudge setting as the file holds it: its one record, or nothing at all where it is off. */
+function nudgeRecord(preference: NudgePreference | null): StoredNudge[] {
+  const stored = preference === null ? null : toStoredNudge(preference)
+  return stored === null ? [] : [stored]
 }
 
 /** `task-tracker-backup-2026-09-19.json`, by the local day it was made. */
@@ -108,6 +120,8 @@ export function writeBackupFile(data: AccountData, now: Date): string {
     }),
     rewardSettings: data.pointValue === null ? [] : [toStoredPointValue(data.pointValue)],
     warmUp: data.warmUp === null ? [] : [toStoredWarmUp(data.warmUp)],
+    // A nudge back at its defaults keeps no record here either, as it keeps none in the account.
+    nudge: nudgeRecord(data.nudge),
   }
   return `${JSON.stringify(file, null, 2)}\n`
 }
@@ -136,6 +150,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
   const prizes = file.version < 4 ? [] : file.prizes
   const rewardSettings = file.version < 4 ? [] : file.rewardSettings
   const warmUp = file.version < 5 ? [] : file.warmUp
+  const nudge = file.version < 6 ? [] : file.nudge
   if (
     !Array.isArray(tasks) ||
     !Array.isArray(lists) ||
@@ -145,7 +160,8 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     !Array.isArray(redemptions) ||
     !Array.isArray(rewardGoals) ||
     !Array.isArray(rewardSettings) ||
-    !Array.isArray(warmUp)
+    !Array.isArray(warmUp) ||
+    !Array.isArray(nudge)
   ) {
     return 'not-a-backup'
   }
@@ -173,6 +189,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     bonuses: bonuses as PeriodBonuses,
     pointValue: readEach(rewardSettings, readPointValue)[0] ?? null,
     warmUp: readEach<WarmUp>(warmUp, readWarmUp)[0] ?? null,
+    nudge: readEach<NudgePreference>(nudge, readNudge)[0] ?? null,
   }
   return { data, unreadable }
 }

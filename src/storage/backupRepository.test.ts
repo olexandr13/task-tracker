@@ -12,6 +12,7 @@ import {
   startWarmUp,
   TRASH_RETENTION_MS,
 } from '../core'
+import type { NudgePreference } from './nudgeRepository'
 import { countRecords, newRecords, type AccountData, type KnownRecords } from './backupRepository'
 
 /* What an import adds to the account. BAK ids refer to wiki/backup.md. */
@@ -28,6 +29,7 @@ const GARDEN = createTag('garden', AT)
 const CHOCOLATE = createPrize('Chocolate', 20, 'prize', AT)
 const UAH = createPointValue(2.5)
 const WARMING_UP = startWarmUp(AT)
+const NUDGING: NudgePreference = { on: true, quietHours: 3, window: null }
 
 const EMPTY: AccountData = {
   tasks: [],
@@ -39,6 +41,7 @@ const EMPTY: AccountData = {
   bonuses: NO_BONUSES,
   pointValue: null,
   warmUp: null,
+  nudge: null,
 }
 
 const NOTHING_KNOWN: KnownRecords = {
@@ -51,6 +54,7 @@ const NOTHING_KNOWN: KnownRecords = {
   bonuses: NO_BONUSES,
   pointValue: null,
   warmUp: null,
+  nudge: null,
   days: new Map(),
 }
 
@@ -66,6 +70,7 @@ describe('what an import adds', () => {
       bonuses: { today: 10, week: 40, month: null },
       pointValue: UAH,
       warmUp: WARMING_UP,
+      nudge: NUDGING,
     }
 
     expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
@@ -219,6 +224,7 @@ describe('counting records', () => {
       bonuses: { today: 10, week: null, month: null },
       pointValue: UAH,
       warmUp: WARMING_UP,
+      nudge: NUDGING,
     }
 
     // The bonuses, the point value and the warm-up are settings rather than records, and are counted as none.

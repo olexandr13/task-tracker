@@ -2,11 +2,13 @@ import { BONUS_PERIODS } from '../core'
 import type { ListRepository } from './listRepository'
 import { clearGuestAccount } from './localBackupRepository'
 import { loadGuestLists } from './localListRepository'
+import { loadGuestNudge } from './localNudgeRepository'
 import { loadGuestPrizes } from './localPrizeRepository'
 import { loadGuestLedger } from './localRewardRepository'
 import { loadGuestTags } from './localTagRepository'
 import { loadGuestTasks } from './localTaskRepository'
 import { loadGuestWarmUp } from './localWarmUpRepository'
+import type { NudgeRepository } from './nudgeRepository'
 import type { PrizeRepository } from './prizeRepository'
 import type { RewardRepository } from './rewardRepository'
 import type { TagRepository } from './tagRepository'
@@ -25,6 +27,7 @@ export async function importGuestAccount(
   prizes: PrizeRepository,
   rewards: RewardRepository,
   warmUp: WarmUpRepository,
+  nudge: NudgeRepository,
 ): Promise<void> {
   const guestTasks = loadGuestTasks()
   const guestLists = loadGuestLists()
@@ -32,6 +35,7 @@ export async function importGuestAccount(
   const guestPrizes = loadGuestPrizes()
   const ledger = loadGuestLedger()
   const guestWarmUp = loadGuestWarmUp()
+  const guestNudge = loadGuestNudge()
 
   const empty =
     guestTasks.length === 0 &&
@@ -42,7 +46,8 @@ export async function importGuestAccount(
     ledger.redemptions.length === 0 &&
     BONUS_PERIODS.every((period) => ledger.bonuses[period] === null) &&
     ledger.pointValue === null &&
-    guestWarmUp === null
+    guestWarmUp === null &&
+    guestNudge === null
 
   if (empty) {
     clearGuestAccount()
@@ -74,6 +79,7 @@ export async function importGuestAccount(
   // A warm-up begun as guest keeps the day it began on, so signing in does not
   // start the month again (WARM-10).
   if (guestWarmUp !== null) await warmUp.importWarmUp(guestWarmUp)
+  if (guestNudge !== null) await nudge.importNudge(guestNudge)
 
   clearGuestAccount()
 }

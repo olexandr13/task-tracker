@@ -134,13 +134,15 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 ## Completing
 
 - **TASK-13** The round box at the head of the row toggles the task between done and not done.
-  On a phone a swipe right does the same (UI-60).
+  On a phone a swipe right does the same (UI-60). A task with a **checklist** answers to its items
+  instead: the box will not finish one with a part still to do, and says so (CHK-11, CHK-31).
 - **TASK-14** Completing stamps the time. Completing something already done changes nothing — the
   first completion time stands.
 - **TASK-67** For a few seconds after a completion a toast offers to undo it — **only an arrow
   button**, named Undo for a screen reader and as its tooltip, with **no title** of what was done
-  (the tick already said that). Completing by ticking the last checklist item (CHK-9) offers the
-  same. A second completion, or a deletion's undo toast (TRASH-3), replaces it rather than stacking.
+  (the tick already said that). It follows the completion itself, so a checklist tick offers nothing:
+  ticking an item never completes a task (CHK-9). A second completion, or a deletion's undo toast
+  (TRASH-3), replaces it rather than stacking.
   Letting it lapse leaves the task done.
 - **TASK-15** Un-completing puts the task back to todo and forgets when it was done. For a
   repeating task that undoes the occurrence in play, which is all there is to undo — and where that

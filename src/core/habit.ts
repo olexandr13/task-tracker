@@ -152,7 +152,8 @@ export function habitRate(task: Task, days: number, now: Date = new Date()): Hab
  * mistake taken back.
  *
  * Today is the task's own box: it goes through `completeTask` and
- * `uncompleteTask`, checklist and all. An earlier day only changes the history,
+ * `uncompleteTask`, so an open checklist refuses it (CHK-11) and taking it back
+ * leaves the list ticked (CHK-12). An earlier day only changes the history,
  * and the completion time where that has to follow: it stays the most recent
  * day the habit was done, so the week and month bars count what the history
  * says. A backfilled day has no time of its own and is stamped at its start.

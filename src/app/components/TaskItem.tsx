@@ -8,6 +8,7 @@ import {
   dueDay,
   elapsedSeconds,
   hasDescription,
+  hasOpenSubtasks,
   hasSubtasks,
   hasTags,
   isComplete,
@@ -47,6 +48,7 @@ import {
 } from '../rowControls'
 import { isInTextEntry } from '../textEntry'
 import { textOffsetAtPoint } from '../textOffsetAtPoint'
+import { useCompletionRefusal } from '../useCompletionRefusal'
 import { isHeldInPlace } from '../useLongPress'
 import { usePhoneLayout } from '../usePhoneLayout'
 import { useRowSwipe } from '../useRowSwipe'
@@ -57,6 +59,7 @@ import { CalendarIcon } from './CalendarIcon'
 import { ChecklistIcon } from './ChecklistIcon'
 import { ClockIcon } from './ClockIcon'
 import { CompletionBox } from './CompletionBox'
+import { CompletionRefusal } from './CompletionRefusal'
 import { ContextMenu, type ContextMenuEntry } from './ContextMenu'
 import { DueChoices } from './DueChoices'
 import { DueTimeChoices } from './DueTimeChoices'
@@ -241,11 +244,17 @@ export function TaskItem({
   const line = useRef<HTMLDivElement>(null)
   const { setNodeRef, setActivatorNodeRef, listeners, attributes, isDragging, transform, transition } =
     useSortableTask(task, now)
+  // The tick this row turned down, its checklist still having a part to do
+  // (CHK-11). Every way of ticking the task off goes through it — the box, and
+  // the swipe on a phone — so the row answers the same however it was asked.
+  const { refused, refuse } = useCompletionRefusal()
+  const blocked = !done && hasOpenSubtasks(task, now)
   // Right completes (or takes back), left deletes — phone only, and not while the
   // sheet is open or the row is being dragged to a new place.
   const swipe = useRowSwipe(phone && !isActive && !isDragging, row, {
     onComplete: () => {
       if (done) actions.uncomplete(task.id)
+      else if (blocked) refuse()
       else actions.complete(task.id)
     },
     onDelete: () => { actions.remove(task.id) },
@@ -668,11 +677,16 @@ export function TaskItem({
         // which should leave the row as it was.
         if (event.key === 'Escape' && !isDragging) rest()
       }}
-      className={
+      className={[
         phone
           ? `group relative touch-manipulation overflow-hidden rounded-xl${emphasized ? ' my-3' : ''}`
-          : `group relative touch-manipulation ${surface}${emphasized ? ' my-3' : ''}`
-      }
+          : `group relative touch-manipulation ${surface}${emphasized ? ' my-3' : ''}`,
+        // The whole row shakes, box and title together: it is the task that would
+        // not be ticked off, not the box that failed to take a click (CHK-11).
+        refused && 'completion-refusal-shake',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       title={urgent ? 'Urgent' : undefined}
     >
       {/* In the gutter left of the row, so it takes nothing from the row itself.
@@ -746,6 +760,8 @@ export function TaskItem({
           done={done}
           ready={ready}
           skipped={!done && isSkippedToday(task, now)}
+          blocked={blocked}
+          onBlocked={refuse}
           onComplete={() => { actions.complete(task.id) }}
           onUncomplete={() => { actions.uncomplete(task.id) }}
           inert={phone && isActive}
@@ -964,6 +980,10 @@ export function TaskItem({
           </>
         )}
       </div>
+
+      {/* Where the title starts, under the box that turned the tick down, so the
+          words answer the click that was just made rather than the row at large. */}
+      {refused && <CompletionRefusal className={`pb-1.5 ${indent}`} />}
 
       {phone && detailed && (tags !== null || urgentLabel !== null || schedule !== null || count !== null || time !== null || points !== null) && (
         <div className={`${detail} flex min-w-0 flex-wrap items-center gap-x-2 px-3 pb-2 ${indent}`}>

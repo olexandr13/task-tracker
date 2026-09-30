@@ -13,8 +13,9 @@ in. Both are on **Settings**, under the account (UI-35).
   lists, the kept tags — those no task carries any more too (TAG-6) — the wishlist (RWD-33), what
   completions earned (a *completion* in the counts is one task's points on one day), the
   redemptions, what clearing each period is worth (RWD-24, RWD-29), what a point is worth
-  (RWD-31) and the warm-up under way (WARM-1). What is kept on this device alone — the View options (STORE-30), the sidebar
-  (STORE-31), the cached quote — is not the account's, and is not in it. Neither is
+  (RWD-31), the warm-up under way (WARM-1) and how the owner asked to be nudged (NUDGE-9). What is
+  kept on this device alone — the View options (STORE-30), the sidebar (STORE-31), the cached quote,
+  and what the nudge has already said here (STORE-46) — is not the account's, and is not in it. Neither is
   **Procrastination mode** (STORE-45), which the account does keep: it is the state of one
   afternoon, and a mode restored from a file made last month would be off by the time it was read. A record the app cannot
   read (STORE-7) is left out.
@@ -73,13 +74,20 @@ in. Both are on **Settings**, under the account (UI-35).
   neither what was imported nor what was already here, and an import takes the file's warm-up only
   where the account has **none of its own** — so restoring a backup cannot start a month that has
   already been served, nor put back one that was ended.
+- **BAK-16** A file holds the **nudge's setting** (NUDGE-9), as its one record: whether it is on,
+  the span it waits for and the hours it may speak in. A nudge exactly as the app arrives — off, at
+  the default span, at any hour — is no record at all, here as in the account (STORE-46), and a file
+  made before the setting was the account's holds none either; both are read as asking for none
+  rather than turned away (BAK-13). It is **no record** the same way (BAK-14), and an import takes
+  the file's setting only where the account has **none of its own** — so restoring a backup cannot
+  turn a nudge back on that was turned off since.
 
 ---
 
 **Where it lives:** `src/storage/backupRepository.ts` (the interface, and what an import adds),
 `firestoreBackupRepository.ts` (reading and adding to the account in Firestore), `localBackupRepository.ts`
 (the guest's), `backupFile.ts` (the file and its version), `taskSchema.ts`, `listSchema.ts`, `tagSchema.ts`,
-`prizeSchema.ts`, `rewardSchema.ts`, `warmUpSchema.ts` (each record's own shape),
+`prizeSchema.ts`, `rewardSchema.ts`, `warmUpSchema.ts`, `nudgeSchema.ts` (each record's own shape),
 `src/app/useBackup.ts` (running them), `src/app/backupLabels.ts` (what is said),
 `src/app/downloadFile.ts`, `src/app/components/BackupCard.tsx`, `SettingsList.tsx`.
 **Tested in:** `src/storage/backupFile.test.ts` (the file, and reading one back),

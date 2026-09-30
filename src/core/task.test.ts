@@ -630,10 +630,15 @@ describe('doneDays', () => {
     expect(completeTask(createTask('buy milk', null, NOW), LATER).doneDays).toEqual([])
   })
 
-  it('follows a checklist that finishes the task, and reopens it', () => {
+  it('records nothing for a checklist ticked through, and drops the day when one is reopened', () => {
     const task = addSubtask(createTask('morning routine', DAILY, MON_14), 'stretch', MON_14)
     const itemId = task.subtasks[0].id
-    const finished = setSubtaskDone(task, itemId, true, TUE_15)
+    const ticked = setSubtaskDone(task, itemId, true, TUE_15)
+
+    // The parts being done is not the task being done (CHK-9): the box records the day.
+    expect(ticked.doneDays).toEqual([])
+
+    const finished = completeTask(ticked, TUE_15)
 
     expect(finished.doneDays).toEqual(['2026-09-15'])
     expect(setSubtaskDone(finished, itemId, false, TUE_15).doneDays).toEqual([])
@@ -697,7 +702,7 @@ describe('reopening a missed occurrence', () => {
   it('does the same when unticking a checklist item reopens the task (CHK-10)', () => {
     const task = addSubtask(createTask('weekly review', MONDAYS, MON_14), 'read notes', MON_14)
     const itemId = task.subtasks[0].id
-    const finished = setSubtaskDone(task, itemId, true, WED_16)
+    const finished = completeTask(setSubtaskDone(task, itemId, true, WED_16), WED_16)
 
     expect(setSubtaskDone(finished, itemId, false, WED_16).skippedDays).toEqual(['2026-09-14'])
   })

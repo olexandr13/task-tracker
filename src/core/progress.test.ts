@@ -220,10 +220,12 @@ describe('a task with a checklist', () => {
       (current, title) => addSubtask(current, title, MON_14_EVENING),
       task(null),
     )
-    const finished = listed.subtasks.reduce<Task>(
+    const ticked = listed.subtasks.reduce<Task>(
       (current, subtask) => setSubtaskDone(current, subtask.id, true, TUE_15),
       listed,
     )
+    // The parts ticked are not the task done: its own box still says so (CHK-9).
+    const finished = completeTask(ticked, TUE_15)
 
     expect(summarize([finished], 'today', TUE_15)).toEqual({
       completed: 1,

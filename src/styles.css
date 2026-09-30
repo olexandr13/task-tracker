@@ -208,3 +208,35 @@ body {
     content: none;
   }
 }
+
+/* A box that would not tick its task off, the checklist still having a part to
+   do (CHK-11). The row shakes once — a small sideways nudge, the width of a
+   couple of characters — so the refusal is felt where the click was, and the
+   note beside it says why. Short and level: it moves nothing on the line and
+   leaves no room behind it, so the list does not jump. */
+@keyframes completion-refusal-shake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  15%,
+  75% {
+    transform: translate3d(-0.3rem, 0, 0);
+  }
+  40%,
+  90% {
+    transform: translate3d(0.3rem, 0, 0);
+  }
+}
+
+.completion-refusal-shake {
+  animation: completion-refusal-shake 0.4s ease-in-out;
+}
+
+/* A device asking for less motion keeps the note and loses the shake: the words
+   are what carries the refusal, and the movement only points at them. */
+@media (prefers-reduced-motion: reduce) {
+  .completion-refusal-shake {
+    animation: none;
+  }
+}

@@ -24,8 +24,10 @@ const heading = 'text-sm font-medium text-neutral-700 dark:text-neutral-300'
  *
  * A mode with something to set carries it here too (MODE-12), under what it
  * does: what a mode does and how it is set are one thing, and the page that
- * explains the one is where the other belongs. A mode with nothing to set — or
- * one that is off, there being nothing to tune about it — shows no such section.
+ * explains the one is where the other belongs. It reads whether the mode is on
+ * or off — what a mode will do is decided before it is turned on, and a section
+ * that appears only afterwards is one nobody knows to look for. A mode with
+ * nothing to set shows no such section.
  */
 export function ModePage({ mode, settings }: { mode: ModeState; settings?: ReactNode }) {
   // The head says where the mode stands, not only which mode it is (MODE-11).

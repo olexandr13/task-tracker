@@ -80,6 +80,23 @@ describe('ModePage', () => {
     expect(screen.getByText('After this long with nothing finished')).toBeDefined()
   })
 
+  it('carries them while the mode is off as well, being what is set before it is on (MODE-12)', () => {
+    render(<ModePage mode={mode('modes/nudge')} settings={<p>After this long with nothing finished</p>} />)
+
+    expect(screen.getByRole('region', { name: 'Settings' })).toBeDefined()
+    expect(screen.getByText('After this long with nothing finished')).toBeDefined()
+  })
+
+  it('says how the nudge arrives in one sentence, not the line above it again (MODE-5)', () => {
+    render(<ModePage mode={mode('modes/nudge')} />)
+
+    const points = screen.getByRole('list')
+    expect(points.children).toHaveLength(1)
+    expect(points.textContent).toContain('only while the app is open')
+    // What it watches for is the line the mode is summed up in, right above it.
+    expect(points.textContent).not.toContain('names the task to pick up')
+  })
+
   it('shows no Settings for a mode with nothing to set (MODE-12)', () => {
     render(<ModePage mode={mode('modes/warm-up')} />)
 

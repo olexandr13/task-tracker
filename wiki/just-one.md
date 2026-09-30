@@ -32,8 +32,11 @@ task to do, fade the rest, and earn a rest by finishing it. One of the two
 
 ## How focus shows
 
-- **JUST-5** While focusing, a banner says **Procrastination mode** and **Some functionality dimmed to prevent distraction. Do just one
-  highlighted task**, with no emoji on the banner. The chosen task stays at full strength with
+- **JUST-5** While focusing, a banner says **Procrastination mode** and, under it, **Do just the
+  highlighted task** — one sentence on one row, the instruction and nothing else. What the dimming
+  is doing is not said here: it is on screen to be seen, and written out on the mode's own page
+  (MODE-5), and a banner that explains itself every time is one more thing to read instead of
+  starting. No emoji on the banner. The chosen task stays at full strength with
   extra space above and below it, and is drawn **first** in the list — so a finished win stays
   above the dimmed rows instead of sinking with other done work. The list is **one run** while the
   mode is on: the **Overdue** (TASK-68) and **Done** (TASK-69) headings would speak for rows the
@@ -47,8 +50,12 @@ task to do, fade the rest, and earn a rest by finishing it. One of the two
   calm note (**No rush — pick another only if you want to**) and an optional **Choose another
   task**; every row stays dimmed, and so do the navigation, the bars and the quote. Both banners
   offer **More info**, which opens Procrastination's own page (MODE-10); only the idle one offers
-  **End mode** (JUST-8). The mode banner uses a calm sky tint, not a warning colour. Nothing is
-  hidden or filtered.
+  **End mode** (JUST-8). The mode banner uses a calm sky tint, not a warning colour. Both banners
+  are laid out the same way: what the mode is doing on the left, its side doors at the end of the
+  row — and on a **narrow screen the two stack**, the words taking the width and the doors
+  spreading across it under them, tall enough for a thumb. The words keep their own row at every
+  width; a phone has no room for a column of them beside the doors as well. Nothing is hidden or
+  filtered.
 - **JUST-6** **Other task** (a smaller control) picks again among open Today tasks, skipping the
   current one when there is another to choose. When only one open Today task is left, the same
   control becomes **Create new task** and opens the add-task sheet (UI-54) instead.

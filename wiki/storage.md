@@ -138,11 +138,24 @@ changes shape.
   then written down once (JUST-7, JUST-10), so the other device hears of it. It is **not in the
   backup** (BAK-2): it is today's state rather than something worth restoring next month.
 
+## The nudge
+
+- **STORE-46** The **nudge's setting** (NUDGE-9) is kept in the account as **one record**, named for
+  itself as the warm-up is (STORE-44): whether it is on, the span of quiet it waits for and the
+  hours it may speak in, so a nudge set at the laptop is the same nudge at the phone. **No record at
+  all is the nudge as the app arrives** — off, at the default span, at any hour — whether it was
+  never set or was set back; one turned off with a span or hours still chosen keeps its record, the
+  span outliving the switch. It has **its own version**, and one the app cannot read is ignored with
+  a warning and read as off (STORE-7). It is **in the backup** (BAK-16), being a standing setting
+  rather than today's state.
+  What the nudge has already said on **this device** is the other half of it, and stays here
+  (STORE-47).
+
 ## Guest — this device only
 
 - **STORE-37** As guest (AUTH-15), tasks, lists, tags, the wishlist, the points ledger — the
   bonuses and what a point is worth with it (STORE-41, STORE-42, STORE-43), the warm-up
-  (STORE-44) and Procrastination mode (STORE-45) are kept in this
+  (STORE-44), Procrastination mode (STORE-45) and the nudge's setting (STORE-46) are kept in this
   browser's `localStorage`, under the same versioned shapes as the account's (STORE-4, STORE-24,
   STORE-27, STORE-34). A ledger kept before there were bonuses, or before a point had a value, holds
   none of them, rather than being unreadable for the lack of one. Nothing is sent to the account or any other device. A refresh or another tab
@@ -150,9 +163,9 @@ changes shape.
   quiet (OFF-7).
 - **STORE-38** The first time a Google account is open here online after guest data was kept, that
   data is **moved into the account** — tasks, lists, tags, prizes, points earned, redemptions, the
-  bonuses, what a point is worth and the warm-up — added alongside what the account already has,
-  without overwriting tasks it already holds (STORE-20), or a bonus, point value or warm-up it has
-  already set, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
+  bonuses, what a point is worth, the warm-up and the nudge's setting — added alongside what the
+  account already has, without overwriting tasks it already holds (STORE-20), or a bonus, point
+  value, warm-up or nudge it has already set, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
   signing in does not start its month again (WARM-10). A move that fails, offline say, is tried again next time.
 
 ## Kept on this device
@@ -174,6 +187,14 @@ changes shape.
   kept the same way again, under a version of its own, apart from the task View options (STORE-30). A phone and a
   desktop have different room, so each is set its own way. Options the app cannot read fall back to
   the default: folded.
+- **STORE-47** What the nudge has **already said here** — the moment it last spoke on this device,
+  and the notice it left standing (NUDGE-6, NUDGE-8) — is kept the same way again, under a version
+  of its own, apart from the setting itself (STORE-46). It is the half only the device can answer,
+  so a nudge on the laptop is not repeated on the phone, and a refresh does not nudge all over
+  again. A record saved before the setting travelled holds both: its setting is **moved into the
+  account** the first time the app is open, where the account has none of its own, and then dropped
+  from the browser, as the tasks from before there were accounts are (STORE-19) — so a nudge turned
+  on here stays on.
 - **STORE-40** The theme (UI-63) is kept the same way again, under a version of its own: a phone
   kept dark and a desktop kept light are each set their own way, and it is the same whoever is
   signed in — or nobody, on the sign-in screen. Following the system, the default, keeps nothing.
@@ -262,7 +283,10 @@ copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgr
 (the prizes and the wishlist), `listRepository.ts`, `firestoreListRepository.ts`, `localListRepository.ts` and
 `listSchema.ts` (the lists), `tagRepository.ts`, `firestoreTagRepository.ts`, `localTagRepository.ts` and `tagSchema.ts`
 (the kept tags), `warmUpRepository.ts`, `firestoreWarmUpRepository.ts`, `localWarmUpRepository.ts`
-and `warmUpSchema.ts` (the warm-up), `localBackupRepository.ts` and `localSyncMonitor.ts` (guest export and the quiet sync notice),
+and `warmUpSchema.ts` (the warm-up), `nudgeRepository.ts`, `firestoreNudgeRepository.ts`,
+`localNudgeRepository.ts` and `nudgeSchema.ts` (the nudge's setting), `nudgeDeviceRepository.ts`,
+`nudgeDeviceSchema.ts` and `localStorageNudgeRepository.ts` (what it has said on this device),
+`localBackupRepository.ts` and `localSyncMonitor.ts` (guest export and the quiet sync notice),
 `src/storage/quoteRepository.ts` and `localStorageQuoteRepository.ts`,
 `src/storage/quoteSource.ts` and `quotableQuoteSource.ts`, `src/storage/viewOptionsRepository.ts`,
 `viewOptionsSchema.ts` and `localStorageViewOptionsRepository.ts` (the View options),
@@ -281,7 +305,9 @@ STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/S
 `src/storage/localTaskImport.test.ts` (the move, and upgrading older data),
 `src/storage/localTaskRepository.test.ts` (the guest's tasks),
 `src/storage/rewardSchema.test.ts`
-(reading the ledger back), `src/storage/warmUpSchema.test.ts` (reading the warm-up back), `src/storage/prizeSchema.test.ts` and `src/app/usePrizes.test.ts`
+(reading the ledger back), `src/storage/warmUpSchema.test.ts` (reading the warm-up back),
+`src/storage/nudgeSchema.test.ts` and `src/storage/nudgeDeviceSchema.test.ts` (reading the nudge's
+setting back, and what a record from before it synced still answers), `src/storage/prizeSchema.test.ts` and `src/app/usePrizes.test.ts`
 (reading a prize or a wish back, and keeping them), `src/storage/listRepository.test.ts` and `src/storage/listSchema.test.ts`
 (what a change to the lists writes, and reading one back), `src/storage/tagRepository.test.ts`,
 `src/storage/tagSchema.test.ts` and `src/app/useTags.test.ts` (the same for the tags, and keeping the

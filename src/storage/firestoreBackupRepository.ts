@@ -13,6 +13,7 @@ import { countRecords, NeedsConnectionError, newRecords, type BackupRepository, 
 import { accountCollection } from './firestoreAccount'
 import { commitInBatches } from './firestoreBatches'
 import { readList, toStoredList } from './listSchema'
+import { NUDGE, readNudge, toStoredNudge } from './nudgeSchema'
 import { readPrize, toStoredPrize } from './prizeSchema'
 import {
   POINT_VALUE,
@@ -57,6 +58,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   const goals = accountCollection(firestore, accountId, 'rewardGoals')
   const settings = accountCollection(firestore, accountId, 'rewardSettings')
   const warmUps = accountCollection(firestore, accountId, 'warmUp')
+  const nudges = accountCollection(firestore, accountId, 'nudge')
 
   /** What the account earns for clearing each period, of everything its goals hold. */
   function bonusesIn(snapshot: QuerySnapshot): PeriodBonuses {
@@ -75,6 +77,10 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   const warmUpIn = (snapshot: QuerySnapshot) =>
     snapshot.docs.flatMap((saved) => (saved.id === WARM_UP ? (readWarmUp(saved.data()) ?? []) : []))[0] ?? null
 
+  /** How the account asked to be nudged, of the one document it is ever kept as. */
+  const nudgeIn = (snapshot: QuerySnapshot) =>
+    snapshot.docs.flatMap((saved) => (saved.id === NUDGE ? (readNudge(saved.data()) ?? []) : []))[0] ?? null
+
   return {
     // The server when there is a connection, the browser's copy when there is not.
     async exportAll() {
@@ -88,8 +94,9 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         savedGoals,
         savedSettings,
         savedWarmUp,
+        savedNudge,
       ] = await Promise.all(
-        [tasks, lists, tags, prizes, days, redemptions, goals, settings, warmUps].map((collection) =>
+        [tasks, lists, tags, prizes, days, redemptions, goals, settings, warmUps, nudges].map((collection) =>
           getDocs(collection),
         ),
       )
@@ -106,6 +113,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         bonuses: bonusesIn(savedGoals),
         pointValue: pointValueIn(savedSettings),
         warmUp: warmUpIn(savedWarmUp),
+        nudge: nudgeIn(savedNudge),
       }
     },
 
@@ -121,7 +129,8 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         savedGoals,
         savedSettings,
         savedWarmUp,
-      ] = await fromServer([tasks, lists, tags, prizes, days, redemptions, goals, settings, warmUps])
+        savedNudge,
+      ] = await fromServer([tasks, lists, tags, prizes, days, redemptions, goals, settings, warmUps, nudges])
       const known: KnownRecords = {
         taskIds: ids(savedTasks),
         listIds: ids(savedLists),
@@ -132,6 +141,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         bonuses: bonusesIn(savedGoals),
         pointValue: pointValueIn(savedSettings),
         warmUp: warmUpIn(savedWarmUp),
+        nudge: nudgeIn(savedNudge),
         days: new Map(
           savedDays.docs.map((saved): [LocalDay, ReadonlySet<TaskId> | null] => {
             const entries = readRewardDay(saved.data())
@@ -143,6 +153,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
       const { fresh, alreadyHere } = newRecords(incoming, known, now)
       const value = fresh.pointValue
       const warmUp = fresh.warmUp
+      const nudge = fresh.nudge === null ? null : toStoredNudge(fresh.nudge)
 
       // A day is merged, never replaced, as when points are earned: only the
       // entries it did not hold are added to it.
@@ -157,8 +168,8 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         ...fresh.redemptions.map((redemption) => (batch: WriteBatch) =>
           batch.set(doc(redemptions, redemption.id), toStoredRedemption(redemption)),
         ),
-        // The file's bonuses, point value and warm-up are only ever set where
-        // the account has none of its own (`newRecords`).
+        // The file's bonuses, point value, warm-up and nudge are only ever set
+        // where the account has none of its own (`newRecords`).
         ...BONUS_PERIODS.flatMap((period) => {
           const points = fresh.bonuses[period]
           return points === null
@@ -171,6 +182,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         ...(warmUp === null
           ? []
           : [(batch: WriteBatch) => batch.set(doc(warmUps, WARM_UP), toStoredWarmUp(warmUp))]),
+        ...(nudge === null ? [] : [(batch: WriteBatch) => batch.set(doc(nudges, NUDGE), nudge)]),
       ])
 
       return { added: countRecords(fresh), alreadyHere }

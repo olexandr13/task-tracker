@@ -39,23 +39,26 @@ and each mode a page of its own that says what it does, and sets what it has to 
   (NUDGE-10).
 
 - **MODE-9** A mode is **the account's**, not the device's: turned on at the laptop it is on at
-  the phone, and turned off anywhere it is off everywhere (STORE-44, STORE-45). A mode is a way of
-  working for a while, and it is the person who is working, not the machine. **The nudge is the one
-  exception** and its page says so among the things it does (MODE-5): it speaks through the
-  browser's own notifications, which are the browser's to allow, so being nudged here is not being
-  nudged everywhere. It is kept on this device, as the theme is (NUDGE-9, STORE-30).
+  the phone, and turned off anywhere it is off everywhere (STORE-44, STORE-45, STORE-46). A mode is
+  a way of working for a while, and it is the person who is working, not the machine — and what
+  a mode is set to (MODE-12) travels with it, a span and the hours to keep to being how someone
+  wants to be nudged rather than how a machine does it. The nudge keeps only what **this device
+  alone can answer** on the device: whether *it* has already spoken, so one nudge is not paid for
+  twice (NUDGE-6, STORE-47). Its notifications are still the browser's to allow, which its page says
+  among the things it does (MODE-5, NUDGE-10).
 - **MODE-12** A mode with **something to set carries it on its own page**, under **Settings**,
   below what the mode does (MODE-5): the nudge's span and the hours it may speak in (NUDGE-9,
-  NUDGE-12). It is there **only while the mode is on** — there is nothing to tune about a mode that
-  is not running — and a mode with nothing to set shows no such section, as Procrastination and the
-  warm-up do not. A mode's settings sit with the mode rather than on the Settings page: what a mode
-  does and how it is set are one thing, and the page that explains the one is where the other is
-  understood.
+  NUDGE-12). It reads **whether the mode is on or off** — what a mode will do is decided before it
+  is turned on, and a section that only appears afterwards is one nobody knows to look for — and a
+  mode with nothing to set shows no such section, as Procrastination and the warm-up do not. A
+  mode's settings sit with the mode rather than on the Settings page: what a mode does and how it is
+  set are one thing, and the page that explains the one is where the other is understood.
 - **MODE-8** While a mode's data is **still on its way** the word under its switch is `Loading…`
-  rather than `Disabled`, and the switch waits. `Disabled` would be a guess, and on the warm-up a
-  costly one: turning it on over a month already running would start a fresh one at day one
-  (WARM-2). What the modes are measured
-  against — the account's warm-up, Today's tasks — arrives a moment after the page does.
+  rather than `Disabled`, and the switch waits. `Disabled` would be a guess, and a costly one: on
+  the warm-up, turning it on over a month already running would start a fresh one at day one
+  (WARM-2); on the nudge, a setting not read yet reads as off, which the switch would then send back
+  to the account over the one already there. What the modes are measured against — the account's
+  warm-up, its nudge setting, Today's tasks — arrives a moment after the page does.
 
 ## What a mode does
 
@@ -66,16 +69,16 @@ and each mode a page of its own that says what it does, and sets what it has to 
   is summed up in, where it stands, and the same switch (MODE-3) — and under that **What it does**:
   what being on actually does, in **plain sentences, one thing each**, naming the controls they
   mean in quotes (*Press "Other task" to pick a different one*). Procrastination: what is picked,
-  what is dimmed, what each control does, what finishing one wins, the **P** shortcut, and **how the
-  mode is ended** — the focus banner carrying no **End mode** (JUST-8), this page is where that is
-  said and where the switch to do it sits. The
+  what is dimmed, what each control does, what finishing one wins, and the **P** shortcut. The
   warm-up: **why going gradually is the point** — no rush, no extra effort, no promises to
   yourself you end up breaking — then what each day allows, that only new habits are held back,
   what counts against the allowance, that nothing already there is touched, where it is shown, and
-  how it ends. The nudge: what it watches for, what it names, the two ways it arrives, **how far its
-  reach goes** — while the app is open, nothing once it is closed (NUDGE-10) — that it can be held to
-  certain hours, and that it is this device's alone (NUDGE-9). Short enough to read before the switch
-  is touched, and said outright rather than hinted at.
+  how it ends. The nudge, in **one line**: the two ways it arrives, that pressing the notice goes
+  straight to the task, and **how far its reach goes** — while the app is open, nothing once it is
+  closed (NUDGE-10). What it watches for and what it names is the line it is summed up in, right
+  above (MODE-2), and what there is to set is the **Settings** below (MODE-12), so neither is said
+  twice. Short enough to read before the switch is touched, and said outright rather than hinted at:
+  a mode explained at the length of its own settings is one nobody reads.
 - **MODE-10** Wherever a mode **shows itself at work** — the warm-up panel at the head of Habits
   (WARM-6), the focus and idle banners on Today (JUST-5) — the banner carries a **More info**
   button, which opens that mode's own page. A banner has room for a line; the page is where the

@@ -6,6 +6,7 @@ import {
   completeTask,
   createTask,
   PROCRASTINATION_OFF,
+  setSubtaskDone,
   type ProcrastinationState,
   type RewardEntry,
   type Task,
@@ -54,6 +55,14 @@ function ledger(entries: RewardEntry[] = []): WinLedger {
 const EASY = createTask('stretch', null, WED)
 const HARD = ['a', 'b', 'c'].reduce((task, item) => addSubtask(task, item, WED), createTask('report', null, WED))
 
+/** Finishes a checklisted task the only way there is: every part, then its own box (CHK-9, CHK-11). */
+function finish(task: Task, now = WED): Task {
+  return completeTask(
+    task.subtasks.reduce<Task>((current, subtask) => setSubtaskDone(current, subtask.id, true, now), task),
+    now,
+  )
+}
+
 function render(repository: ProcrastinationRepository, today: Task[] | null, now = WED, points = ledger()) {
   return renderHook(({ tasks }: { tasks: Task[] | null }) => useProcrastination(repository, tasks, now, points), {
     initialProps: { tasks: today },
@@ -92,7 +101,7 @@ describe('useProcrastination', () => {
     act(() => { result.current.pickNext() })
     expect(result.current.taskId).toBe(HARD.id)
 
-    const alone = render(memory({ phase: 'focus', taskId: EASY.id, day: '2026-09-16' }), [EASY, completeTask(HARD, WED)])
+    const alone = render(memory({ phase: 'focus', taskId: EASY.id, day: '2026-09-16' }), [EASY, finish(HARD)])
     expect(alone.result.current.hasOtherTask).toBe(false)
   })
 

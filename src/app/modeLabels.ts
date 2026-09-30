@@ -31,20 +31,17 @@ export const MODE_POINTS: Record<ModeView, readonly string[]> = {
     'Focus on just one important task.',
     'Dims everything else — the other tasks, the progress bars, the quote, and the menu apart from "Today", which stays lit as the way back to the task.',
     'Could be activated by pressing "P" button.',
-    'Ends here: turn the switch above off, or press "P" again on "Today". The banner beside the task carries no way out, so the mode is left on purpose rather than by reflex.',
   ],
   'modes/warm-up': [
     'Lets you increase your productivity gradually. No rush, no extra effort, and no promises to yourself you end up breaking.',
     'Allows only one new habit a day: 1 habit on day one, 2 habits on day two and so on.',
     'Ends automatically after 30 days.',
   ],
+  // What the nudge watches for and what it names is the line it is summed up in
+  // (`MODE_SUMMARY`), and what there is to set is the "Settings" below; this is
+  // the rest of it — how it arrives, and how far its reach goes.
   'modes/nudge': [
-    'Watches for a stretch with nothing finished, and says something once it has run as long as you set under "Settings".',
-    'Names the one task to pick up next — the one Today leads with. Press the notice to go straight to it.',
-    'Says it at the foot of the app, and as a browser notification too where the browser allows one.',
-    'Reaches you while the app is open — a tab here, or the installed app running. Nothing arrives once it is closed, because nothing is left running to send it.',
-    'Can be held to certain hours, so it says nothing overnight. Set them under "Settings".',
-    'Is kept on this device only: the browser is what allows notifications, so being nudged here is not being nudged everywhere.',
+    'Shows a notice at the foot of the app — press it to go straight to that task — and a browser notification too, but only while the app is open.',
   ],
 }
 

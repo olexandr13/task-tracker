@@ -56,6 +56,8 @@ interface ModeSources {
     /** The span of quiet it waits for, and the hours it may speak in (NUDGE-12). */
     quietHours: QuietHours
     window: NudgeWindow | null
+    /** Whether the setting is still on its way from the account (MODE-8). */
+    loading: boolean
     onTurnOn: (on: boolean) => void
   }
 }
@@ -89,13 +91,13 @@ export function modeStates({ procrastination, warmUp, nudge }: ModeSources): Rec
     'modes/nudge': {
       view: 'modes/nudge',
       on: nudge.on,
-      status: describeNudgeStatus(nudge.on, nudge.quietHours, nudge.window),
-      // Nothing blocks it and nothing is waited for: the setting is this
-      // device's and is read the moment the app opens (STORE-30), and what the
-      // nudge watches — the tasks — it waits for itself (NUDGE-5). A browser
-      // that will post no notification does not stand in its way either: the
-      // notice is at the foot of the app whatever the browser allows (NUDGE-10).
-      blocked: null,
+      status: nudge.loading ? MODE_LOADING : describeNudgeStatus(nudge.on, nudge.quietHours, nudge.window),
+      // Nothing blocks it once its setting is here: what the nudge watches —
+      // the tasks — it waits for itself (NUDGE-5), and a browser that will post
+      // no notification does not stand in its way either, the notice being at
+      // the foot of the app whatever the browser allows (NUDGE-10). The setting
+      // is the account's, so it is waited for as the other modes are (STORE-46).
+      blocked: nudge.loading ? MODE_NOT_LOADED : null,
       toggle: nudge.onTurnOn,
     },
   }

@@ -17,8 +17,9 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 ## A habit's card
 
 - **HAB-4** Each habit has a box to tick **today** off, and to take today back. It is the task's
-  own box (UI-47), so it does the same as ticking the task off in a list, checklist and all (CHK),
-  and the lists show the change. A habit with a time goal has no clock on its card; its box still
+  own box (UI-47), so it does the same as ticking the task off in a list — and refuses the same,
+  where the habit has a checklist with a part still to do today (CHK-11, CHK-31). The lists show
+  the change. A habit with a time goal has no clock on its card; its box still
   invites a tick once today's time is in (TIME-13).
 - **HAB-5** **Current streak**: the days in a row it was done, counting back from today. While
   today is still to do, the count starts from yesterday instead: today is still in play until it
@@ -36,13 +37,11 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   week on the right. Every other row names its weekday, and a month's name sits over the week that
   holds its first Monday. As many weeks show as the card has room for, up to a year. A phone shows
   about four months.
-- **HAB-10** A day in the grid is **done** (green), **missed** (a darker gap), **skipped** (pale,
-  drawn as an outline rather than filled in, HAB-31), **not tracked** (pale in the same way but with
-  no outline, before the habit started) or **today still to do** (a lighter outlined square). A rest
-  is pale because it asked nothing of the habit (HAB-8), and a square this small says it with no
-  colour of its own — the yellow a rest is drawn in is on the box that ticks today off, not here —
-  so the outline is what keeps it from being read as a miss or as a day before the habit began.
-  Days after today are left empty. A legend at the bottom of the page names the shades, and only while any
+- **HAB-10** A day in the grid is **done** (green), **missed** (a darker gap), **skipped** (a soft
+  yellow, the same shade the day's box turns when a rest is marked in it, HAB-31), **not tracked**
+  (pale, before the habit started) or **today still to do** (a lighter outlined square). A rest is
+  yellow rather than plain so it is told apart from a miss and from a day before the habit began,
+  without being read as an alarm the way red would. Days after today are left empty. A legend at the bottom of the page names the shades, and only while any
   habit's card is open (HAB-21) — a folded card shows no grid, only its last week (HAB-21), whose
   green reads without one.
   A day can be clicked (on a folded card: that a habit is tapped to see its days, HAB-21). Pointing at a day shows its date and what it was: `Wed, Sep 16 · Done`.
@@ -74,7 +73,10 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   by mistake taken back. Clicking it again undoes the change. A skipped day (HAB-31) clicked is
   done after all, done winning (RPT-36); taking that tick back leaves it skipped again.
 - **HAB-17** Today in the grid is the same as the box on the card (HAB-4): the task is ticked off or
-  reopened, checklist and all.
+  reopened — so today is refused while the checklist has a part to do (CHK-11), and the way to mark it
+  is to tick the parts first and then the day. Ticking the parts alone marks nothing (CHK-9), and
+  taking the day back leaves them ticked (CHK-12). An earlier day is only the history, and is marked
+  whatever the checklist says: the list speaks for the occurrence in play, not for a day gone by.
 - **HAB-18** A day after today cannot be marked. It is not a button at all.
 - **HAB-19** On the keyboard the grid is **one stop for Tab**, landing on today, or on the day last
   moved to while the grid had focus. Left and right move a week, to the same weekday. Up and down
@@ -165,8 +167,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   (RPT-34): the habit is due tomorrow, leaves Today, and records nothing — and today reads as
   **skipped** on the card and in the grid rather than as missed. The card's **box** turns a soft
   yellow with the skip's mark in it instead of a tick, as does the box at the head of the
-  sheet and on the task's row; the grid draws the day pale instead (HAB-10), a square that size
-  having no room for a mark. A screen reader hears `Mark "stretch" as done today: skipped
+  sheet and on the task's row; the grid draws the day in the same soft yellow (HAB-10), a square
+  that size having no room for a mark. A screen reader hears `Mark "stretch" as done today: skipped
   today`, and ticking it does today after all. A rest is not a miss: the streak
   runs on across it (HAB-5, HAB-6) and it is left out of the days the rates count (HAB-8). For the
   rest of the day the button reads **Skipped**, pressed, and pressing it again takes the skip back,

@@ -30,6 +30,7 @@ function sources(over: {
       on: over.nudgeOn ?? false,
       quietHours: over.quietHours ?? 2,
       window: over.window ?? null,
+      loading,
       onTurnOn: vi.fn(),
     },
   }
@@ -82,16 +83,17 @@ describe('modeStates', () => {
     })
   })
 
-  it('never blocks the nudge: its notice shows on screen whatever the browser allows (MODE-6, NUDGE-10)', () => {
-    expect(modeStates(sources({ loading: true }))['modes/nudge'].blocked).toBeNull()
+  it('never blocks the nudge once its setting is here, whatever the browser allows (MODE-6, NUDGE-10)', () => {
+    expect(modeStates(sources())['modes/nudge'].blocked).toBeNull()
   })
 
   it('says a mode is still loading rather than disabled, and will not switch it (MODE-8)', () => {
     // A warm-up not read yet reads as no warm-up; turning it on here would start
-    // a fresh month over the one already running.
+    // a fresh month over the one already running. A nudge setting not read yet
+    // reads as off, which the switch would then send back to the account.
     const modes = modeStates(sources({ loading: true, progress: null }))
 
-    for (const mode of ['modes/procrastination', 'modes/warm-up'] as const) {
+    for (const mode of ['modes/procrastination', 'modes/warm-up', 'modes/nudge'] as const) {
       expect(modes[mode].status).toEqual({ state: 'Loading…', detail: null })
       expect(modes[mode].blocked).toBe('Still loading.')
     }

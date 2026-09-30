@@ -108,7 +108,7 @@ export function reorderSubtasks(
 
 /**
  * Ticking, renaming and removing an item are all operations on the **task**
- * that holds it — a tick can finish the task, and removing the last open item
- * can too — so they live in ./task with the rule that keeps the two in step,
+ * that holds it — a tick can reopen the task, though it can never finish one
+ * (CHK-9) — so they live in ./task with the rule that keeps the two in step,
  * rather than here where a subtask cannot see the task it belongs to.
  */

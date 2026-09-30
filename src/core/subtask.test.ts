@@ -5,6 +5,7 @@ import {
   completeTask,
   countSubtasks,
   createTask,
+  hasOpenSubtasks,
   hasSubtasks,
   insertSubtask,
   isComplete,
@@ -27,9 +28,14 @@ function withChecklist(titles: readonly string[], repeat: Task['repeat'] = null)
   return titles.reduce((task, title) => addSubtask(task, title, NOW), createTask('ship it', repeat, NOW))
 }
 
-/** Ticks every item, oldest first, and hands back the task that leaves. */
+/** Ticks every item, oldest first, and hands back the task that leaves — still todo (CHK-9). */
 function tickAll(task: Task, now: Date = LATER): Task {
   return task.subtasks.reduce<Task>((current, subtask) => setSubtaskDone(current, subtask.id, true, now), task)
+}
+
+/** Finishes a checklisted task the only way there is: every part, then its own box (CHK-9, CHK-11). */
+function finish(task: Task, now: Date = LATER): Task {
+  return completeTask(tickAll(task, now), now)
 }
 
 describe('addSubtask', () => {
@@ -78,7 +84,7 @@ describe('insertSubtask', () => {
   })
 
   it('refuses a blank title and reopens a finished task, as adding does', () => {
-    const finished = tickAll(withChecklist(['crate it', 'post it']))
+    const finished = finish(withChecklist(['crate it', 'post it']))
 
     expect(() => insertSubtask(finished, 1, '  ', LATER)).toThrow(EmptyTitleError)
     expect(isComplete(insertSubtask(finished, 1, 'label it', LATER), LATER)).toBe(false)
@@ -94,23 +100,24 @@ describe('setSubtaskDone', () => {
     expect(countSubtasks(partly, LATER)).toEqual({ done: 1, total: 2 })
   })
 
-  it('completes the task when the last item is ticked, and stamps it', () => {
-    const finished = tickAll(withChecklist(['crate it', 'label it']))
+  it('leaves the task todo when the last item is ticked, for its own box to finish (CHK-9)', () => {
+    const ticked = tickAll(withChecklist(['crate it', 'label it']))
 
-    expect(isComplete(finished, LATER)).toBe(true)
-    expect(finished.completedAt).toBe(LATER.toISOString())
+    expect(countSubtasks(ticked, LATER)).toEqual({ done: 2, total: 2 })
+    expect(isComplete(ticked, LATER)).toBe(false)
+    expect(ticked.completedAt).toBeNull()
   })
 
-  it('reopens the task when a tick is taken back', () => {
-    const finished = tickAll(withChecklist(['crate it', 'label it']))
+  it('reopens the task when a tick is taken back (CHK-10)', () => {
+    const finished = finish(withChecklist(['crate it', 'label it']))
     const reopened = setSubtaskDone(finished, finished.subtasks[0].id, false, LATER)
 
     expect(isComplete(reopened, LATER)).toBe(false)
     expect(reopened.completedAt).toBeNull()
   })
 
-  it('leaves the other items alone when one tick is taken back', () => {
-    const finished = tickAll(withChecklist(['crate it', 'label it', 'post it']))
+  it('leaves the other items alone when one tick is taken back (CHK-10)', () => {
+    const finished = finish(withChecklist(['crate it', 'label it', 'post it']))
     const reopened = setSubtaskDone(finished, finished.subtasks[0].id, false, LATER)
 
     expect(countSubtasks(reopened, LATER)).toEqual({ done: 2, total: 3 })
@@ -132,7 +139,7 @@ describe('setSubtaskDone', () => {
 
 describe('a checklist under a repeating task', () => {
   it('comes back with the task when the next occurrence arrives', () => {
-    const finished = tickAll(withChecklist(['stretch', 'push-ups'], { kind: 'daily' }))
+    const finished = finish(withChecklist(['stretch', 'push-ups'], { kind: 'daily' }))
 
     expect(isComplete(finished, LATER)).toBe(true)
     expect(countSubtasks(finished, LATER)).toEqual({ done: 2, total: 2 })
@@ -158,30 +165,61 @@ describe('a checklist under a repeating task', () => {
   })
 })
 
-describe('completeTask and uncompleteTask, with a checklist', () => {
-  it('ticks the whole list when the task itself is ticked', () => {
-    const task = withChecklist(['crate it', 'label it'])
-    const done = completeTask(task, LATER)
-
-    expect(countSubtasks(done, LATER)).toEqual({ done: 2, total: 2 })
-    expect(done.subtasks.every((subtask) => subtask.completedAt === LATER.toISOString())).toBe(true)
+describe('hasOpenSubtasks', () => {
+  it('is false with no checklist at all, which leaves the task to its own box', () => {
+    expect(hasOpenSubtasks(createTask('ship it', null, NOW), LATER)).toBe(false)
   })
 
-  it('keeps a tick that was already there rather than restamping it', () => {
+  it('is true while any item is still to tick, however many are done', () => {
+    const task = withChecklist(['crate it', 'label it'])
+
+    expect(hasOpenSubtasks(task, LATER)).toBe(true)
+    expect(hasOpenSubtasks(setSubtaskDone(task, task.subtasks[0].id, true, NOW), LATER)).toBe(true)
+    expect(hasOpenSubtasks(tickAll(task), LATER)).toBe(false)
+  })
+
+  it('opens again with the next occurrence of a repeating task (CHK-16)', () => {
+    const daily = tickAll(withChecklist(['crate it'], { kind: 'daily' }), NOW)
+
+    expect(hasOpenSubtasks(daily, LATER)).toBe(false)
+    expect(hasOpenSubtasks(daily, TOMORROW)).toBe(true)
+  })
+})
+
+describe('completeTask and uncompleteTask, with a checklist', () => {
+  it('refuses the task its own box while an item is open, changing nothing (CHK-11)', () => {
     const task = withChecklist(['crate it', 'label it'])
     const partly = setSubtaskDone(task, task.subtasks[0].id, true, NOW)
-    const done = completeTask(partly, LATER)
 
-    expect(done.subtasks[0].completedAt).toBe(NOW.toISOString())
-    expect(done.subtasks[1].completedAt).toBe(LATER.toISOString())
+    expect(completeTask(task, LATER)).toBe(task)
+    expect(completeTask(partly, LATER)).toBe(partly)
+    expect(countSubtasks(partly, LATER)).toEqual({ done: 1, total: 2 })
   })
 
-  it('clears the whole list when the task itself is unticked', () => {
-    const done = completeTask(withChecklist(['crate it', 'label it']), LATER)
+  it('refuses a repeating task whose list has come back open, day after day (CHK-11, CHK-16)', () => {
+    const daily = finish(withChecklist(['crate it'], { kind: 'daily' }), NOW)
+
+    expect(isComplete(daily, LATER)).toBe(true)
+    expect(completeTask(daily, TOMORROW)).toBe(daily)
+    expect(isComplete(daily, TOMORROW)).toBe(false)
+  })
+
+  it('has nothing to refuse once every item is ticked, and stamps the box (CHK-9)', () => {
+    const ticked = tickAll(withChecklist(['crate it', 'label it']), NOW)
+    const done = completeTask(ticked, LATER)
+
+    expect(isComplete(done, LATER)).toBe(true)
+    expect(done.completedAt).toBe(LATER.toISOString())
+    expect(countSubtasks(done, LATER)).toEqual({ done: 2, total: 2 })
+  })
+
+  it('leaves the whole list as it was when the task itself is unticked (CHK-12)', () => {
+    const done = finish(withChecklist(['crate it', 'label it']))
     const reopened = uncompleteTask(done, LATER)
 
-    expect(countSubtasks(reopened, LATER)).toEqual({ done: 0, total: 2 })
-    expect(reopened.subtasks.every((subtask) => subtask.completedAt === null)).toBe(true)
+    expect(isComplete(reopened, LATER)).toBe(false)
+    expect(countSubtasks(reopened, LATER)).toEqual({ done: 2, total: 2 })
+    expect(reopened.subtasks).toEqual(done.subtasks)
   })
 })
 
@@ -194,7 +232,7 @@ describe('renameSubtask', () => {
   })
 
   it('keeps the id and the tick, so a rename cannot finish or reopen anything', () => {
-    const finished = tickAll(withChecklist(['crate it']))
+    const finished = finish(withChecklist(['crate it']))
     const renamed = renameSubtask(finished, finished.subtasks[0].id, 'crate it properly')
 
     expect(renamed.subtasks[0].id).toBe(finished.subtasks[0].id)
@@ -217,15 +255,17 @@ describe('removeSubtask', () => {
     expect(shorter.subtasks.map((subtask) => subtask.title)).toEqual(['label it'])
   })
 
-  it('completes the task when the item removed was the last one still open', () => {
+  it('leaves the task todo when the item removed was the last one still open (CHK-14)', () => {
     const task = withChecklist(['crate it', 'label it'])
     const partly = setSubtaskDone(task, task.subtasks[0].id, true, LATER)
+    const shorter = removeSubtask(partly, partly.subtasks[1].id, LATER)
 
-    expect(isComplete(removeSubtask(partly, partly.subtasks[1].id, LATER), LATER)).toBe(true)
+    expect(isComplete(shorter, LATER)).toBe(false)
+    expect(completeTask(shorter, LATER).completedAt).toBe(LATER.toISOString())
   })
 
   it('leaves a task emptied of its checklist to its own box', () => {
-    const finished = tickAll(withChecklist(['crate it']))
+    const finished = finish(withChecklist(['crate it']))
     const emptied = removeSubtask(finished, finished.subtasks[0].id, LATER)
 
     expect(hasSubtasks(emptied)).toBe(false)
@@ -311,7 +351,7 @@ describe('moveSubtask', () => {
 
 describe('setRepeat, with a checklist', () => {
   it('lets go of ticks from an occurrence that has passed when the rule is dropped', () => {
-    const finished = tickAll(withChecklist(['stretch', 'push-ups'], { kind: 'daily' }))
+    const finished = finish(withChecklist(['stretch', 'push-ups'], { kind: 'daily' }))
 
     // Tomorrow the task reads as todo and so does its list; making it a one-off
     // must not harden yesterday's ticks into permanent ones.
@@ -322,7 +362,7 @@ describe('setRepeat, with a checklist', () => {
   })
 
   it('keeps ticks that still count for the occurrence in play', () => {
-    const finished = tickAll(withChecklist(['stretch', 'push-ups'], { kind: 'daily' }))
+    const finished = finish(withChecklist(['stretch', 'push-ups'], { kind: 'daily' }))
     const once = setRepeat(finished, null, LATER)
 
     expect(countSubtasks(once, LATER)).toEqual({ done: 2, total: 2 })

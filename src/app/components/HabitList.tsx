@@ -4,6 +4,7 @@ import {
   habitLastDays,
   habitRate,
   habitStats,
+  hasOpenSubtasks,
   isComplete,
   isSkippedToday,
   isTimeGoalReached,
@@ -20,9 +21,11 @@ import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { dragGrip } from '../rowControls'
 import { HABIT_DAY_TONES } from '../habitTones'
 import { textOffsetAtPoint } from '../textOffsetAtPoint'
+import { useCompletionRefusal } from '../useCompletionRefusal'
 import { useSortableTask } from '../useSortableTask'
 import { ChevronIcon } from './ChevronIcon'
 import { CompletionBox } from './CompletionBox'
+import { CompletionRefusal } from './CompletionRefusal'
 import { FlameIcon } from './FlameIcon'
 import { GripIcon } from './GripIcon'
 import { HabitGrid } from './HabitGrid'
@@ -230,6 +233,10 @@ function HabitCard({
 } & Omit<HabitListProps, 'habits' | 'showDetails' | 'revealId'>) {
   const done = isComplete(habit, now)
   const ready = !done && isTimeGoalReached(habit, now)
+  // A habit's checklist comes back open with every occurrence (CHK-16), so its
+  // box asks for the parts each day before it will tick the day off (CHK-11).
+  const { refused, refuse } = useCompletionRefusal()
+  const blocked = !done && hasOpenSubtasks(habit, now)
   const { currentStreak, bestStreak } = habitStats(habit, now)
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(() => toDraft(habit.repeat, now))
@@ -364,7 +371,13 @@ function HabitCard({
       // grip, which is where these listeners check a key press came from — so
       // the grid's own arrow keys and Space (HAB-19) are left alone.
       {...listeners}
-      className={`group relative flex touch-manipulation flex-col rounded-xl border bg-white dark:bg-neutral-900 ${surface}`}
+      className={[
+        `group relative flex touch-manipulation flex-col rounded-xl border bg-white dark:bg-neutral-900 ${surface}`,
+        // The card shakes whole, as a row does: it is the habit that is not done.
+        refused && 'completion-refusal-shake',
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
       {/* In the page's gutter, so it takes nothing from the card. Shown on hover, and where the keyboard reaches it. */}
       <button
@@ -388,6 +401,8 @@ function HabitCard({
           ready={ready}
           skipped={!done && isSkippedToday(habit, now)}
           today
+          blocked={blocked}
+          onBlocked={refuse}
           onComplete={() => { actions.complete(habit.id) }}
           onUncomplete={() => { actions.uncomplete(habit.id) }}
           className="relative z-10 mt-0.5 md:mt-0"
@@ -395,6 +410,8 @@ function HabitCard({
 
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <h2 className="text-base font-medium break-words md:text-sm">{habit.title}</h2>
+          {/* In the title's own column, under the words, where the card's glance sits. */}
+          {refused && <CompletionRefusal />}
           {!isOpen && <Glance habit={habit} streak={currentStreak} now={now} />}
         </div>
 

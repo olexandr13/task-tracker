@@ -6,6 +6,7 @@ import {
   type KnownRecords,
 } from './backupRepository'
 import { clearGuestLists, createLocalListRepository, loadGuestLists } from './localListRepository'
+import { clearGuestNudge, createLocalNudgeRepository, loadGuestNudge } from './localNudgeRepository'
 import { clearGuestPrizes, createLocalPrizeRepository, loadGuestPrizes } from './localPrizeRepository'
 import { clearGuestRewards, loadGuestLedger, replaceGuestLedger } from './localRewardRepository'
 import { clearGuestTags, createLocalTagRepository, loadGuestTags } from './localTagRepository'
@@ -23,6 +24,7 @@ export function createLocalBackupRepository(): BackupRepository {
   const tags = createLocalTagRepository()
   const prizes = createLocalPrizeRepository()
   const warmUp = createLocalWarmUpRepository()
+  const nudge = createLocalNudgeRepository()
 
   return {
     async exportAll() {
@@ -37,6 +39,7 @@ export function createLocalBackupRepository(): BackupRepository {
         bonuses: ledger.bonuses,
         pointValue: ledger.pointValue,
         warmUp: loadGuestWarmUp(),
+        nudge: loadGuestNudge(),
       }
     },
 
@@ -53,6 +56,7 @@ export function createLocalBackupRepository(): BackupRepository {
         bonuses: ledger.bonuses,
         pointValue: ledger.pointValue,
         warmUp: loadGuestWarmUp(),
+        nudge: loadGuestNudge(),
         days: daysKnown(ledger.entries),
       }
 
@@ -74,8 +78,9 @@ export function createLocalBackupRepository(): BackupRepository {
         ledger.pointValue ?? fresh.pointValue,
       )
 
-      // The file's warm-up only where there is none here already (`newRecords`).
+      // The file's warm-up and nudge only where there is none here already (`newRecords`).
       if (fresh.warmUp !== null) await warmUp.importWarmUp(fresh.warmUp)
+      if (fresh.nudge !== null) await nudge.importNudge(fresh.nudge)
 
       return { added: countRecords(fresh), alreadyHere }
     },
@@ -100,6 +105,7 @@ export function clearGuestAccount(): void {
   clearGuestPrizes()
   clearGuestRewards()
   clearGuestWarmUp()
+  clearGuestNudge()
   // Today's mode goes with them; it is the day's state, not a record (STORE-45).
   clearGuestProcrastination()
 }

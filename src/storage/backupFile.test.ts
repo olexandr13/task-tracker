@@ -16,6 +16,8 @@ import {
 import { backupFileName, BACKUP_FORMAT, BACKUP_VERSION, readBackupFile, writeBackupFile } from './backupFile'
 import type { AccountData } from './backupRepository'
 import { LIST_SCHEMA_VERSION } from './listSchema'
+import type { NudgePreference } from './nudgeRepository'
+import { NUDGE_SCHEMA_VERSION } from './nudgeSchema'
 import { PRIZE_SCHEMA_VERSION } from './prizeSchema'
 import { REWARD_SCHEMA_VERSION } from './rewardSchema'
 import { TAG_SCHEMA_VERSION } from './tagSchema'
@@ -39,6 +41,7 @@ const CHOCOLATE = createPrize('Chocolate', 20, 'prize', AT)
 const BONUSES: PeriodBonuses = { today: 10, week: 40, month: null }
 const UAH = createPointValue(2.5)
 const WARMING_UP = startWarmUp(AT)
+const NUDGING: NudgePreference = { on: true, quietHours: 3, window: { from: '09:00', to: '22:00' } }
 
 const DATA: AccountData = {
   tasks: [DONE, TRASHED],
@@ -50,6 +53,7 @@ const DATA: AccountData = {
   bonuses: BONUSES,
   pointValue: UAH,
   warmUp: WARMING_UP,
+  nudge: NUDGING,
 }
 
 function fileWith(changes: Record<string, unknown>): string {
@@ -80,6 +84,7 @@ describe('writing a backup', () => {
         { version: REWARD_SCHEMA_VERSION, goal: { period: 'week', points: 40 } },
       ],
       rewardSettings: [{ version: REWARD_SCHEMA_VERSION, name: 'pointValue', value: UAH }],
+      nudge: [{ version: NUDGE_SCHEMA_VERSION, name: 'nudge', nudge: NUDGING }],
     })
   })
 
@@ -123,38 +128,56 @@ describe('reading a backup', () => {
         rewardGoals: undefined,
         rewardSettings: undefined,
         warmUp: undefined,
+        nudge: undefined,
       }),
     )
 
     expect(read).toEqual({
-      data: { ...DATA, tags: [], prizes: [], bonuses: NO_BONUSES, pointValue: null, warmUp: null },
+      data: { ...DATA, tags: [], prizes: [], bonuses: NO_BONUSES, pointValue: null, warmUp: null, nudge: null },
       unreadable: 0,
     })
   })
 
   it('reads a file from before there was a bonus as setting none (BAK-13)', () => {
     const read = readBackupFile(
-      fileWith({ version: 2, prizes: undefined, rewardGoals: undefined, rewardSettings: undefined, warmUp: undefined }),
+      fileWith({
+        version: 2,
+        prizes: undefined,
+        rewardGoals: undefined,
+        rewardSettings: undefined,
+        warmUp: undefined,
+        nudge: undefined,
+      }),
     )
 
     expect(read).toEqual({
-      data: { ...DATA, prizes: [], bonuses: NO_BONUSES, pointValue: null, warmUp: null },
+      data: { ...DATA, prizes: [], bonuses: NO_BONUSES, pointValue: null, warmUp: null, nudge: null },
       unreadable: 0,
     })
   })
 
   it('reads a file from before the wishlist as holding no prizes and no point value (BAK-14)', () => {
     const read = readBackupFile(
-      fileWith({ version: 3, prizes: undefined, rewardSettings: undefined, warmUp: undefined }),
+      fileWith({ version: 3, prizes: undefined, rewardSettings: undefined, warmUp: undefined, nudge: undefined }),
     )
 
-    expect(read).toEqual({ data: { ...DATA, prizes: [], pointValue: null, warmUp: null }, unreadable: 0 })
+    expect(read).toEqual({
+      data: { ...DATA, prizes: [], pointValue: null, warmUp: null, nudge: null },
+      unreadable: 0,
+    })
   })
 
   it('reads a file from before there was a warm-up as having none under way (BAK-15)', () => {
-    const read = readBackupFile(fileWith({ version: 4, warmUp: undefined }))
+    const read = readBackupFile(fileWith({ version: 4, warmUp: undefined, nudge: undefined }))
 
-    expect(read).toEqual({ data: { ...DATA, warmUp: null }, unreadable: 0 })
+    expect(read).toEqual({ data: { ...DATA, warmUp: null, nudge: null }, unreadable: 0 })
+  })
+
+  it('reads a file from before the nudge synced as asking for none (BAK-16)', () => {
+    // Version 5 kept the nudge on the device, so no file made then holds one.
+    const read = readBackupFile(fileWith({ version: 5, nudge: undefined }))
+
+    expect(read).toEqual({ data: { ...DATA, nudge: null }, unreadable: 0 })
   })
 
   it('says so when a backup was made by a newer version of the app (BAK-9)', () => {
@@ -190,6 +213,7 @@ describe('reading a backup', () => {
         bonuses: BONUSES,
         pointValue: UAH,
         warmUp: WARMING_UP,
+        nudge: NUDGING,
       },
       unreadable: 6,
     })

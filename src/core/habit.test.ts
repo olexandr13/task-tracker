@@ -20,6 +20,7 @@ import {
   isComplete,
   setRepeat,
   setStartDay,
+  setSubtaskDone,
   type Task,
 } from './task'
 
@@ -337,12 +338,19 @@ describe('setDoneOnDay (HAB-16 to HAB-20)', () => {
     expect(setDoneOnDay(once, '2026-09-13', false, WED_16)).toMatchObject({ status: 'todo', completedAt: null })
   })
 
-  it('ticks today through the task itself, checklist and all (HAB-17)', () => {
+  it('ticks today through the task itself, which an open checklist refuses (HAB-17, CHK-11)', () => {
     const task = addSubtask(createTask('stretch', DAILY, MON_14), 'hamstrings', MON_14)
-    const done = setDoneOnDay(task, '2026-09-16', true, WED_16)
+
+    expect(setDoneOnDay(task, '2026-09-16', true, WED_16)).toBe(task)
+
+    // The items are the way through to the box, which is what records the day (CHK-9).
+    const ticked = setSubtaskDone(task, task.subtasks[0].id, true, WED_16)
+
+    expect(isComplete(ticked, WED_16)).toBe(false)
+
+    const done = setDoneOnDay(ticked, '2026-09-16', true, WED_16)
 
     expect(isComplete(done, WED_16)).toBe(true)
-    expect(done.subtasks[0].completedAt).toBe(WED_16.toISOString())
     expect(done.doneDays).toEqual(['2026-09-16'])
     expect(isComplete(setDoneOnDay(done, '2026-09-16', false, WED_16), WED_16)).toBe(false)
   })

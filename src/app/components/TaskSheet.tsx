@@ -4,6 +4,7 @@ import {
   currentEntries,
   defaultReward,
   dueDay,
+  hasOpenSubtasks,
   isComplete,
   isOverdue,
   isSkippedToday,
@@ -18,6 +19,7 @@ import {
 } from '../../core'
 import type { SkipChoice } from '../dateChoices'
 import type { RepeatDraft } from '../repeatDraft'
+import { useCompletionRefusal } from '../useCompletionRefusal'
 import { describeTimeProgress } from '../durationLabels'
 import { describeDueDate, describeShortDate, describeTimeOfDay } from '../dueLabels'
 import { describeRepeatBriefly } from '../repeatLabels'
@@ -29,6 +31,7 @@ import {
 } from '../rowControls'
 import { BottomSheet } from './BottomSheet'
 import { CompletionBox } from './CompletionBox'
+import { CompletionRefusal } from './CompletionRefusal'
 import { DuplicateIcon } from './DuplicateIcon'
 import { ListPicker } from './ListPicker'
 import { RewardPicker } from './RewardPicker'
@@ -103,6 +106,10 @@ export function TaskSheet({
     skipTo === null ? undefined : { to: skipTo, onSkip: () => { actions.skip(task.id) } }
   // Today passed over and not done after all: the foot's Skip reads as pressed and takes it back (HAB-31).
   const skippedToday = !done && isSkippedToday(task, now)
+  // The sheet holds the checklist itself, so a refused tick and the parts it is
+  // waiting on are on screen together (CHK-11).
+  const { refused, refuse } = useCompletionRefusal()
+  const blocked = !done && hasOpenSubtasks(task, now)
 
   // What the icons hold, spelled out under them (UI-63). A repeating task's days
   // come from its rule, so the rule is what is said, and the hour rides with
@@ -123,17 +130,26 @@ export function TaskSheet({
 
   return (
     <BottomSheet label={`Details of "${task.title}"`} onClose={onClose}>
-      <div className="flex shrink-0 items-start gap-3 px-4 pb-3">
+      {/* The head alone shakes, not the sheet around it: a sheet that moved would
+          read as being dismissed rather than as a tick turned down (CHK-11). */}
+      <div
+        className={`flex shrink-0 items-start gap-3 px-4 pb-3${refused ? ' completion-refusal-shake' : ''}`}
+      >
         <CompletionBox
           title={task.title}
           done={done}
           ready={ready}
           skipped={skippedToday}
+          blocked={blocked}
+          onBlocked={refuse}
           onComplete={() => { actions.complete(task.id) }}
           onUncomplete={() => { actions.uncomplete(task.id) }}
         />
         <div className="flex min-h-8 min-w-0 flex-1 items-center">{title}</div>
       </div>
+
+      {/* Under the title, where the box's own column ends, as it is on a row. */}
+      {refused && <CompletionRefusal className="shrink-0 px-4 pb-3 pl-12" />}
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <SheetActions

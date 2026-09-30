@@ -504,6 +504,67 @@ describe('the checklist count on a task row', () => {
   })
 })
 
+describe('a row that will not tick its task off (CHK-11)', () => {
+  /** A task whose checklist has `ticked` items done and the rest still to do. */
+  function withChecklist(ticked: number, total: number) {
+    const user = userEvent.setup()
+    const complete = vi.fn()
+    const task: Task = {
+      ...createTask(TASK, null, NOW),
+      subtasks: Array.from({ length: total }, (_, index) => ({
+        ...createSubtask(`part ${String(index + 1)}`, NOW),
+        completedAt: index < ticked ? NOW.toISOString() : null,
+      })),
+    }
+    render(
+      <ul>
+        <TaskItem actions={{ ...NO_TASK_ACTIONS, complete }} task={task} now={NOW} knownTags={[]} lists={[]} />
+      </ul>,
+    )
+    return { user, complete }
+  }
+
+  function box() {
+    return screen.getByRole('button', { name: `Mark "${TASK}" as done` })
+  }
+
+  it('says so and shakes, and leaves the task alone', async () => {
+    const { user, complete } = withChecklist(1, 2)
+
+    await user.click(box())
+
+    expect(screen.getByRole('alert')).toHaveProperty('textContent', 'Complete subtasks first')
+    expect(screen.getAllByRole('listitem')[0].className).toContain('completion-refusal-shake')
+    expect(complete).not.toHaveBeenCalled()
+    expect(box().getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('says nothing until the tick is asked for: a row at rest wears no complaint', () => {
+    withChecklist(1, 2)
+
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.getAllByRole('listitem')[0].className).not.toContain('completion-refusal-shake')
+  })
+
+  it('ticks off as it always did once every item is done', async () => {
+    const { user, complete } = withChecklist(2, 2)
+
+    await user.click(box())
+
+    expect(screen.queryByRole('alert')).toBeNull()
+    await vi.waitFor(() => { expect(complete).toHaveBeenCalledTimes(1) })
+  })
+
+  it('leaves a task with no checklist to its own box', async () => {
+    const { user, complete } = withChecklist(0, 0)
+
+    await user.click(box())
+
+    expect(screen.queryByRole('alert')).toBeNull()
+    await vi.waitFor(() => { expect(complete).toHaveBeenCalledTimes(1) })
+  })
+})
+
 describe('the controls on a task row', () => {
   it('are the set ones only at rest, a task with nothing set showing none (UI-18)', () => {
     setup(null)
@@ -1459,6 +1520,25 @@ describe('on a phone, tapping a task', () => {
     expect(open.getByText('one')).toBeDefined()
   })
 
+  it('turns a tick down in the sheet, beside the checklist it is waiting on (CHK-11)', async () => {
+    const onComplete = vi.fn()
+    const user = userEvent.setup()
+    const task: Task = { ...createTask(TASK, null, NOW), subtasks: [createSubtask('part one', NOW)] }
+    render(
+      <ul>
+        <TaskItem actions={{ ...NO_TASK_ACTIONS, complete: onComplete }} task={task} now={NOW} knownTags={[]} lists={[]} />
+      </ul>,
+    )
+
+    await user.click(screen.getByRole('listitem'))
+    await user.click(within(sheet()).getByRole('button', { name: `Mark "${TASK}" as done` }))
+
+    expect(within(sheet()).getByRole('alert')).toHaveProperty('textContent', 'Complete subtasks first')
+    expect(onComplete).not.toHaveBeenCalled()
+    // The sheet stays put: only its head shakes, so it does not read as being dismissed.
+    expect(sheet().className).not.toContain('completion-refusal-shake')
+  })
+
   it('edits the title only from the sheet (TASK-8, UI-48)', async () => {
     layOutTitle()
     const onRename = vi.fn()
@@ -1620,6 +1700,22 @@ describe('on a phone, tapping a task', () => {
 
       expect(onComplete).toHaveBeenCalledWith(task.id)
       expect(screen.queryByRole('dialog', { name: `Details of "${TASK}"` })).toBeNull()
+    })
+
+    it('refuses a swipe right while the checklist has a part to do (CHK-11)', () => {
+      const onComplete = vi.fn()
+      const task: Task = { ...createTask(TASK, null, NOW), subtasks: [createSubtask('part one', NOW)] }
+      render(
+        <ul>
+          <TaskItem actions={{ ...NO_TASK_ACTIONS, complete: onComplete }} task={task} now={NOW} knownTags={[]} lists={[]} />
+        </ul>,
+      )
+
+      swipe(screen.getByRole('listitem'), 80)
+
+      // The swipe is the same ask as the box, and gets the same answer.
+      expect(onComplete).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveProperty('textContent', 'Complete subtasks first')
     })
 
     it('takes a done task back on a swipe right', () => {

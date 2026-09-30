@@ -17,3 +17,10 @@ export const COMPLETION_SPAN_LABELS: Record<CompletionSpan, string> = {
  * together instead of dividing them by when they were finished.
  */
 export const DONE_LABEL = 'Done'
+
+/**
+ * What a box says when it will not tick a task with an open checklist item on
+ * it (CHK-11). Short, because it is read mid-click: the parts are what the box
+ * is waiting on, and the checklist is already on screen beside the words.
+ */
+export const OPEN_SUBTASKS_REFUSAL = 'Complete subtasks first'

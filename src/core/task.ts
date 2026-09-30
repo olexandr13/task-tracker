@@ -91,10 +91,12 @@ export interface Task {
   readonly dueTime: LocalTime | null
   /**
    * The checklist, in the order it was written. Empty for a task that has no
-   * parts worth naming — which is most of them. A task carrying one is done
-   * exactly when every item on it is; see `syncWithSubtasks`. The items are not
-   * tasks: they never reach a period's count, and they have no trash of their
-   * own. See ./subtask.
+   * parts worth naming — which is most of them. Ticking every part does not
+   * finish the task: it clears the way for the task's own box, which is what
+   * finishes it. What the list will not allow is a part left open under a task
+   * already reading done; see `reopenForOpenSubtasks`. The items are not tasks:
+   * they never reach a period's count, and they have no trash of their own.
+   * See ./subtask.
    */
   readonly subtasks: readonly Subtask[]
   /**
@@ -254,38 +256,38 @@ export function hasDescription(task: Task): boolean {
 }
 
 /**
- * Ticking the task ticks its checklist with it, so a done task never sits there
- * showing open items. That is the task's own box speaking for the whole thing —
- * an item ticked one at a time goes through `setSubtaskDone` instead.
+ * Ticking the task off, which a checklist with an open item on it **refuses**
+ * (CHK-11): the parts are the task, so the box cannot speak past them. Ticking
+ * the parts is what clears the way, and the box is still what finishes the task
+ * (CHK-9) — the list never finishes one on its own. Whoever asked is told
+ * nothing here — the task simply comes back as it was, and saying so is the
+ * screen's job.
+ *
+ * With no checklist, or with every item already ticked for the occurrence in
+ * play, the box answers for the task as it always did.
  *
  * Returns a new task; the one passed in is never modified.
  */
 export function completeTask(task: Task, now: Date = new Date()): Task {
-  if (isComplete(task, now)) {
+  if (isComplete(task, now) || hasOpenSubtasks(task, now)) {
     return task
   }
 
-  const at = now.toISOString()
-
-  return settleHistory(
-    {
-      ...task,
-      status: 'done',
-      completedAt: at,
-      subtasks: task.subtasks.map((subtask) =>
-        isSubtaskComplete(subtask, task.repeat, now) ? subtask : { ...subtask, completedAt: at },
-      ),
-    },
-    now,
-  )
+  return settleHistory({ ...task, status: 'done', completedAt: now.toISOString() }, now)
 }
 
 /**
  * The inverse of completing: the task goes back to todo and forgets when it was
- * done, and its checklist is cleared with it for the same reason completing
- * ticked it. For a repeating task that undoes the occurrence in play, and where
- * that occurrence has gone by, hands the task on to the rule's next day rather
- * than back onto a day it can no longer do anything about (RPT-38).
+ * done. Its checklist is **left exactly as it was** (CHK-12) — a task whose
+ * parts are all ticked while the task itself is not is the ordinary state of a
+ * checklisted task, the one every one of them passes through on the way to
+ * being finished, so reopening lands back in it rather than throwing away work
+ * nobody undid. Un-ticking the task is not un-ticking one item of five, which
+ * `setSubtaskDone` does and which leaves the other four alone (CHK-10).
+ *
+ * For a repeating task that undoes the occurrence in play, and where that
+ * occurrence has gone by, hands the task on to the rule's next day rather than
+ * back onto a day it can no longer do anything about (RPT-38).
  *
  * Returns a new task; the one passed in is never modified.
  */
@@ -294,17 +296,7 @@ export function uncompleteTask(task: Task, now: Date = new Date()): Task {
     return task
   }
 
-  return reopen(
-    {
-      ...task,
-      status: 'todo',
-      completedAt: null,
-      subtasks: task.subtasks.map((subtask) =>
-        subtask.completedAt === null ? subtask : { ...subtask, completedAt: null },
-      ),
-    },
-    now,
-  )
+  return reopen({ ...task, status: 'todo', completedAt: null }, now)
 }
 
 /**
@@ -615,32 +607,28 @@ export function isRepeating(task: Task): boolean {
 }
 
 /**
- * A task with a checklist is done exactly when every item on it is.
+ * Puts a task back to todo where its checklist has a part still to tick.
  *
- * This runs after every change to the list, so the task's stored completion can
- * never disagree with what the list shows: the last tick finishes the task,
- * taking any tick back reopens it, and so does adding a fresh item to a task
- * already done. A task with no checklist is left to its own box.
+ * This runs after every change to the list, and it works in **one direction
+ * only**: a checklist can reopen a task and can never finish one. Ticking the
+ * last part says the parts are done, not that the task is (CHK-9) — the last
+ * word is the task's own box, which a full list lets through (CHK-11) and which
+ * is where a completion is stamped, earned and undone. What the list cannot be
+ * allowed to leave behind is a task reading done with a part still open: taking
+ * a tick back (CHK-10), or giving something already finished another part
+ * (CHK-13), reopens it, so the box's refusal never has to argue with a tick
+ * that is already there.
  *
- * It settles the task and never the list — unlike `completeTask`, which speaks
- * for the whole thing. That is the difference between unticking one item of five
- * and unticking the task itself: the first must leave the other four alone.
+ * It settles the task and never the list, so unticking one item of five leaves
+ * the other four alone. A task with no checklist, and one whose parts are all
+ * ticked, are both left to their own box.
  */
-function syncWithSubtasks(task: Task, now: Date): Task {
-  if (task.subtasks.length === 0) {
+function reopenForOpenSubtasks(task: Task, now: Date): Task {
+  if (!isComplete(task, now) || !hasOpenSubtasks(task, now)) {
     return task
   }
 
-  const done = isComplete(task, now)
-  const allDone = task.subtasks.every((subtask) => isSubtaskComplete(subtask, task.repeat, now))
-
-  if (allDone === done) {
-    return task
-  }
-
-  return allDone
-    ? settleHistory({ ...task, status: 'done', completedAt: now.toISOString() }, now)
-    : reopen({ ...task, status: 'todo', completedAt: null }, now)
+  return reopen({ ...task, status: 'todo', completedAt: null }, now)
 }
 
 /**
@@ -663,7 +651,7 @@ export function addSubtask(task: Task, title: string, now: Date = new Date()): T
 export function insertSubtask(task: Task, index: number, title: string, now: Date = new Date()): Task {
   const at = Math.min(Math.max(index, 0), task.subtasks.length)
   const subtasks = [...task.subtasks.slice(0, at), createSubtask(title, now), ...task.subtasks.slice(at)]
-  return syncWithSubtasks({ ...task, subtasks }, now)
+  return reopenForOpenSubtasks({ ...task, subtasks }, now)
 }
 
 /**
@@ -686,9 +674,10 @@ export function renameSubtask(task: Task, subtaskId: SubtaskId, title: string): 
 }
 
 /**
- * Takes an item off the list. Removing the last one that was still open finishes
- * the task; emptying the list altogether hands the decision back to the task's
- * own box, which is the only thing left to answer it.
+ * Takes an item off the list. Removing the last one that was still open leaves
+ * the task ready to be ticked off rather than ticking it off (CHK-14); emptying
+ * the list altogether hands the decision back to the task's own box, which is
+ * the only thing left to answer it.
  *
  * Returns a new task; the one passed in is never modified.
  */
@@ -698,7 +687,7 @@ export function removeSubtask(task: Task, subtaskId: SubtaskId, now: Date = new 
     return task
   }
 
-  return syncWithSubtasks({ ...task, subtasks: kept }, now)
+  return reopenForOpenSubtasks({ ...task, subtasks: kept }, now)
 }
 
 /**
@@ -715,7 +704,8 @@ export function moveSubtask(task: Task, subtaskId: SubtaskId, targetId: SubtaskI
 }
 
 /**
- * Ticks one item, or unticks it, and brings the task into line behind it.
+ * Ticks one item, or unticks it. A tick never finishes the task, not even the
+ * last one (CHK-9); an untick reopens a task that was reading done (CHK-10).
  *
  * Returns a new task; the one passed in is never modified.
  */
@@ -734,7 +724,7 @@ export function setSubtaskDone(
     subtask === target ? { ...subtask, completedAt: done ? now.toISOString() : null } : subtask,
   )
 
-  return syncWithSubtasks({ ...task, subtasks }, now)
+  return reopenForOpenSubtasks({ ...task, subtasks }, now)
 }
 
 /** How the checklist stands as of `now` — what a row reads out as "2/5". */
@@ -747,4 +737,17 @@ export function countSubtasks(task: Task, now: Date = new Date()): { done: numbe
 
 export function hasSubtasks(task: Task): boolean {
   return task.subtasks.length > 0
+}
+
+/**
+ * Whether the checklist still has an item to tick for the occurrence in play —
+ * which is what stops the task's own box from finishing it (CHK-11). A task
+ * with no checklist has nothing open and answers for itself.
+ *
+ * Asked by `completeTask`, which refuses, and by the screen, which says so.
+ * A repeating task starts each occurrence with every item open again (CHK-16),
+ * so a daily routine is ticked item by item every day.
+ */
+export function hasOpenSubtasks(task: Task, now: Date = new Date()): boolean {
+  return task.subtasks.some((subtask) => !isSubtaskComplete(subtask, task.repeat, now))
 }

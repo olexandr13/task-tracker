@@ -119,7 +119,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   completes it (or takes a done one back), **left** deletes it the same way the sheet's Delete does
   — into the trash, with the undo toast (TRASH-1, TRASH-3). A short swipe snaps back and does
   nothing. Vertical still scrolls the list, and a hold still picks the row up to move it (TASK-39).
-  The box and the sheet keep doing the same jobs; the swipe is the thumb's way on a resting row.
+  The box and the sheet keep doing the same jobs; the swipe is the thumb's way on a resting row —
+  and it is turned down where the box would be, the checklist still having a part to do (CHK-11).
 - **UI-61** On a phone the app runs to the edges of the screen and keeps clear of what is in the way
   there: the page starts below the notch and keeps off the rounded corners when the phone is turned,
   the bottom bar (UI-4) grows by the height of the home indicator so its tabs sit above it, and the
@@ -452,11 +453,14 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   opens past the edge and fades — and the **task is left where it is** while that plays, for half a
   second. Only then is it ticked off: it greys out and is struck through (TASK-16), and sinks under
   the work still to do (TASK-17), once the tick has landed rather than sliding away from under it.
-  **Clicking the box again before the tick lands takes it back**, and nothing was done. Taking a tick
+  **Clicking the box again before the tick lands takes it back**, and nothing was done. A box that
+  will not finish the task at all — its checklist still having a part to do (CHK-11) — plays no
+  flourish and starts no wait: it turns the click down there and then, and the row says why
+  (CHK-31). Taking a tick
   back from a task already done (TASK-15) happens at once and without the flourish: undoing
   something is quiet. A device asking for less motion is given neither the flourish nor the wait —
-  its tick is done as it is clicked. Finishing a task any other way — a swipe (UI-60), its last
-  checklist item (CHK-9) — moves it as it always did.
+  its tick is done as it is clicked. Finishing a task the other way — a swipe (UI-60) — moves it as
+  it always did.
 
 ---
 

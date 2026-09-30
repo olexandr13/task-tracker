@@ -18,6 +18,7 @@ import {
   type TaskId,
   type WarmUp,
 } from '../core'
+import type { NudgePreference } from './nudgeRepository'
 
 /**
  * Everything an account keeps, in today's shapes: the tasks — the trash too —
@@ -49,6 +50,12 @@ export interface AccountData {
    * account has none of its own.
    */
   readonly warmUp: WarmUp | null
+  /**
+   * How the owner asked to be nudged (NUDGE-9), or null where nothing says. A
+   * setting again: it is counted as none of the records, and an import takes it
+   * only where the account has none of its own.
+   */
+  readonly nudge: NudgePreference | null
 }
 
 /** How many of each kind of record there are. A completion is one entry of the ledger. */
@@ -108,6 +115,8 @@ export interface KnownRecords {
   readonly pointValue: PointValue | null
   /** The warm-up the account has already, or null when it has none. */
   readonly warmUp: WarmUp | null
+  /** How the account already asked to be nudged, or null when it says nothing. */
+  readonly nudge: NudgePreference | null
   /**
    * The tasks each saved day holds an entry for, or null for a day the app
    * cannot read — which is left as it is, so nothing is added to it.
@@ -139,9 +148,10 @@ export function countRecords(data: AccountData): RecordCounts {
  * so an import never makes a second record of one tag. The bonuses and what a
  * point is worth are the things in here that are no records: the file's are
  * taken only where the account has none, and count towards neither what was
- * added nor what was already here. So is the warm-up: a file's is taken only
- * by an account with none of its own, which keeps a restored backup from
- * starting a month that has already been served.
+ * added nor what was already here. So are the warm-up and the nudge: a file's
+ * is taken only by an account with none of its own, which keeps a restored
+ * backup from starting a month that has already been served, or from turning a
+ * nudge back on that was turned off since.
  */
 export function newRecords(
   incoming: AccountData,
@@ -197,6 +207,7 @@ export function newRecords(
       bonuses,
       pointValue: known.pointValue === null ? incoming.pointValue : null,
       warmUp: known.warmUp === null ? incoming.warmUp : null,
+      nudge: known.nudge === null ? incoming.nudge : null,
     },
     alreadyHere,
   }

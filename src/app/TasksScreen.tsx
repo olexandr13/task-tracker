@@ -10,7 +10,6 @@ import {
   pinFocusedFirst,
   sameTag,
   secondsSpent,
-  setSubtaskDone,
   sortForDisplay,
   summarizeLists,
   summarizeTags,
@@ -22,7 +21,6 @@ import {
   type RedemptionId,
   type Repeat,
   type RewardKey,
-  type SubtaskId,
   type Task,
   type TaskId,
 } from '../core'
@@ -248,8 +246,15 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     storageProblem.report,
   )
   // The nudge: nothing finished for a while says so and points at Today's leader
-  // (NUDGE-1). The same set Procrastination mode works on, and null while it loads.
-  const nudge = useNudge(deviceStorage.nudge, isLoading ? null : todayTasks)
+  // (NUDGE-1). The same set Procrastination mode works on, and null while it
+  // loads. Its setting is the account's (STORE-46); what it has already said
+  // here is the device's (NUDGE-6).
+  const nudge = useNudge(
+    storage.nudge,
+    deviceStorage.nudge,
+    isLoading ? null : todayTasks,
+    storageProblem.report,
+  )
   // The hours tasks are due at, watched against the clock: one that comes round
   // on a task still to do says so (REM-1). Every live task, not just Today's —
   // an hour is due at its moment wherever the task is filed — and null while
@@ -352,9 +357,10 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       onEnd: warmUp.end,
     },
     nudge: {
-      on: nudge.setting.on,
-      quietHours: nudge.setting.quietHours,
-      window: nudge.setting.window,
+      on: nudge.preference.on,
+      quietHours: nudge.preference.quietHours,
+      window: nudge.preference.window,
+      loading: nudge.isLoading,
       onTurnOn: nudge.turnOn,
     },
   })
@@ -371,19 +377,6 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     const wasDone = task !== undefined && isComplete(task, now)
     complete(id)
     if (task !== undefined && !wasDone) {
-      undo.show({ kind: 'completion', taskId: id })
-    }
-  }
-
-  /**
-   * Ticking a checklist item can finish the task (CHK-9). When it does, offer
-   * the same completion undo as the box — without naming the task.
-   */
-  function handleSetChecklistItemDone(id: TaskId, subtaskId: SubtaskId, done: boolean) {
-    const task = tasks.find((candidate) => candidate.id === id)
-    const wasDone = task !== undefined && isComplete(task, now)
-    setChecklistItemDone(id, subtaskId, done)
-    if (task !== undefined && !wasDone && done && isComplete(setSubtaskDone(task, subtaskId, true, now), now)) {
       undo.show({ kind: 'completion', taskId: id })
     }
   }
@@ -551,7 +544,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       duplicate(id)
     },
     addSubtask: addChecklistItem,
-    setSubtaskDone: handleSetChecklistItemDone,
+    setSubtaskDone: setChecklistItemDone,
     renameSubtask: renameChecklistItem,
     removeSubtask: removeChecklistItem,
     moveSubtask: moveChecklistItem,
@@ -650,11 +643,12 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   mode={modes[view]}
                   settings={
                     // The nudge is the one mode with something to set (MODE-12),
-                    // and nothing to set while it is off.
-                    view === 'modes/nudge' && nudge.setting.on ? (
+                    // and it is set whether it is on or off: a span and the hours
+                    // to keep to are what someone decides before turning it on.
+                    view === 'modes/nudge' ? (
                       <NudgeSettings
-                        quietHours={nudge.setting.quietHours}
-                        window={nudge.setting.window}
+                        quietHours={nudge.preference.quietHours}
+                        window={nudge.preference.window}
                         permission={nudge.permission}
                         now={now}
                         onQuietHoursChange={nudge.changeQuietHours}

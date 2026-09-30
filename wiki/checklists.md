@@ -1,7 +1,7 @@
 # Checklists
 
-A task can be broken into parts. Each part is ticked on its own, and the task is done when they all
-are — which is the point of it: a task with five unwritten parts is the kind of vague lump that
+A task can be broken into parts. Each part is ticked on its own, and the task is not done until they
+all are — which is the point of it: a task with five unwritten parts is the kind of vague lump that
 gets put off, and writing them down is what makes it startable.
 
 A subtask is **not** a small task. It has no rule of its own, no trash, and no place in any period's
@@ -46,20 +46,44 @@ count.
 
 ## The rule
 
-The whole of it: **a task with a checklist is done exactly when every item on it is.** It holds in
-both directions, and nothing can leave a task reading done with an item still open.
+The whole of it: **a checklist can reopen a task and can never finish one.** Ticking the parts says
+the parts are done; whether the *task* is done is its own box's answer. The one thing nothing can do
+is leave a task reading done with an item still open — not even the box, which is turned down rather
+than allowed to speak past the parts (CHK-11).
 
-- **CHK-9** Ticking the last open item completes the task, stamped at that moment.
+- **CHK-9** Ticking the last open item does **not** complete the task. It clears the way for the box,
+  which is what finishes it, stamped at the moment it is clicked. A list ticked through under a task
+  still to do is an ordinary state, not a loose end: the parts being done and the task being done are
+  two different claims, and the second one stays yours to make. It is also what makes the parts safe
+  to tick as you go — ticking the fourth of five cannot finish anything by surprise, and neither can
+  ticking the fifth.
 - **CHK-10** Taking back any tick puts the task back to todo — and leaves the other items alone.
   Unticking one of five is not unticking the task. Reopening a repeating task this way passes over
   an occurrence that has gone by, as its own box does (RPT-38).
-- **CHK-11** Ticking the **task's own box** ticks every item with it. That box speaks for the whole
-  thing, so it cannot finish the task while leaving parts open. A tick already there keeps its own
-  time rather than being restamped.
-- **CHK-12** Un-ticking the task's own box clears the whole checklist, for the same reason.
+- **CHK-11** The task's **own box refuses** to finish a task with an open item on it. The parts are
+  what the task is now, and a box that ticked them all off with one click would be finishing work
+  nobody had done — the vague lump back again, with a tick on it. Ticking the last item is the way
+  through (CHK-9), which is one click more than the box alone and the honest one. This holds wherever the
+  task can be ticked off: a row's box, a habit card's, the head of a phone's sheet, and a swipe
+  right on a phone (UI-60). A repeating task's list comes back open with each occurrence (CHK-16),
+  so a daily routine with a checklist is ticked item by item every day.
+- **CHK-12** Un-ticking the task's own box leaves the checklist **exactly as it was**: every part
+  still ticked is still ticked. A task whose parts are all done while the task itself is not is the
+  ordinary state every checklisted task passes through on its way to being finished (CHK-9), so
+  reopening lands back in it rather than throwing away work nobody undid — and ticking the box is
+  all it takes to finish it again. Un-ticking **one item of five** is a different thing and leaves
+  the other four alone (CHK-10).
+- **CHK-31** A refused tick is **answered where it was made**: the row, card or sheet head shakes
+  once and shows **Complete subtasks first** under the title, for a few seconds. Nothing is saved
+  and nothing is undone — the task is exactly as it was — so there is no undo offered and nothing
+  to take back. The box is **not** dimmed or disabled beforehand: a box that cannot be clicked
+  cannot say why, and the reason is worth more than the refusal. The words are amber, not red:
+  nothing has gone wrong, the task is simply not finished yet. A device asking for less motion gets
+  the words without the shake.
 - **CHK-13** Adding an item to a task already done **reopens it**: it has just been given another
   part.
-- **CHK-14** Removing the last item that was still open completes the task.
+- **CHK-14** Removing the last item that was still open leaves the task **ready to be ticked off**
+  rather than ticking it off: the box still answers for it (CHK-9).
 - **CHK-15** Emptying the checklist altogether hands the decision back to the task's own box, which
   is then the only thing left to answer it. The task keeps whatever state it had.
 
@@ -129,10 +153,18 @@ both directions, and nothing can leave a task reading done with an item still op
 ---
 
 **Where it lives:** `src/core/subtask.ts` (the item, how a tick is read, and the reordering),
-`src/core/task.ts` (the rule binding a checklist to its task), `src/app/components/SubtaskList.tsx`,
+`src/core/task.ts` (the rule binding a checklist to its task, and `hasOpenSubtasks`, which is what
+the box asks before it ticks), `src/app/components/SubtaskList.tsx`,
 `SubtaskItem.tsx`, `SubtaskDraft.tsx` (the line Enter opens), `TaskItem.tsx` (the button and the
-block), `src/app/dragSensors.ts` (what a press on a checklist does to the row around it),
+block), `src/app/components/CompletionBox.tsx` (the box that turns the click down),
+`src/app/components/CompletionRefusal.tsx` and `src/app/useCompletionRefusal.ts` (the words and how
+long they stay), `src/app/completionLabels.ts` (what they say), `src/styles.css` (the shake),
+`src/app/dragSensors.ts` (what a press on a checklist does to the row around it),
 `src/app/useTasks.ts`.
-**Tested in:** `src/core/subtask.test.ts` (the rules, moving among them),
+**Tested in:** `src/core/subtask.test.ts` (the rules, moving among them, and the refusal — CHK-11),
 `src/app/components/SubtaskList.test.tsx` (the keyboard: adding, editing, Enter and Backspace —
-CHK-6, 7, 19, 25, 26), `src/app/dragSensors.test.ts` (which press picks what up — CHK-28).
+CHK-6, 7, 19, 25, 26), `src/app/components/CompletionBox.test.tsx`,
+`src/app/components/TaskItem.test.tsx` and `src/app/components/HabitList.test.tsx` (what a refused
+tick looks like on a row, in a sheet and on a card — CHK-31),
+`src/app/useCompletionRefusal.test.ts` (how long the words stay),
+`src/app/dragSensors.test.ts` (which press picks what up — CHK-28).

@@ -13,10 +13,13 @@ function box(name = `Mark "${TASK}" as done`) {
 interface Watchers {
   onComplete: ReturnType<typeof vi.fn>
   onUncomplete: ReturnType<typeof vi.fn>
+  onBlocked: ReturnType<typeof vi.fn>
 }
 
-function setup(props: { done?: boolean; ready?: boolean; skipped?: boolean; today?: boolean } = {}): Watchers {
-  const watchers = { onComplete: vi.fn(), onUncomplete: vi.fn() }
+function setup(
+  props: { done?: boolean; ready?: boolean; skipped?: boolean; today?: boolean; blocked?: boolean } = {},
+): Watchers {
+  const watchers = { onComplete: vi.fn(), onUncomplete: vi.fn(), onBlocked: vi.fn() }
   render(<CompletionBox title={TASK} done={false} {...props} {...watchers} />)
   return watchers
 }
@@ -97,6 +100,42 @@ describe('ticking a task off (UI-65)', () => {
     view.unmount()
 
     expect(watchers.onComplete).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('a box the checklist will not let tick the task off (CHK-11)', () => {
+  it('turns the click down instead of ticking, with no flourish and nothing done', async () => {
+    const user = userEvent.setup()
+    const { onComplete, onUncomplete, onBlocked } = setup({ blocked: true })
+
+    await user.click(box())
+
+    expect(onBlocked).toHaveBeenCalledTimes(1)
+    expect(box().className).not.toContain('completion-box-landing')
+    expect(box().getAttribute('aria-pressed')).toBe('false')
+
+    // Nothing lands later either: the tick was refused, not delayed.
+    await new Promise((settle) => setTimeout(settle, 700))
+    expect(onComplete).not.toHaveBeenCalled()
+    expect(onUncomplete).not.toHaveBeenCalled()
+  })
+
+  it('stays a box to click, so the refusal is something the click can ask for', () => {
+    setup({ blocked: true })
+
+    const refusing = box()
+    expect(refusing.hasAttribute('disabled')).toBe(false)
+    expect(refusing.getAttribute('aria-disabled')).toBeNull()
+  })
+
+  it('still takes a tick back: a done task has no open part to wait on', async () => {
+    const user = userEvent.setup()
+    const { onUncomplete, onBlocked } = setup({ done: true, blocked: true })
+
+    await user.click(box(`Mark "${TASK}" as not done`))
+
+    expect(onUncomplete).toHaveBeenCalledTimes(1)
+    expect(onBlocked).not.toHaveBeenCalled()
   })
 })
 

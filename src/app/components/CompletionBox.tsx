@@ -72,6 +72,15 @@ interface CompletionBoxProps {
   /** A habit's box, which speaks for today rather than for the task as a whole. */
   today?: boolean
   /**
+   * The checklist still has a part to do, so the box will not finish the task
+   * (CHK-11). It is still a box to click — the click is what asks, and
+   * `onBlocked` is the answer — so it is neither disabled nor drawn apart: a
+   * refusal explained after the fact beats one nobody can read the reason for.
+   */
+  blocked?: boolean
+  /** The click a `blocked` box turned down, for the row to say so and shake. */
+  onBlocked?: () => void
+  /**
    * Ticks the task off. Called when the tick has landed, not as it is clicked:
    * until then the task is untouched, which is what keeps its row where it is.
    */
@@ -93,6 +102,8 @@ export function CompletionBox({
   ready = false,
   skipped = false,
   today = false,
+  blocked = false,
+  onBlocked,
   onComplete,
   onUncomplete,
   inert = false,
@@ -146,6 +157,10 @@ export function CompletionBox({
           setLanding(false)
         } else if (done) {
           onUncomplete()
+        } else if (blocked) {
+          // Nothing lands and nothing is saved: the task is untouched, and the
+          // row it sits in is what does the answering.
+          onBlocked?.()
         } else if (wantsLessMotion()) {
           onComplete()
         } else {

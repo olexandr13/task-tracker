@@ -13,7 +13,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Account](account.md) | Signing in with Google, continuing as guest, staying signed in, signing out |
 | [Principles](principles.md) | The rules that hold everywhere: local days, derived time, what is saved, what is not |
 | [Tasks](tasks.md) | The record itself — adding, renaming, completing, ordering |
-| [Checklists](checklists.md) | Subtasks: ticking them off, and the rule that finishes the task |
+| [Checklists](checklists.md) | Subtasks: ticking them off, and what that does and does not finish |
 | [Due dates](due-dates.md) | The day a task is due, setting it, and overdue |
 | [Tags](tags.md) | Names a task carries, tagging by picker or by typing `#`, the Tags page and each tag's list |
 | [Lists](lists.md) | Somewhere to put a task: one list at a time, the Inbox, and the Lists page |

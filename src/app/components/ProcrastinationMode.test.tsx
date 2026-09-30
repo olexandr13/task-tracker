@@ -26,7 +26,7 @@ describe('ProcrastinationPanel', () => {
     render(<ProcrastinationPanel phase="focus" {...panel} />)
 
     expect(screen.getByText('Procrastination mode')).toBeDefined()
-    expect(screen.getByText('Some functionality dimmed to prevent distraction. Do just one highlighted task')).toBeDefined()
+    expect(screen.getByText('Do just the highlighted task')).toBeDefined()
     expect(screen.getByRole('button', { name: 'Other task' })).toBeDefined()
     // Ending is a decision taken on the mode's own page, not a button beside the one task (JUST-8).
     expect(screen.queryByRole('button', { name: 'End mode' })).toBeNull()
@@ -53,7 +53,7 @@ describe('ProcrastinationPanel', () => {
 
     expect(screen.getByText('Resting')).toBeDefined()
     expect(screen.getByText(/No rush/)).toBeDefined()
-    expect(screen.queryByText('Some functionality dimmed to prevent distraction. Do just one highlighted task')).toBeNull()
+    expect(screen.queryByText('Do just the highlighted task')).toBeNull()
     expect(screen.getByRole('button', { name: 'Choose another task' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'End mode' })).toBeDefined()
   })
