@@ -17,7 +17,13 @@ interface Watchers {
 }
 
 function setup(
-  props: { done?: boolean; ready?: boolean; skipped?: boolean; today?: boolean; blocked?: boolean } = {},
+  props: {
+    done?: boolean
+    ready?: 'time' | 'subtasks'
+    skipped?: boolean
+    today?: boolean
+    blocked?: boolean
+  } = {},
 ): Watchers {
   const watchers = { onComplete: vi.fn(), onUncomplete: vi.fn(), onBlocked: vi.fn() }
   render(<CompletionBox title={TASK} done={false} {...props} {...watchers} />)
@@ -141,12 +147,21 @@ describe('a box the checklist will not let tick the task off (CHK-11)', () => {
 
 describe('what a completion box is called and how it is drawn', () => {
   it('names its task, and says a time goal is reached where it is (UI-12, TIME-5)', () => {
-    setup({ ready: true })
+    setup({ ready: 'time' })
 
     const ready = box(`Mark "${TASK}" as done: its time goal is reached`)
     expect(ready.className).toContain('border-green-600')
     expect(ready.className).not.toContain('bg-green-600')
     expect(ready.getAttribute('title')).toBe('Time goal reached: ready to tick off')
+  })
+
+  it('names its task, and says its checklist is done where it is (UI-12, CHK-32)', () => {
+    setup({ ready: 'subtasks' })
+
+    const ready = box(`Mark "${TASK}" as done: its checklist is done`)
+    expect(ready.className).toContain('border-green-600')
+    expect(ready.className).not.toContain('bg-green-600')
+    expect(ready.getAttribute('title')).toBe('Checklist done: ready to tick off')
   })
 
   it('reads as a rest while today is skipped, and still ticks the task off (HAB-31)', async () => {

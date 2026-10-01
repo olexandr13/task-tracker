@@ -14,7 +14,7 @@
 
 import { atLocalTime, offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from './day'
 import { periodRange, type Period } from './progress'
-import { currentOccurrence, nextOccurrence, occurrenceFrom, type Repeat } from './repeat'
+import { currentOccurrence, nextOccurrence, occurrenceFrom, repeatsEveryDay, type Repeat } from './repeat'
 import { hasDueDay, isComplete, isDeleted, startedOn, type Task, type TaskId } from './task'
 
 /**
@@ -66,15 +66,35 @@ export function firstDueDay(repeat: Repeat, start: LocalDay): LocalDay {
  * Whether the task has an occurrence to pass over: it repeats, is still to do,
  * and is due on a day. A one-off has no next day to move on to, and a done
  * occurrence was not skipped.
+ *
+ * **A habit only ever rests today** (HAB-32). Its rule comes round every day, so
+ * the day it moves on to after a skip is tomorrow, and passing that over would
+ * store a rest for a day nobody has reached yet: the next day would arrive
+ * already resting, having asked nothing of the habit and never having been
+ * passed over on purpose. So a habit can skip only while the day it is due on
+ * is today — which also leaves a rule still to start alone, nothing being asked
+ * of it yet. A rule with gaps in it has somewhere further to go, and skipping
+ * again passes over its next occurrence too: a Monday task skipped twice is away
+ * for two Mondays (RPT-35).
  */
 export function canSkipOccurrence(task: Task, now: Date = new Date()): boolean {
-  return task.repeat !== null && !isDeleted(task) && !isComplete(task, now) && dueDay(task, now) !== null
+  if (task.repeat === null || isDeleted(task) || isComplete(task, now)) {
+    return false
+  }
+
+  const day = dueDay(task, now)
+  if (day === null) {
+    return false
+  }
+
+  return !repeatsEveryDay(task.repeat) || day === toLocalDay(now)
 }
 
 /**
  * Passes over the occurrence the task is due on, so it is due on the rule's next
  * day instead — without being done, so nothing is recorded or earned for it.
- * Skipping again passes over that one too. Ticking the task off afterwards is
+ * Skipping again passes over that one too, except on a habit, which rests today
+ * and no further (`canSkipOccurrence`). Ticking the task off afterwards is
  * doing the occurrence in play after all (see `Task.skippedDays`).
  *
  * Returns a new task; the one passed in is never modified.

@@ -447,7 +447,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   a task's sheet (UI-47), a checklist item — is drawn **thick, with rounded ends**, like the tick in
   ✅ rather than the thin one a font draws, so it still reads as a tick at the small size a row draws
   its box. It is the same mark wherever a box is ticked off, white on green when done and a faint
-  green when a time goal says the task is ready to be (TIME-5).
+  green when a time goal says the task is ready to be (TIME-5) or its checklist is through
+  (CHK-32).
 - **UI-65** A **tick lands** where it was clicked. The box answers the click at once — it flashes a
   lighter green and bounces, the mark (UI-64) sweeps in rather than appearing whole, and a green ring
   opens past the edge and fades — and the **task is left where it is** while that plays, for half a

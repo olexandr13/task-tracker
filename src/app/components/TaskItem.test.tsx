@@ -524,8 +524,8 @@ describe('a row that will not tick its task off (CHK-11)', () => {
     return { user, complete }
   }
 
-  function box() {
-    return screen.getByRole('button', { name: `Mark "${TASK}" as done` })
+  function box(name = `Mark "${TASK}" as done`) {
+    return screen.getByRole('button', { name })
   }
 
   it('says so and shakes, and leaves the task alone', async () => {
@@ -546,10 +546,14 @@ describe('a row that will not tick its task off (CHK-11)', () => {
     expect(screen.getAllByRole('listitem')[0].className).not.toContain('completion-refusal-shake')
   })
 
-  it('ticks off as it always did once every item is done', async () => {
+  it('ticks off as it always did once every item is done, inviting the click first (CHK-32)', async () => {
     const { user, complete } = withChecklist(2, 2)
 
-    await user.click(box())
+    const ready = box(`Mark "${TASK}" as done: its checklist is done`)
+    expect(ready.className).toContain('border-green-600')
+    expect(ready.getAttribute('title')).toBe('Checklist done: ready to tick off')
+
+    await user.click(ready)
 
     expect(screen.queryByRole('alert')).toBeNull()
     await vi.waitFor(() => { expect(complete).toHaveBeenCalledTimes(1) })
@@ -1073,6 +1077,33 @@ describe('the menu a right-click opens on a task row', () => {
       await user.click(schedulePanel().getByRole('button', { name: 'Skip occurrence' }))
 
       expect(onSkipOccurrence).toHaveBeenCalledTimes(1)
+    })
+
+    it('has no skip for a habit resting today, which rests no further (HAB-32, RPT-35)', async () => {
+      const rested = skipOccurrence(createTask(TASK, { kind: 'daily' }, NOW), NOW)
+      const user = renderDated(rested)
+
+      await openMenu(user)
+
+      // Tomorrow is where the rest moved the habit to, not another day to pass over:
+      // offering a skip here would store a rest for a day nobody has reached (DUE-26 is the way back).
+      expect(icons()).not.toContain('Skip occurrence')
+      expect(screen.getByRole('menuitemradio', { name: 'Tomorrow' }).getAttribute('aria-checked')).toBe('true')
+      await user.keyboard('{Escape}')
+      cleanup()
+
+      const panel = renderDated(rested)
+      await panel.click(screen.getByRole('button', { name: /^Schedule for/ }))
+      expect(schedulePanel().queryByRole('button', { name: 'Skip occurrence' })).toBeNull()
+    })
+
+    it('keeps the skip on a rule with gaps once passed over, which has a further one to pass (RPT-35)', async () => {
+      // Tuesdays, today being one: skipped, it moves on to next Tuesday, which is its own to skip.
+      const user = renderDated(skipOccurrence(createTask(TASK, { kind: 'weekly', weekdays: [2] }, NOW), NOW))
+
+      await openMenu(user)
+
+      expect(icons()).toContain('Skip occurrence')
     })
 
     it('has no skip for a repeating task already done (RPT-34)', async () => {

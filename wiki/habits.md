@@ -178,6 +178,15 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   A screen reader hears the button as `Skip "stretch"`, and as pressed, `Skipped "stretch" today`,
   while today is skipped. Every task's sheet has the button while its occurrence can be skipped
   (RPT-34), a habit's being the one whose page reads the rest.
+- **HAB-32** **A habit rests today and no further.** While today is a rest, nothing offers to skip
+  it again: the sheet's schedule (DUE-9) and the task's menu (DUE-14) drop **Skip occurrence** for
+  as long as the rest stands, the way they do for a task already done (RPT-34). A habit's rule comes
+  round every day, so another skip would pass over **tomorrow** — storing a rest for a day nobody has
+  reached yet, which would then arrive asking nothing of the habit, counting for nothing, and never
+  having been passed over on purpose. This is the one place a habit parts from RPT-35, where a rule
+  with gaps in it does have a further occurrence to pass over. The ways back from a rest stay where
+  they were: the foot's **Skipped** (HAB-31), and picking today again (DUE-26). A habit whose rule
+  has yet to start (DUE-18) offers no skip either — nothing is asked of it today to rest from.
 
 ---
 

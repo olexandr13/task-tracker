@@ -249,6 +249,9 @@ export function TaskItem({
   // the swipe on a phone — so the row answers the same however it was asked.
   const { refused, refuse } = useCompletionRefusal()
   const blocked = !done && hasOpenSubtasks(task, now)
+  // Every part ticked, task still not: the box offers the same green invitation
+  // a reached time goal does (CHK-32), just for a different reason.
+  const subtasksReady = !done && hasSubtasks(task) && !hasOpenSubtasks(task, now)
   // Right completes (or takes back), left deletes — phone only, and not while the
   // sheet is open or the row is being dragged to a new place.
   const swipe = useRowSwipe(phone && !isActive && !isDragging, row, {
@@ -758,7 +761,7 @@ export function TaskItem({
         <CompletionBox
           title={task.title}
           done={done}
-          ready={ready}
+          ready={ready ? 'time' : subtasksReady ? 'subtasks' : undefined}
           skipped={!done && isSkippedToday(task, now)}
           blocked={blocked}
           onBlocked={refuse}

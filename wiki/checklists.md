@@ -73,6 +73,12 @@ than allowed to speak past the parts (CHK-11).
   reopening lands back in it rather than throwing away work nobody undid — and ticking the box is
   all it takes to finish it again. Un-ticking **one item of five** is a different thing and leaves
   the other four alone (CHK-10).
+- **CHK-32** Once every item is ticked and the task itself still is not, its own box stops refusing
+  and **invites the last click**: the same green hollow outline and faint tick a reached time goal
+  draws (TIME-5), saying "Checklist done: ready to tick off" on hover and to a screen reader. It is
+  not done yet — the click is still the one that finishes it (CHK-9) — but nothing stands in the
+  way of it any more. This holds wherever the box does (CHK-11): a row, a habit card, the head of a
+  phone's sheet.
 - **CHK-31** A refused tick is **answered where it was made**: the row, card or sheet head shakes
   once and shows **Complete subtasks first** under the title, for a few seconds. Nothing is saved
   and nothing is undone — the task is exactly as it was — so there is no undo offered and nothing
@@ -163,7 +169,8 @@ long they stay), `src/app/completionLabels.ts` (what they say), `src/styles.css`
 `src/app/useTasks.ts`.
 **Tested in:** `src/core/subtask.test.ts` (the rules, moving among them, and the refusal — CHK-11),
 `src/app/components/SubtaskList.test.tsx` (the keyboard: adding, editing, Enter and Backspace —
-CHK-6, 7, 19, 25, 26), `src/app/components/CompletionBox.test.tsx`,
+CHK-6, 7, 19, 25, 26), `src/app/components/CompletionBox.test.tsx` (what a refused tick looks like,
+and the green invitation once every item is ticked — CHK-31, CHK-32),
 `src/app/components/TaskItem.test.tsx` and `src/app/components/HabitList.test.tsx` (what a refused
 tick looks like on a row, in a sheet and on a card — CHK-31),
 `src/app/useCompletionRefusal.test.ts` (how long the words stay),

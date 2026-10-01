@@ -100,14 +100,17 @@ describe("a habit's box against its checklist (CHK-11, CHK-16)", () => {
     expect(onComplete).not.toHaveBeenCalled()
   })
 
-  it('ticks the day off as it always did once the list is done for today', async () => {
+  it('ticks the day off as it always did once the list is done for today, inviting the click first (CHK-32)', async () => {
     const habit: Task = {
       ...stretch(),
       subtasks: [{ ...createSubtask('hamstrings', WED_16), completedAt: WED_16.toISOString() }],
     }
     const { user, onComplete } = setup([habit])
 
-    await user.click(screen.getByRole('button', { name: 'Mark "stretch" as done today' }))
+    const ready = screen.getByRole('button', { name: 'Mark "stretch" as done today: its checklist is done' })
+    expect(ready.className).toContain('border-green-600')
+
+    await user.click(ready)
 
     expect(screen.queryByRole('alert')).toBeNull()
     await waitFor(() => { expect(onComplete).toHaveBeenCalledWith(habit.id) })
@@ -143,6 +146,18 @@ describe('skipping today (HAB-31)', () => {
     await user.click(skipped)
 
     expect(onUnskip).toHaveBeenCalledWith(habit.id)
+  })
+
+  it('offers no second skip anywhere, so no day arrives already a rest (HAB-32, RPT-35)', async () => {
+    const { user } = setup([{ ...stretch(), skippedDays: ['2026-09-16'] }], true)
+
+    await user.click(screen.getByRole('button', { name: 'Edit "stretch"' }))
+    await user.click(screen.getByRole('button', { name: /^Schedule for/ }))
+
+    // The rest moved the habit on to tomorrow; passing that over would store a
+    // rest for a day nobody has reached. Picking today again is the way back (DUE-26).
+    expect(screen.queryByRole('button', { name: 'Skip occurrence' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Tomorrow' })).toHaveProperty('ariaPressed', 'true')
   })
 
   it('offers no skip once today is done', async () => {

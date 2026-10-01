@@ -403,12 +403,12 @@ describe('setStartDay', () => {
   })
 
   it('puts the occurrences passed over from that day on back in play, and leaves the earlier ones (DUE-26)', () => {
-    // Skipped on the 15th, 16th and 17th, so due on the 18th.
-    const skipped = skipOccurrence(
-      skipOccurrence(skipOccurrence(createTask('stretch', { kind: 'daily' }, NOW), NOW), NOW),
-      NOW,
-    )
-    expect(skipped.skippedDays).toEqual(['2026-09-15', '2026-09-16', '2026-09-17'])
+    // Rested on the 15th, 16th and 17th — a habit rests a day at a time (HAB-31),
+    // so three days of it are three days' skipping, written here as what they left.
+    const skipped = {
+      ...createTask('stretch', { kind: 'daily' }, NOW),
+      skippedDays: ['2026-09-15', '2026-09-16', '2026-09-17'] as const,
+    }
 
     expect(setStartDay(skipped, '2026-09-16').skippedDays).toEqual(['2026-09-15'])
     expect(setStartDay(skipped, '2026-09-10').skippedDays).toEqual([])

@@ -5,6 +5,7 @@ import {
   defaultReward,
   dueDay,
   hasOpenSubtasks,
+  hasSubtasks,
   isComplete,
   isOverdue,
   isSkippedToday,
@@ -93,7 +94,11 @@ export function TaskSheet({
   timer,
 }: TaskSheetProps) {
   const done = isComplete(task, now)
-  const ready = !done && isTimeGoalReached(task, now)
+  const timeReady = !done && isTimeGoalReached(task, now)
+  // Every part ticked, task still not: the box offers the same green invitation
+  // a reached time goal does (CHK-32), just for a different reason.
+  const subtasksReady = !done && hasSubtasks(task) && !hasOpenSubtasks(task, now)
+  const ready = timeReady ? 'time' : subtasksReady ? 'subtasks' : undefined
   const overdue = isOverdue(task, now)
   const sessions = currentEntries(task.timeLog, task.repeat, now)
   const timerRunning = timer?.isRunningFor(task.id) ?? false

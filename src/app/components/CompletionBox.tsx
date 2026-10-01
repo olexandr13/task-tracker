@@ -18,8 +18,9 @@ const completionBoxOn = `${completionBox} border-green-600 bg-green-600 text-whi
 const completionBoxOff = `${completionBox} border-neutral-300 text-transparent hover:border-neutral-900 dark:border-neutral-600 dark:hover:border-neutral-300`
 
 /**
- * Not done yet, but ready to be: the time it asks for is in. Green like a done
- * box and hollow like an open one, so it reads as an invitation to tick it off.
+ * Not done yet, but ready to be: its time goal is in, or its checklist is
+ * through. Green like a done box and hollow like an open one, so it reads as
+ * an invitation to tick it off.
  */
 const completionBoxReady = `${completionBox} border-green-600 text-green-600/60 hover:border-green-700 hover:text-green-700 dark:border-green-500 dark:text-green-500/60 dark:hover:border-green-400 dark:hover:text-green-400`
 
@@ -52,11 +53,24 @@ function wantsLessMotion(): boolean {
 /** What the box is called for a screen reader, which names its task (UI-12). */
 function boxLabel(
   title: string,
-  { done, ready, skipped, today }: { done: boolean; ready: boolean; skipped: boolean; today: boolean },
+  {
+    done,
+    ready,
+    skipped,
+    today,
+  }: { done: boolean; ready: 'time' | 'subtasks' | undefined; skipped: boolean; today: boolean },
 ): string {
   const mark = done ? 'as not done' : 'as done'
   const when = today ? ' today' : ''
-  const why = done ? '' : skipped ? ': skipped today' : ready ? ': its time goal is reached' : ''
+  const why = done
+    ? ''
+    : skipped
+      ? ': skipped today'
+      : ready === 'time'
+        ? ': its time goal is reached'
+        : ready === 'subtasks'
+          ? ': its checklist is done'
+          : ''
   return `Mark "${title}" ${mark}${when}${why}`
 }
 
@@ -65,8 +79,12 @@ interface CompletionBoxProps {
   title: string
   /** Whether the task reads as done as of now. */
   done: boolean
-  /** Its time goal is met, so the box invites a tick (TIME-5). */
-  ready?: boolean
+  /**
+   * Not done, but one click away: its time goal is met (TIME-5) or its
+   * checklist is through (CHK-32). Either way the box invites a tick; which
+   * one only changes the words it offers for why.
+   */
+  ready?: 'time' | 'subtasks'
   /** Today was passed over and not done after all (HAB-31): the box reads as a rest, and still ticks. */
   skipped?: boolean
   /** A habit's box, which speaks for today rather than for the task as a whole. */
@@ -99,7 +117,7 @@ interface CompletionBoxProps {
 export function CompletionBox({
   title,
   done,
-  ready = false,
+  ready,
   skipped = false,
   today = false,
   blocked = false,
@@ -170,7 +188,15 @@ export function CompletionBox({
       aria-pressed={ticked}
       aria-label={boxLabel(title, { done: ticked, ready, skipped, today })}
       title={
-        ticked ? undefined : skipped ? 'Skipped today: tick to do it after all' : ready ? 'Time goal reached: ready to tick off' : undefined
+        ticked
+          ? undefined
+          : skipped
+            ? 'Skipped today: tick to do it after all'
+            : ready === 'time'
+              ? 'Time goal reached: ready to tick off'
+              : ready === 'subtasks'
+                ? 'Checklist done: ready to tick off'
+                : undefined
       }
       aria-hidden={inert ? true : undefined}
       tabIndex={inert ? -1 : undefined}

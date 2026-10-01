@@ -483,13 +483,13 @@ describe('nextWeekDueDay', () => {
 
 describe('unskipToday (HAB-31)', () => {
   it('puts a skipped today back in play, a skip of another day standing', () => {
-    const skipped = skipOccurrence(skipOccurrence(repeating(DAILY), WED_16), WED_16)
+    const skipped = skipOccurrence({ ...repeating(DAILY), skippedDays: ['2026-09-15'] }, WED_16)
     expect(isSkippedToday(skipped, WED_16)).toBe(true)
 
     const back = unskipToday(skipped, WED_16)
 
     expect(isSkippedToday(back, WED_16)).toBe(false)
-    expect(back.skippedDays).toEqual(['2026-09-17'])
+    expect(back.skippedDays).toEqual(['2026-09-15'])
     expect(dueDay(back, WED_16)).toBe('2026-09-16')
   })
 
@@ -530,10 +530,41 @@ describe('skipOccurrence', () => {
   })
 
   it('passes over the next one too when done again (RPT-35)', () => {
-    const twice = skipOccurrence(skipOccurrence(repeating(DAILY), WED_16), WED_16)
+    const twice = skipOccurrence(skipOccurrence(repeating(MONDAYS), WED_16), WED_16)
 
-    expect(twice.skippedDays).toEqual(['2026-09-16', '2026-09-17'])
-    expect(dueDay(twice, WED_16)).toBe('2026-09-18')
+    expect(twice.skippedDays).toEqual(['2026-09-14', '2026-09-21'])
+    expect(dueDay(twice, WED_16)).toBe('2026-09-28')
+  })
+
+  it('rests a habit today and no further, so no day arrives already skipped (HAB-32, RPT-35)', () => {
+    const rested = skipOccurrence(repeating(DAILY), WED_16)
+    expect(rested.skippedDays).toEqual(['2026-09-16'])
+
+    expect(canSkipOccurrence(rested, WED_16)).toBe(false)
+    expect(skipOccurrence(rested, WED_16)).toBe(rested)
+
+    // Thursday comes round asked for as any other day: still to do, and its own to skip.
+    const THU_17 = new Date(2026, 8, 17, 9, 0)
+    expect(isSkippedToday(rested, THU_17)).toBe(false)
+    expect(isInToday(rested, THU_17)).toBe(true)
+    expect(canSkipOccurrence(rested, THU_17)).toBe(true)
+  })
+
+  it('rests a seven-day weekly rule today and no further either, it being a habit too (HAB-1, HAB-32)', () => {
+    const everyDay: Repeat = { kind: 'weekly', weekdays: [0, 1, 2, 3, 4, 5, 6] }
+    const rested = skipOccurrence(repeating(everyDay), WED_16)
+
+    expect(rested.skippedDays).toEqual(['2026-09-16'])
+    expect(canSkipOccurrence(rested, WED_16)).toBe(false)
+  })
+
+  it('leaves a habit whose rule has yet to start alone, nothing being asked of it today (HAB-32)', () => {
+    const fromFriday = startedOnDay(DAILY, '2026-09-18')
+
+    expect(dueDay(fromFriday, WED_16)).toBe('2026-09-18')
+    expect(canSkipOccurrence(fromFriday, WED_16)).toBe(false)
+    expect(skipOccurrence(fromFriday, WED_16)).toBe(fromFriday)
+    expect(canSkipOccurrence(fromFriday, new Date(2026, 8, 18, 9, 0))).toBe(true)
   })
 
   it('reads as done on the occurrence in play once ticked off after all, and skipped again once unticked (RPT-36)', () => {

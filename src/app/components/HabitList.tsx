@@ -5,6 +5,7 @@ import {
   habitRate,
   habitStats,
   hasOpenSubtasks,
+  hasSubtasks,
   isComplete,
   isSkippedToday,
   isTimeGoalReached,
@@ -232,9 +233,13 @@ function HabitCard({
   revealed: boolean
 } & Omit<HabitListProps, 'habits' | 'showDetails' | 'revealId'>) {
   const done = isComplete(habit, now)
-  const ready = !done && isTimeGoalReached(habit, now)
+  const timeReady = !done && isTimeGoalReached(habit, now)
   // A habit's checklist comes back open with every occurrence (CHK-16), so its
   // box asks for the parts each day before it will tick the day off (CHK-11).
+  // Once today's parts are all ticked, the box offers the same green invitation
+  // a reached time goal does (CHK-32), just for a different reason.
+  const subtasksReady = !done && hasSubtasks(habit) && !hasOpenSubtasks(habit, now)
+  const ready = timeReady ? 'time' : subtasksReady ? 'subtasks' : undefined
   const { refused, refuse } = useCompletionRefusal()
   const blocked = !done && hasOpenSubtasks(habit, now)
   const { currentStreak, bestStreak } = habitStats(habit, now)

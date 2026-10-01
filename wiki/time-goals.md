@@ -32,7 +32,8 @@ ticked off. The tick itself stays the owner's.
 - **TIME-5** Once the time that counts **reaches the goal**, a task not yet done **invites a tick**:
   its box turns a green outline with a faint tick in it, saying "Time goal reached: ready to tick
   off" on hover and to a screen reader. The time under the clock (TIME-12) and in the panel turns
-  green, and the panel says the goal is reached. A done task's box is simply done.
+  green, and the panel says the goal is reached. A done task's box is simply done. A finished
+  checklist invites the same way, with its own words (CHK-32).
 - **TIME-6** **Time never finishes or reopens a task.** Logging, taking a session back and changing
   the goal leave whether it is done alone, and ticking the task off or back leaves the time alone.
   A task can be ticked off before its goal is reached; the goal is a hint, not a gate.

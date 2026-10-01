@@ -116,7 +116,12 @@ and whether it reads as done is derived from the occurrence currently in play ra
   to do, records nothing in its history and earns nothing. Only a task still to do, with an
   occurrence in play (DUE-11), can skip; a one-off has no next day to move on to. Picking the
   skipped day again takes the skip back (DUE-26).
-- **RPT-35** Skipping again passes over the next occurrence too.
+- **RPT-35** Skipping again passes over the next occurrence too — a Monday task skipped twice is
+  away for two Mondays. **A habit is the exception** (HAB-32): its rule comes round every day, so the
+  occurrence a rest moves it on to is tomorrow, and passing that over would store a rest for a day
+  nobody has reached yet, which would then arrive already resting. A habit rests today and no
+  further, and while it is resting nothing offers it another skip — its menu, its schedule panel and
+  the foot of its sheet each offer the way back instead (HAB-32, DUE-26).
 - **RPT-36** **Done wins**: ticking a skipped task off does the occurrence in play after all — it
   reads as done on that day, as it would have without the skip. Taking the tick back skips it again,
   which is what reopening does with any occurrence gone by (RPT-38); a day is passed over once,
