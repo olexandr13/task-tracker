@@ -9,10 +9,18 @@ import { MorePage } from './MorePage'
 afterEach(cleanup)
 
 describe('MorePage', () => {
-  it('links to Lists, Tags and Modes, in that order (UI-45, LST-24)', () => {
+  it('links to Lists, Tags, Balance and Modes, in that order (UI-45, LST-24, BAL-1)', () => {
     render(<MorePage onOpen={vi.fn()} />)
 
-    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Lists', 'Tags', 'Modes'])
+    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Lists', 'Tags', 'Balance', 'Modes'])
+  })
+
+  it('opens the Balance page (BAL-1)', async () => {
+    const onOpen = vi.fn()
+    render(<MorePage onOpen={onOpen} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Balance' }))
+    expect(onOpen).toHaveBeenCalledExactlyOnceWith('balance')
   })
 
   it('opens the lists, which a phone reaches nowhere else without a hold (LST-24)', async () => {

@@ -111,6 +111,10 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   modifier, leaves `H` alone, as with `N` (UI-55).
 - **UI-57** Pressing **R** opens **Rewards** (RWD-19). From anywhere in the app; typing in a box, or
   holding a modifier, leaves `R` alone, as with the other letter shortcuts (UI-55, UI-56).
+- **UI-72** Pressing **C** opens the **Chest** (CHST-22). From anywhere in the app; typing in a box,
+  or holding a modifier, leaves `C` alone, as with the other letter shortcuts (UI-55, UI-56, UI-57).
+  It is the one page under Rewards with its own letter: it is the only one with something waiting on
+  it, and a key is worth least the longer it goes unnoticed (CHST-23).
 - **UI-58** Pressing **P** on **Today** starts **Procrastination mode** whenever its switch on
   Modes would (JUST-1), and ends it while the mode is on (JUST-8). Elsewhere, or while there is
   nothing to focus on (MODE-6), `P` does nothing. Typing in a box, or holding a modifier, leaves
@@ -136,23 +140,24 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 ## Navigation
 
-- **UI-7** Nineteen views: **Today**, **Week**, **Month**, **Tasks**, **Inbox**, **Habits**,
-  **Rewards** with **History**, **Prizes**, **Wishlist** and **Rules** under it (RWD-30), **Lists**,
-  **Tags**, **More**, **Modes** with a page for each of **Procrastination** and **Warm-up** under
-  it (MODE-1), **Trash** and **Settings**, and a view for each list, opened from Lists, and one for
+- **UI-7** Twenty-two views: **Today**, **Week**, **Month**, **Tasks**, **Inbox**, **Habits**,
+  **Rewards** with **Chest**, **History**, **Prizes**, **Wishlist** and **Rules** under it (RWD-30),
+  **Lists**,
+  **Tags**, **Balance** (BAL-1), **More**, **Modes** with a page for each of **Procrastination**, **Warm-up** and
+  **Nudge** under it (MODE-1), **Trash** and **Settings**, and a view for each list, opened from Lists, and one for
   each tag, opened from Tags. Each is named and carries an
   icon — every tag's view the same `#` as Tags, and every list the same folder as Lists, and each
-  mode the glyph it wears everywhere else. **Tags** is reached from **More** (UI-45), and so is
-  **Modes** on a phone — the sidebar gives Modes an entry of its own, with each mode under it
-  (MODE-7); **Rewards** has an entry of its own in
+  mode the glyph it wears everywhere else. **Tags** is reached from **More** (UI-45), and so are
+  **Balance** and **Modes** on a phone — the sidebar gives each an entry of its own, Modes with each
+  mode under it (MODE-7); **Rewards** has an entry of its own in
   the sidebar and a tab of its own on a phone, with its pages under both (UI-30, UI-32, UI-67). See
   [Views](views.md), [Lists](lists.md), [Habits](habits.md),
-  [Rewards](rewards.md), [Tags](tags.md) and [Modes](modes.md).
+  [Rewards](rewards.md), [Tags](tags.md), [Balance](balance.md) and [Modes](modes.md).
 - **UI-30** In the sidebar the views come in four groups with a thin line between each: the period
   views (**Today**, **Week**, **Month**), then **Tasks**, **Habits**, **Lists**, **Rewards**,
-  **Modes** and **More**, then **Trash**, then **Settings**. **Lists**, **Rewards** and **Modes**
-  each keep their pages indented under them — the **Inbox** and every list (LST-13), **History**,
-  **Prizes**, **Wishlist** and **Rules** (RWD-30), and **Procrastination** and **Warm-up**
+  **Balance**, **Modes** and **More**, then **Trash**, then **Settings**. **Lists**, **Rewards** and **Modes**
+  each keep their pages indented under them — the **Inbox** and every list (LST-13), the **Chest**,
+  **History**, **Prizes**, **Wishlist** and **Rules** (RWD-30), and **Procrastination** and **Warm-up**
   (MODE-7) — and each has a **chevron at its end that folds them away** and opens them
   again, without leaving the view you are on. Open, the page you are on is marked itself; folded,
   the entry above stands for it. All three start open, and how they are left is kept on this device
@@ -195,8 +200,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   keeps you on it, and a bookmark or a link opens on it. An address naming no view opens on Today.
 - **UI-37** **Back goes one level up**, not to the view before. The views make a tree: at the top
   the bar's tabs — the period views, Tasks, Habits, Rewards, More and Settings; under Tasks the
-  Lists page and the Trash (UI-34), and under Lists the Inbox and each list; under Rewards its four
-  pages (RWD-19); under More Tags and Modes (UI-45), under Tags each tag's tasks, and under Modes
+  Lists page and the Trash (UI-34), and under Lists the Inbox and each list; under Rewards its five
+  pages (RWD-19); under More Tags, Balance and Modes (UI-45), under Tags each tag's tasks, and under Modes
   each mode's page (MODE-7). So from a mode's page back goes to Modes, then to More; from a list to
   Lists, then to Tasks; and from a tab back **leaves the app**, as it leaves any other. It is the
   same wherever you came from — a phone's back button, the browser's, or a keyboard's — and the
@@ -213,8 +218,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-67** The **Rewards** tab has a menu of its own, opened as the Tasks tab's is (UI-43): held
   down, or tapped again while how the points stand is on screen, and closed by a tap on Rewards
   while open. It holds what the sidebar has in its place, laid out as the sidebar lays it out
-  (UI-30, RWD-19) — **Rewards** itself, with **History**, **Prizes**, **Wishlist** and **Rules**
-  **indented under it**, each entry with its icon — so any of the five pages is two taps from
+  (UI-30, RWD-19) — **Rewards** itself, with the **Chest**, **History**, **Prizes**, **Wishlist**
+  and **Rules**
+  **indented under it**, each entry with its icon — so any of the six pages is two taps from
   anywhere, however long a page of history runs. Choosing one goes there. From one of the pages
   under Rewards a tap on the tab goes to how the points stand, as it did before the menu: a tap
   only opens the menu where it has nowhere further to go. The strip across the top of the rewards
@@ -241,15 +247,16 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   closes first, leaving the one it came from. Closing the sheet any other way (UI-9, UI-48) drops
   that extra step, so the next back is the same as if the sheet had not been opened. It is the same
   wherever back comes from — a phone's back button, the browser's, or a keyboard's.
-- **UI-45** The bar has no entry for the tags or the modes, and the sidebar none for the tags:
-  they are under **More**, marked with three dots; the sidebar lists the modes itself (MODE-7).
-  **A tap opens More's page** — three links, **Lists**, **Tags** and **Modes**, each with its icon, large enough
+- **UI-45** The bar has no entry for the tags, the Balance page or the modes, and the sidebar none
+  for the tags: they are under **More**, marked with three dots; the sidebar lists Balance and the
+  modes itself (UI-30, MODE-7).
+  **A tap opens More's page** — four links, **Lists**, **Tags**, **Balance** and **Modes**, each with its icon, large enough
   for a thumb (UI-49) and a chevron at its end marking it as a page to go to. The Modes row says how many modes are on (MODE-1). The page is the same on a wide
   screen, and choosing any of them goes there. **Lists** is only a way in: it is reached from the
   Tasks tab as well (UI-34, LST-24), so **Tasks** is what stays marked once it is open, and More is
   not, or two tabs would be marked at once. **More** stays marked while its own page, the Tags page or
-  a tag's view is open, and in the bar while the Modes page or one mode's page is; in the sidebar
-  those mark **Modes** instead (MODE-7). Procrastination and the warm-up were rows
+  a tag's view is open, and in the bar while the Balance page, the Modes page or one mode's page is;
+  in the sidebar those mark **Balance** and **Modes** instead (MODE-7). Procrastination and the warm-up were rows
   here while they were switches with nothing to say; each has a page of its own now (MODE-5), as the
   rewards took a tab of their own once a phone's bar had room (UI-32, RWD-19). Its address is
   `#/more` (UI-36).
@@ -426,7 +433,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   than as a line that happens to start with a bullet. At rest the description is a single control
   that opens the box — reached with Tab and opened with Enter or Space, like any button.
 - **UI-38** Every control that **deletes or removes** something — a task, a checklist item, a task
-  in the trash for good, a tag, a redemption — is muted at rest like the controls around it and **turns red under
+  in the trash for good, a tag, a redemption, a Balance category or a tag bound to one — is muted at rest like the controls around it and **turns red under
   the pointer**, so what a click would do is plain before it is done. Closing the undo toast deletes
   nothing, and stays neutral. The sheet's **Delete** (UI-48) is the exception: a word with a bin
   beside it rather than a bare ×, and **red at rest**, since a phone has no pointer to hover over it

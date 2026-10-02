@@ -26,8 +26,9 @@ these, so a feature page only mentions them where the feature bends them.
   by one rather than colliding.
 - **PRIN-7** A task stores its **most recent** completion time. A repeating task also stores the
   **days** it was done on (RPT-27), which is what habits and their streaks are read from
-  ([Habits](habits.md)). A one-off has no history, and neither does a checklist item, nor time
-  logged: a repeating task keeps only the sessions of the occurrence in play (TIME-8). The one
+  ([Habits](habits.md)). A one-off has no history, and neither does a checklist item. Time logged
+  under a repeating task counts only for the occurrence in play, but its sessions are kept for a
+  month as the history the Balance page reads (TIME-8, BAL-3). The one
   record kept apart from the tasks is the **points ledger**: what each completion earned and what
   was redeemed ([Rewards](rewards.md)). It outlives the tasks, so earned stays earned (RWD-13).
 

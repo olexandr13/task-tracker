@@ -67,6 +67,13 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   same day leaves one completion's worth, and two devices recording the same completion count
   it once.
 
+- **RWD-44** What the **chest** gave is a row of the ledger like any other (RWD-23), named **The
+  chest** rather than for a task, deleted the same way, and counting the same way towards the
+  balance and the period tiles (RWD-17, RWD-21). It is earned on the day the chest was opened, and —
+  unlike a period's bonus (RWD-26) — is **never taken back** by the day coming unclear again
+  (CHST-5). What the chest asks of a day and what its key plays for are set on **Rules** (RWD-39,
+  CHST-7); the rest of it is on [its own page](chest.md).
+
 ## Clearing a period
 
 - **RWD-24** Clearing **Today** earns points of its own: a **bonus**, one amount for the whole
@@ -168,7 +175,7 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
 
 ## The Rewards pages
 
-- **RWD-19** **Rewards** has its own entry in the sidebar, with its three pages indented under it
+- **RWD-19** **Rewards** has its own entry in the sidebar, with its five pages indented under it
   and a chevron that **folds them away** as Lists folds its lists (UI-30, LST-26); folded, Rewards
   itself is marked wherever you are under it, and open, each page is marked on its own. On a phone it
   has a **tab of its own** in the bottom bar, marked on any of its pages (UI-32), and that tab has
@@ -180,15 +187,20 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   was **earned** in each period (RWD-21); **Finish everything, earn extra** — the three period
   bonuses **side by side in one row**, each its amount and where it stands: `+5 earned`,
   `+20 all done = earned`, or `— no bonus` — under a line saying what the bonus is
-  (RWD-27, RWD-29); and what the balance reaches on each list (RWD-37). Nothing is spent or set
-  here. None of the five pages has a box for adding a task, or a rail (UI-2).
-- **RWD-30** Rewards is **five pages**: **Rewards** itself (RWD-20), **History** (RWD-38),
+  (RWD-27, RWD-29); where the **chest** stands — what a cleared day's key can give, from 1 point
+  up to the jackpot, and whether one is waiting or already spent (CHST-23, CHST-26); and what the balance reaches on each list (RWD-37).
+  Nothing is spent or set here. None of the five pages has a box for adding a task, or a rail (UI-2).
+- **RWD-30** Rewards is **six pages**: **Rewards** itself (RWD-20), the **Chest** a cleared day
+  earns a key to ([the chest](chest.md), CHST-22), **History** (RWD-38),
   **Prizes** and **Wishlist** (RWD-40) and **Rules** (RWD-39). Their addresses are `#/rewards`,
-  `#/rewards/history`, `#/rewards/prizes`, `#/rewards/wishlist` and `#/rewards/rules` (UI-36). On a wide screen they are
+  `#/rewards/chest`,
+  `#/rewards/history`, `#/rewards/prizes`, `#/rewards/wishlist` and `#/rewards/rules` (UI-36). The
+  Chest comes **first of the five under Rewards**: it is the only one with something waiting on it. On a wide screen they are
   reached from the sidebar (RWD-19); on a phone, which has no sidebar, a **strip of them runs
   across the top of whichever is open**, the one you are on marked, and the **Rewards tab's menu**
   holds them too, so one is two taps away from anywhere in the app (UI-67). Each page answers one question:
-  where am I, where did it all go, what can I have now, what am I saving for, and what earns it.
+  where am I, what is today worth, where did it all go, what can I have now, what am I saving for,
+  and what earns it.
 - **RWD-38** **History** is everything that happened to the points in **one run**, most recent
   first: what was earned (RWD-23) and what was spent (RWD-18) together, each row its day, what it
   was, and how many points it moved — **+5** earned, **−3** spent, told apart by the sign and a
@@ -196,7 +208,8 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   a page of its own rather than the foot of how the points stand: a year of days is a long page, and
   how you are doing should not be behind it.
 - **RWD-39** **Rules** is what earns points and what they are worth: the bonus for clearing
-  **Today**, **this week** and **this month** (RWD-27), and what a point is worth in money (RWD-31).
+  **Today**, **this week** and **this month** (RWD-27), what the **chest** asks of a day and what
+  its key plays for (CHST-3, CHST-7), and what a point is worth in money (RWD-31).
   What a *task* earns is not here — that is set on the task, with its star (RWD-5), being that
   task's own; everything on Rules is one amount for the whole account.
 - **RWD-21** Points **earned** are shown on how the points stand, for **today**, **this week**
@@ -236,6 +249,7 @@ and their addresses), `src/app/components/SideNav.tsx` (the entry and its fold),
 `src/storage/rewardRepository.ts`, `firestoreRewardRepository.ts`, `rewardSchema.ts`,
 `prizeRepository.ts`, `firestorePrizeRepository.ts`, `localPrizeRepository.ts`, `prizeSchema.ts` —
 see [Storage](storage.md).
+**The chest**, which a cleared day earns the key to, has [a page of its own](chest.md).
 **Tested in:** `src/core/reward.test.ts`, `src/core/bonus.test.ts`, `src/core/prize.test.ts`,
 `src/core/pointValue.test.ts`, `src/core/redemption.test.ts`, `src/core/task.test.ts`,
 `src/storage/rewardSchema.test.ts`, `src/storage/prizeSchema.test.ts`,

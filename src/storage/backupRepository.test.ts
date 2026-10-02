@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  createCategory,
   createList,
   createPointValue,
   createPrize,
@@ -11,6 +12,7 @@ import {
   renameTask,
   startWarmUp,
   TRASH_RETENTION_MS,
+  type ChestSettings,
 } from '../core'
 import type { NudgePreference } from './nudgeRepository'
 import { countRecords, newRecords, type AccountData, type KnownRecords } from './backupRepository'
@@ -30,16 +32,20 @@ const CHOCOLATE = createPrize('Chocolate', 20, 'prize', AT)
 const UAH = createPointValue(2.5)
 const WARMING_UP = startWarmUp(AT)
 const NUDGING: NudgePreference = { on: true, quietHours: 3, window: null }
+const ASKING: ChestSettings = { leastTasks: 4, jackpot: 'typicalDay' }
+const REST = createCategory('Rest', AT)
 
 const EMPTY: AccountData = {
   tasks: [],
   lists: [],
   tags: [],
   prizes: [],
+  categories: [],
   entries: [],
   redemptions: [],
   bonuses: NO_BONUSES,
   pointValue: null,
+  chest: null,
   warmUp: null,
   nudge: null,
 }
@@ -50,9 +56,11 @@ const NOTHING_KNOWN: KnownRecords = {
   tagIds: new Set(),
   tagNames: [],
   prizeIds: new Set(),
+  categoryIds: new Set(),
   redemptionIds: new Set(),
   bonuses: NO_BONUSES,
   pointValue: null,
+  chest: null,
   warmUp: null,
   nudge: null,
   days: new Map(),
@@ -65,10 +73,12 @@ describe('what an import adds', () => {
       lists: [WORK],
       tags: [ERRANDS],
       prizes: [CHOCOLATE],
+      categories: [REST],
       entries: [{ taskId: WRITE.id, day: '2026-09-19', points: 5 }],
       redemptions: [COFFEE],
       bonuses: { today: 10, week: 40, month: null },
       pointValue: UAH,
+      chest: ASKING,
       warmUp: WARMING_UP,
       nudge: NUDGING,
     }
@@ -207,6 +217,16 @@ describe('what an import does with the bonuses and the point value', () => {
       alreadyHere: 1,
     })
   })
+
+  it('adds a Balance category the account does not have, and leaves one it does (BAK-5, BAK-6)', () => {
+    const incoming: AccountData = { ...EMPTY, categories: [REST, REST] }
+
+    expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: { ...EMPTY, categories: [REST] }, alreadyHere: 0 })
+    expect(newRecords(incoming, { ...NOTHING_KNOWN, categoryIds: new Set([REST.id]) }, AT)).toEqual({
+      fresh: EMPTY,
+      alreadyHere: 2,
+    })
+  })
 })
 
 describe('counting records', () => {
@@ -216,6 +236,7 @@ describe('counting records', () => {
       lists: [WORK],
       tags: [ERRANDS],
       prizes: [CHOCOLATE],
+      categories: [REST],
       entries: [
         { taskId: WRITE.id, day: '2026-09-19', points: 5 },
         { taskId: WRITE.id, day: '2026-09-18', points: 5 },
@@ -223,11 +244,20 @@ describe('counting records', () => {
       redemptions: [],
       bonuses: { today: 10, week: null, month: null },
       pointValue: UAH,
+      chest: ASKING,
       warmUp: WARMING_UP,
       nudge: NUDGING,
     }
 
     // The bonuses, the point value and the warm-up are settings rather than records, and are counted as none.
-    expect(countRecords(data)).toEqual({ tasks: 2, lists: 1, tags: 1, prizes: 1, completions: 2, redemptions: 0 })
+    expect(countRecords(data)).toEqual({
+      tasks: 2,
+      lists: 1,
+      tags: 1,
+      prizes: 1,
+      categories: 1,
+      completions: 2,
+      redemptions: 0,
+    })
   })
 })

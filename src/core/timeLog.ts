@@ -13,10 +13,14 @@
  * Under a repeating task a session counts for the occurrence it was logged in,
  * the same trick a checklist tick uses (./subtask): a daily hour starts from
  * nothing again tomorrow, and a weekly one when its next day comes round,
- * without anything running at midnight. Sessions from occurrences gone by are
- * dead weight, so logging lets go of them rather than piling them up.
+ * without anything running at midnight. Sessions from occurrences gone by no
+ * longer count toward the goal, but they are still time spent: the Balance page
+ * (./balance) reads them back by the day they were logged. So they are kept for
+ * a while (`TIME_HISTORY_DAYS`) and let go of once older, the next time the task
+ * logs, rather than piling up for ever.
  */
 
+import { offsetDay, startOfLocalDay, toLocalDay } from './day'
 import { countsForCurrentOccurrence, type Repeat } from './repeat'
 import type { Task } from './task'
 
@@ -95,6 +99,38 @@ export function currentEntries(entries: readonly TimeEntry[], repeat: Repeat | n
 }
 
 /**
+ * How many days of sessions a task keeps, today among them, once they no longer
+ * count for its occurrence: the history the Balance page reads (BAL-3).
+ */
+export const TIME_HISTORY_DAYS = 30
+
+/**
+ * The earliest moment a session gone by is still kept from: the start of the
+ * day `TIME_HISTORY_DAYS` back, or of the month, whichever is earlier — so the
+ * Balance page's month (BAL-2) is always whole.
+ */
+export function timeHistoryStart(now: Date): Date {
+  const days = startOfLocalDay(offsetDay(toLocalDay(now), -(TIME_HISTORY_DAYS - 1)))
+  const month = new Date(now.getFullYear(), now.getMonth(), 1)
+  return days < month ? days : month
+}
+
+/**
+ * The sessions a task keeps as of `now`, oldest first: every one that counts
+ * (`currentEntries`), and those of occurrences gone by that are recent enough to
+ * be history (`timeHistoryStart`). Only these are written back when the task
+ * next logs; what counts toward the goal is still `currentEntries`.
+ */
+export function keptEntries(entries: readonly TimeEntry[], repeat: Repeat | null, now: Date): TimeEntry[] {
+  if (repeat === null) return [...entries]
+
+  const since = timeHistoryStart(now)
+  return entries.filter(
+    (entry) => new Date(entry.loggedAt) >= since || countsForCurrentOccurrence(entry.loggedAt, repeat, now),
+  )
+}
+
+/**
  * Logs a session of whole minutes, as typed or clicked. Whether the task is
  * done is left alone either way: time reaching the goal says the task is
  * ready, not that it was done.
@@ -125,7 +161,7 @@ export function logSeconds(task: Task, seconds: number, now: Date = new Date()):
   }
 
   const entry: TimeEntry = { id: crypto.randomUUID(), seconds, loggedAt: now.toISOString() }
-  return { ...task, timeLog: [...currentEntries(task.timeLog, task.repeat, now), entry] }
+  return { ...task, timeLog: [...keptEntries(task.timeLog, task.repeat, now), entry] }
 }
 
 /**

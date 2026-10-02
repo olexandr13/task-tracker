@@ -1,6 +1,8 @@
 import type { ReactElement } from 'react'
+import { BalanceIcon } from './components/BalanceIcon'
 import { CalendarIcon } from './components/CalendarIcon'
 import { CalmIcon } from './components/CalmIcon'
+import { ChestIcon } from './components/ChestIcon'
 import { FlameIcon } from './components/FlameIcon'
 import { FolderIcon } from './components/FolderIcon'
 import { GiftIcon } from './components/GiftIcon'
@@ -41,12 +43,14 @@ export const VIEW_ICONS: Record<FixedView, ViewIcon> = {
   inbox: InboxIcon,
   habits: FlameIcon,
   rewards: StarIcon,
+  'rewards/chest': ChestIcon,
   'rewards/history': HistoryIcon,
   'rewards/prizes': GiftIcon,
   'rewards/wishlist': TrophyIcon,
   'rewards/rules': SlidersIcon,
   lists: FolderIcon,
   tags: TagIcon,
+  balance: BalanceIcon,
   more: MoreIcon,
   modes: ModesIcon,
   'modes/procrastination': ProcrastinationIcon,

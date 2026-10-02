@@ -4,6 +4,7 @@ import {
   hasTimeGoal,
   InvalidTimeError,
   isTimeGoalReached,
+  keptEntries,
   logSeconds,
   logTime,
   MAX_SESSION_MINUTES,
@@ -12,7 +13,10 @@ import {
   removeTimeEntry,
   secondsSpent,
   setTimeGoal,
+  TIME_HISTORY_DAYS,
+  timeHistoryStart,
   timeSpent,
+  type TimeEntry,
 } from './timeLog'
 
 /* TIME ids refer to wiki/time-goals.md. */
@@ -134,13 +138,24 @@ describe('time under a repeating task (TIME-7)', () => {
     expect(timeSpent(task, MON_21)).toBe(60)
   })
 
-  it('lets go of sessions from occurrences gone by as the next is logged (TIME-8)', () => {
+  it('keeps sessions from occurrences gone by as history, counting only the occurrence in play (TIME-8)', () => {
     const task = logTime(logTime(sport(), 50, MON_14), 10, TUE_15)
 
-    expect(task.timeLog.map((entry) => entry.seconds)).toEqual([10 * 60])
+    expect(task.timeLog.map((entry) => entry.seconds)).toEqual([50 * 60, 10 * 60])
+    expect(timeSpent(task, TUE_15)).toBe(10)
   })
 
-  it('lets go of sessions that no longer count when the rule is dropped, keeping those that do', () => {
+  it('lets go of sessions older than the history as the next is logged (TIME-8)', () => {
+    const old = logTime(sport(), 50, new Date(2026, 7, 10, 9, 0))
+    const recent = logTime(old, 20, new Date(2026, 8, 1, 9, 0))
+
+    const task = logTime(recent, 10, TUE_15)
+
+    // 10 August is more than thirty days and a month before 15 September; 1 September is neither.
+    expect(task.timeLog.map((entry) => entry.seconds)).toEqual([20 * 60, 10 * 60])
+  })
+
+  it('lets go of sessions that no longer count when the rule is dropped, history too, keeping those that do', () => {
     // Yesterday's session is still on the task: nothing has been logged since to let go of it.
     const task = logTime(sport(), 10, TUE_15)
     const stale = { ...task, timeLog: [{ id: 'old', seconds: 50 * 60, loggedAt: MON_14.toISOString() }, ...task.timeLog] }
@@ -216,5 +231,44 @@ describe('duplicateTask (TIME-9)', () => {
 
     expect(copy.timeGoal).toBe(60)
     expect(copy.timeLog).toEqual([])
+  })
+})
+
+describe('the history of time (TIME-8, BAL-3)', () => {
+  const at = (moment: Date): TimeEntry => ({ id: moment.toISOString(), seconds: 60, loggedAt: moment.toISOString() })
+
+  it('reaches thirty days back, today among them', () => {
+    expect(TIME_HISTORY_DAYS).toBe(30)
+    // 30 September: the 1st of the month is 29 days back, so thirty days reach it exactly.
+    expect(timeHistoryStart(new Date(2026, 8, 30, 12, 0))).toEqual(new Date(2026, 8, 1))
+    // 31 October: thirty days back is 2 October, later than the 1st.
+    expect(timeHistoryStart(new Date(2026, 9, 31, 12, 0))).toEqual(new Date(2026, 9, 1))
+  })
+
+  it('never reaches less far back than the start of the month', () => {
+    expect(timeHistoryStart(new Date(2026, 9, 31, 23, 59))).toEqual(new Date(2026, 9, 1))
+    // Early in a month, thirty days reach into the one before.
+    expect(timeHistoryStart(new Date(2026, 9, 5, 8, 0))).toEqual(new Date(2026, 8, 6))
+  })
+
+  it('keeps what counts and what is recent under a repeating task, and everything under a one-off', () => {
+    const now = new Date(2026, 9, 5, 8, 0)
+    const old = at(new Date(2026, 8, 5, 20, 0))
+    const recent = at(new Date(2026, 8, 6, 0, 0))
+    const today = at(new Date(2026, 9, 5, 7, 0))
+
+    expect(keptEntries([old, recent, today], { kind: 'daily' }, now)).toEqual([recent, today])
+    expect(keptEntries([old, recent, today], null, now)).toEqual([old, recent, today])
+  })
+
+  it('keeps a session that still counts, however long ago it was logged', () => {
+    // A monthly task on the 31st fell on 30 September, which has no 31st, and is
+    // in play until 31 October: a session from the 30th still counts on the 30th
+    // of October, before the history's start of 1 October.
+    const now = new Date(2026, 9, 30, 8, 0)
+    const counting = at(new Date(2026, 8, 30, 9, 0))
+
+    expect(timeHistoryStart(now)).toEqual(new Date(2026, 9, 1))
+    expect(keptEntries([counting], { kind: 'monthly', day: 31 }, now)).toEqual([counting])
   })
 })

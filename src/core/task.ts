@@ -132,8 +132,8 @@ export interface Task {
   readonly timeGoal: number | null
   /**
    * The sessions logged against the task, oldest first. Under a repeating task
-   * only those of the occurrence in play count, and logging lets go of the rest,
-   * so this never grows into a history. See ./timeLog.
+   * only those of the occurrence in play count; those gone by are kept a while
+   * as history for the Balance page, and let go of once older. See ./timeLog.
    */
   readonly timeLog: readonly TimeEntry[]
   /**
@@ -418,6 +418,9 @@ export function isDeleted(task: Task): boolean {
  * its stored status is still the `done` of an occurrence that has passed. Its
  * checklist and its logged time need the same hand for the same reason: a tick
  * or a session from an occurrence that has gone by would harden into a permanent one.
+ * A one-off counts every session it holds, so the sessions kept as history
+ * (`keptEntries`) go too: the Balance page loses them rather than the goal
+ * counting them.
  */
 export function setRepeat(task: Task, repeat: Repeat | null, now: Date = new Date()): Task {
   if (repeat !== null) {

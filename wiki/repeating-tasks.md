@@ -34,7 +34,8 @@ and whether it reads as done is derived from the occurrence currently in play ra
 - **RPT-11** Un-completing undoes the occurrence in play only, and where that occurrence has gone
   by it passes it over rather than leaving the task on it (RPT-38).
 - **RPT-32** Time logged against a repeating task counts for the occurrence in play too, and starts
-  from nothing when the next one arrives (TIME-7).
+  from nothing when the next one arrives (TIME-7). The sessions gone by are kept a while all the
+  same, as time spent for the Balance page (TIME-8, BAL-3).
 - **RPT-38** Taking the tick back off a task whose occurrence **has gone by** passes that occurrence
   over, exactly as skipping it would (RPT-34): the task is due on the rule's next day, is no longer
   overdue and is out of Today and this week (LIST-2, LIST-3, LIST-11), rather than dropping back

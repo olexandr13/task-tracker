@@ -41,6 +41,7 @@ describe('viewFromHash', () => {
       'rewards',
       'lists',
       'tags',
+      'balance',
       'more',
       'modes',
       'modes/procrastination',
@@ -52,6 +53,11 @@ describe('viewFromHash', () => {
     for (const view of views) {
       expect(viewFromHash(viewHash(view))).toBe(view)
     }
+  })
+
+  it('gives the Balance page an address of its own (BAL-1, UI-36)', () => {
+    expect(viewHash('balance')).toBe('#/balance')
+    expect(viewFromHash('#/balance')).toBe('balance')
   })
 
   it('names a mode\'s page after the mode, under Modes (MODE-1, UI-36)', () => {
@@ -151,6 +157,16 @@ describe('useView', () => {
     const { result } = renderHook(() => useView())
     await historySettles()
     expect(result.current[0]).toBe('rewards/wishlist')
+
+    await back()
+    expect(result.current[0]).toBe('rewards')
+  })
+
+  it('reads the chest’s own address, and climbs to Rewards from it (RWD-30, CHST-22)', async () => {
+    window.history.replaceState(null, '', '/#/rewards/chest')
+    const { result } = renderHook(() => useView())
+    await historySettles()
+    expect(result.current[0]).toBe('rewards/chest')
 
     await back()
     expect(result.current[0]).toBe('rewards')

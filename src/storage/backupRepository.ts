@@ -1,6 +1,9 @@
 import {
   BONUS_PERIODS,
   isExpired,
+  type Category,
+  type CategoryId,
+  type ChestSettings,
   sameTag,
   type List,
   type ListId,
@@ -33,6 +36,8 @@ export interface AccountData {
   readonly tags: readonly Tag[]
   /** The prizes points are saved up for (./prizeRepository). */
   readonly prizes: readonly Prize[]
+  /** The Balance page's categories (./categoryRepository). */
+  readonly categories: readonly Category[]
   /** What completions earned (./rewardRepository). */
   readonly entries: readonly RewardEntry[]
   readonly redemptions: readonly Redemption[]
@@ -44,6 +49,12 @@ export interface AccountData {
   readonly bonuses: PeriodBonuses
   /** What one point is worth (RWD-31), or null while nothing says. A setting, as the bonuses are. */
   readonly pointValue: PointValue | null
+  /**
+   * What the chest asks of a day and what its key plays for (CHST-7), or null
+   * where nothing says and it stands at what an account starts with. A setting
+   * again, taken by an import only where the account has none of its own.
+   */
+  readonly chest: ChestSettings | null
   /**
    * The warm-up under way, or null for none (WARM-1). A setting again: it is
    * counted as none of the records, and an import takes it only where the
@@ -64,6 +75,7 @@ export interface RecordCounts {
   readonly lists: number
   readonly tags: number
   readonly prizes: number
+  readonly categories: number
   readonly completions: number
   readonly redemptions: number
 }
@@ -108,11 +120,14 @@ export interface KnownRecords {
   /** The names of the tags kept already, readable ones: a tag is found by its name (../core/tag). */
   readonly tagNames: readonly string[]
   readonly prizeIds: ReadonlySet<PrizeId>
+  readonly categoryIds: ReadonlySet<CategoryId>
   readonly redemptionIds: ReadonlySet<RedemptionId>
   /** What the account earns for clearing each period already, null where it has no bonus. */
   readonly bonuses: PeriodBonuses
   /** What the account says a point is worth already, or null when it says nothing. */
   readonly pointValue: PointValue | null
+  /** What the account asks of the chest already, or null when it says nothing. */
+  readonly chest: ChestSettings | null
   /** The warm-up the account has already, or null when it has none. */
   readonly warmUp: WarmUp | null
   /** How the account already asked to be nudged, or null when it says nothing. */
@@ -130,6 +145,7 @@ export function countRecords(data: AccountData): RecordCounts {
     lists: data.lists.length,
     tags: data.tags.length,
     prizes: data.prizes.length,
+    categories: data.categories.length,
     completions: data.entries.length,
     redemptions: data.redemptions.length,
   }
@@ -148,7 +164,8 @@ export function countRecords(data: AccountData): RecordCounts {
  * so an import never makes a second record of one tag. The bonuses and what a
  * point is worth are the things in here that are no records: the file's are
  * taken only where the account has none, and count towards neither what was
- * added nor what was already here. So are the warm-up and the nudge: a file's
+ * added nor what was already here. So are the chest's settings, the warm-up and
+ * the nudge: a file's
  * is taken only by an account with none of its own, which keeps a restored
  * backup from starting a month that has already been served, or from turning a
  * nudge back on that was turned off since.
@@ -202,10 +219,12 @@ export function newRecords(
       lists: unseen(incoming.lists, (list) => list.id, known.listIds),
       tags,
       prizes: unseen(incoming.prizes, (prize) => prize.id, known.prizeIds),
+      categories: unseen(incoming.categories, (category) => category.id, known.categoryIds),
       entries: unseen(incoming.entries, entryKey, takenEntries),
       redemptions: unseen(incoming.redemptions, (redemption) => redemption.id, known.redemptionIds),
       bonuses,
       pointValue: known.pointValue === null ? incoming.pointValue : null,
+      chest: known.chest === null ? incoming.chest : null,
       warmUp: known.warmUp === null ? incoming.warmUp : null,
       nudge: known.nudge === null ? incoming.nudge : null,
     },

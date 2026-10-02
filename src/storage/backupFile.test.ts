@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  bindTag,
   completeTask,
+  createCategory,
   createList,
   createPointValue,
   createPrize,
@@ -12,9 +14,11 @@ import {
   startWarmUp,
   type PeriodBonuses,
   type RewardEntry,
+  type ChestSettings,
 } from '../core'
 import { backupFileName, BACKUP_FORMAT, BACKUP_VERSION, readBackupFile, writeBackupFile } from './backupFile'
 import type { AccountData } from './backupRepository'
+import { CATEGORY_SCHEMA_VERSION } from './categorySchema'
 import { LIST_SCHEMA_VERSION } from './listSchema'
 import type { NudgePreference } from './nudgeRepository'
 import { NUDGE_SCHEMA_VERSION } from './nudgeSchema'
@@ -42,16 +46,20 @@ const BONUSES: PeriodBonuses = { today: 10, week: 40, month: null }
 const UAH = createPointValue(2.5)
 const WARMING_UP = startWarmUp(AT)
 const NUDGING: NudgePreference = { on: true, quietHours: 3, window: { from: '09:00', to: '22:00' } }
+const ASKING: ChestSettings = { leastTasks: 4, jackpot: 'typicalDay' }
+const REST = bindTag(createCategory('Rest', AT), 'walk')
 
 const DATA: AccountData = {
   tasks: [DONE, TRASHED],
   lists: [WORK],
   tags: [ERRANDS],
   prizes: [CHOCOLATE],
+  categories: [REST],
   entries: ENTRIES,
   redemptions: [TREAT],
   bonuses: BONUSES,
   pointValue: UAH,
+  chest: ASKING,
   warmUp: WARMING_UP,
   nudge: NUDGING,
 }
@@ -78,12 +86,16 @@ describe('writing a backup', () => {
       lists: [{ version: LIST_SCHEMA_VERSION, list: WORK }],
       tags: [{ version: TAG_SCHEMA_VERSION, tag: ERRANDS }],
       prizes: [{ version: PRIZE_SCHEMA_VERSION, prize: CHOCOLATE }],
+      categories: [{ version: CATEGORY_SCHEMA_VERSION, category: REST }],
       redemptions: [{ version: REWARD_SCHEMA_VERSION, redemption: TREAT }],
       rewardGoals: [
         { version: REWARD_SCHEMA_VERSION, goal: { period: 'today', points: 10 } },
         { version: REWARD_SCHEMA_VERSION, goal: { period: 'week', points: 40 } },
       ],
-      rewardSettings: [{ version: REWARD_SCHEMA_VERSION, name: 'pointValue', value: UAH }],
+      rewardSettings: [
+        { version: REWARD_SCHEMA_VERSION, name: 'pointValue', value: UAH },
+        { version: REWARD_SCHEMA_VERSION, name: 'chest', settings: ASKING },
+      ],
       nudge: [{ version: NUDGE_SCHEMA_VERSION, name: 'nudge', nudge: NUDGING }],
     })
   })
@@ -117,6 +129,7 @@ describe('reading a backup', () => {
     expect(readBackupFile(fileWith({ lists: undefined }))).toBe('not-a-backup')
     expect(readBackupFile(fileWith({ tags: undefined }))).toBe('not-a-backup')
     expect(readBackupFile(fileWith({ prizes: undefined }))).toBe('not-a-backup')
+    expect(readBackupFile(fileWith({ categories: undefined }))).toBe('not-a-backup')
   })
 
   it('reads a file from before tags were backed up as keeping none (BAK-12)', () => {
@@ -129,11 +142,22 @@ describe('reading a backup', () => {
         rewardSettings: undefined,
         warmUp: undefined,
         nudge: undefined,
+        categories: undefined,
       }),
     )
 
     expect(read).toEqual({
-      data: { ...DATA, tags: [], prizes: [], bonuses: NO_BONUSES, pointValue: null, warmUp: null, nudge: null },
+      data: {
+        ...DATA,
+        tags: [],
+        prizes: [],
+        categories: [],
+        bonuses: NO_BONUSES,
+        pointValue: null,
+        chest: null,
+        warmUp: null,
+        nudge: null,
+      },
       unreadable: 0,
     })
   })
@@ -147,37 +171,51 @@ describe('reading a backup', () => {
         rewardSettings: undefined,
         warmUp: undefined,
         nudge: undefined,
+        categories: undefined,
       }),
     )
 
     expect(read).toEqual({
-      data: { ...DATA, prizes: [], bonuses: NO_BONUSES, pointValue: null, warmUp: null, nudge: null },
+      data: { ...DATA, prizes: [], categories: [], bonuses: NO_BONUSES, pointValue: null, chest: null, warmUp: null, nudge: null },
       unreadable: 0,
     })
   })
 
   it('reads a file from before the wishlist as holding no prizes and no point value (BAK-14)', () => {
     const read = readBackupFile(
-      fileWith({ version: 3, prizes: undefined, rewardSettings: undefined, warmUp: undefined, nudge: undefined }),
+      fileWith({
+        version: 3,
+        prizes: undefined,
+        rewardSettings: undefined,
+        warmUp: undefined,
+        nudge: undefined,
+        categories: undefined,
+      }),
     )
 
     expect(read).toEqual({
-      data: { ...DATA, prizes: [], pointValue: null, warmUp: null, nudge: null },
+      data: { ...DATA, prizes: [], categories: [], pointValue: null, chest: null, warmUp: null, nudge: null },
       unreadable: 0,
     })
   })
 
   it('reads a file from before there was a warm-up as having none under way (BAK-15)', () => {
-    const read = readBackupFile(fileWith({ version: 4, warmUp: undefined, nudge: undefined }))
+    const read = readBackupFile(fileWith({ version: 4, warmUp: undefined, nudge: undefined, categories: undefined }))
 
-    expect(read).toEqual({ data: { ...DATA, warmUp: null, nudge: null }, unreadable: 0 })
+    expect(read).toEqual({ data: { ...DATA, categories: [], warmUp: null, nudge: null }, unreadable: 0 })
   })
 
   it('reads a file from before the nudge synced as asking for none (BAK-16)', () => {
     // Version 5 kept the nudge on the device, so no file made then holds one.
-    const read = readBackupFile(fileWith({ version: 5, nudge: undefined }))
+    const read = readBackupFile(fileWith({ version: 5, nudge: undefined, categories: undefined }))
 
-    expect(read).toEqual({ data: { ...DATA, nudge: null }, unreadable: 0 })
+    expect(read).toEqual({ data: { ...DATA, categories: [], nudge: null }, unreadable: 0 })
+  })
+
+  it('reads a file from before there were Balance categories as holding none (BAK-17)', () => {
+    const read = readBackupFile(fileWith({ version: 6, categories: undefined }))
+
+    expect(read).toEqual({ data: { ...DATA, categories: [] }, unreadable: 0 })
   })
 
   it('says so when a backup was made by a newer version of the app (BAK-9)', () => {
@@ -199,6 +237,7 @@ describe('reading a backup', () => {
         tags: [{ version: TAG_SCHEMA_VERSION, tag: { ...ERRANDS, name: 'two words' } }],
         rewardDays: [{ version: REWARD_SCHEMA_VERSION, day: 'someday', entries: {} }],
         redemptions: ['coffee', { version: REWARD_SCHEMA_VERSION, redemption: TREAT }],
+        categories: [{ version: CATEGORY_SCHEMA_VERSION, category: { ...REST, tags: ['two words'] } }],
       }),
     )
 
@@ -208,14 +247,16 @@ describe('reading a backup', () => {
         lists: [],
         tags: [],
         prizes: [CHOCOLATE],
+        categories: [],
         entries: [],
         redemptions: [TREAT],
         bonuses: BONUSES,
         pointValue: UAH,
+        chest: ASKING,
         warmUp: WARMING_UP,
         nudge: NUDGING,
       },
-      unreadable: 6,
+      unreadable: 7,
     })
   })
 })

@@ -1,4 +1,14 @@
-import { bonusPeriod, moneyFor, toLocalDay, type LocalDay, type Period, type PointValue, type Repeat, type TaskId } from '../core'
+import {
+  bonusPeriod,
+  CHEST_ID,
+  moneyFor,
+  toLocalDay,
+  type LocalDay,
+  type Period,
+  type PointValue,
+  type Repeat,
+  type TaskId,
+} from '../core'
 import { describeDueDate } from './dueLabels'
 
 /**
@@ -34,10 +44,17 @@ export const BONUS_HINTS: Record<Period, string> = {
   month: 'Earned once a month, the moment everything this month asks for is done.',
 }
 
-/** The title a ledger row carries: the task's, or what the bonus was for (RWD-28). */
+/** What an opened chest reads as, where a task's title would be (RWD-44). */
+export const CHEST_TITLE = 'The chest'
+
+/**
+ * The title a ledger row carries: the task's, what the bonus was for (RWD-28),
+ * or the chest a cleared day earned the key to (RWD-44).
+ */
 export function describeEarningTitle(taskId: TaskId, taskTitles: ReadonlyMap<TaskId, string>): string {
   const period = bonusPeriod(taskId)
   if (period !== null) return BONUS_TITLES[period]
+  if (taskId === CHEST_ID) return CHEST_TITLE
   return taskTitles.get(taskId) ?? 'Deleted task'
 }
 

@@ -16,11 +16,12 @@ import { AppLogo } from './AppLogo'
 import { ChevronIcon } from './ChevronIcon'
 import { FolderIcon } from './FolderIcon'
 import { InboxIcon } from './InboxIcon'
+import { KeyWaitingMark } from './KeyWaitingMark'
 
 /**
  * The views, grouped: the ones named after a period, then every task, the
- * habits, the lists, the rewards, the modes and More, then the trash, then
- * settings. A thin line is drawn between groups. Lists opens onto the Inbox and
+ * habits, the lists, the rewards, the balance of time, the modes and More, then
+ * the trash, then settings. A thin line is drawn between groups. Lists opens onto the Inbox and
  * every list under it, so a list is one click away and a task can be dropped on
  * one to file it, and folds them away when they are not wanted. Rewards keeps
  * its four pages under it in the same way, and Modes a page for each mode
@@ -29,7 +30,7 @@ import { InboxIcon } from './InboxIcon'
  */
 const VIEW_GROUPS: readonly (readonly FixedView[])[] = [
   ['today', 'week', 'month'],
-  ['tasks', 'habits', 'lists', 'rewards', 'modes', 'more'],
+  ['tasks', 'habits', 'lists', 'rewards', 'balance', 'modes', 'more'],
   ['trash'],
   ['settings'],
 ]
@@ -83,6 +84,8 @@ interface SideNavProps {
   rewardsOpen: boolean
   /** Whether each mode's page is shown under Modes, or folded away. */
   modesOpen: boolean
+  /** Whether a key is waiting, which marks the Chest under Rewards (CHST-22). */
+  keyWaiting?: boolean
   /** Soften the sidebar, Today apart, while Procrastination mode is on (JUST-5). */
   dimmed?: boolean
   onChange: (view: View) => void
@@ -97,8 +100,8 @@ interface SideNavProps {
  * instead (BottomNav), and no mark above the work. The one you are on is
  * marked, a list under Lists included — or Lists itself while the lists are
  * folded away. More stays marked while Tags or a tag's tasks are open; Rewards
- * has its own entry here, with the history, the wishlist and the rules under it,
- * and each of the four is marked itself (RWD-19) — or Rewards alone while they
+ * has its own entry here, with the chest, the history, the prizes, the wishlist
+ * and the rules under it, and each of the five is marked itself (RWD-19) — or Rewards alone while they
  * are folded away, as with Lists. Modes is listed the same way, with each mode's
  * page under it, so going from one mode to the other is a step down the sidebar
  * rather than a strip across the top of them (MODE-7).
@@ -109,6 +112,7 @@ export function SideNav({
   listsOpen,
   rewardsOpen,
   modesOpen,
+  keyWaiting = false,
   dimmed = false,
   onChange,
   onListsOpenChange,
@@ -180,7 +184,13 @@ export function SideNav({
                   onOpenChange={onRewardsOpenChange}
                 >
                   {UNDER_REWARDS.map((page) => (
-                    <SubNavButton key={page} value={page} active={view === page} onSelect={onChange} />
+                    <SubNavButton
+                      key={page}
+                      value={page}
+                      active={view === page}
+                      marked={page === 'rewards/chest' && keyWaiting}
+                      onSelect={onChange}
+                    />
                   ))}
                 </FoldableEntry>
               ) : value === 'modes' ? (
@@ -282,13 +292,15 @@ function NavButton({ value, active, onSelect }: { value: FixedView; active: bool
 interface SubNavButtonProps {
   value: FixedView
   active: boolean
+  /** Something is waiting on this page: a dot after its name (CHST-22). */
+  marked?: boolean
   /** How the page's glyph is drawn: a mode's emoji needs more said than a drawing does. */
   glyph?: string
   onSelect: (view: View) => void
 }
 
 /** A page under Rewards or Modes: the same indent as a list under Lists, and nothing to drop on it. */
-function SubNavButton({ value, active, glyph = subGlyph, onSelect }: SubNavButtonProps) {
+function SubNavButton({ value, active, marked = false, glyph = subGlyph, onSelect }: SubNavButtonProps) {
   const Icon = VIEW_ICONS[value]
 
   return (
@@ -301,6 +313,7 @@ function SubNavButton({ value, active, glyph = subGlyph, onSelect }: SubNavButto
       >
         <Icon className={glyph} />
         <span className="min-w-0 truncate">{VIEW_LABELS[value]}</span>
+        {marked && <KeyWaitingMark />}
       </button>
     </li>
   )

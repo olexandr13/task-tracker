@@ -34,9 +34,11 @@ function setup({
   prizes = [CHOCOLATE, PHONE] as readonly Prize[],
   bonuses = NO_BONUSES as PeriodBonuses,
   pointValue = null as PointValue | null,
+  chest = { jackpot: 20, waiting: false, gave: null as number | null },
 } = {}) {
   const onOpenPrizes = vi.fn()
   const onOpenWishlist = vi.fn()
+  const onOpenChest = vi.fn()
   const onOpenRules = vi.fn()
   render(
     <RewardsPage
@@ -46,12 +48,14 @@ function setup({
       bonuses={bonuses}
       pointValue={pointValue}
       now={NOW}
+      chest={chest}
       onOpenPrizes={onOpenPrizes}
       onOpenWishlist={onOpenWishlist}
+      onOpenChest={onOpenChest}
       onOpenRules={onOpenRules}
     />,
   )
-  return { user: userEvent.setup(), onOpenPrizes, onOpenWishlist, onOpenRules }
+  return { user: userEvent.setup(), onOpenPrizes, onOpenWishlist, onOpenChest, onOpenRules }
 }
 
 describe('the balance (RWD-17, RWD-32)', () => {
@@ -129,5 +133,34 @@ describe('what the balance reaches (RWD-37, RWD-40)', () => {
     await user.click(screen.getByRole('button', { name: 'Spend points' }))
 
     expect(onOpenPrizes).toHaveBeenCalled()
+  })
+})
+
+describe('the chest', () => {
+  it('says a key is waiting, and what it plays for (CHST-22)', () => {
+    setup({ chest: { jackpot: 25, waiting: true, gave: null } })
+
+    expect(screen.getByText('A key is waiting.')).toBeTruthy()
+    expect(screen.getByText('One chest a day, for 1 to 25 points.')).toBeTruthy()
+  })
+
+  it('says what today’s gave once it is open', () => {
+    setup({ chest: { jackpot: 25, waiting: false, gave: 7 } })
+
+    expect(screen.getByText('Opened today, for 7 points.')).toBeTruthy()
+  })
+
+  it('says what would earn a key while the day is unclear', () => {
+    setup({ chest: { jackpot: 25, waiting: false, gave: null } })
+
+    expect(screen.getByText('Clear everything in Today to earn a key.')).toBeTruthy()
+  })
+
+  it('goes to the chest', async () => {
+    const { user, onOpenChest } = setup({ chest: { jackpot: 25, waiting: true, gave: null } })
+
+    await user.click(screen.getByRole('button', { name: 'Open it' }))
+
+    expect(onOpenChest).toHaveBeenCalledOnce()
   })
 })

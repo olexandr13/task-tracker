@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import type { ReactNode } from 'react'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -9,7 +10,7 @@ import { RewardRulesPage } from './RewardRulesPage'
 
 afterEach(cleanup)
 
-function setup(bonuses: PeriodBonuses = NO_BONUSES, pointValue: PointValue | null = null) {
+function setup(bonuses: PeriodBonuses = NO_BONUSES, pointValue: PointValue | null = null, chest?: ReactNode) {
   const onChangeBonus = vi.fn()
   const onChangePointValue = vi.fn()
   render(
@@ -18,6 +19,7 @@ function setup(bonuses: PeriodBonuses = NO_BONUSES, pointValue: PointValue | nul
       pointValue={pointValue}
       onChangeBonus={onChangeBonus}
       onChangePointValue={onChangePointValue}
+      chest={chest}
     />,
   )
   return { user: userEvent.setup(), onChangeBonus, onChangePointValue }
@@ -111,5 +113,20 @@ describe('what a point is worth (RWD-31)', () => {
     await user.tab()
 
     expect(amount.value).toBe('2.5')
+  })
+})
+
+describe('the chest', () => {
+  it('carries what the chest asks of a day, beside the other rules (CHST-7)', () => {
+    setup(NO_BONUSES, null, <p>Tasks a day must ask for</p>)
+
+    expect(screen.getByRole('region', { name: 'The chest' })).toBeTruthy()
+    expect(screen.getByText('Tasks a day must ask for')).toBeTruthy()
+  })
+
+  it('shows no such section where there is nothing to put in it', () => {
+    setup()
+
+    expect(screen.queryByRole('region', { name: 'The chest' })).toBeNull()
   })
 })

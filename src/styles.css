@@ -240,3 +240,760 @@ body {
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   The chest (CHST-14). Clearing Today earns a key, and the key is worth having
+   because of the two and a half seconds that follow it: a squash as it is
+   pressed, three rattles each harder than the last, a crack of light that takes
+   on a colour, a held beat in which the cabinet darkens round a trembling chest
+   — and then the lid, a flash, a ring going out, and the light flooding up.
+
+   The lengths here are the ones in `src/app/chestTiming.ts`; changing one means
+   changing the other. Every movement is transform and opacity, so the whole of
+   it runs on the compositor, and every curve is chosen for what it is doing: a
+   hop rises fast and falls slow, a lid overshoots and settles, a ring eases out.
+
+   The chest is SVG, so what moves inside it is turned about points in its own
+   space — `transform-box: view-box` — rather than about its own box, which
+   changes shape as it squashes.
+   --------------------------------------------------------------------------- */
+
+/* The cabinet: a dark stage in either theme (Chest), lit faintly from above,
+   and when the chest is open, lit from within by whatever came out of it.
+   `--chest-glow` is the tier's light. */
+.chest-stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(90% 55% at 50% 0%, rgb(255 237 213 / 0.09), transparent 70%),
+    radial-gradient(70% 40% at 50% 100%, rgb(0 0 0 / 0.35), transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.chest-cabinet-open {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--chest-glow) 45%, transparent),
+    0 0 48px -4px color-mix(in srgb, var(--chest-glow) 55%, transparent),
+    0 24px 48px -24px rgb(0 0 0 / 0.6);
+  transition: box-shadow 600ms ease-out;
+}
+
+.chest-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(60% 55% at 50% 50%, color-mix(in srgb, var(--chest-glow) 55%, transparent), transparent 72%);
+  opacity: 0;
+}
+
+.chest-ambient-on {
+  animation: chest-ambient 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.chest-ambient-still {
+  opacity: 0.7;
+}
+
+@keyframes chest-ambient {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+}
+
+/* The held beat: the room going quiet round the chest. */
+.chest-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(closest-side at 50% 54%, transparent 45%, rgb(0 0 0 / 0.5));
+  opacity: 0;
+  transition: opacity 180ms ease-in;
+}
+
+.chest-vignette-on {
+  opacity: 1;
+  transition: opacity 480ms ease-out;
+}
+
+/* The chest as one, standing on its floor. */
+.chest-object,
+.chest-shadow {
+  transform-box: view-box;
+  transform-origin: 100px 164px;
+}
+
+/* Breathing while a key is waiting: a slow rise and settle, its shadow
+   tightening as it rises — the one thing on the page that is alive. */
+.chest-breathe {
+  animation: chest-breathe 3.2s ease-in-out infinite;
+}
+
+.chest-shadow-breathe {
+  animation: chest-shadow-breathe 3.2s ease-in-out infinite;
+}
+
+@keyframes chest-breathe {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1, 1);
+  }
+  50% {
+    transform: translate(0, -5px) scale(0.995, 1.01);
+  }
+}
+
+@keyframes chest-shadow-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.9);
+    opacity: 0.75;
+  }
+}
+
+/* And a glint running over the lid now and then, like light off varnish. */
+.chest-glint {
+  animation: chest-glint 3.6s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+}
+
+@keyframes chest-glint {
+  0%,
+  55% {
+    transform: translateX(0);
+  }
+  85%,
+  100% {
+    transform: translateX(240px);
+  }
+}
+
+/* Pressed: it squashes into its floor before anything else, the way a thing
+   gathers itself before it moves. */
+.chest-press {
+  animation: chest-press 0.16s cubic-bezier(0.3, 0, 0.3, 1) forwards;
+}
+
+@keyframes chest-press {
+  to {
+    transform: scale(1.06, 0.92);
+  }
+}
+
+/* The three rattles. Each one rises, twists and lands harder than the last:
+   squashed on the way down, stretched at the top, and the third nearly
+   jumping off its floor. */
+.chest-rattle-1 {
+  animation: chest-rattle-1 0.26s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.chest-rattle-2 {
+  animation: chest-rattle-2 0.3s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.chest-rattle-3 {
+  animation: chest-rattle-3 0.38s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+@keyframes chest-rattle-1 {
+  0% {
+    transform: scale(1.06, 0.92);
+  }
+  30% {
+    transform: translate(-1.5px, -4px) rotate(-2deg) scale(0.98, 1.03);
+  }
+  60% {
+    transform: translate(1.5px, 0) rotate(1.5deg) scale(1.03, 0.97);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes chest-rattle-2 {
+  0% {
+    transform: scale(1.05, 0.94);
+  }
+  25% {
+    transform: translate(-3px, -10px) rotate(-4deg) scale(0.96, 1.06);
+  }
+  50% {
+    transform: translate(3px, -4px) rotate(4deg) scale(0.99, 1.01);
+  }
+  72% {
+    transform: translate(0, 0) rotate(-1.5deg) scale(1.06, 0.93);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes chest-rattle-3 {
+  0% {
+    transform: scale(1.08, 0.9);
+  }
+  22% {
+    transform: translate(-4px, -20px) rotate(-7deg) scale(0.93, 1.1);
+  }
+  44% {
+    transform: translate(4px, -12px) rotate(6deg) scale(0.97, 1.04);
+  }
+  64% {
+    transform: translate(-2px, 0) rotate(-3deg) scale(1.1, 0.88);
+  }
+  82% {
+    transform: translate(1px, -2px) rotate(1deg) scale(0.98, 1.02);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* The shadow under each hop: smaller and fainter the higher the chest goes. */
+.chest-hop-1 {
+  animation: chest-hop 0.26s ease-out;
+  --hop: 0.94;
+}
+
+.chest-hop-2 {
+  animation: chest-hop 0.3s ease-out;
+  --hop: 0.84;
+}
+
+.chest-hop-3 {
+  animation: chest-hop 0.38s ease-out;
+  --hop: 0.7;
+}
+
+@keyframes chest-hop {
+  30% {
+    transform: scale(var(--hop));
+    opacity: 0.6;
+  }
+}
+
+/* The held beat: almost still, a tremble too fine to call a rattle. */
+.chest-tremble {
+  animation: chest-tremble 0.09s linear infinite;
+}
+
+@keyframes chest-tremble {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0);
+  }
+  25% {
+    transform: translate(-0.7px, 0.2px) rotate(-0.4deg);
+  }
+  75% {
+    transform: translate(0.7px, -0.2px) rotate(0.4deg);
+  }
+}
+
+/* The crack of light along the lid: a hairline with the second rattle, then,
+   held, a line that swells and brightens until it cannot be held in. */
+.chest-seam,
+.chest-seam-held {
+  transform-box: view-box;
+  transform-origin: 100px 106px;
+}
+
+.chest-seam {
+  animation: chest-seam 0.5s ease-out forwards;
+}
+
+.chest-seam-held {
+  animation: chest-seam-held 0.54s cubic-bezier(0.5, 0, 0.9, 0.6) forwards;
+}
+
+@keyframes chest-seam {
+  0% {
+    opacity: 0;
+    transform: scale(0.3, 0.4);
+  }
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.8;
+    transform: scale(1, 1);
+  }
+}
+
+@keyframes chest-seam-held {
+  0% {
+    opacity: 0.8;
+    transform: scale(1, 1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.06, 2.4);
+  }
+}
+
+/* The spill round the lid's outline: faint with the seam, and swelling through
+   the held beat until the lid cannot hold it. */
+.chest-backlight,
+.chest-backlight-held {
+  transform-box: view-box;
+  transform-origin: 100px 104px;
+}
+
+.chest-backlight {
+  animation: chest-backlight 0.6s ease-out forwards;
+}
+
+.chest-backlight-held {
+  animation: chest-backlight-held 0.54s cubic-bezier(0.5, 0, 0.9, 0.6) forwards;
+}
+
+@keyframes chest-backlight {
+  0% {
+    opacity: 0;
+    transform: scale(0.7, 0.5);
+  }
+  100% {
+    opacity: 0.55;
+    transform: scale(1, 1);
+  }
+}
+
+@keyframes chest-backlight-held {
+  0% {
+    opacity: 0.55;
+    transform: scale(1, 1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.18, 1.9);
+  }
+}
+
+/* Anything of the light that is not out yet. */
+.chest-dark {
+  opacity: 0;
+}
+
+/* The lid: off on a spring. It flies higher than it lands, tipping back, and
+   settles where it stays. */
+.chest-lid,
+.chest-lid-still {
+  transform-box: view-box;
+  transform-origin: 100px 106px;
+}
+
+.chest-lid {
+  animation: chest-lid 0.72s linear forwards;
+}
+
+.chest-lid-still {
+  transform: translate(0, -46px) rotate(-11deg);
+}
+
+@keyframes chest-lid {
+  0% {
+    transform: translate(0, 0) rotate(0);
+    animation-timing-function: cubic-bezier(0.1, 0.7, 0.3, 1);
+  }
+  30% {
+    transform: translate(2px, -66px) rotate(-17deg);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.6, 1);
+  }
+  55% {
+    transform: translate(0, -40px) rotate(-8deg);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  75% {
+    transform: translate(0, -50px) rotate(-12.5deg);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  100% {
+    transform: translate(0, -46px) rotate(-11deg);
+  }
+}
+
+/* The chest itself kicks as the lid goes. */
+.chest-recoil {
+  animation: chest-recoil 0.5s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes chest-recoil {
+  0% {
+    transform: scale(1.1, 0.86);
+  }
+  35% {
+    transform: scale(0.95, 1.06);
+  }
+  65% {
+    transform: scale(1.02, 0.98);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+/* The light out of it: a core in the mouth, a bloom behind, and shafts through
+   the bloom that sway as if the light were moving inside. */
+.chest-core,
+.chest-core-still,
+.chest-bloom,
+.chest-bloom-still,
+.chest-rays,
+.chest-rays-still,
+.chest-rays-sway {
+  transform-box: view-box;
+  transform-origin: 100px 106px;
+}
+
+.chest-core {
+  animation: chest-core 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.chest-core-still {
+  opacity: 0.85;
+}
+
+@keyframes chest-core {
+  0% {
+    opacity: 0;
+    transform: scale(0.2, 0.4);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.25, 1.6);
+  }
+  100% {
+    opacity: 0.85;
+    transform: scale(1, 1);
+  }
+}
+
+.chest-bloom {
+  animation:
+    chest-bloom 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards,
+    chest-breath-light 3s ease-in-out 0.9s infinite;
+}
+
+.chest-bloom-still {
+  opacity: 0.75;
+  animation: chest-breath-light 3s ease-in-out infinite;
+}
+
+@keyframes chest-bloom {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+}
+
+@keyframes chest-breath-light {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+
+.chest-rays {
+  animation: chest-rays 0.8s cubic-bezier(0.15, 0.85, 0.25, 1) forwards;
+}
+
+.chest-rays-still {
+  opacity: 0.8;
+}
+
+.chest-rays-sway {
+  animation: chest-rays-sway 7s ease-in-out infinite;
+}
+
+@keyframes chest-rays {
+  0% {
+    opacity: 0;
+    transform: scale(0.1, 0.05);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.05, 1.12);
+  }
+  100% {
+    opacity: 0.8;
+    transform: scale(1, 1);
+  }
+}
+
+@keyframes chest-rays-sway {
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+/* A jackpot's light will not hold one colour. */
+.chest-rainbow {
+  animation:
+    chest-rays-sway 7s ease-in-out infinite,
+    chest-rainbow 2.4s linear infinite;
+}
+
+@keyframes chest-rainbow {
+  to {
+    filter: hue-rotate(360deg);
+  }
+}
+
+/* The lid going: a flash out of the mouth, and two rings of light after it. */
+.chest-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 53%, #fff 0%, rgb(255 255 255 / 0.85) 18%, color-mix(in srgb, var(--chest-glow) 60%, transparent) 40%, transparent 70%);
+  mix-blend-mode: screen;
+  animation: chest-flash 0.55s cubic-bezier(0.1, 0.6, 0.3, 1) forwards;
+}
+
+@keyframes chest-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  12% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+.chest-shockwave {
+  position: absolute;
+  left: 50%;
+  top: 53%;
+  width: 36%;
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  border: 3px solid var(--chest-glow);
+  box-shadow:
+    0 0 18px var(--chest-glow),
+    inset 0 0 18px var(--chest-glow);
+  transform: translate(-50%, -50%) scale(0.1);
+  opacity: 0;
+  animation: chest-shockwave 0.7s cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
+}
+
+.chest-shockwave-late {
+  border-width: 1.5px;
+  animation-delay: 0.12s;
+  animation-duration: 0.9s;
+}
+
+@keyframes chest-shockwave {
+  0% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(0.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(3);
+  }
+}
+
+/* A jackpot takes the whole cabinet with it. */
+.chest-shake {
+  animation: chest-shake 0.6s cubic-bezier(0.3, 0.6, 0.4, 1);
+}
+
+@keyframes chest-shake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  12% {
+    transform: translate3d(-6px, 3px, 0) rotate(-0.6deg);
+  }
+  28% {
+    transform: translate3d(6px, -3px, 0) rotate(0.6deg);
+  }
+  46% {
+    transform: translate3d(-4px, 2px, 0);
+  }
+  64% {
+    transform: translate3d(3px, -1px, 0);
+  }
+  82% {
+    transform: translate3d(-1px, 0, 0);
+  }
+}
+
+/* The number: in with a spring, glowing in the tier's own colour. */
+.chest-number {
+  filter: drop-shadow(0 0 18px color-mix(in srgb, currentColor 55%, transparent));
+  animation: chest-number 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes chest-number {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.chest-tier {
+  animation: chest-tier 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both;
+}
+
+@keyframes chest-tier {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* JACKPOT, written in every colour at once and running. */
+.chest-jackpot-text {
+  background: linear-gradient(90deg, #f472b6, #facc15, #4ade80, #38bdf8, #c084fc, #f472b6);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation:
+    chest-tier 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both,
+    chest-jackpot-text 1.6s linear infinite;
+}
+
+@keyframes chest-jackpot-text {
+  to {
+    background-position: 200% 0;
+  }
+}
+
+/* "Press to open", pulsing gently while a key is waiting. */
+.chest-ready {
+  animation: chest-ready 2.2s ease-in-out infinite;
+}
+
+@keyframes chest-ready {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* A press with no key behind it. The chest is never dimmed out of reach — a
+   dimmed lid cannot say why it is dim — so it is pressable and refuses where it
+   was pressed, the cabinet shaking its head, with the reason in words
+   underneath (CHST-17). */
+@keyframes chest-refusal-shake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  18% {
+    transform: translate3d(-7px, 0, 0) rotate(-0.8deg);
+  }
+  40% {
+    transform: translate3d(6px, 0, 0) rotate(0.6deg);
+  }
+  62% {
+    transform: translate3d(-3px, 0, 0);
+  }
+  82% {
+    transform: translate3d(1.5px, 0, 0);
+  }
+}
+
+.chest-refusal-shake {
+  animation: chest-refusal-shake 0.42s cubic-bezier(0.3, 0.6, 0.4, 1);
+}
+
+/* A device asking for less motion gets the lid open and the number on screen at
+   once, and none of the rest: no breathing, no rattling, no flash, no rings,
+   nothing thrown — the wait goes with the movement, there being nothing to
+   watch it for (Chest, CHST-18). The light is still there; it just does not
+   arrive. */
+@media (prefers-reduced-motion: reduce) {
+  .chest-breathe,
+  .chest-shadow-breathe,
+  .chest-glint,
+  .chest-press,
+  .chest-rattle-1,
+  .chest-rattle-2,
+  .chest-rattle-3,
+  .chest-hop-1,
+  .chest-hop-2,
+  .chest-hop-3,
+  .chest-tremble,
+  .chest-recoil,
+  .chest-backlight,
+  .chest-backlight-held,
+  .chest-rays-sway,
+  .chest-rainbow,
+  .chest-shake,
+  .chest-refusal-shake,
+  .chest-number,
+  .chest-tier,
+  .chest-ready {
+    animation: none;
+  }
+
+  .chest-jackpot-text {
+    animation: none;
+  }
+
+  .chest-glint,
+  .chest-flash,
+  .chest-shockwave {
+    display: none;
+  }
+
+  .chest-lid {
+    animation: none;
+    transform: translate(0, -46px) rotate(-11deg);
+  }
+
+  .chest-core,
+  .chest-bloom,
+  .chest-rays,
+  .chest-ambient-on {
+    animation: none;
+    opacity: 0.8;
+  }
+}

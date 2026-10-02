@@ -79,8 +79,8 @@ it is deleted, whether or not a task carries it.
   Its box makes a tag instead (TAG-23).
 - **TAG-22** Beside each tag is a button that **deletes it**, after asking: the tag comes off every
   task carrying it — tasks in the trash too, so restoring one does not bring it back — the tasks
-  themselves stay as they were otherwise, and the tag is gone from everywhere it was offered. There
-  is no undo.
+  themselves stay as they were otherwise, and the tag is gone from everywhere it was offered. It is
+  unbound from every Balance category too (BAL-11). There is no undo.
 - **TAG-23** A box at the top of the Tags page, **Add a tag**, makes a tag no task carries yet —
   on Enter or its **Add** button, a `#` in front ignored (TAG-3). The new tag is listed at once, with
   nothing to do, and the box empties, staying on the page for the next one. A name some tag has
@@ -91,7 +91,7 @@ it is deleted, whether or not a task carries it.
   written on **every task carrying the tag** — tasks in the trash too, so restoring one does not
   bring the old name back — where the old one stood among the task's tags; nothing else about a
   task changes, and a task without the tag is not touched. The tag's record is kept under the new
-  name (STORE-33). A name **another tag has**, in any case, is refused, and the row says so and
+  name (STORE-33), and the Balance categories bound to it stay bound under it (BAL-11). A name **another tag has**, in any case, is refused, and the row says so and
   keeps what was typed; the same name in another case is the tag **respelled**, not another tag
   (TAG-4), and goes through. A name a tag cannot have is not taken, and the row says why.
 - **TAG-25** Giving up a rename with Escape leaves the tag named as it was, as dropping a title

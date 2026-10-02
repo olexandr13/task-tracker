@@ -45,9 +45,13 @@ ticked off. The tick itself stays the owner's.
   chosen day, so a weekly rule on one day gathers a week's time and one on Mon and Wed starts again
   on Wednesday; a monthly one on its day of the month. A task that happens once counts every session.
   Nothing runs at midnight: a page left open picks the new occurrence up on its next render (PRIN-2).
-- **TIME-8** No history of time is kept. Sessions from an occurrence gone by are let go the next
-  time one is logged, and dropping the rule keeps only the sessions that still count, as it does
-  with checklist ticks (CHK-18), so a stale session cannot harden into a one-off's time.
+- **TIME-8** Sessions from an occurrence gone by **no longer count** toward the goal, and the clock's
+  panel lists only those that do (TIME-4), but they are still time spent: they are **kept for thirty
+  days**, today among them, and never less than back to the start of the calendar month, for the
+  [Balance](balance.md) page to read (BAL-3). Older ones are let go the next time the task logs
+  time. Dropping the rule keeps only the sessions that still count, as it does with checklist ticks
+  (CHK-18), so a stale session cannot harden into a one-off's time — the history goes with them. A
+  one-off counts, and keeps, every session it has.
 - **TIME-9** A duplicated task carries its goal and **none of its time** (TASK-53). Time travels
   with its task into the trash and back out.
 
@@ -112,8 +116,8 @@ ticked off. The tick itself stays the owner's.
 
 ---
 
-**Where it lives:** `src/core/timeLog.ts` (the goal, sessions, which of them count, and whether the
-goal is reached), `src/core/taskTimer.ts` (elapsed time and whether a run has reached the goal),
+**Where it lives:** `src/core/timeLog.ts` (the goal, sessions, which of them count, how long they
+are kept, and whether the goal is reached), `src/core/taskTimer.ts` (elapsed time and whether a run has reached the goal),
 `src/core/task.ts` (the fields, and letting go of stale sessions when a rule is
 dropped), `src/app/components/TimePicker.tsx` (the clock and its panel), `src/app/components/TaskItem.tsx`
 (the slot, the detail and the box's hint), `src/app/components/HabitList.tsx` (the habit card's box),

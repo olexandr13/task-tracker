@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { createPointValue, type Redemption } from '../core'
+import { createPointValue, DEFAULT_CHEST, type ChestSettings, type Redemption } from '../core'
 import {
+  readChestSettings,
   readRedemption,
   readRewardDay,
   readPointValue,
   readRewardGoal,
   REWARD_SCHEMA_VERSION,
+  toStoredChestSettings,
   toStoredPointValue,
   toStoredRedemption,
   toStoredRewardGoal,
@@ -99,5 +101,26 @@ describe('readPointValue (STORE-42, STORE-24)', () => {
     expect(readPointValue({ ...saved, value: { amount: 2.5, currency: '' } })).toBeNull()
     expect(readPointValue({ ...saved, value: { amount: '2.5', currency: 'UAH' } })).toBeNull()
     expect(readPointValue(null)).toBeNull()
+  })
+})
+
+describe('readChestSettings (STORE-48, STORE-24)', () => {
+  it('reads back what the chest asks of a day and what its key plays for', () => {
+    const asking: ChestSettings = { leastTasks: 4, jackpot: 'typicalDay' }
+
+    expect(readChestSettings(toStoredChestSettings(asking))).toEqual(asking)
+    expect(readChestSettings(toStoredChestSettings(DEFAULT_CHEST))).toEqual(DEFAULT_CHEST)
+  })
+
+  it('trusts nothing in a version it does not know, or not shaped as settings (STORE-24)', () => {
+    const saved = toStoredChestSettings({ leastTasks: 4, jackpot: 'typicalDay' })
+
+    expect(readChestSettings({ ...saved, version: 99 })).toBeNull()
+    expect(readChestSettings({ ...saved, name: 'pointValue' })).toBeNull()
+    expect(readChestSettings({ ...saved, settings: { leastTasks: 0, jackpot: 'typicalDay' } })).toBeNull()
+    expect(readChestSettings({ ...saved, settings: { leastTasks: 4, jackpot: 'whatever' } })).toBeNull()
+    expect(readChestSettings({ ...saved, settings: { leastTasks: '4', jackpot: 'bestTask' } })).toBeNull()
+    expect(readChestSettings({ ...saved, settings: {} })).toBeNull()
+    expect(readChestSettings(null)).toBeNull()
   })
 })

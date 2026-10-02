@@ -1,6 +1,10 @@
 import {
   BONUS_PERIODS,
+  CHEST_JACKPOTS,
+  type ChestJackpot,
+  type ChestSettings,
   isCurrency,
+  isLeastTasks,
   isLocalDay,
   isPointAmount,
   isRedemptionAmount,
@@ -134,11 +138,14 @@ export function readRewardGoal(data: unknown): { period: Period; points: number 
 /**
  * A standing setting of the points, kept one record per setting under a name of
  * its own rather than an id — the same reasoning as a bonus above. What one
- * point is worth (RWD-31) is the only one so far.
+ * point is worth (RWD-31) and what the chest asks and plays for (CHST-7) are
+ * the two there are; a new one is a name here and a watcher in the repository.
  */
-export type RewardSetting = 'pointValue'
+export type RewardSetting = 'pointValue' | 'chest'
 
 export const POINT_VALUE: RewardSetting = 'pointValue'
+
+export const CHEST: RewardSetting = 'chest'
 
 export interface StoredPointValue {
   version: number
@@ -162,4 +169,38 @@ export function readPointValue(data: unknown): PointValue | null {
   }
 
   return { amount, currency }
+}
+
+/**
+ * What the chest asks of a day and what its key plays for (CHST-2, CHST-7).
+ * One record, named for itself, so the two devices that set it write the one
+ * record and the later write wins.
+ */
+export interface StoredChestSettings {
+  version: number
+  name: RewardSetting
+  settings: ChestSettings
+}
+
+export function toStoredChestSettings(settings: ChestSettings): StoredChestSettings {
+  return { version: REWARD_SCHEMA_VERSION, name: CHEST, settings }
+}
+
+/** Saved chest settings, or null when they can't be trusted. */
+export function readChestSettings(data: unknown): ChestSettings | null {
+  if (!isRecord(data) || data.version !== REWARD_SCHEMA_VERSION || data.name !== CHEST || !isRecord(data.settings)) {
+    return null
+  }
+
+  const { leastTasks, jackpot } = data.settings
+  if (
+    typeof leastTasks !== 'number' ||
+    !isLeastTasks(leastTasks) ||
+    typeof jackpot !== 'string' ||
+    !(CHEST_JACKPOTS as readonly string[]).includes(jackpot)
+  ) {
+    return null
+  }
+
+  return { leastTasks, jackpot: jackpot as ChestJackpot }
 }

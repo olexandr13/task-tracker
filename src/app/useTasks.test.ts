@@ -69,8 +69,10 @@ function fakeRewardRepository() {
     redeem: () => Promise.resolve(),
     setBonus: () => Promise.resolve(),
     setPointValue: () => Promise.resolve(),
+    setChestSettings: () => Promise.resolve(),
     importBonus: () => Promise.resolve(),
     importPointValue: () => Promise.resolve(),
+    importChestSettings: () => Promise.resolve(),
     removeRedemption: () => Promise.resolve(),
   }
   return { repository, recorded }

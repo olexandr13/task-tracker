@@ -14,6 +14,7 @@ import {
   summarizeLists,
   summarizeTags,
   trashedTasks,
+  type CategoryId,
   type ListId,
   type LocalDay,
   type LocalTime,
@@ -31,10 +32,14 @@ import { quotableQuoteSource } from '../storage/quotableQuoteSource'
 import type { Theme } from '../storage/themeRepository'
 import { AddTaskForm } from './components/AddTaskForm'
 import { AddTaskSheet } from './components/AddTaskSheet'
+import { BalancePage } from './components/BalancePage'
 import { BottomNav } from './components/BottomNav'
 import { FolderIcon } from './components/FolderIcon'
 import { HabitList } from './components/HabitList'
 import { WarmUpNoticeToast } from './components/WarmUpNoticeToast'
+import { ChestNoticeToast } from './components/ChestNoticeToast'
+import { ChestPage } from './components/ChestPage'
+import { ChestSettingsCard } from './components/ChestSettingsCard'
 import { WarmUpPanel } from './components/WarmUpPanel'
 import { ProcrastinationPanel } from './components/ProcrastinationMode'
 import { ListsPage } from './components/ListsPage'
@@ -45,6 +50,7 @@ import { MorePage } from './components/MorePage'
 import { ProgressPanel } from './components/ProgressPanel'
 import { QuoteCard } from './components/QuoteCard'
 import { RewardRulesPage } from './components/RewardRulesPage'
+import { useChest } from './useChest'
 import { RewardsHistoryPage } from './components/RewardsHistoryPage'
 import { RewardsNav } from './components/RewardsNav'
 import { RewardsPage } from './components/RewardsPage'
@@ -72,6 +78,7 @@ import type { TaskActions } from './taskActions'
 import { useLetterShortcut } from './useLetterShortcut'
 import { ABOVE_PHONE_BAR, usePhoneLayout } from './usePhoneLayout'
 import { useBackup } from './useBackup'
+import { useCategories } from './useCategories'
 import { useDeviceSetting } from './useDeviceSetting'
 import { useLists } from './useLists'
 import { usePrizes } from './usePrizes'
@@ -200,11 +207,14 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const lists = useLists(storage.lists, storageProblem.report)
   const prizes = usePrizes(storage.prizes, storageProblem.report)
   const savedTags = useTags(storage.tags, isLoading ? null : tasks, storageProblem.report)
+  // The Balance page's categories, each bound to tags (BAL-1).
+  const categories = useCategories(storage.categories, storageProblem.report)
   const backup = useBackup(storage.backup)
   const [view, setView] = useView()
   // The detailed add sheet (UI-54): open from the Plus, from `N` on a task page
   // (UI-55), or from `H` for a habit (UI-56) — which opens Habits first if needed.
-  // `R` opens Rewards (UI-57). `P` starts or ends Procrastination mode (UI-58).
+  // `R` opens Rewards (UI-57) and `C` the chest under it (UI-72). `P` starts or
+  // ends Procrastination mode (UI-58).
   const [adding, setAdding] = useState(false)
   useLetterShortcut('n', isTaskView(view) && !adding, () => { setAdding(true) })
   useLetterShortcut('h', !adding, () => {
@@ -214,6 +224,10 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   useLetterShortcut('r', true, () => {
     setAdding(false)
     if (view !== 'rewards') setView('rewards')
+  })
+  useLetterShortcut('c', true, () => {
+    setAdding(false)
+    if (view !== 'rewards/chest') setView('rewards/chest')
   })
   // How the task views are shown: one set for all of them, kept on this device.
   const [viewOptions, setViewOptions] = useDeviceSetting(deviceStorage.viewOptions)
@@ -255,6 +269,14 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     isLoading ? null : todayTasks,
     storageProblem.report,
   )
+  // The chest a cleared day earns the key to (CHST-2). Every live task, since
+  // "everything in Today" is asked of the whole set the way the bars ask it;
+  // what it asks and plays for is the account's (CHST-7), and the noise, the
+  // last opening and the notice already given are this device's (CHST-24).
+  const chest = useChest(live, rewards, deviceStorage.chest, now, !rewards.isLoading && !isLoading)
+  // A key nobody notices earns nothing, so wherever the Chest is navigated from
+  // says one is waiting (CHST-22).
+  const keyWaiting = chest.blocked === null
   // The hours tasks are due at, watched against the clock: one that comes round
   // on a task still to do says so (REM-1). Every live task, not just Today's —
   // an hour is due at its moment wherever the task is filed — and null while
@@ -457,6 +479,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       case 'completion':
         uncomplete(undo.pending.taskId)
         break
+      case 'category':
+        categories.restore(undo.pending.category)
+        break
     }
     undo.dismiss()
   }
@@ -482,6 +507,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   function handleDeleteTag(name: string) {
     removeTagEverywhere(name)
     savedTags.remove(name)
+    // Unbound from every Balance category too, rather than left naming a tag that has gone (BAL-11).
+    categories.removeTag(name)
   }
 
   /** Makes a tag no task carries yet, unless there is one of that name already. */
@@ -499,7 +526,27 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     if (tags.some((tag) => sameTag(tag, to) && !sameTag(tag, from))) return false
 
     renameTagEverywhere(from, to)
+    // The categories bound to it stay bound under the new name (BAL-11).
+    categories.renameTag(from, to)
     return savedTags.rename(from, to)
+  }
+
+  /**
+   * Binds a tag to a Balance category (BAL-9). A tag named for the first time
+   * here is kept, as one made on the Tags page is, so it is there to give a task.
+   */
+  function handleBindTag(id: CategoryId, name: string) {
+    if (!tags.some((tag) => sameTag(tag, name))) savedTags.add(name)
+    categories.bind(id, name, tags)
+  }
+
+  /** Deletes a Balance category, with a few seconds to take it back (BAL-10). */
+  function handleDeleteCategory(id: CategoryId) {
+    const deleted = categories.categories.find((category) => category.id === id)
+    if (deleted === undefined) return
+
+    categories.remove(id)
+    undo.show({ kind: 'category', category: deleted })
   }
 
   /**
@@ -605,6 +652,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
             listsOpen={sideNav.listsOpen}
             rewardsOpen={sideNav.rewardsOpen}
             modesOpen={sideNav.modesOpen}
+            keyWaiting={keyWaiting}
             dimmed={dimChrome}
             onChange={setView}
             onListsOpenChange={(listsOpen) => { setSideNav({ ...sideNav, listsOpen }) }}
@@ -661,12 +709,14 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
             ) : isRewardsView(view) ? (
               <section aria-label={viewLabel(view)} className="flex flex-col gap-5">
                 {/* A phone has no sidebar to list the pages under Rewards, so they are here (RWD-30). */}
-                <RewardsNav view={view} onChange={setView} />
+                <RewardsNav view={view} keyWaiting={keyWaiting} onChange={setView} />
                 {rewards.isLoading ? (
                   <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
                 ) : rewards.loadFailed ? (
                   // Zeros here would read as points lost, rather than as points unread (RWD-22).
                   <p className="py-10 text-center text-neutral-500 dark:text-neutral-400">{POINTS_NOT_LOADED}</p>
+                ) : view === 'rewards/chest' ? (
+                  <ChestPage chest={chest} />
                 ) : view === 'rewards/history' ? (
                   <RewardsHistoryPage
                     entries={rewards.entries}
@@ -698,6 +748,13 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     pointValue={rewards.pointValue}
                     onChangeBonus={rewards.setBonus}
                     onChangePointValue={rewards.setPointValue}
+                    chest={
+                      <ChestSettingsCard
+                        settings={chest.settings}
+                        jackpot={chest.jackpot}
+                        onChange={chest.setSettings}
+                      />
+                    }
                   />
                 ) : (
                   <RewardsPage
@@ -707,8 +764,14 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     bonuses={rewards.bonuses}
                     pointValue={rewards.pointValue}
                     now={now}
+                    chest={{
+                      jackpot: chest.jackpot,
+                      waiting: chest.blocked === null,
+                      gave: chest.opened?.points ?? null,
+                    }}
                     onOpenPrizes={() => { setView('rewards/prizes') }}
                     onOpenWishlist={() => { setView('rewards/wishlist') }}
+                    onOpenChest={() => { setView('rewards/chest') }}
                     onOpenRules={() => { setView('rewards/rules') }}
                   />
                 )}
@@ -814,6 +877,25 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   />
                 )}
               </section>
+            ) : view === 'balance' ? (
+              <section aria-label="Balance">
+                {categories.isLoading ? (
+                  <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                ) : (
+                  <BalancePage
+                    categories={categories.categories}
+                    // Every task, the trash too: deleted time still counts until it is purged (BAL-3).
+                    tasks={tasks}
+                    knownTags={tags}
+                    now={now}
+                    onAdd={categories.add}
+                    onRename={categories.rename}
+                    onBind={handleBindTag}
+                    onUnbind={categories.unbind}
+                    onDelete={handleDeleteCategory}
+                  />
+                )}
+              </section>
             ) : view === 'habits' ? (
               <>
                 {/* Where the warm-up is felt, so where it says where it stands (WARM-6). */}
@@ -875,7 +957,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
         </div>
       </TaskDragAndDrop>
 
-      <BottomNav view={view} lists={lists.lists} dimmed={dimChrome} onChange={setView} />
+      <BottomNav view={view} lists={lists.lists} keyWaiting={keyWaiting} dimmed={dimChrome} onChange={setView} />
 
       {adding && (isTaskView(view) || view === 'habits') && (
         <AddTaskSheet
@@ -903,6 +985,22 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       {warmUp.notice !== null && (
         <div className="pointer-events-none fixed inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-50 flex justify-center px-4">
           <WarmUpNoticeToast progress={warmUp.notice} onDismiss={warmUp.dismissNotice} />
+        </div>
+      )}
+
+      {/* Today came clear, so a key is waiting (CHST-23). At the top like the
+          warm-up's notice rather than in the stack below: it is an offer to go
+          somewhere, not a note about what just happened, and the moment the last
+          task goes is the moment it is worth most. */}
+      {chest.unannounced && (
+        <div className="pointer-events-none fixed inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-50 flex justify-center px-4">
+          <ChestNoticeToast
+            onOpen={() => {
+              chest.announce()
+              setView('rewards/chest')
+            }}
+            onDismiss={chest.announce}
+          />
         </div>
       )}
 

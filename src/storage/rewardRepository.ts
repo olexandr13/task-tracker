@@ -1,4 +1,5 @@
 import type {
+  ChestSettings,
   Period,
   PeriodBonuses,
   PointValue,
@@ -10,7 +11,8 @@ import type {
 
 /**
  * Everything the points are read from: what completions earned, what was
- * redeemed, what clearing each period earns, and what a point is worth.
+ * redeemed, what clearing each period earns, what a point is worth, and what the
+ * chest asks of a day.
  */
 export interface PointsLedger {
   readonly entries: readonly RewardEntry[]
@@ -19,6 +21,8 @@ export interface PointsLedger {
   readonly bonuses: PeriodBonuses
   /** What one point is worth in money (RWD-31), or null while nothing says. */
   readonly pointValue: PointValue | null
+  /** What the chest asks of a day and what its key plays for (CHST-2, CHST-7). */
+  readonly chest: ChestSettings
 }
 
 /**
@@ -41,8 +45,12 @@ export interface RewardRepository {
   setBonus(period: Period, points: number | null): Promise<void>
   /** Sets what one point is worth, or forgets it with null. */
   setPointValue(value: PointValue | null): Promise<void>
+  /** Sets what the chest asks of a day and what its key plays for. */
+  setChestSettings(settings: ChestSettings): Promise<void>
   /** Takes on a bonus from elsewhere — the guest's — only where there is none already, as `importTasks` does. */
   importBonus(period: Period, points: number): Promise<void>
   /** Takes on a point value from elsewhere, only where there is none already. */
   importPointValue(value: PointValue): Promise<void>
+  /** Takes on chest settings from elsewhere, only where there are none already. */
+  importChestSettings(settings: ChestSettings): Promise<void>
 }

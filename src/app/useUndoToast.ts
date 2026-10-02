@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { PrizeId, Redemption, RewardEntry, Task, TaskId } from '../core'
+import type { Category, PrizeId, Redemption, RewardEntry, Task, TaskId } from '../core'
 import { describePoints } from './rewardLabels'
 
 /** How long the offer to undo stays on screen. */
@@ -11,7 +11,8 @@ const UNDO_WINDOW_MS = 5000
  * completion (the task stays done if the offer lapses; the toast only reopens
  * it), points just spent (RWD-41), which the toast is also the confirmation
  * of — the row that was redeemed does not change, so without it a click would
- * look like nothing happening.
+ * look like nothing happening. A Balance category deleted (BAL-10) is gone for
+ * good once the offer lapses, as an earning is.
  */
 export type UndoPending =
   | { kind: 'task'; task: Task }
@@ -19,6 +20,7 @@ export type UndoPending =
   | { kind: 'redemption'; redemption: Redemption }
   | { kind: 'redeem'; redemption: Redemption; wishId: PrizeId | null }
   | { kind: 'completion'; taskId: TaskId }
+  | { kind: 'category'; category: Category }
 
 /** What the toast says happened. Completions say nothing: the tick already did. */
 export function undoMessage(pending: Exclude<UndoPending, { kind: 'completion' }>): string {
@@ -31,6 +33,8 @@ export function undoMessage(pending: Exclude<UndoPending, { kind: 'completion' }
       return `Deleted “${pending.redemption.note}”`
     case 'redeem':
       return `Redeemed “${pending.redemption.note}” for ${describePoints(pending.redemption.points)}`
+    case 'category':
+      return `Deleted the category “${pending.category.name}”`
   }
 }
 

@@ -1,7 +1,9 @@
 import type { Account } from './authService'
 import type { BackupRepository } from './backupRepository'
+import type { CategoryRepository } from './categoryRepository'
 import { firestore } from './firebaseApp'
 import { createFirestoreBackupRepository } from './firestoreBackupRepository'
+import { createFirestoreCategoryRepository } from './firestoreCategoryRepository'
 import { createFirestoreListRepository } from './firestoreListRepository'
 import { createFirestoreNudgeRepository } from './firestoreNudgeRepository'
 import { createFirestorePrizeRepository } from './firestorePrizeRepository'
@@ -14,6 +16,7 @@ import { createFirestoreWarmUpRepository } from './firestoreWarmUpRepository'
 import { importGuestAccount } from './guestImport'
 import type { ListRepository } from './listRepository'
 import { createLocalBackupRepository } from './localBackupRepository'
+import { createLocalCategoryRepository } from './localCategoryRepository'
 import { createLocalListRepository } from './localListRepository'
 import { createLocalNudgeRepository } from './localNudgeRepository'
 import { createLocalPrizeRepository } from './localPrizeRepository'
@@ -50,6 +53,8 @@ export interface AccountStorage {
   readonly procrastination: ProcrastinationRepository
   /** How the owner wants to be nudged: on, the span, the hours (STORE-46). */
   readonly nudge: NudgeRepository
+  /** The Balance page's categories (BAL-1). */
+  readonly categories: CategoryRepository
   readonly sync: SyncMonitor
   readonly backup: BackupRepository
   /**
@@ -89,6 +94,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
   const rewards = createFirestoreRewardRepository(firestore, accountId)
   const warmUp = createFirestoreWarmUpRepository(firestore, accountId)
   const nudge = createFirestoreNudgeRepository(firestore, accountId)
+  const categories = createFirestoreCategoryRepository(firestore, accountId)
 
   return {
     tasks,
@@ -98,6 +104,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
     rewards,
     warmUp,
     nudge,
+    categories,
     procrastination: createFirestoreProcrastinationRepository(firestore, accountId),
     sync: createFirestoreSyncMonitor(firestore, accountId),
     backup: createFirestoreBackupRepository(firestore, accountId),
@@ -106,7 +113,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
         importLocalTasks(tasks).catch((error: unknown) => {
           console.warn('Could not move the tasks kept in this browser into the account; will try again next time.', error)
         }),
-        importGuestAccount(tasks, lists, tags, prizes, rewards, warmUp, nudge).catch((error: unknown) => {
+        importGuestAccount(tasks, lists, tags, prizes, rewards, warmUp, nudge, categories).catch((error: unknown) => {
           console.warn('Could not move the guest data into the account; will try again next time.', error)
         }),
       ])
@@ -129,6 +136,7 @@ function createGuestAccountStorage(): AccountStorage {
     rewards: createLocalRewardRepository(),
     warmUp: createLocalWarmUpRepository(),
     nudge,
+    categories: createLocalCategoryRepository(),
     procrastination: createLocalProcrastinationRepository(),
     sync: createLocalSyncMonitor(),
     backup: createLocalBackupRepository(),

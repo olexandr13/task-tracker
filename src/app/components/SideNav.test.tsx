@@ -56,7 +56,7 @@ describe('SideNav', () => {
     expect(screen.getByText('PickMe')).toBeTruthy()
   })
 
-  it('carries Lists, Rewards, Modes and More beside Tasks and Habits, and no entry for Tags or any one tag (UI-30, UI-45, TAG-18, RWD-19, LST-13, MODE-7)', () => {
+  it('carries Lists, Rewards, Balance, Modes and More beside Tasks and Habits, and no entry for Tags or any one tag (UI-30, UI-45, TAG-18, RWD-19, LST-13, MODE-7, BAL-1)', () => {
     setup('today')
 
     const entries = screen
@@ -73,10 +73,12 @@ describe('SideNav', () => {
       'Lists',
       'Inbox',
       'Rewards',
+      'Chest',
       'History',
       'Prizes',
       'Wishlist',
       'Rules',
+      'Balance',
       'Modes',
       '🫠Procrastination',
       '🌱Warm-up',
@@ -118,6 +120,11 @@ describe('SideNav', () => {
 
     setup('tag/work')
     expect(marked().map((button) => button.textContent)).toEqual(['More'])
+  })
+
+  it('marks Balance itself, rather than More (UI-8, UI-30, BAL-1)', () => {
+    setup('balance')
+    expect(marked().map((button) => button.textContent)).toEqual(['Balance'])
   })
 
   it('marks Modes, and each mode\'s page itself, rather than More (UI-8, UI-30, MODE-7)', () => {
@@ -228,6 +235,7 @@ describe('SideNav', () => {
 
     const under = within(screen.getByRole('list', { name: 'Rewards' }))
     expect(under.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Chest',
       'History',
       'Prizes',
       'Wishlist',

@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createTask } from '../../core'
+import { createCategory, createTask } from '../../core'
 import { UndoToast } from './UndoToast'
 
 const NOW = new Date('2026-09-21T12:00:00')
@@ -29,6 +29,19 @@ describe('UndoToast', () => {
     expect(onUndo).toHaveBeenCalledOnce()
     await user.click(screen.getByRole('button', { name: 'Dismiss' }))
     expect(onDismiss).toHaveBeenCalledOnce()
+  })
+
+  it('names a deleted Balance category and offers Undo (BAL-10)', async () => {
+    const user = userEvent.setup()
+    const onUndo = vi.fn()
+
+    render(
+      <UndoToast pending={{ kind: 'category', category: createCategory('Rest', NOW) }} onUndo={onUndo} onDismiss={vi.fn()} />,
+    )
+
+    expect(screen.getByText(/Deleted the category “Rest”/)).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(onUndo).toHaveBeenCalledOnce()
   })
 
   it('shows only an Undo arrow after a completion, with no task title (TASK-67)', async () => {

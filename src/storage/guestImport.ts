@@ -1,6 +1,8 @@
 import { BONUS_PERIODS } from '../core'
+import type { CategoryRepository } from './categoryRepository'
 import type { ListRepository } from './listRepository'
 import { clearGuestAccount } from './localBackupRepository'
+import { loadGuestCategories } from './localCategoryRepository'
 import { loadGuestLists } from './localListRepository'
 import { loadGuestNudge } from './localNudgeRepository'
 import { loadGuestPrizes } from './localPrizeRepository'
@@ -28,6 +30,7 @@ export async function importGuestAccount(
   rewards: RewardRepository,
   warmUp: WarmUpRepository,
   nudge: NudgeRepository,
+  categories: CategoryRepository,
 ): Promise<void> {
   const guestTasks = loadGuestTasks()
   const guestLists = loadGuestLists()
@@ -36,6 +39,7 @@ export async function importGuestAccount(
   const ledger = loadGuestLedger()
   const guestWarmUp = loadGuestWarmUp()
   const guestNudge = loadGuestNudge()
+  const guestCategories = loadGuestCategories()
 
   const empty =
     guestTasks.length === 0 &&
@@ -47,7 +51,8 @@ export async function importGuestAccount(
     BONUS_PERIODS.every((period) => ledger.bonuses[period] === null) &&
     ledger.pointValue === null &&
     guestWarmUp === null &&
-    guestNudge === null
+    guestNudge === null &&
+    guestCategories.length === 0
 
   if (empty) {
     clearGuestAccount()
@@ -62,6 +67,7 @@ export async function importGuestAccount(
   if (guestLists.length > 0) await lists.save({ saved: guestLists, removed: [] })
   if (guestTags.length > 0) await tags.save({ saved: guestTags, removed: [] })
   if (guestPrizes.length > 0) await prizes.save({ saved: guestPrizes, removed: [] })
+  if (guestCategories.length > 0) await categories.save({ saved: guestCategories, removed: [] })
 
   if (ledger.entries.length > 0) {
     await rewards.save({ earned: [...ledger.entries], revoked: [] })

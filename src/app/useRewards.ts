@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   createRedemption,
+  DEFAULT_CHEST,
   NO_BONUSES,
+  type ChestSettings,
   pointsBalance,
   type Period,
   type PointValue,
@@ -13,12 +15,18 @@ import {
 import type { PointsLedger, RewardRepository } from '../storage/rewardRepository'
 import { ignoreProblems, type ReportProblem } from './storageProblem'
 
-const EMPTY: PointsLedger = { entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null }
+const EMPTY: PointsLedger = {
+  entries: [],
+  redemptions: [],
+  bonuses: NO_BONUSES,
+  pointValue: null,
+  chest: DEFAULT_CHEST,
+}
 
 /**
  * Holds the points ledger on screen: what completions earned, what was
- * redeemed, what clearing each period is worth (RWD-24, RWD-29) and what a
- * point is worth in money (RWD-31). What completions earn is written as tasks
+ * redeemed, what clearing each period is worth (RWD-24, RWD-29), what a point is
+ * worth in money (RWD-31) and what the chest asks of a day (CHST-3, CHST-7). What completions earn is written as tasks
  * change (useTasks); this reads it back, redeems, sets the rules, and can take
  * an earning or a redemption off the ledger.
  *
@@ -145,6 +153,18 @@ export function useRewards(repository: RewardRepository, onProblem: ReportProble
   )
 
   /**
+   * Sets what the chest asks of a day and what its key plays for. Only days from
+   * here on are measured against it: a chest already opened stays opened and
+   * keeps what it gave, as an earlier period keeps its bonus (RWD-3, CHST-6).
+   */
+  const setChestSettings = useCallback(
+    (settings: ChestSettings) => {
+      attempt(repository.setChestSettings(settings), 'Could not save the chest settings.')
+    },
+    [repository, attempt],
+  )
+
+  /**
    * Writes what one completion earned, in place of whatever it earned before:
    * a deleted earning put back, or the win card's extra points (JUST-9).
    */
@@ -171,5 +191,6 @@ export function useRewards(repository: RewardRepository, onProblem: ReportProble
     saveEarning,
     setBonus,
     setPointValue,
+    setChestSettings,
   }
 }

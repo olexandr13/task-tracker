@@ -2,9 +2,12 @@ import {
   BONUS_PERIODS,
   NO_BONUSES,
   toLocalDay,
+  type Category,
+  type ChestSettings,
   type List,
   type PeriodBonuses,
   type Prize,
+  type PointValue,
   type Redemption,
   type RewardEntry,
   type Tag,
@@ -12,20 +15,24 @@ import {
   type WarmUp,
 } from '../core'
 import type { AccountData } from './backupRepository'
+import { readCategory, toStoredCategory, type StoredCategory } from './categorySchema'
 import { readList, toStoredList, type StoredList } from './listSchema'
 import type { NudgePreference } from './nudgeRepository'
 import { readNudge, toStoredNudge, type StoredNudge } from './nudgeSchema'
 import { isRecord } from './plainData'
 import { readPrize, toStoredPrize, type StoredPrize } from './prizeSchema'
 import {
+  readChestSettings,
   readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
+  toStoredChestSettings,
   toStoredPointValue,
   toStoredRedemption,
   toStoredRewardDays,
   toStoredRewardGoal,
+  type StoredChestSettings,
   type StoredPointValue,
   type StoredRedemption,
   type StoredRewardDay,
@@ -54,11 +61,13 @@ export const BACKUP_FORMAT = 'task-tracker-backup'
  * before there was one is read as having none under way. Version 5 held no
  * nudge setting (NUDGE-9), which was the device's then rather than the
  * account's (STORE-46): a file made before it synced is read as asking for none.
+ * Version 6 held no Balance categories (BAL-12): a file made before there were
+ * any is read as holding none.
  */
-export const BACKUP_VERSION = 6
+export const BACKUP_VERSION = 7
 
 /** The versions of the wrapper this app can still read, oldest first. */
-const READABLE_VERSIONS = [1, 2, 3, 4, 5, BACKUP_VERSION]
+const READABLE_VERSIONS = [1, 2, 3, 4, 5, 6, BACKUP_VERSION]
 
 interface BackupFile {
   format: typeof BACKUP_FORMAT
@@ -70,12 +79,20 @@ interface BackupFile {
   tags: StoredTag[]
   /** The wishlist, one record per prize (RWD-33). */
   prizes: StoredPrize[]
+  /** The Balance page's categories, one record each (BAL-12). */
+  categories: StoredCategory[]
   rewardDays: StoredRewardDay[]
   redemptions: StoredRedemption[]
   /** What clearing a period earns, one record per period that has a bonus (RWD-24, RWD-29). */
   rewardGoals: StoredRewardGoal[]
-  /** The standing settings of the points: what one is worth, where anything says (RWD-31). */
-  rewardSettings: StoredPointValue[]
+  /**
+   * The standing settings of the points, a record each where anything says: what
+   * one point is worth (RWD-31), and what the chest asks of a day (CHST-3).
+   * A new kind of setting joins this array and leaves the wrapper as it is, so
+   * `BACKUP_VERSION` does not move for one — a file without the chest's record
+   * is read as saying nothing about it, as a file without the point value is.
+   */
+  rewardSettings: (StoredPointValue | StoredChestSettings)[]
   /** The warm-up under way, as its one record, or nothing at all for none (WARM-1). */
   warmUp: StoredWarmUp[]
   /** How the owner asked to be nudged, as its one record, or nothing at all where it is off (NUDGE-9). */
@@ -112,13 +129,17 @@ export function writeBackupFile(data: AccountData, now: Date): string {
     lists: data.lists.map(toStoredList),
     tags: data.tags.map(toStoredTag),
     prizes: data.prizes.map(toStoredPrize),
+    categories: data.categories.map(toStoredCategory),
     rewardDays: toStoredRewardDays(data.entries),
     redemptions: data.redemptions.map(toStoredRedemption),
     rewardGoals: BONUS_PERIODS.flatMap((period) => {
       const points = data.bonuses[period]
       return points === null ? [] : [toStoredRewardGoal(period, points)]
     }),
-    rewardSettings: data.pointValue === null ? [] : [toStoredPointValue(data.pointValue)],
+    rewardSettings: [
+      ...(data.pointValue === null ? [] : [toStoredPointValue(data.pointValue)]),
+      ...(data.chest === null ? [] : [toStoredChestSettings(data.chest)]),
+    ],
     warmUp: data.warmUp === null ? [] : [toStoredWarmUp(data.warmUp)],
     // A nudge back at its defaults keeps no record here either, as it keeps none in the account.
     nudge: nudgeRecord(data.nudge),
@@ -151,6 +172,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
   const rewardSettings = file.version < 4 ? [] : file.rewardSettings
   const warmUp = file.version < 5 ? [] : file.warmUp
   const nudge = file.version < 6 ? [] : file.nudge
+  const categories = file.version < 7 ? [] : file.categories
   if (
     !Array.isArray(tasks) ||
     !Array.isArray(lists) ||
@@ -161,7 +183,8 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     !Array.isArray(rewardGoals) ||
     !Array.isArray(rewardSettings) ||
     !Array.isArray(warmUp) ||
-    !Array.isArray(nudge)
+    !Array.isArray(nudge) ||
+    !Array.isArray(categories)
   ) {
     return 'not-a-backup'
   }
@@ -175,6 +198,18 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     })
   }
 
+  // A settings record is one kind or the other, so it is only unreadable when
+  // neither reader can make anything of it.
+  let pointValue: PointValue | null = null
+  let chest: ChestSettings | null = null
+  for (const record of rewardSettings) {
+    const value = readPointValue(record)
+    const asked = readChestSettings(record)
+    if (value !== null) pointValue ??= value
+    else if (asked !== null) chest ??= asked
+    else unreadable += 1
+  }
+
   const goals = readEach(rewardGoals, readRewardGoal)
   const bonuses = { ...NO_BONUSES } as Record<string, number | null>
   for (const goal of goals) bonuses[goal.period] = goal.points
@@ -184,10 +219,12 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     lists: readEach<List>(lists, readList),
     tags: readEach<Tag>(tags, readTag),
     prizes: readEach<Prize>(prizes, readPrize),
+    categories: readEach<Category>(categories, readCategory),
     entries: readEach<RewardEntry[]>(rewardDays, readRewardDay).flat(),
     redemptions: readEach<Redemption>(redemptions, readRedemption),
     bonuses: bonuses as PeriodBonuses,
-    pointValue: readEach(rewardSettings, readPointValue)[0] ?? null,
+    pointValue,
+    chest,
     warmUp: readEach<WarmUp>(warmUp, readWarmUp)[0] ?? null,
     nudge: readEach<NudgePreference>(nudge, readNudge)[0] ?? null,
   }

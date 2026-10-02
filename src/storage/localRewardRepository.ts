@@ -1,17 +1,29 @@
-import { NO_BONUSES, type PeriodBonuses, type PointValue, type Redemption, type RewardEntry } from '../core'
+import {
+  DEFAULT_CHEST,
+  NO_BONUSES,
+  type ChestSettings,
+  type PeriodBonuses,
+  type PointValue,
+  type Redemption,
+  type RewardEntry,
+} from '../core'
 import { isRecord } from './plainData'
 import type { PointsLedger, RewardRepository } from './rewardRepository'
 import {
+  CHEST,
   POINT_VALUE,
+  readChestSettings,
   readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
   REWARD_SCHEMA_VERSION,
+  toStoredChestSettings,
   toStoredPointValue,
   toStoredRedemption,
   toStoredRewardDays,
   toStoredRewardGoal,
+  type StoredChestSettings,
   type StoredPointValue,
   type StoredRedemption,
   type StoredRewardDay,
@@ -25,8 +37,8 @@ interface StoredLedger {
   redemptions: Record<string, StoredRedemption>
   /** What clearing a period earns, by period (RWD-24, RWD-29). A period with none is not in here. */
   goals: Record<string, StoredRewardGoal>
-  /** The standing settings of the points, by name (RWD-31). One not set is not in here. */
-  settings: Record<string, StoredPointValue>
+  /** The standing settings of the points, by name (RWD-31, CHST-7). One not set is not in here. */
+  settings: Record<string, StoredPointValue | StoredChestSettings>
 }
 
 type Listener = (ledger: PointsLedger) => void
@@ -49,7 +61,9 @@ function readStore(): StoredLedger {
       // A ledger kept before there were bonuses, or before a point had a value,
       // holds none, rather than being unreadable for the lack of them.
       goals: isRecord(parsed.goals) ? (parsed.goals as Record<string, StoredRewardGoal>) : {},
-      settings: isRecord(parsed.settings) ? (parsed.settings as Record<string, StoredPointValue>) : {},
+      settings: isRecord(parsed.settings)
+        ? (parsed.settings as Record<string, StoredPointValue | StoredChestSettings>)
+        : {},
     }
   } catch (error) {
     console.warn('Ignoring saved guest rewards: could not be read.', error)
@@ -103,7 +117,19 @@ function toLedger(stored: StoredLedger): PointsLedger {
     console.warn('Ignoring the saved guest point value: unexpected shape.')
   }
 
-  return { entries, redemptions, bonuses: bonuses as PeriodBonuses, pointValue }
+  const savedChest: unknown = stored.settings[CHEST]
+  const chest = savedChest === undefined ? null : readChestSettings(savedChest)
+  if (savedChest !== undefined && chest === null) {
+    console.warn('Ignoring the saved guest chest settings: unexpected shape.')
+  }
+
+  return {
+    entries,
+    redemptions,
+    bonuses: bonuses as PeriodBonuses,
+    pointValue,
+    chest: chest ?? DEFAULT_CHEST,
+  }
 }
 
 function emit(stored: StoredLedger): void {
@@ -189,6 +215,13 @@ export function createLocalRewardRepository(): RewardRepository {
       emit(stored)
     },
 
+    async setChestSettings(chest) {
+      const stored = readStore()
+      stored.settings[CHEST] = toStoredChestSettings(chest)
+      writeStore(stored)
+      emit(stored)
+    },
+
     async importBonus(period, points) {
       const stored = readStore()
       if (stored.goals[period] !== undefined) return
@@ -204,11 +237,30 @@ export function createLocalRewardRepository(): RewardRepository {
       writeStore(stored)
       emit(stored)
     },
+
+    async importChestSettings(chest) {
+      const stored = readStore()
+      if (stored.settings[CHEST] !== undefined) return
+      stored.settings[CHEST] = toStoredChestSettings(chest)
+      writeStore(stored)
+      emit(stored)
+    },
   }
 }
 
 export function loadGuestLedger(): PointsLedger {
   return toLedger(readStore())
+}
+
+/**
+ * What the guest asks of the chest, or null while nothing says — which the
+ * ledger cannot answer, standing at what an account starts with either way. A
+ * backup needs to tell the two apart, so that importing a file never writes over
+ * settings this device chose for itself.
+ */
+export function loadGuestChestSettings(): ChestSettings | null {
+  const saved: unknown = readStore().settings[CHEST]
+  return saved === undefined ? null : readChestSettings(saved)
 }
 
 /** Writes a full ledger (backup import), merging days field by field. */
@@ -217,6 +269,7 @@ export function replaceGuestLedger(
   redemptions: readonly Redemption[],
   bonuses: PeriodBonuses,
   pointValue: PointValue | null,
+  chest: ChestSettings | null,
 ): void {
   const stored = empty()
   for (const day of toStoredRewardDays(entries)) stored.days[day.day] = day
@@ -225,6 +278,7 @@ export function replaceGuestLedger(
     if (points !== null) stored.goals[period] = toStoredRewardGoal(period as keyof PeriodBonuses, points)
   }
   if (pointValue !== null) stored.settings[POINT_VALUE] = toStoredPointValue(pointValue)
+  if (chest !== null) stored.settings[CHEST] = toStoredChestSettings(chest)
   writeStore(stored)
   emit(stored)
 }

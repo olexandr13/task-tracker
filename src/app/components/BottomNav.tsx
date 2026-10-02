@@ -1,6 +1,7 @@
 import { useRef, useState, type ComponentProps } from 'react'
 import { sortLists, type List } from '../../core'
 import { useLongPress } from '../useLongPress'
+import { KeyWaitingMark } from './KeyWaitingMark'
 import {
   isPeriodView,
   isUnder,
@@ -19,6 +20,8 @@ interface BottomNavProps {
   view: View
   /** Every list there is, to go to from the Tasks tab's menu. */
   lists: readonly List[]
+  /** Whether a key is waiting, which marks the Rewards tab (CHST-22). */
+  keyWaiting?: boolean
   /** Soften the bar while Procrastination mode is on (JUST-5). */
   dimmed?: boolean
   onChange: (view: View) => void
@@ -46,7 +49,7 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * and Month share that last tab, which shows the one last chosen and goes to it
  * on a tap. The lists and the trash have no tab — they are reached from
  * Tasks, so Tasks stays marked while either is open, or one list or the Inbox.
- * **Rewards** has a tab of its own, which stays marked while any of its four
+ * **Rewards** has a tab of its own, which stays marked while any of its five
  * pages is open (RWD-19), and a menu of those pages (UI-67), the strip across
  * the top of them being the other way to them (RWD-30). The tags
  * have no tab: they are under More, which goes to its own page on a tap and
@@ -65,7 +68,7 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * the bar rather than covering it, so it is plain which tab the menu belongs
  * to.
  */
-export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavProps) {
+export function BottomNav({ view, lists, keyWaiting = false, dimmed = false, onChange }: BottomNavProps) {
   // The period the period tab goes back to after leaving it: the last one on
   // screen, Today to begin with.
   const [period, setPeriod] = useState<PeriodView>(isPeriodView(view) ? view : 'today')
@@ -199,7 +202,8 @@ export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavPr
               label={VIEW_LABELS.rewards}
               icon={VIEW_ICONS.rewards}
               active={isUnder(view, 'rewards') || menu?.of === 'rewards'}
-              description="Hold, or tap again, for the history, the prizes, the wishlist and the rules"
+              marked={keyWaiting}
+              description="Hold, or tap again, for the chest, the history, the prizes, the wishlist and the rules"
               {...noticingMenu(rewardsPress)}
             />
           </li>
@@ -254,12 +258,19 @@ export function BottomNav({ view, lists, dimmed = false, onChange }: BottomNavPr
   )
 }
 
-type TabProps = { label: string; icon: ViewIcon; active: boolean; description?: string } & Omit<
+type TabProps = {
+  label: string
+  icon: ViewIcon
+  active: boolean
+  description?: string
+  /** Something is waiting under this tab: a dot on its pill (CHST-22). */
+  marked?: boolean
+} & Omit<
   ComponentProps<'button'>,
   'type' | 'className' | 'children'
 >
 
-function Tab({ label, icon: Icon, active, description, ...handlers }: TabProps) {
+function Tab({ label, icon: Icon, active, description, marked = false, ...handlers }: TabProps) {
   return (
     <button
       type="button"
@@ -268,8 +279,9 @@ function Tab({ label, icon: Icon, active, description, ...handlers }: TabProps) 
       className={`${tab} ${active ? tabOn : tabOff}`}
       {...handlers}
     >
-      <span className={active ? `${pill} ${pillOn}` : `${pill} ${pillOff}`}>
+      <span className={`relative ${active ? `${pill} ${pillOn}` : `${pill} ${pillOff}`}`}>
         <Icon className="size-5 shrink-0" />
+        {marked && <KeyWaitingMark className="absolute top-0.5 right-2.5" />}
       </span>
       {label}
     </button>

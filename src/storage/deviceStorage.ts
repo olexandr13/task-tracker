@@ -1,4 +1,6 @@
+import type { ChestDeviceRepository } from './chestDeviceRepository'
 import type { HabitViewOptionsRepository } from './habitViewOptionsRepository'
+import { localStorageChestDeviceRepository } from './localStorageChestDeviceRepository'
 import { localStorageHabitViewOptionsRepository } from './localStorageHabitViewOptionsRepository'
 import { localStorageNudgeRepository } from './localStorageNudgeRepository'
 import { localStorageQuoteRepository } from './localStorageQuoteRepository'
@@ -15,8 +17,9 @@ import type { ViewOptionsRepository } from './viewOptionsRepository'
 
 /**
  * What is kept on this device rather than in the account: how things are shown
- * here, what is running here, what the nudge has already said here, and today's
- * quote (STORE-30, STORE-31, STORE-36, STORE-40, STORE-46).
+ * here, what is running here, what the nudge has already said here, what the
+ * chest keeps here, and today's quote (STORE-30, STORE-31, STORE-36, STORE-40,
+ * STORE-46, STORE-49).
  * The same whoever is signed in, and never synced.
  */
 export interface DeviceStorage {
@@ -26,6 +29,8 @@ export interface DeviceStorage {
   readonly taskTimer: TaskTimerRepository
   /** What the nudge keeps here: when it last spoke, and the notice it left standing (NUDGE-6). */
   readonly nudge: NudgeDeviceRepository
+  /** What the chest keeps here: the noise, the last opening, the notice already given (CHST-24). */
+  readonly chest: ChestDeviceRepository
   readonly quote: QuoteRepository
   readonly theme: ThemeRepository
 }
@@ -36,6 +41,7 @@ export const deviceStorage: DeviceStorage = {
   sideNav: localStorageSideNavRepository,
   taskTimer: localStorageTaskTimerRepository,
   nudge: localStorageNudgeRepository,
+  chest: localStorageChestDeviceRepository,
   quote: localStorageQuoteRepository,
   theme: localStorageThemeRepository,
 }

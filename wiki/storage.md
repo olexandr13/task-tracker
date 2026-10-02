@@ -57,6 +57,14 @@ changes shape.
   write the one record. No record at all is nothing set, and the points are counted in points alone.
   It is kept under the ledger's version (STORE-24) and ignored, with a warning, when it cannot be
   read.
+- **STORE-48** What the **chest** asks of a day and what its key plays for (CHST-3, CHST-7) is kept
+  beside what a point is worth, as **one more record of the settings**, named for itself for the
+  same reason (STORE-42). No record at all is what an account starts with — any cleared day earns a
+  key, playing for today's best task — so there is no shape for "not set" to be told from. It is
+  kept under the ledger's version (STORE-24) and ignored, with a warning, when it cannot be read,
+  which leaves the chest asking what it asks by default rather than asking nothing. It is **in the
+  backup**, taken only by an account that has none of its own, as the bonuses and the point value
+  are (BAK-5). What the chest keeps on **this device** is the other half of it (STORE-49).
 - **STORE-43** Each prize and each wish (RWD-33, RWD-40) is saved as **its own record**, in one
   collection of its own beside the ledger — the record says which kind it is, and when a wish was
   bought — inside a versioned envelope like a list's (STORE-26). Changes are written **record by
@@ -102,6 +110,18 @@ changes shape.
   the tasks go first, so a tag is never left on a task with no record, to be kept all over again.
   Renaming one (TAG-24) is the same two changes in the same order: the new name on every task
   carrying it, then every record of the old name kept under the new one.
+
+## Balance categories
+
+- **STORE-50** Each Balance category (BAL-1) is kept in the account as **its own record**, in a
+  collection of its own, inside a versioned envelope like a list's (STORE-26), with **its own
+  version**. A category names its tags, as a task does, rather than pointing at their records, so a
+  tag renamed or deleted is written through to the categories bound to it (BAL-11) the way it is
+  written through to the tasks. Changes are written **category by category** (STORE-28); they are
+  readable and writable by the account alone (STORE-17), open offline and wait for a connection like
+  the tasks (STORE-18). One the app cannot read — an unknown version, or a tag in it no tag could be
+  called — is ignored with a warning and left as it is (STORE-7). The time the page adds up is not
+  kept here: it is read from the tasks' sessions (TIME-8).
 
 ## Warm-up
 
@@ -153,8 +173,9 @@ changes shape.
 
 ## Guest — this device only
 
-- **STORE-37** As guest (AUTH-15), tasks, lists, tags, the wishlist, the points ledger — the
-  bonuses and what a point is worth with it (STORE-41, STORE-42, STORE-43), the warm-up
+- **STORE-37** As guest (AUTH-15), tasks, lists, tags, the wishlist, the Balance categories, the points ledger — the
+  bonuses, what a point is worth and what the chest asks with it (STORE-41, STORE-42, STORE-43,
+  STORE-48), the warm-up
   (STORE-44), Procrastination mode (STORE-45) and the nudge's setting (STORE-46) are kept in this
   browser's `localStorage`, under the same versioned shapes as the account's (STORE-4, STORE-24,
   STORE-27, STORE-34). A ledger kept before there were bonuses, or before a point had a value, holds
@@ -162,8 +183,8 @@ changes shape.
   on the same address sees the same records. There is nothing to sync, so the sync notice stays
   quiet (OFF-7).
 - **STORE-38** The first time a Google account is open here online after guest data was kept, that
-  data is **moved into the account** — tasks, lists, tags, prizes, points earned, redemptions, the
-  bonuses, what a point is worth, the warm-up and the nudge's setting — added alongside what the
+  data is **moved into the account** — tasks, lists, tags, prizes, Balance categories, points earned,
+  redemptions, the bonuses, what a point is worth, the warm-up and the nudge's setting — added alongside what the
   account already has, without overwriting tasks it already holds (STORE-20), or a bonus, point
   value, warm-up or nudge it has already set, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
   signing in does not start its month again (WARM-10). A move that fails, offline say, is tried again next time.
@@ -195,6 +216,15 @@ changes shape.
   account** the first time the app is open, where the account has none of its own, and then dropped
   from the browser, as the tasks from before there were accounts are (STORE-19) — so a nudge turned
   on here stays on.
+- **STORE-49** What the **chest** keeps here — whether it makes a noise on this device, which
+  opening it is still glowing from, and whether it has already said here that a key is waiting
+  (CHST-19, CHST-23, CHST-24) — is kept the same way again, under a version of its own, apart from
+  what the chest asks of a day, which is the account's (STORE-48). The three are what only the
+  device can answer: the room you are in is not the account you are in; a notice given on the laptop
+  is no reason to withhold it on the phone; and the ledger says what today's chest gave without
+  saying which colour it gave it in. A chest standing exactly as it arrives — a noise, nothing
+  opened, nothing said — keeps **no record at all**, and one the app cannot read is read as a chest
+  arriving, the worst of it being one noise and one notice more than was wanted.
 - **STORE-40** The theme (UI-63) is kept the same way again, under a version of its own: a phone
   kept dark and a desktop kept light are each set their own way, and it is the same whoever is
   signed in — or nobody, on the sign-in screen. Following the system, the default, keeps nothing.
@@ -279,6 +309,8 @@ copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgr
 `guestImport.ts` (moving guest data into an account), `localCollection.ts` (records in `localStorage`),
 `firestoreBatches.ts` (writing in batches), `firestoreAccount.ts` (every collection an account keeps), `rewardRepository.ts`, `firestoreRewardRepository.ts`, `localRewardRepository.ts` and
 `rewardSchema.ts` (the points ledger, the period bonuses and what a point is worth),
+`categoryRepository.ts`, `firestoreCategoryRepository.ts`, `localCategoryRepository.ts` and
+`categorySchema.ts` (the Balance categories), `src/app/useCategories.ts`,
 `prizeRepository.ts`, `firestorePrizeRepository.ts`, `localPrizeRepository.ts` and `prizeSchema.ts`
 (the prizes and the wishlist), `listRepository.ts`, `firestoreListRepository.ts`, `localListRepository.ts` and
 `listSchema.ts` (the lists), `tagRepository.ts`, `firestoreTagRepository.ts`, `localTagRepository.ts` and `tagSchema.ts`
@@ -311,7 +343,8 @@ setting back, and what a record from before it synced still answers), `src/stora
 (reading a prize or a wish back, and keeping them), `src/storage/listRepository.test.ts` and `src/storage/listSchema.test.ts`
 (what a change to the lists writes, and reading one back), `src/storage/tagRepository.test.ts`,
 `src/storage/tagSchema.test.ts` and `src/app/useTags.test.ts` (the same for the tags, and keeping the
-ones tasks carry), `src/storage/viewOptionsSchema.test.ts` (reading the
+ones tasks carry), `src/storage/categorySchema.test.ts`, `src/storage/localCategoryRepository.test.ts`
+and `src/app/useCategories.test.ts` (the Balance categories), `src/storage/viewOptionsSchema.test.ts` (reading the
 View options back), `src/storage/habitViewOptionsSchema.test.ts` (reading Habits' back),
 `src/storage/sideNavSchema.test.ts` (reading the sidebar's layout back), `src/storage/themeSchema.test.ts`
 (reading the theme back) and `src/app/theme.test.ts` (`index.html` reading it back as saved).

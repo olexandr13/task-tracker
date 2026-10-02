@@ -18,16 +18,18 @@ const DATA: AccountData = {
   lists: [createList('Work', AT)],
   tags: [],
   prizes: [],
+  categories: [],
   entries: [],
   redemptions: [],
   bonuses: NO_BONUSES,
   pointValue: null,
+  chest: null,
   warmUp: null,
   nudge: null,
 }
 
 const ADDED: ImportSummary = {
-  added: { tasks: 1, lists: 1, tags: 0, prizes: 0, completions: 0, redemptions: 0 },
+  added: { tasks: 1, lists: 1, tags: 0, prizes: 0, categories: 0, completions: 0, redemptions: 0 },
   alreadyHere: 0,
 }
 

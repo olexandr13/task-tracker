@@ -18,13 +18,14 @@ export const BACKUP_FAILURES: Record<BackupFailure, string> = {
   'newer-version': 'That backup was made by a newer version of the app. Reload the page to update it, then try again.',
 }
 
-/** `12 tasks, 2 lists, 3 tags, 4 prizes, 30 completions and 1 redemption`, leaving out any kind there are none of. Null for none at all. */
+/** `12 tasks, 2 lists, 3 tags, 4 prizes, 2 categories, 30 completions and 1 redemption`, leaving out any kind there are none of. Null for none at all. */
 export function describeRecordCounts(counts: RecordCounts): string | null {
   const parts = [
     countOf(counts.tasks, 'task'),
     countOf(counts.lists, 'list'),
     countOf(counts.tags, 'tag'),
     countOf(counts.prizes, 'prize'),
+    countOf(counts.categories, 'category', 'categories'),
     countOf(counts.completions, 'completion'),
     countOf(counts.redemptions, 'redemption'),
   ].filter((part) => part !== null)
@@ -62,6 +63,6 @@ export function describeImport({ added, alreadyHere }: ImportSummary, unreadable
   return sentences.join(' ')
 }
 
-function countOf(count: number, noun: string): string | null {
-  return count === 0 ? null : `${String(count)} ${noun}${count === 1 ? '' : 's'}`
+function countOf(count: number, noun: string, plural = `${noun}s`): string | null {
+  return count === 0 ? null : `${String(count)} ${count === 1 ? noun : plural}`
 }

@@ -10,17 +10,21 @@ import {
 } from 'firebase/firestore'
 import { BONUS_PERIODS, NO_BONUSES, type LocalDay, type PeriodBonuses, type TaskId } from '../core'
 import { countRecords, NeedsConnectionError, newRecords, type BackupRepository, type KnownRecords } from './backupRepository'
+import { readCategory, toStoredCategory } from './categorySchema'
 import { accountCollection } from './firestoreAccount'
 import { commitInBatches } from './firestoreBatches'
 import { readList, toStoredList } from './listSchema'
 import { NUDGE, readNudge, toStoredNudge } from './nudgeSchema'
 import { readPrize, toStoredPrize } from './prizeSchema'
 import {
+  CHEST,
   POINT_VALUE,
+  readChestSettings,
   readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
+  toStoredChestSettings,
   toStoredPointValue,
   toStoredRedemption,
   toStoredRewardDays,
@@ -59,6 +63,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   const settings = accountCollection(firestore, accountId, 'rewardSettings')
   const warmUps = accountCollection(firestore, accountId, 'warmUp')
   const nudges = accountCollection(firestore, accountId, 'nudge')
+  const categories = accountCollection(firestore, accountId, 'categories')
 
   /** What the account earns for clearing each period, of everything its goals hold. */
   function bonusesIn(snapshot: QuerySnapshot): PeriodBonuses {
@@ -72,6 +77,10 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   /** What the account says a point is worth, of everything its settings hold. */
   const pointValueIn = (snapshot: QuerySnapshot) =>
     snapshot.docs.flatMap((saved) => (saved.id === POINT_VALUE ? (readPointValue(saved.data()) ?? []) : []))[0] ?? null
+
+  /** What the account asks of the chest, of everything its settings hold. */
+  const chestIn = (snapshot: QuerySnapshot) =>
+    snapshot.docs.flatMap((saved) => (saved.id === CHEST ? (readChestSettings(saved.data()) ?? []) : []))[0] ?? null
 
   /** The warm-up the account has, of the one document it is ever kept as. */
   const warmUpIn = (snapshot: QuerySnapshot) =>
@@ -95,9 +104,10 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         savedSettings,
         savedWarmUp,
         savedNudge,
+        savedCategories,
       ] = await Promise.all(
-        [tasks, lists, tags, prizes, days, redemptions, goals, settings, warmUps, nudges].map((collection) =>
-          getDocs(collection),
+        [tasks, lists, tags, prizes, days, redemptions, goals, settings, warmUps, nudges, categories].map(
+          (collection) => getDocs(collection),
         ),
       )
       const readAll = <T>(snapshot: QuerySnapshot, read: (data: unknown) => T | null): T[] =>
@@ -108,10 +118,12 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         lists: readAll(savedLists, readList),
         tags: readAll(savedTags, readTag),
         prizes: readAll(savedPrizes, readPrize),
+        categories: readAll(savedCategories, readCategory),
         entries: readAll(savedDays, readRewardDay).flat(),
         redemptions: readAll(savedRedemptions, readRedemption),
         bonuses: bonusesIn(savedGoals),
         pointValue: pointValueIn(savedSettings),
+        chest: chestIn(savedSettings),
         warmUp: warmUpIn(savedWarmUp),
         nudge: nudgeIn(savedNudge),
       }
@@ -130,16 +142,19 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         savedSettings,
         savedWarmUp,
         savedNudge,
-      ] = await fromServer([tasks, lists, tags, prizes, days, redemptions, goals, settings, warmUps, nudges])
+        savedCategories,
+      ] = await fromServer([tasks, lists, tags, prizes, days, redemptions, goals, settings, warmUps, nudges, categories])
       const known: KnownRecords = {
         taskIds: ids(savedTasks),
         listIds: ids(savedLists),
         tagIds: ids(savedTags),
         tagNames: savedTags.docs.flatMap((saved) => readTag(saved.data())?.name ?? []),
         prizeIds: ids(savedPrizes),
+        categoryIds: ids(savedCategories),
         redemptionIds: ids(savedRedemptions),
         bonuses: bonusesIn(savedGoals),
         pointValue: pointValueIn(savedSettings),
+        chest: chestIn(savedSettings),
         warmUp: warmUpIn(savedWarmUp),
         nudge: nudgeIn(savedNudge),
         days: new Map(
@@ -152,6 +167,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
 
       const { fresh, alreadyHere } = newRecords(incoming, known, now)
       const value = fresh.pointValue
+      const chest = fresh.chest
       const warmUp = fresh.warmUp
       const nudge = fresh.nudge === null ? null : toStoredNudge(fresh.nudge)
 
@@ -162,14 +178,17 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         ...fresh.lists.map((list) => (batch: WriteBatch) => batch.set(doc(lists, list.id), toStoredList(list))),
         ...fresh.tags.map((tag) => (batch: WriteBatch) => batch.set(doc(tags, tag.id), toStoredTag(tag))),
         ...fresh.prizes.map((prize) => (batch: WriteBatch) => batch.set(doc(prizes, prize.id), toStoredPrize(prize))),
+        ...fresh.categories.map((category) => (batch: WriteBatch) =>
+          batch.set(doc(categories, category.id), toStoredCategory(category)),
+        ),
         ...toStoredRewardDays(fresh.entries).map((day) => (batch: WriteBatch) =>
           batch.set(doc(days, day.day), day, { merge: true }),
         ),
         ...fresh.redemptions.map((redemption) => (batch: WriteBatch) =>
           batch.set(doc(redemptions, redemption.id), toStoredRedemption(redemption)),
         ),
-        // The file's bonuses, point value, warm-up and nudge are only ever set
-        // where the account has none of its own (`newRecords`).
+        // The file's bonuses, point value, chest settings, warm-up and nudge are
+        // only ever set where the account has none of its own (`newRecords`).
         ...BONUS_PERIODS.flatMap((period) => {
           const points = fresh.bonuses[period]
           return points === null
@@ -179,6 +198,9 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         ...(value === null
           ? []
           : [(batch: WriteBatch) => batch.set(doc(settings, POINT_VALUE), toStoredPointValue(value))]),
+        ...(chest === null
+          ? []
+          : [(batch: WriteBatch) => batch.set(doc(settings, CHEST), toStoredChestSettings(chest))]),
         ...(warmUp === null
           ? []
           : [(batch: WriteBatch) => batch.set(doc(warmUps, WARM_UP), toStoredWarmUp(warmUp))]),

@@ -110,8 +110,8 @@ describe('BottomNav', () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith('rewards')
   })
 
-  it('keeps More marked while the tags, a tag\'s list or the modes are open (UI-45, TAG-17, MODE-1)', () => {
-    for (const view of ['tags', 'tag/work', 'modes', 'modes/warm-up'] as const) {
+  it('keeps More marked while the tags, a tag\'s list, Balance or the modes are open (UI-45, TAG-17, MODE-1, BAL-1)', () => {
+    for (const view of ['tags', 'tag/work', 'balance', 'modes', 'modes/warm-up'] as const) {
       setup(view)
       expect(moreTab().getAttribute('aria-current')).toBe('page')
       expect(tasksTab().getAttribute('aria-current')).toBeNull()
@@ -323,16 +323,17 @@ describe('the Tasks tab', () => {
 })
 
 describe('the Rewards tab', () => {
-  it('opens its menu on a tap once Rewards is on screen: Rewards with its four pages under it (UI-67)', async () => {
+  it('opens its menu on a tap once Rewards is on screen: Rewards with its five pages under it (UI-67)', async () => {
     const { user, onChange } = setup('rewards')
 
     await user.click(rewardsTab())
 
     const items = within(rewardsMenu() as HTMLElement).getAllByRole('menuitem').map((item) => item.textContent)
-    expect(items).toEqual(['Rewards', 'History', 'Prizes', 'Wishlist', 'Rules'])
+    expect(items).toEqual(['Rewards', 'Chest', 'History', 'Prizes', 'Wishlist', 'Rules'])
     const under = within(rewardsMenu() as HTMLElement).getByRole('group', { name: 'Rewards' })
     expect(within(under).getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
       'Rewards',
+      'Chest',
       'History',
       'Prizes',
       'Wishlist',
@@ -397,7 +398,7 @@ describe('the Rewards tab', () => {
 
     await user.click(rewardsTab())
 
-    for (const name of ['Rewards', 'History', 'Prizes', 'Wishlist', 'Rules']) {
+    for (const name of ['Rewards', 'Chest', 'History', 'Prizes', 'Wishlist', 'Rules']) {
       expect(screen.getByRole('menuitem', { name }).querySelector('svg')).not.toBeNull()
     }
     const history = screen.getByRole('menuitem', { name: 'History' })

@@ -19,6 +19,7 @@ export const ACCOUNT_COLLECTIONS = [
   'warmUp',
   'procrastination',
   'nudge',
+  'categories',
 ] as const
 
 export type AccountCollection = (typeof ACCOUNT_COLLECTIONS)[number]

@@ -7,10 +7,11 @@ in. Both are on **Settings**, under the account (UI-35).
 
 - **BAK-1** **Export** saves a file of the whole account, named for the local day it was made:
   `task-tracker-backup-2026-09-19.json`. Nothing is asked first, and the page then says what went into
-  it — `Exported 12 tasks, 2 lists, 3 tags, 4 prizes, 30 completions and 1 redemption.` — or that the account had nothing
+  it — `Exported 12 tasks, 2 lists, 3 tags, 4 prizes, 3 categories, 30 completions and 1 redemption.` — or that the account had nothing
   in it yet. Offline it still works, from the copy of the account this device keeps (STORE-18).
 - **BAK-2** The file holds **everything the account keeps**: every task, those in the trash too, the
-  lists, the kept tags — those no task carries any more too (TAG-6) — the wishlist (RWD-33), what
+  lists, the kept tags — those no task carries any more too (TAG-6) — the wishlist (RWD-33), the
+  Balance categories (BAL-12), what
   completions earned (a *completion* in the counts is one task's points on one day), the
   redemptions, what clearing each period is worth (RWD-24, RWD-29), what a point is worth
   (RWD-31), the warm-up under way (WARM-1) and how the owner asked to be nudged (NUDGE-9). What is
@@ -30,12 +31,12 @@ in. Both are on **Settings**, under the account (UI-35).
   with a click, and the same file can be picked again straight after. While an export or an import
   is under way neither can be started, and the one running reads **Exporting…** or **Importing…**.
 - **BAK-5** An import **adds to the account what it does not have yet**: tasks, lists, tags,
-  prizes, what completions earned and redemptions. They appear on their own, the way a change made on another
+  prizes, Balance categories, what completions earned and redemptions. They appear on their own, the way a change made on another
   device does, and are not recorded as earning anything again — the points they bring are the ones
   in the file (STORE-25). A file exported from another account works the same, so this is also how
   to copy one account into another.
-- **BAK-6** An import **never changes anything already here**. A task, list, prize or redemption
-  the account has is left as it is, however the one in the file differs; a tag is the account's already
+- **BAK-6** An import **never changes anything already here**. A task, list, prize, category or
+  redemption the account has is left as it is, however the one in the file differs; a tag is the account's already
   when it keeps a tag of that name, whatever the case, so no tag is ever kept twice; what a completion earned is
   added to its day only when that day holds nothing for that task, and a day the app cannot read is
   left alone (STORE-24). So an import is not a return to the moment the file was made — what changed
@@ -81,13 +82,16 @@ in. Both are on **Settings**, under the account (UI-35).
   rather than turned away (BAK-13). It is **no record** the same way (BAK-14), and an import takes
   the file's setting only where the account has **none of its own** — so restoring a backup cannot
   turn a nudge back on that was turned off since.
+- **BAK-17** A file made before there were Balance categories (BAL-12) holds none, and is read as
+  holding none rather than turned away (BAK-13). A category is a **record**, like a prize: it is
+  counted among what was imported or already here, and one the account has is left as it is (BAK-6).
 
 ---
 
 **Where it lives:** `src/storage/backupRepository.ts` (the interface, and what an import adds),
 `firestoreBackupRepository.ts` (reading and adding to the account in Firestore), `localBackupRepository.ts`
 (the guest's), `backupFile.ts` (the file and its version), `taskSchema.ts`, `listSchema.ts`, `tagSchema.ts`,
-`prizeSchema.ts`, `rewardSchema.ts`, `warmUpSchema.ts`, `nudgeSchema.ts` (each record's own shape),
+`prizeSchema.ts`, `categorySchema.ts`, `rewardSchema.ts`, `warmUpSchema.ts`, `nudgeSchema.ts` (each record's own shape),
 `src/app/useBackup.ts` (running them), `src/app/backupLabels.ts` (what is said),
 `src/app/downloadFile.ts`, `src/app/components/BackupCard.tsx`, `SettingsList.tsx`.
 **Tested in:** `src/storage/backupFile.test.ts` (the file, and reading one back),
