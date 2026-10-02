@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import type { HabitViewOptions } from '../../storage/habitViewOptionsRepository'
+import { InfoButton } from './InfoButton'
 import { OptionSwitch } from './OptionSwitch'
 
 interface ViewSettingsCardProps {
@@ -20,12 +21,14 @@ export function ViewSettingsCard({ habitView, onHabitViewChange }: ViewSettingsC
       aria-labelledby={headingId}
       className="flex flex-col rounded-xl border border-neutral-200 bg-white px-4 py-3.5 dark:border-neutral-800 dark:bg-neutral-900"
     >
-      <h2 id={headingId} className="text-sm font-medium">
-        View settings
-      </h2>
-      <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-        How the pages start out. Kept on this device only.
-      </p>
+      <div className="flex items-center gap-1.5">
+        <h2 id={headingId} className="text-sm font-medium">
+          View settings
+        </h2>
+        <InfoButton label="View settings">
+          <p>How the pages start out. Kept on this device only.</p>
+        </InfoButton>
+      </div>
 
       <div className="mt-2 -mx-2">
         <OptionSwitch

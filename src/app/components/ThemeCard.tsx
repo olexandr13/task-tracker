@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { THEMES, type Theme } from '../../storage/themeRepository'
+import { InfoButton } from './InfoButton'
 
 const LABELS: Record<Theme, string> = { system: 'System', light: 'Light', dark: 'Dark' }
 
@@ -26,12 +27,14 @@ export function ThemeCard({ theme, onChange }: ThemeCardProps) {
       aria-labelledby={headingId}
       className="flex flex-col rounded-xl border border-neutral-200 bg-white px-4 py-3.5 dark:border-neutral-800 dark:bg-neutral-900"
     >
-      <h2 id={headingId} className="text-sm font-medium">
-        Theme
-      </h2>
-      <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-        System follows this device’s light or dark mode. Kept on this device only.
-      </p>
+      <div className="flex items-center gap-1.5">
+        <h2 id={headingId} className="text-sm font-medium">
+          Theme
+        </h2>
+        <InfoButton label="Theme">
+          <p>System follows this device’s light or dark mode. Kept on this device only.</p>
+        </InfoButton>
+      </div>
 
       <div
         role="radiogroup"

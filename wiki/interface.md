@@ -285,8 +285,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   Clicking anywhere on the row **opens what the task holds** — its checklist and its description,
   both at once — and spells its date or repeat rule and its checklist count out under their buttons (UI-27). Clicking a task is asking to see the whole
   of it, not to be handed buttons to press. It all goes again when you click the row again (UI-28),
-  click away, press Escape, or click into another row. On a phone a tap opens that as a sheet
-  instead of growing the row (UI-48).
+  click away, press Escape, or click into another row. Escape does it wherever the focus is — a
+  click on the row leaves it on the page, not on the row — unless a panel or an edit box on the row
+  has it first (UI-10). On a phone a tap opens that as a sheet instead of growing the row (UI-48).
 - **UI-18** A resting row shows the controls that **hold something**, and no others — the schedule
   (the date, or the rule on a repeating task, DUE-13), the checklist, the time (TIME-10), the reward
   (RWD-5), the description — tinted (UI-26), so the list reads as what its tasks carry rather than as
@@ -427,6 +428,10 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   for a screen reader (UI-12), so its autofill and its developer tools can tell one box from another
   and raise no issue about one they cannot. The same kind of box has the same name wherever it
   appears: a task's title in the add box, in the sheet and in the row alike.
+- **UI-73** A page or settings card that has something to explain — what it is for, how it works —
+  carries an **i** beside its heading rather than the explanation sitting on the page itself: a tap
+  opens it in a sheet (UI-48), closing the same ways any sheet does. The page stays to its controls;
+  the words are a tap away for whoever wants them, read once or come back to.
 - **UI-24** The box a description is written in reads as a multi-line text box, and the emphasis
   in it is marked up as well as drawn: bold words are heard as bold rather than only seen.
 - **UI-25** Lists in that box are marked up as lists, so an item is heard as one of so many rather
@@ -477,7 +482,8 @@ row, a habit card or a task's sheet can do to its task), `src/app/components/Tas
 row at rest and awake), `src/app/components/TaskSheet.tsx` and `src/app/components/BottomSheet.tsx` (a
 phone's look at a task, and a wide screen's dialog), `src/app/components/SheetActions.tsx` and
 `src/app/components/InfoIcon.tsx` (the row of icons, the line of what is set, and the **i** that
-names them, UI-63), `src/app/sheetDrag.ts` and `src/app/useSheetDrag.ts`
+names them, UI-63), `src/app/components/InfoButton.tsx` (the **i** beside a heading that opens a
+sheet with what the page explains, UI-73), `src/app/sheetDrag.ts` and `src/app/useSheetDrag.ts`
 (pulling a sheet down to close it), `src/app/usePhoneLayout.ts` (whether the screen is a phone's, and
 how high above the bar the Plus and the notices float), `index.html` (the page running under the
 notch and the home indicator), `src/app/components/TaskList.tsx` (the room between rows), `src/app/components/ContextMenu.tsx` (a task's menu), `src/app/components/FloatingPanel.tsx` (a menu or panel floating where the pointer was), `src/app/textOffsetAtPoint.ts` (which character a click landed on), `src/app/components/SideNav.tsx`,
@@ -501,7 +507,7 @@ the sheet's pickers), `src/app/components/PanelRow.tsx` and `src/app/components/
 line standing for a group of choices, and the way back out of the ones it opens), `src/app/usePageLock.ts` (the page held still under a sheet or a panel, UI-68), `src/styles.css`,
 `public/favicon.svg` (the app's icon; the PNGs beside it are the same icon for installing),
 `src/app/components/AppLogo.tsx` (the mark in the sidebar).
-**Tested in:** `src/app/components/SheetActions.test.tsx` (the row of icons and its **i**), `src/app/components/PickerPanel.test.tsx` (the aside and the sheet), `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
+**Tested in:** `src/app/components/SheetActions.test.tsx` (the row of icons and its **i**), `src/app/components/InfoButton.test.tsx` (the **i** beside a heading and the sheet it opens), `src/app/components/PickerPanel.test.tsx` (the aside and the sheet), `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
 items are large enough for a finger), `src/app/components/MorePage.test.tsx` (More's links), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
 view in the address, and back going a level up), `src/app/overlayHistory.test.ts` (back closing a sheet, and a sheet over a sheet first), `src/app/view.test.ts` (which view is above which), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel),
 `src/app/components/SettingsList.test.tsx` (the version on Settings, and the habits switch on it),

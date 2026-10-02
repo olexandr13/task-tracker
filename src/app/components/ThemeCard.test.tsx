@@ -52,6 +52,7 @@ describe('ThemeCard', () => {
     render(<Card />)
 
     await user.tab()
+    await user.tab()
     expect(document.activeElement).toBe(screen.getByRole('radio', { name: 'System' }))
 
     await user.keyboard('{ArrowRight}')

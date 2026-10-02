@@ -53,9 +53,10 @@ function range() {
 }
 
 describe('what the page says', () => {
-  it('says what a cleared day earns (CHST-2)', () => {
-    setup()
+  it('says what a cleared day earns (CHST-2)', async () => {
+    const { user } = setup()
 
+    await user.click(screen.getByRole('button', { name: 'About The chest' }))
     expect(screen.getByText(/Clear everything in Today and a key is yours/)).toBeTruthy()
   })
 
@@ -103,7 +104,7 @@ describe('practice', () => {
     await user.click(screen.getByRole('switch', { name: 'Practice' }))
     expect(screen.getByText('Practice — nothing is earned')).toBeTruthy()
 
-    const lid = screen.getByRole('button', { name: /chest/i })
+    const lid = screen.getByRole('button', { name: /open.*chest/i })
     await user.click(lid)
     await user.click(lid)
     await user.click(lid)
@@ -119,7 +120,7 @@ describe('practice', () => {
     const practice = screen.getByRole('switch', { name: 'Practice' })
 
     await user.click(practice)
-    await user.click(screen.getByRole('button', { name: /chest/i }))
+    await user.click(screen.getByRole('button', { name: /open.*chest/i }))
     expect(screen.getByText(/^\+\d+$/)).toBeTruthy()
 
     await user.click(practice)
@@ -133,7 +134,7 @@ describe('practice', () => {
     const { user } = setup()
 
     await user.click(screen.getByRole('switch', { name: 'Practice' }))
-    await user.click(screen.getByRole('button', { name: /chest/i }))
+    await user.click(screen.getByRole('button', { name: /open.*chest/i }))
 
     const counted = screen
       .getAllByRole('listitem')

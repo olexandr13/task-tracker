@@ -19,8 +19,10 @@ function mode(view: ModeView, over: Partial<ModeState> = {}): ModeState {
 afterEach(cleanup)
 
 describe('ModePage', () => {
-  it('says what the mode does, a thing at a time (MODE-5)', () => {
+  it('says what the mode does, a thing at a time (MODE-5)', async () => {
     render(<ModePage mode={mode('modes/warm-up')} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'About What it does' }))
 
     const points = screen.getByRole('list')
     expect(points.children).toHaveLength(MODE_POINTS['modes/warm-up'].length)
@@ -75,7 +77,7 @@ describe('ModePage', () => {
     )
 
     const sections = screen.getAllByRole('region').map((section) => section.getAttribute('aria-label'))
-    expect(sections).toEqual(['What it does', 'Settings'])
+    expect(sections).toEqual(['Settings'])
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeDefined()
     expect(screen.getByText('After this long with nothing finished')).toBeDefined()
   })
@@ -87,8 +89,10 @@ describe('ModePage', () => {
     expect(screen.getByText('After this long with nothing finished')).toBeDefined()
   })
 
-  it('says how the nudge arrives in one sentence, not the line above it again (MODE-5)', () => {
+  it('says how the nudge arrives in one sentence, not the line above it again (MODE-5)', async () => {
     render(<ModePage mode={mode('modes/nudge')} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'About What it does' }))
 
     const points = screen.getByRole('list')
     expect(points.children).toHaveLength(1)
@@ -103,10 +107,12 @@ describe('ModePage', () => {
     expect(screen.queryByRole('region', { name: 'Settings' })).toBeNull()
   })
 
-  it('reads even while the mode cannot be turned on (MODE-6)', () => {
+  it('reads even while the mode cannot be turned on (MODE-6)', async () => {
     render(<ModePage mode={mode('modes/procrastination', { blocked: 'Nothing to do in Today.' })} />)
 
     expect(screen.getByRole('switch', { name: 'Procrastination' }).hasAttribute('disabled')).toBe(true)
+
+    await userEvent.click(screen.getByRole('button', { name: 'About What it does' }))
     expect(screen.getByRole('list').textContent).toContain('Dims everything else')
   })
 })

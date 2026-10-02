@@ -11,10 +11,11 @@ anywhere else, by tagging it: a walk with the dog tagged `walk`, with `walk` bou
 ## The page
 
 - **BAL-1** **Balance** is a page of its own, at `#/balance` (UI-36), with an entry in the sidebar
-  between Rewards and Modes (UI-30) and a row on More's page (UI-45). It opens with what it is for,
-  in a few plain sentences under the heading **Work–rest balance**; then the time spent (BAL-2 to
-  BAL-6, BAL-13); then the categories themselves, made and changed in place (BAL-7 to BAL-10). It has no
-  box for adding a task and no Plus: it is not a list of tasks.
+  between Rewards and Modes (UI-30) and a row on More's page (UI-45). It opens on the heading
+  **Work–rest balance**, an **i** beside it (UI-73) saying what the page is for and how categories
+  work; then the time spent (BAL-2 to BAL-6, BAL-13); then the categories themselves, made and
+  changed in place (BAL-7 to BAL-10). It has no box for adding a task and no Plus: it is not a list
+  of tasks.
 - **BAL-2** The time spent is shown for **Today**, **Week** or **Month**, chosen with three segments
   at the head of the totals — the same periods as the progress bars (PROG-1): today from local
   midnight, the week Monday to Sunday, and the calendar month. The page opens on **Today** every

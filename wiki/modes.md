@@ -65,20 +65,21 @@ and each mode a page of its own that says what it does, and sets what it has to 
 - **MODE-4** A click **anywhere else on the row** opens that mode's own page. A chevron at the end
   of the row marks it as a page to go to, and a **tooltip** says so in words — *Open Warm-up for
   what it does* — so the switch is not the only thing the row looks like.
-- **MODE-5** A **mode's own page** carries the mode at its head — glyph (MODE-11), name, the line it
-  is summed up in, where it stands, and the same switch (MODE-3) — and under that **What it does**:
-  what being on actually does, in **plain sentences, one thing each**, naming the controls they
-  mean in quotes (*Press "Other task" to pick a different one*). Procrastination: what is picked,
-  what is dimmed, what each control does, what finishing one wins, and the **P** shortcut. The
-  warm-up: **why going gradually is the point** — no rush, no extra effort, no promises to
-  yourself you end up breaking — then what each day allows, that only new habits are held back,
-  what counts against the allowance, that nothing already there is touched, where it is shown, and
-  how it ends. The nudge, in **one line**: the two ways it arrives, that pressing the notice goes
-  straight to the task, and **how far its reach goes** — while the app is open, nothing once it is
-  closed (NUDGE-10). What it watches for and what it names is the line it is summed up in, right
-  above (MODE-2), and what there is to set is the **Settings** below (MODE-12), so neither is said
-  twice. Short enough to read before the switch is touched, and said outright rather than hinted at:
-  a mode explained at the length of its own settings is one nobody reads.
+- **MODE-5** A **mode's own page** carries the mode at its head — glyph (MODE-11), name with an
+  **i** beside it (UI-73), the line it is summed up in, where it stands, and the same switch
+  (MODE-3). The **i** opens **What it does**: what being on actually does, in **plain sentences, one
+  thing each**, naming the controls they mean in quotes (*Press "Other task" to pick a different
+  one*). Procrastination: what is picked, what is dimmed, what each control does, what finishing one
+  wins, and the **P** shortcut. The warm-up: **why going gradually is the point** — no rush, no
+  extra effort, no promises to yourself you end up breaking — then what each day allows, that only
+  new habits are held back, what counts against the allowance, that nothing already there is
+  touched, where it is shown, and how it ends. The nudge, in **one line**: the two ways it arrives,
+  that pressing the notice goes straight to the task, and **how far its reach goes** — while the app
+  is open, nothing once it is closed (NUDGE-10). What it watches for and what it names is the line
+  it is summed up in, right above (MODE-2), and what there is to set is the **Settings** below
+  (MODE-12), so neither is said twice. Short enough to read before the switch is touched, and said
+  outright rather than hinted at: a mode explained at the length of its own settings is one nobody
+  reads.
 - **MODE-10** Wherever a mode **shows itself at work** — the warm-up panel at the head of Habits
   (WARM-6), the focus and idle banners on Today (JUST-5) — the banner carries a **More info**
   button, which opens that mode's own page. A banner has room for a line; the page is where the

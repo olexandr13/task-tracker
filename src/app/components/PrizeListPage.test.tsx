@@ -63,9 +63,10 @@ describe('the two lists (RWD-40)', () => {
     expect(screen.queryByText('A new phone')).toBeNull()
   })
 
-  it('says what each list is for', () => {
-    setup({ kind: 'wish' })
+  it('says what each list is for', async () => {
+    const { user } = setup({ kind: 'wish' })
 
+    await user.click(screen.getByRole('button', { name: 'About Wishlist' }))
     expect(screen.getByText(/The big ones, bought once/)).toBeTruthy()
   })
 

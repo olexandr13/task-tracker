@@ -152,10 +152,11 @@ The two and a half seconds the lid takes to open are as much the feature as the 
 
 - **CHST-22** **Chest** is a page under **Rewards**, at `#/rewards/chest` (UI-36), and it comes
   **first of them**, ahead of the history (RWD-30): a key nobody notices earns nothing. Pressing
-  **C** opens it from anywhere (UI-72). It holds what a cleared day earns, what the key plays for,
-  the chest itself, what it can give (CHST-26) and the practice switch (CHST-21); what it
-  *asks* and plays for is set on Rules, with everything else that is one amount for the whole
-  account (CHST-7). While a key is waiting, the Chest is **marked wherever it is reached from** —
+  **C** opens it from anywhere (UI-72). An **i** at its head (UI-73) says what a cleared day earns
+  and what Practice is for; the page itself holds the key it plays for, the chest itself, what it
+  can give (CHST-26) and the practice switch (CHST-21); what it *asks* and plays for is set on
+  Rules, with everything else that is one amount for the whole account (CHST-7). While a key is
+  waiting, the Chest is **marked wherever it is reached from** —
   its entry in the sidebar, its pill in the phone's strip, the Rewards tab — with a dot and the
   words behind it, a mark that is only a colour saying nothing to someone who cannot see it.
 - **CHST-23** The moment the day comes clear, the app **says so**: *Today is clear. A key is

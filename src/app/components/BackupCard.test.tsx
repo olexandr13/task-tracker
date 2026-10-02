@@ -52,6 +52,7 @@ describe('BackupCard', () => {
 
     await user.tab()
     await user.tab()
+    await user.tab()
 
     expect(document.activeElement).toBe(screen.getByLabelText('Import'))
   })

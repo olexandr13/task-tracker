@@ -15,6 +15,7 @@ import {
 import type { Chest as ChestState } from '../useChest'
 import { Chest } from './Chest'
 import { ChestRange } from './ChestRange'
+import { InfoButton } from './InfoButton'
 import { ModeSwitch } from './ModeSwitch'
 
 const heading = 'text-sm font-medium text-neutral-700 dark:text-neutral-300'
@@ -62,7 +63,13 @@ export function ChestPage({ chest }: { chest: ChestState }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-sm text-neutral-600 dark:text-neutral-400">{CHEST_SUMMARY}</p>
+      <div className="flex">
+        <InfoButton label="The chest">
+          <p>{CHEST_SUMMARY}</p>
+          <h3 className="mt-1 text-sm font-medium text-neutral-900 dark:text-neutral-100">{PRACTICE_LABEL}</h3>
+          <p>{PRACTICE_HINT}</p>
+        </InfoButton>
+      </div>
 
       <ChestRange
         jackpot={practising ? practiceFor : chest.jackpot}
@@ -97,20 +104,17 @@ export function ChestPage({ chest }: { chest: ChestState }) {
       <section aria-label={PRACTICE_LABEL} className="flex flex-col gap-2">
         <h2 className={heading}>{PRACTICE_LABEL}</h2>
         <div className={`${card} flex flex-col gap-3 px-4 py-3.5`}>
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">{PRACTICE_HINT}</p>
-            <ModeSwitch
-              label={PRACTICE_LABEL}
-              state={practising ? 'On' : 'Off'}
-              checked={practising}
-              blocked={null}
-              onChange={(on) => {
-                setPractising(on)
-                setTally(NOTHING_YET)
-                setPracticeJackpot(String(chest.jackpot))
-              }}
-            />
-          </div>
+          <ModeSwitch
+            label={PRACTICE_LABEL}
+            state={practising ? 'On' : 'Off'}
+            checked={practising}
+            blocked={null}
+            onChange={(on) => {
+              setPractising(on)
+              setTally(NOTHING_YET)
+              setPracticeJackpot(String(chest.jackpot))
+            }}
+          />
 
           {practising && (
             <div className="flex flex-col gap-3 border-t border-neutral-200 pt-3 dark:border-neutral-800">

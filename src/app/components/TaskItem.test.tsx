@@ -147,6 +147,27 @@ describe('the repeat rule on a task row', () => {
 
     expect(within(screen.getByRole('listitem')).queryByText('Daily')).toBeNull()
   })
+
+  it('stops spelling it out on Escape, with the focus still on the page after a click on the row (UI-17)', async () => {
+    const user = setup()
+
+    await user.click(screen.getByRole('listitem'))
+    expect(document.activeElement).toBe(document.body)
+    await user.keyboard('{Escape}')
+
+    expect(within(screen.getByRole('listitem')).queryByText('Daily')).toBeNull()
+  })
+
+  it('keeps an open panel\'s Escape to the panel, the row staying open (UI-10, UI-17)', async () => {
+    const user = setup()
+
+    await user.click(screen.getByRole('listitem'))
+    await user.click(scheduleButton())
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('dialog', { name: `Schedule for "${TASK}"` })).toBeNull()
+    expect(within(screen.getByRole('listitem')).getByText('Daily')).toBeDefined()
+  })
 })
 
 describe('the due date on a task row', () => {

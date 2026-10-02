@@ -182,14 +182,15 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   **the same pages in a menu**, indented under Rewards as the sidebar indents them (UI-67) — it is no
   longer under **More** (UI-45). Pressing **R** opens it from anywhere (UI-57), on how the points
   stand.
-- **RWD-20** **Rewards** itself is **how the points stand**, top to bottom: a line on how points are
-  earned; the **balance**, with what it is worth in money where a point has a value (RWD-32); what
-  was **earned** in each period (RWD-21); **Finish everything, earn extra** — the three period
-  bonuses **side by side in one row**, each its amount and where it stands: `+5 earned`,
-  `+20 all done = earned`, or `— no bonus` — under a line saying what the bonus is
-  (RWD-27, RWD-29); where the **chest** stands — what a cleared day's key can give, from 1 point
-  up to the jackpot, and whether one is waiting or already spent (CHST-23, CHST-26); and what the balance reaches on each list (RWD-37).
-  Nothing is spent or set here. None of the five pages has a box for adding a task, or a rail (UI-2).
+- **RWD-20** **Rewards** itself is **how the points stand**, top to bottom: the **balance**, an **i**
+  beside it (UI-73) saying how points are earned and what the bonus is for; what it is worth in
+  money where a point has a value (RWD-32); what was **earned** in each period (RWD-21); **Finish
+  everything, earn extra** — the three period bonuses **side by side in one row**, each its amount
+  and where it stands: `+5 earned`, `+20 all done = earned`, or `— no bonus` (RWD-27, RWD-29); where
+  the **chest** stands — what a cleared day's key can give, from 1 point up to the jackpot, and
+  whether one is waiting or already spent (CHST-23, CHST-26); and what the balance reaches on each
+  list (RWD-37). Nothing is spent or set here. None of the five pages has a box for adding a task,
+  or a rail (UI-2).
 - **RWD-30** Rewards is **six pages**: **Rewards** itself (RWD-20), the **Chest** a cleared day
   earns a key to ([the chest](chest.md), CHST-22), **History** (RWD-38),
   **Prizes** and **Wishlist** (RWD-40) and **Rules** (RWD-39). Their addresses are `#/rewards`,

@@ -19,6 +19,7 @@ import { describeMoney, describePoints, PERIOD_NAMES } from '../rewardLabels'
 import { VIEW_LABELS } from '../view'
 import { ChestIcon } from './ChestIcon'
 import { GiftIcon } from './GiftIcon'
+import { InfoButton } from './InfoButton'
 import { RewardTotals } from './RewardTotals'
 import { StarIcon } from './StarIcon'
 import { TrophyIcon } from './TrophyIcon'
@@ -81,18 +82,25 @@ export function RewardsPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-        <StarIcon className="size-3.5 shrink-0" />
-        Give a task a reward with its star, and every time it is done earns its points here.
-      </p>
-
       <section aria-label="Balance" className={`${card} flex flex-col gap-1 px-4 py-3.5`}>
-        <p className="flex items-baseline gap-2">
-          <span className="text-3xl font-semibold text-neutral-900 tabular-nums dark:text-neutral-100">{balance}</span>
-          <span className="text-sm text-neutral-500 dark:text-neutral-400">
-            {Math.abs(balance) === 1 ? 'point' : 'points'} to spend
-          </span>
-        </p>
+        <div className="flex items-start justify-between gap-2">
+          <p className="flex items-baseline gap-2">
+            <span className="text-3xl font-semibold text-neutral-900 tabular-nums dark:text-neutral-100">{balance}</span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">
+              {Math.abs(balance) === 1 ? 'point' : 'points'} to spend
+            </span>
+          </p>
+          <InfoButton label="Rewards">
+            <p className="flex items-center gap-1.5">
+              <StarIcon className="size-3.5 shrink-0" />
+              Give a task a reward with its star, and every time it is done earns its points here.
+            </p>
+            <h3 className="mt-1 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+              Finish everything, earn extra
+            </h3>
+            <p>An extra bonus on top of what the tasks themselves earn, paid once everything in the period is done.</p>
+          </InfoButton>
+        </div>
         {worth !== null && (
           <p className="text-sm text-neutral-500 tabular-nums dark:text-neutral-400">worth {worth}</p>
         )}
@@ -110,9 +118,6 @@ export function RewardsPage({
             {bonuses.today === null && bonuses.week === null && bonuses.month === null ? 'Set a bonus' : 'Change'}
           </button>
         </div>
-        <p className={note}>
-          An extra bonus on top of what the tasks themselves earn, paid once everything in the period is done.
-        </p>
         {/* Three at a glance, side by side: one row reads as one rule with three amounts. */}
         <dl className="grid grid-cols-3 gap-2">
           {BONUS_PERIODS.map((period) => {

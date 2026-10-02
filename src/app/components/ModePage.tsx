@@ -3,6 +3,7 @@ import { MODE_POINTS, MODE_SUMMARY } from '../modeLabels'
 import type { ModeState } from '../modes'
 import { VIEW_LABELS } from '../view'
 import { MODE_PAGE_ICONS } from '../viewIcons'
+import { InfoButton } from './InfoButton'
 import { ModeSwitch } from './ModeSwitch'
 
 const card =
@@ -14,20 +15,20 @@ const cardOn =
 const heading = 'text-sm font-medium text-neutral-700 dark:text-neutral-300'
 
 /**
- * One mode's own page: what it is, where it stands, its switch, and what being
- * on actually does — a thing at a time, in the words the mode would use about
- * itself (MODE-5).
+ * One mode's own page: what it is, where it stands, its switch, and — behind
+ * the **i** beside its name (UI-73) — what being on actually does, a thing at a
+ * time, in the words the mode would use about itself (MODE-5).
  *
  * A switch on a list says only its name, and the name of a mode cannot carry a
  * spell of the whole app behaving differently. This page is where that is said,
  * so turning one on is a decision rather than a guess.
  *
- * A mode with something to set carries it here too (MODE-12), under what it
- * does: what a mode does and how it is set are one thing, and the page that
- * explains the one is where the other belongs. It reads whether the mode is on
- * or off — what a mode will do is decided before it is turned on, and a section
- * that appears only afterwards is one nobody knows to look for. A mode with
- * nothing to set shows no such section.
+ * A mode with something to set carries it here too (MODE-12): what a mode does
+ * and how it is set are one thing, and the page that explains the one is where
+ * the other belongs. It reads whether the mode is on or off — what a mode will
+ * do is decided before it is turned on, and a section that appears only
+ * afterwards is one nobody knows to look for. A mode with nothing to set shows
+ * no such section.
  */
 export function ModePage({ mode, settings }: { mode: ModeState; settings?: ReactNode }) {
   // The head says where the mode stands, not only which mode it is (MODE-11).
@@ -40,7 +41,19 @@ export function ModePage({ mode, settings }: { mode: ModeState; settings?: React
         <Icon className="inline-flex size-7 shrink-0 items-center justify-center text-2xl leading-none" />
 
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="text-lg leading-6">{label}</span>
+          <span className="flex items-center gap-1.5 text-lg leading-6">
+            {label}
+            <InfoButton label="What it does">
+              <ul className="flex flex-col gap-2">
+                {MODE_POINTS[mode.view].map((point) => (
+                  <li key={point} className="flex gap-2.5">
+                    <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-neutral-300 dark:bg-neutral-600" />
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </InfoButton>
+          </span>
           <span className="text-xs text-neutral-500 dark:text-neutral-400">{MODE_SUMMARY[mode.view]}</span>
           {/* Whether it is on is said under the switch; this is the rest of where it stands (MODE-3). */}
           {mode.status.detail !== null && (
@@ -56,21 +69,6 @@ export function ModePage({ mode, settings }: { mode: ModeState; settings?: React
           onChange={mode.toggle}
         />
       </div>
-
-      <section aria-label="What it does" className="flex flex-col gap-2">
-        <h2 className={heading}>What it does</h2>
-        <ul className="flex flex-col gap-2.5">
-          {MODE_POINTS[mode.view].map((point) => (
-            <li
-              key={point}
-              className="flex gap-2.5 text-sm leading-5 text-neutral-700 dark:text-neutral-300"
-            >
-              <span aria-hidden="true" className="mt-2 size-1.5 shrink-0 rounded-full bg-neutral-300 dark:bg-neutral-600" />
-              {point}
-            </li>
-          ))}
-        </ul>
-      </section>
 
       {settings !== undefined && (
         <section aria-label="Settings" className="flex flex-col gap-2">

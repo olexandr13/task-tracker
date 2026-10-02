@@ -26,6 +26,7 @@ import { balancePieces, type PieceKey } from '../balancePieces'
 import { deleteControl } from '../rowControls'
 import { BalanceChart } from './BalanceChart'
 import { BalanceDays } from './BalanceDays'
+import { InfoButton } from './InfoButton'
 import { PencilIcon } from './PencilIcon'
 import { TagPicker } from './TagPicker'
 
@@ -84,13 +85,16 @@ export function BalancePage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1.5">
         <h2 className="text-lg leading-6 text-neutral-900 dark:text-neutral-100">{BALANCE_HEADING}</h2>
-        {BALANCE_INTRO.map((line) => (
-          <p key={line} className="text-sm text-neutral-600 dark:text-neutral-400">
-            {line}
-          </p>
-        ))}
+        <InfoButton label={BALANCE_HEADING}>
+          {BALANCE_INTRO.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+          {CATEGORIES_HELP.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </InfoButton>
       </div>
 
       <Totals categories={categories} tasks={tasks} period={period} now={now} onPeriodChange={setPeriod} />
@@ -280,16 +284,9 @@ function Categories({ categories, knownTags, onAdd, onRename, onBind, onUnbind, 
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
-        <h2 id={headingId} className={heading}>
-          Categories
-        </h2>
-        {CATEGORIES_HELP.map((line) => (
-          <p key={line} className={note}>
-            {line}
-          </p>
-        ))}
-      </div>
+      <h2 id={headingId} className={heading}>
+        Categories
+      </h2>
 
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-1.5">

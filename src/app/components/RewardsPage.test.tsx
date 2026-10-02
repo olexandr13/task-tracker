@@ -80,6 +80,7 @@ describe('what finishing a period pays (RWD-30)', () => {
   it('says what the bonus is for, and offers to set one where there is none', async () => {
     const { user, onOpenRules } = setup()
 
+    await user.click(screen.getByRole('button', { name: 'About Rewards' }))
     expect(screen.getByText(/An extra bonus on top of what the tasks themselves earn/)).toBeTruthy()
     expect(screen.getAllByText('no bonus')).toHaveLength(3)
 

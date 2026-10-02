@@ -41,7 +41,7 @@ export const OTHER_LABEL = 'Other'
 export const NO_CATEGORIES_HINT = 'Add a category below to divide this time.'
 
 export const CATEGORIES_HELP = [
-  'Add categories like "Work", "Routine" or "Rest", bind tags to it. Add tags to tasks. Then log time on a task.',
+  'Add categories like "Work", "Routine" or "Rest", bind tags to them. Add tags to tasks. Then log time on a task.',
 ]
 
 export const CATEGORY_NAME_TAKEN = 'There is a category called that already.'

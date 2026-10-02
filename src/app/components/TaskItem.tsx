@@ -423,6 +423,9 @@ export function TaskItem({
   }, [isEditing])
 
   const putAway = useEffectEvent(rest)
+  const putAwayOnEscape = useEffectEvent((event: globalThis.KeyboardEvent) => {
+    if (event.key === 'Escape' && !isDragging) rest()
+  })
 
   useEffect(() => {
     // A phone's sheet lives outside the row and closes itself.
@@ -432,8 +435,14 @@ export function TaskItem({
       if (!row.current?.contains(event.target as Node)) putAway()
     }
 
+    // A click on the row leaves the focus on the page, where the row's own key
+    // handler cannot hear Escape. Panels and edit boxes stop it before it gets here.
     document.addEventListener('pointerdown', handlePointerDown)
-    return () => { document.removeEventListener('pointerdown', handlePointerDown) }
+    document.addEventListener('keydown', putAwayOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', putAwayOnEscape)
+    }
   }, [isActive, phone])
 
   const bringUp = useEffectEvent(() => {

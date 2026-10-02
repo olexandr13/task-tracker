@@ -1,4 +1,5 @@
 import type { BackupStatus } from '../useBackup'
+import { InfoButton } from './InfoButton'
 
 /** The Sign out button's look (AccountCard), so the page's buttons read as one set. */
 const action =
@@ -25,11 +26,15 @@ export function BackupCard({ status, onExport, onImport }: BackupCardProps) {
       aria-label="Backup"
       className="flex flex-col rounded-xl border border-neutral-200 bg-white px-4 py-3.5 dark:border-neutral-800 dark:bg-neutral-900"
     >
-      <h2 className="text-sm font-medium">Backup</h2>
-      <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
-        Everything in your account — tasks, the trash, lists, tags and points — in one file. Importing a file adds what
-        isn’t here yet and changes nothing that is.
-      </p>
+      <div className="flex items-center gap-1.5">
+        <h2 className="text-sm font-medium">Backup</h2>
+        <InfoButton label="Backup">
+          <p>
+            Everything in your account — tasks, the trash, lists, tags and points — in one file. Importing a file adds
+            what isn’t here yet and changes nothing that is.
+          </p>
+        </InfoButton>
+      </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
         <button

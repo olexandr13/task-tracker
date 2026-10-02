@@ -15,7 +15,9 @@ import {
 import { PRIZE_WORDS } from '../prizeLabels'
 import { describeBoughtOn, describeMoney, describePoints } from '../rewardLabels'
 import { deleteControl } from '../rowControls'
+import { VIEW_LABELS } from '../view'
 import { GiftIcon } from './GiftIcon'
+import { InfoButton } from './InfoButton'
 import { RedeemForm } from './RedeemForm'
 import { PencilIcon } from './PencilIcon'
 import { TrophyIcon } from './TrophyIcon'
@@ -160,13 +162,15 @@ export function PrizeListPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-neutral-500 dark:text-neutral-400">
           <span className="font-medium text-neutral-900 tabular-nums dark:text-neutral-100">{balance}</span>{' '}
           {Math.abs(balance) === 1 ? 'point' : 'points'} to spend
           {describeMoney(balance, pointValue) !== null && ` — worth ${String(describeMoney(balance, pointValue))}`}
         </p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">{words.hint}</p>
+        <InfoButton label={VIEW_LABELS[kind === 'wish' ? 'rewards/wishlist' : 'rewards/prizes']}>
+          <p>{words.hint}</p>
+        </InfoButton>
       </div>
 
       <div className="flex flex-col gap-1">
