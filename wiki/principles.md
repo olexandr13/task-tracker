@@ -28,9 +28,10 @@ these, so a feature page only mentions them where the feature bends them.
   **days** it was done on (RPT-27), which is what habits and their streaks are read from
   ([Habits](habits.md)). A one-off has no history, and neither does a checklist item. Time logged
   under a repeating task counts only for the occurrence in play, but its sessions are kept for a
-  month as the history the Balance page reads (TIME-8, BAL-3). The one
-  record kept apart from the tasks is the **points ledger**: what each completion earned and what
-  was redeemed ([Rewards](rewards.md)). It outlives the tasks, so earned stays earned (RWD-13).
+  month as the history the Balance page reads (TIME-8, BAL-3). Kept apart from the tasks are the
+  **points ledger** — what each completion earned and what was redeemed ([Rewards](rewards.md)),
+  which outlives the tasks, so earned stays earned (RWD-13) — and the **activity log**, the day hour
+  by hour, which is about no task at all ([Activity log](activity-log.md)).
 
 ## Behaviour
 
@@ -63,3 +64,9 @@ These are enforced rather than merely intended, and `CLAUDE.md` is the authority
   the UI.
 - **PRIN-15** Anything time-dependent in that layer takes an injectable `now`, so tests are
   deterministic and future time-based rules have a seam.
+- **PRIN-16** Everything runs in the browser but **one part**: the **sender** that pushes a
+  check-in to a device while the app is closed (CHECKIN-10), a scheduled function in the app's
+  Firebase project, since nothing on a device can wake a closed web app at the top of the hour. It
+  reads only what it needs — the devices registered, the check-in's setting, the day being asked
+  about — decides by the same rules the app does, and writes nothing but the hour it last asked
+  about. Without it the app works as before; only that reach is lost.

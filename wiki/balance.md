@@ -108,14 +108,15 @@ anywhere else, by tagging it: a walk with the dog tagged `walk`, with `walk` bou
 
 **Where it lives:** `src/core/balance.ts` (categories, binding, following a tag renamed or deleted,
 and the totals), `src/core/timeLog.ts` (how long sessions are kept), `src/app/useCategories.ts`,
-`src/app/components/BalancePage.tsx`, `src/app/components/BalanceChart.tsx` (the bar and its legend),
-`src/app/components/BalanceDays.tsx` (day by day), `src/app/balancePieces.ts` (what each chart is
-divided into), `src/app/balanceColors.ts` (the colours), `src/app/components/BalanceIcon.tsx`,
-`src/app/balanceLabels.ts` (wording), `src/app/TasksScreen.tsx` (the page, and tags followed through), `src/app/view.ts`,
+`src/app/components/BalancePage.tsx`, `src/app/components/TimeSplitChart.tsx` (the bar and its
+legend) and `src/app/components/DayColumnsChart.tsx` (day by day) — both shared with the
+[Activity log](activity-log.md) — `src/app/balancePieces.ts` and `src/app/chartPieces.ts` (what each
+chart is divided into), `src/app/chartColors.ts` (the colours), `src/app/components/BalanceIcon.tsx`,
+`src/app/balanceLabels.ts` and `src/app/chartLabels.ts` (wording), `src/app/TasksScreen.tsx` (the page, and tags followed through), `src/app/view.ts`,
 `src/app/components/SideNav.tsx`, `src/app/components/MorePage.tsx`, `src/app/useUndoToast.ts`;
 saving: [Storage](storage.md).
 **Tested in:** `src/core/balance.test.ts`, `src/core/timeLog.test.ts` (the history kept),
-`src/app/useCategories.test.ts`, `src/app/components/BalancePage.test.tsx`, `src/app/balanceLabels.test.ts`,
+`src/app/useCategories.test.ts`, `src/app/components/BalancePage.test.tsx`, `src/app/chartLabels.test.ts`,
 `src/app/components/UndoToast.test.tsx`, `src/storage/categorySchema.test.ts`,
 `src/storage/localCategoryRepository.test.ts`, `src/app/components/MorePage.test.tsx`,
 `src/app/components/SideNav.test.tsx`, `src/app/components/BottomNav.test.tsx`, `src/app/view.test.ts`,

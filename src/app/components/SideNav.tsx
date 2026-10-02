@@ -20,7 +20,8 @@ import { KeyWaitingMark } from './KeyWaitingMark'
 
 /**
  * The views, grouped: the ones named after a period, then every task, the
- * habits, the lists, the rewards, the balance of time, the modes and More, then
+ * habits, the lists, the rewards, the balance of time, the activity log, the
+ * modes and More, then
  * the trash, then settings. A thin line is drawn between groups. Lists opens onto the Inbox and
  * every list under it, so a list is one click away and a task can be dropped on
  * one to file it, and folds them away when they are not wanted. Rewards keeps
@@ -30,7 +31,7 @@ import { KeyWaitingMark } from './KeyWaitingMark'
  */
 const VIEW_GROUPS: readonly (readonly FixedView[])[] = [
   ['today', 'week', 'month'],
-  ['tasks', 'habits', 'lists', 'rewards', 'balance', 'modes', 'more'],
+  ['tasks', 'habits', 'lists', 'rewards', 'balance', 'activity', 'modes', 'more'],
   ['trash'],
   ['settings'],
 ]

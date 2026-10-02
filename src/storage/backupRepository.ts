@@ -1,5 +1,7 @@
 import {
   BONUS_PERIODS,
+  type ActivityEntry,
+  type ActivityEntryId,
   isExpired,
   type Category,
   type CategoryId,
@@ -21,6 +23,7 @@ import {
   type TaskId,
   type WarmUp,
 } from '../core'
+import type { CheckInPreference } from './checkInRepository'
 import type { NudgePreference } from './nudgeRepository'
 
 /**
@@ -38,6 +41,8 @@ export interface AccountData {
   readonly prizes: readonly Prize[]
   /** The Balance page's categories (./categoryRepository). */
   readonly categories: readonly Category[]
+  /** The activity log's records (./activityRepository). */
+  readonly activities: readonly ActivityEntry[]
   /** What completions earned (./rewardRepository). */
   readonly entries: readonly RewardEntry[]
   readonly redemptions: readonly Redemption[]
@@ -67,6 +72,13 @@ export interface AccountData {
    * only where the account has none of its own.
    */
   readonly nudge: NudgePreference | null
+  /**
+   * Whether the check-in is on and the hours it keeps to (CHECKIN-2), or null
+   * where nothing says. A setting again, taken by an import only where the
+   * account has none of its own. The devices it pushes to are not in here: a
+   * registration is a device's, not the account's data (STORE-53).
+   */
+  readonly checkIn: CheckInPreference | null
 }
 
 /** How many of each kind of record there are. A completion is one entry of the ledger. */
@@ -76,6 +88,7 @@ export interface RecordCounts {
   readonly tags: number
   readonly prizes: number
   readonly categories: number
+  readonly activities: number
   readonly completions: number
   readonly redemptions: number
 }
@@ -121,6 +134,10 @@ export interface KnownRecords {
   readonly tagNames: readonly string[]
   readonly prizeIds: ReadonlySet<PrizeId>
   readonly categoryIds: ReadonlySet<CategoryId>
+  /** Every activity record the account holds, on days it can read. */
+  readonly activityIds: ReadonlySet<ActivityEntryId>
+  /** The days of the activity log it cannot read, which are left as they are, so nothing is added to them. */
+  readonly unreadableActivityDays: ReadonlySet<LocalDay>
   readonly redemptionIds: ReadonlySet<RedemptionId>
   /** What the account earns for clearing each period already, null where it has no bonus. */
   readonly bonuses: PeriodBonuses
@@ -132,6 +149,8 @@ export interface KnownRecords {
   readonly warmUp: WarmUp | null
   /** How the account already asked to be nudged, or null when it says nothing. */
   readonly nudge: NudgePreference | null
+  /** How the account already asked to be checked in on, or null when it says nothing. */
+  readonly checkIn: CheckInPreference | null
   /**
    * The tasks each saved day holds an entry for, or null for a day the app
    * cannot read — which is left as it is, so nothing is added to it.
@@ -146,6 +165,7 @@ export function countRecords(data: AccountData): RecordCounts {
     tags: data.tags.length,
     prizes: data.prizes.length,
     categories: data.categories.length,
+    activities: data.activities.length,
     completions: data.entries.length,
     redemptions: data.redemptions.length,
   }
@@ -155,7 +175,8 @@ export function countRecords(data: AccountData): RecordCounts {
  * The records in `incoming` the account does not have yet, and how many it
  * has already. A record is the account's already when one with its id is there,
  * readable or not, so an import never overwrites anything; a completion is
- * there when its day holds an entry for its task. The same record twice in
+ * there when its day holds an entry for its task, and an activity record when
+ * the account holds its id or cannot read its day. The same record twice in
  * `incoming` is taken once.
  *
  * A task whose time in the trash ran out since the file was made is left out:
@@ -165,7 +186,7 @@ export function countRecords(data: AccountData): RecordCounts {
  * point is worth are the things in here that are no records: the file's are
  * taken only where the account has none, and count towards neither what was
  * added nor what was already here. So are the chest's settings, the warm-up and
- * the nudge: a file's
+ * the nudge and the check-in: a file's
  * is taken only by an account with none of its own, which keeps a restored
  * backup from starting a month that has already been served, or from turning a
  * nudge back on that was turned off since.
@@ -198,6 +219,11 @@ export function newRecords(
     if (day === null || day?.has(entry.taskId) === true) takenEntries.add(entryKey(entry))
   }
 
+  const takenActivities = new Set(known.activityIds)
+  for (const entry of incoming.activities) {
+    if (known.unreadableActivityDays.has(entry.day)) takenActivities.add(entry.id)
+  }
+
   const tagNames = [...known.tagNames]
   const tags = unseen(incoming.tags, (tag) => tag.id, known.tagIds).filter((tag) => {
     if (known.tagNames.some((name) => sameTag(name, tag.name))) {
@@ -220,6 +246,7 @@ export function newRecords(
       tags,
       prizes: unseen(incoming.prizes, (prize) => prize.id, known.prizeIds),
       categories: unseen(incoming.categories, (category) => category.id, known.categoryIds),
+      activities: unseen(incoming.activities, (entry) => entry.id, takenActivities),
       entries: unseen(incoming.entries, entryKey, takenEntries),
       redemptions: unseen(incoming.redemptions, (redemption) => redemption.id, known.redemptionIds),
       bonuses,
@@ -227,6 +254,7 @@ export function newRecords(
       chest: known.chest === null ? incoming.chest : null,
       warmUp: known.warmUp === null ? incoming.warmUp : null,
       nudge: known.nudge === null ? incoming.nudge : null,
+      checkIn: known.checkIn === null ? incoming.checkIn : null,
     },
     alreadyHere,
   }

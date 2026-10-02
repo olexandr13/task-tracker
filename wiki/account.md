@@ -53,7 +53,8 @@ device alone.
   outright, so there is no panel to open and nothing to close. The mark is decorative — the lines
   beside it say who it is, so a screen reader hears it once.
 - **AUTH-11** **Sign out** sits beside a Google account and goes straight back to the sign-in screen
-  without asking. Nothing is lost by it.
+  without asking. Nothing is lost by it. A device reached by check-ins while the app is closed lets
+  that go first, so it is not reached for an account it has left (CHECKIN-13).
 - **AUTH-16** A guest on Settings shows a person mark, the name **Guest**, and that everything is
   **Saved on this device only**. **Leave** goes back to the sign-in screen without asking; the
   guest's data stays in the browser for the next time they continue as guest. Signing in with Google

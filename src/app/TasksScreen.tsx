@@ -14,7 +14,9 @@ import {
   summarizeLists,
   summarizeTags,
   trashedTasks,
+  type ActivityEntry,
   type CategoryId,
+  type HourSlot,
   type ListId,
   type LocalDay,
   type LocalTime,
@@ -30,10 +32,14 @@ import type { Account } from '../storage/authService'
 import { deviceStorage } from '../storage/deviceStorage'
 import { quotableQuoteSource } from '../storage/quotableQuoteSource'
 import type { Theme } from '../storage/themeRepository'
+import { ActivityPage } from './components/ActivityPage'
 import { AddTaskForm } from './components/AddTaskForm'
 import { AddTaskSheet } from './components/AddTaskSheet'
 import { BalancePage } from './components/BalancePage'
 import { BottomNav } from './components/BottomNav'
+import { CheckInDevice } from './components/CheckInDevice'
+import { CheckInSettings } from './components/CheckInSettings'
+import { CheckInToast } from './components/CheckInToast'
 import { FolderIcon } from './components/FolderIcon'
 import { HabitList } from './components/HabitList'
 import { WarmUpNoticeToast } from './components/WarmUpNoticeToast'
@@ -77,7 +83,11 @@ import { POINTS_NOT_LOADED, TASKS_NOT_LOADED } from './storageProblem'
 import type { TaskActions } from './taskActions'
 import { useLetterShortcut } from './useLetterShortcut'
 import { ABOVE_PHONE_BAR, usePhoneLayout } from './usePhoneLayout'
+import { useActivities } from './useActivities'
 import { useBackup } from './useBackup'
+import { useCheckIn } from './useCheckIn'
+import { usePushDevice } from './usePushDevice'
+import { useServiceWorkerMessages } from './useServiceWorkerMessages'
 import { useCategories } from './useCategories'
 import { useDeviceSetting } from './useDeviceSetting'
 import { useLists } from './useLists'
@@ -209,8 +219,22 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const savedTags = useTags(storage.tags, isLoading ? null : tasks, storageProblem.report)
   // The Balance page's categories, each bound to tags (BAL-1).
   const categories = useCategories(storage.categories, storageProblem.report)
+  // The activity log, hour by hour (ACT-1).
+  const activities = useActivities(storage.activities, storageProblem.report)
   const backup = useBackup(storage.backup)
   const [view, setView] = useView()
+  // The hour the activity log opens on — the one a check-in asked about — and a
+  // count that starts the page afresh each time it is gone to that way (CHECKIN-4).
+  const [activityOpen, setActivityOpen] = useState<{ slot: HourSlot | null; times: number }>({ slot: null, times: 0 })
+  // Left, the log is opened on today again the next time it is gone to some other way.
+  if (view !== 'activity' && activityOpen.slot !== null) {
+    setActivityOpen({ ...activityOpen, slot: null })
+  }
+  /** Goes to the activity log, on the hour asked about where one was. */
+  function openActivityLog(slot: HourSlot | null) {
+    setActivityOpen((open) => ({ slot, times: open.times + 1 }))
+    setView('activity')
+  }
   // The detailed add sheet (UI-54): open from the Plus, from `N` on a task page
   // (UI-55), or from `H` for a habit (UI-56) — which opens Habits first if needed.
   // `R` opens Rewards (UI-57) and `C` the chest under it (UI-72). `P` starts or
@@ -269,6 +293,20 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     isLoading ? null : todayTasks,
     storageProblem.report,
   )
+  // The check-in: the top of every hour asks what was done in the hour that
+  // just ended, unless it is logged already (CHECKIN-1). Its setting is the
+  // account's (STORE-52); what it keeps here is the device's (STORE-54).
+  const checkIn = useCheckIn(
+    storage.checkIn,
+    deviceStorage.checkIn,
+    activities.isLoading ? null : activities.entries,
+    storageProblem.report,
+    { onOpen: openActivityLog },
+  )
+  // Whether this device is pushed check-ins while the app is closed (CHECKIN-11),
+  // and a pushed one pressed while it is open (CHECKIN-10).
+  const pushDevice = usePushDevice(storage.push, checkIn.device, checkIn.updateDevice, storageProblem.report)
+  useServiceWorkerMessages(openActivityLog)
   // The chest a cleared day earns the key to (CHST-2). Every live task, since
   // "everything in Today" is asked of the whole set the way the bars ask it;
   // what it asks and plays for is the account's (CHST-7), and the noise, the
@@ -385,6 +423,17 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       loading: nudge.isLoading,
       onTurnOn: nudge.turnOn,
     },
+    checkIn: {
+      on: checkIn.preference.on,
+      window: checkIn.preference.window,
+      loading: checkIn.isLoading,
+      // Turned on here, it reaches this device while the app is closed too,
+      // wherever that can be done (CHECKIN-11).
+      onTurnOn: (on) => {
+        checkIn.turnOn(on)
+        if (on && pushDevice.support === 'supported' && !pushDevice.on) void pushDevice.turnOn()
+      },
+    },
   })
   const modesOn = UNDER_MODES.filter((mode) => modes[mode].on).length
 
@@ -482,6 +531,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       case 'category':
         categories.restore(undo.pending.category)
         break
+      case 'activity':
+        activities.restore(undo.pending.entry)
+        break
     }
     undo.dismiss()
   }
@@ -547,6 +599,12 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
 
     categories.remove(id)
     undo.show({ kind: 'category', category: deleted })
+  }
+
+  /** Takes a record out of the activity log, with a few seconds to take it back (ACT-11). */
+  function handleRemoveActivity(entry: ActivityEntry) {
+    activities.remove(entry.id)
+    undo.show({ kind: 'activity', entry })
   }
 
   /**
@@ -665,7 +723,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
               <section aria-label="Settings">
                 <SettingsList
                   account={account}
-                  onSignOut={onSignOut}
+                  // This device stops being pushed check-ins for an account it is no longer signed into (CHECKIN-13).
+                  onSignOut={() => { void pushDevice.forget().finally(onSignOut) }}
                   backup={backup.status}
                   onExport={() => { void backup.exportAll() }}
                   onImport={(file) => { void backup.importFile(file) }}
@@ -701,6 +760,26 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                         now={now}
                         onQuietHoursChange={nudge.changeQuietHours}
                         onWindowChange={nudge.changeWindow}
+                      />
+                    ) : view === 'modes/check-in' ? (
+                      // The check-in's hours, set whether it is on or off: they are also
+                      // the hours the activity log counts as meant to be logged (ACT-17).
+                      <CheckInSettings
+                        window={checkIn.preference.window}
+                        permission={checkIn.permission}
+                        now={now}
+                        onWindowChange={checkIn.changeWindow}
+                        device={
+                          <CheckInDevice
+                            support={pushDevice.support}
+                            on={pushDevice.on}
+                            busy={pushDevice.busy}
+                            outcome={pushDevice.outcome}
+                            onTurnOn={() => { void pushDevice.turnOn() }}
+                            onTurnOff={() => { void pushDevice.turnOff() }}
+                            onSendTest={pushDevice.sendTest}
+                          />
+                        }
                       />
                     ) : undefined
                   }
@@ -896,6 +975,26 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   />
                 )}
               </section>
+            ) : view === 'activity' ? (
+              <section aria-label="Activity log">
+                {activities.isLoading || checkIn.isLoading ? (
+                  <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                ) : (
+                  <ActivityPage
+                    // Opened afresh from a check-in, on the hour it asked about.
+                    key={activityOpen.times}
+                    entries={activities.entries}
+                    window={checkIn.preference.window}
+                    now={now}
+                    checkIn={modes['modes/check-in']}
+                    initialSlot={activityOpen.slot}
+                    onAdd={(activity, seconds, slot) => { activities.add(activity, seconds, slot) }}
+                    onChange={activities.change}
+                    onRemove={handleRemoveActivity}
+                    onOpenCheckIn={() => { setView('modes/check-in') }}
+                  />
+                )}
+              </section>
             ) : view === 'habits' ? (
               <>
                 {/* Where the warm-up is felt, so where it says where it stands (WARM-6). */}
@@ -1036,6 +1135,16 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
             more={reminders.notices.length - 1}
             onOpen={() => { revealTask(reminderTask); reminders.dismiss() }}
             onDismiss={reminders.dismiss}
+          />
+        )}
+        {checkIn.notice !== null && view !== 'activity' && (
+          <CheckInToast
+            checkIn={checkIn.notice}
+            onLog={() => {
+              const asked = checkIn.notice
+              if (asked !== null) openActivityLog(asked.slot)
+            }}
+            onDismiss={checkIn.dismiss}
           />
         )}
         {nudgeTask !== null && nudgeNotice !== null && (

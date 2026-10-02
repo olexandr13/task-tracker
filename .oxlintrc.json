@@ -1,25 +1,78 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
+  "plugins": [
+    "react",
+    "typescript",
+    "oxc"
+  ],
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+    "react/only-export-components": [
+      "warn",
+      {
+        "allowConstantExport": true
+      }
+    ]
   },
   "overrides": [
     {
-      "files": ["src/core/**"],
+      "files": [
+        "src/core/**"
+      ],
       "rules": {
         "no-restricted-imports": [
           "error",
           {
             "patterns": [
               {
-                "group": ["react", "react-*", "react/*", "react-dom/*"],
+                "group": [
+                  "react",
+                  "react-*",
+                  "react/*",
+                  "react-dom/*"
+                ],
                 "message": "src/core must stay framework-free. Move anything React-aware into src/app."
               },
               {
-                "group": ["**/app/**", "**/storage/**", "../app", "../storage"],
+                "group": [
+                  "**/app/**",
+                  "**/storage/**",
+                  "../app",
+                  "../storage"
+                ],
                 "message": "src/core must not depend on the app or storage layers. Dependencies point inwards only."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "functions/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/app/**",
+                  "../app",
+                  "../../src/app/**"
+                ],
+                "message": "The sender reads the account's data; the app's screens are none of its business."
+              },
+              {
+                "group": [
+                  "firebase",
+                  "firebase/*",
+                  "**/storage/firebaseApp",
+                  "**/storage/firestore*",
+                  "**/storage/local*"
+                ],
+                "message": "The sender reads Firestore with firebase-admin. Import the shapes it reads (src/storage/*Schema.ts) and checkInSender.ts, not the app's client SDK or repositories."
               }
             ]
           }

@@ -56,7 +56,7 @@ describe('SideNav', () => {
     expect(screen.getByText('PickMe')).toBeTruthy()
   })
 
-  it('carries Lists, Rewards, Balance, Modes and More beside Tasks and Habits, and no entry for Tags or any one tag (UI-30, UI-45, TAG-18, RWD-19, LST-13, MODE-7, BAL-1)', () => {
+  it('carries Lists, Rewards, Balance, the activity log, Modes and More beside Tasks and Habits, and no entry for Tags or any one tag (UI-30, UI-45, TAG-18, RWD-19, LST-13, MODE-7, BAL-1, ACT-1)', () => {
     setup('today')
 
     const entries = screen
@@ -79,10 +79,12 @@ describe('SideNav', () => {
       'Wishlist',
       'Rules',
       'Balance',
+      'Activity log',
       'Modes',
       '🫠Procrastination',
       '🌱Warm-up',
       '🔔Nudge',
+      '⏰Check-in',
       'More',
       'Trash',
       'Settings',
@@ -127,6 +129,11 @@ describe('SideNav', () => {
     expect(marked().map((button) => button.textContent)).toEqual(['Balance'])
   })
 
+  it('marks the activity log itself, rather than More (UI-8, UI-30, ACT-1)', () => {
+    setup('activity')
+    expect(marked().map((button) => button.textContent)).toEqual(['Activity log'])
+  })
+
   it('marks Modes, and each mode\'s page itself, rather than More (UI-8, UI-30, MODE-7)', () => {
     setup('modes')
     expect(marked().map((button) => button.textContent)).toEqual(['Modes'])
@@ -158,6 +165,7 @@ describe('SideNav', () => {
       '🫠Procrastination',
       '🌱Warm-up',
       '🔔Nudge',
+      '⏰Check-in',
     ])
   })
 

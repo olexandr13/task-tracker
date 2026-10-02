@@ -9,10 +9,24 @@ import { MorePage } from './MorePage'
 afterEach(cleanup)
 
 describe('MorePage', () => {
-  it('links to Lists, Tags, Balance and Modes, in that order (UI-45, LST-24, BAL-1)', () => {
+  it('links to Lists, Tags, Balance, the activity log and Modes, in that order (UI-45, LST-24, BAL-1, ACT-1)', () => {
     render(<MorePage onOpen={vi.fn()} />)
 
-    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Lists', 'Tags', 'Balance', 'Modes'])
+    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual([
+      'Lists',
+      'Tags',
+      'Balance',
+      'Activity log',
+      'Modes',
+    ])
+  })
+
+  it('opens the activity log (ACT-1)', async () => {
+    const onOpen = vi.fn()
+    render(<MorePage onOpen={onOpen} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Activity log' }))
+    expect(onOpen).toHaveBeenCalledExactlyOnceWith('activity')
   })
 
   it('opens the Balance page (BAL-1)', async () => {

@@ -26,6 +26,7 @@ dist-ssr
 
 # Firebase CLI
 .firebase/
+functions/lib/
 firebase-debug.log*
 firestore-debug.log*
 

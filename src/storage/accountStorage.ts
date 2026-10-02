@@ -1,13 +1,18 @@
+import type { ActivityRepository } from './activityRepository'
 import type { Account } from './authService'
 import type { BackupRepository } from './backupRepository'
 import type { CategoryRepository } from './categoryRepository'
-import { firestore } from './firebaseApp'
+import type { CheckInRepository } from './checkInRepository'
+import { firebaseApp, firestore } from './firebaseApp'
+import { createFirestoreActivityRepository } from './firestoreActivityRepository'
 import { createFirestoreBackupRepository } from './firestoreBackupRepository'
 import { createFirestoreCategoryRepository } from './firestoreCategoryRepository'
+import { createFirestoreCheckInRepository } from './firestoreCheckInRepository'
 import { createFirestoreListRepository } from './firestoreListRepository'
 import { createFirestoreNudgeRepository } from './firestoreNudgeRepository'
 import { createFirestorePrizeRepository } from './firestorePrizeRepository'
 import { createFirestoreProcrastinationRepository } from './firestoreProcrastinationRepository'
+import { createFirestorePushRepository } from './firestorePushRepository'
 import { createFirestoreRewardRepository } from './firestoreRewardRepository'
 import { createFirestoreSyncMonitor } from './firestoreSyncMonitor'
 import { createFirestoreTagRepository } from './firestoreTagRepository'
@@ -15,8 +20,10 @@ import { createFirestoreTaskRepository } from './firestoreTaskRepository'
 import { createFirestoreWarmUpRepository } from './firestoreWarmUpRepository'
 import { importGuestAccount } from './guestImport'
 import type { ListRepository } from './listRepository'
+import { createLocalActivityRepository } from './localActivityRepository'
 import { createLocalBackupRepository } from './localBackupRepository'
 import { createLocalCategoryRepository } from './localCategoryRepository'
+import { createLocalCheckInRepository } from './localCheckInRepository'
 import { createLocalListRepository } from './localListRepository'
 import { createLocalNudgeRepository } from './localNudgeRepository'
 import { createLocalPrizeRepository } from './localPrizeRepository'
@@ -31,6 +38,7 @@ import { createLocalWarmUpRepository } from './localWarmUpRepository'
 import type { NudgeRepository } from './nudgeRepository'
 import type { PrizeRepository } from './prizeRepository'
 import type { ProcrastinationRepository } from './procrastinationRepository'
+import { NO_PUSH, type PushRepository } from './pushRepository'
 import type { RewardRepository } from './rewardRepository'
 import type { SyncMonitor } from './syncMonitor'
 import type { TagRepository } from './tagRepository'
@@ -55,6 +63,12 @@ export interface AccountStorage {
   readonly nudge: NudgeRepository
   /** The Balance page's categories (BAL-1). */
   readonly categories: CategoryRepository
+  /** The activity log, a day at a time (ACT-1). */
+  readonly activities: ActivityRepository
+  /** Whether the check-in is on, and the hours it keeps to (STORE-52). */
+  readonly checkIn: CheckInRepository
+  /** The devices check-ins are pushed to when the app is closed (STORE-53); none as guest. */
+  readonly push: PushRepository
   readonly sync: SyncMonitor
   readonly backup: BackupRepository
   /**
@@ -95,6 +109,8 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
   const warmUp = createFirestoreWarmUpRepository(firestore, accountId)
   const nudge = createFirestoreNudgeRepository(firestore, accountId)
   const categories = createFirestoreCategoryRepository(firestore, accountId)
+  const activities = createFirestoreActivityRepository(firestore, accountId)
+  const checkIn = createFirestoreCheckInRepository(firestore, accountId)
 
   return {
     tasks,
@@ -105,6 +121,9 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
     warmUp,
     nudge,
     categories,
+    activities,
+    checkIn,
+    push: createFirestorePushRepository(firestore, firebaseApp, accountId),
     procrastination: createFirestoreProcrastinationRepository(firestore, accountId),
     sync: createFirestoreSyncMonitor(firestore, accountId),
     backup: createFirestoreBackupRepository(firestore, accountId),
@@ -113,7 +132,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
         importLocalTasks(tasks).catch((error: unknown) => {
           console.warn('Could not move the tasks kept in this browser into the account; will try again next time.', error)
         }),
-        importGuestAccount(tasks, lists, tags, prizes, rewards, warmUp, nudge, categories).catch((error: unknown) => {
+        importGuestAccount(tasks, lists, tags, prizes, rewards, warmUp, nudge, categories, activities, checkIn).catch((error: unknown) => {
           console.warn('Could not move the guest data into the account; will try again next time.', error)
         }),
       ])
@@ -137,6 +156,9 @@ function createGuestAccountStorage(): AccountStorage {
     warmUp: createLocalWarmUpRepository(),
     nudge,
     categories: createLocalCategoryRepository(),
+    activities: createLocalActivityRepository(),
+    checkIn: createLocalCheckInRepository(),
+    push: NO_PUSH,
     procrastination: createLocalProcrastinationRepository(),
     sync: createLocalSyncMonitor(),
     backup: createLocalBackupRepository(),

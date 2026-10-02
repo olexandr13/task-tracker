@@ -15,10 +15,10 @@ interface MorePageProps {
 
 /**
  * More's page: the pages a phone's bar has no tab for — Lists, Tags, Balance
- * (BAL-1), and Modes, which holds Procrastination and the warm-up (MODE-1).
+ * (BAL-1), the activity log (ACT-1), and Modes, which holds the modes (MODE-1).
  * Lists is here as well as behind the Tasks tab (UI-34), which takes a hold or
  * a second tap to open, so it is reached the same way as everything else on a
- * phone. Balance has an entry in the sidebar too (UI-30). The modes were rows
+ * phone. Balance and the activity log have entries in the sidebar too (UI-30). The modes were rows
  * here while there were two of them and nothing to say about either; they are a
  * page of their own now, so each can say what it does.
  */

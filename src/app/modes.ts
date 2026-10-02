@@ -1,6 +1,7 @@
-import type { NudgeWindow, QuietHours, WarmUpProgress } from '../core'
+import type { HoursWindow, NudgeWindow, QuietHours, WarmUpProgress } from '../core'
 import type { ProcrastinationPhase } from './components/ProcrastinationMode'
 import {
+  describeCheckInStatus,
   describeNudgeStatus,
   describeProcrastinationStatus,
   describeWarmUpStatus,
@@ -60,10 +61,18 @@ interface ModeSources {
     loading: boolean
     onTurnOn: (on: boolean) => void
   }
+  checkIn: {
+    on: boolean
+    /** The hours it asks about (CHECKIN-2). */
+    window: HoursWindow
+    /** Whether the setting is still on its way from the account (MODE-8). */
+    loading: boolean
+    onTurnOn: (on: boolean) => void
+  }
 }
 
 /** Every mode, as the Modes pages read it, from what the hooks hold. */
-export function modeStates({ procrastination, warmUp, nudge }: ModeSources): Record<ModeView, ModeState> {
+export function modeStates({ procrastination, warmUp, nudge, checkIn }: ModeSources): Record<ModeView, ModeState> {
   return {
     'modes/procrastination': {
       view: 'modes/procrastination',
@@ -99,6 +108,16 @@ export function modeStates({ procrastination, warmUp, nudge }: ModeSources): Rec
       // is the account's, so it is waited for as the other modes are (STORE-46).
       blocked: nudge.loading ? MODE_NOT_LOADED : null,
       toggle: nudge.onTurnOn,
+    },
+    'modes/check-in': {
+      view: 'modes/check-in',
+      on: checkIn.on,
+      status: checkIn.loading ? MODE_LOADING : describeCheckInStatus(checkIn.on, checkIn.window),
+      // Nothing blocks it once its setting is here: a browser that will post no
+      // notification does not stand in its way, the notice being at the foot of
+      // the app whatever the browser allows (CHECKIN-5).
+      blocked: checkIn.loading ? MODE_NOT_LOADED : null,
+      toggle: checkIn.onTurnOn,
     },
   }
 }

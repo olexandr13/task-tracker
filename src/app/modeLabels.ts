@@ -1,4 +1,5 @@
-import type { NudgeWindow, QuietHours, WarmUpProgress } from '../core'
+import type { HoursWindow, NudgeWindow, QuietHours, WarmUpProgress } from '../core'
+import { describeHours } from './checkInLabels'
 import { describeNudgeWindow, describeQuietSpan } from './nudgeLabels'
 import { describeDaysLeft, describeWarmUpDay } from './warmUpLabels'
 import { VIEW_LABELS, type ModeView } from './view'
@@ -8,7 +9,7 @@ import { VIEW_LABELS, type ModeView } from './view'
  * at length on its own page, and how its state is said.
  *
  * The modes are the parts of the app that are turned on and off rather than
- * used — Procrastination, the warm-up and the nudge. Each changes how the rest
+ * used — Procrastination, the warm-up, the nudge and the check-in. Each changes how the rest
  * of the app behaves for a while, which is exactly what is hard to guess from a
  * switch, so each says what it does in its own words (MODE-5).
  */
@@ -18,6 +19,7 @@ export const MODE_SUMMARY: Record<ModeView, string> = {
   'modes/procrastination': 'One task out of Today, and everything else dimmed until it is done.',
   'modes/warm-up': 'Increase your productivity gradually: one new habit a day, for thirty days.',
   'modes/nudge': 'Speaks up when nothing has been finished for a while, and names the task to pick up.',
+  'modes/check-in': 'Asks at the top of every hour what you did, so your day gets logged as it goes.',
 }
 
 /**
@@ -42,6 +44,15 @@ export const MODE_POINTS: Record<ModeView, readonly string[]> = {
   // the rest of it — how it arrives, and how far its reach goes.
   'modes/nudge': [
     'Shows a notice at the foot of the app — press it to go straight to that task — and a browser notification too, but only while the app is open.',
+  ],
+  // The hours it keeps to and the devices it reaches are the "Settings" below;
+  // this is what it asks, when, and how it arrives.
+  'modes/check-in': [
+    'At 10:00, 11:00, 12:00 and so on, it asks what you did in the hour that just ended.',
+    'It only asks about the hours between "From" and "To" below, and skips an hour you have already logged.',
+    'It shows a notice at the foot of the app. Press "Log it" to open the Activity log on that hour.',
+    'While PickMe is open, it sends a browser notification too.',
+    'To be asked while PickMe is closed, turn on "Notify this device when PickMe is closed" on each device you want it on.',
   ],
 }
 
@@ -116,6 +127,12 @@ export function describeNudgeStatus(
     state: MODE_ENABLED,
     detail: window === null ? span : `${span} · ${describeNudgeWindow(window)}`,
   }
+}
+
+/** Where the check-in stands: the hours it asks about, while it is on (MODE-3). */
+export function describeCheckInStatus(on: boolean, window: HoursWindow): ModeStatus {
+  if (!on) return { state: MODE_DISABLED, detail: null }
+  return { state: MODE_ENABLED, detail: `Every hour · ${describeHours(window)}` }
 }
 
 /** Where the warm-up stands: how far through its month it is, or that there is none (MODE-3). */

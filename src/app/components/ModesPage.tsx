@@ -43,7 +43,12 @@ export function ModesPage({ modes, onOpen }: ModesPageProps) {
   )
 }
 
-function ModeRow({ mode, onOpen }: { mode: ModeState; onOpen: () => void }) {
+/**
+ * One mode as a row: its glyph, name, the line it is summed up in and where it
+ * stands, going to its page, with its switch at the end (MODE-3, MODE-4). The
+ * activity log carries the check-in's the same way (ACT-19).
+ */
+export function ModeRow({ mode, onOpen }: { mode: ModeState; onOpen: () => void }) {
   const Icon = VIEW_ICONS[mode.view]
   const label = VIEW_LABELS[mode.view]
 

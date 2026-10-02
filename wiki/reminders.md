@@ -46,8 +46,8 @@ the right moment — so a task written down at nine in the morning is not rememb
 in a stretch — `dueReminders` — and what a standing notice still has to say — `standingReminders`),
 `src/core/day.ts` (`LocalTime`, `atLocalTime`), `src/core/task.ts` (`setDueTime`),
 `src/app/useReminders.ts` (the watching, and what is said), `src/app/browserNotification.ts` (the
-browser's notification and its permission, shared with [Nudges](nudges.md) and
-[Time goals](time-goals.md)), `src/app/components/ReminderToast.tsx` (the notice),
+browser's notification and its permission, shared with [Nudges](nudges.md),
+[Time goals](time-goals.md) and [Check-ins](check-ins.md)), `src/app/components/ReminderToast.tsx` (the notice),
 `src/app/components/DueTimeChoices.tsx` (setting the hour), `src/app/TasksScreen.tsx` (asking to
 notify when an hour is set).
 **Tested in:** `src/core/due.test.ts`, `src/core/day.test.ts`, `src/core/task.test.ts`,

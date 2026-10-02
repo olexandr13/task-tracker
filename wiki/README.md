@@ -29,6 +29,8 @@ lets this be read as a description of the app rather than a wish list.
 | [The chest](chest.md) | A cleared day earns a key, and the key opens a chest worth a share of a jackpot |
 | [Time goals](time-goals.md) | A length of time a task asks for, sessions logged against it, and the hint to tick it off |
 | [Balance](balance.md) | Where the logged time went: categories named by the owner, bound to tags, and the time each took today, this week or this month |
+| [Activity log](activity-log.md) | The day hour by hour: what was done and for how long, the records added and changed, and what they add up to over a day, a week or a month |
+| [Check-ins](check-ins.md) | The top of every hour asking what was done: the hours it keeps to, the notice, and reaching a device while the app is closed |
 | [Reminders](reminders.md) | The hour a task is due at coming round: what is said, when, and how it reaches you |
 | [Nudges](nudges.md) | The app noticing nothing is getting done: the quiet stretch, the task it points at, the hours it may speak in, and the notification |
 | [Daily quote](daily-quote.md) | One quote a day, from the quote service, cached for the day |

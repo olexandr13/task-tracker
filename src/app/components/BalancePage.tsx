@@ -21,12 +21,13 @@ import {
   NO_CATEGORIES_HINT,
   NOTHING_LOGGED,
   PERIOD_CHOICES,
+  PERIOD_IN_A_SENTENCE,
 } from '../balanceLabels'
 import { balancePieces, type PieceKey } from '../balancePieces'
 import { deleteControl } from '../rowControls'
-import { BalanceChart } from './BalanceChart'
-import { BalanceDays } from './BalanceDays'
+import { DayColumnsChart } from './DayColumnsChart'
 import { InfoButton } from './InfoButton'
+import { TimeSplitChart } from './TimeSplitChart'
 import { PencilIcon } from './PencilIcon'
 import { TagPicker } from './TagPicker'
 
@@ -167,10 +168,10 @@ function Totals({ categories, tasks, period, now, onPeriodChange }: TotalsProps)
         <p className="py-2 text-sm text-neutral-500 dark:text-neutral-400">{NOTHING_LOGGED[period]}</p>
       ) : (
         <>
-          <BalanceChart
+          <TimeSplitChart
             pieces={pieces}
             total={totals.total}
-            period={period}
+            when={PERIOD_IN_A_SENTENCE[period]}
             active={active}
             pinned={pinned}
             onPin={(key) => { setPinned(pinned === key ? null : key) }}
@@ -178,10 +179,14 @@ function Totals({ categories, tasks, period, now, onPeriodChange }: TotalsProps)
           />
 
           {period !== 'today' && (
-            <BalanceDays
+            <DayColumnsChart
               // Keyed by the period, so a day chosen in a week is not looked for in a month.
               key={period}
-              days={balanceByDay(categories, tasks, period, now)}
+              columns={balanceByDay(categories, tasks, period, now).map((day) => ({
+                day: day.day,
+                total: day.total,
+                pieces: balancePieces(day),
+              }))}
               period={period}
               today={toLocalDay(now)}
               active={active}

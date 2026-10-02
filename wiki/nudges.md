@@ -110,7 +110,7 @@ task is pointed at),
 guest's), `src/storage/nudgeDeviceRepository.ts`, `nudgeDeviceSchema.ts` and
 `localStorageNudgeRepository.ts` (what it has already said on this device),
 `src/app/browserNotification.ts` (the browser's notification and its permission, shared with
-[Reminders](reminders.md) and [Time goals](time-goals.md)), `src/app/useNudge.ts` (the measuring, and what is said),
+[Reminders](reminders.md), [Time goals](time-goals.md) and [Check-ins](check-ins.md)), `src/app/useNudge.ts` (the measuring, and what is said),
 `src/app/nudgeLabels.ts` (the wording — the span, the hours, what the browser allows),
 `src/app/components/NudgeToast.tsx` (the notice),
 `src/app/components/NudgeSettings.tsx` (the settings on the mode's page),

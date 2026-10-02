@@ -66,6 +66,8 @@ interface ClockDialProps {
   value: LocalTime | null
   /** The moment the face opens against, when there is no hour to open on. */
   now: Date
+  /** Whole hours only, as a check-in's hours are (CHECKIN-2): the minutes stay at :00, and the face on the hours. */
+  hoursOnly?: boolean
   onChange: (time: LocalTime) => void
 }
 
@@ -88,7 +90,7 @@ interface ClockDialProps {
  * picked, and picking the hour hands the face to the minutes, which is what is
  * left to say.
  */
-export function ClockDial({ value, now, onChange }: ClockDialProps) {
+export function ClockDial({ value, now, hoursOnly = false, onChange }: ClockDialProps) {
   const [unit, setUnit] = useState<DialUnit>('hour')
   // Where the keys start out when the task has no hour: the hour coming, which is
   // the likeliest one. Nothing is set by resting there, and it never moves after.
@@ -102,7 +104,7 @@ export function ClockDial({ value, now, onChange }: ClockDialProps) {
   const fromPointer = useRef(false)
 
   // With no hour set there are no minutes to set either, so the face stays on the hour.
-  const shown: DialUnit = value === null ? 'hour' : unit
+  const shown: DialUnit = value === null || hoursOnly ? 'hour' : unit
   const base = value ?? start
   const steps = DIAL_STEPS[shown]
   const { hour, minute } = timeParts(base)
@@ -114,7 +116,8 @@ export function ClockDial({ value, now, onChange }: ClockDialProps) {
   const inReach = shown === 'hour' ? hour : (Math.round(minute / 5) * 5) % 60
 
   function set(picked: number) {
-    onChange(shown === 'hour' ? withHour(base, picked) : withMinute(base, picked))
+    if (hoursOnly) onChange(withMinute(withHour(base, picked), 0))
+    else onChange(shown === 'hour' ? withHour(base, picked) : withMinute(base, picked))
   }
 
   // A key moved the hand: the focus follows it onto the number it came to rest by.
@@ -157,7 +160,7 @@ export function ClockDial({ value, now, onChange }: ClockDialProps) {
     dragging.current = false
     // The hour said, what is left is the minutes; letting go is what hands the
     // face over, and the focus with it, so the keys carry on where the hand left off.
-    if (shown === 'hour') {
+    if (shown === 'hour' && !hoursOnly) {
       moved.current = true
       setUnit('minute')
     }
@@ -168,7 +171,7 @@ export function ClockDial({ value, now, onChange }: ClockDialProps) {
     if (fromPointer.current) return
     event.preventDefault()
     set(written)
-    if (shown === 'hour') {
+    if (shown === 'hour' && !hoursOnly) {
       moved.current = true
       setUnit('minute')
     }
@@ -232,17 +235,24 @@ export function ClockDial({ value, now, onChange }: ClockDialProps) {
         <span aria-hidden="true" className="text-2xl font-semibold text-neutral-400 md:text-xl dark:text-neutral-500">
           :
         </span>
-        <button
-          type="button"
-          onClick={() => { setUnit('minute') }}
-          disabled={!isSet}
-          aria-pressed={shown === 'minute'}
-          aria-label={isSet ? `Minutes, ${String(minute)}` : 'Minutes, no hour set yet'}
-          title={isSet ? 'Set the minutes' : 'Pick an hour first'}
-          className={`${readout} ${shown === 'minute' ? readoutOn : readoutOff} disabled:pointer-events-none disabled:opacity-40`}
-        >
-          {isSet ? String(minute).padStart(2, '0') : '--'}
-        </button>
+        {hoursOnly ? (
+          // On the hour, always: there are no minutes to set.
+          <span aria-hidden="true" className={`${readout} text-neutral-400 dark:text-neutral-500`}>
+            00
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => { setUnit('minute') }}
+            disabled={!isSet}
+            aria-pressed={shown === 'minute'}
+            aria-label={isSet ? `Minutes, ${String(minute)}` : 'Minutes, no hour set yet'}
+            title={isSet ? 'Set the minutes' : 'Pick an hour first'}
+            className={`${readout} ${shown === 'minute' ? readoutOn : readoutOff} disabled:pointer-events-none disabled:opacity-40`}
+          >
+            {isSet ? String(minute).padStart(2, '0') : '--'}
+          </button>
+        )}
       </div>
 
       <div

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   bindTag,
   completeTask,
+  createActivityEntry,
   createCategory,
   createList,
   createPointValue,
@@ -17,8 +18,11 @@ import {
   type ChestSettings,
 } from '../core'
 import { backupFileName, BACKUP_FORMAT, BACKUP_VERSION, readBackupFile, writeBackupFile } from './backupFile'
+import { ACTIVITY_SCHEMA_VERSION } from './activitySchema'
 import type { AccountData } from './backupRepository'
 import { CATEGORY_SCHEMA_VERSION } from './categorySchema'
+import type { CheckInPreference } from './checkInRepository'
+import { CHECK_IN_SCHEMA_VERSION } from './checkInSchema'
 import { LIST_SCHEMA_VERSION } from './listSchema'
 import type { NudgePreference } from './nudgeRepository'
 import { NUDGE_SCHEMA_VERSION } from './nudgeSchema'
@@ -48,6 +52,9 @@ const WARMING_UP = startWarmUp(AT)
 const NUDGING: NudgePreference = { on: true, quietHours: 3, window: { from: '09:00', to: '22:00' } }
 const ASKING: ChestSettings = { leastTasks: 4, jackpot: 'typicalDay' }
 const REST = bindTag(createCategory('Rest', AT), 'walk')
+const READING = createActivityEntry('Reading', 900, { day: '2026-09-18', hour: 14 }, AT)
+const WORKING = createActivityEntry('Work', 2700, { day: '2026-09-18', hour: 14 }, AT)
+const CHECKING_IN: CheckInPreference = { on: true, window: { from: '08:00', to: '20:00' } }
 
 const DATA: AccountData = {
   tasks: [DONE, TRASHED],
@@ -55,6 +62,7 @@ const DATA: AccountData = {
   tags: [ERRANDS],
   prizes: [CHOCOLATE],
   categories: [REST],
+  activities: [READING, WORKING],
   entries: ENTRIES,
   redemptions: [TREAT],
   bonuses: BONUSES,
@@ -62,7 +70,11 @@ const DATA: AccountData = {
   chest: ASKING,
   warmUp: WARMING_UP,
   nudge: NUDGING,
+  checkIn: CHECKING_IN,
 }
+
+/** What a file from before the activity log and the check-in reads as (BAK-18, BAK-19). */
+const BEFORE_ACTIVITIES = { activities: [], checkIn: null }
 
 function fileWith(changes: Record<string, unknown>): string {
   return JSON.stringify({ ...(JSON.parse(writeBackupFile(DATA, AT)) as object), ...changes })
@@ -97,7 +109,31 @@ describe('writing a backup', () => {
         { version: REWARD_SCHEMA_VERSION, name: 'chest', settings: ASKING },
       ],
       nudge: [{ version: NUDGE_SCHEMA_VERSION, name: 'nudge', nudge: NUDGING }],
+      checkIn: [{ version: CHECK_IN_SCHEMA_VERSION, name: 'checkIn', checkIn: CHECKING_IN }],
     })
+  })
+
+  it('keeps the activity log a day at a time, as the account does (BAK-18)', () => {
+    const file = JSON.parse(writeBackupFile(DATA, AT)) as { activityDays: unknown }
+
+    expect(file.activityDays).toEqual([
+      {
+        version: ACTIVITY_SCHEMA_VERSION,
+        day: '2026-09-18',
+        entries: {
+          [READING.id]: { activity: 'Reading', seconds: 900, hour: 14, loggedAt: AT.toISOString() },
+          [WORKING.id]: { activity: 'Work', seconds: 2700, hour: 14, loggedAt: AT.toISOString() },
+        },
+      },
+    ])
+  })
+
+  it('holds no check-in record for one at its defaults (BAK-19)', () => {
+    const file = JSON.parse(writeBackupFile({ ...DATA, checkIn: { on: false, window: { from: '09:00', to: '22:00' } } }, AT)) as {
+      checkIn: unknown
+    }
+
+    expect(file.checkIn).toEqual([])
   })
 
   it('keeps the points a day at a time, as the account does (BAK-3)', () => {
@@ -130,6 +166,8 @@ describe('reading a backup', () => {
     expect(readBackupFile(fileWith({ tags: undefined }))).toBe('not-a-backup')
     expect(readBackupFile(fileWith({ prizes: undefined }))).toBe('not-a-backup')
     expect(readBackupFile(fileWith({ categories: undefined }))).toBe('not-a-backup')
+    expect(readBackupFile(fileWith({ activityDays: undefined }))).toBe('not-a-backup')
+    expect(readBackupFile(fileWith({ checkIn: undefined }))).toBe('not-a-backup')
   })
 
   it('reads a file from before tags were backed up as keeping none (BAK-12)', () => {
@@ -143,12 +181,15 @@ describe('reading a backup', () => {
         warmUp: undefined,
         nudge: undefined,
         categories: undefined,
+        activityDays: undefined,
+        checkIn: undefined,
       }),
     )
 
     expect(read).toEqual({
       data: {
         ...DATA,
+        ...BEFORE_ACTIVITIES,
         tags: [],
         prizes: [],
         categories: [],
@@ -172,11 +213,13 @@ describe('reading a backup', () => {
         warmUp: undefined,
         nudge: undefined,
         categories: undefined,
+        activityDays: undefined,
+        checkIn: undefined,
       }),
     )
 
     expect(read).toEqual({
-      data: { ...DATA, prizes: [], categories: [], bonuses: NO_BONUSES, pointValue: null, chest: null, warmUp: null, nudge: null },
+      data: { ...DATA, ...BEFORE_ACTIVITIES, prizes: [], categories: [], bonuses: NO_BONUSES, pointValue: null, chest: null, warmUp: null, nudge: null },
       unreadable: 0,
     })
   })
@@ -190,32 +233,47 @@ describe('reading a backup', () => {
         warmUp: undefined,
         nudge: undefined,
         categories: undefined,
+        activityDays: undefined,
+        checkIn: undefined,
       }),
     )
 
     expect(read).toEqual({
-      data: { ...DATA, prizes: [], categories: [], pointValue: null, chest: null, warmUp: null, nudge: null },
+      data: { ...DATA, ...BEFORE_ACTIVITIES, prizes: [], categories: [], pointValue: null, chest: null, warmUp: null, nudge: null },
       unreadable: 0,
     })
   })
 
   it('reads a file from before there was a warm-up as having none under way (BAK-15)', () => {
-    const read = readBackupFile(fileWith({ version: 4, warmUp: undefined, nudge: undefined, categories: undefined }))
+    const read = readBackupFile(
+      fileWith({ version: 4, warmUp: undefined, nudge: undefined, categories: undefined, activityDays: undefined, checkIn: undefined }),
+    )
 
-    expect(read).toEqual({ data: { ...DATA, categories: [], warmUp: null, nudge: null }, unreadable: 0 })
+    expect(read).toEqual({
+      data: { ...DATA, ...BEFORE_ACTIVITIES, categories: [], warmUp: null, nudge: null },
+      unreadable: 0,
+    })
   })
 
   it('reads a file from before the nudge synced as asking for none (BAK-16)', () => {
     // Version 5 kept the nudge on the device, so no file made then holds one.
-    const read = readBackupFile(fileWith({ version: 5, nudge: undefined, categories: undefined }))
+    const read = readBackupFile(
+      fileWith({ version: 5, nudge: undefined, categories: undefined, activityDays: undefined, checkIn: undefined }),
+    )
 
-    expect(read).toEqual({ data: { ...DATA, categories: [], nudge: null }, unreadable: 0 })
+    expect(read).toEqual({ data: { ...DATA, ...BEFORE_ACTIVITIES, categories: [], nudge: null }, unreadable: 0 })
   })
 
   it('reads a file from before there were Balance categories as holding none (BAK-17)', () => {
-    const read = readBackupFile(fileWith({ version: 6, categories: undefined }))
+    const read = readBackupFile(fileWith({ version: 6, categories: undefined, activityDays: undefined, checkIn: undefined }))
 
-    expect(read).toEqual({ data: { ...DATA, categories: [] }, unreadable: 0 })
+    expect(read).toEqual({ data: { ...DATA, ...BEFORE_ACTIVITIES, categories: [] }, unreadable: 0 })
+  })
+
+  it('reads a file from before the activity log as holding none and asking for no check-in (BAK-18, BAK-19)', () => {
+    const read = readBackupFile(fileWith({ version: 7, activityDays: undefined, checkIn: undefined }))
+
+    expect(read).toEqual({ data: { ...DATA, ...BEFORE_ACTIVITIES }, unreadable: 0 })
   })
 
   it('says so when a backup was made by a newer version of the app (BAK-9)', () => {
@@ -238,6 +296,8 @@ describe('reading a backup', () => {
         rewardDays: [{ version: REWARD_SCHEMA_VERSION, day: 'someday', entries: {} }],
         redemptions: ['coffee', { version: REWARD_SCHEMA_VERSION, redemption: TREAT }],
         categories: [{ version: CATEGORY_SCHEMA_VERSION, category: { ...REST, tags: ['two words'] } }],
+        activityDays: [{ version: ACTIVITY_SCHEMA_VERSION, day: '2026-09-18', entries: { x: { activity: '', seconds: 60, hour: 9 } } }],
+        checkIn: [{ version: CHECK_IN_SCHEMA_VERSION, name: 'checkIn', checkIn: { on: true, window: { from: '09:30', to: '22:00' } } }],
       }),
     )
 
@@ -248,6 +308,7 @@ describe('reading a backup', () => {
         tags: [],
         prizes: [CHOCOLATE],
         categories: [],
+        activities: [],
         entries: [],
         redemptions: [TREAT],
         bonuses: BONUSES,
@@ -255,8 +316,9 @@ describe('reading a backup', () => {
         chest: ASKING,
         warmUp: WARMING_UP,
         nudge: NUDGING,
+        checkIn: null,
       },
-      unreadable: 7,
+      unreadable: 9,
     })
   })
 })

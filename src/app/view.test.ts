@@ -33,7 +33,9 @@ describe('parentView', () => {
   it('puts Tags, Balance and Modes under More, a tag\'s tasks under Tags and a mode\'s page under Modes (UI-45, MODE-7, BAL-1)', () => {
     expect(parentView('tags')).toBe('more')
     expect(parentView('balance')).toBe('more')
+    expect(parentView('activity')).toBe('more')
     expect(parentView('modes')).toBe('more')
+    expect(parentView('modes/check-in')).toBe('modes')
     expect(parentView(tagView('work'))).toBe('tags')
     expect(parentView('modes/procrastination')).toBe('modes')
     expect(parentView('modes/warm-up')).toBe('modes')

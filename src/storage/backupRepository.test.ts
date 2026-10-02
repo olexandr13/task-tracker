@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  createActivityEntry,
   createCategory,
   createList,
   createPointValue,
@@ -14,6 +15,7 @@ import {
   TRASH_RETENTION_MS,
   type ChestSettings,
 } from '../core'
+import type { CheckInPreference } from './checkInRepository'
 import type { NudgePreference } from './nudgeRepository'
 import { countRecords, newRecords, type AccountData, type KnownRecords } from './backupRepository'
 
@@ -34,6 +36,8 @@ const WARMING_UP = startWarmUp(AT)
 const NUDGING: NudgePreference = { on: true, quietHours: 3, window: null }
 const ASKING: ChestSettings = { leastTasks: 4, jackpot: 'typicalDay' }
 const REST = createCategory('Rest', AT)
+const READING = createActivityEntry('Reading', 900, { day: '2026-09-18', hour: 14 }, AT)
+const CHECKING_IN: CheckInPreference = { on: true, window: { from: '08:00', to: '20:00' } }
 
 const EMPTY: AccountData = {
   tasks: [],
@@ -41,6 +45,7 @@ const EMPTY: AccountData = {
   tags: [],
   prizes: [],
   categories: [],
+  activities: [],
   entries: [],
   redemptions: [],
   bonuses: NO_BONUSES,
@@ -48,6 +53,7 @@ const EMPTY: AccountData = {
   chest: null,
   warmUp: null,
   nudge: null,
+  checkIn: null,
 }
 
 const NOTHING_KNOWN: KnownRecords = {
@@ -57,12 +63,15 @@ const NOTHING_KNOWN: KnownRecords = {
   tagNames: [],
   prizeIds: new Set(),
   categoryIds: new Set(),
+  activityIds: new Set(),
+  unreadableActivityDays: new Set(),
   redemptionIds: new Set(),
   bonuses: NO_BONUSES,
   pointValue: null,
   chest: null,
   warmUp: null,
   nudge: null,
+  checkIn: null,
   days: new Map(),
 }
 
@@ -74,6 +83,7 @@ describe('what an import adds', () => {
       tags: [ERRANDS],
       prizes: [CHOCOLATE],
       categories: [REST],
+      activities: [READING],
       entries: [{ taskId: WRITE.id, day: '2026-09-19', points: 5 }],
       redemptions: [COFFEE],
       bonuses: { today: 10, week: 40, month: null },
@@ -81,6 +91,7 @@ describe('what an import adds', () => {
       chest: ASKING,
       warmUp: WARMING_UP,
       nudge: NUDGING,
+      checkIn: CHECKING_IN,
     }
 
     expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
@@ -227,6 +238,32 @@ describe('what an import does with the bonuses and the point value', () => {
       alreadyHere: 2,
     })
   })
+
+  it('adds an activity record the account does not have, and leaves one it does (BAK-18)', () => {
+    const incoming: AccountData = { ...EMPTY, activities: [READING, READING] }
+
+    expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: { ...EMPTY, activities: [READING] }, alreadyHere: 0 })
+    expect(newRecords(incoming, { ...NOTHING_KNOWN, activityIds: new Set([READING.id]) }, AT)).toEqual({
+      fresh: EMPTY,
+      alreadyHere: 2,
+    })
+  })
+
+  it('adds nothing to a day of the log the account cannot read (BAK-18)', () => {
+    const known: KnownRecords = { ...NOTHING_KNOWN, unreadableActivityDays: new Set(['2026-09-18']) }
+
+    expect(newRecords({ ...EMPTY, activities: [READING] }, known, AT)).toEqual({ fresh: EMPTY, alreadyHere: 1 })
+  })
+
+  it('takes the file\u2019s check-in only where the account has none (BAK-19)', () => {
+    const incoming: AccountData = { ...EMPTY, checkIn: CHECKING_IN }
+
+    expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
+    expect(newRecords(incoming, { ...NOTHING_KNOWN, checkIn: { on: false, window: CHECKING_IN.window } }, AT)).toEqual({
+      fresh: EMPTY,
+      alreadyHere: 0,
+    })
+  })
 })
 
 describe('counting records', () => {
@@ -237,6 +274,7 @@ describe('counting records', () => {
       tags: [ERRANDS],
       prizes: [CHOCOLATE],
       categories: [REST],
+      activities: [READING],
       entries: [
         { taskId: WRITE.id, day: '2026-09-19', points: 5 },
         { taskId: WRITE.id, day: '2026-09-18', points: 5 },
@@ -247,6 +285,7 @@ describe('counting records', () => {
       chest: ASKING,
       warmUp: WARMING_UP,
       nudge: NUDGING,
+      checkIn: CHECKING_IN,
     }
 
     // The bonuses, the point value and the warm-up are settings rather than records, and are counted as none.
@@ -256,6 +295,7 @@ describe('counting records', () => {
       tags: 1,
       prizes: 1,
       categories: 1,
+      activities: 1,
       completions: 2,
       redemptions: 0,
     })

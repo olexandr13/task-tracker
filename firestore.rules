@@ -31,6 +31,16 @@ rules_version = '2';
 //   under that name, and no document at all is the nudge off at its defaults.
 // - Balance categories: one document per category, stored as { version, category }
 //   (src/storage/firestoreCategoryRepository.ts), always filed under the category's id.
+// - The activity log: one document per day, stored as { version, day, entries }
+//   (src/storage/firestoreActivityRepository.ts), always filed under its day.
+// - The check-in's setting: the one document it is ever kept as, stored as
+//   { version, name, checkIn } (src/storage/firestoreCheckInRepository.ts), filed
+//   under that name, and no document at all is the check-in off at its defaults.
+// - Push registrations: one document per device, stored as
+//   { version, deviceId, subscription, timeZone, updatedAt }
+//   (src/storage/firestorePushRepository.ts), always filed under the device's id.
+//   The sender in functions/ adds lastSentSlot; it runs with the project's own
+//   rights, which these rules do not hold back.
 service cloud.firestore {
   match /databases/{database}/documents {
     function isOwner(accountId) {
@@ -95,6 +105,21 @@ service cloud.firestore {
     match /users/{accountId}/categories/{categoryId} {
       allow read, delete: if isOwner(accountId);
       allow create, update: if isOwner(accountId) && request.resource.data.category.id == categoryId;
+    }
+
+    match /users/{accountId}/activityDays/{day} {
+      allow read, delete: if isOwner(accountId);
+      allow create, update: if isOwner(accountId) && request.resource.data.day == day;
+    }
+
+    match /users/{accountId}/checkIn/{name} {
+      allow read, delete: if isOwner(accountId);
+      allow create, update: if isOwner(accountId) && request.resource.data.name == name;
+    }
+
+    match /users/{accountId}/pushSubscriptions/{deviceId} {
+      allow read, delete: if isOwner(accountId);
+      allow create, update: if isOwner(accountId) && request.resource.data.deviceId == deviceId;
     }
   }
 }

@@ -9,7 +9,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   progress bars, with today's quote below them.
 - **UI-2** The rail belongs to the views that show tasks — Today, Week, Month, Tasks, the Inbox, each
   list's and each tag's — not to
-  the app: habits, rewards, More, the modes, the lists, the tags, the trash and settings do without it. The habits page is already a record of progress (HAB-15), and how much of
+  the app: habits, rewards, More, the modes, the lists, the tags, Balance, the Activity log, the trash and settings do without it. The habits page is already a record of progress (HAB-15), and how much of
   the week is cleared says nothing about what was thrown away. Nobody needs spurring on to empty a
   bin.
 - **UI-3** There is **no view heading** over the work. The navigation already marks which view you
@@ -140,25 +140,26 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 ## Navigation
 
-- **UI-7** Twenty-two views: **Today**, **Week**, **Month**, **Tasks**, **Inbox**, **Habits**,
+- **UI-7** Twenty-four views: **Today**, **Week**, **Month**, **Tasks**, **Inbox**, **Habits**,
   **Rewards** with **Chest**, **History**, **Prizes**, **Wishlist** and **Rules** under it (RWD-30),
   **Lists**,
-  **Tags**, **Balance** (BAL-1), **More**, **Modes** with a page for each of **Procrastination**, **Warm-up** and
-  **Nudge** under it (MODE-1), **Trash** and **Settings**, and a view for each list, opened from Lists, and one for
+  **Tags**, **Balance** (BAL-1), **Activity log** (ACT-1), **More**, **Modes** with a page for each of
+  **Procrastination**, **Warm-up**, **Nudge** and **Check-in** under it (MODE-1), **Trash** and **Settings**, and a view for each list, opened from Lists, and one for
   each tag, opened from Tags. Each is named and carries an
   icon — every tag's view the same `#` as Tags, and every list the same folder as Lists, and each
   mode the glyph it wears everywhere else. **Tags** is reached from **More** (UI-45), and so are
-  **Balance** and **Modes** on a phone — the sidebar gives each an entry of its own, Modes with each
-  mode under it (MODE-7); **Rewards** has an entry of its own in
+  **Balance**, the **Activity log** and **Modes** on a phone — the sidebar gives each an entry of its
+  own, Modes with each mode under it (MODE-7); **Rewards** has an entry of its own in
   the sidebar and a tab of its own on a phone, with its pages under both (UI-30, UI-32, UI-67). See
   [Views](views.md), [Lists](lists.md), [Habits](habits.md),
-  [Rewards](rewards.md), [Tags](tags.md), [Balance](balance.md) and [Modes](modes.md).
+  [Rewards](rewards.md), [Tags](tags.md), [Balance](balance.md), [Activity log](activity-log.md) and
+  [Modes](modes.md).
 - **UI-30** In the sidebar the views come in four groups with a thin line between each: the period
   views (**Today**, **Week**, **Month**), then **Tasks**, **Habits**, **Lists**, **Rewards**,
-  **Balance**, **Modes** and **More**, then **Trash**, then **Settings**. **Lists**, **Rewards** and **Modes**
+  **Balance**, **Activity log**, **Modes** and **More**, then **Trash**, then **Settings**. **Lists**, **Rewards** and **Modes**
   each keep their pages indented under them — the **Inbox** and every list (LST-13), the **Chest**,
-  **History**, **Prizes**, **Wishlist** and **Rules** (RWD-30), and **Procrastination** and **Warm-up**
-  (MODE-7) — and each has a **chevron at its end that folds them away** and opens them
+  **History**, **Prizes**, **Wishlist** and **Rules** (RWD-30), and **Procrastination**, **Warm-up**,
+  **Nudge** and **Check-in** (MODE-7) — and each has a **chevron at its end that folds them away** and opens them
   again, without leaving the view you are on. Open, the page you are on is marked itself; folded,
   the entry above stands for it. All three start open, and how they are left is kept on this device
   (STORE-31). A tag's view has no entry of its own: **More** stays marked while Tags or a tag's
@@ -201,7 +202,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-37** **Back goes one level up**, not to the view before. The views make a tree: at the top
   the bar's tabs — the period views, Tasks, Habits, Rewards, More and Settings; under Tasks the
   Lists page and the Trash (UI-34), and under Lists the Inbox and each list; under Rewards its five
-  pages (RWD-19); under More Tags, Balance and Modes (UI-45), under Tags each tag's tasks, and under Modes
+  pages (RWD-19); under More Tags, Balance, the Activity log and Modes (UI-45), under Tags each tag's
+  tasks, and under Modes
   each mode's page (MODE-7). So from a mode's page back goes to Modes, then to More; from a list to
   Lists, then to Tasks; and from a tab back **leaves the app**, as it leaves any other. It is the
   same wherever you came from — a phone's back button, the browser's, or a keyboard's — and the
@@ -247,16 +249,16 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   closes first, leaving the one it came from. Closing the sheet any other way (UI-9, UI-48) drops
   that extra step, so the next back is the same as if the sheet had not been opened. It is the same
   wherever back comes from — a phone's back button, the browser's, or a keyboard's.
-- **UI-45** The bar has no entry for the tags, the Balance page or the modes, and the sidebar none
-  for the tags: they are under **More**, marked with three dots; the sidebar lists Balance and the
-  modes itself (UI-30, MODE-7).
-  **A tap opens More's page** — four links, **Lists**, **Tags**, **Balance** and **Modes**, each with its icon, large enough
+- **UI-45** The bar has no entry for the tags, the Balance page, the Activity log or the modes, and
+  the sidebar none for the tags: they are under **More**, marked with three dots; the sidebar lists
+  Balance, the Activity log and the modes itself (UI-30, MODE-7).
+  **A tap opens More's page** — five links, **Lists**, **Tags**, **Balance**, **Activity log** and **Modes**, each with its icon, large enough
   for a thumb (UI-49) and a chevron at its end marking it as a page to go to. The Modes row says how many modes are on (MODE-1). The page is the same on a wide
   screen, and choosing any of them goes there. **Lists** is only a way in: it is reached from the
   Tasks tab as well (UI-34, LST-24), so **Tasks** is what stays marked once it is open, and More is
   not, or two tabs would be marked at once. **More** stays marked while its own page, the Tags page or
-  a tag's view is open, and in the bar while the Balance page, the Modes page or one mode's page is;
-  in the sidebar those mark **Balance** and **Modes** instead (MODE-7). Procrastination and the warm-up were rows
+  a tag's view is open, and in the bar while the Balance page, the Activity log, the Modes page or one
+  mode's page is; in the sidebar those mark **Balance**, **Activity log** and **Modes** instead (MODE-7). Procrastination and the warm-up were rows
   here while they were switches with nothing to say; each has a page of its own now (MODE-5), as the
   rewards took a tab of their own once a phone's bar had room (UI-32, RWD-19). Its address is
   `#/more` (UI-36).
@@ -438,7 +440,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   than as a line that happens to start with a bullet. At rest the description is a single control
   that opens the box — reached with Tab and opened with Enter or Space, like any button.
 - **UI-38** Every control that **deletes or removes** something — a task, a checklist item, a task
-  in the trash for good, a tag, a redemption, a Balance category or a tag bound to one — is muted at rest like the controls around it and **turns red under
+  in the trash for good, a tag, a redemption, a Balance category or a tag bound to one, a record of
+  the Activity log — is muted at rest like the controls around it and **turns red under
   the pointer**, so what a click would do is plain before it is done. Closing the undo toast deletes
   nothing, and stays neutral. The sheet's **Delete** (UI-48) is the exception: a word with a bin
   beside it rather than a bare ×, and **red at rest**, since a phone has no pointer to hover over it

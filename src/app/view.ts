@@ -21,14 +21,14 @@ import {
  * task, the Inbox, one list's and the ones carrying a tag — and share everything
  * but which tasks they show, what a task added to them starts with and whether
  * their done tasks are divided by when they were finished. Habits, the rewards
- * pages, More, the modes, the lists, the tags, the balance of time, the trash
- * and settings are screens of their own.
+ * pages, More, the modes, the lists, the tags, the balance of time, the
+ * activity log, the trash and settings are screens of their own.
  *
  * Rewards is six screens rather than one: how the points stand, and under it the
  * chest, the history, the prizes, the wishlist and the rules (RWD-19, RWD-30).
  * They are named `rewards/…`, which
  * is what their addresses read as and what marks them as belonging under Rewards.
- * Modes is four in the same way (MODE-1): the list of them, and a page for each
+ * Modes is five in the same way (MODE-1): the list of them, and a page for each
  * mode explaining what it does, named `modes/…`.
  *
  * "View" is this file's word for a screen. What the owner calls a **list** is
@@ -51,11 +51,13 @@ export type FixedView =
   | 'lists'
   | 'tags'
   | 'balance'
+  | 'activity'
   | 'more'
   | 'modes'
   | 'modes/procrastination'
   | 'modes/warm-up'
   | 'modes/nudge'
+  | 'modes/check-in'
   | 'trash'
   | 'settings'
 
@@ -79,7 +81,7 @@ export type View = FixedView | OneListView | TagView
 /** The views that show tasks: the box to add one, the rows, and the rail beside them. */
 export type TaskView = Exclude<
   View,
-  'habits' | RewardsView | 'lists' | 'tags' | 'balance' | 'more' | ModesView | 'trash' | 'settings'
+  'habits' | RewardsView | 'lists' | 'tags' | 'balance' | 'activity' | 'more' | ModesView | 'trash' | 'settings'
 >
 
 /**
@@ -110,14 +112,15 @@ export function isRewardsView(view: View): view is RewardsView {
 /**
  * The modes and what they do, in the order the Modes page lists them: the one
  * that picks a single task out of Today, the one that allows one more habit
- * with each of its thirty days, and the one that speaks up when nothing is
- * getting done (MODE-2). Each is a page of its own, so a mode can say what it
+ * with each of its thirty days, the one that speaks up when nothing is getting
+ * done, and the one that asks every hour what was done (MODE-2). Each is a page of its own, so a mode can say what it
  * does rather than being a switch whose name has to carry the whole idea.
  */
 export const UNDER_MODES = [
   'modes/procrastination',
   'modes/warm-up',
   'modes/nudge',
+  'modes/check-in',
 ] as const satisfies readonly FixedView[]
 
 /** One mode, as the view of its own page. */
@@ -134,10 +137,11 @@ export function isModesView(view: View): view is ModesView {
  * The pages More's own page lists, in the order it lists them: Lists, which a
  * phone's bar has no tab for (UI-34), Tags, now that Rewards has a place of its
  * own everywhere (RWD-19), Balance, where the time logged divides between work
- * and rest (BAL-1), and Modes, which holds the switches that were once rows on
- * More itself (MODE-1).
+ * and rest (BAL-1), the activity log, where each hour of the day is written
+ * down (ACT-1), and Modes, which holds the switches that were once rows on More
+ * itself (MODE-1).
  */
-export const ON_MORE = ['lists', 'tags', 'balance', 'modes'] as const satisfies readonly FixedView[]
+export const ON_MORE = ['lists', 'tags', 'balance', 'activity', 'modes'] as const satisfies readonly FixedView[]
 
 /**
  * The pages More stands for while one of them is open — the ones on its page
@@ -147,7 +151,7 @@ export const ON_MORE = ['lists', 'tags', 'balance', 'modes'] as const satisfies 
  * once. Adding a page to More's page is deciding both: whether it is listed
  * there, and whether it is reached only from there.
  */
-export const UNDER_MORE = ['tags', 'balance', 'modes'] as const satisfies readonly FixedView[]
+export const UNDER_MORE = ['tags', 'balance', 'activity', 'modes'] as const satisfies readonly FixedView[]
 
 /** The views named after a period, which a phone keeps behind a single tab. */
 export type PeriodView = 'today' | 'week' | 'month'
@@ -182,7 +186,7 @@ export function tagView(tag: string): TagView {
  * Whether being on `view` is being somewhere under `menu` in the navigation: on
  * it, or on one of the screens opened from it — a list or the Inbox under Lists,
  * a tag's tasks under Tags, the history, the wishlist and the rules under
- * Rewards, or Tags, Balance, Modes and each mode's page under More.
+ * Rewards, or Tags, Balance, the activity log, Modes and each mode's page under More.
  */
 export function isUnder(view: View, menu: View): boolean {
   if (view === menu) return true
@@ -201,7 +205,7 @@ export function isUnder(view: View, menu: View): boolean {
  * tree whose top is the bar's tabs — the periods, Tasks, Habits, Rewards, More
  * and Settings. Under Tasks are Lists and the Trash, its two buttons (UI-34);
  * under Lists the Inbox and each list; under Rewards its five pages (RWD-19);
- * under More Tags, Balance and Modes (UI-45), under Tags each tag's tasks, and under
+ * under More Tags, Balance, the activity log and Modes (UI-45), under Tags each tag's tasks, and under
  * Modes each mode's page (MODE-7). This is what the back button climbs, so a
  * page is left the way it was reached rather than the way it happened to be
  * arrived at.
@@ -210,7 +214,7 @@ export function parentView(view: View): View | null {
   if (isOneListView(view) || view === 'inbox') return 'lists'
   if (isTagView(view)) return 'tags'
   if (view === 'lists' || view === 'trash') return 'tasks'
-  if (view === 'tags' || view === 'balance' || view === 'modes') return 'more'
+  if (view === 'tags' || view === 'balance' || view === 'activity' || view === 'modes') return 'more'
   if ((UNDER_REWARDS as readonly View[]).includes(view)) return 'rewards'
   if ((UNDER_MODES as readonly View[]).includes(view)) return 'modes'
   return null
@@ -305,11 +309,13 @@ export const VIEW_LABELS: Record<FixedView, string> = {
   lists: 'Lists',
   tags: 'Tags',
   balance: 'Balance',
+  activity: 'Activity log',
   more: 'More',
   modes: 'Modes',
   'modes/procrastination': 'Procrastination',
   'modes/warm-up': 'Warm-up',
   'modes/nudge': 'Nudge',
+  'modes/check-in': 'Check-in',
   trash: 'Trash',
   settings: 'Settings',
 }

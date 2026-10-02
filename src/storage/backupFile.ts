@@ -1,5 +1,6 @@
 import {
   BONUS_PERIODS,
+  type ActivityEntry,
   NO_BONUSES,
   toLocalDay,
   type Category,
@@ -14,8 +15,11 @@ import {
   type Task,
   type WarmUp,
 } from '../core'
+import { readActivityDay, toStoredActivityDays, type StoredActivityDay } from './activitySchema'
 import type { AccountData } from './backupRepository'
 import { readCategory, toStoredCategory, type StoredCategory } from './categorySchema'
+import type { CheckInPreference } from './checkInRepository'
+import { readCheckIn, toStoredCheckIn, type StoredCheckIn } from './checkInSchema'
 import { readList, toStoredList, type StoredList } from './listSchema'
 import type { NudgePreference } from './nudgeRepository'
 import { readNudge, toStoredNudge, type StoredNudge } from './nudgeSchema'
@@ -62,12 +66,14 @@ export const BACKUP_FORMAT = 'task-tracker-backup'
  * nudge setting (NUDGE-9), which was the device's then rather than the
  * account's (STORE-46): a file made before it synced is read as asking for none.
  * Version 6 held no Balance categories (BAL-12): a file made before there were
- * any is read as holding none.
+ * any is read as holding none. Version 7 held no activity log and no check-in
+ * (ACT-1, CHECKIN-2): a file made before them is read as holding no records and
+ * asking for no check-in.
  */
-export const BACKUP_VERSION = 7
+export const BACKUP_VERSION = 8
 
 /** The versions of the wrapper this app can still read, oldest first. */
-const READABLE_VERSIONS = [1, 2, 3, 4, 5, 6, BACKUP_VERSION]
+const READABLE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, BACKUP_VERSION]
 
 interface BackupFile {
   format: typeof BACKUP_FORMAT
@@ -97,6 +103,10 @@ interface BackupFile {
   warmUp: StoredWarmUp[]
   /** How the owner asked to be nudged, as its one record, or nothing at all where it is off (NUDGE-9). */
   nudge: StoredNudge[]
+  /** The activity log, a day at a time, as the account keeps it (STORE-51). */
+  activityDays: StoredActivityDay[]
+  /** Whether the check-in is on and its hours, as its one record, or nothing at all at its defaults (CHECKIN-2). */
+  checkIn: StoredCheckIn[]
 }
 
 /** Why a file was not read at all. */
@@ -111,6 +121,12 @@ export interface BackupRead {
 /** The nudge setting as the file holds it: its one record, or nothing at all where it is off. */
 function nudgeRecord(preference: NudgePreference | null): StoredNudge[] {
   const stored = preference === null ? null : toStoredNudge(preference)
+  return stored === null ? [] : [stored]
+}
+
+/** The check-in setting as the file holds it: its one record, or nothing at all at its defaults. */
+function checkInRecord(preference: CheckInPreference | null): StoredCheckIn[] {
+  const stored = preference === null ? null : toStoredCheckIn(preference)
   return stored === null ? [] : [stored]
 }
 
@@ -143,6 +159,8 @@ export function writeBackupFile(data: AccountData, now: Date): string {
     warmUp: data.warmUp === null ? [] : [toStoredWarmUp(data.warmUp)],
     // A nudge back at its defaults keeps no record here either, as it keeps none in the account.
     nudge: nudgeRecord(data.nudge),
+    activityDays: toStoredActivityDays(data.activities),
+    checkIn: checkInRecord(data.checkIn),
   }
   return `${JSON.stringify(file, null, 2)}\n`
 }
@@ -173,6 +191,8 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
   const warmUp = file.version < 5 ? [] : file.warmUp
   const nudge = file.version < 6 ? [] : file.nudge
   const categories = file.version < 7 ? [] : file.categories
+  const activityDays = file.version < 8 ? [] : file.activityDays
+  const checkIn = file.version < 8 ? [] : file.checkIn
   if (
     !Array.isArray(tasks) ||
     !Array.isArray(lists) ||
@@ -184,7 +204,9 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     !Array.isArray(rewardSettings) ||
     !Array.isArray(warmUp) ||
     !Array.isArray(nudge) ||
-    !Array.isArray(categories)
+    !Array.isArray(categories) ||
+    !Array.isArray(activityDays) ||
+    !Array.isArray(checkIn)
   ) {
     return 'not-a-backup'
   }
@@ -220,6 +242,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     tags: readEach<Tag>(tags, readTag),
     prizes: readEach<Prize>(prizes, readPrize),
     categories: readEach<Category>(categories, readCategory),
+    activities: readEach<ActivityEntry[]>(activityDays, readActivityDay).flat(),
     entries: readEach<RewardEntry[]>(rewardDays, readRewardDay).flat(),
     redemptions: readEach<Redemption>(redemptions, readRedemption),
     bonuses: bonuses as PeriodBonuses,
@@ -227,6 +250,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     chest,
     warmUp: readEach<WarmUp>(warmUp, readWarmUp)[0] ?? null,
     nudge: readEach<NudgePreference>(nudge, readNudge)[0] ?? null,
+    checkIn: readEach<CheckInPreference>(checkIn, readCheckIn)[0] ?? null,
   }
   return { data, unreadable }
 }

@@ -123,6 +123,38 @@ changes shape.
   called — is ignored with a warning and left as it is (STORE-7). The time the page adds up is not
   kept here: it is read from the tasks' sessions (TIME-8).
 
+## The activity log
+
+- **STORE-51** The activity log (ACT-1) is kept in the account as **one record per day**, holding a
+  field for each record logged under one of its hours, keyed by the record's id — as the points ledger
+  keeps its days (STORE-21), so reading the log costs a record a day however many hours were logged.
+  A day is only ever changed **record by record**: adding or changing one writes its field, taking
+  one out deletes it, and nothing else on the day is touched, so two devices logging on one day keep
+  both. A record moved to another day leaves the day it was under and joins the new one. A day whose
+  last record was taken out is left **holding nothing**, and read as a day with nothing logged. It
+  has **its own version**; a day the app cannot read is ignored with a warning and left as it is
+  (STORE-7). It is readable and writable by the account alone (STORE-17), opens offline and waits for
+  a connection like the tasks (STORE-18) — and the sender reads it too (STORE-53), to know an hour is
+  logged.
+
+## The check-in
+
+- **STORE-52** The **check-in's setting** (CHECKIN-9) is kept in the account as **one record**,
+  named for itself as the nudge's is (STORE-46): whether it is on, and the hours it keeps to. **No
+  record at all is the check-in as the app arrives** — off, 09:00–22:00 — and one turned off with
+  hours of its own keeps its record, the hours being the log's too (ACT-17). It has **its own
+  version**, and one the app cannot read — an unknown version, hours not on the hour — is ignored with
+  a warning and read as off (STORE-7). It is **in the backup** (BAK-19).
+- **STORE-53** A device reached **while the app is closed** (CHECKIN-10) is kept in the account as
+  **one record per device**, under an id the device keeps (STORE-54): the browser's push
+  subscription — where to send, and the keys to send with — the device's time zone, and when it last
+  said so, refreshed each time the app opens there with it on. The **sender** is the one reader
+  beside the account itself: it runs with the project's own rights, reads the registrations, the
+  check-in's setting and the day being asked about, and writes beside a registration the hour it last
+  pushed about, which the device's own writes leave alone. A registration is the device's rather
+  than the account's data, so it is **not in the backup** (BAK-2), and a guest has none (CHECKIN-11).
+  It has **its own version**; one the sender cannot read is sent nothing.
+
 ## Warm-up
 
 - **STORE-44** The **warm-up** (WARM-1) is kept in the account as **one record**, named for itself
@@ -173,7 +205,8 @@ changes shape.
 
 ## Guest — this device only
 
-- **STORE-37** As guest (AUTH-15), tasks, lists, tags, the wishlist, the Balance categories, the points ledger — the
+- **STORE-37** As guest (AUTH-15), tasks, lists, tags, the wishlist, the Balance categories, the
+  activity log — a record at a time — and the check-in's setting (STORE-51, STORE-52), the points ledger — the
   bonuses, what a point is worth and what the chest asks with it (STORE-41, STORE-42, STORE-43,
   STORE-48), the warm-up
   (STORE-44), Procrastination mode (STORE-45) and the nudge's setting (STORE-46) are kept in this
@@ -183,10 +216,11 @@ changes shape.
   on the same address sees the same records. There is nothing to sync, so the sync notice stays
   quiet (OFF-7).
 - **STORE-38** The first time a Google account is open here online after guest data was kept, that
-  data is **moved into the account** — tasks, lists, tags, prizes, Balance categories, points earned,
-  redemptions, the bonuses, what a point is worth, the warm-up and the nudge's setting — added alongside what the
+  data is **moved into the account** — tasks, lists, tags, prizes, Balance categories, the activity
+  log, points earned, redemptions, the bonuses, what a point is worth, the warm-up, the nudge's
+  setting and the check-in's — added alongside what the
   account already has, without overwriting tasks it already holds (STORE-20), or a bonus, point
-  value, warm-up or nudge it has already set, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
+  value, warm-up, nudge or check-in it has already set, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
   signing in does not start its month again (WARM-10). A move that fails, offline say, is tried again next time.
 
 ## Kept on this device
@@ -225,6 +259,12 @@ changes shape.
   saying which colour it gave it in. A chest standing exactly as it arrives — a noise, nothing
   opened, nothing said — keeps **no record at all**, and one the app cannot read is read as a chest
   arriving, the worst of it being one noise and one notice more than was wanted.
+- **STORE-54** What the **check-in** keeps here — the notice put away on this device (CHECKIN-4),
+  the id this device's registration is kept under, and whether this device is reached while the app
+  is closed (CHECKIN-11) — is kept the same way again, under a version of its own, apart from the
+  setting, which is the account's (STORE-52). A notice put away on the laptop is still worth showing
+  on the phone, and a push reaches a device rather than an account. A device as it arrives keeps no
+  record; one the app cannot read is read as a device arriving.
 - **STORE-40** The theme (UI-63) is kept the same way again, under a version of its own: a phone
   kept dark and a desktop kept light are each set their own way, and it is the same whoever is
   signed in — or nobody, on the sign-in screen. Following the system, the default, keeps nothing.
@@ -318,6 +358,13 @@ copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgr
 and `warmUpSchema.ts` (the warm-up), `nudgeRepository.ts`, `firestoreNudgeRepository.ts`,
 `localNudgeRepository.ts` and `nudgeSchema.ts` (the nudge's setting), `nudgeDeviceRepository.ts`,
 `nudgeDeviceSchema.ts` and `localStorageNudgeRepository.ts` (what it has said on this device),
+`activityRepository.ts`, `firestoreActivityRepository.ts`, `localActivityRepository.ts` and
+`activitySchema.ts` (the activity log), `checkInRepository.ts`, `firestoreCheckInRepository.ts`,
+`localCheckInRepository.ts` and `checkInSchema.ts` (the check-in's setting), `checkInDeviceRepository.ts`,
+`checkInDeviceSchema.ts` and `localStorageCheckInDeviceRepository.ts` (what it keeps on this device),
+`pushRepository.ts`, `firestorePushRepository.ts` and `pushSchema.ts` (the devices reached while the
+app is closed), `checkInSender.ts` and `functions/src/index.ts` (the sender reading them),
+`src/app/useActivities.ts`,
 `localBackupRepository.ts` and `localSyncMonitor.ts` (guest export and the quiet sync notice),
 `src/storage/quoteRepository.ts` and `localStorageQuoteRepository.ts`,
 `src/storage/quoteSource.ts` and `quotableQuoteSource.ts`, `src/storage/viewOptionsRepository.ts`,
@@ -337,7 +384,10 @@ STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/S
 `src/storage/localTaskImport.test.ts` (the move, and upgrading older data),
 `src/storage/localTaskRepository.test.ts` (the guest's tasks),
 `src/storage/rewardSchema.test.ts`
-(reading the ledger back), `src/storage/warmUpSchema.test.ts` (reading the warm-up back),
+(reading the ledger back), `src/storage/activitySchema.test.ts` and `localActivityRepository.test.ts`
+(the activity log, and what a change writes), `src/storage/checkInSchema.test.ts` (the check-in's
+setting, and what it keeps on this device), `src/storage/checkInSender.test.ts` (what the sender
+reads, sends and lets go of), `src/storage/warmUpSchema.test.ts` (reading the warm-up back),
 `src/storage/nudgeSchema.test.ts` and `src/storage/nudgeDeviceSchema.test.ts` (reading the nudge's
 setting back, and what a record from before it synced still answers), `src/storage/prizeSchema.test.ts` and `src/app/usePrizes.test.ts`
 (reading a prize or a wish back, and keeping them), `src/storage/listRepository.test.ts` and `src/storage/listSchema.test.ts`

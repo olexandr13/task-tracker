@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { DEFAULT_NUDGE_WINDOW, type NudgeWindow, type QuietHours, type WarmUpProgress } from '../core'
+import { DEFAULT_CHECK_IN_WINDOW, DEFAULT_NUDGE_WINDOW, type NudgeWindow, type QuietHours, type WarmUpProgress } from '../core'
 import { modeStates } from './modes'
 
 /* The modes as the Modes pages read them. MODE ids refer to wiki/modes.md;
-   JUST ids to wiki/just-one.md, WARM ids to wiki/warm-up.md. */
+   JUST ids to wiki/just-one.md, WARM ids to wiki/warm-up.md, CHECKIN ids to wiki/check-ins.md. */
 
 const WARMING_UP: WarmUpProgress = { day: 3, daysLeft: 27, allowed: 3, used: 2, remaining: 1 }
 
@@ -15,6 +15,7 @@ function sources(over: {
   nudgeOn?: boolean
   quietHours?: QuietHours
   window?: NudgeWindow | null
+  checkInOn?: boolean
 } = {}) {
   const loading = over.loading ?? false
   return {
@@ -33,6 +34,7 @@ function sources(over: {
       loading,
       onTurnOn: vi.fn(),
     },
+    checkIn: { on: over.checkInOn ?? false, window: DEFAULT_CHECK_IN_WINDOW, loading, onTurnOn: vi.fn() },
   }
 }
 
@@ -40,7 +42,7 @@ describe('modeStates', () => {
   it('reads every mode as disabled while none is on, with nothing more to say (MODE-3)', () => {
     const modes = modeStates(sources())
 
-    for (const mode of ['modes/procrastination', 'modes/warm-up', 'modes/nudge'] as const) {
+    for (const mode of ['modes/procrastination', 'modes/warm-up', 'modes/nudge', 'modes/check-in'] as const) {
       expect(modes[mode].on).toBe(false)
       expect(modes[mode].status).toEqual({ state: 'Disabled', detail: null })
     }
@@ -87,13 +89,21 @@ describe('modeStates', () => {
     expect(modeStates(sources())['modes/nudge'].blocked).toBeNull()
   })
 
+  it('says the hours the check-in asks about, and never blocks it once loaded (MODE-3, CHECKIN-2)', () => {
+    const checkIn = modeStates(sources({ checkInOn: true }))['modes/check-in']
+
+    expect(checkIn.on).toBe(true)
+    expect(checkIn.status).toEqual({ state: 'Enabled', detail: 'Every hour · 09:00–22:00' })
+    expect(checkIn.blocked).toBeNull()
+  })
+
   it('says a mode is still loading rather than disabled, and will not switch it (MODE-8)', () => {
     // A warm-up not read yet reads as no warm-up; turning it on here would start
     // a fresh month over the one already running. A nudge setting not read yet
     // reads as off, which the switch would then send back to the account.
     const modes = modeStates(sources({ loading: true, progress: null }))
 
-    for (const mode of ['modes/procrastination', 'modes/warm-up', 'modes/nudge'] as const) {
+    for (const mode of ['modes/procrastination', 'modes/warm-up', 'modes/nudge', 'modes/check-in'] as const) {
       expect(modes[mode].status).toEqual({ state: 'Loading…', detail: null })
       expect(modes[mode].blocked).toBe('Still loading.')
     }
@@ -112,5 +122,8 @@ describe('modeStates', () => {
 
     modes['modes/nudge'].toggle(true)
     expect(given.nudge.onTurnOn).toHaveBeenCalledExactlyOnceWith(true)
+
+    modes['modes/check-in'].toggle(true)
+    expect(given.checkIn.onTurnOn).toHaveBeenCalledExactlyOnceWith(true)
   })
 })

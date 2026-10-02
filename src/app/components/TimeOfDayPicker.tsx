@@ -16,6 +16,8 @@ interface TimeOfDayPickerProps {
   now: Date
   /** Which edge the panel lines up with: the one nearer the middle of the screen. */
   align?: 'left' | 'right'
+  /** Whole hours only (`ClockDial`). */
+  hoursOnly?: boolean
   onChange: (time: LocalTime) => void
 }
 
@@ -29,7 +31,7 @@ interface TimeOfDayPickerProps {
  * a click outside it or Escape — the panel hears the click itself, and Escape is
  * this control's to hear, as it is the time picker's.
  */
-export function TimeOfDayPicker({ label, value, now, align = 'left', onChange }: TimeOfDayPickerProps) {
+export function TimeOfDayPicker({ label, value, now, align = 'left', hoursOnly = false, onChange }: TimeOfDayPickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
 
@@ -69,7 +71,7 @@ export function TimeOfDayPicker({ label, value, now, align = 'left', onChange }:
             content="gap-2 rounded-2xl p-3 md:gap-1.5 md:rounded-xl md:p-2"
             onClose={() => { setIsOpen(false) }}
           >
-            <ClockDial value={value} now={now} onChange={onChange} />
+            <ClockDial value={value} now={now} hoursOnly={hoursOnly} onChange={onChange} />
           </PickerPanel>
 
           {/* The panel hangs over the page rather than in it, so where the page

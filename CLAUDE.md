@@ -29,8 +29,10 @@ Dependencies point inwards only.
 | `src/core/` | The rules. Pure functions over plain data. | nothing else in `src/` |
 | `src/storage/` | Saving, loading, signing in. | `src/core` |
 | `src/app/` | React components and screen state. | `src/core`, `src/storage` |
+| `functions/` | The one server-side part: the check-in sender, a scheduled Firebase function. | `src/core`, `src/storage/*Schema.ts`, `src/storage/checkInSender.ts` |
 
-`src/core/` has no React, browser APIs or saving; `npm run lint` enforces the boundary (`.oxlintrc.json`).
+`src/core/` has no React, browser APIs or saving; `functions/` never imports the app or the Firebase
+client SDK. `npm run lint` enforces both boundaries (`.oxlintrc.json`).
 
 ## Conventions
 
@@ -50,6 +52,8 @@ Dependencies point inwards only.
 - Ids are `crypto.randomUUID()`, timestamps ISO 8601, so devices merge record by record.
 - Points live beside tasks, not on them (`rewardDays/{day}`, `redemptions/{id}`), so earned stays
   earned. What a change earns is derived in core (`rewardChanges`) and written from `useTasks`.
+- Records that pile up daily are kept a document per day, a field per record, merged and never
+  replaced (`rewardDays`, `activityDays`), so reading them costs a document a day.
 - A new account collection goes into `ACCOUNT_COLLECTIONS` (`firestoreAccount.ts`), is reached via
   `accountCollection`, and is added to the backup (`AccountData`, `backupFile.ts`,
   `firestoreBackupRepository.ts`, `localBackupRepository.ts`).
@@ -72,11 +76,18 @@ Dependencies point inwards only.
 
 - Firebase settings come from `VITE_*` variables (`.env.local`, Vercel env). **No keys or secrets in
   committed files**; only `.env.example`, with empty values.
-- The service worker exists only in the built app: test offline with `npm run build && npm run preview`.
+- The service worker exists only in the built app: test offline, and push, with
+  `npm run build && npm run preview`. Push handlers are `public/check-in-sw.js`, imported into the
+  generated worker (`vite.config.ts`).
+- Check-ins pushed while the app is closed need the Firebase project on Blaze. The VAPID key pair is
+  made by `npm run setup:push`: both halves go to Secret Manager, the public one also to
+  `.env.local` and Vercel as `VITE_VAPID_PUBLIC_KEY`. The private one is never written to a file.
+  Deploy the sender with `npm run deploy:functions` (ask first: it changes the live project).
 
 ### Testing
 
-- Rules: `src/core/*.test.ts` (Node). Interaction a person could break (keys, focus, caret):
+- Rules: `src/core/*.test.ts` (Node). The sender's decisions are `src/storage/checkInSender.ts`, tested
+  with fakes; `functions/` only joins them to Firestore and web-push. Interaction a person could break (keys, focus, caret):
   `*.test.tsx` beside the component, Testing Library + `user-event`, starting with
   `// @vitest-environment jsdom`.
 - Any console output fails a test (`src/test/consoleGuard.ts`). Declare intended output with

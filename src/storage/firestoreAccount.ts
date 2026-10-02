@@ -4,8 +4,9 @@ import { collection, type CollectionReference, type Firestore } from 'firebase/f
  * Every collection an account's data is kept in, each at `users/{accountId}/{name}`.
  * A new one is added here, and so is watched by whatever watches all of the
  * account's data (`firestoreSyncMonitor.ts`) — and to the backup
- * (`firestoreBackupRepository.ts`, `backupFile.ts`), or no export holds it.
- * Who may read each: `firestore.rules`.
+ * (`firestoreBackupRepository.ts`, `backupFile.ts`), or no export holds it —
+ * unless, like the push registrations, it is the devices' rather than data
+ * worth restoring. Who may read each: `firestore.rules`.
  */
 export const ACCOUNT_COLLECTIONS = [
   'tasks',
@@ -20,6 +21,9 @@ export const ACCOUNT_COLLECTIONS = [
   'procrastination',
   'nudge',
   'categories',
+  'activityDays',
+  'checkIn',
+  'pushSubscriptions',
 ] as const
 
 export type AccountCollection = (typeof ACCOUNT_COLLECTIONS)[number]

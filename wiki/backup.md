@@ -7,16 +7,19 @@ in. Both are on **Settings**, under the account (UI-35).
 
 - **BAK-1** **Export** saves a file of the whole account, named for the local day it was made:
   `task-tracker-backup-2026-09-19.json`. Nothing is asked first, and the page then says what went into
-  it — `Exported 12 tasks, 2 lists, 3 tags, 4 prizes, 3 categories, 30 completions and 1 redemption.` — or that the account had nothing
+  it — `Exported 12 tasks, 2 lists, 3 tags, 4 prizes, 3 categories, 40 activity records, 30 completions and 1 redemption.` — or that the account had nothing
   in it yet. Offline it still works, from the copy of the account this device keeps (STORE-18).
 - **BAK-2** The file holds **everything the account keeps**: every task, those in the trash too, the
   lists, the kept tags — those no task carries any more too (TAG-6) — the wishlist (RWD-33), the
-  Balance categories (BAL-12), what
+  Balance categories (BAL-12), the activity log (ACT-15), what
   completions earned (a *completion* in the counts is one task's points on one day), the
   redemptions, what clearing each period is worth (RWD-24, RWD-29), what a point is worth
-  (RWD-31), the warm-up under way (WARM-1) and how the owner asked to be nudged (NUDGE-9). What is
-  kept on this device alone — the View options (STORE-30), the sidebar (STORE-31), the cached quote,
-  and what the nudge has already said here (STORE-46) — is not the account's, and is not in it. Neither is
+  (RWD-31), the warm-up under way (WARM-1), how the owner asked to be nudged (NUDGE-9) and the
+  check-in's setting (CHECKIN-9). What is kept on this device alone — the View options (STORE-30),
+  the sidebar (STORE-31), the cached quote, what the nudge has already said here (STORE-46) and what
+  the check-in keeps here (STORE-54) — is not the account's, and is not in it. Nor are the devices
+  check-ins are pushed to (STORE-53): a registration belongs to a browser that may be gone by the
+  time the file is read. Neither is
   **Procrastination mode** (STORE-45), which the account does keep: it is the state of one
   afternoon, and a mode restored from a file made last month would be off by the time it was read. A record the app cannot
   read (STORE-7) is left out.
@@ -31,7 +34,7 @@ in. Both are on **Settings**, under the account (UI-35).
   with a click, and the same file can be picked again straight after. While an export or an import
   is under way neither can be started, and the one running reads **Exporting…** or **Importing…**.
 - **BAK-5** An import **adds to the account what it does not have yet**: tasks, lists, tags,
-  prizes, Balance categories, what completions earned and redemptions. They appear on their own, the way a change made on another
+  prizes, Balance categories, activity records, what completions earned and redemptions. They appear on their own, the way a change made on another
   device does, and are not recorded as earning anything again — the points they bring are the ones
   in the file (STORE-25). A file exported from another account works the same, so this is also how
   to copy one account into another.
@@ -85,13 +88,24 @@ in. Both are on **Settings**, under the account (UI-35).
 - **BAK-17** A file made before there were Balance categories (BAL-12) holds none, and is read as
   holding none rather than turned away (BAK-13). A category is a **record**, like a prize: it is
   counted among what was imported or already here, and one the account has is left as it is (BAK-6).
+- **BAK-18** A file holds the **activity log** a day at a time, as the account keeps it (STORE-51),
+  each record with its own id. A record is a **record**: counted among what was imported or already
+  here, and one the account holds is left as it is (BAK-6) — added to its day, never replacing the
+  day. A day of the account's log the app cannot read is left alone, and nothing is added to it. A
+  file made before there was an activity log holds none, and is read as holding none (BAK-13).
+- **BAK-19** A file holds the **check-in's setting** (CHECKIN-9), as its one record: whether it is
+  on and the hours it keeps to. A check-in exactly as the app arrives — off, 09:00–22:00 — is no
+  record at all, here as in the account (STORE-52), and a file made before there was a check-in holds
+  none either; both are read as asking for none (BAK-13). It is **no record** the same way (BAK-14),
+  and an import takes the file's setting only where the account has **none of its own**.
 
 ---
 
 **Where it lives:** `src/storage/backupRepository.ts` (the interface, and what an import adds),
 `firestoreBackupRepository.ts` (reading and adding to the account in Firestore), `localBackupRepository.ts`
 (the guest's), `backupFile.ts` (the file and its version), `taskSchema.ts`, `listSchema.ts`, `tagSchema.ts`,
-`prizeSchema.ts`, `categorySchema.ts`, `rewardSchema.ts`, `warmUpSchema.ts`, `nudgeSchema.ts` (each record's own shape),
+`prizeSchema.ts`, `categorySchema.ts`, `activitySchema.ts`, `rewardSchema.ts`, `warmUpSchema.ts`,
+`nudgeSchema.ts`, `checkInSchema.ts` (each record's own shape),
 `src/app/useBackup.ts` (running them), `src/app/backupLabels.ts` (what is said),
 `src/app/downloadFile.ts`, `src/app/components/BackupCard.tsx`, `SettingsList.tsx`.
 **Tested in:** `src/storage/backupFile.test.ts` (the file, and reading one back),

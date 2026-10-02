@@ -13,7 +13,8 @@
  * night rather than eight hours of nothing getting done.
  */
 
-import { atLocalTime, isLocalTime, offsetDay, toLocalDay, toLocalTime, type LocalTime } from './day'
+import { atLocalTime, offsetDay, toLocalDay } from './day'
+import { isHoursWindow, isWithinHours, type HoursWindow } from './hours'
 import { sortForDisplay } from './order'
 import { isComplete, type Task, type TaskId } from './task'
 
@@ -33,42 +34,23 @@ export function isQuietHours(value: unknown): value is QuietHours {
 /**
  * The hours of the day the nudge may speak in — from one time of day to another,
  * in the owner's local clock — so a night is a night rather than a stretch of
- * quiet worth saying something about.
- *
- * Written as two `LocalTime`s and not as a pair of moments, for the reason a due
- * time is (`LocalTime`): nine in the morning is nine in the morning wherever the
- * device is, and every day, where a stored moment would be one morning only.
+ * quiet worth saying something about. The same hours a check-in keeps to
+ * (./hours).
  */
-export interface NudgeWindow {
-  readonly from: LocalTime
-  readonly to: LocalTime
-}
+export type NudgeWindow = HoursWindow
 
 /** Waking hours: late enough not to be the alarm clock, early enough to still be the day. */
 export const DEFAULT_NUDGE_WINDOW: NudgeWindow = { from: '09:00', to: '22:00' }
 
-export function isNudgeWindow(value: unknown): value is NudgeWindow {
-  if (typeof value !== 'object' || value === null) return false
-  const { from, to } = value as Partial<NudgeWindow>
-  return typeof from === 'string' && isLocalTime(from) && typeof to === 'string' && isLocalTime(to)
-}
+export const isNudgeWindow: (value: unknown) => value is NudgeWindow = isHoursWindow
 
 /**
  * Whether `now` falls inside the hours the nudge may speak in — always, where
- * there are none to keep to.
- *
- * A window whose end is **before** its start runs past midnight, 22:00 to 07:00
- * being the night; one whose two ends are the **same** hour is the whole day,
- * there being no hour it shuts out. Times compare as text, in clock order, which
- * is what writing them as `HH:MM` is for.
+ * there are none to keep to. A window running past midnight, or whose two ends
+ * are the same hour, reads as ./hours says.
  */
 export function isWithinNudgeWindow(window: NudgeWindow | null, now: Date = new Date()): boolean {
-  if (window === null) return true
-
-  const at = toLocalTime(now)
-  return window.from < window.to
-    ? at >= window.from && at < window.to
-    : at >= window.from || at < window.to
+  return isWithinHours(window, now)
 }
 
 /**

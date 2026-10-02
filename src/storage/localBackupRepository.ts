@@ -5,7 +5,9 @@ import {
   type BackupRepository,
   type KnownRecords,
 } from './backupRepository'
+import { clearGuestActivities, createLocalActivityRepository, loadGuestActivities } from './localActivityRepository'
 import { clearGuestCategories, createLocalCategoryRepository, loadGuestCategories } from './localCategoryRepository'
+import { clearGuestCheckIn, createLocalCheckInRepository, loadGuestCheckIn } from './localCheckInRepository'
 import { clearGuestLists, createLocalListRepository, loadGuestLists } from './localListRepository'
 import { clearGuestNudge, createLocalNudgeRepository, loadGuestNudge } from './localNudgeRepository'
 import { clearGuestPrizes, createLocalPrizeRepository, loadGuestPrizes } from './localPrizeRepository'
@@ -30,6 +32,8 @@ export function createLocalBackupRepository(): BackupRepository {
   const tags = createLocalTagRepository()
   const prizes = createLocalPrizeRepository()
   const categories = createLocalCategoryRepository()
+  const activities = createLocalActivityRepository()
+  const checkIn = createLocalCheckInRepository()
   const warmUp = createLocalWarmUpRepository()
   const nudge = createLocalNudgeRepository()
 
@@ -42,6 +46,7 @@ export function createLocalBackupRepository(): BackupRepository {
         tags: loadGuestTags(),
         prizes: loadGuestPrizes(),
         categories: loadGuestCategories(),
+        activities: loadGuestActivities(),
         entries: ledger.entries,
         redemptions: ledger.redemptions,
         bonuses: ledger.bonuses,
@@ -49,6 +54,7 @@ export function createLocalBackupRepository(): BackupRepository {
         chest: loadGuestChestSettings(),
         warmUp: loadGuestWarmUp(),
         nudge: loadGuestNudge(),
+        checkIn: loadGuestCheckIn(),
       }
     },
 
@@ -62,12 +68,15 @@ export function createLocalBackupRepository(): BackupRepository {
         tagNames: guestTags.map((tag) => tag.name),
         prizeIds: new Set(loadGuestPrizes().map((prize) => prize.id)),
         categoryIds: new Set(loadGuestCategories().map((category) => category.id)),
+        activityIds: new Set(loadGuestActivities().map((entry) => entry.id)),
+        unreadableActivityDays: new Set(),
         redemptionIds: new Set(ledger.redemptions.map((redemption) => redemption.id)),
         bonuses: ledger.bonuses,
         pointValue: ledger.pointValue,
         chest: loadGuestChestSettings(),
         warmUp: loadGuestWarmUp(),
         nudge: loadGuestNudge(),
+        checkIn: loadGuestCheckIn(),
         days: daysKnown(ledger.entries),
       }
 
@@ -78,6 +87,7 @@ export function createLocalBackupRepository(): BackupRepository {
       await tags.save({ saved: fresh.tags, removed: [] })
       await prizes.save({ saved: fresh.prizes, removed: [] })
       await categories.save({ saved: fresh.categories, removed: [] })
+      await activities.save({ saved: fresh.activities, removed: [] })
       // The file's bonuses, point value and chest settings only where there are
       // none here already (`newRecords`).
       const bonuses = Object.fromEntries(
@@ -91,9 +101,10 @@ export function createLocalBackupRepository(): BackupRepository {
         loadGuestChestSettings() ?? fresh.chest,
       )
 
-      // The file's warm-up and nudge only where there is none here already (`newRecords`).
+      // The file's warm-up, nudge and check-in only where there is none here already (`newRecords`).
       if (fresh.warmUp !== null) await warmUp.importWarmUp(fresh.warmUp)
       if (fresh.nudge !== null) await nudge.importNudge(fresh.nudge)
+      if (fresh.checkIn !== null) await checkIn.importCheckIn(fresh.checkIn)
 
       return { added: countRecords(fresh), alreadyHere }
     },
@@ -117,6 +128,8 @@ export function clearGuestAccount(): void {
   clearGuestTags()
   clearGuestPrizes()
   clearGuestCategories()
+  clearGuestActivities()
+  clearGuestCheckIn()
   clearGuestRewards()
   clearGuestWarmUp()
   clearGuestNudge()

@@ -1,8 +1,12 @@
 import { BONUS_PERIODS } from '../core'
+import type { ActivityRepository } from './activityRepository'
 import type { CategoryRepository } from './categoryRepository'
+import type { CheckInRepository } from './checkInRepository'
 import type { ListRepository } from './listRepository'
+import { loadGuestActivities } from './localActivityRepository'
 import { clearGuestAccount } from './localBackupRepository'
 import { loadGuestCategories } from './localCategoryRepository'
+import { loadGuestCheckIn } from './localCheckInRepository'
 import { loadGuestLists } from './localListRepository'
 import { loadGuestNudge } from './localNudgeRepository'
 import { loadGuestPrizes } from './localPrizeRepository'
@@ -31,6 +35,8 @@ export async function importGuestAccount(
   warmUp: WarmUpRepository,
   nudge: NudgeRepository,
   categories: CategoryRepository,
+  activities: ActivityRepository,
+  checkIn: CheckInRepository,
 ): Promise<void> {
   const guestTasks = loadGuestTasks()
   const guestLists = loadGuestLists()
@@ -40,6 +46,8 @@ export async function importGuestAccount(
   const guestWarmUp = loadGuestWarmUp()
   const guestNudge = loadGuestNudge()
   const guestCategories = loadGuestCategories()
+  const guestActivities = loadGuestActivities()
+  const guestCheckIn = loadGuestCheckIn()
 
   const empty =
     guestTasks.length === 0 &&
@@ -52,7 +60,9 @@ export async function importGuestAccount(
     ledger.pointValue === null &&
     guestWarmUp === null &&
     guestNudge === null &&
-    guestCategories.length === 0
+    guestCategories.length === 0 &&
+    guestActivities.length === 0 &&
+    guestCheckIn === null
 
   if (empty) {
     clearGuestAccount()
@@ -68,6 +78,7 @@ export async function importGuestAccount(
   if (guestTags.length > 0) await tags.save({ saved: guestTags, removed: [] })
   if (guestPrizes.length > 0) await prizes.save({ saved: guestPrizes, removed: [] })
   if (guestCategories.length > 0) await categories.save({ saved: guestCategories, removed: [] })
+  if (guestActivities.length > 0) await activities.save({ saved: guestActivities, removed: [] })
 
   if (ledger.entries.length > 0) {
     await rewards.save({ earned: [...ledger.entries], revoked: [] })
@@ -86,6 +97,7 @@ export async function importGuestAccount(
   // start the month again (WARM-10).
   if (guestWarmUp !== null) await warmUp.importWarmUp(guestWarmUp)
   if (guestNudge !== null) await nudge.importNudge(guestNudge)
+  if (guestCheckIn !== null) await checkIn.importCheckIn(guestCheckIn)
 
   clearGuestAccount()
 }

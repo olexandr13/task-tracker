@@ -9,8 +9,10 @@ import {
   type WriteBatch,
 } from 'firebase/firestore'
 import { BONUS_PERIODS, NO_BONUSES, type LocalDay, type PeriodBonuses, type TaskId } from '../core'
+import { readActivityDay, toStoredActivityDays } from './activitySchema'
 import { countRecords, NeedsConnectionError, newRecords, type BackupRepository, type KnownRecords } from './backupRepository'
 import { readCategory, toStoredCategory } from './categorySchema'
+import { CHECK_IN, readCheckIn, toStoredCheckIn } from './checkInSchema'
 import { accountCollection } from './firestoreAccount'
 import { commitInBatches } from './firestoreBatches'
 import { readList, toStoredList } from './listSchema'
@@ -64,6 +66,8 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   const warmUps = accountCollection(firestore, accountId, 'warmUp')
   const nudges = accountCollection(firestore, accountId, 'nudge')
   const categories = accountCollection(firestore, accountId, 'categories')
+  const activityDays = accountCollection(firestore, accountId, 'activityDays')
+  const checkIns = accountCollection(firestore, accountId, 'checkIn')
 
   /** What the account earns for clearing each period, of everything its goals hold. */
   function bonusesIn(snapshot: QuerySnapshot): PeriodBonuses {
@@ -90,6 +94,10 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   const nudgeIn = (snapshot: QuerySnapshot) =>
     snapshot.docs.flatMap((saved) => (saved.id === NUDGE ? (readNudge(saved.data()) ?? []) : []))[0] ?? null
 
+  /** How the account asked to be checked in on, of the one document it is ever kept as. */
+  const checkInIn = (snapshot: QuerySnapshot) =>
+    snapshot.docs.flatMap((saved) => (saved.id === CHECK_IN ? (readCheckIn(saved.data()) ?? []) : []))[0] ?? null
+
   return {
     // The server when there is a connection, the browser's copy when there is not.
     async exportAll() {
@@ -105,8 +113,10 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         savedWarmUp,
         savedNudge,
         savedCategories,
+        savedActivityDays,
+        savedCheckIn,
       ] = await Promise.all(
-        [tasks, lists, tags, prizes, days, redemptions, goals, settings, warmUps, nudges, categories].map(
+        [tasks, lists, tags, prizes, days, redemptions, goals, settings, warmUps, nudges, categories, activityDays, checkIns].map(
           (collection) => getDocs(collection),
         ),
       )
@@ -119,6 +129,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         tags: readAll(savedTags, readTag),
         prizes: readAll(savedPrizes, readPrize),
         categories: readAll(savedCategories, readCategory),
+        activities: readAll(savedActivityDays, readActivityDay).flat(),
         entries: readAll(savedDays, readRewardDay).flat(),
         redemptions: readAll(savedRedemptions, readRedemption),
         bonuses: bonusesIn(savedGoals),
@@ -126,6 +137,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         chest: chestIn(savedSettings),
         warmUp: warmUpIn(savedWarmUp),
         nudge: nudgeIn(savedNudge),
+        checkIn: checkInIn(savedCheckIn),
       }
     },
 
@@ -143,7 +155,24 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         savedWarmUp,
         savedNudge,
         savedCategories,
-      ] = await fromServer([tasks, lists, tags, prizes, days, redemptions, goals, settings, warmUps, nudges, categories])
+        savedActivityDays,
+        savedCheckIn,
+      ] = await fromServer([
+        tasks,
+        lists,
+        tags,
+        prizes,
+        days,
+        redemptions,
+        goals,
+        settings,
+        warmUps,
+        nudges,
+        categories,
+        activityDays,
+        checkIns,
+      ])
+      const activityDaysRead = savedActivityDays.docs.map((saved) => ({ day: saved.id, entries: readActivityDay(saved.data()) }))
       const known: KnownRecords = {
         taskIds: ids(savedTasks),
         listIds: ids(savedLists),
@@ -151,12 +180,15 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         tagNames: savedTags.docs.flatMap((saved) => readTag(saved.data())?.name ?? []),
         prizeIds: ids(savedPrizes),
         categoryIds: ids(savedCategories),
+        activityIds: new Set(activityDaysRead.flatMap(({ entries }) => (entries ?? []).map((entry) => entry.id))),
+        unreadableActivityDays: new Set(activityDaysRead.filter(({ entries }) => entries === null).map(({ day }) => day)),
         redemptionIds: ids(savedRedemptions),
         bonuses: bonusesIn(savedGoals),
         pointValue: pointValueIn(savedSettings),
         chest: chestIn(savedSettings),
         warmUp: warmUpIn(savedWarmUp),
         nudge: nudgeIn(savedNudge),
+        checkIn: checkInIn(savedCheckIn),
         days: new Map(
           savedDays.docs.map((saved): [LocalDay, ReadonlySet<TaskId> | null] => {
             const entries = readRewardDay(saved.data())
@@ -170,9 +202,10 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
       const chest = fresh.chest
       const warmUp = fresh.warmUp
       const nudge = fresh.nudge === null ? null : toStoredNudge(fresh.nudge)
+      const checkIn = fresh.checkIn === null ? null : toStoredCheckIn(fresh.checkIn)
 
-      // A day is merged, never replaced, as when points are earned: only the
-      // entries it did not hold are added to it.
+      // A day is merged, never replaced, as when points are earned or time is
+      // logged: only the entries it did not hold are added to it.
       await commitInBatches(firestore, [
         ...fresh.tasks.map((task) => (batch: WriteBatch) => batch.set(doc(tasks, task.id), toStoredTask(task))),
         ...fresh.lists.map((list) => (batch: WriteBatch) => batch.set(doc(lists, list.id), toStoredList(list))),
@@ -184,10 +217,13 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         ...toStoredRewardDays(fresh.entries).map((day) => (batch: WriteBatch) =>
           batch.set(doc(days, day.day), day, { merge: true }),
         ),
+        ...toStoredActivityDays(fresh.activities).map((day) => (batch: WriteBatch) =>
+          batch.set(doc(activityDays, day.day), day, { merge: true }),
+        ),
         ...fresh.redemptions.map((redemption) => (batch: WriteBatch) =>
           batch.set(doc(redemptions, redemption.id), toStoredRedemption(redemption)),
         ),
-        // The file's bonuses, point value, chest settings, warm-up and nudge are
+        // The file's bonuses, point value, chest settings, warm-up, nudge and check-in are
         // only ever set where the account has none of its own (`newRecords`).
         ...BONUS_PERIODS.flatMap((period) => {
           const points = fresh.bonuses[period]
@@ -205,6 +241,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
           ? []
           : [(batch: WriteBatch) => batch.set(doc(warmUps, WARM_UP), toStoredWarmUp(warmUp))]),
         ...(nudge === null ? [] : [(batch: WriteBatch) => batch.set(doc(nudges, NUDGE), nudge)]),
+        ...(checkIn === null ? [] : [(batch: WriteBatch) => batch.set(doc(checkIns, CHECK_IN), checkIn)]),
       ])
 
       return { added: countRecords(fresh), alreadyHere }

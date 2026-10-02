@@ -1,7 +1,9 @@
 import type { ReactElement } from 'react'
+import { ActivityIcon } from './components/ActivityIcon'
 import { BalanceIcon } from './components/BalanceIcon'
 import { CalendarIcon } from './components/CalendarIcon'
 import { CalmIcon } from './components/CalmIcon'
+import { CheckInIcon } from './components/CheckInIcon'
 import { ChestIcon } from './components/ChestIcon'
 import { FlameIcon } from './components/FlameIcon'
 import { FolderIcon } from './components/FolderIcon'
@@ -51,11 +53,13 @@ export const VIEW_ICONS: Record<FixedView, ViewIcon> = {
   lists: FolderIcon,
   tags: TagIcon,
   balance: BalanceIcon,
+  activity: ActivityIcon,
   more: MoreIcon,
   modes: ModesIcon,
   'modes/procrastination': ProcrastinationIcon,
   'modes/warm-up': WarmUpIcon,
   'modes/nudge': NudgeIcon,
+  'modes/check-in': CheckInIcon,
   trash: TrashIcon,
   settings: SettingsIcon,
 }
@@ -77,4 +81,5 @@ export const MODE_PAGE_ICONS: Record<ModeView, { readonly off: ViewIcon; readonl
   'modes/procrastination': { off: ProcrastinationIcon, on: CalmIcon },
   'modes/warm-up': { off: WarmUpIcon, on: WarmUpIcon },
   'modes/nudge': { off: NudgeIcon, on: NudgeIcon },
+  'modes/check-in': { off: CheckInIcon, on: CheckInIcon },
 }

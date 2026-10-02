@@ -2,8 +2,9 @@
 
 The parts of the app that are turned on and off rather than used:
 [Procrastination](just-one.md), which puts one task in front of you and dims the rest, the
-[warm-up](warm-up.md), which allows one more habit with each of its thirty days, and the
-[nudge](nudges.md), which speaks up when nothing is getting done. Each changes how the rest of the
+[warm-up](warm-up.md), which allows one more habit with each of its thirty days, the
+[nudge](nudges.md), which speaks up when nothing is getting done, and the
+[check-in](check-ins.md), which asks at the top of every hour what was done. Each changes how the rest of the
 app behaves for a while, which is more than a name on a switch can carry — so they have a page,
 and each mode a page of its own that says what it does, and sets what it has to set (MODE-12).
 
@@ -13,12 +14,13 @@ and each mode a page of its own that says what it does, and sets what it has to 
   on (`1 on`), or nothing at all while none is. On a phone **More** stays marked while the Modes
   page or one mode's page is open; a wide screen marks **Modes** itself, having an entry for it
   (MODE-7). The addresses are `#/modes` and, for a mode, `#/modes/procrastination`,
-  `#/modes/warm-up` and `#/modes/nudge` (UI-36).
+  `#/modes/warm-up`, `#/modes/nudge` and `#/modes/check-in` (UI-36).
 - **MODE-2** The page **lists every mode there is** — Procrastination first, then Warm-up, then
-  Nudge — each with its own glyph (🫠, 🌱, 🔔), its name, and the one line it is summed up in: *One
-  task out of Today, and everything else dimmed until it is done*, *Increase your productivity
-  gradually: one new habit a day, for thirty days*, *Speaks up when nothing has been finished for a
-  while, and names the task to pick up*.
+  Nudge, then Check-in — each with its own glyph (🫠, 🌱, 🔔, ⏰), its name, and the one line it is
+  summed up in: *One task out of Today, and everything else dimmed until it is done*, *Increase your
+  productivity gradually: one new habit a day, for thirty days*, *Speaks up when nothing has been
+  finished for a while, and names the task to pick up*, *Asks at the top of every hour what you did,
+  so your day gets logged as it goes*.
 
 ## Turning one on
 
@@ -34,21 +36,24 @@ and each mode a page of its own that says what it does, and sets what it has to 
   off, Procrastination's switch is dimmed and refuses (JUST-2), and says why — on the row
   (`Nothing to do in Today`) and in a tooltip. The mode is still listed and its page still reads:
   what it does is worth knowing before there is something to do. Nothing ever blocks the warm-up,
-  which is about the habits rather than about today, nor the nudge: a browser that will post no
-  notification does not stand in its way, the notice being at the foot of the app either way
-  (NUDGE-10).
+  which is about the habits rather than about today, nor the nudge or the check-in: a browser that
+  will post no notification does not stand in their way, the notice being at the foot of the app
+  either way (NUDGE-10, CHECKIN-5).
 
 - **MODE-9** A mode is **the account's**, not the device's: turned on at the laptop it is on at
-  the phone, and turned off anywhere it is off everywhere (STORE-44, STORE-45, STORE-46). A mode is
+  the phone, and turned off anywhere it is off everywhere (STORE-44, STORE-45, STORE-46, STORE-52). A mode is
   a way of working for a while, and it is the person who is working, not the machine — and what
   a mode is set to (MODE-12) travels with it, a span and the hours to keep to being how someone
   wants to be nudged rather than how a machine does it. The nudge keeps only what **this device
   alone can answer** on the device: whether *it* has already spoken, so one nudge is not paid for
   twice (NUDGE-6, STORE-47). Its notifications are still the browser's to allow, which its page says
-  among the things it does (MODE-5, NUDGE-10).
+  among the things it does (MODE-5, NUDGE-10). The check-in keeps on the device the notice put away
+  here and whether this device is reached while the app is closed, a push reaching a device rather
+  than an account (CHECKIN-11, STORE-54).
 - **MODE-12** A mode with **something to set carries it on its own page**, under **Settings**,
   below what the mode does (MODE-5): the nudge's span and the hours it may speak in (NUDGE-9,
-  NUDGE-12). It reads **whether the mode is on or off** — what a mode will do is decided before it
+  NUDGE-12), and the check-in's hours and whether this device is reached while the app is closed
+  (CHECKIN-8). It reads **whether the mode is on or off** — what a mode will do is decided before it
   is turned on, and a section that only appears afterwards is one nobody knows to look for — and a
   mode with nothing to set shows no such section, as Procrastination and the warm-up do not. A
   mode's settings sit with the mode rather than on the Settings page: what a mode does and how it is
@@ -77,7 +82,9 @@ and each mode a page of its own that says what it does, and sets what it has to 
   that pressing the notice goes straight to the task, and **how far its reach goes** — while the app
   is open, nothing once it is closed (NUDGE-10). What it watches for and what it names is the line
   it is summed up in, right above (MODE-2), and what there is to set is the **Settings** below
-  (MODE-12), so neither is said twice. Short enough to read before the switch is touched, and said
+  (MODE-12), so neither is said twice. The check-in: when it asks and about which hour, that an hour
+  already logged is skipped, what **Log it** does, the browser notification while the app is open,
+  and that being asked while it is closed is turned on device by device (CHECKIN-1 to CHECKIN-11). Short enough to read before the switch is touched, and said
   outright rather than hinted at: a mode explained at the length of its own settings is one nobody
   reads.
 - **MODE-10** Wherever a mode **shows itself at work** — the warm-up panel at the head of Habits
@@ -88,7 +95,7 @@ and each mode a page of its own that says what it does, and sets what it has to 
   (JUST-5), the warm-up's does not (WARM-9). The win card (JUST-9) carries none: a win is not the
   moment to read.
 - **MODE-7** **Modes has an entry of its own in the sidebar**, with a page for each mode indented
-  under it — **Procrastination**, **Warm-up**, each wearing its own glyph — and a chevron that
+  under it — **Procrastination**, **Warm-up**, **Nudge** and **Check-in**, each wearing its own glyph — and a chevron that
   **folds them away** as Lists folds its lists (UI-30, LST-26); folded, Modes itself is marked
   wherever you are under it, and open, each mode's page is marked on its own, so one mode is a
   click from the other. How it is left is kept on this device (STORE-31). A phone has no sidebar
@@ -120,8 +127,9 @@ and each mode a page of its own that says what it does, and sets what it has to 
 `src/app/components/ModesIcon.tsx`, `src/app/components/MorePage.tsx` (the way in),
 `src/app/components/WarmUpPanel.tsx` and `src/app/components/ProcrastinationMode.tsx`
 (**More info** on a mode's banner),
-`src/app/components/NudgeSettings.tsx` (the one mode with settings of its own, MODE-12),
-`src/app/TasksScreen.tsx` (the modes built from `useProcrastination`, `useWarmUp` and `useNudge`).
+`src/app/components/NudgeSettings.tsx` and `CheckInSettings.tsx` (the modes with settings of their own, MODE-12),
+`src/app/TasksScreen.tsx` (the modes built from `useProcrastination`, `useWarmUp`, `useNudge` and
+`useCheckIn`).
 **Tested in:** `src/app/modes.test.ts`, `src/app/components/ModesPage.test.tsx`,
 `src/app/components/ModePage.test.tsx`, `src/app/components/MorePage.test.tsx`,
 `src/app/components/WarmUpPanel.test.tsx` and `src/app/components/ProcrastinationMode.test.tsx`

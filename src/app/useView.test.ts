@@ -42,11 +42,13 @@ describe('viewFromHash', () => {
       'lists',
       'tags',
       'balance',
+      'activity',
       'more',
       'modes',
       'modes/procrastination',
       'modes/warm-up',
       'modes/nudge',
+      'modes/check-in',
       'trash',
       'settings',
     ] as const
@@ -58,6 +60,12 @@ describe('viewFromHash', () => {
   it('gives the Balance page an address of its own (BAL-1, UI-36)', () => {
     expect(viewHash('balance')).toBe('#/balance')
     expect(viewFromHash('#/balance')).toBe('balance')
+  })
+
+  it('gives the activity log and the check-in addresses of their own (ACT-1, MODE-1, UI-36)', () => {
+    expect(viewHash('activity')).toBe('#/activity')
+    expect(viewFromHash('#/activity')).toBe('activity')
+    expect(viewFromHash('#/modes/check-in')).toBe('modes/check-in')
   })
 
   it('names a mode\'s page after the mode, under Modes (MODE-1, UI-36)', () => {

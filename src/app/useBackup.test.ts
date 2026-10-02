@@ -19,6 +19,7 @@ const DATA: AccountData = {
   tags: [],
   prizes: [],
   categories: [],
+  activities: [],
   entries: [],
   redemptions: [],
   bonuses: NO_BONUSES,
@@ -26,10 +27,11 @@ const DATA: AccountData = {
   chest: null,
   warmUp: null,
   nudge: null,
+  checkIn: null,
 }
 
 const ADDED: ImportSummary = {
-  added: { tasks: 1, lists: 1, tags: 0, prizes: 0, categories: 0, completions: 0, redemptions: 0 },
+  added: { tasks: 1, lists: 1, tags: 0, prizes: 0, categories: 0, activities: 0, completions: 0, redemptions: 0 },
   alreadyHere: 0,
 }
 
