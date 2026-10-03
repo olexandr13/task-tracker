@@ -56,7 +56,7 @@ describe('SideNav', () => {
     expect(screen.getByText('PickMe')).toBeTruthy()
   })
 
-  it('carries Lists, Rewards, Balance, the activity log, Modes and More beside Tasks and Habits, and no entry for Tags or any one tag (UI-30, UI-45, TAG-18, RWD-19, LST-13, MODE-7, BAL-1, ACT-1)', () => {
+  it('carries Lists, Rewards, Balance, the activity log, Modes and More beside Habits and Tasks, and no entry for Tags or any one tag (UI-30, UI-45, TAG-18, RWD-19, LST-13, MODE-7, BAL-1, ACT-1)', () => {
     setup('today')
 
     const entries = screen
@@ -68,8 +68,8 @@ describe('SideNav', () => {
       'Today',
       'Week',
       'Month',
-      'Tasks',
       'Habits',
+      'Tasks',
       'Lists',
       'Inbox',
       'Rewards',

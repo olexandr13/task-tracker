@@ -155,7 +155,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   [Rewards](rewards.md), [Tags](tags.md), [Balance](balance.md), [Activity log](activity-log.md) and
   [Modes](modes.md).
 - **UI-30** In the sidebar the views come in four groups with a thin line between each: the period
-  views (**Today**, **Week**, **Month**), then **Tasks**, **Habits**, **Lists**, **Rewards**,
+  views (**Today**, **Week**, **Month**), then **Habits**, **Tasks**, **Lists**, **Rewards**,
   **Balance**, **Activity log**, **Modes** and **More**, then **Trash**, then **Settings**. **Lists**, **Rewards** and **Modes**
   each keep their pages indented under them — the **Inbox** and every list (LST-13), the **Chest**,
   **History**, **Prizes**, **Wishlist** and **Rules** (RWD-30), and **Procrastination**, **Warm-up**,
