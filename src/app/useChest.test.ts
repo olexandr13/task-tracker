@@ -3,10 +3,12 @@ import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   CHEST_ID,
+  chestQuarter,
   completeTask,
   createTask,
   DEFAULT_CHEST,
   setDueDate,
+  type ChestOpen,
   type ChestSettings,
   type RewardEntry,
   type Task,
@@ -66,7 +68,7 @@ describe('where the chest stands', () => {
   })
 
   it('has none while the day is smaller than the settings ask for (CHST-3)', () => {
-    const { result } = setUp({ tasks: [today('pack', true)], settings: { leastTasks: 3, jackpot: 'bestTask' } })
+    const { result } = setUp({ tasks: [today('pack', true)], settings: { leastTasks: 3 } })
 
     expect(result.current.blocked).toBe('tooSmall')
     expect(result.current.dayAsked).toBe(1)
@@ -80,8 +82,12 @@ describe('where the chest stands', () => {
     expect(result.current.unannounced).toBe(false)
   })
 
-  it('plays for the heaviest task of today (CHST-7)', () => {
-    expect(setUp({ entries: [{ taskId: 'a', day: '2026-09-17', points: 30 }] }).result.current.jackpot).toBe(30)
+  it('plays for everything earned today (CHST-7)', () => {
+    const entries = [
+      { taskId: 'a', day: '2026-09-17', points: 30 },
+      { taskId: 'b', day: '2026-09-17', points: 12 },
+    ]
+    expect(setUp({ entries }).result.current.jackpot).toBe(42)
   })
 })
 
@@ -108,13 +114,20 @@ describe('opening it', () => {
     expect(saveEarning).toHaveBeenCalledTimes(1)
   })
 
-  it('remembers on this device which tier it was, so a page opened again still glows (CHST-24)', () => {
+  it('remembers on this device which quarter of the jackpot it came to, so a page opened again still glows (CHST-24)', () => {
     const { result, device } = setUp()
 
-    const given = act(() => result.current.open())
-    void given
+    let given: ChestOpen | null = null
+    act(() => {
+      given = result.current.open()
+    })
+    if (given === null) throw new Error('no opening')
+    const opened: ChestOpen = given
 
-    expect(device.saved.at(-1)?.lastOpen).toEqual({ day: '2026-09-17', tier: expect.any(String) })
+    expect(device.saved.at(-1)?.lastOpen).toEqual({
+      day: '2026-09-17',
+      quarter: chestQuarter(opened.points, opened.jackpot),
+    })
   })
 
   it('refuses a second opening the same day, writing nothing (CHST-4)', () => {
@@ -146,9 +159,9 @@ describe('opening it', () => {
   })
 
   it('leaves yesterday’s glow behind, the last opening belonging to its day', () => {
-    const { result } = setUp({ device: fakeDevice({ ...CHEST_AT_REST, lastOpen: { day: '2026-09-16', tier: 'haul' } }) })
+    const { result } = setUp({ device: fakeDevice({ ...CHEST_AT_REST, lastOpen: { day: '2026-09-16', quarter: 3 } }) })
 
-    expect(result.current.lastTier).toBeNull()
+    expect(result.current.lastQuarter).toBeNull()
   })
 })
 
@@ -188,8 +201,8 @@ describe('the notice and the noise', () => {
   it('writes a changed setting to the account rather than the device (CHST-7)', () => {
     const { result, setChestSettings } = setUp()
 
-    result.current.setSettings({ leastTasks: 3, jackpot: 'typicalDay' })
+    result.current.setSettings({ leastTasks: 3 })
 
-    expect(setChestSettings).toHaveBeenCalledExactlyOnceWith({ leastTasks: 3, jackpot: 'typicalDay' })
+    expect(setChestSettings).toHaveBeenCalledExactlyOnceWith({ leastTasks: 3 })
   })
 })

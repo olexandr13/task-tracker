@@ -12,7 +12,8 @@
  * occurrences needs a completion history, which is a step of its own.
  */
 
-import { startOfLocalDay, toLocalDay, type LocalDay } from './day'
+import { toLocalDay, type LocalDay } from './day'
+import { isInPeriod } from './due'
 import { occursOn, startOfDay, type Repeat } from './repeat'
 import { isComplete, isDeleted, type Task } from './task'
 
@@ -83,7 +84,7 @@ export function summarize(tasks: readonly Task[], period: Period, now: Date = ne
     // A task that was completed inside the period always counts towards it,
     // even where the occurrence it was ticked off for fell just outside — that
     // keeps `completed` from ever running past `total`.
-    if (!done && !inPlayDuring(task, range, now)) {
+    if (!done && !inPlayDuring(task, period, range, now)) {
       continue
     }
 
@@ -110,20 +111,22 @@ function completedWithin(task: Task, range: PeriodRange): boolean {
   return at >= range.start && at < range.end
 }
 
-function inPlayDuring(task: Task, range: PeriodRange, now: Date): boolean {
-  if (task.repeat === null) {
-    if (isComplete(task, now)) return false
-    // One with no day of its own can be done on any of the period's days, so it
-    // belongs to all three — which is how the lists read it too (LIST-5): a bar
-    // counts what its list shows.
-    if (task.dueDate === null) return true
-    // Otherwise a one-off belongs from its day on: to the period it falls in, and
-    // to every later one it is still undone in, so letting it slip does not take
-    // it out of the count.
-    return startOfLocalDay(task.dueDate) < range.end
-  }
+/**
+ * Whether the period asks for the task. An occurrence of its rule inside the
+ * period does, done or not, so a Friday task is part of the week from Monday.
+ *
+ * Otherwise a task still to do is counted wherever its list shows it
+ * (`isInPeriod`) — a bar counts what its list shows. A task belongs from its
+ * day on: to the period the day falls in, and to every later one it is still
+ * undone in, so letting it slip does not take it out of the count — a one-off
+ * past its date, or a weekly task missed on Monday, which Tuesday's list shows
+ * under Overdue (LIST-2). One with no day at all can be done on any of the
+ * period's days, so it belongs to all three (LIST-5).
+ */
+function inPlayDuring(task: Task, period: Period, range: PeriodRange, now: Date): boolean {
+  if (task.repeat !== null && occursWithin(task.repeat, task.skippedDays, range, task.startDay)) return true
 
-  return occursWithin(task.repeat, task.skippedDays, range, task.startDay)
+  return !isComplete(task, now) && isInPeriod(task, period, now)
 }
 
 /**

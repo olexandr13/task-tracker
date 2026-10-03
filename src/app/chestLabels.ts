@@ -1,4 +1,4 @@
-import { CHEST_TIERS, type ChestBlock, type ChestJackpot, type ChestTier } from '../core'
+import { CHEST_QUARTERS, type ChestBlock, type ChestQuarter } from '../core'
 
 /**
  * How the chest reads on screen. The rules live in ../core/chest; wording is
@@ -12,26 +12,19 @@ import { CHEST_TIERS, type ChestBlock, type ChestJackpot, type ChestTier } from 
 export const CHEST_NAME = 'Chest'
 
 /** The one line the page is summed up in, under its name. */
-export const CHEST_SUMMARY = 'Clear everything in Today and a key is yours: one chest a day, for a share of the jackpot.'
+export const CHEST_SUMMARY =
+  'Clear everything in Today and a key is yours: one chest a day, for anything from 1 point to everything you earned today.'
 
-/** What each tier is called once the lid is open. */
-export const TIER_NAMES: Record<ChestTier, string> = {
-  pinch: 'A pinch',
-  handful: 'A handful',
-  haul: 'A haul',
-  jackpot: 'JACKPOT',
-}
-
-/** What each tier is worth saying about it, beside the number. */
-export const TIER_NOTES: Record<ChestTier, string> = {
-  pinch: 'Not much, but a chest is never empty.',
-  handful: 'A fair share of the jackpot.',
-  haul: 'Most of the jackpot — a good day to have cleared.',
-  jackpot: 'The whole jackpot. Four openings in a hundred go like that.',
+/**
+ * What an opening came to, against what it could have, for a screen reader:
+ * the card's colour says it to everyone else (CHST-15).
+ */
+export function describeOutOf(points: number, jackpot: number): string {
+  return `${String(points)} of a possible ${String(jackpot)}`
 }
 
 /**
- * Why the chest has nothing to give, said where the lid is pressed. A refusal
+ * Why the chest has nothing to give, said where the crate is pressed. A refusal
  * has to say what would change it, so the sentence names the thing to do rather
  * than only the thing that is wrong.
  */
@@ -55,12 +48,11 @@ export function describeTasks(tasks: number): string {
 export const RANGE_LEAST = 'At least'
 export const RANGE_MOST = 'Up to'
 
-/** What the most is, in a sentence under the two, by how it is worked out. Kept to one line. */
-export const RANGE_MOST_HINTS: Record<ChestJackpot | 'practice', string> = {
-  bestTask: 'The most is what your best task today was worth.',
-  typicalDay: 'The most is what a typical day earned this week.',
-  practice: 'The most is what you are practising with.',
-}
+/**
+ * What the most is, in a sentence under the two. Kept to one line. Practice has
+ * none: its most is the number typed just below.
+ */
+export const RANGE_MOST_HINT = 'The most is everything you earned today.'
 
 /**
  * Said in place of the hint while nothing finished today has earned anything,
@@ -74,7 +66,7 @@ export function describeChestRange(least: number, most: number): string {
   return least === most ? `${String(most)} ${most === 1 ? 'point' : 'points'}` : `${String(least)} to ${String(most)} points`
 }
 
-/** What the lid says while a key is waiting. */
+/** What the line under the crate says while a key is waiting. */
 export const CHEST_READY = 'Press to open'
 
 /** What it says once today's is open and this device saw it. */
@@ -87,28 +79,22 @@ export function describeChestPoints(points: number): string {
   return `+${String(points)}`
 }
 
-/** What each way of working the jackpot out is called where it is chosen. */
-export const JACKPOT_LABELS: Record<ChestJackpot, string> = {
-  bestTask: 'Today’s best task',
-  typicalDay: 'A typical day',
-}
-
-/** What each one means, in a sentence under its name. */
-export const JACKPOT_HINTS: Record<ChestJackpot, string> = {
-  bestTask: 'The most any one task earned today, so a day of heavy work plays for a bigger prize.',
-  typicalDay: 'The average earned a day over the last seven days, which moves more slowly than one day can.',
-}
-
 /** The line above the setting for how big a day has to be. */
 export const LEAST_TASKS_LABEL = 'Tasks a day must ask for'
 
 export const LEAST_TASKS_HINT =
   'A cleared day earns no key unless it asked for at least this many tasks, so one thing remembered at bedtime is not a day’s work.'
 
-/** The line above the jackpot setting. */
+/** What the key plays for, said on Rules where the old choice of it was (CHST-7). */
 export const JACKPOT_LABEL = 'What the key plays for'
 
-export const JACKPOT_HINT = 'The most a chest can give. Every opening pays a share of it, and four in a hundred pay the whole.'
+export const JACKPOT_HINT =
+  'Anything from 1 point to everything you earned today, every amount as likely as any other.'
+
+/** `Today the most is 37 points.` */
+export function describeJackpotToday(points: string): string {
+  return `Today the most is ${points}.`
+}
 
 /** What the notice says the moment the day comes clear (CHST-23). */
 export const CHEST_NOTICE = 'Today is clear. A key is waiting.'
@@ -130,9 +116,17 @@ export const PRACTICE_BAND = 'Practice — nothing is earned'
 
 export const PRACTICE_SKIP_LABEL = 'Skip the wait'
 
-/** The tally of a practice run, so the odds can be eyed against the table. */
-export function describeTally(counts: Readonly<Record<ChestTier, number>>, points: number): string {
-  const opens = CHEST_TIERS.reduce((sum, tier) => sum + counts[tier], 0)
+/** What each quarter of the jackpot is called in the practice tally. */
+export const QUARTER_NAMES: Record<ChestQuarter, string> = {
+  1: 'Up to ¼',
+  2: 'Up to ½',
+  3: 'Up to ¾',
+  4: 'Over ¾',
+}
+
+/** The tally of a practice run, so the odds can be eyed: every quarter should come up about as often. */
+export function describeTally(counts: Readonly<Record<ChestQuarter, number>>, points: number): string {
+  const opens = CHEST_QUARTERS.reduce((sum, quarter) => sum + counts[quarter], 0)
   if (opens === 0) return 'No practice openings yet.'
 
   const average = Math.round((points / opens) * 10) / 10

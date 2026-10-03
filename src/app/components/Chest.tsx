@@ -1,35 +1,62 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { CHEST_TIERS, type ChestBlock, type ChestOpen, type ChestTier } from '../../core'
-import { CHEST_READY, describeChestBlock, describeChestPoints, describeOpened, describeSound, TIER_NAMES, TIER_NOTES } from '../chestLabels'
-import { playBurst, playHeld, playKey, playRattle, playRefusal, playTick } from '../chestSound'
+import { chestQuarter, type ChestBlock, type ChestOpen, type ChestQuarter } from '../../core'
+import { CHEST_READY, describeChestBlock, describeChestPoints, describeOpened, describeOutOf, describeSound } from '../chestLabels'
+import { buildReel, reelTicks, type Reel } from '../chestReel'
 import {
-  CHEST_BURST_AT,
-  CHEST_COLOUR_AT,
+  hushChest,
+  playLanded,
+  playLatches,
+  playPowerOn,
+  playReelTick,
+  playRefusal,
+  playReveal,
+  playSpinBed,
+  playTick,
+  playUnlock,
+} from '../chestSound'
+import {
   CHEST_COUNT_AT,
   CHEST_COUNT_MS,
-  CHEST_HELD_AT,
+  CHEST_LANDED_AT,
+  CHEST_LATCH_AT,
+  CHEST_POWER_AT,
   CHEST_PRESS_MS,
-  CHEST_RATTLES,
   CHEST_REFUSAL_MS,
-  CHEST_SEAM_AT,
+  CHEST_REVEAL_AT,
   CHEST_SETTLED_AT,
+  CHEST_SPIN_AT,
+  CHEST_SPIN_MS,
+  CHEST_UNLOCK_AT,
 } from '../chestTiming'
-import { CHEST_TONES } from '../chestTones'
-import { ChestArt, type ChestState } from './ChestArt'
+import { CHEST_TONES, CHEST_UNKNOWN_TONE } from '../chestTones'
+import { ChestArt, type CrateState } from './ChestArt'
 import { ChestBurst } from './ChestBurst'
+import { ChestReel, ChestSpotlight, type ReelPhase } from './ChestReel'
 import { SpeakerIcon } from './SpeakerIcon'
+
+/** Where the opening is (CHST-14): the crate's part, the reel's part, and the card out. */
+type Stage = CrateState | 'power' | 'spinning' | 'landed' | 'open'
+
+/** What the reel is doing at each stage it is on screen for. */
+const REEL_PHASES: Partial<Record<Stage, ReelPhase>> = {
+  power: 'power',
+  spinning: 'spinning',
+  landed: 'landed',
+  open: 'off',
+}
 
 /**
  * The cabinet is a dark stage in either theme (CHST-25), as a jeweller's box is
- * lined dark whatever room it is opened in: light can only be seen to come out of a chest
- * against something darker than itself, and on a white card a pinch's pale glow
- * and a haul's gold were simply not there.
+ * lined dark whatever room it is opened in: light can only be seen to come out
+ * of something against what is darker than itself. Its lining — gunmetal, a
+ * pool of light from above, grit in the paint, hazard stripes along its foot —
+ * is in `.chest-stage` in `src/styles.css`.
  */
 const cabinet =
-  'chest-stage relative isolate aspect-square w-full max-w-[22rem] overflow-hidden rounded-[2rem] bg-gradient-to-b from-stone-800 via-stone-900 to-stone-950 ring-1 ring-black/10 shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_28px_56px_-28px_rgb(41_37_36/0.75)] dark:ring-white/10 dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.06),0_28px_56px_-28px_rgb(0_0_0/0.9)]'
+  'chest-stage relative isolate aspect-[6/5] w-full max-w-[40rem] overflow-hidden rounded-[1.75rem] ring-1 ring-black/20 sm:aspect-[16/10] dark:ring-white/10'
 
 const lid =
-  'absolute inset-0 z-0 cursor-pointer rounded-[2rem] aria-disabled:cursor-default focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500 [-webkit-tap-highlight-color:transparent]'
+  'absolute inset-0 z-[1] cursor-pointer rounded-[1.75rem] aria-disabled:cursor-default focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-amber-400 [-webkit-tap-highlight-color:transparent]'
 
 /** Whether the device asks for less motion, which jsdom has no answer for. */
 function wantsLessMotion(): boolean {
@@ -58,13 +85,13 @@ interface ChestProps {
   leastTasks: number
   /** What today's chest gave, where it is already open. */
   openedPoints: number | null
-  /** Which tier it was, where this device saw it happen. */
-  openedTier: ChestTier | null
+  /** Which quarter of the jackpot it came to, where this device saw it happen. */
+  openedQuarter: ChestQuarter | null
   sound: boolean
   onSound: (on: boolean) => void
   /** Draws, records and hands back an opening — or null where there was nothing to open. */
   onOpen: () => ChestOpen | null
-  /** Practice: the rattling is skipped, so thirty openings do not cost a minute of it. */
+  /** Practice: the show is skipped, so thirty openings do not cost three minutes of it. */
   skipWait?: boolean
   /** What a practice opening is marked with under the chest, or null when it is real. */
   band?: string | null
@@ -75,55 +102,57 @@ interface ChestProps {
  *
  * **The chest is the button** (CHST-13): the whole cabinet takes the press, as
  * do Enter and Space. A press with no key behind it is **refused in place** —
- * the lock rattles and the line under it says what would earn one — rather than
- * the lid being dimmed out of reach, which could not say why it was dim
- * (CHST-17).
+ * the dial jerks, the lamp blinks red and the line under it says what would
+ * earn one — rather than the crate being dimmed out of reach, which could not
+ * say why it was dim (CHST-17).
  *
- * The opening is conducted here, beat by beat, from `chestTiming`: a squash as
- * it is pressed; three rattles, each harder; a crack of light along the lid
- * that takes on a colour; a held beat, the cabinet darkening round a chest that
- * trembles; and then the lid — a flash, a ring going out, the light flooding up
- * and everything thrown out of it (`ChestBurst`) — and the points counting up.
+ * The opening is conducted here, beat by beat, from `chestTiming`: the crate
+ * squashes as it is pressed, its dial turns and its latches go with a hiss; it
+ * drops away and a screen comes on behind it; a reel of cards runs past a
+ * marker, ticking, and slows to a crawl; a beat with the marker on one card —
+ * and that card comes out of the screen onto a starburst in its own colour,
+ * throwing sparks (`ChestBurst`), while the points count up.
  *
  * What the opening gives is drawn and written by `onOpen` before the first
- * frame (CHST-16), so nothing here can change it: all of this is a replay.
- * Asked for less motion, the lid opens **at once** (CHST-18) — the wait goes
- * with the movement, there being no point in sitting through a pause whose
- * reason cannot be seen.
+ * frame (CHST-16), and the reel is built round it (`buildReel`), so nothing here
+ * can change it: all of this is a replay. Asked for less motion, the card is
+ * out **at once** (CHST-18) — the wait goes with the movement, there being no
+ * point in sitting through a pause whose reason cannot be seen.
  */
 export function Chest({
   blocked,
   dayAsked,
   leastTasks,
   openedPoints,
-  openedTier,
+  openedQuarter,
   sound,
   onSound,
   onOpen,
   skipWait = false,
   band = null,
 }: ChestProps) {
-  const [state, setState] = useState<ChestState>('shut')
+  const [stage, setStage] = useState<Stage>('shut')
   const [result, setResult] = useState<ChestOpen | null>(null)
-  /** The tier the light shows, which may run one brighter than the answer (CHST-15). */
-  const [hinted, setHinted] = useState<ChestTier | null>(null)
+  /** The strip of cards this opening runs, built round what it drew. */
+  const [reel, setReel] = useState<Reel | null>(null)
+  /** How many cards have crossed the marker so far, which flicks it each time. */
+  const [ticks, setTicks] = useState(0)
   const [counted, setCounted] = useState(0)
   const [refused, setRefused] = useState(false)
-  const [rattle, setRattle] = useState(-1)
-  /** Whether this opening skipped the show: no coins to throw, nothing to shake. */
+  /** Whether this opening skipped the show: no reel, nothing thrown, nothing shaken. */
   const [quick, setQuick] = useState(false)
-  /** How many lids this chest has seen go, which names each burst so it plays afresh. */
+  /** How many cards this chest has seen come out, which names each burst so it plays afresh. */
   const [bursts, setBursts] = useState(0)
   /**
-   * Whether the last lid's burst is still to be shown. Cleared on the next
-   * press, so what was thrown out of one opening is never still falling over
-   * the chest as it rattles shut for the next.
+   * Whether the last card's burst is still to be shown. Cleared on the next
+   * press, so what was thrown off one opening is never still falling over the
+   * crate as it unlocks for the next.
    */
   const [bursting, setBursting] = useState(false)
 
   /**
    * Whether an opening is still being shown, from the press until the number
-   * has counted and everything thrown has come down (`CHEST_SETTLED_AT`). The
+   * has counted and everything thrown has died away (`CHEST_SETTLED_AT`). The
    * chest takes no press meanwhile — not a refusal, not a sound, nothing — so a
    * second tap in the excitement can neither cut the show short nor, outside
    * practice, be refused in the middle of it (CHST-16).
@@ -135,9 +164,16 @@ export function Chest({
   useEffect(
     () => () => {
       for (const timer of timers.current) window.clearTimeout(timer)
+      hushChest()
     },
     [],
   )
+
+  // Turned off in the middle of the show, the noise stops there and then, the
+  // drone and the tails included, rather than playing out what was lined up.
+  useEffect(() => {
+    if (!sound) hushChest()
+  }, [sound])
 
   function after(ms: number, run: () => void): void {
     timers.current.push(window.setTimeout(run, ms))
@@ -149,7 +185,7 @@ export function Chest({
 
   /** The counting at the end, which is the only part whose length says anything. */
   function count(opening: ChestOpen): void {
-    const ms = CHEST_COUNT_MS[opening.tier]
+    const ms = CHEST_COUNT_MS[chestQuarter(opening.points, opening.jackpot)]
     const steps = Math.max(1, Math.min(opening.points, 32))
 
     for (let step = 1; step <= steps; step++) {
@@ -184,102 +220,116 @@ export function Chest({
       refuse()
       return
     }
+    const quarter = chestQuarter(opening.points, opening.jackpot)
 
     setResult(opening)
     setCounted(0)
-    setHinted(null)
-    setRattle(-1)
+    setTicks(0)
     setBursting(false)
 
     if (skipWait || wantsLessMotion()) {
       setQuick(true)
-      setState('open')
-      setHinted(opening.tier)
+      setReel(null)
+      setStage('open')
       setCounted(opening.points)
       noise(() => {
-        playBurst(opening.tier)
+        playReveal(quarter)
       })
       return
     }
 
+    const built = buildReel(opening)
+    setReel(built)
     setQuick(false)
     setBusy(true)
     after(CHEST_SETTLED_AT, () => {
       setBusy(false)
     })
-    setState('pressed')
-    noise(playKey)
-    buzz(18)
-    after(CHEST_PRESS_MS, () => {
-      setState('rattling')
-    })
 
-    for (const [index, shake] of CHEST_RATTLES.entries()) {
-      after(shake.at, () => {
-        setRattle(index)
-        noise(() => {
-          playRattle(index + 1)
-        })
-        buzz(10 + index * 18)
+    setStage('pressed')
+    noise(playUnlock)
+    buzz(18)
+    after(Math.max(CHEST_PRESS_MS, CHEST_UNLOCK_AT), () => {
+      setStage('unlocking')
+    })
+    after(CHEST_LATCH_AT, () => {
+      setStage('unlatched')
+      noise(playLatches)
+      buzz(24)
+    })
+    after(CHEST_POWER_AT, () => {
+      setStage('power')
+      noise(playPowerOn)
+    })
+    after(CHEST_SPIN_AT, () => {
+      setStage('spinning')
+      noise(() => {
+        playSpinBed(CHEST_SPIN_MS)
+      })
+    })
+    for (const at of reelTicks(built, CHEST_SPIN_MS)) {
+      after(CHEST_SPIN_AT + at, () => {
+        setTicks((before) => before + 1)
+        noise(playReelTick)
       })
     }
-
-    after(CHEST_SEAM_AT, () => {
-      setState('seam')
-    })
-    // The light takes a colour a moment before the answer is out, and is allowed
-    // to run one tier brighter than it: the "nearly" a third reel would give.
-    after(CHEST_COLOUR_AT, () => {
-      setHinted(hintTier(opening.tier))
-    })
-    after(CHEST_HELD_AT, () => {
-      setState('held')
-      setRattle(-1)
+    after(CHEST_LANDED_AT, () => {
+      setStage('landed')
       noise(() => {
-        playHeld(CHEST_BURST_AT - CHEST_HELD_AT)
+        playLanded(CHEST_REVEAL_AT - CHEST_LANDED_AT)
       })
+      buzz(20)
     })
-    after(CHEST_BURST_AT, () => {
-      setState('open')
-      setHinted(opening.tier)
+    after(CHEST_REVEAL_AT, () => {
+      setStage('open')
       setBursts((before) => before + 1)
       setBursting(true)
       noise(() => {
-        playBurst(opening.tier)
+        playReveal(quarter)
       })
-      buzz(opening.tier === 'jackpot' ? [50, 40, 50, 40, 160] : [40, 30, 60])
+      buzz(quarter === 4 ? [50, 40, 50, 40, 160] : [40, 30, 60])
     })
     count(opening)
   }
 
-  // A chest opened earlier, come back to: open and glowing, with nothing flying.
+  // A chest opened earlier, come back to: the card out and glowing, nothing flying.
   const still = result === null && openedPoints !== null
-  const shown: ChestState = still ? 'open' : state
-  const tier = still ? openedTier : hinted
-  const tone = tier === null ? null : CHEST_TONES[tier]
-  const landed = result !== null && state === 'open'
-  const jackpot = landed && result.tier === 'jackpot'
-  const inviting = blocked === null && !still && state === 'shut'
+  const resultQuarter = result === null ? null : chestQuarter(result.points, result.jackpot)
+  const shownQuarter = still ? openedQuarter : resultQuarter
+  const tone = shownQuarter === null ? (still ? CHEST_UNKNOWN_TONE : null) : CHEST_TONES[shownQuarter]
+  const out = still || (result !== null && stage === 'open')
+  const landed = result !== null && stage === 'open'
+  const top = landed && resultQuarter === 4
+  const crate: CrateState | null = !still && (stage === 'shut' || stage === 'pressed' || stage === 'unlocking' || stage === 'unlatched') ? stage : null
+  const inviting = blocked === null && crate === 'shut'
+  const phase = reel !== null && !quick ? REEL_PHASES[stage] : undefined
 
-  const glow = { '--chest-glow': tone?.light ?? 'transparent' } as CSSProperties
+  const glow = { '--chest-glow': out && tone !== null ? tone.light : 'transparent' } as CSSProperties
 
   return (
-    <div className="flex w-full flex-col items-center gap-5">
+    <div className="chest-frame flex w-full flex-col items-center gap-5">
       <div
         style={glow}
-        className={[
-          cabinet,
-          shown === 'open' && 'chest-cabinet-open',
-          refused && 'chest-refusal-shake',
-          jackpot && !quick && 'chest-shake',
-        ]
+        className={[cabinet, out && 'chest-cabinet-open', refused && 'chest-refusal-shake', top && !quick && 'chest-shake']
           .filter(Boolean)
           .join(' ')}
       >
-        {/* The light the open chest throws on the cabinet itself. */}
-        <div aria-hidden="true" className={`chest-ambient ${shown === 'open' ? (still || quick ? 'chest-ambient-still' : 'chest-ambient-on') : ''}`} />
-        {/* The room going quiet round it, for the held beat. */}
-        <div aria-hidden="true" className={`chest-vignette ${state === 'held' ? 'chest-vignette-on' : ''}`} />
+        {/* The light the card throws on the cabinet once it is out. */}
+        <div aria-hidden="true" className={`chest-ambient ${out ? (still || quick ? 'chest-ambient-still' : 'chest-ambient-on') : ''}`} />
+        {/* Dust turning in the light while the crate waits. */}
+        {crate !== null && (
+          <div aria-hidden="true" className="chest-dust">
+            <i />
+            <i />
+            <i />
+            <i />
+            <i />
+            <i />
+            <i />
+          </div>
+        )}
+        {/* The room going quiet round the screen while the reel runs. */}
+        <div aria-hidden="true" className={`chest-vignette ${stage === 'spinning' || stage === 'landed' ? 'chest-vignette-on' : ''}`} />
 
         <button
           type="button"
@@ -290,28 +340,37 @@ export function Chest({
           aria-disabled={busy || undefined}
           className={lid}
         >
-          <span className="absolute inset-[6%] block">
-            <ChestArt
-              state={shown}
-              light={tone?.light ?? null}
-              inviting={inviting}
-              still={still || quick}
-              rainbow={tier === 'jackpot' && shown === 'open'}
-              rattle={rattle}
-            />
-          </span>
+          {(crate !== null || stage === 'power') && !still && (
+            <span className={`absolute inset-[7%] block ${stage === 'power' ? 'chest-crate-away' : ''}`}>
+              <ChestArt state={crate ?? 'unlatched'} inviting={inviting} refused={refused} />
+            </span>
+          )}
         </button>
 
-        {bursting && !quick && <ChestBurst key={`burst${String(bursts)}`} tier={result?.tier ?? null} play={bursts} />}
+        {reel !== null && phase !== undefined && <ChestReel reel={reel} phase={phase} ticks={ticks} />}
 
-        {/* The lid going: a flash, and a ring of light going out from the mouth. */}
+        {out && (
+          <ChestSpotlight
+            key={`spot${String(bursts)}`}
+            quarter={shownQuarter}
+            points={still ? (openedPoints ?? 0) : (result?.points ?? 0)}
+            arriving={!still && !quick}
+            land={reel === null ? 0 : reel.winner + 0.5 - reel.to}
+          />
+        )}
+
+        {bursting && !quick && <ChestBurst key={`burst${String(bursts)}`} quarter={resultQuarter} play={bursts} />}
+
+        {/* The card coming out: a flash, and two rings of light going out from it. */}
         {bursting && !quick && (
-          <div key={`flash${String(bursts)}`} aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div key={`flash${String(bursts)}`} aria-hidden="true" className="pointer-events-none absolute inset-0 z-[3]">
             <div className="chest-flash" />
             <div className="chest-shockwave" />
             <div className="chest-shockwave chest-shockwave-late" />
           </div>
         )}
+
+        <div aria-hidden="true" className="chest-hazard" />
 
         <button
           type="button"
@@ -321,14 +380,13 @@ export function Chest({
           aria-label={describeSound(sound)}
           aria-pressed={sound}
           title={describeSound(sound)}
-          className="absolute right-2.5 bottom-2.5 z-10 grid size-11 place-items-center rounded-full text-white/40 transition-colors hover:bg-white/10 hover:text-white/90 md:size-9"
+          className="absolute right-2.5 bottom-3.5 z-10 grid size-11 place-items-center rounded-full text-white/45 transition-colors hover:bg-white/10 hover:text-white/90 md:size-9"
         >
           <SpeakerIcon on={sound} className="size-5" />
         </button>
       </div>
 
-      {/* Under the chest rather than over it: the lid lifts clear of the cabinet
-          when it opens, and a band across the top would be the one thing it hit. */}
+      {/* Under the chest rather than over it, where it never covers the card. */}
       {band !== null && (
         <p className="rounded-full bg-neutral-900/90 px-3 py-1 text-[11px] font-semibold tracking-[0.08em] text-white uppercase dark:bg-white/90 dark:text-neutral-900">
           {band}
@@ -336,54 +394,30 @@ export function Chest({
       )}
 
       {/* What came of it, or what would earn a key. Spoken, so it is never only a colour. */}
-      <div role="status" aria-live="polite" className="flex min-h-24 flex-col items-center justify-start text-center">
+      <div role="status" aria-live="polite" className="flex min-h-16 flex-col items-center justify-start text-center">
         {landed && tone !== null ? (
           <>
-            <p key={`n${String(bursts)}`} className={`chest-number text-5xl font-bold tracking-tight tabular-nums ${tone.points}`}>
+            <p key={`n${String(bursts)}`} className={`chest-number chest-type text-5xl font-bold tabular-nums ${tone.points}`}>
               {describeChestPoints(counted)}
             </p>
-            <p
-              key={`t${String(bursts)}`}
-              className={`chest-tier mt-1 text-sm font-semibold tracking-[0.12em] uppercase ${
-                result.tier === 'jackpot' ? 'chest-jackpot-text' : tone.points
-              }`}
-            >
-              {TIER_NAMES[result.tier]}
-            </p>
-            <p key={`w${String(bursts)}`} className="chest-tier mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              {TIER_NOTES[result.tier]}
-            </p>
+            {/* The card's colour has already shown how big it was; this says it to a screen reader. */}
+            <p className="sr-only">{describeOutOf(result.points, result.jackpot)}</p>
           </>
         ) : blocked === 'opened' && openedPoints !== null ? (
           <>
-            <p className={`text-2xl font-semibold tabular-nums ${CHEST_TONES[openedTier ?? 'pinch'].points}`}>
+            <p className={`text-2xl font-semibold tabular-nums ${(openedQuarter === null ? CHEST_UNKNOWN_TONE : CHEST_TONES[openedQuarter]).points}`}>
               {describeOpened(openedPoints)}
             </p>
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              {describeChestBlock('opened', dayAsked, leastTasks)}
-            </p>
+            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{describeChestBlock('opened', dayAsked, leastTasks)}</p>
           </>
         ) : blocked !== null ? (
-          <p className="max-w-xs text-sm text-neutral-500 dark:text-neutral-400">
-            {describeChestBlock(blocked, dayAsked, leastTasks)}
-          </p>
+          <p className="max-w-xs text-sm text-neutral-500 dark:text-neutral-400">{describeChestBlock(blocked, dayAsked, leastTasks)}</p>
         ) : (
-          <p className={`text-sm font-semibold tracking-[0.12em] text-amber-700 uppercase dark:text-amber-300 ${busy ? 'opacity-0' : 'chest-ready'}`}>
+          <p className={`text-sm font-semibold tracking-[0.16em] text-amber-700 uppercase dark:text-amber-300 ${busy ? 'opacity-0' : 'chest-ready'}`}>
             {CHEST_READY}
           </p>
         )}
       </div>
     </div>
   )
-}
-
-/**
- * The tier the light shows at the moment before the lid goes: now and then one
- * brighter than the answer, so a haul can look like a jackpot for half a second.
- * Presentation only — what the chest gives was drawn and written before any of
- * this ran (CHST-15).
- */
-function hintTier(tier: ChestTier): ChestTier {
-  const next = CHEST_TIERS[CHEST_TIERS.indexOf(tier) + 1]
-  return next !== undefined && Math.random() < 0.35 ? next : tier
 }

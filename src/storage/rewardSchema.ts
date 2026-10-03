@@ -1,7 +1,5 @@
 import {
   BONUS_PERIODS,
-  CHEST_JACKPOTS,
-  type ChestJackpot,
   type ChestSettings,
   isCurrency,
   isLeastTasks,
@@ -138,7 +136,7 @@ export function readRewardGoal(data: unknown): { period: Period; points: number 
 /**
  * A standing setting of the points, kept one record per setting under a name of
  * its own rather than an id — the same reasoning as a bonus above. What one
- * point is worth (RWD-31) and what the chest asks and plays for (CHST-7) are
+ * point is worth (RWD-31) and what the chest asks of a day (CHST-3) are
  * the two there are; a new one is a name here and a watcher in the repository.
  */
 export type RewardSetting = 'pointValue' | 'chest'
@@ -172,9 +170,8 @@ export function readPointValue(data: unknown): PointValue | null {
 }
 
 /**
- * What the chest asks of a day and what its key plays for (CHST-2, CHST-7).
- * One record, named for itself, so the two devices that set it write the one
- * record and the later write wins.
+ * What the chest asks of a day (CHST-3). One record, named for itself, so the
+ * two devices that set it write the one record and the later write wins.
  */
 export interface StoredChestSettings {
   version: number
@@ -186,21 +183,22 @@ export function toStoredChestSettings(settings: ChestSettings): StoredChestSetti
   return { version: REWARD_SCHEMA_VERSION, name: CHEST, settings }
 }
 
-/** Saved chest settings, or null when they can't be trusted. */
+/**
+ * Saved chest settings, or null when they can't be trusted.
+ *
+ * Settings saved before the jackpot became everything earned today also say
+ * which of two ways it was worked out (`jackpot: 'bestTask' | 'typicalDay'`).
+ * There is no choice any more, so that is read past rather than refused: the
+ * record is otherwise the same shape, and refusing it would throw away the one
+ * setting that is left. It is dropped on the next save.
+ */
 export function readChestSettings(data: unknown): ChestSettings | null {
   if (!isRecord(data) || data.version !== REWARD_SCHEMA_VERSION || data.name !== CHEST || !isRecord(data.settings)) {
     return null
   }
 
-  const { leastTasks, jackpot } = data.settings
-  if (
-    typeof leastTasks !== 'number' ||
-    !isLeastTasks(leastTasks) ||
-    typeof jackpot !== 'string' ||
-    !(CHEST_JACKPOTS as readonly string[]).includes(jackpot)
-  ) {
-    return null
-  }
+  const { leastTasks } = data.settings
+  if (typeof leastTasks !== 'number' || !isLeastTasks(leastTasks)) return null
 
-  return { leastTasks, jackpot: jackpot as ChestJackpot }
+  return { leastTasks }
 }

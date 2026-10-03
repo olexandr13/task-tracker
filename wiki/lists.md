@@ -36,7 +36,8 @@ reasons; requirements here are `LST-`.
 
 - **LST-8** Every list has **a view of its own**, opened from the Lists page (LST-13): the live
   tasks filed under it. It shows what Tasks shows otherwise (LIST-7) — the same rows, overdue
-  floating, done sinking, dragging, the rail — and **Lists** stays marked in the sidebar while it is open. It is in
+  floating, done sinking, dragging, the rail — its done tasks divided as the Inbox's are (TASK-72),
+  and **Lists** stays marked in the sidebar while it is open. It is in
   the address as `#/list/{id}` (UI-36), by the list's id, so a rename does not break a bookmark.
 - **LST-9** A task added in a list's view **goes into that list**, and has no day, as in Tasks.
 - **LST-10** An empty list says nothing is in it yet and to add a task above; once everything in it
@@ -47,7 +48,8 @@ reasons; requirements here are `LST-`.
 - **LST-11** The tasks in **no list** are the **Inbox**, which heads the Lists page and has a view
   of its own at `#/inbox`. The Inbox is not a record — it is what "in no list" looks like — so it
   is always there, cannot be renamed or deleted, and has no buttons of its own beside it. A task
-  added in the Inbox is in no list, as anywhere else but a list's own view.
+  added in the Inbox is in no list, as anywhere else but a list's own view. Of its done tasks the
+  Inbox shows today's, the rest folded away under headings that open them (TASK-72).
 - **LST-20** Tasks is every live task whatever list it is in, so the Inbox is a part of Tasks and
   not the same thing as it.
 
@@ -98,8 +100,9 @@ reasons; requirements here are `LST-`.
 - **LST-19** Beside each list is a button that **renames** it in place (LST-6), and one that
   **deletes** it, after asking. Deleting puts every task that was in it **back in the Inbox** —
   tasks in the trash too, so restoring one does not file it under a list that has gone — and the
-  tasks themselves stay as they were otherwise. There is no undo. Deleting the list whose view is
-  open leaves that view for the Lists page.
+  tasks themselves stay as they were otherwise. A finished task not loaded yet (STORE-55) goes on
+  naming the list, and reads as being in the Inbox all the same (LST-12). There is no undo.
+  Deleting the list whose view is open leaves that view for the Lists page.
 - **LST-21** A box at the top of the page makes a list (LST-4), on Enter or with its Add button, and
   **opens the new list** so the next thing typed goes into it. The box is cleared for the next one.
 - **LST-22** The Lists page is not a list of tasks, so it has no box for adding one and no rail

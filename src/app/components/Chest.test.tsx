@@ -1,14 +1,15 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ChestOpen, ChestTier } from '../../core'
-import { CHEST_BURST_AT, CHEST_COUNT_AT, CHEST_COUNT_MS, CHEST_SETTLED_AT } from '../chestTiming'
+import type { ChestOpen, ChestQuarter } from '../../core'
+import { CHEST_COUNT_AT, CHEST_COUNT_MS, CHEST_LANDED_AT, CHEST_LATCH_AT, CHEST_POWER_AT, CHEST_REVEAL_AT, CHEST_SETTLED_AT, CHEST_SPIN_AT } from '../chestTiming'
 import { Chest } from './Chest'
 
 /* Opening the chest on screen. CHST ids refer to wiki/chest.md. */
 
-const HAUL: ChestOpen = { tier: 'haul', points: 14, jackpot: 20 }
+/** 14 of a possible 20: the third quarter, amber. */
+const OPENING: ChestOpen = { points: 14, jackpot: 20 }
 
 // jsdom draws nothing on a canvas, and says so on the console when asked to:
 // the burst is told there is nothing to draw on, as it would be anywhere else.
@@ -38,11 +39,11 @@ function setup({
   dayAsked = 2,
   leastTasks = 1,
   openedPoints = null as number | null,
-  openedTier = null as ChestTier | null,
+  openedQuarter = null as ChestQuarter | null,
   sound = true,
   skipWait = false,
   band = null as string | null,
-  opening = HAUL as ChestOpen | null,
+  opening = OPENING as ChestOpen | null,
 } = {}) {
   const onOpen = vi.fn(() => opening)
   const onSound = vi.fn()
@@ -52,7 +53,7 @@ function setup({
       dayAsked={dayAsked}
       leastTasks={leastTasks}
       openedPoints={openedPoints}
-      openedTier={openedTier}
+      openedQuarter={openedQuarter}
       sound={sound}
       onSound={onSound}
       onOpen={onOpen}
@@ -64,6 +65,12 @@ function setup({
 }
 
 const lid = () => screen.getByRole('button', { name: /chest/i })
+
+/** The line under the chest, where what came out of it is said rather than only shown. */
+const said = () => within(screen.getByRole('status'))
+
+/** What the reel is doing, or undefined while it is not on screen. */
+const reelPhase = () => document.querySelector<HTMLElement>('.chest-screen')?.dataset.reelPhase
 
 describe('a chest with no key behind it', () => {
   it('is pressable rather than dimmed, and says what would earn a key (CHST-17)', async () => {
@@ -86,7 +93,7 @@ describe('a chest with no key behind it', () => {
 
   it('says today’s is open, and what it gave, once it has been (CHST-4)', () => {
     asksFor(false)
-    setup({ blocked: 'opened', openedPoints: 9, openedTier: 'handful', opening: null })
+    setup({ blocked: 'opened', openedPoints: 9, openedQuarter: 2, opening: null })
 
     expect(screen.getByText('Today’s chest gave +9.')).toBeTruthy()
     expect(screen.getByText('Today’s chest is open. Come back tomorrow.')).toBeTruthy()
@@ -111,7 +118,7 @@ describe('a chest with no key behind it', () => {
 })
 
 describe('opening it', () => {
-  it('shows what it gave, and which tier it was (CHST-14)', () => {
+  it('shows what it gave, and says out of how much (CHST-14)', () => {
     asksFor(false)
     vi.useFakeTimers()
     setup()
@@ -119,20 +126,20 @@ describe('opening it', () => {
     fireEvent.click(lid())
 
     // The lid has not gone yet, so the number is not out either.
-    expect(screen.queryByText('A haul')).toBeNull()
+    expect(screen.queryByText('14 of a possible 20')).toBeNull()
 
     act(() => {
-      vi.advanceTimersByTime(CHEST_BURST_AT + 10)
+      vi.advanceTimersByTime(CHEST_REVEAL_AT + 10)
     })
-    expect(screen.getByText('A haul')).toBeTruthy()
+    expect(screen.getByText('14 of a possible 20')).toBeTruthy()
 
     act(() => {
-      vi.advanceTimersByTime(CHEST_COUNT_AT + CHEST_COUNT_MS.haul)
+      vi.advanceTimersByTime(CHEST_COUNT_AT + CHEST_COUNT_MS[3])
     })
-    expect(screen.getByText('+14')).toBeTruthy()
+    expect(said().getByText('+14')).toBeTruthy()
   })
 
-  it('rattles the lock three times before the lid goes (CHST-14)', () => {
+  it('unlocks the crate, turns the screen on and runs the reel before the card comes out (CHST-14)', () => {
     asksFor(false)
     vi.useFakeTimers()
     setup()
@@ -141,17 +148,63 @@ describe('opening it', () => {
     act(() => {
       vi.advanceTimersByTime(200)
     })
-    expect(document.querySelector('.chest-rattle-1')).not.toBeNull()
+    expect(document.querySelector('.chest-dial-turned')).not.toBeNull()
 
     act(() => {
-      vi.advanceTimersByTime(600)
+      vi.advanceTimersByTime(CHEST_LATCH_AT - 200 + 10)
     })
-    expect(document.querySelector('.chest-rattle-2')).not.toBeNull()
+    expect(document.querySelector('.chest-latch-left')).not.toBeNull()
 
     act(() => {
-      vi.advanceTimersByTime(750)
+      vi.advanceTimersByTime(CHEST_POWER_AT - CHEST_LATCH_AT)
     })
-    expect(document.querySelector('.chest-rattle-3')).not.toBeNull()
+    expect(reelPhase()).toBe('power')
+    expect(document.querySelector('.chest-crate-away')).not.toBeNull()
+
+    act(() => {
+      vi.advanceTimersByTime(CHEST_SPIN_AT - CHEST_POWER_AT)
+    })
+    expect(reelPhase()).toBe('spinning')
+    expect(document.querySelector('.chest-object')).toBeNull()
+
+    act(() => {
+      vi.advanceTimersByTime(CHEST_LANDED_AT - CHEST_SPIN_AT)
+    })
+    expect(reelPhase()).toBe('landed')
+    // Stopped on the card, and still nothing said.
+    expect(screen.queryByText('14 of a possible 20')).toBeNull()
+  })
+
+  it('stops the reel on the card the opening drew (CHST-16)', () => {
+    asksFor(false)
+    vi.useFakeTimers()
+    setup()
+
+    fireEvent.click(lid())
+    act(() => {
+      vi.advanceTimersByTime(CHEST_LANDED_AT + 10)
+    })
+
+    const winner = document.querySelector('[data-reel-winner]')
+    expect(winner?.textContent).toBe('+14')
+
+    const strip = document.querySelector<HTMLElement>('.chest-reel')
+    const cards = document.querySelectorAll('.chest-reel-slot')
+    const stopsAt = Number(strip?.style.getPropertyValue('--reel-to'))
+    expect(cards[Math.floor(stopsAt)]).toBe(winner)
+  })
+
+  it('flicks the marker each time a card crosses it', () => {
+    asksFor(false)
+    vi.useFakeTimers()
+    setup()
+
+    fireEvent.click(lid())
+    act(() => {
+      vi.advanceTimersByTime(CHEST_SPIN_AT + 200)
+    })
+
+    expect(document.querySelector('.chest-marker-tick')).not.toBeNull()
   })
 
   it('opens at once, with no wait at all, where less motion is asked for (CHST-18)', async () => {
@@ -160,8 +213,8 @@ describe('opening it', () => {
 
     await userEvent.setup().click(lid())
 
-    expect(screen.getByText('A haul')).toBeTruthy()
-    expect(screen.getByText('+14')).toBeTruthy()
+    expect(screen.getByText('14 of a possible 20')).toBeTruthy()
+    expect(said().getByText('+14')).toBeTruthy()
   })
 
   it('throws nothing and flashes nothing where less motion is asked for (CHST-18)', async () => {
@@ -174,7 +227,7 @@ describe('opening it', () => {
     expect(document.querySelector('.chest-flash')).toBeNull()
   })
 
-  it('flashes, sends a ring out and throws what was inside as the lid goes (CHST-14)', () => {
+  it('flashes, sends a ring out and throws sparks as the card comes out (CHST-14)', () => {
     asksFor(false)
     vi.useFakeTimers()
     setup()
@@ -183,7 +236,7 @@ describe('opening it', () => {
     expect(document.querySelector('.chest-flash')).toBeNull()
 
     act(() => {
-      vi.advanceTimersByTime(CHEST_BURST_AT + 10)
+      vi.advanceTimersByTime(CHEST_REVEAL_AT + 10)
     })
 
     expect(document.querySelector('.chest-flash')).not.toBeNull()
@@ -208,7 +261,7 @@ describe('opening it', () => {
     expect(document.querySelector('.chest-flash')).toBeNull()
   })
 
-  it('squashes as it is pressed, trembles through the held beat, and lifts its lid (CHST-14)', () => {
+  it('squashes as it is pressed, and brings the card out of the screen once it has landed (CHST-14)', () => {
     asksFor(false)
     vi.useFakeTimers()
     setup()
@@ -217,15 +270,16 @@ describe('opening it', () => {
     expect(document.querySelector('.chest-press')).not.toBeNull()
 
     act(() => {
-      vi.advanceTimersByTime(1900)
+      vi.advanceTimersByTime(CHEST_SPIN_AT + 100)
     })
-    expect(document.querySelector('.chest-tremble')).not.toBeNull()
     expect(document.querySelector('.chest-vignette-on')).not.toBeNull()
+    expect(document.querySelector('.chest-spot')).toBeNull()
 
     act(() => {
-      vi.advanceTimersByTime(500)
+      vi.advanceTimersByTime(CHEST_REVEAL_AT - CHEST_SPIN_AT)
     })
-    expect(document.querySelector('.chest-lid')).not.toBeNull()
+    expect(document.querySelector('.chest-spot-arriving')).not.toBeNull()
+    expect(reelPhase()).toBe('off')
     expect(document.querySelector('.chest-vignette-on')).toBeNull()
   })
 
@@ -239,13 +293,23 @@ describe('opening it', () => {
     expect(document.querySelector('.chest-breathe')).toBeNull()
   })
 
-  it('stands open and glowing, with nothing flying, when coming back to one opened earlier', () => {
+  it('shows the card it gave, with nothing flying, when coming back to one opened earlier', () => {
     asksFor(false)
-    setup({ blocked: 'opened', openedPoints: 9, openedTier: 'handful', opening: null })
+    setup({ blocked: 'opened', openedPoints: 9, openedQuarter: 2, opening: null })
 
-    expect(document.querySelector('.chest-lid-still')).not.toBeNull()
-    expect(document.querySelector('.chest-lid')).toBeNull()
+    expect(document.querySelector('.chest-spot-still')?.textContent).toContain('+9')
+    expect(document.querySelector('.chest-spot-arriving')).toBeNull()
+    expect(document.querySelector('.chest-screen')).toBeNull()
     expect(document.querySelector('.chest-flash')).toBeNull()
+  })
+
+  it('shows a plain card where this device never saw which colour it was (CHST-24)', () => {
+    asksFor(false)
+    setup({ blocked: 'opened', openedPoints: 9, openedQuarter: null, opening: null })
+
+    const card = document.querySelector('.chest-spot-still .chest-card')
+    expect(card?.textContent).toContain('+9')
+    expect(card?.querySelectorAll('.chest-card-pip-on')).toHaveLength(0)
   })
 
   it('opens with Enter and with Space, the chest being a button', async () => {
@@ -271,14 +335,14 @@ describe('opening it', () => {
     expect(onOpen).toHaveBeenCalledTimes(1)
   })
 
-  it('takes no press until the show is over, the lid long gone but the coins still falling (CHST-16)', () => {
+  it('takes no press until the show is over, the card long out but the sparks still flying (CHST-16)', () => {
     asksFor(false)
     vi.useFakeTimers()
     const { onOpen } = setup()
 
     fireEvent.click(lid())
     let now = 0
-    for (const at of [CHEST_BURST_AT + 10, CHEST_COUNT_AT + 200, CHEST_SETTLED_AT - 50]) {
+    for (const at of [CHEST_REVEAL_AT + 10, CHEST_COUNT_AT + 200, CHEST_SETTLED_AT - 50]) {
       act(() => {
         vi.advanceTimersByTime(at - now)
       })
@@ -320,7 +384,7 @@ describe('opening it', () => {
     lid().focus()
     fireEvent.click(lid())
     act(() => {
-      vi.advanceTimersByTime(CHEST_BURST_AT + 10)
+      vi.advanceTimersByTime(CHEST_REVEAL_AT + 10)
     })
 
     expect(lid().hasAttribute('disabled')).toBe(false)

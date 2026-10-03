@@ -34,6 +34,14 @@ describe('completionSpan', () => {
     expect(completionSpan(task, ROLLING_SPANS, new Date(2026, 8, 20, 0, 1))).toBe('yesterday')
   })
 
+  it('counts a day in the first span reaching back to it, where a set leaves a span out (TASK-72)', () => {
+    const spans = ['today', 'last7Days', 'last30Days'] as const
+
+    expect(completionSpan(doneAt(new Date(2026, 8, 18, 23, 55)), spans, NOW)).toBe('last7Days')
+    expect(completionSpan(doneAt(new Date(2026, 8, 19, 0, 5)), spans, NOW)).toBe('today')
+    expect(completionSpan(doneAt(new Date(2026, 7, 20, 12, 0)), spans, NOW)).toBe('earlier')
+  })
+
   it('counts a completion stamped ahead of today as today’s', () => {
     expect(completionSpan(doneAt(new Date(2026, 8, 20, 12, 0)), ROLLING_SPANS, NOW)).toBe('today')
   })

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { createList, createTask, moveToList, setDueDate, toLocalDay } from '../core'
-import { oneListView, parentView, rootView, tagView, viewShowingTask } from './view'
+import { doneSpans, foldedSpans, historyScope, oneListView, parentView, rootView, tagView, viewShowingTask } from './view'
 
-/* Which view a task is gone to on, and which view is above which. TIME ids refer to
-   wiki/time-goals.md, UI ids to wiki/interface.md. */
+/* Which view a task is gone to on, which view is above which, and how each draws its
+   done tasks. TIME ids refer to wiki/time-goals.md, UI ids to wiki/interface.md, TASK
+   ids to wiki/tasks.md, STORE ids to wiki/storage.md. */
 
 const NOW = new Date(2026, 8, 16, 9, 0)
 const TODAY = toLocalDay(NOW)
@@ -78,5 +79,47 @@ describe('viewShowingTask', () => {
     const undated = createTask('someday', null, NOW)
 
     expect(viewShowingTask(undated, 'rewards', NOW, [])).toBe('today')
+  })
+})
+
+describe('doneSpans and foldedSpans', () => {
+  const work = oneListView('6f1b2c3d-0f3a-4a1b-9c2e-8d7f6a5b4c3d')
+
+  it('divides the done on Tasks by rolling windows, folding all but today\'s (TASK-56, TASK-73)', () => {
+    expect(doneSpans('tasks')).toEqual(['today', 'yesterday', 'last7Days', 'last30Days'])
+    expect(foldedSpans('tasks')).toEqual(['yesterday', 'last7Days', 'last30Days', 'earlier'])
+  })
+
+  it('shows a list\'s done work of today and folds the week\'s, the month\'s and earlier (TASK-72)', () => {
+    for (const view of ['inbox', work, tagView('work')] as const) {
+      expect(doneSpans(view)).toEqual(['today', 'last7Days', 'last30Days'])
+      expect(foldedSpans(view)).toEqual(['last7Days', 'last30Days', 'earlier'])
+    }
+  })
+
+  it('keeps one open run of done tasks on Today, Week and Month (TASK-69)', () => {
+    for (const view of ['today', 'week', 'month'] as const) {
+      expect(doneSpans(view)).toBeNull()
+      expect(foldedSpans(view)).toEqual([])
+    }
+  })
+})
+
+describe('historyScope', () => {
+  it('asks after every task on Tasks, and the tasks in no list for the Inbox (STORE-55)', () => {
+    expect(historyScope('tasks')).toEqual({ kind: 'all' })
+    expect(historyScope('inbox')).toEqual({ kind: 'list', listId: null })
+  })
+
+  it('asks after a list\'s tasks, and a tag\'s as the tag is kept (STORE-55)', () => {
+    expect(historyScope(oneListView('6f1b2c3d-0f3a-4a1b-9c2e-8d7f6a5b4c3d'))).toEqual({
+      kind: 'list',
+      listId: '6f1b2c3d-0f3a-4a1b-9c2e-8d7f6a5b4c3d',
+    })
+    expect(historyScope(tagView('work'), ['Errands', 'Work'])).toEqual({ kind: 'tag', tag: 'Work' })
+  })
+
+  it('asks nothing of a period\'s view, which folds no spans (STORE-55)', () => {
+    expect(historyScope('today')).toBeNull()
   })
 })

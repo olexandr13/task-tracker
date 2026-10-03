@@ -30,14 +30,15 @@ having to be a task first. The [Check-in](check-ins.md) asks for it at the top o
   anywhere in. Down and up pick one out and **Enter** takes it, as a press on one does; **Enter**
   with none picked out keeps what was typed. Either way the caret moves on to how long. Escape puts
   the list away.
-- **ACT-5** The hour a record goes under is said above the boxes — `Add to 14:00–15:00` — with
-  **‹** and **›** to step to the hour before or after, and pressing an hour in the day's list
-  (ACT-7) points the form at it too, bringing it into view with the caret in **What did you do?**.
-  It starts on the **hour just gone** while nothing is logged under it — what a check-in asks about
-  (CHECKIN-3) — and otherwise on the **hour under way**; on a day gone by, on its first hour meant to
-  be logged that is not (ACT-17); and opened from a check-in, on the hour it asked about (CHECKIN-4).
-  An hour that has **not started** cannot take a record: stepping to it, or adding under it, is
-  refused under the boxes, saying so.
+- **ACT-5** The hour a record goes under is the one **picked in the day's list** (ACT-7): pressing
+  an hour, or its **Log**, picks it out there, and brings the form into view with the caret in what
+  was done. There is no line above the boxes for it — the hour is picked out in the list, and named in
+  the empty box itself, `What did you do 14:00–15:00?`. The form starts on the **hour just gone**
+  while nothing is logged under it — what a check-in asks about (CHECKIN-3) — and otherwise on the
+  **hour under way**; on a day gone by, on its first hour meant to be logged that is not (ACT-17); and
+  opened from a check-in, on the hour it asked about (CHECKIN-4). An hour that has **not started** —
+  listed only because something was logged under it ahead of this device's clock — cannot take a
+  record: adding under it is refused under the boxes, saying so.
 - **ACT-6** How long is typed into the box beside it: a bare number is **minutes** (`15`), and
   `1h`, `1h 20m`, `1.5h` and `1:30` read as they are written (TIME-11). **Enter** there, or **Add**,
   logs it, and the boxes empty for the next record under the same hour. A record is a whole number of
@@ -53,7 +54,8 @@ having to be a task first. The [Check-in](check-ins.md) asks for it at the top o
   logged under it, so a record made at night is never hidden. The hour under way is marked **now**,
   and the hour the form is pointed at is picked out. Each hour lists its records in the order they
   were written down, each as what and how long — `Work 45m` — after a swatch of its activity's colour,
-  and ends with the hour's total.
+  and ends with the hour's total. A long day **scrolls inside its own box** rather than pushing the
+  page down, and the hour picked is kept in view in it, scrolled within the box alone.
 - **ACT-8** Each hour carries a **bar the hour long**: a full bar is the whole hour, each record a
   piece of it in its activity's colour (ACT-16), so a day read down the list shows at a glance which
   hours were full, which half-empty and which were what. More than an hour logged under one hour
@@ -61,11 +63,11 @@ having to be a task first. The [Check-in](check-ins.md) asks for it at the top o
 - **ACT-9** An hour meant to be logged with nothing under it says **not logged**, and a **Log**
   button beside it points the form at it (ACT-5). An hour picked that is not one of them says
   **nothing logged**.
-- **ACT-10** Pressing a record **changes it** in the form: the form says `Change` with the record's
-  hour, its boxes hold what the record says — how long written out, `45m` — and **Save**, Enter in
-  how long, keeps the change; **Cancel** or Escape leaves it as it was. The hour can be stepped while
-  changing it, moving the record to another hour of its day. A refusal is the same as when adding
-  (ACT-6).
+- **ACT-10** Pressing a record **changes it** in the form: a line over the boxes names it and its
+  hour — `Change “Work 45m” · 09:00–10:00` — and says **Press another hour to move it.**; the boxes hold
+  what the record says, how long written out, `45m`. Pressing another hour in the list while changing
+  it moves the record there, of the same day. **Save**, or Enter in how long, keeps the change;
+  **Cancel** or Escape leaves it as it was. A refusal is the same as when adding (ACT-6).
 - **ACT-11** A record's **×**, or **Delete** while changing it, takes it out of the log, with the
   few seconds' **Undo** a deleted task has (UI-38), naming it: `Deleted “Work 45m” at 10:00`.
 

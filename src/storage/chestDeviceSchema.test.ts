@@ -6,7 +6,7 @@ import { CHEST_DEVICE_SCHEMA_VERSION, readChestDevice, toStoredChestDevice } fro
 
 const GLOWING: ChestDeviceState = {
   sound: false,
-  lastOpen: { day: '2026-09-17', tier: 'haul' },
+  lastOpen: { day: '2026-09-17', quarter: 3 },
   noticedDay: '2026-09-17',
 }
 
@@ -19,7 +19,7 @@ describe('toStoredChestDevice (STORE-49)', () => {
     expect(toStoredChestDevice(GLOWING)).toEqual({
       version: CHEST_DEVICE_SCHEMA_VERSION,
       sound: false,
-      lastOpen: { day: '2026-09-17', tier: 'haul' },
+      lastOpen: { day: '2026-09-17', quarter: 3 },
       noticedDay: '2026-09-17',
     })
   })
@@ -42,6 +42,12 @@ describe('readChestDevice (STORE-49, STORE-24)', () => {
     expect(readChestDevice('chest')).toBeNull()
   })
 
+  it('upgrades a version 1 record: the noise and the notice kept, the old tier forgotten', () => {
+    const old = { version: 1, sound: false, lastOpen: { day: '2026-09-17', tier: 'haul' }, noticedDay: '2026-09-17' }
+
+    expect(readChestDevice(old)).toEqual({ sound: false, lastOpen: null, noticedDay: '2026-09-17' })
+  })
+
   it('reads a record with no noise in it as a device arriving', () => {
     expect(readChestDevice({ version: CHEST_DEVICE_SCHEMA_VERSION })).toEqual(CHEST_AT_REST)
   })
@@ -49,12 +55,12 @@ describe('readChestDevice (STORE-49, STORE-24)', () => {
   it('drops an opening or a day it cannot read, keeping the noise (STORE-7)', () => {
     const saved = { version: CHEST_DEVICE_SCHEMA_VERSION, sound: false }
 
-    expect(readChestDevice({ ...saved, lastOpen: { day: 'yesterday', tier: 'haul' } })).toEqual({
+    expect(readChestDevice({ ...saved, lastOpen: { day: 'yesterday', quarter: 3 } })).toEqual({
       sound: false,
       lastOpen: null,
       noticedDay: null,
     })
-    expect(readChestDevice({ ...saved, lastOpen: { day: '2026-09-17', tier: 'bonanza' } })).toEqual({
+    expect(readChestDevice({ ...saved, lastOpen: { day: '2026-09-17', quarter: 5 } })).toEqual({
       sound: false,
       lastOpen: null,
       noticedDay: null,

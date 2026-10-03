@@ -1,4 +1,4 @@
-import { CHEST_TIERS, isLocalDay, type ChestTier } from '../core'
+import { CHEST_QUARTERS, isLocalDay, type ChestQuarter } from '../core'
 import { CHEST_AT_REST, type ChestDeviceState } from './chestDeviceRepository'
 import { isRecord } from './plainData'
 
@@ -7,13 +7,18 @@ import { isRecord } from './plainData'
  * apart from the account's settings (./rewardSchema) and from everything
  * else's; bump it whenever the shape below changes and migrate on load
  * (STORE-5).
+ *
+ * 2: the last opening is remembered by which quarter of the jackpot it came to
+ * rather than by its tier, the tiers having gone. A version 1 record keeps its
+ * sound and its notice and forgets the opening — an old tier says nothing about
+ * a quarter, and the worst of forgetting is today's card shown in plain bone.
  */
-export const CHEST_DEVICE_SCHEMA_VERSION = 1
+export const CHEST_DEVICE_SCHEMA_VERSION = 2
 
 export interface StoredChestDevice {
   version: number
   sound: boolean
-  lastOpen: { day: string; tier: string } | null
+  lastOpen: { day: string; quarter: number } | null
   noticedDay: string | null
 }
 
@@ -29,7 +34,7 @@ export function toStoredChestDevice(state: ChestDeviceState): StoredChestDevice 
   return {
     version: CHEST_DEVICE_SCHEMA_VERSION,
     sound: state.sound,
-    lastOpen: state.lastOpen === null ? null : { day: state.lastOpen.day, tier: state.lastOpen.tier },
+    lastOpen: state.lastOpen === null ? null : { day: state.lastOpen.day, quarter: state.lastOpen.quarter },
     noticedDay: state.noticedDay,
   }
 }
@@ -39,14 +44,14 @@ function readDay(value: unknown): string | null {
 }
 
 /** An opening in today's shape, or null — one that cannot be read simply does not glow. */
-function readLastOpen(data: unknown): { day: string; tier: ChestTier } | null {
+function readLastOpen(data: unknown): { day: string; quarter: ChestQuarter } | null {
   if (!isRecord(data)) return null
 
   const day = readDay(data.day)
   if (day === null) return null
-  if (typeof data.tier !== 'string' || !(CHEST_TIERS as readonly string[]).includes(data.tier)) return null
+  if (typeof data.quarter !== 'number' || !(CHEST_QUARTERS as readonly number[]).includes(data.quarter)) return null
 
-  return { day, tier: data.tier as ChestTier }
+  return { day, quarter: data.quarter as ChestQuarter }
 }
 
 /**
@@ -56,12 +61,12 @@ function readLastOpen(data: unknown): { day: string; tier: ChestTier } | null {
  * notice said once more than it had to be.
  */
 export function readChestDevice(data: unknown): ChestDeviceState | null {
-  if (!isRecord(data) || data.version !== CHEST_DEVICE_SCHEMA_VERSION) return null
+  if (!isRecord(data) || (data.version !== CHEST_DEVICE_SCHEMA_VERSION && data.version !== 1)) return null
   if (typeof data.sound !== 'boolean') return CHEST_AT_REST
 
   return {
     sound: data.sound,
-    lastOpen: readLastOpen(data.lastOpen),
+    lastOpen: data.version === 1 ? null : readLastOpen(data.lastOpen),
     noticedDay: readDay(data.noticedDay),
   }
 }

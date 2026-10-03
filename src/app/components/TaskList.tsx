@@ -1,16 +1,21 @@
+import { useEffect, useEffectEvent, useId, useState, type ReactNode } from 'react'
 import {
   groupByCompletion,
   isComplete,
+  isSpanHeld,
+  spanStart,
   splitOverdue,
   type CompletionSpan,
   type CompletionSpans,
   type List,
+  type LocalDay,
   type Task,
   type TaskId,
 } from '../../core'
-import { COMPLETION_SPAN_LABELS, DONE_LABEL } from '../completionLabels'
+import { COMPLETION_SPAN_LABELS, DONE_LABEL, SPAN_EMPTY, SPAN_LOADING } from '../completionLabels'
 import { OVERDUE_LABEL } from '../dueLabels'
 import { CelebrateIcon } from './CelebrateIcon'
+import { ChevronIcon } from './ChevronIcon'
 import { SortableTasks } from './SortableTasks'
 import { TaskItem } from './TaskItem'
 import type { TaskActions } from '../taskActions'
@@ -24,9 +29,24 @@ const section = 'flex flex-col gap-1.5'
 
 const heading = 'flex items-baseline gap-2 px-1 text-xs font-medium'
 
+const doneHeading = `${heading} text-neutral-400 dark:text-neutral-500`
+
+const doneCount = 'font-normal text-neutral-300 tabular-nums dark:text-neutral-600'
+
+/** What an open span says in place of rows it is still loading, or does not have. */
+const spanNote = 'px-1 text-xs text-neutral-400 dark:text-neutral-500'
+
+/**
+ * A folded span's heading is a button the size of its words, padded out past
+ * them into the gaps around it so a finger finds it without the list moving.
+ */
+const foldButton =
+  '-my-1.5 flex items-center gap-2 rounded-md py-1.5 outline-offset-2 transition-colors hover:text-neutral-600 focus-visible:outline-2 focus-visible:outline-blue-500 dark:hover:text-neutral-300'
+
 /**
  * Older done work fades further back: yesterday still near full, last week and
- * last month progressively softer. Today and earlier stay at full strength.
+ * last month progressively softer. Today and earlier stay at full strength. A
+ * folded span fades its rows alone, its heading being what opens it (TASK-65).
  */
 function doneSpanClass(span: CompletionSpan): string {
   switch (span) {
@@ -39,6 +59,19 @@ function doneSpanClass(span: CompletionSpan): string {
     default:
       return ''
   }
+}
+
+/**
+ * The done work of a list that is not loaded yet (TASK-74): every task finished
+ * on or after `heldSince` is held, and a folded span starting before that day is
+ * loaded when it is opened.
+ */
+export interface ListHistory {
+  readonly heldSince: LocalDay
+  /** Whether the list is known to have work not loaded, or that is not known yet. */
+  readonly unheld: 'some' | 'unknown'
+  /** Asks for every task finished on or after `day`, or for all of them with null. */
+  readonly onReachBack: (day: LocalDay | null) => void
 }
 
 interface TaskListProps {
@@ -65,9 +98,17 @@ interface TaskListProps {
    * The spans the done tasks are divided into by when they were finished, each
    * under a heading, or null for one run of them under a plain **Done**. The tasks
    * are then given in that order too: to do, then done today, yesterday and so on
-   * (`groupByCompletion`).
+   * (`groupByCompletion`). Each is drawn open unless it is one of `foldedSpans`.
    */
   doneSpans?: CompletionSpans | null
+  /**
+   * The spans — `earlier` among them when it is — drawn folded away behind their
+   * headings, each until its heading is clicked (TASK-72, TASK-73). Folded, a
+   * heading still says how many it holds, once they are all held (TASK-74).
+   */
+  foldedSpans?: readonly CompletionSpan[]
+  /** The done work not loaded yet, or null when every task the list could show is (TASK-74). */
+  history?: ListHistory | null
   /** What an empty list says, pointing at the box above it. */
   emptyMessage: string
   /** What the list says above its tasks once every one of them is done. */
@@ -90,6 +131,8 @@ export function TaskList({
   focusId = null,
   dimAll = false,
   doneSpans = null,
+  foldedSpans = [],
+  history = null,
   emptyMessage,
   allDoneMessage,
   actions,
@@ -97,7 +140,14 @@ export function TaskList({
   revealId = null,
   onRevealed,
 }: TaskListProps) {
-  if (tasks.length === 0) {
+  /** Whether all of a folded span's tasks are held, so its count is how many it has. */
+  const isHeld = (span: CompletionSpan) => history === null || isSpanHeld(span, history.heldSince, now)
+
+  // A span still to load, in a list known to have work not loaded, may hold any
+  // of it: until it is opened, the list is not known to be empty.
+  const mayHoldMore = (span: CompletionSpan) => !isHeld(span) && history?.unheld === 'some'
+
+  if (tasks.length === 0 && !foldedSpans.some(mayHoldMore)) {
     return (
       <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">
         {emptyMessage}
@@ -179,12 +229,29 @@ export function TaskList({
 
   /**
    * The done work under its heading: a span of it, faded by how long ago it was
-   * finished, where the view divides it that way — otherwise all of it under a
-   * plain **Done**, so finished work reads as finished without the list being
-   * scanned row by row.
+   * finished or folded away, where the view divides it that way — otherwise all
+   * of it under a plain **Done**, so finished work reads as finished without the
+   * list being scanned row by row.
    */
   function doneRun(span: CompletionSpan, group: readonly Task[]) {
     const label = doneSpans !== null ? COMPLETION_SPAN_LABELS[span] : DONE_LABEL
+
+    if (foldedSpans.includes(span)) {
+      return (
+        <FoldedRun
+          key={span}
+          label={label}
+          size={group.length}
+          held={isHeld(span)}
+          shown={group.length > 0 || mayHoldMore(span)}
+          fade={doneSpanClass(span)}
+          holdsReveal={revealId !== null && group.some((task) => task.id === revealId)}
+          onReach={() => { history?.onReachBack(spanStart(span, now)) }}
+        >
+          {group.map((task) => row(task))}
+        </FoldedRun>
+      )
+    }
 
     return (
       <section
@@ -192,9 +259,9 @@ export function TaskList({
         aria-label={label}
         className={[section, doneSpanClass(span)].filter(Boolean).join(' ')}
       >
-        <h2 className={`${heading} text-neutral-400 dark:text-neutral-500`}>
+        <h2 className={doneHeading}>
           {label}
-          <span className="font-normal text-neutral-300 tabular-nums dark:text-neutral-600">{group.length}</span>
+          <span className={doneCount}>{group.length}</span>
         </h2>
         <ul className={rows}>{group.map((task) => row(task))}</ul>
       </section>
@@ -207,6 +274,14 @@ export function TaskList({
    * whatever no span does, so no spans leaves every done task in it).
    */
   const groups = headRuns ? groupByCompletion(tasks, doneSpans ?? [], now) : [{ span: null, tasks }]
+
+  /**
+   * The runs in the order they are drawn. A folded span is drawn whether or not
+   * it holds anything — it draws nothing while it has nothing to show — so one
+   * opened as it loads keeps its place, and stays open, whatever it turns out to hold.
+   */
+  const runs: (CompletionSpan | null)[] = headRuns ? [null, ...(doneSpans ?? []), 'earlier'] : [null]
+  const groupOf = (span: CompletionSpan | null) => groups.find((group) => group.span === span)?.tasks ?? []
 
   return (
     <>
@@ -221,9 +296,87 @@ export function TaskList({
       )}
       <div className="flex flex-col gap-3">
         <SortableTasks tasks={tasks}>
-          {groups.map(({ span, tasks: group }) => (span === null ? todoRun(group) : doneRun(span, group)))}
+          {runs.map((span) => {
+            const group = groupOf(span)
+            if (span === null) return group.length > 0 ? todoRun(group) : null
+            return group.length > 0 || foldedSpans.includes(span) ? doneRun(span, group) : null
+          })}
         </SortableTasks>
       </div>
     </>
+  )
+}
+
+interface FoldedRunProps {
+  label: string
+  /** How many of its tasks are held. */
+  size: number
+  /** Whether every task it could hold is, so `size` is how many it has. */
+  held: boolean
+  /** Whether it is drawn while folded: it holds something, or may. */
+  shown: boolean
+  /** How far its rows fade once open (TASK-65). */
+  fade: string
+  /** Whether the task being gone to (TIME-20) is in it, which opens it. */
+  holdsReveal: boolean
+  /** Asks for the rest of its tasks, once it is open with some still to load (TASK-74). */
+  onReach: () => void
+  /** Its rows, drawn only while it is open. */
+  children: ReactNode
+}
+
+/**
+ * A span of done work folded away behind its heading, which opens it and folds
+ * it again (TASK-72, TASK-73). It starts folded whenever it is drawn afresh —
+ * coming back to the view — so how much is shown is the view's to say, not
+ * whatever was opened last time. Opened with tasks still to load, it asks for
+ * them and says it is loading; its count waits until they are all there, since
+ * a count of some of them would be wrong (TASK-74).
+ */
+function FoldedRun({ label, size, held, shown, fade, holdsReveal, onReach, children }: FoldedRunProps) {
+  const [open, setOpen] = useState(false)
+  const rowsId = useId()
+
+  // The task being gone to is in here, so its row has to be there to bring up.
+  // Opened for good rather than while the reveal lasts, or the row would fold
+  // away again the moment it had been brought up. Adjusted while rendering,
+  // which React redoes at once.
+  if (holdsReveal && !open) setOpen(true)
+
+  // Asking again for what is on its way asks nothing, so this can ask each time
+  // the span is open and not all there.
+  const reach = useEffectEvent(onReach)
+  useEffect(() => {
+    if (open && !held) reach()
+  }, [open, held])
+
+  if (!open && !shown) return null
+
+  return (
+    <section aria-label={label} className={section}>
+      <h2 className={doneHeading}>
+        <button
+          type="button"
+          onClick={() => { setOpen(!open) }}
+          aria-expanded={open}
+          aria-controls={open ? rowsId : undefined}
+          className={foldButton}
+        >
+          {label}
+          {held && <span className={doneCount}>{size}</span>}
+          <ChevronIcon className={`size-3.5 shrink-0 transition-transform ${open ? '' : '-rotate-90'}`} />
+        </button>
+      </h2>
+      {open && (
+        <div id={rowsId} className={section}>
+          {size > 0 && <ul className={[rows, fade].filter(Boolean).join(' ')}>{children}</ul>}
+          {!held ? (
+            <p role="status" className={spanNote}>{SPAN_LOADING}</p>
+          ) : size === 0 ? (
+            <p className={spanNote}>{SPAN_EMPTY}</p>
+          ) : null}
+        </div>
+      )}
+    </section>
   )
 }

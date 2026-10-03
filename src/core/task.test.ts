@@ -15,6 +15,7 @@ import {
   createTask,
   deleteTask,
   duplicateTask,
+  forgetRestsAhead,
   isComplete,
   isDeleted,
   hasDescription,
@@ -315,6 +316,62 @@ describe('setRepeat', () => {
     setRepeat(task, DAILY, MON_14)
 
     expect(task.repeat).toBeNull()
+  })
+
+  it('lets go of the skips ahead of a rule made daily, a habit resting today and no further (HAB-33)', () => {
+    // Skipped this Monday and the next two, then made daily on the Tuesday.
+    const skipped = { ...createTask('review', MONDAYS, MON_14), skippedDays: ['2026-09-14', '2026-09-21', '2026-09-28'] }
+
+    expect(setRepeat(skipped, DAILY, TUE_15).skippedDays).toEqual(['2026-09-14'])
+  })
+
+  it('keeps the skips ahead of a rule that still has gaps, with further days to pass over (RPT-35)', () => {
+    const skipped = { ...createTask('review', MONDAYS, MON_14), skippedDays: ['2026-09-21', '2026-09-28'] }
+
+    expect(setRepeat(skipped, { kind: 'weekly', weekdays: [1, 3] }, TUE_15).skippedDays).toEqual([
+      '2026-09-21',
+      '2026-09-28',
+    ])
+  })
+})
+
+describe('forgetRestsAhead', () => {
+  function rested(repeat: Repeat, skippedDays: string[]) {
+    return { ...createTask('stretch', repeat, MON_14), skippedDays }
+  }
+
+  it('lets go of a habit’s rests for days still to come, keeping today and the days gone by (HAB-33)', () => {
+    const habit = rested(DAILY, ['2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17'])
+
+    expect(forgetRestsAhead(habit, TUE_15).skippedDays).toEqual(['2026-09-14', '2026-09-15'])
+  })
+
+  it('reads a weekly rule on all seven days as the habit it is (HAB-1)', () => {
+    const habit = rested({ kind: 'weekly', weekdays: [0, 1, 2, 3, 4, 5, 6] }, ['2026-09-15', '2026-09-16'])
+
+    expect(forgetRestsAhead(habit, TUE_15).skippedDays).toEqual(['2026-09-15'])
+  })
+
+  it('leaves a rule with gaps every skip ahead, and a one-off whatever it kept (RPT-35)', () => {
+    const weekly = rested(MONDAYS, ['2026-09-21', '2026-09-28'])
+    // A habit whose rule was dropped, keeping what it held while it repeated.
+    const once = { ...rested(DAILY, ['2026-09-16']), repeat: null }
+
+    expect(forgetRestsAhead(weekly, TUE_15)).toBe(weekly)
+    expect(forgetRestsAhead(once, TUE_15)).toBe(once)
+  })
+
+  it('hands back the task itself when it holds no rest ahead', () => {
+    const habit = rested(DAILY, ['2026-09-14', '2026-09-15'])
+
+    expect(forgetRestsAhead(habit, TUE_15)).toBe(habit)
+  })
+
+  it('never touches the task it was given', () => {
+    const habit = rested(DAILY, ['2026-09-15', '2026-09-16'])
+    forgetRestsAhead(habit, TUE_15)
+
+    expect(habit.skippedDays).toEqual(['2026-09-15', '2026-09-16'])
   })
 })
 

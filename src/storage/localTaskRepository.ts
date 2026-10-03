@@ -22,12 +22,14 @@ const collection = createLocalCollection<Task>({
 
 /**
  * The guest's tasks in this browser. Same shape as the account's, same schema,
- * never leaves the device.
+ * never leaves the device — so every one of them is held from the start, with
+ * nothing to fetch and no history left behind (STORE-55).
  */
 export function createLocalTaskRepository(): TaskRepository {
   return {
-    subscribe(onTasks, onError) {
-      return collection.subscribe(onTasks, onError)
+    subscribe(_start, onTasks, onError) {
+      const stop = collection.subscribe((tasks) => { onTasks(tasks, null) }, onError)
+      return { reachBack() {}, unheld: () => Promise.resolve(0), stop }
     },
 
     async save({ saved, removed }) {

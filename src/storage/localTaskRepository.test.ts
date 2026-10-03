@@ -22,7 +22,7 @@ describe('createLocalTaskRepository', () => {
 
     const second = createLocalTaskRepository()
     const seen: Task[][] = []
-    second.subscribe((tasks) => {
+    second.subscribe('2026-01-01', (tasks) => {
       seen.push(tasks)
     }, () => {})
 
@@ -39,7 +39,7 @@ describe('createLocalTaskRepository', () => {
 
     const repository = createLocalTaskRepository()
     const seen: Task[][] = []
-    repository.subscribe((tasks) => {
+    repository.subscribe('2026-01-01', (tasks) => {
       seen.push(tasks)
     }, () => {})
 
@@ -77,7 +77,7 @@ describe('createLocalTaskRepository', () => {
   it('notifies subscribers when another tab writes (STORE-37)', async () => {
     const repository = createLocalTaskRepository()
     const seen: Task[][] = []
-    repository.subscribe((tasks) => {
+    repository.subscribe('2026-01-01', (tasks) => {
       seen.push(tasks)
     }, () => {})
 

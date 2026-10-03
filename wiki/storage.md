@@ -30,6 +30,16 @@ changes shape.
   offline are kept in it — through a refresh or a closed app — and sent once there is a connection.
   Every open tab shares that copy. The app itself is kept for offline too (OFF-1); see
   [Offline](offline.md).
+- **STORE-55** Opening the app does **not load every task**. Left behind is **history**: a task that
+  happens once, is done, is not in the trash, and was finished — and is due, if at all — before
+  this week or this month began, whichever began first. Nothing on screen counts it: every list,
+  bar and bonus is today's, this week's or this month's. So what is downloaded as the app opens is
+  the work in play, not everything ever done. History is loaded a stretch of days at a time, as a
+  span of done work reaching back to it is opened (TASK-74), and stays loaded until a reload; how
+  many tasks a view has is asked of the server without loading them. Deleting or renaming a tag
+  loads all of it first (TAG-22, TAG-24). Time logged on a history task, after it was finished,
+  counts on the Balance page once that task is loaded (BAL-3). A guest's tasks are all in the
+  browser, so all of them are loaded.
 
 ## Points
 
@@ -57,10 +67,12 @@ changes shape.
   write the one record. No record at all is nothing set, and the points are counted in points alone.
   It is kept under the ledger's version (STORE-24) and ignored, with a warning, when it cannot be
   read.
-- **STORE-48** What the **chest** asks of a day and what its key plays for (CHST-3, CHST-7) is kept
-  beside what a point is worth, as **one more record of the settings**, named for itself for the
-  same reason (STORE-42). No record at all is what an account starts with — any cleared day earns a
-  key, playing for today's best task — so there is no shape for "not set" to be told from. It is
+- **STORE-48** What the **chest** asks of a day (CHST-3) is kept beside what a point is worth, as
+  **one more record of the settings**, named for itself for the same reason (STORE-42). No record at
+  all is what an account starts with — any cleared day earns a key — so there is no shape for "not
+  set" to be told from. A record saved while the jackpot could be worked out two ways also says
+  which way; there is no choice any more (CHST-7), so that is read past rather than refused, and
+  dropped on the next save. It is
   kept under the ledger's version (STORE-24) and ignored, with a warning, when it cannot be read,
   which leaves the chest asking what it asks by default rather than asking nothing. It is **in the
   backup**, taken only by an account that has none of its own, as the bonuses and the point value
@@ -251,14 +263,16 @@ changes shape.
   from the browser, as the tasks from before there were accounts are (STORE-19) — so a nudge turned
   on here stays on.
 - **STORE-49** What the **chest** keeps here — whether it makes a noise on this device, which
-  opening it is still glowing from, and whether it has already said here that a key is waiting
-  (CHST-19, CHST-23, CHST-24) — is kept the same way again, under a version of its own, apart from
+  opening it is still glowing from (by which quarter of the jackpot it came to), and whether it has
+  already said here that a key is waiting (CHST-19, CHST-23, CHST-24) — is kept the same way again,
+  under a version of its own, apart from
   what the chest asks of a day, which is the account's (STORE-48). The three are what only the
   device can answer: the room you are in is not the account you are in; a notice given on the laptop
   is no reason to withhold it on the phone; and the ledger says what today's chest gave without
   saying which colour it gave it in. A chest standing exactly as it arrives — a noise, nothing
   opened, nothing said — keeps **no record at all**, and one the app cannot read is read as a chest
-  arriving, the worst of it being one noise and one notice more than was wanted.
+  arriving, the worst of it being one noise and one notice more than was wanted. A record from before
+  the quarters, which named a tier instead, keeps its noise and its notice and forgets the opening.
 - **STORE-54** What the **check-in** keeps here — the notice put away on this device (CHECKIN-4),
   the id this device's registration is kept under, and whether this device is reached while the app
   is closed (CHECKIN-11) — is kept the same way again, under a version of its own, apart from the
@@ -342,7 +356,8 @@ changes shape.
 **Where it lives:** `src/storage/accountStorage.ts` (which service keeps an account's data, and
 moving what the browser kept into it), `deviceStorage.ts` and `localStorageSetting.ts` (what is kept
 on the device alone), `src/storage/taskRepository.ts` (the interface), `recordChanges.ts` (what a
-change comes to, record by record), `firestoreRecords.ts` (one document per record),
+change comes to, record by record), `firestoreRecords.ts` (one document per record), `taskQueries.ts` and `heldTasks.ts` (what is
+loaded of the tasks, asked in parts and put together),
 `firestoreTaskRepository.ts` (the account's tasks), `localTaskRepository.ts` (the guest's),
 `firebaseApp.ts` (the database and its offline
 copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgrades), `localTaskImport.ts` (tasks kept in the browser before accounts),
@@ -378,6 +393,7 @@ reads it too, before the page is drawn), `src/app/useTasks.ts`, `src/app/useList
 STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/StorageProblemNotice.tsx`
 (saying what was refused). Who may read what: `firestore.rules`.
 **Tested in:** `src/storage/taskRepository.test.ts` (what a change writes),
+`src/storage/taskQueries.test.ts` and `src/storage/heldTasks.test.ts` (what is loaded of the tasks),
 `src/app/useTasks.test.ts` and `src/app/useLists.test.ts` (changes made in one go, and refusals),
 `src/app/useRewards.test.ts`, `src/app/storageProblem.test.ts` and
 `src/app/components/StorageProblemNotice.test.tsx` (what is said when the service refuses),

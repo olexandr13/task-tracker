@@ -8,8 +8,10 @@ import {
   deleteTag,
   deleteTask,
   duplicateTask,
+  forgetRestsAhead,
   hasRewardChanges,
   hasDueDay,
+  historyStart,
   insertSubtask,
   insertTask,
   isDeleted,
@@ -60,7 +62,7 @@ import {
 } from '../core'
 import type { RewardRepository } from '../storage/rewardRepository'
 import { changesBetween, hasChanges } from '../storage/recordChanges'
-import type { TaskChanges, TaskRepository } from '../storage/taskRepository'
+import type { TaskChanges, TaskRepository, TaskScope, TaskSubscription } from '../storage/taskRepository'
 import { ignoreProblems, type ReportProblem } from './storageProblem'
 
 function persist(repository: TaskRepository, changes: TaskChanges, onProblem: ReportProblem): void {
@@ -113,15 +115,28 @@ export function useTasks(
   // in one go — a title and a description kept together — each build on the one
   // before instead of the second quietly putting back what the first changed.
   const latest = useRef<Task[]>([])
+  // The day from which every finished task is held, null once every task is, and
+  // undefined until the tasks have loaded (STORE-55) — as state for the screen, and
+  // as it stands this moment for `everywhere`.
+  const [heldSince, setHeldSince] = useState<LocalDay | null | undefined>(undefined)
+  const held = useRef<LocalDay | null | undefined>(undefined)
+  const subscription = useRef<TaskSubscription | null>(null)
+  // What `everywhere` was asked to do once every task is held.
+  const waiting = useRef<(() => void)[]>([])
 
   useEffect(() => {
-    return repository.subscribe(
-      (saved) => {
+    const opened = repository.subscribe(
+      historyStart(new Date()),
+      (saved, since) => {
         // Anything whose time in the trash ran out, while the app was closed or on
-        // another device, goes now, and is written back so storage stops carrying it.
-        const kept = purgeExpired(saved)
+        // another device, goes now, and so does a habit's rest for a day still to
+        // come (HAB-33); both are written back so storage stops carrying them.
+        const now = new Date()
+        const kept = purgeExpired(saved, now).map((task) => forgetRestsAhead(task, now))
         latest.current = kept
+        held.current = since
         setTasks(kept)
+        setHeldSince(since)
         setStatus('loaded')
         persist(repository, changesBetween(saved, kept), onProblem)
       },
@@ -131,7 +146,49 @@ export function useTasks(
         onProblem('load')
       },
     )
+    subscription.current = opened
+
+    return () => {
+      opened.stop()
+      subscription.current = null
+      waiting.current = []
+    }
   }, [repository, onProblem])
+
+  // Every task is held at last: what was waiting on that goes now.
+  useEffect(() => {
+    if (heldSince !== null || waiting.current.length === 0) return
+
+    const actions = waiting.current
+    waiting.current = []
+    for (const action of actions) action()
+  }, [heldSince])
+
+  /** Holds history too, from `day` on or all of it with null (STORE-55); asking twice asks once. */
+  const reachBack = useCallback((day: LocalDay | null) => {
+    subscription.current?.reachBack(day)
+  }, [])
+
+  /** How many tasks in `scope` are not held, as the server counts them, or null when it cannot be asked. */
+  const unheld = useCallback(
+    (scope: TaskScope): Promise<number | null> => subscription.current?.unheld(scope) ?? Promise.resolve(null),
+    [],
+  )
+
+  /**
+   * Runs `action` once every task is held: at once when it is, or else once the
+   * history, asked for here, has arrived. A change that has to reach every task —
+   * a tag deleted or renamed (TAG-22, TAG-24) — goes through this, or the history
+   * would go on carrying what was changed away, and bring it back when loaded.
+   */
+  const everywhere = useCallback((action: () => void) => {
+    if (held.current === null) {
+      action()
+      return
+    }
+    waiting.current.push(action)
+    subscription.current?.reachBack(null)
+  }, [])
 
   const apply = useCallback(
     (change: (current: Task[]) => Task[]) => {
@@ -370,7 +427,10 @@ export function useTasks(
     [apply],
   )
 
-  /** Deletes a tag: off every task that carries it, the tasks themselves staying. */
+  /**
+   * Deletes a tag: off every task held that carries it, the tasks themselves
+   * staying. Every task, once asked for through `everywhere`.
+   */
   const removeTagEverywhere = useCallback(
     (name: string) => {
       apply((current) => deleteTag(current, name))
@@ -378,7 +438,10 @@ export function useTasks(
     [apply],
   )
 
-  /** Renames a tag on every task that carries it, the tasks themselves staying (TAG-24). */
+  /**
+   * Renames a tag on every task held that carries it, the tasks themselves
+   * staying (TAG-24). Every task, once asked for through `everywhere`.
+   */
   const renameTagEverywhere = useCallback(
     (from: string, to: string) => {
       apply((current) => renameTag(current, from, to))
@@ -503,6 +566,11 @@ export function useTasks(
 
   return {
     tasks,
+    /** The day from which every finished task is held, or null once every task is (STORE-55). */
+    heldSince: heldSince ?? null,
+    reachBack,
+    unheld,
+    everywhere,
     isLoading: status === 'loading',
     /** The repository refused to read the tasks: an empty list then is not an empty account. */
     loadFailed: status === 'failed',

@@ -13,6 +13,7 @@ const AUG_20 = new Date(2026, 7, 20, 12, 0)
 
 const DAILY: Repeat = { kind: 'daily' }
 const MONDAYS: Repeat = { kind: 'weekly', weekdays: [1] }
+const FRIDAYS: Repeat = { kind: 'weekly', weekdays: [5] }
 const ON_THE_20TH: Repeat = { kind: 'monthly', day: 20 }
 
 function task(repeat: Repeat | null, completedAt: Date | null = null): Task {
@@ -55,7 +56,7 @@ describe('periodRange', () => {
 
 describe('summarize, which tasks a period counts', () => {
   it('counts a repeating task in every period one of its occurrences falls in', () => {
-    const tasks = [task(MONDAYS)]
+    const tasks = [task(FRIDAYS)]
 
     expect(summarize(tasks, 'today', TUE_15).total).toBe(0)
     expect(summarize(tasks, 'week', TUE_15).total).toBe(1)
@@ -129,6 +130,47 @@ describe('summarize, a task that happens once on a given day', () => {
     const doneToday = [dueOn('2026-10-02', TUE_15_EVENING)]
 
     expect(summarize(doneToday, 'today', TUE_15_EVENING)).toMatchObject({ completed: 1, total: 1 })
+  })
+})
+
+describe('summarize, a repeating task whose day went by undone', () => {
+  it('stays in every later period while it is still to do, as Today shows it under Overdue (LIST-2)', () => {
+    // Written on the Monday it was due, and not done that day.
+    const missed = [task(MONDAYS)]
+
+    expect(summarize(missed, 'today', TUE_15)).toMatchObject({ completed: 0, total: 1 })
+    expect(summarize(missed, 'week', TUE_15)).toMatchObject({ completed: 0, total: 1 })
+  })
+
+  it('stays counted past the turn of the month too', () => {
+    const missedInAugust = [createTask('a task', ON_THE_20TH, AUG_20)]
+
+    expect(summarize(missedInAugust, 'today', TUE_15)).toMatchObject({ completed: 0, total: 1 })
+  })
+
+  it('counts as done once ticked off, without adding to the total', () => {
+    const late = [completeTask(task(MONDAYS), TUE_15_EVENING)]
+
+    expect(summarize(late, 'today', TUE_15_EVENING)).toMatchObject({ completed: 1, total: 1 })
+  })
+
+  it('asks nothing of the days after it once it was done on its day', () => {
+    const onTime = [task(MONDAYS, MON_14_EVENING)]
+
+    expect(summarize(onTime, 'today', TUE_15).total).toBe(0)
+  })
+
+  it('asks nothing of the days after an occurrence passed over (RPT-34)', () => {
+    const skipped = [skipOccurrence(task(MONDAYS), TUE_15)]
+
+    expect(summarize(skipped, 'today', TUE_15).total).toBe(0)
+  })
+
+  it('asks nothing for a day from before the task was written', () => {
+    // A Monday task thought of on Tuesday is next due on Monday, not overdue.
+    const writtenTuesday = [createTask('a task', MONDAYS, TUE_15)]
+
+    expect(summarize(writtenTuesday, 'today', TUE_15).total).toBe(0)
   })
 })
 

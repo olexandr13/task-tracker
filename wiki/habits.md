@@ -187,16 +187,26 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   with gaps in it does have a further occurrence to pass over. The ways back from a rest stay where
   they were: the foot's **Skipped** (HAB-31), and picking today again (DUE-26). A habit whose rule
   has yet to start (DUE-18) offers no skip either — nothing is asked of it today to rest from.
+- **HAB-33** **A habit keeps no rest for a day still to come.** Before HAB-32, skipping a habit again
+  stored a rest for tomorrow, and the day after on the next press. A phone left open on an older
+  version could still do it. A weekly task skipped ahead and then made daily carries its skips over
+  too. Such a rest stays out of sight until its day: the grid draws nothing after today, and a day
+  ticked anyway reads as done (RPT-36). The first day left unticked would show it as a rest nobody
+  took. So whenever the tasks arrive (on load, or changed elsewhere) a habit's rests after today
+  are dropped and saved back, the way expired tasks are (STORE-10). Giving a task a daily rule drops
+  them as well. Rests for today and earlier stay as they are. A task that is not a habit keeps
+  every skip, since its rule has further occurrences to pass over (RPT-35). "Today" means this
+  device's today (PRIN-1).
 
 ---
 
 **Where it lives:** `src/core/habit.ts` (what a habit is, streaks, rates, the weeks, the last days, `setDoneOnDay`,
 `moveToEndOfHabits`),
-`src/core/task.ts` (`doneDays`, kept in step by `settleHistory`), `src/app/components/HabitList.tsx`
+`src/core/task.ts` (`doneDays`, kept in step by `settleHistory`; `forgetRestsAhead`, HAB-33), `src/app/components/HabitList.tsx`
 (the page and its cards, and a timed habit's clock — see [Time goals](time-goals.md)), `src/app/components/HabitGrid.tsx`, `src/app/components/ChevronIcon.tsx`, `src/app/components/MoreVerticalIcon.tsx`, `src/app/components/TaskSheet.tsx` (editing a habit), `src/app/habitLabels.ts` (wording),
 `src/app/habitTones.ts` (the shades), `src/app/components/FlameIcon.tsx`, `src/app/components/SkipIcon.tsx`,
 `src/core/due.ts` (`isSkippedToday`, `unskipToday`), `src/app/useTasks.ts`
-(`setHabitDay`, `unskip`, and `changeRepeat` putting a task taken on at the end), `src/app/components/AddTaskForm.tsx` (the add box), `src/app/components/AddTaskSheet.tsx` (the detailed
+(`setHabitDay`, `unskip`, `changeRepeat` putting a task taken on at the end, and rests ahead dropped as the tasks arrive), `src/app/components/AddTaskForm.tsx` (the add box), `src/app/components/AddTaskSheet.tsx` (the detailed
 sheet, starting daily), `src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`H` opens it),
 `src/app/components/ViewSettingsCard.tsx` and `src/app/useDeviceSetting.ts`
 (the switch under Settings' View settings, and keeping whether cards start folded on this device), `src/core/order.ts` (`moveTask`, the order itself),

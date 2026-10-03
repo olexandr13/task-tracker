@@ -1,268 +1,237 @@
 import { useId } from 'react'
-import { CHEST_LAMPLIGHT } from '../chestTones'
 
-/** Where the chest is in the opening (CHST-14). */
-export type ChestState = 'shut' | 'pressed' | 'rattling' | 'seam' | 'held' | 'open'
-
-/**
- * The shafts of light out of an open chest: an angle each, a width and a
- * reach, uneven on purpose — light through a gap is never a fan of equal spokes.
- */
-const RAYS: readonly { readonly angle: number; readonly width: number; readonly reach: number }[] = [
-  { angle: -74, width: 5, reach: 104 },
-  { angle: -52, width: 8, reach: 120 },
-  { angle: -33, width: 4, reach: 112 },
-  { angle: -16, width: 9, reach: 128 },
-  { angle: 0, width: 6, reach: 132 },
-  { angle: 14, width: 10, reach: 124 },
-  { angle: 31, width: 4, reach: 116 },
-  { angle: 50, width: 8, reach: 122 },
-  { angle: 71, width: 5, reach: 106 },
-]
-
-/** Where the light comes from: the middle of the chest's mouth. */
-const MOUTH = { x: 100, y: 106 }
-
-/** One shaft as a triangle out of the mouth, its tip as wide as the shaft. */
-function rayPoints({ angle, width, reach }: (typeof RAYS)[number]): string {
-  const radians = (degrees: number) => (degrees * Math.PI) / 180
-  const tip = (degrees: number) =>
-    `${(MOUTH.x + Math.sin(radians(degrees)) * reach).toFixed(1)},${(MOUTH.y - Math.cos(radians(degrees)) * reach).toFixed(1)}`
-  return `${String(MOUTH.x)},${String(MOUTH.y)} ${tip(angle - width / 2)} ${tip(angle + width / 2)}`
-}
-
-/** Where the bands of iron run down the chest, front left and front right. */
-const STRAPS = [52, 136]
+/** Where the crate is in the opening (CHST-14): pressed, the dial turning, the latches gone. */
+export type CrateState = 'shut' | 'pressed' | 'unlocking' | 'unlatched'
 
 interface ChestArtProps {
-  state: ChestState
-  /** The colour the light comes out in, or null while it is still plain lamplight. */
-  light: string | null
-  /** A key is waiting: the chest breathes, and a glint runs over its lid (CHST-13). */
+  state: CrateState
+  /** A key is waiting: the crate breathes, its lamp glows, a glint runs over its lid (CHST-13). */
   inviting?: boolean
-  /** Open already, as it is when coming back to a chest opened earlier: no lid flying. */
-  still?: boolean
-  /** The jackpot's light runs through every colour rather than holding one. */
-  rainbow?: boolean
-  /** Which of the three rattles is shaking it, or -1 for none. */
-  rattle?: number
+  /** A press with no key behind it: the dial jerks and the lamp blinks red (CHST-17). */
+  refused?: boolean
 }
 
-/** Each rattle harder than the one before, and the shadow under each hop. */
-const RATTLES = ['chest-rattle-1', 'chest-rattle-2', 'chest-rattle-3']
-const HOPS = ['chest-hop-1', 'chest-hop-2', 'chest-hop-3']
+/** The notches round the dial, every thirty degrees. */
+const NOTCHES = Array.from({ length: 12 }, (_, index) => index * 30)
+
+/** The rivets along the lid and the body, where the corner guards are held on. */
+const RIVETS: readonly (readonly [number, number])[] = [
+  [41, 65],
+  [159, 65],
+  [41, 151],
+  [159, 151],
+  [62, 65],
+  [138, 65],
+  [62, 151],
+  [138, 151],
+]
+
+/** Where the paint has chipped off the lid, down to the metal under it. */
+const CHIPS = [
+  'M36 76l3-2 1 4-3 3z',
+  'M151 59l6 1-2 3-5-1z',
+  'M163 84l2 5-3 1-1-4z',
+  'M74 60l5 0-2 2z',
+]
 
 /**
- * The chest itself, drawn rather than drawn from a file, as every glyph in the
- * app is — but as an object rather than an icon: wood that is lighter where the
- * light falls, iron bands with a sheen on them, a lock, and a mouth that is
- * dark until it is not.
+ * The crate itself — a supply crate from a world that ended in 1962 and kept
+ * its paint scheme: cream enamel over a teal body, gone at the corners, with a
+ * band of hazard stripes where the lid meets it, a latch at each side and a dial
+ * lock in the middle whose lamp is lit while a key is waiting.
  *
- * It is built in layers, back to front, because the opening is a matter of
- * which of them is moving: the **bloom** and the **shafts** behind the chest,
- * which are the light once it is out; the **chest**, which squashes, hops and
- * trembles as one; the **mouth** and its **core**, which are where the light
- * comes from; and the **lid**, which lifts clear on a spring and tips back. The
- * **seam** sits over all of it, screened rather than painted, because it is a
- * crack of light rather than a thing.
- *
- * The light takes the tier's colour, through `currentColor`, and is the only
- * thing in the whole opening that says how rich it turned out (CHST-15).
+ * Drawn rather than drawn from a file, as every glyph in the app is, and built
+ * in the layers the opening moves: the **dial**, which turns; the **latches**,
+ * which let go; the **lid**, which lifts a hair on the hiss; and the **seam**
+ * between, where light from inside shows once the latches are off. After that
+ * the crate drops away and the reel takes over (`ChestReel`), so nothing here
+ * ever says what is inside.
  */
-export function ChestArt({ state, light, inviting = false, still = false, rainbow = false, rattle = -1 }: ChestArtProps) {
-  // Gradients are named per chest, so two on one page never borrow each other's.
+export function ChestArt({ state, inviting = false, refused = false }: ChestArtProps) {
+  // Gradients are named per crate, so two on one page never borrow each other's.
   const id = useId().replace(/[^a-zA-Z0-9]/g, '')
   const ref = (name: string) => `url(#${name}${id})`
   const def = (name: string) => `${name}${id}`
 
-  const open = state === 'open'
-  const lit = state === 'seam' || state === 'held'
+  const loose = state === 'unlatched'
+  const waiting = inviting && state === 'shut'
 
-  const object = [
-    'chest-object',
-    rattle >= 0 && RATTLES[rattle],
-    state === 'pressed' && 'chest-press',
-    state === 'held' && 'chest-tremble',
-    open && !still && 'chest-recoil',
-    inviting && state === 'shut' && 'chest-breathe',
-  ]
+  const object = ['chest-object', state === 'pressed' && 'chest-press', state === 'unlocking' && 'chest-jolt', waiting && 'chest-breathe']
     .filter(Boolean)
     .join(' ')
 
+  const lamp = refused ? 'chest-lamp-refused' : state === 'unlocking' || loose ? 'chest-lamp-open' : waiting ? 'chest-lamp-waiting' : 'chest-lamp-idle'
+
   return (
-    <svg
-      viewBox="0 0 200 200"
-      fill="none"
-      aria-hidden="true"
-      className="size-full overflow-visible"
-      style={{ color: light ?? CHEST_LAMPLIGHT, transition: 'color 420ms ease' }}
-    >
+    <svg viewBox="16 26 168 152" fill="none" aria-hidden="true" className="size-full overflow-visible">
       <defs>
-        <linearGradient id={def('wood')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#a8652e" />
-          <stop offset="0.5" stopColor="#7d431a" />
-          <stop offset="1" stopColor="#4a240b" />
+        <linearGradient id={def('enamel')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#f3ead3" />
+          <stop offset="0.55" stopColor="#dccfad" />
+          <stop offset="1" stopColor="#b8a882" />
         </linearGradient>
-        <linearGradient id={def('lid')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#c9843f" />
-          <stop offset="0.6" stopColor="#9a5523" />
-          <stop offset="1" stopColor="#6f3a14" />
+        <linearGradient id={def('teal')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3a7d75" />
+          <stop offset="0.5" stopColor="#24564f" />
+          <stop offset="1" stopColor="#173a36" />
         </linearGradient>
-        <linearGradient id={def('band')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fff1b8" />
-          <stop offset="0.3" stopColor="#e8b950" />
-          <stop offset="0.7" stopColor="#a8701c" />
-          <stop offset="1" stopColor="#6a440c" />
+        <linearGradient id={def('metal')} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#8d949b" />
+          <stop offset="0.45" stopColor="#555b62" />
+          <stop offset="1" stopColor="#2a2e33" />
         </linearGradient>
-        <linearGradient id={def('strap')} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#7a5212" />
-          <stop offset="0.35" stopColor="#f4d27a" />
-          <stop offset="0.6" stopColor="#c48a26" />
-          <stop offset="1" stopColor="#5f3e0b" />
-        </linearGradient>
-        <linearGradient id={def('mouth')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#0d0603" />
-          <stop offset="1" stopColor="#2f170a" />
-        </linearGradient>
-        <linearGradient id={def('sheen')} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity="0.42" />
-          <stop offset="0.45" stopColor="#fff" stopOpacity="0.06" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0" />
+        <linearGradient id={def('chrome')} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#f4f5f6" />
+          <stop offset="0.45" stopColor="#a3a9b0" />
+          <stop offset="0.7" stopColor="#5d636a" />
+          <stop offset="1" stopColor="#c4c9ce" />
         </linearGradient>
         <linearGradient id={def('glint')} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="#fff" stopOpacity="0" />
-          <stop offset="0.5" stopColor="#fff" stopOpacity="0.75" />
+          <stop offset="0.5" stopColor="#fff" stopOpacity="0.7" />
           <stop offset="1" stopColor="#fff" stopOpacity="0" />
         </linearGradient>
-        <radialGradient id={def('bloom')} cx={MOUTH.x} cy={MOUTH.y - 8} r="104" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="currentColor" stopOpacity="0.95" />
-          <stop offset="0.3" stopColor="currentColor" stopOpacity="0.5" />
-          <stop offset="0.65" stopColor="currentColor" stopOpacity="0.14" />
-          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id={def('core')} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="#fff" />
-          <stop offset="0.35" stopColor="currentColor" />
-          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id={def('seam')} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="currentColor" stopOpacity="0" />
-          <stop offset="0.2" stopColor="currentColor" />
+        <linearGradient id={def('leak')} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#fff3d6" stopOpacity="0" />
+          <stop offset="0.2" stopColor="#ffe2a8" />
           <stop offset="0.5" stopColor="#fff" />
-          <stop offset="0.8" stopColor="currentColor" />
-          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+          <stop offset="0.8" stopColor="#ffe2a8" />
+          <stop offset="1" stopColor="#fff3d6" stopOpacity="0" />
         </linearGradient>
-        <radialGradient id={def('fade')} cx={MOUTH.x} cy={MOUTH.y} r="132" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#fff" stopOpacity="1" />
-          <stop offset="0.5" stopColor="#fff" stopOpacity="0.55" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0" />
-        </radialGradient>
-        <mask id={def('rays')} maskUnits="userSpaceOnUse" x="-40" y="-40" width="280" height="200">
-          <rect x="-40" y="-40" width="280" height="200" fill={ref('fade')} />
-        </mask>
-        <clipPath id={def('dome')}>
-          <path d="M36 106V91C36 75 60 67 100 67S164 75 164 91V106Z" />
+        <pattern id={def('hazard')} width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="skewX(-35)">
+          <rect width="12" height="12" fill="#1b1c1e" />
+          <rect width="6" height="12" fill="#e9a23b" />
+        </pattern>
+        <clipPath id={def('lidClip')}>
+          <path d="M34 98V68Q34 58 44 58H156Q166 58 166 68V98Z" />
         </clipPath>
-        <filter id={def('soft')} x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="2.4" />
+        <filter id={def('soft')} x="-50%" y="-200%" width="200%" height="500%">
+          <feGaussianBlur stdDeviation="2.2" />
         </filter>
       </defs>
 
-      {/* The light once it is out: a bloom, and the shafts through it. */}
-      <g className={open ? (still ? 'chest-bloom-still' : 'chest-bloom') : 'chest-dark'}>
-        <ellipse cx={MOUTH.x} cy={MOUTH.y - 8} rx="104" ry="92" fill={ref('bloom')} />
-      </g>
-      <g className={open ? (still ? 'chest-rays-still' : 'chest-rays') : 'chest-dark'} mask={ref('rays')}>
-        <g className={`chest-rays-sway ${rainbow ? 'chest-rainbow' : ''}`} fill="currentColor">
-          {RAYS.map((ray) => (
-            <polygon key={ray.angle} points={rayPoints(ray)} opacity={0.18 + ray.width / 40} />
-          ))}
-        </g>
-      </g>
-
-      {/* Light leaking round the lid before it opens. Behind the chest, so all of
-          it that is seen is what spills round the outline — the way light
-          round a door reads in a dark room. */}
-      <ellipse
-        cx={MOUTH.x}
-        cy="104"
-        rx="86"
-        ry="30"
-        fill={ref('core')}
-        className={lit ? (state === 'held' ? 'chest-backlight-held' : 'chest-backlight') : 'chest-dark'}
-      />
-
       {/* The floor under it, which keeps it standing on something. */}
-      <ellipse
-        cx="100"
-        cy="166"
-        rx="66"
-        ry="7"
-        className={[
-          'chest-shadow fill-black/60',
-          inviting && state === 'shut' && 'chest-shadow-breathe',
-          rattle >= 0 && HOPS[rattle],
-        ]
-          .filter(Boolean)
-          .join(' ')}
-      />
+      <ellipse cx="100" cy="166" rx="70" ry="7" className={`chest-shadow fill-black/60 ${waiting ? 'chest-shadow-breathe' : ''}`} />
 
       <g className={object}>
-        {/* The body: planks, the iron round its top and down its front, and its corners. */}
-        <path d="M36 106H164V156A8 8 0 0 1 156 164H44A8 8 0 0 1 36 156Z" fill={ref('wood')} />
-        <path d="M36 125H164M36 145H164" stroke="#2a1205" strokeOpacity="0.45" strokeWidth="1.4" />
-        <path d="M36 126H164M36 146H164" stroke="#e7a25c" strokeOpacity="0.12" strokeWidth="1" />
-        {STRAPS.map((x) => (
-          <g key={x}>
-            <rect x={x} y="106" width="12" height="58" fill={ref('strap')} />
-            <circle cx={x + 6} cy="122" r="1.7" fill="#fff3c4" fillOpacity="0.85" />
-            <circle cx={x + 6} cy="150" r="1.7" fill="#fff3c4" fillOpacity="0.85" />
-          </g>
-        ))}
-        <path d="M36 150V156A8 8 0 0 0 44 164H52V150Z M164 150V156A8 8 0 0 1 156 164H148V150Z" fill={ref('band')} />
-        <path d="M36 106H164V156A8 8 0 0 1 156 164H44A8 8 0 0 1 36 156Z" stroke="#2a1205" strokeWidth="2.4" strokeLinejoin="round" />
+        {/* Feet. */}
+        <rect x="44" y="154" width="22" height="10" rx="2" fill="#1c1f22" />
+        <rect x="134" y="154" width="22" height="10" rx="2" fill="#1c1f22" />
 
-        {/* The mouth, dark until the lid is off it, and the light rising out of it. */}
-        <path d="M40 106H160L156 116H44Z" fill={ref('mouth')} className={open ? 'opacity-100' : 'opacity-0'} />
-        <ellipse
-          cx={MOUTH.x}
-          cy="108"
-          rx="62"
-          ry="9"
-          fill={ref('core')}
-          className={open ? (still ? 'chest-core-still' : 'chest-core') : 'chest-dark'}
-        />
+        {/* The body: teal, ribbed, rust running from its rivets. */}
+        <path d="M34 104H166V150Q166 158 158 158H42Q34 158 34 150Z" fill={ref('teal')} />
+        <path d="M38 121H162M38 138H162" stroke="#0d2321" strokeOpacity="0.55" strokeWidth="1.6" />
+        <path d="M38 122.6H162M38 139.6H162" stroke="#8fd3c8" strokeOpacity="0.14" strokeWidth="1" />
+        <path d="M62 153v4M138 153c1 2 0 4 1 5" stroke="#8a4b22" strokeOpacity="0.55" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M120 106c0 6 2 9 1 14" stroke="#8a4b22" strokeOpacity="0.3" strokeWidth="2" strokeLinecap="round" />
+        {/* An emblem stencilled on: a starburst, and three bars. */}
+        <g fill="#efe6cf" fillOpacity="0.55">
+          <path d="M60 122l1.6 6.4 6.4 1.6-6.4 1.6-1.6 6.4-1.6-6.4-6.4-1.6 6.4-1.6Z" />
+          <path d="M60 126.4l.7 2.9 2.9.7-2.9.7-.7 2.9-.7-2.9-2.9-.7 2.9-.7Z" transform="rotate(45 60 130)" />
+          <rect x="128" y="126" width="3" height="10" />
+          <rect x="133" y="126" width="3" height="10" />
+          <rect x="138" y="126" width="10" height="10" fillOpacity="0.6" />
+        </g>
+        <path d="M34 104H166V150Q166 158 158 158H42Q34 158 34 150Z" stroke="#0b1a19" strokeWidth="2.2" strokeLinejoin="round" />
 
-        {/* The lock, on the body. */}
-        <rect x="87" y="110" width="26" height="28" rx="5" fill={ref('band')} stroke="#5a3608" strokeWidth="1.6" />
-        <circle cx="100" cy="121" r="3.4" fill="#1a0b03" />
-        <path d="M98.4 122.4 97.2 131H102.8L101.6 122.4Z" fill="#1a0b03" />
-
-        {/* The lid: lifts clear on a spring and tips back, the hasp going with it. */}
-        <g className={open ? (still ? 'chest-lid-still' : 'chest-lid') : undefined}>
-          <path d="M36 106V91C36 75 60 67 100 67S164 75 164 91V106Z" fill={ref('lid')} />
-          <g clipPath={ref('dome')}>
-            <path d="M44 84Q100 64 156 84" stroke="#2a1205" strokeOpacity="0.35" strokeWidth="1.3" fill="none" />
-            {STRAPS.map((x) => (
-              <rect key={x} x={x} y="60" width="12" height="46" fill={ref('strap')} />
+        {/* The lid: cream enamel, chipped, with a handle pressed into it. */}
+        <g className={loose ? 'chest-lid-loose' : undefined}>
+          <path d="M34 98V68Q34 58 44 58H156Q166 58 166 68V98Z" fill={ref('enamel')} />
+          <g clipPath={ref('lidClip')}>
+            <path d="M34 61H166" stroke="#fff" strokeOpacity="0.55" strokeWidth="1.4" />
+            <rect x="80" y="64" width="40" height="9" rx="4.5" fill="#6b5f48" fillOpacity="0.45" />
+            <rect x="83" y="66" width="34" height="5" rx="2.5" fill="#2b2620" fillOpacity="0.55" />
+            {CHIPS.map((chip) => (
+              <path key={chip} d={chip} fill="#4a4f55" fillOpacity="0.75" />
             ))}
-            <rect x="36" y="99" width="128" height="7" fill={ref('band')} />
-            <path d="M36 67H164V100H36Z" fill={ref('sheen')} />
-            <g className={inviting && state === 'shut' ? 'chest-glint' : 'opacity-0'}>
-              <rect x="-30" y="60" width="22" height="52" fill={ref('glint')} transform="skewX(-22)" />
+            <g className={waiting ? 'chest-glint' : 'opacity-0'}>
+              <rect x="-34" y="54" width="20" height="50" fill={ref('glint')} transform="skewX(-22)" />
             </g>
           </g>
-          <path d="M36 106V91C36 75 60 67 100 67S164 75 164 91V106Z" stroke="#2a1205" strokeWidth="2.4" strokeLinejoin="round" />
-          <path d="M93 98H107V112A3 3 0 0 1 104 115H96A3 3 0 0 1 93 112Z" fill={ref('band')} stroke="#5a3608" strokeWidth="1.4" />
+          <path d="M34 98V68Q34 58 44 58H156Q166 58 166 68V98Z" stroke="#4a4232" strokeWidth="2.2" strokeLinejoin="round" />
+        </g>
+
+        {/* Corner guards, riveted on. */}
+        <path d="M34 72V68Q34 58 44 58H50V64H44Q40 64 40 68V72Z" fill={ref('metal')} />
+        <path d="M166 72V68Q166 58 156 58H150V64H156Q160 64 160 68V72Z" fill={ref('metal')} />
+        <path d="M34 144V150Q34 158 42 158H50V152H42Q40 152 40 150V144Z" fill={ref('metal')} />
+        <path d="M166 144V150Q166 158 158 158H150V152H158Q160 152 160 150V144Z" fill={ref('metal')} />
+        {RIVETS.map(([x, y]) => (
+          <g key={`${String(x)}-${String(y)}`}>
+            <circle cx={x} cy={y} r="2.1" fill="#2a2e33" />
+            <circle cx={x - 0.5} cy={y - 0.6} r="1.2" fill="#c9ced3" />
+          </g>
+        ))}
+
+        {/* Where the lid meets the body: a band of hazard stripes, and the light from
+            inside showing along it once the latches have gone. */}
+        <rect x="30" y="96" width="140" height="11" rx="2.5" fill={ref('hazard')} />
+        <rect x="30" y="96" width="140" height="11" rx="2.5" stroke="#0e0f10" strokeWidth="1.6" />
+        <rect x="31" y="96.8" width="138" height="1.2" fill="#fff" fillOpacity="0.25" />
+        <g className={loose ? 'chest-leak' : 'opacity-0'}>
+          <rect x="26" y="91" width="148" height="9" rx="4.5" fill={ref('leak')} filter={ref('soft')} />
+          <rect x="36" y="94.6" width="128" height="1.8" rx="0.9" fill={ref('leak')} />
+        </g>
+
+        {/* The latches, one each side, which spring off on the hiss. */}
+        {[
+          { x: 46, side: 'left' },
+          { x: 154, side: 'right' },
+        ].map(({ x, side }) => (
+          <g key={side}>
+            <rect x={x - 8} y="104" width="16" height="16" rx="2" fill={ref('metal')} stroke="#16181b" strokeWidth="1.2" />
+            <g className={`chest-latch ${loose ? `chest-latch-${side}` : ''}`} style={{ transformOrigin: `${String(x)}px 116px` }}>
+              <rect x={x - 4.5} y="86" width="9" height="32" rx="2.5" fill={ref('chrome')} stroke="#16181b" strokeWidth="1.2" />
+              <rect x={x - 2} y="89" width="4" height="7" rx="1" fill="#16181b" fillOpacity="0.55" />
+            </g>
+            <circle cx={x} cy="116" r="2" fill="#16181b" />
+          </g>
+        ))}
+
+        {/* The dial lock: it turns as the key does, and its lamp says whether a key is waiting. */}
+        <g className={`chest-dial ${state === 'unlocking' || loose ? 'chest-dial-turned' : refused ? 'chest-dial-refused' : ''}`}>
+          <circle cx="100" cy="101" r="20" fill="#16181b" />
+          <circle cx="100" cy="101" r="18.5" fill={ref('chrome')} />
+          {NOTCHES.map((angle) => (
+            <rect
+              key={angle}
+              x="99.2"
+              y="84.2"
+              width="1.6"
+              height={angle % 90 === 0 ? 4.4 : 2.8}
+              rx="0.8"
+              fill="#24272b"
+              transform={`rotate(${String(angle)} 100 101)`}
+            />
+          ))}
+          <circle cx="100" cy="101" r="12.5" fill="#121416" stroke="#000" strokeWidth="1" />
+          <path d="M100 89.4l2.4 3.6h-4.8Z" fill="#e9a23b" />
+        </g>
+        <g className={lamp}>
+          {/* Its own gradients, inside it, so that their `currentColor` is the lamp's. */}
+          <defs>
+            <radialGradient id={def('lamp')} cx="0.4" cy="0.35" r="0.7">
+              <stop offset="0" stopColor="#fff" />
+              <stop offset="0.35" stopColor="currentColor" />
+              <stop offset="1" stopColor="currentColor" stopOpacity="0.35" />
+            </radialGradient>
+            <radialGradient id={def('halo')} cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0" stopColor="currentColor" stopOpacity="0.7" />
+              <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          <circle cx="100" cy="101" r="16" fill={ref('halo')} className="chest-lamp-halo" />
+          <circle cx="100" cy="101" r="6.5" fill={ref('lamp')} />
         </g>
       </g>
 
-      {/* The crack of light where the lid meets the body, screened over all of it. */}
-      <g className={lit ? (state === 'held' ? 'chest-seam-held' : 'chest-seam') : 'chest-dark'}>
-        <rect x="28" y="99" width="144" height="14" rx="7" fill={ref('seam')} filter={ref('soft')} opacity="0.9" />
-        <rect x="40" y="104" width="120" height="4" rx="2" fill={ref('seam')} />
-        <rect x="58" y="105.2" width="84" height="1.6" rx="0.8" fill="#fff" />
-      </g>
+      {/* The hiss as the latches go: a puff each side. */}
+      {loose && (
+        <g fill="#f5f5f4">
+          <circle cx="30" cy="100" r="7" className="chest-puff chest-puff-left" />
+          <circle cx="170" cy="100" r="7" className="chest-puff chest-puff-right" />
+        </g>
+      )}
     </svg>
   )
 }

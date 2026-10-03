@@ -9,10 +9,9 @@ import {
   type ActivityEntry,
   type LocalDay,
 } from '../../core'
-import { ACTIVITY_REFUSALS, type ActivityRefusal } from '../activityLabels'
+import { ACTIVITY_REFUSALS, describeEntry, MOVE_HINT, type ActivityRefusal } from '../activityLabels'
 import { describeSlot } from '../checkInLabels'
 import { describeDuration, parseDuration } from '../durationLabels'
-import { ChevronIcon } from './ChevronIcon'
 
 const field =
   'w-full min-w-0 rounded-lg border border-neutral-300 bg-transparent px-2.5 py-2 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-500'
@@ -22,22 +21,19 @@ const button =
 const primary = `${button} bg-blue-600 font-medium text-white hover:bg-blue-700 active:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400`
 const quiet = `${button} text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:active:bg-neutral-800`
 const danger = `${button} text-red-600 hover:bg-red-50 active:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40 dark:active:bg-red-950/40`
-const stepper =
-  'flex size-9 shrink-0 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-100 md:size-7 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:active:bg-neutral-800'
 const option = 'flex cursor-pointer items-center rounded-lg px-2.5 py-2 text-base md:px-2 md:py-1.5 md:text-sm'
 const optionOn = 'bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100'
 const optionOff = 'text-neutral-700 dark:text-neutral-200'
 
 interface ActivityFormProps {
   day: LocalDay
-  /** The hour of the day a record goes under, or the one being changed is moved to. */
+  /** The hour of the day a record goes under, or the one being changed is moved to — picked in the list (ACT-5). */
   hour: number
   now: Date
   /** Every activity there is, the ones offered first first (`knownActivities`). */
   known: readonly string[]
   /** The record being changed, or null while adding. The form is keyed by it, so its boxes start from it. */
   editing: ActivityEntry | null
-  onHourChange: (hour: number) => void
   onAdd: (activity: string, seconds: number, hour: number) => void
   onSave: (id: string, change: ActivityChange) => void
   onDelete: (entry: ActivityEntry) => void
@@ -47,9 +43,10 @@ interface ActivityFormProps {
 }
 
 /**
- * The form a record is written in (ACT-2 to ACT-6, ACT-10): the hour it goes
- * under, stepped with ‹ and ›; what was done, with the activities used before
- * offered while typing; and how long, minutes unless hours are written.
+ * The form a record is written in (ACT-2 to ACT-6, ACT-10): what was done, with
+ * the activities used before offered while typing, and how long, minutes unless
+ * hours are written. The hour it goes under is the one picked in the list below
+ * it, and named in the box until something is typed there.
  *
  * A record that will not do is refused under the boxes, saying why, rather than
  * the button being dimmed; what was typed stays to be put right.
@@ -60,7 +57,6 @@ export function ActivityForm({
   now,
   known,
   editing,
-  onHourChange,
   onAdd,
   onSave,
   onDelete,
@@ -105,14 +101,6 @@ export function ActivityForm({
     } else {
       onSave(editing.id, { activity: name, seconds: minutes * 60, hour })
     }
-  }
-
-  function step(by: number) {
-    const next = hour + by
-    if (next < 0 || next > 23) return
-    if (!hasSlotStarted({ day, hour: next }, now)) return refuse('notStarted')
-    setRefused(null)
-    onHourChange(next)
   }
 
   function pick(name: string) {
@@ -174,33 +162,14 @@ export function ActivityForm({
 
   return (
     <section aria-label={editing === null ? 'Add to the log' : 'Change a record'} className="flex flex-col gap-2">
-      <div className="flex min-h-9 items-center gap-1">
-        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-          {editing === null ? 'Add to' : 'Change'}
-        </span>
-        <button
-          type="button"
-          onClick={() => { step(-1) }}
-          aria-label="The hour before"
-          title="The hour before"
-          className={`${stepper}${hour === 0 ? ' invisible' : ''}`}
-        >
-          <ChevronIcon className="size-4 rotate-90" />
-        </button>
-        <span aria-live="polite" className="min-w-[6.5rem] text-center text-sm font-medium tabular-nums text-neutral-900 dark:text-neutral-100">
-          {slot}
-        </span>
-        <button
-          type="button"
-          onClick={() => { step(1) }}
-          aria-label="The hour after"
-          title="The hour after"
-          className={`${stepper}${hour === 23 ? ' invisible' : ''}`}
-        >
-          <ChevronIcon className="size-4 -rotate-90" />
-        </button>
-
-        {editing !== null && (
+      {/* Changing a record says which, and how to move it; adding needs no line of its own,
+          the hour being the one picked out in the list and named in the box. */}
+      {editing !== null && (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="min-w-0 truncate text-sm font-medium text-neutral-800 dark:text-neutral-200">
+            Change “{describeEntry(editing)}” · {slot}
+          </span>
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">{MOVE_HINT}</span>
           <span className="ml-auto flex items-center gap-1">
             <button type="button" onClick={onCancel} className={quiet}>
               Cancel
@@ -209,8 +178,8 @@ export function ActivityForm({
               Delete
             </button>
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-1.5 md:flex-row md:items-start">
         <div className="relative min-w-0 md:flex-1">
@@ -229,7 +198,7 @@ export function ActivityForm({
             onFocus={() => { setOffering(true) }}
             onBlur={() => { setOffering(false) }}
             onKeyDown={handleActivityKeys}
-            placeholder="What did you do?"
+            placeholder={`What did you do ${slot}?`}
             aria-label={`What you did, ${slot}`}
             aria-autocomplete="list"
             aria-expanded={isSuggesting}

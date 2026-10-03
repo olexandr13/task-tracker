@@ -47,9 +47,9 @@ afterEach(() => {
 function fakeTaskRepository() {
   let onTasks: (tasks: Task[]) => void = () => {}
   const repository: TaskRepository = {
-    subscribe(callback) {
-      onTasks = callback
-      return () => {}
+    subscribe(_start, callback) {
+      onTasks = (tasks) => { callback(tasks, null) }
+      return { reachBack() {}, unheld: () => Promise.resolve(0), stop() {} }
     },
     save: () => Promise.resolve(),
     importTasks: () => Promise.resolve(),
@@ -350,9 +350,9 @@ describe('useTasks, changes made in one go', () => {
     const written: TaskChanges[] = []
     let onTasks: (tasks: Task[]) => void = () => {}
     const repository: TaskRepository = {
-      subscribe(callback) {
-        onTasks = callback
-        return () => {}
+      subscribe(_start, callback) {
+        onTasks = (tasks) => { callback(tasks, null) }
+        return { reachBack() {}, unheld: () => Promise.resolve(0), stop() {} }
       },
       save(changes) {
         written.push(changes)
@@ -403,9 +403,9 @@ describe('useTasks, when the repository refuses', () => {
     const onProblem = vi.fn()
     let fail: (error: unknown) => void = () => {}
     const repository: TaskRepository = {
-      subscribe(_onTasks, onError) {
+      subscribe(_start, _onTasks, onError) {
         fail = onError
-        return () => {}
+        return { reachBack() {}, unheld: () => Promise.resolve(null), stop() {} }
       },
       save: () => Promise.resolve(),
       importTasks: () => Promise.resolve(),
@@ -425,9 +425,9 @@ describe('useTasks, when the repository refuses', () => {
     const task = createTask('stretch')
     let onTasks: (tasks: Task[]) => void = () => {}
     const repository: TaskRepository = {
-      subscribe(callback) {
-        onTasks = callback
-        return () => {}
+      subscribe(_start, callback) {
+        onTasks = (tasks) => { callback(tasks, null) }
+        return { reachBack() {}, unheld: () => Promise.resolve(0), stop() {} }
       },
       save: () => Promise.reject(new Error('quota exceeded')),
       importTasks: () => Promise.resolve(),
@@ -441,5 +441,145 @@ describe('useTasks, when the repository refuses', () => {
     })
 
     expect(onProblem).toHaveBeenCalledWith('save')
+  })
+})
+
+describe('useTasks, holding history', () => {
+  /** A task repository that says how much it holds, and records what it was asked to hold. */
+  function partialRepository() {
+    let onTasks: (tasks: Task[], heldSince: string | null) => void = () => {}
+    const asked: { start: string | null; reachedBack: (string | null)[] } = { start: null, reachedBack: [] }
+    const repository: TaskRepository = {
+      subscribe(start, callback) {
+        asked.start = start
+        onTasks = callback
+        return {
+          reachBack(day) { asked.reachedBack.push(day) },
+          unheld: () => Promise.resolve(3),
+          stop() {},
+        }
+      },
+      save: () => Promise.resolve(),
+      importTasks: () => Promise.resolve(),
+    }
+    const arrive = (tasks: Task[], heldSince: string | null) => { act(() => { onTasks(tasks, heldSince) }) }
+    return { repository, asked, arrive }
+  }
+
+  function setUpPartial(saved: Task[], heldSince: string | null) {
+    const tasks = partialRepository()
+    const { result } = renderHook(() => useTasks(tasks.repository, fakeRewardRepository().repository))
+    tasks.arrive(saved, heldSince)
+    return { result, ...tasks }
+  }
+
+  it('holds the tasks from the first day of this week or month, whichever comes first (STORE-55)', () => {
+    // Thursday 17 September: the month began on the 1st, before the week did.
+    const { result, asked } = setUpPartial([], '2026-09-01')
+
+    expect(asked.start).toBe('2026-09-01')
+    expect(result.current.heldSince).toBe('2026-09-01')
+  })
+
+  it('asks the repository to reach back, and says once it has (STORE-55)', () => {
+    const { result, asked, arrive } = setUpPartial([], '2026-09-01')
+
+    act(() => { result.current.reachBack('2026-08-19') })
+    arrive([], '2026-08-19')
+
+    expect(asked.reachedBack).toEqual(['2026-08-19'])
+    expect(result.current.heldSince).toBe('2026-08-19')
+  })
+
+  it('renames a tag on the history too, waiting for it to arrive first (TAG-24, STORE-55)', () => {
+    const held = addTag(createTask('email'), 'work')
+    const old = completeTask(addTag(createTask('report'), 'work'), new Date(2026, 6, 1))
+    const { result, asked, arrive } = setUpPartial([held], '2026-09-01')
+
+    let ran = false
+    act(() => {
+      result.current.everywhere(() => {
+        ran = true
+        result.current.renameTagEverywhere('work', 'job')
+      })
+    })
+
+    expect(ran).toBe(false)
+    expect(asked.reachedBack).toEqual([null])
+
+    arrive([held, old], null)
+
+    expect(ran).toBe(true)
+    expect(result.current.tasks.map((task) => task.tags)).toEqual([['job'], ['job']])
+  })
+
+  it('does at once what needs every task when every task is held already (TAG-22)', () => {
+    const { result, asked } = setUpPartial([addTag(createTask('email'), 'work')], null)
+
+    act(() => { result.current.everywhere(() => { result.current.removeTagEverywhere('work') }) })
+
+    expect(asked.reachedBack).toEqual([])
+    expect(result.current.tasks.map((task) => task.tags)).toEqual([[]])
+  })
+})
+
+describe('useTasks, a habit resting ahead of its day (HAB-33)', () => {
+  /** A task repository that keeps every change it is asked to save. */
+  function savingRepository() {
+    const saves: TaskChanges[] = []
+    let onTasks: (tasks: Task[]) => void = () => {}
+    const repository: TaskRepository = {
+      subscribe(_start, callback) {
+        onTasks = (tasks) => { callback(tasks, null) }
+        return { reachBack() {}, unheld: () => Promise.resolve(0), stop() {} }
+      },
+      save(changes) {
+        saves.push(changes)
+        return Promise.resolve()
+      },
+      importTasks: () => Promise.resolve(),
+    }
+    const { result } = renderHook(() => useTasks(repository, fakeRewardRepository().repository))
+    return { result, saves, arrive: (tasks: Task[]) => { act(() => { onTasks(tasks) }) } }
+  }
+
+  const WRITTEN = new Date(2026, 8, 10, 9, 0)
+
+  it('lets go of a rest stored for a day still to come, and writes the habit back', () => {
+    // Resting yesterday and today, and ahead on the two days after: what skipping
+    // a habit again and again left before it rested today and no further (HAB-32).
+    const habit = {
+      ...createTask('stretch', { kind: 'daily' }, WRITTEN),
+      skippedDays: ['2026-09-16', '2026-09-17', '2026-09-18', '2026-09-19'],
+    }
+    const { result, saves, arrive } = savingRepository()
+
+    arrive([habit])
+
+    expect(result.current.tasks[0].skippedDays).toEqual(['2026-09-16', '2026-09-17'])
+    expect(saves).toEqual([{ saved: [result.current.tasks[0]], removed: [] }])
+  })
+
+  it('so a rest left for tomorrow does not arrive with it: tomorrow the habit is due', () => {
+    const habit = { ...createTask('stretch', { kind: 'daily' }, WRITTEN), skippedDays: ['2026-09-18'] }
+    const { result, arrive } = savingRepository()
+
+    arrive([habit])
+    vi.setSystemTime(new Date(2026, 8, 18, 9, 0))
+
+    expect(result.current.tasks[0].skippedDays).toEqual([])
+    expect(dueDay(result.current.tasks[0])).toBe('2026-09-18')
+  })
+
+  it('writes nothing for tasks with no rest ahead, nor for a rule with gaps skipped ahead (RPT-35)', () => {
+    const MONDAYS: Repeat = { kind: 'weekly', weekdays: [1] }
+    const rested = { ...createTask('stretch', { kind: 'daily' }, WRITTEN), skippedDays: ['2026-09-17'] }
+    const weekly = { ...createTask('review', MONDAYS, WRITTEN), skippedDays: ['2026-09-21'] }
+    const { result, saves, arrive } = savingRepository()
+
+    arrive([rested, weekly])
+
+    expect(result.current.tasks).toEqual([rested, weekly])
+    expect(saves).toEqual([])
   })
 })

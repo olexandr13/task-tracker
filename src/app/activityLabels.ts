@@ -23,9 +23,9 @@ export const ACTIVITY_HEADING = 'Activity log'
 /** What the page is for and how it is used, in plain sentences, one thing each (UI-73). */
 export const ACTIVITY_INTRO = [
   'Write down what you did, hour by hour, to see where your days go.',
-  'Pick the hour with "‹" and "›", or press an hour in the list. Then type what you did and how long it took, and press "Add".',
+  'Press an hour in the list to pick it. Then type what you did and how long it took, and press "Add".',
   'Type the time in minutes, like "15", or with hours, like "1h 20m".',
-  'Press a record to change it, or its "×" to delete it.',
+  'Press a record to change it, or its "×" to delete it. While changing it, press another hour to move it there.',
   'Switch between "Day", "Week" and "Month" to see the totals, and use "‹" and "›" beside the date to look back.',
   'Hours logged and the streak count the hours set for Check-in, from "From" to "To".',
 ]
@@ -120,6 +120,9 @@ export function describeEntry(entry: ActivityEntry): string {
 export function describeEntryDeleted(entry: ActivityEntry): string {
   return `Deleted “${describeEntry(entry)}” at ${describeHour(entry.hour)}`
 }
+
+/** What changing a record says about moving it (ACT-10). */
+export const MOVE_HINT = 'Press another hour to move it.'
 
 /** An hour with nothing logged under it, as its row says (ACT-7). */
 export const NOT_LOGGED = 'not logged'

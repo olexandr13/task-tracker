@@ -19,17 +19,17 @@ function setup(settings: ChestSettings = DEFAULT_CHEST, jackpot = 20) {
 
 describe('how many tasks a day must ask for', () => {
   it('steps up and down, saving each step as it is made (CHST-3)', async () => {
-    const { user, onChange } = setup({ leastTasks: 2, jackpot: 'bestTask' })
+    const { user, onChange } = setup({ leastTasks: 2 })
 
     await user.click(screen.getByRole('button', { name: 'One task more' }))
-    expect(onChange).toHaveBeenLastCalledWith({ leastTasks: 3, jackpot: 'bestTask' })
+    expect(onChange).toHaveBeenLastCalledWith({ leastTasks: 3 })
 
     await user.click(screen.getByRole('button', { name: 'One task fewer' }))
-    expect(onChange).toHaveBeenLastCalledWith({ leastTasks: 1, jackpot: 'bestTask' })
+    expect(onChange).toHaveBeenLastCalledWith({ leastTasks: 1 })
   })
 
   it('stops at one, there being no day of no tasks to clear', async () => {
-    const { user, onChange } = setup({ leastTasks: 1, jackpot: 'bestTask' })
+    const { user, onChange } = setup({ leastTasks: 1 })
 
     await user.click(screen.getByRole('button', { name: 'One task fewer' }))
 
@@ -37,12 +37,12 @@ describe('how many tasks a day must ask for', () => {
   })
 
   it('saves a number as it is typed, and leaves one it cannot use unsaved (RWD-6)', async () => {
-    const { user, onChange } = setup({ leastTasks: 1, jackpot: 'bestTask' })
+    const { user, onChange } = setup({ leastTasks: 1 })
     const box = screen.getByRole('spinbutton', { name: 'Tasks a day must ask for' })
 
     await user.clear(box)
     await user.type(box, '4')
-    expect(onChange).toHaveBeenLastCalledWith({ leastTasks: 4, jackpot: 'bestTask' })
+    expect(onChange).toHaveBeenLastCalledWith({ leastTasks: 4 })
 
     onChange.mockClear()
     await user.clear(box)
@@ -51,7 +51,7 @@ describe('how many tasks a day must ask for', () => {
   })
 
   it('puts a box left saying nothing it can use back to what is saved (RWD-6)', async () => {
-    const { user } = setup({ leastTasks: 3, jackpot: 'bestTask' })
+    const { user } = setup({ leastTasks: 3 })
     const box = screen.getByRole('spinbutton', { name: 'Tasks a day must ask for' })
 
     await user.clear(box)
@@ -62,19 +62,12 @@ describe('how many tasks a day must ask for', () => {
 })
 
 describe('what the key plays for', () => {
-  it('offers both ways, with the one in use marked and what it comes to today (CHST-7)', () => {
-    setup({ leastTasks: 1, jackpot: 'bestTask' }, 25)
+  it('says it is everything earned today, and what that comes to so far (CHST-7)', () => {
+    setup({ leastTasks: 1 }, 25)
 
-    expect(screen.getByRole('radio', { name: /Today’s best task/ }).getAttribute('aria-checked')).toBe('true')
-    expect(screen.getByRole('radio', { name: /A typical day/ }).getAttribute('aria-checked')).toBe('false')
+    expect(screen.getByText(/everything you earned today/)).toBeTruthy()
     expect(screen.getByText('Today the most is 25 points.')).toBeTruthy()
-  })
-
-  it('changes to the other at a click, keeping how big a day must be', async () => {
-    const { user, onChange } = setup({ leastTasks: 3, jackpot: 'bestTask' })
-
-    await user.click(screen.getByRole('radio', { name: /A typical day/ }))
-
-    expect(onChange).toHaveBeenCalledExactlyOnceWith({ leastTasks: 3, jackpot: 'typicalDay' })
+    // A fact rather than a choice: nothing to pick.
+    expect(screen.queryAllByRole('radio')).toHaveLength(0)
   })
 })

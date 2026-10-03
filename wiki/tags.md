@@ -59,7 +59,8 @@ it is deleted, whether or not a task carries it.
 
 - **TAG-13** Every tag has **a list of its own**, opened from the Tags page (TAG-18): the live
   tasks carrying it, in any case. It shows what Tasks shows otherwise (LIST-7) — the same rows,
-  urgent floating, overdue next, done sinking, dragging, the rail — headed with the tag's name, and **Tags** stays marked in
+  urgent floating, overdue next, done sinking, dragging, the rail — its done tasks divided as the
+  Inbox's are (TASK-72), headed with the tag's name, and **Tags** stays marked in
   the sidebar while it is open. It is in the address as `#/tag/name` (UI-36), so it survives a
   reload even when no task carries the tag, when it says there is nothing tagged yet.
 - **TAG-14** A task added in a tag's list **carries that tag**, and has no day, as in Tasks.
@@ -80,7 +81,9 @@ it is deleted, whether or not a task carries it.
 - **TAG-22** Beside each tag is a button that **deletes it**, after asking: the tag comes off every
   task carrying it — tasks in the trash too, so restoring one does not bring it back — the tasks
   themselves stay as they were otherwise, and the tag is gone from everywhere it was offered. It is
-  unbound from every Balance category too (BAL-11). There is no undo.
+  unbound from every Balance category too (BAL-11). There is no undo. Reaching every task means
+  loading the finished ones not loaded yet (STORE-55) first, so the tag goes once they have
+  arrived — with no connection, once there is one.
 - **TAG-23** A box at the top of the Tags page, **Add a tag**, makes a tag no task carries yet —
   on Enter or its **Add** button, a `#` in front ignored (TAG-3). The new tag is listed at once, with
   nothing to do, and the box empties, staying on the page for the next one. A name some tag has
@@ -93,7 +96,8 @@ it is deleted, whether or not a task carries it.
   task changes, and a task without the tag is not touched. The tag's record is kept under the new
   name (STORE-33), and the Balance categories bound to it stay bound under it (BAL-11). A name **another tag has**, in any case, is refused, and the row says so and
   keeps what was typed; the same name in another case is the tag **respelled**, not another tag
-  (TAG-4), and goes through. A name a tag cannot have is not taken, and the row says why.
+  (TAG-4), and goes through. A name a tag cannot have is not taken, and the row says why. As with
+  deleting (TAG-22), the new name is written once every task is loaded, so the old one shows until then.
 - **TAG-25** Giving up a rename with Escape leaves the tag named as it was, as dropping a title
   edit does (TASK-11); so does Enter on the name unchanged. A tag's list is at its new name from
   then on (`#/tag/name`, TAG-13); an address kept for the old one opens a list with nothing tagged.

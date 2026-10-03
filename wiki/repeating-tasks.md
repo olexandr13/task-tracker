@@ -122,7 +122,9 @@ and whether it reads as done is derived from the occurrence currently in play ra
   occurrence a rest moves it on to is tomorrow, and passing that over would store a rest for a day
   nobody has reached yet, which would then arrive already resting. A habit rests today and no
   further, and while it is resting nothing offers it another skip — its menu, its schedule panel and
-  the foot of its sheet each offer the way back instead (HAB-32, DUE-26).
+  the foot of its sheet each offer the way back instead (HAB-32, DUE-26). A task skipped ahead and
+  then made daily drops its skips after today, and a habit holding any is cleared of them as the
+  tasks arrive (HAB-33).
 - **RPT-36** **Done wins**: ticking a skipped task off does the occurrence in play after all — it
   reads as done on that day, as it would have without the skip. Taking the tick back skips it again,
   which is what reopening does with any occurrence gone by (RPT-38); a day is passed over once,
@@ -154,7 +156,7 @@ and whether it reads as done is derived from the occurrence currently in play ra
 ---
 
 **Where it lives:** `src/core/repeat.ts` (the rules, `nextOccurrence` and `occurrenceFrom`), `src/core/task.ts` (`isComplete`,
-`setRepeat`, `startDay`, `doneDays`, `skippedDays`, `settleHistory` and `passOverMissedOccurrence`),
+`setRepeat`, `startDay`, `doneDays`, `skippedDays`, `settleHistory`, `passOverMissedOccurrence` and `forgetRestsAhead`),
 `src/core/due.ts` (`skipOccurrence`), `src/app/repeatDraft.ts` (what the picker holds while choosing),
 `src/app/repeatLabels.ts` (wording), `src/app/components/RepeatChoices.tsx` (the repeat half of
 `SchedulePicker.tsx`).

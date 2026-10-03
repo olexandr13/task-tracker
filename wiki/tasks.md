@@ -192,13 +192,14 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   in the last 30 days** and **Done earlier**, most recent first. The spans count back in local days
   and each leaves out the ones before it, so a task is under exactly one; a span with nothing in it
   has no heading. Inside a span the latest completion comes first (TASK-70). Tasks still to do stay
-  above, with no heading. Today, Week, Month, the Inbox, lists and tags keep one run of done tasks,
+  above, with no heading. Every span but Done today is folded away (TASK-73). The Inbox, lists and
+  tags divide their done tasks too (TASK-72). Today, Week and Month keep one run of done tasks,
   under the plain **Done** heading (TASK-69).
 - **TASK-69** The done tasks are set apart from the ones still to do by a heading of their own:
   **Done**, in the same small, muted gray the spans read in (TASK-56), with its count beside it and
-  the same distance to the run above. Every list has it — Today, Week, Month, the Inbox, lists and
-  tags — bar **Tasks**, where the spans say when the work was finished and head the runs instead,
-  and bar Today in Procrastination mode, which draws one run (JUST-5). A list with nothing done has
+  the same distance to the run above. Today, Week and Month have it; **Tasks**, the **Inbox**, lists
+  and tags do not, spans saying when the work was finished and heading the runs instead (TASK-56,
+  TASK-72); nor does Today in Procrastination mode, which draws one run (JUST-5). A list with nothing done has
   no heading, and it goes the moment the last tick is taken back.
 - **TASK-57** A repeating task is under the span of its latest completion while that completion
   still covers the occurrence in play (TASK-18); once the next occurrence comes it is back among the
@@ -206,9 +207,31 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   today's.
 - **TASK-58** Nothing is rewritten when the day turns: what is under each heading follows from the
   day it is, so a page left open moves yesterday's work along on its next render (PRIN-2).
-- **TASK-65** On **Tasks**, older done spans fade: **Done yesterday** at 80% opacity, **Done in the
-  last 7 days** at 60%, and **Done in the last 30 days** at 40%. **Done today** and **Done earlier**
-  stay at full strength.
+- **TASK-65** Older done spans fade once opened: the rows of **Done yesterday** at 80% opacity,
+  **Done in the last 7 days** at 60%, and **Done in the last 30 days** at 40%. **Done today** and
+  **Done earlier** stay at full strength, and so does every heading, being what opens its span.
+- **TASK-72** In the **Inbox**, a **list's** view and a **tag's**, the done tasks on show are
+  **today's**, under **Done today**. The rest are **folded away** under headings of their own, most
+  recent first: **Done in the last 7 days**, yesterday included, then **Done in the last 30 days**
+  and **Done earlier**. A folded heading shows how many tasks it holds, once they are all loaded
+  (TASK-74), with a chevron pointing right. Clicking or tapping the heading opens the span and
+  turns the chevron down; clicking it again folds the span away. Every span starts folded each time
+  the view is opened, and whichever were left open is not kept. The spans count back in local days
+  as on Tasks (TASK-56), a span with nothing in it has no heading, and an opened span's rows fade
+  by age (TASK-65). Ticking a task off puts it under Done today, so it stays in sight. Going to a
+  task in a folded span (TIME-20) opens that span.
+- **TASK-73** On **Tasks** the spans fold the same way (TASK-72): **Done today** is open, and
+  **Done yesterday**, **Done in the last 7 days**, **Done in the last 30 days** and **Done earlier**
+  start folded, each opened and folded again from its heading.
+- **TASK-74** Done work finished before this week and this month began is **not loaded** when the
+  app opens (STORE-55); a folded span reaching back to it **loads it as it is opened**. Until its
+  tasks are all loaded, the span's heading has **no count**, and once open it shows the tasks it has
+  so far with **Loading…** under them; then the count and the rest arrive. A span is headed while
+  folded when it has tasks loaded, or when the view is known to have work not loaded yet — the
+  server is asked how many tasks the view has, which loads none of them. Opened and found to hold
+  nothing, a span says **Nothing was finished in this time.** while it stays open. A list with no
+  tasks loaded but work still to load shows those headings instead of saying it is empty (TASK-19).
+  Once loaded, older work stays loaded until the app is reloaded.
 
 ## Moving
 
@@ -286,7 +309,10 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 ---
 
 **Where it lives:** `src/core/task.ts` (the rules), `src/core/urgent.ts` (the mark), `src/core/completed.ts` (the spans done tasks are
-divided into), `src/app/completionLabels.ts` (their headings), `src/core/due.ts` and `src/core/day.ts` (due dates), `src/core/emphasis.ts` (bold and italic, written
+divided into), `src/app/view.ts` (`doneSpans` and `foldedSpans`: which spans each view divides them into, and which it folds away),
+`src/app/completionLabels.ts` (their headings and what an opened span says), `src/core/history.ts`
+(what is left to load, and whether a span holds all of its tasks), `src/app/useUnheldHistory.ts`
+(asking whether a view has work not loaded), `src/core/due.ts` and `src/core/day.ts` (due dates), `src/core/emphasis.ts` (bold and italic, written
 down and read back), `src/core/descriptionLists.ts` (lists, the same), `src/app/components/AddTaskForm.tsx`,
 `src/app/components/AddTaskSheet.tsx` (the detailed add sheet),
 `src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet),
@@ -301,7 +327,9 @@ and `src/app/completionLabels.ts` (the Done one),
 `src/app/dragSensors.ts` (dragging, and what it leaves to a text box or a checklist).
 
 **Tested in:** `src/core/task.test.ts`, `src/core/urgent.test.ts`, `src/core/completed.test.ts`, `src/core/emphasis.test.ts`, `src/core/descriptionLists.test.ts`,
-`src/core/order.test.ts`, `src/app/taskDrop.test.ts` (what a drop does), `src/app/components/TaskList.test.tsx` (what a list says),
+`src/core/order.test.ts`, `src/app/taskDrop.test.ts` (what a drop does), `src/app/components/TaskList.test.tsx` (what a list says, and folding its spans),
+`src/app/view.test.ts` (which spans each view uses and folds), `src/core/history.test.ts`,
+`src/app/useUnheldHistory.test.ts`,
 `src/app/components/TaskItem.test.tsx` (the row, and its menu), `src/app/components/UrgentToggle.test.tsx`,
 `src/app/components/AddTaskForm.test.tsx` (the one-line box and the detailed sheet),
 `src/app/letterShortcut.test.ts` and `src/app/useLetterShortcut.test.ts` (`N` and `H` open the sheet).

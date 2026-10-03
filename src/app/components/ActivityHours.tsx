@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import {
   activityKey,
   entriesInSlot,
@@ -54,6 +55,10 @@ interface ActivityHoursProps {
  * the records logged under it, and its total. An hour meant to be logged with
  * nothing under it says so, and a press on its hour, or on its +, points the
  * form at it.
+ *
+ * A long day scrolls inside its own box rather than pushing the page down, and
+ * the hour picked is kept in view in it — scrolled within the box alone, so the
+ * page itself never moves for it.
  */
 export function ActivityHours({
   day,
@@ -69,9 +74,25 @@ export function ActivityHours({
   onRemove,
 }: ActivityHoursProps) {
   const current = slotAt(now)
+  const list = useRef<HTMLUListElement>(null)
+
+  useEffect(() => {
+    const box = list.current
+    const row = box?.querySelector<HTMLElement>('[data-picked="true"]')
+    if (box === null || row === null || row === undefined) return
+    // Offsets are from the list itself, which is what it is positioned against.
+    if (row.offsetTop < box.scrollTop) box.scrollTop = row.offsetTop
+    else if (row.offsetTop + row.offsetHeight > box.scrollTop + box.clientHeight) {
+      box.scrollTop = row.offsetTop + row.offsetHeight - box.clientHeight
+    }
+  }, [day, pickedHour])
 
   return (
-    <ul aria-label="Hours" className="flex flex-col gap-0.5">
+    <ul
+      ref={list}
+      aria-label="Hours"
+      className="relative -mx-1 flex max-h-[min(26rem,60dvh)] flex-col gap-0.5 overflow-y-auto overscroll-y-contain px-1 py-0.5"
+    >
       {hours.map((hour) => {
         const slot = { day, hour }
         const logged = entriesInSlot(entries, slot)
@@ -81,7 +102,7 @@ export function ActivityHours({
         const isNow = sameSlot(slot, current)
 
         return (
-          <li key={hour} className={`${row}${picked ? ` ${rowPicked}` : ''}`}>
+          <li key={hour} data-picked={picked} className={`${row}${picked ? ` ${rowPicked}` : ''}`}>
             <button
               type="button"
               onClick={() => { onPickHour(hour) }}

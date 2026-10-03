@@ -22,7 +22,7 @@ function atOnce() {
 }
 
 function setup(over: Partial<ChestState> = {}) {
-  const open = vi.fn(() => ({ tier: 'pinch' as const, points: 2, jackpot: 20 }))
+  const open = vi.fn(() => ({ points: 2, jackpot: 20 }))
   const chest: ChestState = {
     isLoading: false,
     settings: DEFAULT_CHEST,
@@ -30,7 +30,7 @@ function setup(over: Partial<ChestState> = {}) {
     blocked: null,
     dayAsked: 2,
     opened: null,
-    lastTier: null,
+    lastQuarter: null,
     sound: false,
     setSound: vi.fn(),
     open,
@@ -60,18 +60,11 @@ describe('what the page says', () => {
     expect(screen.getByText(/Clear everything in Today and a key is yours/)).toBeTruthy()
   })
 
-  it('says the least and the most a chest can give: 1 point, up to the best task today (CHST-26)', () => {
+  it('says the least and the most a chest can give: 1 point, up to everything earned today (CHST-26)', () => {
     setup({ jackpot: 25 })
 
     expect(range()).toEqual({ least: '1point', most: '25points' })
-    expect(screen.getByText('The most is what your best task today was worth.')).toBeTruthy()
-  })
-
-  it('says what the most is when it is a typical day', () => {
-    setup({ jackpot: 12, settings: { leastTasks: 1, jackpot: 'typicalDay' } })
-
-    expect(range().most).toBe('12points')
-    expect(screen.getByText('The most is what a typical day earned this week.')).toBeTruthy()
+    expect(screen.getByText('The most is everything you earned today.')).toBeTruthy()
   })
 
   it('says what to do while nothing finished today has earned anything, the most being the least (CHST-26)', () => {
@@ -81,7 +74,7 @@ describe('what the page says', () => {
     expect(screen.getByText(/Nothing finished today has earned points yet/)).toBeTruthy()
   })
 
-  it('lists no table of tiers and chances, only the two ends', () => {
+  it('lists no table of chances, only the two ends', () => {
     setup()
 
     expect(screen.queryByText('What a chest can hold')).toBeNull()
@@ -121,7 +114,7 @@ describe('practice', () => {
 
     await user.click(practice)
     await user.click(screen.getByRole('button', { name: /open.*chest/i }))
-    expect(screen.getByText(/^\+\d+$/)).toBeTruthy()
+    expect(within(screen.getByRole('status')).getByText(/^\+\d+$/)).toBeTruthy()
 
     await user.click(practice)
 
@@ -129,7 +122,7 @@ describe('practice', () => {
     expect(screen.queryByText('Practice — nothing is earned')).toBeNull()
   })
 
-  it('counts the openings by tier, so the weights can be eyed against the table', async () => {
+  it('counts the openings by quarter of the jackpot, so the odds can be eyed (CHST-21)', async () => {
     atOnce()
     const { user } = setup()
 
@@ -145,7 +138,7 @@ describe('practice', () => {
     expect(counted.join(' ')).toMatch(/: 1/)
   })
 
-  it('offers a bigger jackpot to try, the real one being too small to tell the tiers apart', async () => {
+  it('offers a bigger jackpot to try, the real one being too small to tell the quarters apart', async () => {
     atOnce()
     const { user } = setup()
 
@@ -155,10 +148,11 @@ describe('practice', () => {
     await user.type(box, '400')
 
     expect(range().most).toBe('400points')
-    expect(screen.getByText('The most is what you are practising with.')).toBeTruthy()
+    // No sentence about it: the most is the number just typed.
+    expect(screen.queryByText(/^The most is/)).toBeNull()
   })
 
-  it('offers to skip the wait, so thirty openings do not cost a minute of rattling', async () => {
+  it('offers to skip the wait, so thirty openings do not cost three minutes of reels', async () => {
     atOnce()
     const { user } = setup()
 

@@ -18,7 +18,7 @@ import {
 // Type-only: ./list reads the task's rules, so nothing is imported back from it.
 import type { ListId } from './list'
 import type { Placement } from './placement'
-import { assertValidRepeat, countsForCurrentOccurrence, currentOccurrence, type Repeat } from './repeat'
+import { assertValidRepeat, countsForCurrentOccurrence, currentOccurrence, repeatsEveryDay, type Repeat } from './repeat'
 import { createSubtask, isSubtaskComplete, reorderSubtasks, type Subtask, type SubtaskId } from './subtask'
 import { currentEntries, type TimeEntry } from './timeLog'
 import { normalizeTitle } from './title'
@@ -66,6 +66,7 @@ export interface Task {
    * an occurrence ticked off after all reads as done, and the day stays here
    * only so that taking the tick back passes it over again. Picking a day for
    * the rule to start on puts the days from it on back in play (`setStartDay`).
+   * A habit holds none for a day still to come (`forgetRestsAhead`).
    */
   readonly skippedDays: readonly LocalDay[]
   /**
@@ -448,8 +449,31 @@ export function setRepeat(task: Task, repeat: Repeat | null, now: Date = new Dat
   // changed, not when it began. The hour stays through all of it: the rule gives
   // the task days to fall on, so "9:00" survives becoming a daily 9:00. A
   // completion that still stands under the new rule goes into the history, the
-  // way ticking it off under the rule would have.
-  return settleHistory({ ...task, repeat, dueDate: null }, now)
+  // way ticking it off under the rule would have. A rule with gaps skipped ahead
+  // and made daily is a habit, which rests today and no further (HAB-33).
+  return forgetRestsAhead(settleHistory({ ...task, repeat, dueDate: null }, now), now)
+}
+
+/**
+ * Lets go of the rests a habit holds for days still to come (HAB-33). A habit
+ * rests today and no further (HAB-32), so a rest stored ahead of its day was
+ * never a day passed over on purpose: it was left by skipping again before that
+ * rule, by a device still running an app from before it, or by a rule with gaps
+ * that was skipped ahead and then made daily. Kept, it would arrive with its day
+ * reading as a rest nobody took. Rests up to today stand, and a task that is not
+ * a habit keeps every skip it has: its rule has further occurrences to pass over
+ * (RPT-35).
+ *
+ * Returns the task itself when there is nothing to let go.
+ */
+export function forgetRestsAhead(task: Task, now: Date = new Date()): Task {
+  if (task.repeat === null || !repeatsEveryDay(task.repeat)) {
+    return task
+  }
+
+  const today = toLocalDay(now)
+  const skippedDays = task.skippedDays.filter((day) => day <= today)
+  return skippedDays.length === task.skippedDays.length ? task : { ...task, skippedDays }
 }
 
 export class DueDateOnRepeatingTaskError extends Error {

@@ -105,21 +105,30 @@ describe('readPointValue (STORE-42, STORE-24)', () => {
 })
 
 describe('readChestSettings (STORE-48, STORE-24)', () => {
-  it('reads back what the chest asks of a day and what its key plays for', () => {
-    const asking: ChestSettings = { leastTasks: 4, jackpot: 'typicalDay' }
+  it('reads back what the chest asks of a day', () => {
+    const asking: ChestSettings = { leastTasks: 4 }
 
     expect(readChestSettings(toStoredChestSettings(asking))).toEqual(asking)
     expect(readChestSettings(toStoredChestSettings(DEFAULT_CHEST))).toEqual(DEFAULT_CHEST)
   })
 
+  it('reads settings saved with the old choice of jackpot, keeping how big a day must be', () => {
+    const saved = { ...toStoredChestSettings({ leastTasks: 4 }), settings: { leastTasks: 4, jackpot: 'typicalDay' } }
+
+    expect(readChestSettings(saved)).toEqual({ leastTasks: 4 })
+  })
+
+  it('saves no choice of jackpot, there being none', () => {
+    expect(toStoredChestSettings({ leastTasks: 4 }).settings).toEqual({ leastTasks: 4 })
+  })
+
   it('trusts nothing in a version it does not know, or not shaped as settings (STORE-24)', () => {
-    const saved = toStoredChestSettings({ leastTasks: 4, jackpot: 'typicalDay' })
+    const saved = toStoredChestSettings({ leastTasks: 4 })
 
     expect(readChestSettings({ ...saved, version: 99 })).toBeNull()
     expect(readChestSettings({ ...saved, name: 'pointValue' })).toBeNull()
-    expect(readChestSettings({ ...saved, settings: { leastTasks: 0, jackpot: 'typicalDay' } })).toBeNull()
-    expect(readChestSettings({ ...saved, settings: { leastTasks: 4, jackpot: 'whatever' } })).toBeNull()
-    expect(readChestSettings({ ...saved, settings: { leastTasks: '4', jackpot: 'bestTask' } })).toBeNull()
+    expect(readChestSettings({ ...saved, settings: { leastTasks: 0 } })).toBeNull()
+    expect(readChestSettings({ ...saved, settings: { leastTasks: '4' } })).toBeNull()
     expect(readChestSettings({ ...saved, settings: {} })).toBeNull()
     expect(readChestSettings(null)).toBeNull()
   })

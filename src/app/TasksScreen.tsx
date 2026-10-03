@@ -72,7 +72,7 @@ import { NudgeToast } from './components/NudgeToast'
 import { ReminderToast } from './components/ReminderToast'
 import { TagList } from './components/TagList'
 import { TaskDragAndDrop } from './components/TaskDragAndDrop'
-import { TaskList } from './components/TaskList'
+import { TaskList, type ListHistory } from './components/TaskList'
 import { TrashIcon } from './components/TrashIcon'
 import { TrashList } from './components/TrashList'
 import { UndoToast } from './components/UndoToast'
@@ -106,10 +106,13 @@ import { useTaskTimer } from './useTaskTimer'
 import { useUndoToast } from './useUndoToast'
 import { modeStates } from './modes'
 import { useView } from './useView'
+import { useUnheldHistory } from './useUnheldHistory'
 import {
   allDoneMessage,
   emptyMessage,
   doneSpans,
+  foldedSpans,
+  historyScope,
   isModesView,
   isRewardsView,
   isTaskView,
@@ -177,6 +180,10 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const rewards = useRewards(storage.rewards, storageProblem.report)
   const {
     tasks,
+    heldSince,
+    reachBack,
+    unheld,
+    everywhere,
     isLoading,
     loadFailed: tasksNotLoaded,
     addTask,
@@ -370,6 +377,11 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // Every tag there is: the kept ones, whether or not a task carries them, and
   // any a live task carries that is not kept yet.
   const tags = allTags(savedTags.tags, live)
+  // Whether the done work the view folds away includes history not loaded yet
+  // (STORE-55), and with it what the view's list needs to load it (TASK-74).
+  const unheldHere = useUnheldHistory(isTaskView(view) ? historyScope(view, tags) : null, heldSince, !isLoading, unheld)
+  const history: ListHistory | null =
+    heldSince === null || unheldHere === 'none' ? null : { heldSince, unheld: unheldHere, onReachBack: reachBack }
 
   // Overdue float to the top — the run the list heads with Overdue — urgent to
   // the top of their run, and done sink to the bottom; sort is stable, so each
@@ -554,13 +566,16 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   /**
    * Deleting a tag is two changes, as deleting a list is: off every task, then
    * no longer kept. The tasks go first, so a tag no record keeps is never left on
-   * a task to be kept all over again.
+   * a task to be kept all over again — the history too, which is why both wait
+   * until every task is held (`everywhere`, STORE-55).
    */
   function handleDeleteTag(name: string) {
-    removeTagEverywhere(name)
-    savedTags.remove(name)
-    // Unbound from every Balance category too, rather than left naming a tag that has gone (BAL-11).
-    categories.removeTag(name)
+    everywhere(() => {
+      removeTagEverywhere(name)
+      savedTags.remove(name)
+      // Unbound from every Balance category too, rather than left naming a tag that has gone (BAL-11).
+      categories.removeTag(name)
+    })
   }
 
   /** Makes a tag no task carries yet, unless there is one of that name already. */
@@ -577,10 +592,14 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   function handleRenameTag(from: string, to: string): boolean {
     if (tags.some((tag) => sameTag(tag, to) && !sameTag(tag, from))) return false
 
-    renameTagEverywhere(from, to)
-    // The categories bound to it stay bound under the new name (BAL-11).
-    categories.renameTag(from, to)
-    return savedTags.rename(from, to)
+    // On every task, the history too, so the change waits until every task is held (STORE-55).
+    everywhere(() => {
+      renameTagEverywhere(from, to)
+      // The categories bound to it stay bound under the new name (BAL-11).
+      categories.renameTag(from, to)
+      savedTags.rename(from, to)
+    })
+    return true
   }
 
   /**
@@ -902,6 +921,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     focusId={focusId}
                     dimAll={procrastination.phase === 'idle'}
                     doneSpans={spans}
+                    foldedSpans={foldedSpans(view)}
+                    history={history}
                     emptyMessage={tasksNotLoaded ? TASKS_NOT_LOADED : emptyMessage(view, lists.lists)}
                     allDoneMessage={allDoneMessage(view, lists.lists)}
                     actions={taskActions}

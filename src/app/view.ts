@@ -7,22 +7,26 @@ import {
   isTagName,
   lastDayOf,
   ROLLING_SPANS,
+  sameTag,
+  type CompletionSpan,
   type CompletionSpans,
   type List,
   type ListId,
   type LocalDay,
   type Task,
 } from '../core'
+import type { TaskScope } from '../storage/taskRepository'
 
 /**
  * The screens the app has, and where another would be added.
  *
  * Most of them show tasks — the ones for today, this week and this month, every
  * task, the Inbox, one list's and the ones carrying a tag — and share everything
- * but which tasks they show, what a task added to them starts with and whether
- * their done tasks are divided by when they were finished. Habits, the rewards
- * pages, More, the modes, the lists, the tags, the balance of time, the
- * activity log, the trash and settings are screens of their own.
+ * but which tasks they show, what a task added to them starts with, whether
+ * their done tasks are divided by when they were finished and which of those
+ * spans are folded away. Habits, the rewards pages, More, the modes, the lists,
+ * the tags, the balance of time, the activity log, the trash and settings are
+ * screens of their own.
  *
  * Rewards is six screens rather than one: how the points stand, and under it the
  * chest, the history, the prizes, the wishlist and the rules (RWD-19, RWD-30).
@@ -266,13 +270,67 @@ export function viewShowingTask(task: Task, current: View, now: Date, lists: rea
 }
 
 /**
+ * A list's spans — the Inbox's, one list's or one tag's: today's work apart,
+ * then the week and the month back from it. Yesterday is part of the week here
+ * rather than a span of its own.
+ */
+const LIST_SPANS: CompletionSpans = ['today', 'last7Days', 'last30Days']
+
+/** Everything a list has done before today. */
+const LIST_FOLDED: readonly CompletionSpan[] = ['last7Days', 'last30Days', 'earlier']
+
+/** Everything done before today, on Tasks. */
+const TASKS_FOLDED: readonly CompletionSpan[] = ['yesterday', 'last7Days', 'last30Days', 'earlier']
+
+const NONE_FOLDED: readonly CompletionSpan[] = []
+
+/** The views that are a list of tasks kept together, rather than a period's: the Inbox, a list's and a tag's. */
+function isListLike(view: TaskView): boolean {
+  return view === 'inbox' || isOneListView(view) || isTagView(view)
+}
+
+/**
  * How the view divides its done tasks by when they were finished, or null for
  * one run of them. Tasks holds every done task there is, however long ago, and
  * one run of them would bury today's work under last month's, so it counts back
- * in rolling windows. Everywhere else keeps one run.
+ * in rolling windows. The Inbox, a list and a tag keep today's work apart from
+ * the week's and the month's. Today, Week and Month keep one run, being one
+ * period's work already.
  */
 export function doneSpans(view: TaskView): CompletionSpans | null {
-  return view === 'tasks' ? ROLLING_SPANS : null
+  if (view === 'tasks') return ROLLING_SPANS
+  if (isListLike(view)) return LIST_SPANS
+  return null
+}
+
+/**
+ * The spans of done work the view draws folded away behind their headings until
+ * one is opened: everywhere it divides them, all of it bar today's (TASK-72,
+ * TASK-73), so a list shows what was done today and says what was done before —
+ * and what was done long before is not loaded until it is asked for (TASK-74).
+ */
+export function foldedSpans(view: TaskView): readonly CompletionSpan[] {
+  if (view === 'tasks') return TASKS_FOLDED
+  if (isListLike(view)) return LIST_FOLDED
+  return NONE_FOLDED
+}
+
+/**
+ * The tasks a view's done spans are drawn from, as the server counts them, to
+ * ask whether any of them is history not loaded yet (STORE-55): every task on
+ * Tasks, the ones in no list for the Inbox, a list's own, a tag's — spelled as
+ * the tag is kept, `known` being every tag there is. Null for a view with no
+ * spans to fold.
+ */
+export function historyScope(view: TaskView, known: readonly string[] = []): TaskScope | null {
+  if (view === 'tasks') return { kind: 'all' }
+  if (view === 'inbox') return { kind: 'list', listId: null }
+  if (isOneListView(view)) return { kind: 'list', listId: viewListId(view) }
+  if (isTagView(view)) {
+    const tag = viewTag(view)
+    return { kind: 'tag', tag: known.find((name) => sameTag(name, tag)) ?? tag }
+  }
+  return null
 }
 
 /** The day a task added to the view starts on: the last day of its period, if it has one. */

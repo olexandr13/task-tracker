@@ -26,7 +26,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Habits](habits.md) | Daily tasks as habits: streaks, rates and the grid of days |
 | [Warm-up](warm-up.md) | The month that lets the habits in one at a time: one on day one, two on day two |
 | [Rewards](rewards.md) | Points a task earns on every completion, the bonus for clearing a period, the prizes and the wishlist they are spent on, and the Rewards pages |
-| [The chest](chest.md) | A cleared day earns a key, and the key opens a chest worth a share of a jackpot |
+| [The chest](chest.md) | A cleared day earns a key, and the key opens a chest worth anything from 1 point to everything earned today |
 | [Time goals](time-goals.md) | A length of time a task asks for, sessions logged against it, and the hint to tick it off |
 | [Balance](balance.md) | Where the logged time went: categories named by the owner, bound to tags, and the time each took today, this week or this month |
 | [Activity log](activity-log.md) | The day hour by hour: what was done and for how long, the records added and changed, and what they add up to over a day, a week or a month |

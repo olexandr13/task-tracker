@@ -51,7 +51,7 @@ describe('adding to the log (ACT-2 to ACT-6)', () => {
   it('logs what was done and how long under the hour just gone, minutes unless hours are written', async () => {
     const { user, onAdd } = setUp()
 
-    expect(screen.getByText('14:00–15:00')).toBeDefined()
+    expect(activityBox().getAttribute('placeholder')).toBe('What did you do 14:00–15:00?')
     await user.type(activityBox(), 'Reading{Enter}')
     expect(document.activeElement).toBe(durationBox())
     await user.type(durationBox(), '1h 20m{Enter}')
@@ -81,17 +81,22 @@ describe('adding to the log (ACT-2 to ACT-6)', () => {
     expect(onAdd).not.toHaveBeenCalled()
   })
 
-  it('steps the hour, and refuses one that has not started (ACT-5)', async () => {
-    const { user } = setUp()
+  it('takes the hour picked in the list, and refuses one that has not started (ACT-5)', async () => {
+    // Logged ahead of this device's clock — on another device, say — so the hour is listed.
+    const ahead = entry('Call', 20, { day: '2026-10-02', hour: 17 })
+    const { user, onAdd } = setUp({ entries: [ahead] })
 
-    await user.click(screen.getByRole('button', { name: 'The hour before' }))
-    expect(screen.getByText('13:00–14:00')).toBeDefined()
-    await user.click(screen.getByRole('button', { name: 'The hour after' }))
-    await user.click(screen.getByRole('button', { name: 'The hour after' }))
-    expect(screen.getByText('15:00–16:00')).toBeDefined()
-    await user.click(screen.getByRole('button', { name: 'The hour after' }))
+    await user.click(screen.getByRole('button', { name: 'Log into 12:00–13:00', pressed: false }))
+    expect(activityBox().getAttribute('placeholder')).toBe('What did you do 12:00–13:00?')
+    await user.type(activityBox(), 'Lunch')
+    await user.type(durationBox(), '40{Enter}')
+    expect(onAdd).toHaveBeenCalledExactlyOnceWith('Lunch', 2400, { day: '2026-10-02', hour: 12 })
+
+    await user.click(screen.getByRole('button', { name: 'Log into 17:00–18:00', pressed: false }))
+    await user.type(activityBox(), 'Call')
+    await user.type(durationBox(), '10{Enter}')
     expect(screen.getByRole('alert').textContent).toBe('That hour hasn’t started yet.')
-    expect(screen.getByText('15:00–16:00')).toBeDefined()
+    expect(onAdd).toHaveBeenCalledOnce()
   })
 
   it('offers the activities used before, picked with the arrows (ACT-4)', async () => {
@@ -115,7 +120,8 @@ describe('adding to the log (ACT-2 to ACT-6)', () => {
   it('opens on the hour a check-in asked about (CHECKIN-4)', () => {
     setUp({ initialSlot: { day: '2026-10-02', hour: 11 } })
 
-    expect(screen.getByText('11:00–12:00')).toBeDefined()
+    expect(activityBox().getAttribute('placeholder')).toBe('What did you do 11:00–12:00?')
+    expect(within(hourRow('11:00')).getByRole('button', { name: 'Log into 11:00–12:00', pressed: true })).toBeDefined()
   })
 })
 
@@ -141,7 +147,7 @@ describe('the day (ACT-7 to ACT-11)', () => {
 
     await user.click(within(hourRow('11:00')).getByRole('button', { name: 'Log into 11:00–12:00', pressed: false }))
 
-    expect(screen.getByText('11:00–12:00', { selector: 'span' })).toBeDefined()
+    expect(activityBox().getAttribute('placeholder')).toBe('What did you do 11:00–12:00?')
     expect(document.activeElement).toBe(activityBox())
   })
 
@@ -157,6 +163,20 @@ describe('the day (ACT-7 to ACT-11)', () => {
     await user.type(durationBox(), '50{Enter}')
     expect(onChange).toHaveBeenCalledExactlyOnceWith(work.id, { activity: 'Work', seconds: 3000, hour: 9 })
     expect(screen.getByRole('region', { name: 'Add to the log' })).toBeDefined()
+  })
+
+  it('moves a record being changed to another hour pressed (ACT-10)', async () => {
+    const { user, onChange } = setUp({ entries: [work] })
+
+    await user.click(screen.getByRole('button', { name: 'Change “Work 45m”' }))
+    expect(screen.getByText('Change “Work 45m” · 09:00–10:00')).toBeDefined()
+    expect(screen.getByText('Press another hour to move it.')).toBeDefined()
+
+    await user.click(within(hourRow('11:00')).getByRole('button', { name: 'Log into 11:00–12:00', pressed: false }))
+    expect(screen.getByText('Change “Work 45m” · 11:00–12:00')).toBeDefined()
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(onChange).toHaveBeenCalledExactlyOnceWith(work.id, { activity: 'Work', seconds: 2700, hour: 11 })
   })
 
   it('deletes a record from its × or from the form (ACT-11)', async () => {

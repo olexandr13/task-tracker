@@ -12,7 +12,7 @@ const NOW = new Date('2026-09-15T10:00:00.000Z')
 function repositoryThat(outcome: 'accepts' | 'fails') {
   const imported: Task[] = []
   const repository: TaskRepository = {
-    subscribe: () => () => {},
+    subscribe: () => ({ reachBack() {}, unheld: () => Promise.resolve(0), stop() {} }),
     save: () => Promise.resolve(),
     importTasks(tasks) {
       if (outcome === 'fails') return Promise.reject(new Error('offline'))

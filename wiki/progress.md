@@ -13,17 +13,22 @@ separately, on the [Rewards](rewards.md) pages — where clearing a bar of its o
   "done at some point this week" is exactly what the saved data can answer — a daily task counts
   once towards the week, not seven times.
 - **PROG-4** A task belongs to a period when an occurrence of its rule falls inside that period,
-  when its due date does, or when it was completed inside it. A **skipped** occurrence (RPT-34) asks
-  nothing of its day, so a daily task skipped today is out of today's count and still in the week's,
-  and a weekly task whose only occurrence this week was skipped is out of the week. An occurrence
-  passed over by reopening a task after its day (RPT-38) counts the same way, and so does a day
-  before the rule starts (DUE-18): a habit that starts next month is no part of this month's count.
-- **PROG-5** A task that happens once with a due date belongs to the period its day falls in and,
-  while it is still to do, to every later period as well — letting it slip does not take it out of
-  the count. One with **no due date** belongs to **all three** while it is still to do, being work
-  any of their days would take, so a bar counts what its list shows (LIST-5, LIST-13, LIST-18) —
-  which means today's bar, and the bonus that follows it (RWD-25), ask for the undated backlog along
-  with the day's own work. Done, either kind counts in the period it was completed in.
+  when its due day does or went by undone before it (PROG-5), or when it was completed inside it. A
+  **skipped** occurrence (RPT-34) asks nothing of its day, so a daily task skipped today is out of
+  today's count and still in the week's, and a weekly task whose only occurrence this week was
+  skipped is out of the week. An occurrence passed over by reopening a task after its day (RPT-38)
+  counts the same way, and so does a day before the rule starts (DUE-18): a habit that starts next
+  month is no part of this month's count.
+- **PROG-5** A task belongs to the period its day falls in and, while it is still to do, to every
+  later period as well — letting it slip does not take it out of the count. That holds for a one-off
+  past its date and for a repeating task whose occurrence went by undone (DUE-11) alike: a Monday
+  task missed on Monday is in Tuesday's count, as it is in Tuesday's list under **Overdue**
+  (LIST-2), until it is ticked off or passed over (RPT-34, RPT-38). A one-off with **no due date**
+  belongs to **all three** while it is still to do, being work any of their days would take. So,
+  still to do, a task is counted wherever its list shows it (LIST-2, LIST-5, LIST-13, LIST-18) —
+  which means today's bar, and the bonus and the chest's key that follow it (RWD-25, CHST-2), ask
+  for everything overdue and the undated backlog along with the day's own work. Done, a one-off
+  counts in the period it was completed in.
 - **PROG-6** A task counts as done for a period when its completion time falls inside that period.
   Yesterday's tick is out of today, and still in this week and this month.
 - **PROG-7** A task completed inside a period always counts towards it, even where the occurrence
@@ -49,5 +54,6 @@ separately, on the [Rewards](rewards.md) pages — where clearing a bar of its o
 
 ---
 
-**Where it lives:** `src/core/progress.ts` (the counting), `src/app/components/ProgressPanel.tsx`.
+**Where it lives:** `src/core/progress.ts` (the counting), `src/core/due.ts` (`isInPeriod`: what a
+list shows, which is what a bar counts of the tasks still to do), `src/app/components/ProgressPanel.tsx`.
 **Tested in:** `src/core/progress.test.ts`.

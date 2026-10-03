@@ -241,41 +241,78 @@ body {
   }
 }
 
+
 /* ---------------------------------------------------------------------------
    The chest (CHST-14). Clearing Today earns a key, and the key is worth having
-   because of the two and a half seconds that follow it: a squash as it is
-   pressed, three rattles each harder than the last, a crack of light that takes
-   on a colour, a held beat in which the cabinet darkens round a trembling chest
-   — and then the lid, a flash, a ring going out, and the light flooding up.
+   because of the seconds that follow it: a supply crate unlocking — the dial
+   turning, the latches going with a hiss — and dropping away; an old set's
+   screen coming on behind it; a reel of cards running past a marker, ticking,
+   slowing to a crawl; a beat on one card — and that card coming out onto a
+   starburst in its own colour.
+
+   Two looks at once, on purpose: the reel is a modern game's, quick and clean,
+   and everything round it is 1962 left out in the weather — enamel gone at the
+   corners, hazard stripes, a rounded tube with scanlines on it.
 
    The lengths here are the ones in `src/app/chestTiming.ts`; changing one means
-   changing the other. Every movement is transform and opacity, so the whole of
-   it runs on the compositor, and every curve is chosen for what it is doing: a
-   hop rises fast and falls slow, a lid overshoots and settles, a ring eases out.
+   changing the other. Every movement is transform and opacity, so it runs on
+   the compositor, bar the brief brightness of the tube switching on and off.
 
-   The chest is SVG, so what moves inside it is turned about points in its own
-   space — `transform-box: view-box` — rather than about its own box, which
-   changes shape as it squashes.
+   The crate is SVG, so what moves inside it is turned about points in its own
+   space — `transform-box: view-box` — rather than about its own box.
    --------------------------------------------------------------------------- */
 
-/* The cabinet: a dark stage in either theme (Chest), lit faintly from above,
-   and when the chest is open, lit from within by whatever came out of it.
-   `--chest-glow` is the tier's light. */
+/* Cards are sized against the chest's own width rather than the window's, so a
+   phone's reel shows three and a wide screen's nearly five. */
+.chest-frame {
+  container-type: inline-size;
+}
+
+/* The cabinet: gunmetal in either theme (CHST-25), a lamp somewhere above it,
+   grit in the paint. `--chest-glow` is the light of the card once it is out,
+   in the colour of its quarter of the jackpot. */
+.chest-stage {
+  --card-w: clamp(5.5rem, 22cqw, 7.5rem);
+  --card-h: calc(var(--card-w) * 1.3);
+  --card-gap: 0.5rem;
+  --card-pitch: calc(var(--card-w) + var(--card-gap));
+  background:
+    radial-gradient(55% 70% at 50% -10%, rgb(255 214 150 / 0.17), transparent 70%),
+    radial-gradient(50% 16% at 50% 84%, rgb(0 0 0 / 0.4), transparent 75%),
+    linear-gradient(180deg, #25292d 0%, #181b1e 55%, #0f1113 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 28px 56px -28px rgb(0 0 0 / 0.8);
+}
+
 .chest-stage::before {
   content: '';
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(90% 55% at 50% 0%, rgb(255 237 213 / 0.09), transparent 70%),
-    radial-gradient(70% 40% at 50% 100%, rgb(0 0 0 / 0.35), transparent 70%);
-  pointer-events: none;
   z-index: -1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+}
+
+/* Hazard stripes along its foot, worn away towards the ends. */
+.chest-hazard {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 2;
+  height: 0.55rem;
+  pointer-events: none;
+  background: repeating-linear-gradient(-45deg, #e9a23b 0 9px, #161719 9px 18px);
+  box-shadow: 0 -1px 0 rgb(0 0 0 / 0.7);
+  opacity: 0.85;
+  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
 }
 
 .chest-cabinet-open {
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--chest-glow) 45%, transparent),
-    0 0 48px -4px color-mix(in srgb, var(--chest-glow) 55%, transparent),
+    0 0 48px -4px color-mix(in srgb, var(--chest-glow) 50%, transparent),
     0 24px 48px -24px rgb(0 0 0 / 0.6);
   transition: box-shadow 600ms ease-out;
 }
@@ -284,7 +321,7 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(60% 55% at 50% 50%, color-mix(in srgb, var(--chest-glow) 55%, transparent), transparent 72%);
+  background: radial-gradient(55% 60% at 50% 50%, color-mix(in srgb, var(--chest-glow) 30%, transparent), transparent 72%);
   opacity: 0;
 }
 
@@ -311,23 +348,65 @@ body {
   }
 }
 
-/* The held beat: the room going quiet round the chest. */
+/* While the reel runs, the room goes quiet round the screen. */
 .chest-vignette {
   position: absolute;
   inset: 0;
-  pointer-events: none;
   z-index: 1;
-  background: radial-gradient(closest-side at 50% 54%, transparent 45%, rgb(0 0 0 / 0.5));
+  pointer-events: none;
+  background: radial-gradient(closest-side at 50% 50%, transparent 55%, rgb(0 0 0 / 0.55));
   opacity: 0;
-  transition: opacity 180ms ease-in;
+  transition: opacity 240ms ease-in;
 }
 
 .chest-vignette-on {
   opacity: 1;
-  transition: opacity 480ms ease-out;
+  transition: opacity 900ms ease-out;
 }
 
-/* The chest as one, standing on its floor. */
+/* Dust turning in the lamp's light while the crate waits. */
+.chest-dust {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.chest-dust i {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: rgb(255 228 180 / 0.6);
+  opacity: 0;
+  animation: chest-dust 10s linear infinite;
+}
+
+.chest-dust i:nth-child(1) { left: 30%; top: 62%; animation-delay: -1s; }
+.chest-dust i:nth-child(2) { left: 44%; top: 40%; animation-delay: -4s; animation-duration: 12s; }
+.chest-dust i:nth-child(3) { left: 58%; top: 70%; animation-delay: -7s; }
+.chest-dust i:nth-child(4) { left: 66%; top: 34%; animation-delay: -2.5s; animation-duration: 13s; width: 2px; height: 2px; }
+.chest-dust i:nth-child(5) { left: 38%; top: 24%; animation-delay: -9s; animation-duration: 11s; width: 2px; height: 2px; }
+.chest-dust i:nth-child(6) { left: 52%; top: 18%; animation-delay: -5.5s; }
+.chest-dust i:nth-child(7) { left: 24%; top: 44%; animation-delay: -3s; animation-duration: 14s; width: 2px; height: 2px; }
+
+@keyframes chest-dust {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(22px, -70px);
+    opacity: 0;
+  }
+}
+
+/* The crate as one, standing on its floor. */
 .chest-object,
 .chest-shadow {
   transform-box: view-box;
@@ -366,7 +445,7 @@ body {
   }
 }
 
-/* And a glint running over the lid now and then, like light off varnish. */
+/* And a glint running over the enamel now and then. */
 .chest-glint {
   animation: chest-glint 3.6s cubic-bezier(0.45, 0, 0.2, 1) infinite;
 }
@@ -378,387 +457,609 @@ body {
   }
   85%,
   100% {
-    transform: translateX(240px);
+    transform: translateX(250px);
   }
 }
 
-/* Pressed: it squashes into its floor before anything else, the way a thing
-   gathers itself before it moves. */
+/* Pressed: it squashes into its floor, then jolts as the dial turns. */
 .chest-press {
-  animation: chest-press 0.16s cubic-bezier(0.3, 0, 0.3, 1) forwards;
+  animation: chest-press 0.14s cubic-bezier(0.3, 0, 0.3, 1) forwards;
 }
 
 @keyframes chest-press {
   to {
-    transform: scale(1.06, 0.92);
+    transform: scale(1.04, 0.94);
   }
 }
 
-/* The three rattles. Each one rises, twists and lands harder than the last:
-   squashed on the way down, stretched at the top, and the third nearly
-   jumping off its floor. */
-.chest-rattle-1 {
-  animation: chest-rattle-1 0.26s cubic-bezier(0.3, 0.7, 0.4, 1);
+.chest-jolt {
+  animation: chest-jolt 0.3s cubic-bezier(0.3, 0.7, 0.4, 1);
 }
 
-.chest-rattle-2 {
-  animation: chest-rattle-2 0.3s cubic-bezier(0.3, 0.7, 0.4, 1);
-}
-
-.chest-rattle-3 {
-  animation: chest-rattle-3 0.38s cubic-bezier(0.3, 0.7, 0.4, 1);
-}
-
-@keyframes chest-rattle-1 {
+@keyframes chest-jolt {
   0% {
-    transform: scale(1.06, 0.92);
+    transform: scale(1.04, 0.94);
   }
-  30% {
-    transform: translate(-1.5px, -4px) rotate(-2deg) scale(0.98, 1.03);
+  35% {
+    transform: translate(0, -4px) scale(0.98, 1.03);
   }
-  60% {
-    transform: translate(1.5px, 0) rotate(1.5deg) scale(1.03, 0.97);
+  70% {
+    transform: rotate(-0.8deg);
   }
   100% {
     transform: none;
   }
 }
 
-@keyframes chest-rattle-2 {
-  0% {
-    transform: scale(1.05, 0.94);
-  }
-  25% {
-    transform: translate(-3px, -10px) rotate(-4deg) scale(0.96, 1.06);
-  }
-  50% {
-    transform: translate(3px, -4px) rotate(4deg) scale(0.99, 1.01);
-  }
-  72% {
-    transform: translate(0, 0) rotate(-1.5deg) scale(1.06, 0.93);
-  }
-  100% {
-    transform: none;
-  }
+/* The dial: a three-quarter turn as the key goes, a jerk that goes nowhere when there is no key. */
+.chest-dial {
+  transform-box: view-box;
+  transform-origin: 100px 101px;
 }
 
-@keyframes chest-rattle-3 {
-  0% {
-    transform: scale(1.08, 0.9);
-  }
-  22% {
-    transform: translate(-4px, -20px) rotate(-7deg) scale(0.93, 1.1);
-  }
-  44% {
-    transform: translate(4px, -12px) rotate(6deg) scale(0.97, 1.04);
-  }
-  64% {
-    transform: translate(-2px, 0) rotate(-3deg) scale(1.1, 0.88);
-  }
-  82% {
-    transform: translate(1px, -2px) rotate(1deg) scale(0.98, 1.02);
-  }
-  100% {
-    transform: none;
-  }
+.chest-dial-turned {
+  transform: rotate(270deg);
+  transition: transform 0.3s cubic-bezier(0.5, 0, 0.2, 1.25);
 }
 
-/* The shadow under each hop: smaller and fainter the higher the chest goes. */
-.chest-hop-1 {
-  animation: chest-hop 0.26s ease-out;
-  --hop: 0.94;
+.chest-dial-refused {
+  animation: chest-dial-refused 0.42s cubic-bezier(0.3, 0.6, 0.4, 1);
 }
 
-.chest-hop-2 {
-  animation: chest-hop 0.3s ease-out;
-  --hop: 0.84;
-}
-
-.chest-hop-3 {
-  animation: chest-hop 0.38s ease-out;
-  --hop: 0.7;
-}
-
-@keyframes chest-hop {
-  30% {
-    transform: scale(var(--hop));
-    opacity: 0.6;
-  }
-}
-
-/* The held beat: almost still, a tremble too fine to call a rattle. */
-.chest-tremble {
-  animation: chest-tremble 0.09s linear infinite;
-}
-
-@keyframes chest-tremble {
+@keyframes chest-dial-refused {
   0%,
   100% {
-    transform: translate(0, 0) rotate(0);
+    transform: none;
   }
-  25% {
-    transform: translate(-0.7px, 0.2px) rotate(-0.4deg);
+  20% {
+    transform: rotate(14deg);
   }
-  75% {
-    transform: translate(0.7px, -0.2px) rotate(0.4deg);
+  45% {
+    transform: rotate(-10deg);
   }
-}
-
-/* The crack of light along the lid: a hairline with the second rattle, then,
-   held, a line that swells and brightens until it cannot be held in. */
-.chest-seam,
-.chest-seam-held {
-  transform-box: view-box;
-  transform-origin: 100px 106px;
-}
-
-.chest-seam {
-  animation: chest-seam 0.5s ease-out forwards;
-}
-
-.chest-seam-held {
-  animation: chest-seam-held 0.54s cubic-bezier(0.5, 0, 0.9, 0.6) forwards;
-}
-
-@keyframes chest-seam {
-  0% {
-    opacity: 0;
-    transform: scale(0.3, 0.4);
-  }
-  60% {
-    opacity: 0.9;
-  }
-  100% {
-    opacity: 0.8;
-    transform: scale(1, 1);
+  70% {
+    transform: rotate(5deg);
   }
 }
 
-@keyframes chest-seam-held {
-  0% {
-    opacity: 0.8;
-    transform: scale(1, 1);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1.06, 2.4);
-  }
+/* The lamp: dark, amber and breathing while a key waits, white as the lock
+   goes, a red blink for a press with no key behind it. */
+.chest-lamp-idle {
+  color: #6b5a3e;
 }
 
-/* The spill round the lid's outline: faint with the seam, and swelling through
-   the held beat until the lid cannot hold it. */
-.chest-backlight,
-.chest-backlight-held {
-  transform-box: view-box;
-  transform-origin: 100px 104px;
-}
-
-.chest-backlight {
-  animation: chest-backlight 0.6s ease-out forwards;
-}
-
-.chest-backlight-held {
-  animation: chest-backlight-held 0.54s cubic-bezier(0.5, 0, 0.9, 0.6) forwards;
-}
-
-@keyframes chest-backlight {
-  0% {
-    opacity: 0;
-    transform: scale(0.7, 0.5);
-  }
-  100% {
-    opacity: 0.55;
-    transform: scale(1, 1);
-  }
-}
-
-@keyframes chest-backlight-held {
-  0% {
-    opacity: 0.55;
-    transform: scale(1, 1);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1.18, 1.9);
-  }
-}
-
-/* Anything of the light that is not out yet. */
-.chest-dark {
+.chest-lamp-idle .chest-lamp-halo {
   opacity: 0;
 }
 
-/* The lid: off on a spring. It flies higher than it lands, tipping back, and
-   settles where it stays. */
-.chest-lid,
-.chest-lid-still {
+.chest-lamp-waiting {
+  color: #ffb43a;
+  animation: chest-lamp 2.4s ease-in-out infinite;
+}
+
+.chest-lamp-open {
+  color: #fff4dc;
+}
+
+.chest-lamp-refused {
+  color: #f43f3f;
+  animation: chest-lamp-blink 0.14s steps(2, jump-none) 3;
+}
+
+@keyframes chest-lamp {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes chest-lamp-blink {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.25;
+  }
+}
+
+/* The latches spring off, the lid lifts a hair, light shows along the seam, and the seal hisses. */
+.chest-latch {
   transform-box: view-box;
-  transform-origin: 100px 106px;
 }
 
-.chest-lid {
-  animation: chest-lid 0.72s linear forwards;
+.chest-latch-left,
+.chest-latch-right {
+  transition: transform 0.22s cubic-bezier(0.3, 1.6, 0.5, 1);
 }
 
-.chest-lid-still {
-  transform: translate(0, -46px) rotate(-11deg);
+.chest-latch-left {
+  transform: rotate(-38deg);
 }
 
-@keyframes chest-lid {
+.chest-latch-right {
+  transform: rotate(38deg);
+}
+
+.chest-lid-loose {
+  transform: translateY(-3px);
+  transition: transform 0.18s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.chest-leak {
+  animation: chest-leak 0.32s ease-out forwards;
+}
+
+@keyframes chest-leak {
   0% {
-    transform: translate(0, 0) rotate(0);
-    animation-timing-function: cubic-bezier(0.1, 0.7, 0.3, 1);
+    opacity: 0;
   }
   30% {
-    transform: translate(2px, -66px) rotate(-17deg);
-    animation-timing-function: cubic-bezier(0.5, 0, 0.6, 1);
+    opacity: 1;
+  }
+  45% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.chest-puff {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  filter: blur(2px);
+  animation: chest-puff 0.6s ease-out forwards;
+}
+
+.chest-puff-left {
+  --puff-x: -16px;
+}
+
+.chest-puff-right {
+  --puff-x: 16px;
+}
+
+@keyframes chest-puff {
+  0% {
+    opacity: 0.75;
+    transform: translate(0, 0) scale(0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--puff-x), -12px) scale(2.4);
+  }
+}
+
+/* The crate dropping away as the screen comes on. */
+.chest-crate-away {
+  animation: chest-crate-away 0.28s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+}
+
+@keyframes chest-crate-away {
+  to {
+    opacity: 0;
+    transform: translateY(6%) scale(0.86);
+    filter: blur(6px);
+  }
+}
+
+/* The screen: an old set's rounded tube in a gunmetal bezel. */
+.chest-screen {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: 50%;
+  z-index: 2;
+  height: calc(var(--card-h) + 2.5rem);
+  margin-top: calc((var(--card-h) + 2.5rem) / -2);
+  overflow: hidden;
+  border-radius: 1.4rem / 1.7rem;
+  pointer-events: none;
+  background: radial-gradient(120% 150% at 50% 50%, #1f2523 0%, #0d100f 70%, #070908 100%);
+  box-shadow:
+    0 0 0 1px #000,
+    0 0 0 6px #2d3136,
+    0 0 0 7px rgb(255 255 255 / 0.09),
+    0 0 0 8px rgb(0 0 0 / 0.5),
+    0 20px 40px -14px rgb(0 0 0 / 0.9);
+}
+
+/* Coming on as an old set does: a line, then the picture. */
+.chest-screen-on {
+  animation: chest-power-on 0.34s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes chest-power-on {
+  0% {
+    opacity: 0;
+    transform: scale(0.4, 0.008);
+    filter: brightness(5);
+  }
+  10% {
+    opacity: 1;
+  }
+  45% {
+    transform: scale(1, 0.008);
+    filter: brightness(5);
+  }
+  100% {
+    transform: none;
+    filter: none;
+  }
+}
+
+/* And going off as the card comes out of it: to a line, to a dot, to nothing. */
+.chest-screen-off {
+  animation: chest-power-off 0.42s cubic-bezier(0.6, 0, 0.8, 0.4) forwards;
+}
+
+@keyframes chest-power-off {
+  0% {
+    transform: none;
+    filter: none;
   }
   55% {
-    transform: translate(0, -40px) rotate(-8deg);
-    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+    transform: scale(1, 0.008);
+    filter: brightness(4);
+    opacity: 1;
   }
-  75% {
-    transform: translate(0, -50px) rotate(-12.5deg);
-    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  85% {
+    transform: scale(0.02, 0.008);
+    filter: brightness(6);
+    opacity: 1;
   }
   100% {
-    transform: translate(0, -46px) rotate(-11deg);
+    transform: scale(0, 0);
+    opacity: 0;
   }
 }
 
-/* The chest itself kicks as the lid goes. */
-.chest-recoil {
-  animation: chest-recoil 0.5s cubic-bezier(0.2, 0.8, 0.3, 1);
+.chest-reel-window {
+  position: absolute;
+  inset: 0;
+  mask-image: linear-gradient(90deg, transparent 0, #000 18%, #000 82%, transparent 100%);
 }
 
-@keyframes chest-recoil {
+/* The strip: its left edge at the marker, sent left from `--reel-from` cards to
+   `--reel-to`. How long it takes, and the curve, are set beside it in
+   `ChestReel`, from `chestTiming` and `chestReel`. */
+.chest-reel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  margin-top: calc(var(--card-h) / -2);
+  transform: translateX(calc(var(--reel-from) * var(--card-pitch) * -1));
+  will-change: transform;
+}
+
+@keyframes chest-reel-run {
+  to {
+    transform: translateX(calc(var(--reel-to) * var(--card-pitch) * -1));
+  }
+}
+
+.chest-reel-slot {
+  display: flex;
+  flex: none;
+  justify-content: center;
+  width: var(--card-pitch);
+}
+
+.chest-scanlines {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgb(0 0 0 / 0.24) 0 1px, transparent 1px 3px);
+}
+
+/* The bar of light that rolls down an old set's picture. */
+.chest-scanlines::after {
+  content: '';
+  position: absolute;
+  inset: -40% 0 auto;
+  height: 40%;
+  background: linear-gradient(180deg, transparent, rgb(200 255 230 / 0.05), transparent);
+  animation: chest-roll 3.2s linear infinite;
+}
+
+@keyframes chest-roll {
+  to {
+    transform: translateY(350%);
+  }
+}
+
+/* The glass: curved, catching the lamp at its top corner, dark at its rim. */
+.chest-screen-glass {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(90% 70% at 20% 0%, rgb(255 255 255 / 0.09), transparent 55%);
+  box-shadow:
+    inset 0 0 30px 8px rgb(0 0 0 / 0.75),
+    inset 0 0 0 2px rgb(0 0 0 / 0.6);
+}
+
+/* The marker down the middle, with a flapper top and bottom that each card flicks. */
+.chest-marker {
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  left: 50%;
+  z-index: 2;
+  width: 2px;
+  margin-left: -1px;
+  background: linear-gradient(180deg, #ffc46b, #ffb43a 50%, #ffc46b);
+  box-shadow: 0 0 10px 1px rgb(255 170 50 / 0.75);
+}
+
+.chest-marker::before,
+.chest-marker::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 0;
+  height: 0;
+  margin-left: -7px;
+  border-right: 7px solid transparent;
+  border-left: 7px solid transparent;
+  filter: drop-shadow(0 0 4px rgb(255 170 50 / 0.8));
+}
+
+.chest-marker::before {
+  top: -0.5rem;
+  border-top: 10px solid #ffb43a;
+  transform-origin: 50% 0;
+}
+
+.chest-marker::after {
+  bottom: -0.5rem;
+  border-bottom: 10px solid #ffb43a;
+  transform-origin: 50% 100%;
+}
+
+.chest-marker-tick {
+  animation: chest-marker-tick 0.14s ease-out;
+}
+
+.chest-marker-tick::before {
+  animation: chest-flick-top 0.14s ease-out;
+}
+
+.chest-marker-tick::after {
+  animation: chest-flick-bottom 0.14s ease-out;
+}
+
+@keyframes chest-marker-tick {
+  from {
+    box-shadow: 0 0 16px 3px rgb(255 200 90 / 1);
+  }
+}
+
+@keyframes chest-flick-top {
+  from {
+    transform: rotate(-26deg);
+  }
+}
+
+@keyframes chest-flick-bottom {
+  from {
+    transform: rotate(26deg);
+  }
+}
+
+.chest-marker-landed {
+  animation: chest-marker-landed 0.26s ease-out forwards;
+}
+
+@keyframes chest-marker-landed {
+  to {
+    width: 3px;
+    box-shadow: 0 0 22px 4px rgb(255 200 90 / 1);
+  }
+}
+
+/* A card: a chamfered tag of dark metal, the colour of its quarter of the
+   jackpot along its foot and glowing up from it, pips in its corner counting
+   the quarter out. */
+.chest-type {
+  font-family: 'DIN Condensed', 'Bahnschrift', 'Roboto Condensed', 'Arial Narrow', ui-sans-serif, system-ui, sans-serif;
+  font-stretch: condensed;
+}
+
+.chest-card {
+  --cut: 0.85rem;
+  --chamfer: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: var(--card-w);
+  height: var(--card-h);
+  color: var(--tone);
+  clip-path: var(--chamfer);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tone) 50%, #3a3f45), #26292d 40%, color-mix(in srgb, var(--tone) 35%, #1a1c1f));
+}
+
+.chest-card::before {
+  content: '';
+  position: absolute;
+  inset: 1.5px;
+  clip-path: var(--chamfer);
+  background:
+    radial-gradient(90% 55% at 50% 100%, color-mix(in srgb, var(--tone) 30%, transparent), transparent 75%),
+    linear-gradient(165deg, #2f3337 0%, #1d2023 50%, #141618 100%);
+}
+
+.chest-card::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 var(--cut);
+  height: 0.3rem;
+  background: var(--tone);
+  box-shadow: 0 0 14px 2px var(--tone);
+}
+
+.chest-card-top::after {
+  background: linear-gradient(90deg, #f472b6, #facc15, #4ade80, #38bdf8, #c084fc, #f472b6);
+  background-size: 200% 100%;
+  animation: chest-rainbow-run 1.6s linear infinite;
+}
+
+@keyframes chest-rainbow-run {
+  to {
+    background-position: 200% 0;
+  }
+}
+
+.chest-card-pips {
+  position: absolute;
+  top: 0.55rem;
+  left: 0.6rem;
+  display: flex;
+  gap: 2px;
+}
+
+.chest-card-pips i {
+  width: 0.22rem;
+  height: 0.6rem;
+  border-radius: 1px;
+  background: rgb(255 255 255 / 0.13);
+}
+
+.chest-card-pips i.chest-card-pip-on {
+  background: var(--tone);
+  box-shadow: 0 0 5px var(--tone);
+}
+
+.chest-card-emblem {
+  position: relative;
+  width: 62%;
+  height: auto;
+  margin-top: 0.5rem;
+  filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.5));
+}
+
+.chest-card-points {
+  position: relative;
+  margin-bottom: 0.45rem;
+  font-size: calc(var(--card-w) * 0.21);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #f6efe0;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--tone) 70%, transparent);
+}
+
+/* A sweep of light over the card as it comes out. */
+.chest-card-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.5) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: chest-shine 0.9s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
+}
+
+@keyframes chest-shine {
+  to {
+    transform: translateX(120%);
+  }
+}
+
+/* The card once it is out: bigger, on a starburst in its own colour. */
+.chest-spot {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.chest-spot > * {
+  grid-area: 1 / 1;
+}
+
+.chest-spot-glow {
+  width: 70%;
+  height: 90%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--tone) 28%, transparent), transparent);
+}
+
+.chest-starburst {
+  width: auto;
+  height: 135%;
+  aspect-ratio: 1;
+  opacity: 0.5;
+  animation: chest-starburst-spin 48s linear infinite;
+}
+
+.chest-spot-card {
+  transform: scale(1.3);
+  filter: drop-shadow(0 14px 22px rgb(0 0 0 / 0.6));
+}
+
+.chest-spot-arriving .chest-spot-card {
+  animation: chest-card-out 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+.chest-spot-arriving .chest-starburst {
+  animation:
+    chest-starburst-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    chest-starburst-spin 48s linear 0.8s infinite;
+}
+
+.chest-spot-arriving .chest-spot-glow {
+  animation: chest-ambient 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes chest-card-out {
   0% {
-    transform: scale(1.1, 0.86);
-  }
-  35% {
-    transform: scale(0.95, 1.06);
-  }
-  65% {
-    transform: scale(1.02, 0.98);
+    transform: translateX(calc(var(--land) * var(--card-pitch))) scale(1);
   }
   100% {
+    transform: scale(1.3);
+  }
+}
+
+@keyframes chest-starburst-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(-40deg);
+  }
+  100% {
+    opacity: 0.5;
     transform: none;
   }
 }
 
-/* The light out of it: a core in the mouth, a bloom behind, and shafts through
-   the bloom that sway as if the light were moving inside. */
-.chest-core,
-.chest-core-still,
-.chest-bloom,
-.chest-bloom-still,
-.chest-rays,
-.chest-rays-still,
-.chest-rays-sway {
-  transform-box: view-box;
-  transform-origin: 100px 106px;
-}
-
-.chest-core {
-  animation: chest-core 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-}
-
-.chest-core-still {
-  opacity: 0.85;
-}
-
-@keyframes chest-core {
-  0% {
-    opacity: 0;
-    transform: scale(0.2, 0.4);
-  }
-  25% {
-    opacity: 1;
-    transform: scale(1.25, 1.6);
-  }
-  100% {
-    opacity: 0.85;
-    transform: scale(1, 1);
-  }
-}
-
-.chest-bloom {
-  animation:
-    chest-bloom 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards,
-    chest-breath-light 3s ease-in-out 0.9s infinite;
-}
-
-.chest-bloom-still {
-  opacity: 0.75;
-  animation: chest-breath-light 3s ease-in-out infinite;
-}
-
-@keyframes chest-bloom {
-  0% {
-    opacity: 0;
-    transform: scale(0.2);
-  }
-  30% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-  100% {
-    opacity: 0.85;
-    transform: scale(1);
-  }
-}
-
-@keyframes chest-breath-light {
-  0%,
-  100% {
-    opacity: 0.85;
-  }
-  50% {
-    opacity: 0.65;
-  }
-}
-
-.chest-rays {
-  animation: chest-rays 0.8s cubic-bezier(0.15, 0.85, 0.25, 1) forwards;
-}
-
-.chest-rays-still {
-  opacity: 0.8;
-}
-
-.chest-rays-sway {
-  animation: chest-rays-sway 7s ease-in-out infinite;
-}
-
-@keyframes chest-rays {
-  0% {
-    opacity: 0;
-    transform: scale(0.1, 0.05);
-  }
-  35% {
-    opacity: 1;
-    transform: scale(1.05, 1.12);
-  }
-  100% {
-    opacity: 0.8;
-    transform: scale(1, 1);
-  }
-}
-
-@keyframes chest-rays-sway {
-  0%,
-  100% {
-    transform: rotate(-3deg);
-  }
-  50% {
-    transform: rotate(3deg);
+@keyframes chest-starburst-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
 /* A jackpot's light will not hold one colour. */
-.chest-rainbow {
+.chest-starburst.chest-rainbow,
+.chest-spot-still .chest-starburst.chest-rainbow {
   animation:
-    chest-rays-sway 7s ease-in-out infinite,
+    chest-starburst-spin 48s linear infinite,
+    chest-rainbow 2.4s linear infinite;
+}
+
+.chest-spot-arriving .chest-starburst.chest-rainbow {
+  animation:
+    chest-starburst-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    chest-starburst-spin 48s linear 0.8s infinite,
     chest-rainbow 2.4s linear infinite;
 }
 
@@ -768,11 +1069,11 @@ body {
   }
 }
 
-/* The lid going: a flash out of the mouth, and two rings of light after it. */
+/* The card coming out: a flash, and two rings of light after it. */
 .chest-flash {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 53%, #fff 0%, rgb(255 255 255 / 0.85) 18%, color-mix(in srgb, var(--chest-glow) 60%, transparent) 40%, transparent 70%);
+  background: radial-gradient(circle at 50% 50%, #fff 0%, rgb(255 255 255 / 0.85) 16%, color-mix(in srgb, var(--chest-glow) 60%, transparent) 38%, transparent 68%);
   mix-blend-mode: screen;
   animation: chest-flash 0.55s cubic-bezier(0.1, 0.6, 0.3, 1) forwards;
 }
@@ -795,8 +1096,8 @@ body {
 .chest-shockwave {
   position: absolute;
   left: 50%;
-  top: 53%;
-  width: 36%;
+  top: 50%;
+  width: 30%;
   aspect-ratio: 1;
   border-radius: 9999px;
   border: 3px solid var(--chest-glow);
@@ -821,7 +1122,7 @@ body {
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(3);
+    transform: translate(-50%, -50%) scale(3.4);
   }
 }
 
@@ -852,7 +1153,7 @@ body {
   }
 }
 
-/* The number: in with a spring, glowing in the tier's own colour. */
+/* The number: in with a spring, glowing in its card's colour. */
 .chest-number {
   filter: drop-shadow(0 0 18px color-mix(in srgb, currentColor 55%, transparent));
   animation: chest-number 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both;
@@ -866,39 +1167,6 @@ body {
   100% {
     opacity: 1;
     transform: none;
-  }
-}
-
-.chest-tier {
-  animation: chest-tier 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both;
-}
-
-@keyframes chest-tier {
-  0% {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  100% {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* JACKPOT, written in every colour at once and running. */
-.chest-jackpot-text {
-  background: linear-gradient(90deg, #f472b6, #facc15, #4ade80, #38bdf8, #c084fc, #f472b6);
-  background-size: 200% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation:
-    chest-tier 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both,
-    chest-jackpot-text 1.6s linear infinite;
-}
-
-@keyframes chest-jackpot-text {
-  to {
-    background-position: 200% 0;
   }
 }
 
@@ -944,56 +1212,59 @@ body {
   animation: chest-refusal-shake 0.42s cubic-bezier(0.3, 0.6, 0.4, 1);
 }
 
-/* A device asking for less motion gets the lid open and the number on screen at
-   once, and none of the rest: no breathing, no rattling, no flash, no rings,
-   nothing thrown — the wait goes with the movement, there being nothing to
-   watch it for (Chest, CHST-18). The light is still there; it just does not
+/* A device asking for less motion gets the card out and the number on screen
+   at once, and none of the rest: no breathing, no dust, no reel, no flash, no
+   rings, nothing thrown — the wait goes with the movement, there being nothing
+   to watch it for (Chest, CHST-18). The light is still there; it just does not
    arrive. */
 @media (prefers-reduced-motion: reduce) {
   .chest-breathe,
   .chest-shadow-breathe,
-  .chest-glint,
   .chest-press,
-  .chest-rattle-1,
-  .chest-rattle-2,
-  .chest-rattle-3,
-  .chest-hop-1,
-  .chest-hop-2,
-  .chest-hop-3,
-  .chest-tremble,
-  .chest-recoil,
-  .chest-backlight,
-  .chest-backlight-held,
-  .chest-rays-sway,
-  .chest-rainbow,
+  .chest-jolt,
+  .chest-dial-refused,
+  .chest-lamp-waiting,
+  .chest-lamp-refused,
+  .chest-leak,
+  .chest-crate-away,
+  .chest-screen-on,
+  .chest-screen-off,
+  .chest-scanlines::after,
+  .chest-marker-tick,
+  .chest-marker-tick::before,
+  .chest-marker-tick::after,
+  .chest-marker-landed,
+  .chest-card-top::after,
+  .chest-starburst,
+  .chest-starburst.chest-rainbow,
+  .chest-spot-arriving .chest-spot-card,
+  .chest-spot-arriving .chest-starburst,
+  .chest-spot-arriving .chest-spot-glow,
   .chest-shake,
   .chest-refusal-shake,
   .chest-number,
-  .chest-tier,
   .chest-ready {
     animation: none;
   }
 
-  .chest-jackpot-text {
-    animation: none;
+  .chest-dial-turned,
+  .chest-latch-left,
+  .chest-latch-right,
+  .chest-lid-loose {
+    transition: none;
   }
 
+  .chest-dust,
   .chest-glint,
+  .chest-puff,
   .chest-flash,
-  .chest-shockwave {
+  .chest-shockwave,
+  .chest-card-shine {
     display: none;
   }
 
-  .chest-lid {
-    animation: none;
-    transform: translate(0, -46px) rotate(-11deg);
-  }
-
-  .chest-core,
-  .chest-bloom,
-  .chest-rays,
   .chest-ambient-on {
     animation: none;
-    opacity: 0.8;
+    opacity: 0.7;
   }
 }

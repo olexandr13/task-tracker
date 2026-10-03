@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CHEST_TIERS, MIN_CHEST_POINTS, openChest, type ChestOpen, type ChestTier } from '../../core'
+import { CHEST_QUARTERS, chestQuarter, MIN_CHEST_POINTS, openChest, type ChestOpen, type ChestQuarter } from '../../core'
 import {
   CHEST_SUMMARY,
   describeTally,
@@ -7,10 +7,10 @@ import {
   PRACTICE_HINT,
   PRACTICE_LABEL,
   PRACTICE_SKIP_LABEL,
+  QUARTER_NAMES,
   RANGE_MOST,
-  RANGE_MOST_HINTS,
+  RANGE_MOST_HINT,
   RANGE_NOTHING_YET,
-  TIER_NAMES,
 } from '../chestLabels'
 import type { Chest as ChestState } from '../useChest'
 import { Chest } from './Chest'
@@ -23,14 +23,14 @@ const card = 'rounded-xl border border-neutral-200 bg-white dark:border-neutral-
 const field =
   'w-20 min-w-0 rounded-lg border border-neutral-300 bg-transparent px-2 py-1 text-center text-sm tabular-nums text-neutral-900 focus:border-blue-500 focus:outline-none dark:border-neutral-700 dark:text-neutral-100'
 
-/** What a run of practice openings came to, so the odds can be eyed against the weights (CHST-10). */
+/** What a run of practice openings came to, so the odds can be eyed: every quarter about as often (CHST-10). */
 interface Tally {
-  readonly counts: Record<ChestTier, number>
+  readonly counts: Record<ChestQuarter, number>
   readonly points: number
 }
 
 const NOTHING_YET: Tally = {
-  counts: { pinch: 0, handful: 0, haul: 0, jackpot: 0 },
+  counts: { 1: 0, 2: 0, 3: 0, 4: 0 },
   points: 0,
 }
 
@@ -54,8 +54,9 @@ export function ChestPage({ chest }: { chest: ChestState }) {
   /** A practice opening: drawn the same way, written nowhere (CHST-21). */
   function practiseOpen(): ChestOpen {
     const opening = openChest(practiceFor)
+    const quarter = chestQuarter(opening.points, opening.jackpot)
     setTally((before) => ({
-      counts: { ...before.counts, [opening.tier]: before.counts[opening.tier] + 1 },
+      counts: { ...before.counts, [quarter]: before.counts[quarter] + 1 },
       points: before.points + opening.points,
     }))
     return opening
@@ -75,10 +76,10 @@ export function ChestPage({ chest }: { chest: ChestState }) {
         jackpot={practising ? practiceFor : chest.jackpot}
         hint={
           practising
-            ? RANGE_MOST_HINTS.practice
-            : chest.jackpot === MIN_CHEST_POINTS && chest.settings.jackpot === 'bestTask'
+            ? null
+            : chest.jackpot === MIN_CHEST_POINTS
               ? RANGE_NOTHING_YET
-              : RANGE_MOST_HINTS[chest.settings.jackpot]
+              : RANGE_MOST_HINT
         }
       />
 
@@ -92,7 +93,7 @@ export function ChestPage({ chest }: { chest: ChestState }) {
           dayAsked={chest.dayAsked}
           leastTasks={chest.settings.leastTasks}
           openedPoints={practising ? null : (chest.opened?.points ?? null)}
-          openedTier={practising ? null : chest.lastTier}
+          openedQuarter={practising ? null : chest.lastQuarter}
           sound={chest.sound}
           onSound={chest.setSound}
           onOpen={practising ? practiseOpen : chest.open}
@@ -151,9 +152,9 @@ export function ChestPage({ chest }: { chest: ChestState }) {
               <div className="flex flex-col gap-1">
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">{describeTally(tally.counts, tally.points)}</p>
                 <ul className="flex flex-wrap gap-x-4 gap-y-1">
-                  {[...CHEST_TIERS].reverse().map((tier) => (
-                    <li key={tier} className="text-xs text-neutral-600 tabular-nums dark:text-neutral-400">
-                      {`${TIER_NAMES[tier]}: ${String(tally.counts[tier])}`}
+                  {[...CHEST_QUARTERS].reverse().map((quarter) => (
+                    <li key={quarter} className="text-xs text-neutral-600 tabular-nums dark:text-neutral-400">
+                      {`${QUARTER_NAMES[quarter]}: ${String(tally.counts[quarter])}`}
                     </li>
                   ))}
                 </ul>

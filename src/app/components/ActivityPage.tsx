@@ -122,7 +122,8 @@ export function ActivityPage({
 
   // A record being changed that is gone — deleted here or on another device — is no longer being changed.
   const changing = editing === null ? null : (entries.find((entry) => entry.id === editing.id) ?? null)
-  const hour = changing?.hour ?? pickedHour ?? defaultLogSlot(entries, window, anchor, now).hour
+  // The hour picked in the list — while a record is changed, the one it is moved to (ACT-10).
+  const hour = pickedHour ?? changing?.hour ?? defaultLogSlot(entries, window, anchor, now).hour
   const hours = [...new Set([...hoursOfDay(entries, window, anchor, now), hour])].sort((a, b) => a - b)
 
   function show(nextPeriod: ActivityPeriod, nextAnchor: LocalDay) {
@@ -134,10 +135,12 @@ export function ActivityPage({
     }
   }
 
-  /** Points the form at the hour, and brings it into view with the caret in it. */
+  /**
+   * Points the form at the hour, and brings it into view with the caret in it.
+   * While a record is being changed, it is moved there instead (ACT-10).
+   */
   function pickHour(next: number) {
     setPickedHour(next)
-    setEditing(null)
     setFocusAsked((asked) => asked + 1)
   }
 
@@ -259,7 +262,6 @@ export function ActivityPage({
               now={now}
               known={knownActivities(entries, now)}
               editing={changing}
-              onHourChange={(next) => { setPickedHour(next) }}
               onAdd={(activity, seconds, at) => { onAdd(activity, seconds, { day: anchor, hour: at }) }}
               onSave={(id, change) => {
                 onChange(id, change)

@@ -2,22 +2,17 @@ import { describe, expect, it } from 'vitest'
 import { BONUS_IDS } from './bonus'
 import {
   CHEST_ID,
-  CHEST_JACKPOTS,
-  CHEST_MAX_JACKPOT,
-  CHEST_PRIZES,
-  CHEST_TIERS,
+  CHEST_QUARTERS,
   chestBlock,
   chestJackpot,
   chestOpened,
-  chestPoints,
+  chestQuarter,
   DEFAULT_CHEST,
   hasKey,
   isLeastTasks,
   MIN_CHEST_POINTS,
   openChest,
-  TYPICAL_DAYS,
   type ChestSettings,
-  type ChestTier,
 } from './chest'
 import type { RewardEntry } from './reward'
 import { completeTask, createTask, setDueDate, type Task } from './task'
@@ -50,173 +45,102 @@ function settings(over: Partial<ChestSettings> = {}): ChestSettings {
   return { ...DEFAULT_CHEST, ...over }
 }
 
-/** Where a tier's band starts, in the roll `openChest` reads tiers from. */
-function tierRoll(tier: ChestTier): number {
-  const total = CHEST_PRIZES.reduce((sum, prize) => sum + prize.weight, 0)
-  let before = 0
-
-  for (const prize of CHEST_PRIZES) {
-    if (prize.tier === tier) break
-    before += prize.weight
-  }
-
-  // A hair inside the band, so rounding never lands it on the one before.
-  return before / total + 1e-9
-}
-
-describe('what a chest can hold', () => {
-  it('names every tier once, poorest first', () => {
-    expect(CHEST_PRIZES.map((prize) => prize.tier)).toEqual(CHEST_TIERS)
-  })
-
-  it('gives every tier a chance of coming up', () => {
-    for (const prize of CHEST_PRIZES) {
-      expect(prize.weight).toBeGreaterThan(0)
-    }
-  })
-
-  it('pays a share of the jackpot and never more than the whole of it', () => {
-    for (const prize of CHEST_PRIZES) {
-      expect(prize.low).toBeGreaterThan(0)
-      expect(prize.low).toBeLessThanOrEqual(prize.high)
-      expect(prize.high).toBeLessThanOrEqual(1)
-    }
-  })
-
-  it('pays more for a richer tier, with no two bands overlapping', () => {
-    for (const [index, prize] of CHEST_PRIZES.entries()) {
-      if (index === 0) continue
-      expect(prize.low).toBeGreaterThan(CHEST_PRIZES[index - 1].high)
-    }
-  })
-
-  it('is worth about a quarter of the jackpot an opening, so a cleared day is worth clearing', () => {
-    const total = CHEST_PRIZES.reduce((sum, prize) => sum + prize.weight, 0)
-    const expected = CHEST_PRIZES.reduce(
-      (sum, prize) => sum + (prize.weight / total) * ((prize.low + prize.high) / 2),
-      0,
-    )
-
-    expect(expected).toBeGreaterThan(0.22)
-    expect(expected).toBeLessThan(0.32)
-  })
-})
-
 describe('opening one', () => {
-  it('lands on the tier the first draw picks', () => {
-    for (const tier of CHEST_TIERS) {
-      expect(openChest(100, rolls(tierRoll(tier), 0.5)).tier).toBe(tier)
+  it('pays 1 on the lowest draw and the whole jackpot on the highest (CHST-10)', () => {
+    expect(openChest(80, rolls(0)).points).toBe(1)
+    expect(openChest(80, rolls(0.999999)).points).toBe(80)
+  })
+
+  it('gives every amount from 1 to the jackpot the same chance (CHST-10)', () => {
+    const seen = new Map<number, number>()
+    for (let roll = 0; roll < 400; roll++) {
+      const { points } = openChest(8, rolls((roll + 0.5) / 400))
+      seen.set(points, (seen.get(points) ?? 0) + 1)
     }
+
+    expect([...seen.keys()].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
+    expect(new Set(seen.values())).toEqual(new Set([50]))
   })
 
-  it('pays the bottom of the tier on a low second draw and the top on a high one', () => {
-    const prize = CHEST_PRIZES.find((one) => one.tier === 'handful')
-    expect(prize).toBeDefined()
-    if (prize === undefined) return
+  it('is worth about half the jackpot an opening', () => {
+    let total = 0
+    for (let run = 0; run < 4000; run++) total += openChest(100).points
 
-    expect(openChest(200, rolls(tierRoll('handful'), 0)).points).toBe(Math.round(prize.low * 200))
-    expect(openChest(200, rolls(tierRoll('handful'), 1)).points).toBe(Math.round(prize.high * 200))
-  })
-
-  it('pays the whole jackpot on a jackpot (CHST-10)', () => {
-    expect(openChest(120, rolls(tierRoll('jackpot'), 0.5))).toEqual({ tier: 'jackpot', points: 120, jackpot: 120 })
+    expect(total / 4000).toBeGreaterThan(45)
+    expect(total / 4000).toBeLessThan(56)
   })
 
   it('says what it was playing for', () => {
-    expect(openChest(42, rolls(0.5, 0.5)).jackpot).toBe(42)
+    expect(openChest(40, rolls(0.5))).toEqual({ points: 21, jackpot: 40 })
   })
 
-  it('reads two draws whatever comes up, so a stubbed pair is a known opening', () => {
-    const random = rolls(tierRoll('jackpot'), 0.5, tierRoll('pinch'), 0)
-    expect(openChest(100, random).tier).toBe('jackpot')
-    expect(openChest(100, random).tier).toBe('pinch')
+  it('is never empty, however small the jackpot (CHST-11)', () => {
+    expect(openChest(1, rolls(0.99)).points).toBe(MIN_CHEST_POINTS)
+    expect(openChest(0, rolls(0.5))).toEqual({ points: 1, jackpot: 1 })
   })
 
-  it('is never empty, however small the jackpot', () => {
-    for (const tier of CHEST_TIERS) {
-      for (const inside of [0, 0.5, 1]) {
-        const opened = openChest(MIN_CHEST_POINTS, rolls(tierRoll(tier), inside))
-        expect(opened.points).toBe(MIN_CHEST_POINTS)
-      }
+  it('never pays more than the jackpot', () => {
+    for (let run = 0; run < 500; run++) {
+      const { points } = openChest(7)
+      expect(points).toBeGreaterThanOrEqual(1)
+      expect(points).toBeLessThanOrEqual(7)
     }
   })
+})
 
-  it('never pays more than the jackpot, down to a jackpot of 1', () => {
-    expect(chestPoints(1, 1)).toBe(1)
-    expect(chestPoints(0.04, 1)).toBe(1)
-    expect(chestPoints(1.5, 10)).toBe(10)
+describe('which quarter of the jackpot it came to', () => {
+  it('counts the quarters from 1 to 4, lowest first', () => {
+    expect(CHEST_QUARTERS).toEqual([1, 2, 3, 4])
   })
 
-  it('draws every tier over many openings and no tier that is not on the table', () => {
-    const seen = new Set<ChestTier>()
-    let roll = 0
+  it('puts up to a quarter in the first, and more than three quarters in the fourth (CHST-15)', () => {
+    expect(chestQuarter(1, 80)).toBe(1)
+    expect(chestQuarter(20, 80)).toBe(1)
+    expect(chestQuarter(21, 80)).toBe(2)
+    expect(chestQuarter(40, 80)).toBe(2)
+    expect(chestQuarter(41, 80)).toBe(3)
+    expect(chestQuarter(60, 80)).toBe(3)
+    expect(chestQuarter(61, 80)).toBe(4)
+    expect(chestQuarter(80, 80)).toBe(4)
+  })
 
-    for (let count = 0; count < 2000; count++) {
-      roll = (roll + 0.0137) % 1
-      seen.add(openChest(100, rolls(roll, 0.5)).tier)
-    }
+  it('splits a jackpot of four one to a quarter, so each is as likely as the next', () => {
+    expect([1, 2, 3, 4].map((points) => chestQuarter(points, 4))).toEqual([1, 2, 3, 4])
+  })
 
-    expect([...seen].sort()).toEqual([...CHEST_TIERS].sort())
+  it('calls the whole of a jackpot of 1 the top quarter, being all of it', () => {
+    expect(chestQuarter(1, 1)).toBe(4)
   })
 })
 
 describe('what the key plays for', () => {
-  it('offers both ways of working it out', () => {
-    expect(CHEST_JACKPOTS).toEqual(['bestTask', 'typicalDay'])
-  })
-
-  it('plays for the heaviest task of today by default (CHST-7)', () => {
-    expect(DEFAULT_CHEST.jackpot).toBe('bestTask')
-
+  it('plays for everything earned today (CHST-7)', () => {
     const entries = [earned('a', '2026-09-17', 8), earned('b', '2026-09-17', 25), earned('c', '2026-09-17', 3)]
-    expect(chestJackpot(entries, settings(), THU_17)).toBe(25)
+    expect(chestJackpot(entries, THU_17)).toBe(36)
   })
 
-  it('plays for exactly what that task was worth, however little (CHST-7, CHST-9)', () => {
-    expect(chestJackpot([earned('a', '2026-09-17', 2)], settings(), THU_17)).toBe(2)
-    expect(chestJackpot([earned('a', '2026-09-17', 1)], settings(), THU_17)).toBe(1)
+  it('counts a bonus paid today, as the Today tile does', () => {
+    const entries = [earned('a', '2026-09-17', 4), earned(BONUS_IDS.today, '2026-09-17', 5)]
+    expect(chestJackpot(entries, THU_17)).toBe(9)
   })
 
-  it('reads only today for the heaviest task', () => {
+  it('reads only today', () => {
     const entries = [earned('a', '2026-09-16', 400), earned('b', '2026-09-17', 9)]
-    expect(chestJackpot(entries, settings(), THU_17)).toBe(9)
+    expect(chestJackpot(entries, THU_17)).toBe(9)
   })
 
-  it('averages the last seven days for a typical day', () => {
-    const entries = [
-      earned('a', '2026-09-17', 10),
-      earned('b', '2026-09-16', 20),
-      earned('c', '2026-09-11', 40),
-    ]
-
-    expect(chestJackpot(entries, settings({ jackpot: 'typicalDay' }), THU_17)).toBe(Math.round(70 / TYPICAL_DAYS))
+  it('leaves the chest out of what it plays for (CHST-8)', () => {
+    const entries = [earned('a', '2026-09-17', 10), earned(CHEST_ID, '2026-09-17', 7)]
+    expect(chestJackpot(entries, THU_17)).toBe(10)
   })
 
-  it('leaves out what fell before the last seven days', () => {
-    const entries = [earned('a', '2026-09-17', 70), earned('b', '2026-09-10', 700)]
-    expect(chestJackpot(entries, settings({ jackpot: 'typicalDay' }), THU_17)).toBe(10)
+  it('plays for the least a chest gives on a day that earned nothing yet, never for nothing (CHST-9)', () => {
+    expect(chestJackpot([], THU_17)).toBe(MIN_CHEST_POINTS)
   })
 
-  it('counts what tasks earned and not what the app paid on top (CHST-8)', () => {
-    const entries = [
-      earned('a', '2026-09-17', 4),
-      earned(BONUS_IDS.today, '2026-09-17', 500),
-      earned(CHEST_ID, '2026-09-16', 900),
-    ]
-
-    expect(chestJackpot(entries, settings(), THU_17)).toBe(4)
-    expect(chestJackpot(entries, settings({ jackpot: 'typicalDay' }), THU_17)).toBe(1)
-  })
-
-  it('plays for the least a chest gives on a day whose tasks earned nothing yet, never for nothing (CHST-9)', () => {
-    expect(chestJackpot([], settings(), THU_17)).toBe(MIN_CHEST_POINTS)
-    expect(chestJackpot([], settings({ jackpot: 'typicalDay' }), THU_17)).toBe(MIN_CHEST_POINTS)
-  })
-
-  it('never plays for more than a task can be worth', () => {
+  it('has no ceiling but the day itself', () => {
     const entries = [earned('a', '2026-09-17', 999), earned('b', '2026-09-17', 999)]
-    expect(chestJackpot(entries, settings({ jackpot: 'typicalDay' }), THU_17)).toBeLessThanOrEqual(CHEST_MAX_JACKPOT)
-    expect(chestJackpot([earned('a', '2026-09-17', 999)], settings(), THU_17)).toBe(CHEST_MAX_JACKPOT)
+    expect(chestJackpot(entries, THU_17)).toBe(1998)
   })
 })
 

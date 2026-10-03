@@ -18,6 +18,12 @@ export const COMPLETION_SPAN_LABELS: Record<CompletionSpan, string> = {
  */
 export const DONE_LABEL = 'Done'
 
+/** What an opened span says while the tasks finished in it are on their way (TASK-74). */
+export const SPAN_LOADING = 'Loading…'
+
+/** What an opened span says when, loaded, it turns out to hold nothing (TASK-74). */
+export const SPAN_EMPTY = 'Nothing was finished in this time.'
+
 /**
  * What a box says when it will not tick a task with an open checklist item on
  * it (CHK-11). Short, because it is read mid-click: the parts are what the box

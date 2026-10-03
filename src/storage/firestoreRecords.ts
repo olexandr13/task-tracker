@@ -1,4 +1,12 @@
-import { doc, onSnapshot, type CollectionReference, type DocumentData, type Firestore, type WriteBatch } from 'firebase/firestore'
+import {
+  doc,
+  onSnapshot,
+  type CollectionReference,
+  type DocumentData,
+  type Firestore,
+  type QueryDocumentSnapshot,
+  type WriteBatch,
+} from 'firebase/firestore'
 import { commitInBatches } from './firestoreBatches'
 import type { RecordChanges } from './recordChanges'
 
@@ -13,10 +21,30 @@ export interface RecordKind<T> {
 }
 
 /**
- * Calls back with every record of the collection that can be read, once they
- * are known and again whenever they change — here, in another tab or on another
- * device. One that cannot be read is left out with a warning, and left as it is
- * in the database: never overwritten or deleted by the app (STORE-7).
+ * The records among `docs` that can be read. One that cannot is left out with a
+ * warning, and left as it is in the database: never overwritten or deleted by
+ * the app (STORE-7). Given `warned`, a record is warned about once however many
+ * answers carry it.
+ */
+export function readRecords<T>(docs: readonly QueryDocumentSnapshot[], kind: RecordKind<T>, warned?: Set<string>): T[] {
+  return docs.flatMap((saved) => {
+    const data = saved.data()
+    const record = kind.read(data)
+    if (record === null) {
+      if (warned?.has(saved.id) !== true) {
+        warned?.add(saved.id)
+        console.warn(`Ignoring saved ${kind.noun} ${saved.id}: unexpected shape (version ${String(data.version)}).`)
+      }
+      return []
+    }
+    return [record]
+  })
+}
+
+/**
+ * Calls back with every record of the collection that can be read
+ * (`readRecords`), once they are known and again whenever they change — here,
+ * in another tab or on another device.
  */
 export function subscribeToRecords<T>(
   collection: CollectionReference,
@@ -27,17 +55,7 @@ export function subscribeToRecords<T>(
   return onSnapshot(
     collection,
     (snapshot) => {
-      onRecords(
-        snapshot.docs.flatMap((saved) => {
-          const data = saved.data()
-          const record = kind.read(data)
-          if (record === null) {
-            console.warn(`Ignoring saved ${kind.noun} ${saved.id}: unexpected shape (version ${String(data.version)}).`)
-            return []
-          }
-          return [record]
-        }),
-      )
+      onRecords(readRecords(snapshot.docs, kind))
     },
     onError,
   )

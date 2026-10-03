@@ -4,7 +4,8 @@
  * the owner's calendar the way due dates do — and a page left open overnight
  * moves yesterday's work along on its next render without anything rewriting it.
  *
- * Tasks uses these; other views keep one run of done work.
+ * Tasks, the Inbox, lists and tags use these; Today, Week and Month keep one run
+ * of done work.
  */
 
 import { offsetDay, toLocalDay, type LocalDay } from './day'
@@ -44,6 +45,11 @@ export function completionSpan(task: Task, spans: CompletionSpans, now: Date = n
 
   const day = toLocalDay(new Date(task.completedAt))
   return spans.find((span) => day >= firstDayOf(span, now)) ?? 'earlier'
+}
+
+/** The day a span starts on, or null for `earlier`, which reaches back to before anything was done. */
+export function spanStart(span: CompletionSpan, now: Date = new Date()): LocalDay | null {
+  return span === 'earlier' ? null : firstDayOf(span, now)
 }
 
 /** The day a span starts on. */

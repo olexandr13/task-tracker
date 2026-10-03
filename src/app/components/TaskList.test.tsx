@@ -2,7 +2,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   completeTask,
   createTask,
@@ -16,7 +16,7 @@ import {
 import { NO_TASK_ACTIONS } from '../../test/taskActions'
 import type { TaskActions } from '../taskActions'
 import { PHONE_QUERY } from '../usePhoneLayout'
-import { TaskList } from './TaskList'
+import { TaskList, type ListHistory } from './TaskList'
 
 /* What a list says around its tasks. TASK ids refer to wiki/tasks.md, DUE ids to wiki/due-dates.md. */
 
@@ -191,6 +191,198 @@ describe('TaskList', () => {
     setup([open], null, null, true)
 
     expect(screen.getByText('open').closest('li')?.className).toMatch(/opacity-25/)
+  })
+})
+
+describe('done spans folded away behind their headings (TASK-72)', () => {
+  // As the Inbox has them: today's work open, everything done before it folded.
+  const SPANS: CompletionSpans = ['today', 'last7Days', 'last30Days']
+  const FOLDED = ['last7Days', 'last30Days', 'earlier'] as const
+
+  const today = () => completeTask(createTask('read', null, NOW), NOW)
+  const yesterday = () => completeTask(createTask('write', null, NOW), new Date(2026, 8, 16, 18, 0))
+  const lastMonth = () => completeTask(createTask('file', null, NOW), new Date(2026, 7, 25, 12, 0))
+  const longAgo = () => completeTask(createTask('archive', null, NOW), new Date(2026, 5, 1, 12, 0))
+
+  function list(tasks: Task[], revealId: string | null = null) {
+    return (
+      <TaskList
+        actions={NO_TASK_ACTIONS}
+        tasks={tasks}
+        now={NOW}
+        doneSpans={SPANS}
+        foldedSpans={FOLDED}
+        knownTags={[]}
+        lists={[]}
+        emptyMessage={EMPTY}
+        allDoneMessage={ALL_DONE}
+        revealId={revealId}
+      />
+    )
+  }
+
+  const fold = (name: string) => screen.getByRole('button', { name: new RegExp(`^${name}`) })
+
+  afterEach(() => { Reflect.deleteProperty(Element.prototype, 'scrollIntoView') })
+
+  it('shows today’s done work and folds the rest, each heading saying how much it holds', () => {
+    render(list([createTask('plan', null, NOW), today(), yesterday(), lastMonth(), longAgo()]))
+
+    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
+      'Done today1',
+      'Done in the last 7 days1',
+      'Done in the last 30 days1',
+      'Done earlier1',
+    ])
+    expect(screen.getByText('plan')).toBeTruthy()
+    expect(screen.getByText('read')).toBeTruthy()
+    for (const title of ['write', 'file', 'archive']) expect(screen.queryByText(title)).toBeNull()
+    for (const name of ['Done in the last 7 days', 'Done in the last 30 days', 'Done earlier']) {
+      expect(fold(name).getAttribute('aria-expanded')).toBe('false')
+    }
+  })
+
+  it('counts yesterday’s work in the week rather than a span of its own', () => {
+    render(list([yesterday(), completeTask(createTask('call', null, NOW), new Date(2026, 8, 12, 12, 0))]))
+
+    expect(fold('Done in the last 7 days').textContent).toBe('Done in the last 7 days2')
+    expect(screen.queryByRole('heading', { name: /yesterday/ })).toBeNull()
+  })
+
+  it('opens a span from its heading and folds it again, leaving the others as they are', async () => {
+    const user = userEvent.setup()
+    render(list([today(), yesterday(), lastMonth()]))
+
+    await user.click(fold('Done in the last 7 days'))
+
+    expect(fold('Done in the last 7 days').getAttribute('aria-expanded')).toBe('true')
+    expect(within(screen.getByRole('region', { name: 'Done in the last 7 days' })).getByText('write')).toBeTruthy()
+    expect(screen.queryByText('file')).toBeNull()
+
+    await user.click(fold('Done in the last 7 days'))
+
+    expect(fold('Done in the last 7 days').getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByText('write')).toBeNull()
+  })
+
+  it('fades an opened span\'s rows but never its heading, which is what opens it (TASK-65)', async () => {
+    const user = userEvent.setup()
+    render(list([yesterday(), lastMonth()]))
+
+    await user.click(fold('Done in the last 30 days'))
+
+    expect(screen.getByRole('region', { name: 'Done in the last 7 days' }).className).not.toMatch(/opacity-/)
+    expect(screen.getByRole('region', { name: 'Done in the last 30 days' }).className).not.toMatch(/opacity-/)
+    expect(screen.getByText('file').closest('ul')?.className).toMatch(/opacity-40/)
+  })
+
+  it('opens the span holding the task being gone to, and keeps it open once it is there (TIME-20)', () => {
+    Object.defineProperty(Element.prototype, 'scrollIntoView', { configurable: true, value: () => {} })
+    const task = lastMonth()
+    const { rerender } = render(list([today(), task], task.id))
+
+    expect(fold('Done in the last 30 days').getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByText('file')).toBeTruthy()
+
+    rerender(list([today(), task]))
+
+    expect(screen.getByText('file')).toBeTruthy()
+  })
+})
+
+describe('done spans still to load (TASK-74)', () => {
+  // As a list has them on Thursday 17 September: held from the 1st, the last 7
+  // days from the 11th, the last 30 from 19 August.
+  const SPANS: CompletionSpans = ['today', 'last7Days', 'last30Days']
+  const FOLDED = ['last7Days', 'last30Days', 'earlier'] as const
+
+  const today = () => completeTask(createTask('read', null, NOW), NOW)
+  const thisMonth = () => completeTask(createTask('file', null, NOW), new Date(2026, 8, 5, 12, 0))
+  const lastMonth = () => completeTask(createTask('archive', null, NOW), new Date(2026, 7, 25, 12, 0))
+
+  function list(tasks: Task[], history: ListHistory | null) {
+    return (
+      <TaskList
+        actions={NO_TASK_ACTIONS}
+        tasks={tasks}
+        now={NOW}
+        doneSpans={SPANS}
+        foldedSpans={FOLDED}
+        history={history}
+        knownTags={[]}
+        lists={[]}
+        emptyMessage={EMPTY}
+        allDoneMessage={ALL_DONE}
+      />
+    )
+  }
+
+  const fold = (name: string) => screen.getByRole('button', { name: new RegExp(`^${name}`) })
+  const headings = () => screen.getAllByRole('heading').map((heading) => heading.textContent)
+
+  it('heads a span still to load without a count, in a list known to have more (TASK-74)', () => {
+    render(list([today(), thisMonth()], { heldSince: '2026-09-01', unheld: 'some', onReachBack: () => {} }))
+
+    expect(headings()).toEqual(['Done today1', 'Done in the last 30 days', 'Done earlier'])
+  })
+
+  it('asks for a span\'s tasks from its first day as it opens, and says it is loading (TASK-74)', async () => {
+    const user = userEvent.setup()
+    const onReachBack = vi.fn()
+    render(list([thisMonth()], { heldSince: '2026-09-01', unheld: 'some', onReachBack }))
+
+    await user.click(fold('Done in the last 30 days'))
+
+    expect(onReachBack).toHaveBeenCalledWith('2026-08-19')
+    expect(screen.getByText('Loading…')).toBeTruthy()
+    // What is held already is shown meanwhile.
+    expect(screen.getByText('file')).toBeTruthy()
+  })
+
+  it('asks for everything as `earlier` opens (TASK-74)', async () => {
+    const user = userEvent.setup()
+    const onReachBack = vi.fn()
+    render(list([], { heldSince: '2026-09-01', unheld: 'some', onReachBack }))
+
+    await user.click(fold('Done earlier'))
+
+    expect(onReachBack).toHaveBeenCalledWith(null)
+  })
+
+  it('counts and shows an opened span once its tasks are held (TASK-74)', async () => {
+    const user = userEvent.setup()
+    const { rerender } = render(list([thisMonth()], { heldSince: '2026-09-01', unheld: 'some', onReachBack: () => {} }))
+    await user.click(fold('Done in the last 30 days'))
+
+    rerender(list([thisMonth(), lastMonth()], { heldSince: '2026-08-19', unheld: 'some', onReachBack: () => {} }))
+
+    expect(fold('Done in the last 30 days').textContent).toBe('Done in the last 30 days2')
+    expect(screen.getByText('archive')).toBeTruthy()
+    expect(screen.queryByText('Loading…')).toBeNull()
+  })
+
+  it('keeps an opened span that turns out empty, and says so (TASK-74)', async () => {
+    const user = userEvent.setup()
+    const { rerender } = render(list([today()], { heldSince: '2026-09-01', unheld: 'some', onReachBack: () => {} }))
+    await user.click(fold('Done earlier'))
+
+    rerender(list([today()], null))
+
+    expect(fold('Done earlier').textContent).toBe('Done earlier0')
+    expect(screen.getByText('Nothing was finished in this time.')).toBeTruthy()
+  })
+
+  it('draws no span still to load that holds nothing while it is not known there is more (TASK-74)', () => {
+    render(list([today()], { heldSince: '2026-09-01', unheld: 'unknown', onReachBack: () => {} }))
+
+    expect(headings()).toEqual(['Done today1'])
+  })
+
+  it('is not empty while work may be left to load, showing where it would be (TASK-74, TASK-19)', () => {
+    render(list([], { heldSince: '2026-09-01', unheld: 'some', onReachBack: () => {} }))
+
+    expect(screen.queryByText(EMPTY)).toBeNull()
+    expect(headings()).toEqual(['Done in the last 30 days', 'Done earlier'])
   })
 })
 
