@@ -3,6 +3,7 @@ import { createActivityEntry, type HourSlot } from '../core'
 import { toStoredActivityDays } from './activitySchema'
 import { checkInPush, devicesToReach, sendDueCheckIns, type SenderStore, type SendPush } from './checkInSender'
 import { toStoredCheckIn } from './checkInSchema'
+import { toStoredFeatures } from './featureSchema'
 import { toStoredPushRegistration } from './pushSchema'
 
 /* The sender that pushes check-ins while the app is closed. CHECKIN ids refer to wiki/check-ins.md. */
@@ -18,6 +19,7 @@ function registration(deviceId: string, timeZone = 'Europe/Kyiv', endpoint = `ht
 function fakeStore(over: {
   registrations?: { accountId: string; deviceId: string; data: unknown }[]
   checkIn?: unknown
+  features?: unknown
   day?: unknown
 } = {}) {
   const store = {
@@ -25,6 +27,7 @@ function fakeStore(over: {
     checkIn: vi.fn(() =>
       Promise.resolve('checkIn' in over ? over.checkIn : toStoredCheckIn({ on: true, window: { from: '09:00', to: '22:00' } })),
     ),
+    features: vi.fn(() => Promise.resolve(over.features)),
     activityDay: vi.fn(() => Promise.resolve(over.day)),
     markSent: vi.fn(() => Promise.resolve()),
     forget: vi.fn(() => Promise.resolve()),
@@ -64,6 +67,19 @@ describe('sendDueCheckIns (CHECKIN-10)', () => {
     await sendDueCheckIns(fakeStore({ checkIn: undefined }), send, AT_15_KYIV)
 
     expect(send).not.toHaveBeenCalled()
+  })
+
+  it('says nothing while the modes or the activity log are switched off (FEAT-9)', async () => {
+    const send = vi.fn<SendPush>(() => Promise.resolve('sent'))
+
+    await sendDueCheckIns(fakeStore({ features: toStoredFeatures(['modes']) }), send, AT_15_KYIV)
+    await sendDueCheckIns(fakeStore({ features: toStoredFeatures(['activity']) }), send, AT_15_KYIV)
+    expect(send).not.toHaveBeenCalled()
+
+    // Something else switched off, or switches it cannot read, stand in nobody's way.
+    await sendDueCheckIns(fakeStore({ features: toStoredFeatures(['rewards']) }), send, AT_15_KYIV)
+    await sendDueCheckIns(fakeStore({ features: { version: 99 } }), send, AT_15_KYIV)
+    expect(send).toHaveBeenCalledTimes(2)
   })
 
   it('does not push an hour twice', async () => {

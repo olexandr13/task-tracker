@@ -103,9 +103,7 @@ having to be a task first. The [Check-in](check-ins.md) asks for it at the top o
   today`. A record under an hour outside them counts in the chart but not here.
 - **ACT-18** A day is **logged in full** once every hour meant to be logged is over and has
   something under it. On **Week** and **Month** the line says how many of the period's days up to
-  today were — `3 of 5 days logged in full` — and on every period, after it, the **streak**: how many
-  days in a row were logged in full, counted back from yesterday, and from today once today is —
-  `3-day streak`, or `No streak yet`. A day still under way is no break in the run.
+  today were — `3 of 5 days logged in full`.
 - **ACT-19** At the head of the page the **Check-in** has its row, as on the Modes page (MODE-3):
   its glyph, what it does, where it stands — `Every hour · 09:00–22:00` — and its switch, which
   turns it on or off here at once; the rest of the row opens its page, where its hours are set
@@ -115,7 +113,7 @@ having to be a task first. The [Check-in](check-ins.md) asks for it at the top o
 
 **Where it lives:** `src/core/activity.ts` (a record, the names, the activities offered, what they
 add up to, the periods), `src/core/checkIn.ts` (the hours meant to be logged, how much of a day is
-logged, the streak, the hour the form starts on), `src/app/useActivities.ts`,
+logged, the hour the form starts on), `src/app/useActivities.ts`,
 `src/app/components/ActivityPage.tsx`, `src/app/components/ActivityForm.tsx` (adding and changing a
 record), `src/app/components/ActivityHours.tsx` (the day, hour by hour),
 `src/app/components/TimeSplitChart.tsx` and `src/app/components/DayColumnsChart.tsx` (the charts,

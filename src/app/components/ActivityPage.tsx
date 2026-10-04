@@ -6,7 +6,6 @@ import {
   activityTotals,
   daysLoggedInFull,
   defaultLogSlot,
-  fullyLoggedStreak,
   hoursOfDay,
   knownActivities,
   loggedHours,
@@ -27,7 +26,6 @@ import {
   describeNothingLogged,
   describePeriodInSentence,
   describePeriodTitle,
-  describeStreak,
   isCurrentPeriod,
   PERIOD_CHOICES,
 } from '../activityLabels'
@@ -57,8 +55,11 @@ interface ActivityPageProps {
   /** The hours meant to be logged — the check-in's, whether or not it is on (ACT-17). */
   window: HoursWindow
   now: Date
-  /** The check-in, as the Modes pages read it, for its row at the head of the page (ACT-19). */
-  checkIn: ModeState
+  /**
+   * The check-in, as the Modes pages read it, for its row at the head of the
+   * page (ACT-19); null while the modes are switched off on Settings (FEAT-9).
+   */
+  checkIn: ModeState | null
   /** The hour to open on — the one a check-in asked about — or null for today as it stands. */
   initialSlot: HourSlot | null
   onAdd: (activity: string, seconds: number, slot: HourSlot) => void
@@ -118,7 +119,6 @@ export function ActivityPage({
   const pieces = activityPieces(totals, colors)
   const wanted = pointed ?? pinned
   const active = pieces.some((piece) => piece.key === wanted) ? wanted : null
-  const streak = fullyLoggedStreak(entries, window, now)
 
   // A record being changed that is gone — deleted here or on another device — is no longer being changed.
   const changing = editing === null ? null : (entries.find((entry) => entry.id === editing.id) ?? null)
@@ -155,7 +155,7 @@ export function ActivityPage({
         </InfoButton>
       </div>
 
-      <ModeRow mode={checkIn} onOpen={onOpenCheckIn} />
+      {checkIn !== null && <ModeRow mode={checkIn} onOpen={onOpenCheckIn} />}
 
       <section aria-labelledby={headingId} className={`${card} flex flex-col gap-3 px-4 py-3.5`}>
         <h2 id={headingId} className="sr-only">
@@ -213,8 +213,6 @@ export function ActivityPage({
           {period === 'day'
             ? describeLoggedHours(loggedHours(entries, window, anchor, now))
             : describeDaysInFull(daysLoggedInFull(entries, window, days, now))}
-          {' · '}
-          {describeStreak(streak)}
         </p>
 
         {totals.total === 0 ? (

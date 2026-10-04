@@ -1,8 +1,7 @@
-import { UNDER_REWARDS, VIEW_LABELS, type RewardsView } from '../view'
+import { rewardsPagesShown, useFeaturesOff } from '../features'
+import { VIEW_LABELS, type RewardsView } from '../view'
 import { VIEW_ICONS } from '../viewIcons'
 import { KeyWaitingMark } from './KeyWaitingMark'
-
-const PAGES: readonly RewardsView[] = ['rewards', ...UNDER_REWARDS]
 
 const pill =
   'flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-sm whitespace-nowrap transition-colors [-webkit-tap-highlight-color:transparent]'
@@ -18,7 +17,7 @@ const pillOff = 'text-neutral-500 hover:bg-neutral-100 active:bg-neutral-100 dar
  *
  * It scrolls sideways rather than wrapping: a pill or two beyond the width of a
  * phone is a sideways nudge away, and a second line would push the points
- * themselves down.
+ * themselves down. Cases has no pill while it is switched off (FEAT-2).
  */
 export function RewardsNav({
   view,
@@ -26,17 +25,19 @@ export function RewardsNav({
   onChange,
 }: {
   view: RewardsView
-  /** Whether a key is waiting, which marks the Chest's pill (CHST-22). */
+  /** Whether a key is waiting, which marks the Cases pill (CHST-22). */
   keyWaiting?: boolean
   onChange: (view: RewardsView) => void
 }) {
+  const pages: readonly RewardsView[] = ['rewards', ...rewardsPagesShown(useFeaturesOff())]
+
   return (
     <nav
       aria-label="Rewards"
       className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden"
     >
       <ul className="flex gap-1">
-        {PAGES.map((page) => {
+        {pages.map((page) => {
           const Icon = VIEW_ICONS[page]
           const active = view === page
           return (
@@ -49,7 +50,7 @@ export function RewardsNav({
               >
                 <Icon className="size-4 shrink-0" />
                 {VIEW_LABELS[page]}
-                {page === 'rewards/chest' && keyWaiting && <KeyWaitingMark />}
+                {page === 'rewards/cases' && keyWaiting && <KeyWaitingMark />}
               </button>
             </li>
           )

@@ -10,7 +10,7 @@ import { WarmUpPanel } from './WarmUpPanel'
 afterEach(cleanup)
 
 function progress(changes: Partial<WarmUpProgress> = {}): WarmUpProgress {
-  return { day: 3, daysLeft: 27, allowed: 3, used: 2, remaining: 1, ...changes }
+  return { day: 3, daysLeft: 27, allowed: 3, used: 2, remaining: 1, paused: false, ...changes }
 }
 
 describe('WarmUpPanel', () => {
@@ -32,6 +32,12 @@ describe('WarmUpPanel', () => {
     render(<WarmUpPanel progress={progress({ used: 7, remaining: 0 })} onMoreInfo={vi.fn()} />)
 
     expect(screen.getByRole('status').textContent).toContain('7/3 habits')
+  })
+
+  it('says it is paused, on the allowance it froze at (WARM-11)', () => {
+    render(<WarmUpPanel progress={progress({ paused: true })} onMoreInfo={vi.fn()} />)
+
+    expect(screen.getByRole('status').textContent).toContain('Warm-up · Day 3/30 · Paused · 2/3 habits')
   })
 
   it('opens the warm-up’s own page for what it does (MODE-10)', async () => {

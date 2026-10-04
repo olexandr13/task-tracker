@@ -99,6 +99,11 @@ describe('viewFromHash', () => {
     expect(viewFromHash('#/tag/%E0%A4%A')).toBeNull()
   })
 
+  it('opens Cases from the address it used to have (CHST-22)', () => {
+    expect(viewFromHash('#/rewards/chest')).toBe('rewards/cases')
+    expect(viewFromHash('#/rewards/cases')).toBe('rewards/cases')
+  })
+
   it('names no view for an empty or unknown hash', () => {
     expect(viewFromHash('')).toBeNull()
     expect(viewFromHash('#/nowhere')).toBeNull()
@@ -170,11 +175,11 @@ describe('useView', () => {
     expect(result.current[0]).toBe('rewards')
   })
 
-  it('reads the chest’s own address, and climbs to Rewards from it (RWD-30, CHST-22)', async () => {
-    window.history.replaceState(null, '', '/#/rewards/chest')
+  it('reads the Cases address, and climbs to Rewards from it (RWD-30, CHST-22)', async () => {
+    window.history.replaceState(null, '', '/#/rewards/cases')
     const { result } = renderHook(() => useView())
     await historySettles()
-    expect(result.current[0]).toBe('rewards/chest')
+    expect(result.current[0]).toBe('rewards/cases')
 
     await back()
     expect(result.current[0]).toBe('rewards')

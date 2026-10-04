@@ -17,6 +17,7 @@ import { defineSecret } from 'firebase-functions/params'
 import { onSchedule } from 'firebase-functions/v2/scheduler'
 import webpush, { WebPushError } from 'web-push'
 import { CHECK_IN } from '../../src/storage/checkInSchema'
+import { FEATURES_RECORD } from '../../src/storage/featureSchema'
 import { sendDueCheckIns, TEST_PUSH, type PushResult, type SenderStore, type SendPush } from '../../src/storage/checkInSender'
 import { readPushRegistration } from '../../src/storage/pushSchema'
 
@@ -62,6 +63,9 @@ const store: SenderStore = {
   },
   async checkIn(accountId) {
     return (await db.doc(`users/${accountId}/checkIn/${CHECK_IN}`).get()).data()
+  },
+  async features(accountId) {
+    return (await db.doc(`users/${accountId}/features/${FEATURES_RECORD}`).get()).data()
   },
   async activityDay(accountId, day) {
     return (await db.doc(`users/${accountId}/activityDays/${day}`).get()).data()

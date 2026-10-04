@@ -6,6 +6,8 @@ interface ModeSwitchProps {
   checked: boolean
   /** Why it cannot be turned on just now, or null while it can (MODE-6). */
   blocked: string | null
+  /** Asked before it is turned off. Cancelling leaves it on (WARM-9). */
+  confirmOff?: string
   onChange: (checked: boolean) => void
 }
 
@@ -22,7 +24,13 @@ const knob = 'absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow-sm t
  * the switch it explains: a track and a knob say on or off only to someone who
  * already knows which side is which.
  */
-export function ModeSwitch({ label, state, checked, blocked, onChange }: ModeSwitchProps) {
+export function ModeSwitch({ label, state, checked, blocked, confirmOff, onChange }: ModeSwitchProps) {
+  function change() {
+    const next = !checked
+    if (!next && confirmOff !== undefined && !window.confirm(confirmOff)) return
+    onChange(next)
+  }
+
   return (
     <span className="flex shrink-0 flex-col items-center">
       <button
@@ -33,7 +41,7 @@ export function ModeSwitch({ label, state, checked, blocked, onChange }: ModeSwi
         aria-description={blocked ?? undefined}
         title={blocked ?? undefined}
         disabled={blocked !== null && !checked}
-        onClick={() => { onChange(!checked) }}
+        onClick={change}
         // Large enough for a thumb on its own, whatever the row around it does (UI-49).
         className="grid size-11 shrink-0 place-items-center rounded-full transition-colors hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent dark:hover:bg-neutral-800/60"
       >

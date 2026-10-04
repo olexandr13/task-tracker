@@ -243,7 +243,7 @@ body {
 
 
 /* ---------------------------------------------------------------------------
-   The chest (CHST-14). Clearing Today earns a key, and the key is worth having
+   Cases (CHST-14). Clearing Today earns a key, and the key is worth having
    because of the seconds that follow it: a supply crate unlocking — the dial
    turning, the latches going with a hiss — and dropping away; an old set's
    screen coming on behind it; a reel of cards running past a marker, ticking,
@@ -254,7 +254,7 @@ body {
    and everything round it is 1962 left out in the weather — enamel gone at the
    corners, hazard stripes, a rounded tube with scanlines on it.
 
-   The lengths here are the ones in `src/app/chestTiming.ts`; changing one means
+   The lengths here are the ones in `src/app/caseTiming.ts`; changing one means
    changing the other. Every movement is transform and opacity, so it runs on
    the compositor, bar the brief brightness of the tube switching on and off.
 
@@ -262,16 +262,16 @@ body {
    space — `transform-box: view-box` — rather than about its own box.
    --------------------------------------------------------------------------- */
 
-/* Cards are sized against the chest's own width rather than the window's, so a
+/* Cards are sized against Cases' own width rather than the window's, so a
    phone's reel shows three and a wide screen's nearly five. */
-.chest-frame {
+.case-frame {
   container-type: inline-size;
 }
 
 /* The cabinet: gunmetal in either theme (CHST-25), a lamp somewhere above it,
-   grit in the paint. `--chest-glow` is the light of the card once it is out,
+   grit in the paint. `--case-glow` is the light of the card once it is out,
    in the colour of its quarter of the jackpot. */
-.chest-stage {
+.case-stage {
   --card-w: clamp(5.5rem, 22cqw, 7.5rem);
   --card-h: calc(var(--card-w) * 1.3);
   --card-gap: 0.5rem;
@@ -285,7 +285,7 @@ body {
     0 28px 56px -28px rgb(0 0 0 / 0.8);
 }
 
-.chest-stage::before {
+.case-stage::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -297,7 +297,7 @@ body {
 }
 
 /* Hazard stripes along its foot, worn away towards the ends. */
-.chest-hazard {
+.case-hazard {
   position: absolute;
   inset: auto 0 0;
   z-index: 2;
@@ -309,31 +309,31 @@ body {
   mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
 }
 
-.chest-cabinet-open {
+.case-cabinet-open {
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--chest-glow) 45%, transparent),
-    0 0 48px -4px color-mix(in srgb, var(--chest-glow) 50%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--case-glow) 45%, transparent),
+    0 0 48px -4px color-mix(in srgb, var(--case-glow) 50%, transparent),
     0 24px 48px -24px rgb(0 0 0 / 0.6);
   transition: box-shadow 600ms ease-out;
 }
 
-.chest-ambient {
+.case-ambient {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(55% 60% at 50% 50%, color-mix(in srgb, var(--chest-glow) 30%, transparent), transparent 72%);
+  background: radial-gradient(55% 60% at 50% 50%, color-mix(in srgb, var(--case-glow) 30%, transparent), transparent 72%);
   opacity: 0;
 }
 
-.chest-ambient-on {
-  animation: chest-ambient 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+.case-ambient-on {
+  animation: case-ambient 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-.chest-ambient-still {
+.case-ambient-still {
   opacity: 0.7;
 }
 
-@keyframes chest-ambient {
+@keyframes case-ambient {
   0% {
     opacity: 0;
     transform: scale(0.6);
@@ -349,7 +349,7 @@ body {
 }
 
 /* While the reel runs, the room goes quiet round the screen. */
-.chest-vignette {
+.case-vignette {
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -359,37 +359,37 @@ body {
   transition: opacity 240ms ease-in;
 }
 
-.chest-vignette-on {
+.case-vignette-on {
   opacity: 1;
   transition: opacity 900ms ease-out;
 }
 
 /* Dust turning in the lamp's light while the crate waits. */
-.chest-dust {
+.case-dust {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-.chest-dust i {
+.case-dust i {
   position: absolute;
   width: 3px;
   height: 3px;
   border-radius: 9999px;
   background: rgb(255 228 180 / 0.6);
   opacity: 0;
-  animation: chest-dust 10s linear infinite;
+  animation: case-dust 10s linear infinite;
 }
 
-.chest-dust i:nth-child(1) { left: 30%; top: 62%; animation-delay: -1s; }
-.chest-dust i:nth-child(2) { left: 44%; top: 40%; animation-delay: -4s; animation-duration: 12s; }
-.chest-dust i:nth-child(3) { left: 58%; top: 70%; animation-delay: -7s; }
-.chest-dust i:nth-child(4) { left: 66%; top: 34%; animation-delay: -2.5s; animation-duration: 13s; width: 2px; height: 2px; }
-.chest-dust i:nth-child(5) { left: 38%; top: 24%; animation-delay: -9s; animation-duration: 11s; width: 2px; height: 2px; }
-.chest-dust i:nth-child(6) { left: 52%; top: 18%; animation-delay: -5.5s; }
-.chest-dust i:nth-child(7) { left: 24%; top: 44%; animation-delay: -3s; animation-duration: 14s; width: 2px; height: 2px; }
+.case-dust i:nth-child(1) { left: 30%; top: 62%; animation-delay: -1s; }
+.case-dust i:nth-child(2) { left: 44%; top: 40%; animation-delay: -4s; animation-duration: 12s; }
+.case-dust i:nth-child(3) { left: 58%; top: 70%; animation-delay: -7s; }
+.case-dust i:nth-child(4) { left: 66%; top: 34%; animation-delay: -2.5s; animation-duration: 13s; width: 2px; height: 2px; }
+.case-dust i:nth-child(5) { left: 38%; top: 24%; animation-delay: -9s; animation-duration: 11s; width: 2px; height: 2px; }
+.case-dust i:nth-child(6) { left: 52%; top: 18%; animation-delay: -5.5s; }
+.case-dust i:nth-child(7) { left: 24%; top: 44%; animation-delay: -3s; animation-duration: 14s; width: 2px; height: 2px; }
 
-@keyframes chest-dust {
+@keyframes case-dust {
   0% {
     transform: translate(0, 0);
     opacity: 0;
@@ -407,23 +407,23 @@ body {
 }
 
 /* The crate as one, standing on its floor. */
-.chest-object,
-.chest-shadow {
+.case-object,
+.case-shadow {
   transform-box: view-box;
   transform-origin: 100px 164px;
 }
 
 /* Breathing while a key is waiting: a slow rise and settle, its shadow
    tightening as it rises — the one thing on the page that is alive. */
-.chest-breathe {
-  animation: chest-breathe 3.2s ease-in-out infinite;
+.case-breathe {
+  animation: case-breathe 3.2s ease-in-out infinite;
 }
 
-.chest-shadow-breathe {
-  animation: chest-shadow-breathe 3.2s ease-in-out infinite;
+.case-shadow-breathe {
+  animation: case-shadow-breathe 3.2s ease-in-out infinite;
 }
 
-@keyframes chest-breathe {
+@keyframes case-breathe {
   0%,
   100% {
     transform: translate(0, 0) scale(1, 1);
@@ -433,7 +433,7 @@ body {
   }
 }
 
-@keyframes chest-shadow-breathe {
+@keyframes case-shadow-breathe {
   0%,
   100% {
     transform: scale(1);
@@ -446,11 +446,11 @@ body {
 }
 
 /* And a glint running over the enamel now and then. */
-.chest-glint {
-  animation: chest-glint 3.6s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+.case-glint {
+  animation: case-glint 3.6s cubic-bezier(0.45, 0, 0.2, 1) infinite;
 }
 
-@keyframes chest-glint {
+@keyframes case-glint {
   0%,
   55% {
     transform: translateX(0);
@@ -462,21 +462,21 @@ body {
 }
 
 /* Pressed: it squashes into its floor, then jolts as the dial turns. */
-.chest-press {
-  animation: chest-press 0.14s cubic-bezier(0.3, 0, 0.3, 1) forwards;
+.case-press {
+  animation: case-press 0.14s cubic-bezier(0.3, 0, 0.3, 1) forwards;
 }
 
-@keyframes chest-press {
+@keyframes case-press {
   to {
     transform: scale(1.04, 0.94);
   }
 }
 
-.chest-jolt {
-  animation: chest-jolt 0.3s cubic-bezier(0.3, 0.7, 0.4, 1);
+.case-jolt {
+  animation: case-jolt 0.3s cubic-bezier(0.3, 0.7, 0.4, 1);
 }
 
-@keyframes chest-jolt {
+@keyframes case-jolt {
   0% {
     transform: scale(1.04, 0.94);
   }
@@ -492,21 +492,21 @@ body {
 }
 
 /* The dial: a three-quarter turn as the key goes, a jerk that goes nowhere when there is no key. */
-.chest-dial {
+.case-dial {
   transform-box: view-box;
   transform-origin: 100px 101px;
 }
 
-.chest-dial-turned {
+.case-dial-turned {
   transform: rotate(270deg);
   transition: transform 0.3s cubic-bezier(0.5, 0, 0.2, 1.25);
 }
 
-.chest-dial-refused {
-  animation: chest-dial-refused 0.42s cubic-bezier(0.3, 0.6, 0.4, 1);
+.case-dial-refused {
+  animation: case-dial-refused 0.42s cubic-bezier(0.3, 0.6, 0.4, 1);
 }
 
-@keyframes chest-dial-refused {
+@keyframes case-dial-refused {
   0%,
   100% {
     transform: none;
@@ -524,29 +524,29 @@ body {
 
 /* The lamp: dark, amber and breathing while a key waits, white as the lock
    goes, a red blink for a press with no key behind it. */
-.chest-lamp-idle {
+.case-lamp-idle {
   color: #6b5a3e;
 }
 
-.chest-lamp-idle .chest-lamp-halo {
+.case-lamp-idle .case-lamp-halo {
   opacity: 0;
 }
 
-.chest-lamp-waiting {
+.case-lamp-waiting {
   color: #ffb43a;
-  animation: chest-lamp 2.4s ease-in-out infinite;
+  animation: case-lamp 2.4s ease-in-out infinite;
 }
 
-.chest-lamp-open {
+.case-lamp-open {
   color: #fff4dc;
 }
 
-.chest-lamp-refused {
+.case-lamp-refused {
   color: #f43f3f;
-  animation: chest-lamp-blink 0.14s steps(2, jump-none) 3;
+  animation: case-lamp-blink 0.14s steps(2, jump-none) 3;
 }
 
-@keyframes chest-lamp {
+@keyframes case-lamp {
   0%,
   100% {
     opacity: 0.7;
@@ -556,7 +556,7 @@ body {
   }
 }
 
-@keyframes chest-lamp-blink {
+@keyframes case-lamp-blink {
   from {
     opacity: 1;
   }
@@ -566,33 +566,33 @@ body {
 }
 
 /* The latches spring off, the lid lifts a hair, light shows along the seam, and the seal hisses. */
-.chest-latch {
+.case-latch {
   transform-box: view-box;
 }
 
-.chest-latch-left,
-.chest-latch-right {
+.case-latch-left,
+.case-latch-right {
   transition: transform 0.22s cubic-bezier(0.3, 1.6, 0.5, 1);
 }
 
-.chest-latch-left {
+.case-latch-left {
   transform: rotate(-38deg);
 }
 
-.chest-latch-right {
+.case-latch-right {
   transform: rotate(38deg);
 }
 
-.chest-lid-loose {
+.case-lid-loose {
   transform: translateY(-3px);
   transition: transform 0.18s cubic-bezier(0.3, 1.6, 0.5, 1);
 }
 
-.chest-leak {
-  animation: chest-leak 0.32s ease-out forwards;
+.case-leak {
+  animation: case-leak 0.32s ease-out forwards;
 }
 
-@keyframes chest-leak {
+@keyframes case-leak {
   0% {
     opacity: 0;
   }
@@ -607,23 +607,23 @@ body {
   }
 }
 
-.chest-puff {
+.case-puff {
   transform-box: fill-box;
   transform-origin: center;
   opacity: 0;
   filter: blur(2px);
-  animation: chest-puff 0.6s ease-out forwards;
+  animation: case-puff 0.6s ease-out forwards;
 }
 
-.chest-puff-left {
+.case-puff-left {
   --puff-x: -16px;
 }
 
-.chest-puff-right {
+.case-puff-right {
   --puff-x: 16px;
 }
 
-@keyframes chest-puff {
+@keyframes case-puff {
   0% {
     opacity: 0.75;
     transform: translate(0, 0) scale(0.3);
@@ -635,11 +635,11 @@ body {
 }
 
 /* The crate dropping away as the screen comes on. */
-.chest-crate-away {
-  animation: chest-crate-away 0.28s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+.case-crate-away {
+  animation: case-crate-away 0.28s cubic-bezier(0.5, 0, 0.75, 0) forwards;
 }
 
-@keyframes chest-crate-away {
+@keyframes case-crate-away {
   to {
     opacity: 0;
     transform: translateY(6%) scale(0.86);
@@ -648,7 +648,7 @@ body {
 }
 
 /* The screen: an old set's rounded tube in a gunmetal bezel. */
-.chest-screen {
+.case-screen {
   position: absolute;
   left: 4%;
   right: 4%;
@@ -669,11 +669,11 @@ body {
 }
 
 /* Coming on as an old set does: a line, then the picture. */
-.chest-screen-on {
-  animation: chest-power-on 0.34s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+.case-screen-on {
+  animation: case-power-on 0.34s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
-@keyframes chest-power-on {
+@keyframes case-power-on {
   0% {
     opacity: 0;
     transform: scale(0.4, 0.008);
@@ -693,11 +693,11 @@ body {
 }
 
 /* And going off as the card comes out of it: to a line, to a dot, to nothing. */
-.chest-screen-off {
-  animation: chest-power-off 0.42s cubic-bezier(0.6, 0, 0.8, 0.4) forwards;
+.case-screen-off {
+  animation: case-power-off 0.42s cubic-bezier(0.6, 0, 0.8, 0.4) forwards;
 }
 
-@keyframes chest-power-off {
+@keyframes case-power-off {
   0% {
     transform: none;
     filter: none;
@@ -718,7 +718,7 @@ body {
   }
 }
 
-.chest-reel-window {
+.case-reel-window {
   position: absolute;
   inset: 0;
   mask-image: linear-gradient(90deg, transparent 0, #000 18%, #000 82%, transparent 100%);
@@ -726,8 +726,8 @@ body {
 
 /* The strip: its left edge at the marker, sent left from `--reel-from` cards to
    `--reel-to`. How long it takes, and the curve, are set beside it in
-   `ChestReel`, from `chestTiming` and `chestReel`. */
-.chest-reel {
+   `CaseReel`, from `caseTiming` and `caseReel`. */
+.case-reel {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -737,20 +737,20 @@ body {
   will-change: transform;
 }
 
-@keyframes chest-reel-run {
+@keyframes case-reel-run {
   to {
     transform: translateX(calc(var(--reel-to) * var(--card-pitch) * -1));
   }
 }
 
-.chest-reel-slot {
+.case-reel-slot {
   display: flex;
   flex: none;
   justify-content: center;
   width: var(--card-pitch);
 }
 
-.chest-scanlines {
+.case-scanlines {
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -760,23 +760,23 @@ body {
 }
 
 /* The bar of light that rolls down an old set's picture. */
-.chest-scanlines::after {
+.case-scanlines::after {
   content: '';
   position: absolute;
   inset: -40% 0 auto;
   height: 40%;
   background: linear-gradient(180deg, transparent, rgb(200 255 230 / 0.05), transparent);
-  animation: chest-roll 3.2s linear infinite;
+  animation: case-roll 3.2s linear infinite;
 }
 
-@keyframes chest-roll {
+@keyframes case-roll {
   to {
     transform: translateY(350%);
   }
 }
 
 /* The glass: curved, catching the lamp at its top corner, dark at its rim. */
-.chest-screen-glass {
+.case-screen-glass {
   position: absolute;
   inset: 0;
   z-index: 3;
@@ -789,7 +789,7 @@ body {
 }
 
 /* The marker down the middle, with a flapper top and bottom that each card flicks. */
-.chest-marker {
+.case-marker {
   position: absolute;
   top: 0.5rem;
   bottom: 0.5rem;
@@ -801,8 +801,8 @@ body {
   box-shadow: 0 0 10px 1px rgb(255 170 50 / 0.75);
 }
 
-.chest-marker::before,
-.chest-marker::after {
+.case-marker::before,
+.case-marker::after {
   content: '';
   position: absolute;
   left: 50%;
@@ -814,53 +814,53 @@ body {
   filter: drop-shadow(0 0 4px rgb(255 170 50 / 0.8));
 }
 
-.chest-marker::before {
+.case-marker::before {
   top: -0.5rem;
   border-top: 10px solid #ffb43a;
   transform-origin: 50% 0;
 }
 
-.chest-marker::after {
+.case-marker::after {
   bottom: -0.5rem;
   border-bottom: 10px solid #ffb43a;
   transform-origin: 50% 100%;
 }
 
-.chest-marker-tick {
-  animation: chest-marker-tick 0.14s ease-out;
+.case-marker-tick {
+  animation: case-marker-tick 0.14s ease-out;
 }
 
-.chest-marker-tick::before {
-  animation: chest-flick-top 0.14s ease-out;
+.case-marker-tick::before {
+  animation: case-flick-top 0.14s ease-out;
 }
 
-.chest-marker-tick::after {
-  animation: chest-flick-bottom 0.14s ease-out;
+.case-marker-tick::after {
+  animation: case-flick-bottom 0.14s ease-out;
 }
 
-@keyframes chest-marker-tick {
+@keyframes case-marker-tick {
   from {
     box-shadow: 0 0 16px 3px rgb(255 200 90 / 1);
   }
 }
 
-@keyframes chest-flick-top {
+@keyframes case-flick-top {
   from {
     transform: rotate(-26deg);
   }
 }
 
-@keyframes chest-flick-bottom {
+@keyframes case-flick-bottom {
   from {
     transform: rotate(26deg);
   }
 }
 
-.chest-marker-landed {
-  animation: chest-marker-landed 0.26s ease-out forwards;
+.case-marker-landed {
+  animation: case-marker-landed 0.26s ease-out forwards;
 }
 
-@keyframes chest-marker-landed {
+@keyframes case-marker-landed {
   to {
     width: 3px;
     box-shadow: 0 0 22px 4px rgb(255 200 90 / 1);
@@ -870,12 +870,12 @@ body {
 /* A card: a chamfered tag of dark metal, the colour of its quarter of the
    jackpot along its foot and glowing up from it, pips in its corner counting
    the quarter out. */
-.chest-type {
+.case-type {
   font-family: 'DIN Condensed', 'Bahnschrift', 'Roboto Condensed', 'Arial Narrow', ui-sans-serif, system-ui, sans-serif;
   font-stretch: condensed;
 }
 
-.chest-card {
+.case-card {
   --cut: 0.85rem;
   --chamfer: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut)));
   position: relative;
@@ -890,7 +890,7 @@ body {
   background: linear-gradient(160deg, color-mix(in srgb, var(--tone) 50%, #3a3f45), #26292d 40%, color-mix(in srgb, var(--tone) 35%, #1a1c1f));
 }
 
-.chest-card::before {
+.case-card::before {
   content: '';
   position: absolute;
   inset: 1.5px;
@@ -900,7 +900,7 @@ body {
     linear-gradient(165deg, #2f3337 0%, #1d2023 50%, #141618 100%);
 }
 
-.chest-card::after {
+.case-card::after {
   content: '';
   position: absolute;
   inset: auto 0 0 var(--cut);
@@ -909,19 +909,19 @@ body {
   box-shadow: 0 0 14px 2px var(--tone);
 }
 
-.chest-card-top::after {
+.case-card-top::after {
   background: linear-gradient(90deg, #f472b6, #facc15, #4ade80, #38bdf8, #c084fc, #f472b6);
   background-size: 200% 100%;
-  animation: chest-rainbow-run 1.6s linear infinite;
+  animation: case-rainbow-run 1.6s linear infinite;
 }
 
-@keyframes chest-rainbow-run {
+@keyframes case-rainbow-run {
   to {
     background-position: 200% 0;
   }
 }
 
-.chest-card-pips {
+.case-card-pips {
   position: absolute;
   top: 0.55rem;
   left: 0.6rem;
@@ -929,19 +929,19 @@ body {
   gap: 2px;
 }
 
-.chest-card-pips i {
+.case-card-pips i {
   width: 0.22rem;
   height: 0.6rem;
   border-radius: 1px;
   background: rgb(255 255 255 / 0.13);
 }
 
-.chest-card-pips i.chest-card-pip-on {
+.case-card-pips i.case-card-pip-on {
   background: var(--tone);
   box-shadow: 0 0 5px var(--tone);
 }
 
-.chest-card-emblem {
+.case-card-emblem {
   position: relative;
   width: 62%;
   height: auto;
@@ -949,7 +949,7 @@ body {
   filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.5));
 }
 
-.chest-card-points {
+.case-card-points {
   position: relative;
   margin-bottom: 0.45rem;
   font-size: calc(var(--card-w) * 0.21);
@@ -961,22 +961,22 @@ body {
 }
 
 /* A sweep of light over the card as it comes out. */
-.chest-card-shine {
+.case-card-shine {
   position: absolute;
   inset: 0;
   background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.5) 50%, transparent 65%);
   transform: translateX(-120%);
-  animation: chest-shine 0.9s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
+  animation: case-shine 0.9s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
 }
 
-@keyframes chest-shine {
+@keyframes case-shine {
   to {
     transform: translateX(120%);
   }
 }
 
 /* The card once it is out: bigger, on a starburst in its own colour. */
-.chest-spot {
+.case-spot {
   position: absolute;
   inset: 0;
   z-index: 3;
@@ -985,44 +985,44 @@ body {
   pointer-events: none;
 }
 
-.chest-spot > * {
+.case-spot > * {
   grid-area: 1 / 1;
 }
 
-.chest-spot-glow {
+.case-spot-glow {
   width: 70%;
   height: 90%;
   background: radial-gradient(closest-side, color-mix(in srgb, var(--tone) 28%, transparent), transparent);
 }
 
-.chest-starburst {
+.case-starburst {
   width: auto;
   height: 135%;
   aspect-ratio: 1;
   opacity: 0.5;
-  animation: chest-starburst-spin 48s linear infinite;
+  animation: case-starburst-spin 48s linear infinite;
 }
 
-.chest-spot-card {
+.case-spot-card {
   transform: scale(1.3);
   filter: drop-shadow(0 14px 22px rgb(0 0 0 / 0.6));
 }
 
-.chest-spot-arriving .chest-spot-card {
-  animation: chest-card-out 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+.case-spot-arriving .case-spot-card {
+  animation: case-card-out 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both;
 }
 
-.chest-spot-arriving .chest-starburst {
+.case-spot-arriving .case-starburst {
   animation:
-    chest-starburst-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both,
-    chest-starburst-spin 48s linear 0.8s infinite;
+    case-starburst-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    case-starburst-spin 48s linear 0.8s infinite;
 }
 
-.chest-spot-arriving .chest-spot-glow {
-  animation: chest-ambient 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+.case-spot-arriving .case-spot-glow {
+  animation: case-ambient 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-@keyframes chest-card-out {
+@keyframes case-card-out {
   0% {
     transform: translateX(calc(var(--land) * var(--card-pitch))) scale(1);
   }
@@ -1031,7 +1031,7 @@ body {
   }
 }
 
-@keyframes chest-starburst-in {
+@keyframes case-starburst-in {
   0% {
     opacity: 0;
     transform: scale(0.2) rotate(-40deg);
@@ -1042,43 +1042,43 @@ body {
   }
 }
 
-@keyframes chest-starburst-spin {
+@keyframes case-starburst-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
 /* A jackpot's light will not hold one colour. */
-.chest-starburst.chest-rainbow,
-.chest-spot-still .chest-starburst.chest-rainbow {
+.case-starburst.case-rainbow,
+.case-spot-still .case-starburst.case-rainbow {
   animation:
-    chest-starburst-spin 48s linear infinite,
-    chest-rainbow 2.4s linear infinite;
+    case-starburst-spin 48s linear infinite,
+    case-rainbow 2.4s linear infinite;
 }
 
-.chest-spot-arriving .chest-starburst.chest-rainbow {
+.case-spot-arriving .case-starburst.case-rainbow {
   animation:
-    chest-starburst-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both,
-    chest-starburst-spin 48s linear 0.8s infinite,
-    chest-rainbow 2.4s linear infinite;
+    case-starburst-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    case-starburst-spin 48s linear 0.8s infinite,
+    case-rainbow 2.4s linear infinite;
 }
 
-@keyframes chest-rainbow {
+@keyframes case-rainbow {
   to {
     filter: hue-rotate(360deg);
   }
 }
 
 /* The card coming out: a flash, and two rings of light after it. */
-.chest-flash {
+.case-flash {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 50%, #fff 0%, rgb(255 255 255 / 0.85) 16%, color-mix(in srgb, var(--chest-glow) 60%, transparent) 38%, transparent 68%);
+  background: radial-gradient(circle at 50% 50%, #fff 0%, rgb(255 255 255 / 0.85) 16%, color-mix(in srgb, var(--case-glow) 60%, transparent) 38%, transparent 68%);
   mix-blend-mode: screen;
-  animation: chest-flash 0.55s cubic-bezier(0.1, 0.6, 0.3, 1) forwards;
+  animation: case-flash 0.55s cubic-bezier(0.1, 0.6, 0.3, 1) forwards;
 }
 
-@keyframes chest-flash {
+@keyframes case-flash {
   0% {
     opacity: 0;
     transform: scale(0.6);
@@ -1093,29 +1093,29 @@ body {
   }
 }
 
-.chest-shockwave {
+.case-shockwave {
   position: absolute;
   left: 50%;
   top: 50%;
   width: 30%;
   aspect-ratio: 1;
   border-radius: 9999px;
-  border: 3px solid var(--chest-glow);
+  border: 3px solid var(--case-glow);
   box-shadow:
-    0 0 18px var(--chest-glow),
-    inset 0 0 18px var(--chest-glow);
+    0 0 18px var(--case-glow),
+    inset 0 0 18px var(--case-glow);
   transform: translate(-50%, -50%) scale(0.1);
   opacity: 0;
-  animation: chest-shockwave 0.7s cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
+  animation: case-shockwave 0.7s cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
 }
 
-.chest-shockwave-late {
+.case-shockwave-late {
   border-width: 1.5px;
   animation-delay: 0.12s;
   animation-duration: 0.9s;
 }
 
-@keyframes chest-shockwave {
+@keyframes case-shockwave {
   0% {
     opacity: 0.95;
     transform: translate(-50%, -50%) scale(0.1);
@@ -1127,11 +1127,11 @@ body {
 }
 
 /* A jackpot takes the whole cabinet with it. */
-.chest-shake {
-  animation: chest-shake 0.6s cubic-bezier(0.3, 0.6, 0.4, 1);
+.case-shake {
+  animation: case-shake 0.6s cubic-bezier(0.3, 0.6, 0.4, 1);
 }
 
-@keyframes chest-shake {
+@keyframes case-shake {
   0%,
   100% {
     transform: translate3d(0, 0, 0);
@@ -1154,12 +1154,12 @@ body {
 }
 
 /* The number: in with a spring, glowing in its card's colour. */
-.chest-number {
+.case-number {
   filter: drop-shadow(0 0 18px color-mix(in srgb, currentColor 55%, transparent));
-  animation: chest-number 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  animation: case-number 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both;
 }
 
-@keyframes chest-number {
+@keyframes case-number {
   0% {
     opacity: 0;
     transform: translateY(10px) scale(0.5);
@@ -1171,11 +1171,11 @@ body {
 }
 
 /* "Press to open", pulsing gently while a key is waiting. */
-.chest-ready {
-  animation: chest-ready 2.2s ease-in-out infinite;
+.case-ready {
+  animation: case-ready 2.2s ease-in-out infinite;
 }
 
-@keyframes chest-ready {
+@keyframes case-ready {
   0%,
   100% {
     opacity: 0.65;
@@ -1185,11 +1185,11 @@ body {
   }
 }
 
-/* A press with no key behind it. The chest is never dimmed out of reach — a
+/* A press with no key behind it. Cases is never dimmed out of reach — a
    dimmed lid cannot say why it is dim — so it is pressable and refuses where it
    was pressed, the cabinet shaking its head, with the reason in words
    underneath (CHST-17). */
-@keyframes chest-refusal-shake {
+@keyframes case-refusal-shake {
   0%,
   100% {
     transform: translate3d(0, 0, 0);
@@ -1208,62 +1208,62 @@ body {
   }
 }
 
-.chest-refusal-shake {
-  animation: chest-refusal-shake 0.42s cubic-bezier(0.3, 0.6, 0.4, 1);
+.case-refusal-shake {
+  animation: case-refusal-shake 0.42s cubic-bezier(0.3, 0.6, 0.4, 1);
 }
 
 /* A device asking for less motion gets the card out and the number on screen
    at once, and none of the rest: no breathing, no dust, no reel, no flash, no
    rings, nothing thrown — the wait goes with the movement, there being nothing
-   to watch it for (Chest, CHST-18). The light is still there; it just does not
+   to watch it for (Cases, CHST-18). The light is still there; it just does not
    arrive. */
 @media (prefers-reduced-motion: reduce) {
-  .chest-breathe,
-  .chest-shadow-breathe,
-  .chest-press,
-  .chest-jolt,
-  .chest-dial-refused,
-  .chest-lamp-waiting,
-  .chest-lamp-refused,
-  .chest-leak,
-  .chest-crate-away,
-  .chest-screen-on,
-  .chest-screen-off,
-  .chest-scanlines::after,
-  .chest-marker-tick,
-  .chest-marker-tick::before,
-  .chest-marker-tick::after,
-  .chest-marker-landed,
-  .chest-card-top::after,
-  .chest-starburst,
-  .chest-starburst.chest-rainbow,
-  .chest-spot-arriving .chest-spot-card,
-  .chest-spot-arriving .chest-starburst,
-  .chest-spot-arriving .chest-spot-glow,
-  .chest-shake,
-  .chest-refusal-shake,
-  .chest-number,
-  .chest-ready {
+  .case-breathe,
+  .case-shadow-breathe,
+  .case-press,
+  .case-jolt,
+  .case-dial-refused,
+  .case-lamp-waiting,
+  .case-lamp-refused,
+  .case-leak,
+  .case-crate-away,
+  .case-screen-on,
+  .case-screen-off,
+  .case-scanlines::after,
+  .case-marker-tick,
+  .case-marker-tick::before,
+  .case-marker-tick::after,
+  .case-marker-landed,
+  .case-card-top::after,
+  .case-starburst,
+  .case-starburst.case-rainbow,
+  .case-spot-arriving .case-spot-card,
+  .case-spot-arriving .case-starburst,
+  .case-spot-arriving .case-spot-glow,
+  .case-shake,
+  .case-refusal-shake,
+  .case-number,
+  .case-ready {
     animation: none;
   }
 
-  .chest-dial-turned,
-  .chest-latch-left,
-  .chest-latch-right,
-  .chest-lid-loose {
+  .case-dial-turned,
+  .case-latch-left,
+  .case-latch-right,
+  .case-lid-loose {
     transition: none;
   }
 
-  .chest-dust,
-  .chest-glint,
-  .chest-puff,
-  .chest-flash,
-  .chest-shockwave,
-  .chest-card-shine {
+  .case-dust,
+  .case-glint,
+  .case-puff,
+  .case-flash,
+  .case-shockwave,
+  .case-card-shine {
     display: none;
   }
 
-  .chest-ambient-on {
+  .case-ambient-on {
     animation: none;
     opacity: 0.7;
   }

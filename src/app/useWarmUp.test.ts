@@ -95,7 +95,7 @@ describe('starting and ending it', () => {
 
     act(() => { result.current.start() })
 
-    expect(repository.save).toHaveBeenCalledWith({ startedOn: '2026-09-02' })
+    expect(repository.save).toHaveBeenCalledWith({ startedOn: '2026-09-02', pausedOn: null, pausedDays: 0 })
     expect(result.current.progress).toMatchObject({ day: 1, allowed: 1 })
   })
 
@@ -108,6 +108,36 @@ describe('starting and ending it', () => {
     expect(repository.save).toHaveBeenCalledWith(null)
     expect(result.current.progress).toBeNull()
     expect(result.current.holdsBack(DAILY)).toBe(false)
+  })
+})
+
+describe('pausing it', () => {
+  it('holds the allowance and the habits there are, however many days pass (WARM-11)', () => {
+    const { repository } = memory(startWarmUp(TUE))
+    const { result, rerender } = renderHook(
+      ({ now }: { now: Date }) => useWarmUp(repository, [habit('stretch')], now),
+      { initialProps: { now: TUE } },
+    )
+
+    act(() => { result.current.setPaused(true) })
+    expect(result.current.progress).toMatchObject({ day: 1, allowed: 1, used: 1, paused: true })
+    expect(result.current.holdsBack(DAILY)).toBe(true)
+
+    const later = new Date(2026, 8, 11, 9, 0)
+    rerender({ now: later })
+    expect(result.current.progress).toMatchObject({ day: 1, allowed: 1, used: 1, paused: true })
+    expect(repository.save).toHaveBeenCalledTimes(1)
+
+    act(() => { result.current.setPaused(false) })
+    expect(result.current.progress).toMatchObject({ day: 2, allowed: 2, used: 1, paused: false })
+  })
+
+  it('does nothing with no warm-up to pause', () => {
+    const { repository } = memory()
+    const { result } = render(repository, [])
+
+    act(() => { result.current.setPaused(true) })
+    expect(repository.save).not.toHaveBeenCalled()
   })
 })
 

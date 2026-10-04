@@ -24,6 +24,7 @@ export const ACCOUNT_COLLECTIONS = [
   'activityDays',
   'checkIn',
   'pushSubscriptions',
+  'features',
 ] as const
 
 export type AccountCollection = (typeof ACCOUNT_COLLECTIONS)[number]

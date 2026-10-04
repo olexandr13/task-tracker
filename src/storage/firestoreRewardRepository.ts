@@ -9,9 +9,9 @@ import {
   type WriteBatch,
 } from 'firebase/firestore'
 import {
-  DEFAULT_CHEST,
+  DEFAULT_CASES,
   NO_BONUSES,
-  type ChestSettings,
+  type CaseSettings,
   type PeriodBonuses,
   type PointValue,
   type Redemption,
@@ -21,15 +21,15 @@ import { accountCollection } from './firestoreAccount'
 import { commitInBatches } from './firestoreBatches'
 import type { RewardRepository } from './rewardRepository'
 import {
-  CHEST,
+  CASES_SETTING,
   POINT_VALUE,
-  readChestSettings,
+  readCaseSettings,
   readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
   REWARD_SCHEMA_VERSION,
-  toStoredChestSettings,
+  toStoredCaseSettings,
   toStoredPointValue,
   toStoredRedemption,
   toStoredRewardGoal,
@@ -48,8 +48,8 @@ import {
  *   and no document at all is no bonus;
  * - what a point is worth, at `users/{accountId}/rewardSettings/pointValue`,
  *   and no document at all is nothing set;
- * - what the chest asks of a day and what its key plays for, at
- *   `users/{accountId}/rewardSettings/chest`, and no document at all is what an
+ * - what Cases asks of a day and what its key plays for, at
+ *   `users/{accountId}/rewardSettings/cases`, and no document at all is what an
  *   account starts with (CHST-7).
  *
  * A day is only ever written field by field — merged, never replaced — so two
@@ -63,28 +63,28 @@ export function createFirestoreRewardRepository(firestore: Firestore, accountId:
   const goals = accountCollection(firestore, accountId, 'rewardGoals')
   const settings = accountCollection(firestore, accountId, 'rewardSettings')
   const pointValue = doc(settings, POINT_VALUE)
-  const chestSettings = doc(settings, CHEST)
+  const caseSettings = doc(settings, CASES_SETTING)
 
   return {
     subscribe(onLedger, onError) {
       // Five watchers, one ledger: nothing is handed on until all of them are
       // known, so a balance is never drawn from part of it. The bonuses, the
-      // point value and the chest's settings are held as boxes rather than
+      // point value and Cases' settings are held as boxes rather than
       // values, there being nothing set to tell from not knowing yet.
       let entries: RewardEntry[] | null = null
       let spent: Redemption[] | null = null
       let bonuses: { of: PeriodBonuses } | null = null
       let value: { of: PointValue | null } | null = null
-      let chest: { of: ChestSettings } | null = null
+      let cases: { of: CaseSettings } | null = null
 
       function emit() {
-        if (entries !== null && spent !== null && bonuses !== null && value !== null && chest !== null) {
+        if (entries !== null && spent !== null && bonuses !== null && value !== null && cases !== null) {
           onLedger({
             entries,
             redemptions: spent,
             bonuses: bonuses.of,
             pointValue: value.of,
-            chest: chest.of,
+            cases: cases.of,
           })
         }
       }
@@ -144,12 +144,12 @@ export function createFirestoreRewardRepository(firestore: Firestore, accountId:
         onError,
       )
 
-      const stopChest = onSnapshot(
-        chestSettings,
+      const stopCases = onSnapshot(
+        caseSettings,
         (saved) => {
-          const read = saved.exists() ? readChestSettings(saved.data()) : null
-          if (saved.exists() && read === null) console.warn('Ignoring the saved chest settings: unexpected shape.')
-          chest = { of: read ?? DEFAULT_CHEST }
+          const read = saved.exists() ? readCaseSettings(saved.data()) : null
+          if (saved.exists() && read === null) console.warn('Ignoring the saved cases settings: unexpected shape.')
+          cases = { of: read ?? DEFAULT_CASES }
           emit()
         },
         onError,
@@ -160,7 +160,7 @@ export function createFirestoreRewardRepository(firestore: Firestore, accountId:
         stopRedemptions()
         stopGoals()
         stopValue()
-        stopChest()
+        stopCases()
       }
     },
 
@@ -196,8 +196,8 @@ export function createFirestoreRewardRepository(firestore: Firestore, accountId:
       return value === null ? deleteDoc(pointValue) : setDoc(pointValue, toStoredPointValue(value))
     },
 
-    setChestSettings(chest) {
-      return setDoc(chestSettings, toStoredChestSettings(chest))
+    setCaseSettings(cases) {
+      return setDoc(caseSettings, toStoredCaseSettings(cases))
     },
 
     async importBonus(period, points) {
@@ -213,10 +213,10 @@ export function createFirestoreRewardRepository(firestore: Firestore, accountId:
       await setDoc(pointValue, toStoredPointValue(value))
     },
 
-    async importChestSettings(chest) {
-      const existing = await getDocFromServer(chestSettings)
+    async importCaseSettings(cases) {
+      const existing = await getDocFromServer(caseSettings)
       if (existing.exists()) return
-      await setDoc(chestSettings, toStoredChestSettings(chest))
+      await setDoc(caseSettings, toStoredCaseSettings(cases))
     },
   }
 }

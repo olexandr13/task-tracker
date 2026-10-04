@@ -2,9 +2,11 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { FeaturesOff } from '../../core'
+import { FeaturesContext } from '../features'
 import { MorePage } from './MorePage'
 
-/* More's page. UI ids refer to wiki/interface.md, MODE ids to wiki/modes.md. */
+/* More's page. UI ids refer to wiki/interface.md, MODE ids to wiki/modes.md, FEAT ids to wiki/features.md. */
 
 afterEach(cleanup)
 
@@ -90,5 +92,17 @@ describe('MorePage', () => {
     expect(screen.queryByRole('switch')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Procrastination' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Warm-up' })).toBeNull()
+  })
+
+  it('lists no page switched off (FEAT-2)', () => {
+    const off: FeaturesOff = ['tags', 'modes']
+    render(
+      <FeaturesContext value={off}>
+        <MorePage onOpen={vi.fn()} />
+      </FeaturesContext>,
+    )
+
+    // Balance goes with the tags it divides time by (FEAT-4).
+    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Lists', 'Activity log'])
   })
 })

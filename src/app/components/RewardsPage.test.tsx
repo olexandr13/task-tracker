@@ -34,11 +34,17 @@ function setup({
   prizes = [CHOCOLATE, PHONE] as readonly Prize[],
   bonuses = NO_BONUSES as PeriodBonuses,
   pointValue = null as PointValue | null,
-  chest = { jackpot: 20, waiting: false, gave: null as number | null },
+  cases = {
+    today: { least: 1, most: 20 },
+    daily: { least: 1, most: 20 },
+    share: null as { least: number; most: number } | null,
+    waiting: false,
+    gave: null as number | null,
+  },
 } = {}) {
   const onOpenPrizes = vi.fn()
   const onOpenWishlist = vi.fn()
-  const onOpenChest = vi.fn()
+  const onOpenCases = vi.fn()
   const onOpenRules = vi.fn()
   render(
     <RewardsPage
@@ -48,14 +54,14 @@ function setup({
       bonuses={bonuses}
       pointValue={pointValue}
       now={NOW}
-      chest={chest}
+      cases={cases}
       onOpenPrizes={onOpenPrizes}
       onOpenWishlist={onOpenWishlist}
-      onOpenChest={onOpenChest}
+      onOpenCases={onOpenCases}
       onOpenRules={onOpenRules}
     />,
   )
-  return { user: userEvent.setup(), onOpenPrizes, onOpenWishlist, onOpenChest, onOpenRules }
+  return { user: userEvent.setup(), onOpenPrizes, onOpenWishlist, onOpenCases, onOpenRules }
 }
 
 describe('the balance (RWD-17, RWD-32)', () => {
@@ -137,31 +143,47 @@ describe('what the balance reaches (RWD-37, RWD-40)', () => {
   })
 })
 
-describe('the chest', () => {
+describe('Cases', () => {
   it('says a key is waiting, and what it plays for (CHST-22)', () => {
-    setup({ chest: { jackpot: 25, waiting: true, gave: null } })
+    setup({ cases: { today: { least: 4, most: 18 }, daily: { least: 1, most: 6 }, share: null, waiting: true, gave: null } })
 
-    expect(screen.getByText('A key is waiting.')).toBeTruthy()
-    expect(screen.getByText('One chest a day, for 1 to 25 points.')).toBeTruthy()
+    expect(screen.getByText('A case is waiting.')).toBeTruthy()
+    expect(screen.getByText('Payday pays 4 to 18 points. The Drop pays 1 to 6 points.')).toBeTruthy()
+  })
+
+  it('says what Weekly pays on Monday (CHST-30)', () => {
+    setup({
+      cases: {
+        today: { least: 4, most: 18 },
+        daily: { least: 1, most: 6 },
+        share: { least: 3, most: 8 },
+        waiting: true,
+        gave: null,
+      },
+    })
+
+    expect(screen.getByText('Payday pays 4 to 18 points. The Drop pays 1 to 6 points. Weekly pays 3 to 8 points.')).toBeTruthy()
   })
 
   it('says what today’s gave once it is open', () => {
-    setup({ chest: { jackpot: 25, waiting: false, gave: 7 } })
+    setup({ cases: { today: { least: 4, most: 18 }, daily: { least: 1, most: 6 }, share: null, waiting: false, gave: 7 } })
 
     expect(screen.getByText('Opened today, for 7 points.')).toBeTruthy()
   })
 
   it('says what would earn a key while the day is unclear', () => {
-    setup({ chest: { jackpot: 25, waiting: false, gave: null } })
+    setup({ cases: { today: { least: 1, most: 1 }, daily: { least: 1, most: 1 }, share: null, waiting: false, gave: null } })
 
-    expect(screen.getByText('Clear everything in Today to earn a key.')).toBeTruthy()
+    expect(screen.getByText('Finish everything in Today to earn a case.')).toBeTruthy()
   })
 
-  it('goes to the chest', async () => {
-    const { user, onOpenChest } = setup({ chest: { jackpot: 25, waiting: true, gave: null } })
+  it('goes to Cases', async () => {
+    const { user, onOpenCases } = setup({
+      cases: { today: { least: 4, most: 18 }, daily: { least: 1, most: 6 }, share: null, waiting: true, gave: null },
+    })
 
     await user.click(screen.getByRole('button', { name: 'Open it' }))
 
-    expect(onOpenChest).toHaveBeenCalledOnce()
+    expect(onOpenCases).toHaveBeenCalledOnce()
   })
 })

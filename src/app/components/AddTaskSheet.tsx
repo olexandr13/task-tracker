@@ -19,6 +19,7 @@ import { describeTimeProgress } from '../durationLabels'
 import { describeDueDate, describeTimeOfDay } from '../dueLabels'
 import { emptyDraft, toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { describeRepeatBriefly } from '../repeatLabels'
+import { useFeatureOn } from '../features'
 import { describeReward, describeRewardHint } from '../rewardLabels'
 import { BottomSheet } from './BottomSheet'
 import { ListPicker } from './ListPicker'
@@ -87,6 +88,10 @@ export function AddTaskSheet({
   onClose,
   onAdd,
 }: AddTaskSheetProps) {
+  // No row for a list, the tags or a reward while its feature is switched off on Settings (FEAT-3).
+  const listsOn = useFeatureOn('lists')
+  const tagsOn = useFeatureOn('tags')
+  const rewardsOn = useFeatureOn('rewards')
   const titleInput = useRef<HTMLInputElement>(null)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -209,18 +214,22 @@ export function AddTaskSheet({
                 />
               ),
             },
-            {
-              name: 'List',
-              control: (
-                <ListPicker
-                  listId={listId}
-                  lists={lists}
-                  onChange={setListId}
-                  label={`List for "${namedFor}"`}
-                  align="left"
-                />
-              ),
-            },
+            ...(listsOn
+              ? [
+                  {
+                    name: 'List',
+                    control: (
+                      <ListPicker
+                        listId={listId}
+                        lists={lists}
+                        onChange={setListId}
+                        label={`List for "${namedFor}"`}
+                        align="left"
+                      />
+                    ),
+                  },
+                ]
+              : []),
             {
               name: 'Time',
               detail: timeLabel,
@@ -248,43 +257,51 @@ export function AddTaskSheet({
                 />
               ),
             },
-            {
-              name: 'Tags',
-              control: (
-                <TagPicker
-                  tags={tags}
-                  known={knownTags}
-                  onAdd={(name) => {
-                    if (tags.some((tag) => sameTag(tag, name))) return
-                    setTags((current) => [...current, name])
-                  }}
-                  onRemove={(name) => {
-                    setTags((current) => current.filter((tag) => !sameTag(tag, name)))
-                  }}
-                  label={`Tags for "${namedFor}"`}
-                  align="right"
-                />
-              ),
-            },
+            ...(tagsOn
+              ? [
+                  {
+                    name: 'Tags',
+                    control: (
+                      <TagPicker
+                        tags={tags}
+                        known={knownTags}
+                        onAdd={(name) => {
+                          if (tags.some((tag) => sameTag(tag, name))) return
+                          setTags((current) => [...current, name])
+                        }}
+                        onRemove={(name) => {
+                          setTags((current) => current.filter((tag) => !sameTag(tag, name)))
+                        }}
+                        label={`Tags for "${namedFor}"`}
+                        align="right"
+                      />
+                    ),
+                  },
+                ]
+              : []),
             {
               name: 'Urgent',
               detail: urgent ? 'Urgent' : null,
               control: <UrgentToggle urgent={urgent} onChange={setUrgent} label={`Urgent for "${namedFor}"`} />,
             },
-            {
-              name: 'Reward',
-              detail: reward === null ? null : describeReward(reward),
-              control: (
-                <RewardPicker
-                  reward={reward}
-                  startAt={defaultReward(repeat)}
-                  hint={describeRewardHint(repeat)}
-                  onChange={setReward}
-                  label={`Reward for "${namedFor}"`}
-                  align="right"
-                />
-              ),
-            },
+            ...(rewardsOn
+              ? [
+                  {
+                    name: 'Reward',
+                    detail: reward === null ? null : describeReward(reward),
+                    control: (
+                      <RewardPicker
+                        reward={reward}
+                        startAt={defaultReward(repeat)}
+                        hint={describeRewardHint(repeat)}
+                        onChange={setReward}
+                        label={`Reward for "${namedFor}"`}
+                        align="right"
+                      />
+                    ),
+                  },
+                ]
+              : []),
           ]}
         />
 

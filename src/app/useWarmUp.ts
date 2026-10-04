@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   canTakeOnHabit,
   isHabitRepeat,
+  pauseWarmUp,
+  resumeWarmUp,
   startWarmUp,
   warmUpProgress,
   type Repeat,
@@ -22,6 +24,8 @@ export interface WarmUpMode {
   readonly start: () => void
   /** Ends the warm-up (WARM-9). */
   readonly end: () => void
+  /** Freezes the allowance, or lets it grow again (WARM-11). */
+  readonly setPaused: (paused: boolean) => void
   /**
    * Whether the warm-up holds a habit back, asked before a change that would
    * make one: `repeat` is the rule the task would carry, and `was` the rule it
@@ -90,6 +94,15 @@ export function useWarmUp(
 
   const start = useCallback(() => { save(startWarmUp(now)) }, [save, now])
   const end = useCallback(() => { save(null) }, [save])
+  const setPaused = useCallback(
+    (paused: boolean) => {
+      if (warmUp === null) return
+      const next = paused ? pauseWarmUp(warmUp, now) : resumeWarmUp(warmUp, now)
+      if (next === warmUp) return
+      save(next)
+    },
+    [warmUp, now, save],
+  )
 
   const holdsBack = useCallback(
     (repeat: Repeat | null, was: Repeat | null = null): boolean => {
@@ -104,5 +117,5 @@ export function useWarmUp(
 
   const dismissNotice = useCallback(() => { setNotice(null) }, [])
 
-  return { progress, isLoading, start, end, holdsBack, notice, dismissNotice }
+  return { progress, isLoading, start, end, setPaused, holdsBack, notice, dismissNotice }
 }

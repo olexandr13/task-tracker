@@ -1,12 +1,11 @@
 import { Fragment, useId, type ReactElement, type ReactNode } from 'react'
 import { sortLists, type List, type ListId } from '../../core'
+import { isViewOn, modesShown, rewardsPagesShown, useFeaturesOff } from '../features'
 import { useListDropTarget } from '../useListDropTarget'
 import {
   isModesView,
   isUnder,
   oneListView,
-  UNDER_MODES,
-  UNDER_REWARDS,
   VIEW_LABELS,
   type FixedView,
   type View,
@@ -27,7 +26,8 @@ import { KeyWaitingMark } from './KeyWaitingMark'
  * one to file it, and folds them away when they are not wanted. Rewards keeps
  * its four pages under it in the same way, and Modes a page for each mode
  * (MODE-7); both fold away as Lists does. Tags lives under More, and a tag's
- * tasks have no entry of their own.
+ * tasks have no entry of their own. A page whose feature is switched off on
+ * Settings has no entry at all (FEAT-2).
  */
 const VIEW_GROUPS: readonly (readonly FixedView[])[] = [
   ['today', 'week', 'month'],
@@ -85,7 +85,7 @@ interface SideNavProps {
   rewardsOpen: boolean
   /** Whether each mode's page is shown under Modes, or folded away. */
   modesOpen: boolean
-  /** Whether a key is waiting, which marks the Chest under Rewards (CHST-22). */
+  /** Whether a key is waiting, which marks Cases under Rewards (CHST-22). */
   keyWaiting?: boolean
   /** Soften the sidebar, Today apart, while Procrastination mode is on (JUST-5). */
   dimmed?: boolean
@@ -101,7 +101,7 @@ interface SideNavProps {
  * instead (BottomNav), and no mark above the work. The one you are on is
  * marked, a list under Lists included — or Lists itself while the lists are
  * folded away. More stays marked while Tags or a tag's tasks are open; Rewards
- * has its own entry here, with the chest, the history, the prizes, the wishlist
+ * has its own entry here, with Cases, the history, the prizes, the wishlist
  * and the rules under it, and each of the five is marked itself (RWD-19) — or Rewards alone while they
  * are folded away, as with Lists. Modes is listed the same way, with each mode's
  * page under it, so going from one mode to the other is a step down the sidebar
@@ -123,6 +123,8 @@ export function SideNav({
   const listsId = useId()
   const rewardsId = useId()
   const modesId = useId()
+  // What is switched off on Settings has no entry here (FEAT-2).
+  const off = useFeaturesOff()
 
   // Today is where the one task is, so it stays at full strength while the rest
   // of the sidebar softens: the way back is always readable (JUST-5).
@@ -140,7 +142,7 @@ export function SideNav({
                 className={`mx-3 my-1.5 border-t border-neutral-200 dark:border-neutral-800${dimmed ? ` ${dim}` : ''}`}
               />
             )}
-            {group.map((value) =>
+            {group.filter((value) => isViewOn(value, off)).map((value) =>
               value === 'lists' ? (
                 <FoldableEntry
                   key={value}
@@ -184,12 +186,12 @@ export function SideNav({
                   onSelect={onChange}
                   onOpenChange={onRewardsOpenChange}
                 >
-                  {UNDER_REWARDS.map((page) => (
+                  {rewardsPagesShown(off).map((page) => (
                     <SubNavButton
                       key={page}
                       value={page}
                       active={view === page}
-                      marked={page === 'rewards/chest' && keyWaiting}
+                      marked={page === 'rewards/cases' && keyWaiting}
                       onSelect={onChange}
                     />
                   ))}
@@ -206,7 +208,7 @@ export function SideNav({
                   onSelect={onChange}
                   onOpenChange={onModesOpenChange}
                 >
-                  {UNDER_MODES.map((page) => (
+                  {modesShown(off).map((page) => (
                     <SubNavButton
                       key={page}
                       value={page}

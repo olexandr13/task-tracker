@@ -3,9 +3,9 @@ import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   createPointValue,
-  DEFAULT_CHEST,
+  DEFAULT_CASES,
   NO_BONUSES,
-  type ChestSettings,
+  type CaseSettings,
   type Period,
   type PointValue,
   type Redemption,
@@ -26,7 +26,7 @@ const COFFEE: Redemption = {
   redeemedAt: '2026-09-17T09:00:00.000Z',
 }
 
-const EMPTY_LEDGER: PointsLedger = { entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, chest: DEFAULT_CHEST }
+const EMPTY_LEDGER: PointsLedger = { entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES }
 
 afterEach(() => {
   cleanup()
@@ -39,7 +39,7 @@ function fakeRewardRepository(initial: PointsLedger) {
   const removed: string[] = []
   const bonuses: { period: Period; points: number | null }[] = []
   const values: (PointValue | null)[] = []
-  const chests: ChestSettings[] = []
+  const savedCases: CaseSettings[] = []
 
   const repository: RewardRepository = {
     subscribe(callback) {
@@ -66,13 +66,13 @@ function fakeRewardRepository(initial: PointsLedger) {
       values.push(value)
       return Promise.resolve()
     },
-    setChestSettings(settings) {
-      chests.push(settings)
+    setCaseSettings(settings) {
+      savedCases.push(settings)
       return Promise.resolve()
     },
     importBonus: () => Promise.resolve(),
     importPointValue: () => Promise.resolve(),
-    importChestSettings: () => Promise.resolve(),
+    importCaseSettings: () => Promise.resolve(),
   }
 
   return {
@@ -82,7 +82,7 @@ function fakeRewardRepository(initial: PointsLedger) {
     removed,
     bonuses,
     values,
-    chests,
+    savedCases,
     arrive: (ledger: PointsLedger) => {
       act(() => {
         onLedger(ledger)
@@ -144,7 +144,7 @@ describe('useRewards, what a point is worth (RWD-31)', () => {
 
 describe('useRewards, removing ledger rows', () => {
   it('removes an earning at once and hands it back to undo (RWD-23)', () => {
-    const { result, saved } = setUp({ entries: [RUN], redemptions: [], bonuses: NO_BONUSES, pointValue: null, chest: DEFAULT_CHEST })
+    const { result, saved } = setUp({ entries: [RUN], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES })
 
     let removed: RewardEntry | null = null
     act(() => {
@@ -156,7 +156,7 @@ describe('useRewards, removing ledger rows', () => {
   })
 
   it('restores a deleted earning (RWD-23)', () => {
-    const { result, saved } = setUp({ entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, chest: DEFAULT_CHEST })
+    const { result, saved } = setUp({ entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES })
 
     act(() => {
       result.current.saveEarning(RUN)
@@ -166,7 +166,7 @@ describe('useRewards, removing ledger rows', () => {
   })
 
   it('removes a redemption at once and hands it back to undo (RWD-18)', () => {
-    const { result, removed } = setUp({ entries: [], redemptions: [COFFEE], bonuses: NO_BONUSES, pointValue: null, chest: DEFAULT_CHEST })
+    const { result, removed } = setUp({ entries: [], redemptions: [COFFEE], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES })
 
     let deleted: Redemption | null = null
     act(() => {
@@ -178,7 +178,7 @@ describe('useRewards, removing ledger rows', () => {
   })
 
   it('restores a deleted redemption with the same id and day (RWD-18)', () => {
-    const { result, redeemed } = setUp({ entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, chest: DEFAULT_CHEST })
+    const { result, redeemed } = setUp({ entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES })
 
     act(() => {
       result.current.restoreRedemption(COFFEE)
@@ -192,10 +192,10 @@ describe('when the repository refuses', () => {
   it('reports a write it refused (STORE-13)', async () => {
     expectConsole('Could not delete the redemption.')
     const onProblem = vi.fn()
-    const fake = fakeRewardRepository({ entries: [RUN], redemptions: [COFFEE], bonuses: NO_BONUSES, pointValue: null, chest: DEFAULT_CHEST })
+    const fake = fakeRewardRepository({ entries: [RUN], redemptions: [COFFEE], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES })
     const repository: RewardRepository = { ...fake.repository, removeRedemption: () => Promise.reject(new Error('denied')) }
     const { result } = renderHook(() => useRewards(repository, onProblem))
-    fake.arrive({ entries: [RUN], redemptions: [COFFEE], bonuses: NO_BONUSES, pointValue: null, chest: DEFAULT_CHEST })
+    fake.arrive({ entries: [RUN], redemptions: [COFFEE], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES })
 
     await act(async () => {
       result.current.removeRedemption(COFFEE.id)
@@ -210,7 +210,7 @@ describe('when the repository refuses', () => {
     const onProblem = vi.fn()
     let refuse: (error: unknown) => void = () => {}
     const repository: RewardRepository = {
-      ...fakeRewardRepository({ entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, chest: DEFAULT_CHEST }).repository,
+      ...fakeRewardRepository({ entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES }).repository,
       subscribe(_onLedger, onError) {
         refuse = onError
         return () => {}

@@ -1,5 +1,6 @@
 import { useRef, useState, type ComponentProps } from 'react'
 import { sortLists, type List } from '../../core'
+import { isViewOn, rewardsPagesShown, useFeaturesOff } from '../features'
 import { useLongPress } from '../useLongPress'
 import { KeyWaitingMark } from './KeyWaitingMark'
 import {
@@ -7,7 +8,6 @@ import {
   isUnder,
   oneListView,
   PERIOD_VIEWS,
-  UNDER_REWARDS,
   VIEW_LABELS,
   type FixedView,
   type PeriodView,
@@ -67,8 +67,14 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * closes it. A tab stays marked while its menu is open, and the panel stops at
  * the bar rather than covering it, so it is plain which tab the menu belongs
  * to.
+ *
+ * A tab whose page is switched off on Settings is not there, and the rest
+ * share the bar between them (FEAT-2); so is an entry of a tab's menu.
  */
 export function BottomNav({ view, lists, keyWaiting = false, dimmed = false, onChange }: BottomNavProps) {
+  const off = useFeaturesOff()
+  const listsOn = isViewOn('lists', off)
+  const rewardsPages = rewardsPagesShown(off)
   // The period the period tab goes back to after leaving it: the last one on
   // screen, Today to begin with.
   const [period, setPeriod] = useState<PeriodView>(isPeriodView(view) ? view : 'today')
@@ -155,24 +161,28 @@ export function BottomNav({ view, lists, keyWaiting = false, dimmed = false, onC
   const InboxIcon = VIEW_ICONS.inbox
   const ListIcon = VIEW_ICONS.lists
   const tasksItems: ContextMenuEntry[] = [
-    {
-      ...pageItem('lists'),
-      under: [
-        { label: VIEW_LABELS.inbox, icon: <InboxIcon />, onSelect: () => { onChange('inbox') } },
-        ...sortLists(lists).map((list) => ({
-          label: list.name,
-          icon: <ListIcon />,
-          onSelect: () => { onChange(oneListView(list.id)) },
-        })),
-      ],
-    },
+    ...(listsOn
+      ? [
+          {
+            ...pageItem('lists'),
+            under: [
+              { label: VIEW_LABELS.inbox, icon: <InboxIcon />, onSelect: () => { onChange('inbox') } },
+              ...sortLists(lists).map((list) => ({
+                label: list.name,
+                icon: <ListIcon />,
+                onSelect: () => { onChange(oneListView(list.id)) },
+              })),
+            ],
+          },
+        ]
+      : []),
     pageItem('trash'),
   ]
 
   // Rewards with its four pages under it, as the sidebar keeps them (UI-30): the
   // head goes to how the points stand, so all five are one tap from the menu.
   const rewardsItems: ContextMenuEntry[] = [
-    { ...pageItem('rewards'), under: UNDER_REWARDS.map(pageItem) },
+    { ...pageItem('rewards'), under: rewardsPages.map(pageItem) },
   ]
 
   const menus: Record<TabMenu, { label: string; items: ContextMenuEntry[] }> = {
@@ -188,7 +198,8 @@ export function BottomNav({ view, lists, keyWaiting = false, dimmed = false, onC
         // Clear of a phone's home indicator and, turned sideways, its rounded corners (UI-61).
         className={`fixed inset-x-0 bottom-0 z-20 border-t border-neutral-200 bg-white/95 pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] backdrop-blur md:hidden dark:border-neutral-800 dark:bg-neutral-900/95${dimmed ? ' opacity-25' : ''}`}
       >
-        <ul className="mx-auto grid max-w-md grid-cols-6">
+        {/* As many equal columns as there are tabs: a tab switched off leaves no gap (FEAT-2). */}
+        <ul className="mx-auto grid max-w-md auto-cols-fr grid-flow-col">
           <li>
             <Tab
               label={VIEW_LABELS.settings}
@@ -197,41 +208,47 @@ export function BottomNav({ view, lists, keyWaiting = false, dimmed = false, onC
               onClick={() => { onChange('settings') }}
             />
           </li>
-          <li>
-            <Tab
-              label={VIEW_LABELS.rewards}
-              icon={VIEW_ICONS.rewards}
-              active={isUnder(view, 'rewards') || menu?.of === 'rewards'}
-              marked={keyWaiting}
-              description="Hold, or tap again, for the chest, the history, the prizes, the wishlist and the rules"
-              {...noticingMenu(rewardsPress)}
-            />
-          </li>
-          <li>
-            <Tab
-              label={VIEW_LABELS.more}
-              icon={VIEW_ICONS.more}
-              active={isUnder(view, 'more')}
-              onClick={() => { onChange('more') }}
-            />
-          </li>
+          {isViewOn('rewards', off) && (
+            <li>
+              <Tab
+                label={VIEW_LABELS.rewards}
+                icon={VIEW_ICONS.rewards}
+                active={isUnder(view, 'rewards') || menu?.of === 'rewards'}
+                marked={keyWaiting}
+                description={`Hold, or tap again, for ${rewardsPages.includes('rewards/cases') ? 'Cases, ' : ''}the history, the prizes, the wishlist and the rules`}
+                {...noticingMenu(rewardsPress)}
+              />
+            </li>
+          )}
+          {isViewOn('more', off) && (
+            <li>
+              <Tab
+                label={VIEW_LABELS.more}
+                icon={VIEW_ICONS.more}
+                active={isUnder(view, 'more')}
+                onClick={() => { onChange('more') }}
+              />
+            </li>
+          )}
           <li>
             <Tab
               label={VIEW_LABELS.tasks}
               icon={VIEW_ICONS.tasks}
               active={view === 'tasks' || isUnder(view, 'trash') || isUnder(view, 'lists') || menu?.of === 'tasks'}
-              description="Hold, or tap again, for the lists and the trash"
+              description={listsOn ? 'Hold, or tap again, for the lists and the trash' : 'Hold, or tap again, for the trash'}
               {...noticingMenu(tasksPress)}
             />
           </li>
-          <li>
-            <Tab
-              label={VIEW_LABELS.habits}
-              icon={VIEW_ICONS.habits}
-              active={view === 'habits'}
-              onClick={() => { onChange('habits') }}
-            />
-          </li>
+          {isViewOn('habits', off) && (
+            <li>
+              <Tab
+                label={VIEW_LABELS.habits}
+                icon={VIEW_ICONS.habits}
+                active={view === 'habits'}
+                onClick={() => { onChange('habits') }}
+              />
+            </li>
+          )}
           <li>
             <Tab
               label={VIEW_LABELS[period]}

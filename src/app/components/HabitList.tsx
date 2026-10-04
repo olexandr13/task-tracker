@@ -376,6 +376,10 @@ function HabitCard({
       // grip, which is where these listeners check a key press came from — so
       // the grid's own arrow keys and Space (HAB-19) are left alone.
       {...listeners}
+      onContextMenu={(event) => {
+        event.preventDefault()
+        setIsEditing(true)
+      }}
       className={[
         `group relative flex touch-manipulation flex-col rounded-xl border bg-white dark:bg-neutral-900 ${surface}`,
         // The card shakes whole, as a row does: it is the habit that is not done.

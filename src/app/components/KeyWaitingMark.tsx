@@ -1,5 +1,5 @@
 /**
- * A key is waiting, said wherever the Chest is navigated from (CHST-22). A dot,
+ * A key is waiting, said wherever Cases is navigated from (CHST-22). A dot,
  * with the words behind it for a screen reader: a mark that is only a colour
  * says nothing to someone who cannot see it, and nothing at all when it is the
  * one thing on the page worth noticing.

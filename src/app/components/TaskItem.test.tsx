@@ -22,9 +22,11 @@ import {
   type ListId,
   type LocalDay,
   type Repeat,
+  type FeaturesOff,
   type Task,
 } from '../../core'
 import { NO_TASK_ACTIONS } from '../../test/taskActions'
+import { FeaturesContext } from '../features'
 import { describeShortDate } from '../dueLabels'
 import type { TaskActions } from '../taskActions'
 import { PHONE_QUERY } from '../usePhoneLayout'
@@ -1821,5 +1823,40 @@ describe('on a phone, tapping a task', () => {
       expect(onRemove).not.toHaveBeenCalled()
       expect(screen.queryByRole('dialog', { name: `Details of "${TASK}"` })).toBeNull()
     })
+  })
+})
+
+describe('the features switched off on Settings (FEAT-3)', () => {
+  it('leaves a woken row no list, tags or reward to set, and the menu no Tags or List', async () => {
+    const off: FeaturesOff = ['lists', 'tags', 'rewards']
+    const user = userEvent.setup()
+    render(
+      <FeaturesContext value={off}>
+        <ul>
+          <TaskItem
+            actions={NO_TASK_ACTIONS}
+            task={{ ...addTag(createTask(TASK, null, NOW), 'health'), reward: 3 }}
+            now={NOW}
+            knownTags={['health']}
+            lists={[createList('Work', NOW)]}
+            showDetails
+          />
+        </ul>
+      </FeaturesContext>,
+    )
+
+    // Nothing the task carries is spelled out either: the tag and the points are kept, not shown.
+    expect(screen.queryByRole('list', { name: 'Tags' })).toBeNull()
+    expect(screen.queryByText('3 points')).toBeNull()
+
+    await user.click(screen.getByRole('listitem'))
+    expect(screen.queryByRole('button', { name: /^List for/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Tags for/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Reward for/ })).toBeNull()
+
+    await user.pointer({ keys: '[MouseRight]', target: screen.getByRole('listitem') })
+    expect(screen.queryByRole('menuitem', { name: 'Tags' })).toBeNull()
+    expect(screen.queryByRole('menuitemradio', { name: 'Work' })).toBeNull()
+    expect(screen.getByRole('menuitem', { name: 'Duplicate' })).toBeDefined()
   })
 })

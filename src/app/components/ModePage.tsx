@@ -66,6 +66,7 @@ export function ModePage({ mode, settings }: { mode: ModeState; settings?: React
           state={mode.status.state}
           checked={mode.on}
           blocked={mode.blocked}
+          confirmOff={mode.confirmOff}
           onChange={mode.toggle}
         />
       </div>

@@ -1,4 +1,5 @@
-import { ON_MORE, VIEW_LABELS, type FixedView } from '../view'
+import { morePagesShown, useFeaturesOff } from '../features'
+import { VIEW_LABELS, type FixedView } from '../view'
 import { VIEW_ICONS } from '../viewIcons'
 import { ChevronIcon } from './ChevronIcon'
 
@@ -20,12 +21,15 @@ interface MorePageProps {
  * a second tap to open, so it is reached the same way as everything else on a
  * phone. Balance and the activity log have entries in the sidebar too (UI-30). The modes were rows
  * here while there were two of them and nothing to say about either; they are a
- * page of their own now, so each can say what it does.
+ * page of their own now, so each can say what it does. A page switched off on
+ * Settings is not listed (FEAT-2).
  */
 export function MorePage({ onOpen, modesOn = 0 }: MorePageProps) {
+  const off = useFeaturesOff()
+
   return (
     <ul className="flex flex-col gap-1">
-      {ON_MORE.map((value) => {
+      {morePagesShown(off).map((value) => {
         const Icon = VIEW_ICONS[value]
         const note = value === 'modes' && modesOn > 0 ? `${String(modesOn)} on` : null
 

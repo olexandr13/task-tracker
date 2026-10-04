@@ -111,7 +111,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   modifier, leaves `H` alone, as with `N` (UI-55).
 - **UI-57** Pressing **R** opens **Rewards** (RWD-19). From anywhere in the app; typing in a box, or
   holding a modifier, leaves `R` alone, as with the other letter shortcuts (UI-55, UI-56).
-- **UI-72** Pressing **C** opens the **Chest** (CHST-22). From anywhere in the app; typing in a box,
+- **UI-72** Pressing **C** opens **Cases** (CHST-22). From anywhere in the app; typing in a box,
   or holding a modifier, leaves `C` alone, as with the other letter shortcuts (UI-55, UI-56, UI-57).
   It is the one page under Rewards with its own letter: it is the only one with something waiting on
   it, and a key is worth least the longer it goes unnoticed (CHST-23).
@@ -141,7 +141,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 ## Navigation
 
 - **UI-7** Twenty-four views: **Today**, **Week**, **Month**, **Tasks**, **Inbox**, **Habits**,
-  **Rewards** with **Chest**, **History**, **Prizes**, **Wishlist** and **Rules** under it (RWD-30),
+  **Rewards** with **Cases**, **History**, **Prizes**, **Wishlist** and **Rules** under it (RWD-30),
   **Lists**,
   **Tags**, **Balance** (BAL-1), **Activity log** (ACT-1), **More**, **Modes** with a page for each of
   **Procrastination**, **Warm-up**, **Nudge** and **Check-in** under it (MODE-1), **Trash** and **Settings**, and a view for each list, opened from Lists, and one for
@@ -157,7 +157,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-30** In the sidebar the views come in four groups with a thin line between each: the period
   views (**Today**, **Week**, **Month**), then **Habits**, **Tasks**, **Lists**, **Rewards**,
   **Balance**, **Activity log**, **Modes** and **More**, then **Trash**, then **Settings**. **Lists**, **Rewards** and **Modes**
-  each keep their pages indented under them — the **Inbox** and every list (LST-13), the **Chest**,
+  each keep their pages indented under them — the **Inbox** and every list (LST-13), the **Cases**,
   **History**, **Prizes**, **Wishlist** and **Rules** (RWD-30), and **Procrastination**, **Warm-up**,
   **Nudge** and **Check-in** (MODE-7) — and each has a **chevron at its end that folds them away** and opens them
   again, without leaving the view you are on. Open, the page you are on is marked itself; folded,
@@ -166,7 +166,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   tasks are open (UI-45). A mode's page has one, under **Modes**, so nothing there needs a strip of
   its own (MODE-7).
 - **UI-8** The view you are on is marked, in the sidebar and in the bottom bar alike.
-- **UI-32** The bottom bar has six tabs, each an icon over its name, from left to right:
+- **UI-32** The bottom bar has six tabs — fewer where a page is switched off, the rest sharing the
+  bar (FEAT-2) — each an icon over its name, from left to right:
   **Settings**, **Rewards** (UI-67), **More** (UI-45), **Tasks** (UI-43), **Habits** and **the
   period** (UI-33). The Rewards tab goes to how the points stand and stays marked on any of the
   rewards pages, which are reached from its own menu (UI-67) and from the strip across the top of
@@ -186,12 +187,15 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   while either is open, or one list or the Inbox. The sidebar keeps its own entries, so the buttons
   are only on a phone.
 - **UI-35** **Settings** holds the signed-in account and the way out (AUTH-9), and under it
-  **Backup**: exporting the account to a file and importing one back (BAK-1, BAK-4), then the
+  **Backup**: exporting the account to a file and importing one back (BAK-1, BAK-4), then
+  **Features**: a switch for each part of the app that can be done without (FEAT-1), then the
   **Theme** (UI-63) and **View settings**: how the pages start out, kept
   on this device, one switch to a line, each naming the page it speaks for. It holds **Show habit
   details by default** (HAB-23), and anything later about how a page starts out belongs there
   rather than on a card of its own. It is not the task views' **View settings** panel (UI-41),
-  which stands beside the add box and changes those views as you read them. What belongs to one
+  which stands beside the add box and changes those views as you read them. Then **Cases**, holding
+  Cases' **Practice mode** switch (CHST-21): a way to try Cases rather than to use it, so
+  not on Cases' page. A card whose part is switched off goes with it (FEAT-3). What belongs to one
   **mode** is set on that mode's own page instead, not here (MODE-12): the nudge's span and the hours
   it may speak in are read beside what the nudge does (NUDGE-9). Under those, the **version** of the app that is open — `MAJOR.MINOR.PATCH` from `package.json`,
   baked in when the app is built. The number is bumped with each change to the app (patch for a
@@ -220,7 +224,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-67** The **Rewards** tab has a menu of its own, opened as the Tasks tab's is (UI-43): held
   down, or tapped again while how the points stand is on screen, and closed by a tap on Rewards
   while open. It holds what the sidebar has in its place, laid out as the sidebar lays it out
-  (UI-30, RWD-19) — **Rewards** itself, with the **Chest**, **History**, **Prizes**, **Wishlist**
+  (UI-30, RWD-19) — **Rewards** itself, with the **Cases**, **History**, **Prizes**, **Wishlist**
   and **Rules**
   **indented under it**, each entry with its icon — so any of the six pages is two taps from
   anywhere, however long a page of history runs. Choosing one goes there. From one of the pages
@@ -500,7 +504,7 @@ task views' options), `src/app/useDeviceSetting.ts` (keeping them on this device
 long press), `src/app/useRowSwipe.ts` and `src/app/rowSwipe.ts` (a phone's swipe to complete or
 delete), `src/app/components/SettingsList.tsx` (and the version on it, from `package.json` via
 `vite.config.ts`), `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it),
-`ThemeCard.tsx` (the theme on it), `ViewSettingsCard.tsx` (the View settings on it, holding the habits switch, HAB-23), `src/app/theme.ts` and `src/app/useTheme.ts` (the theme worn by the page),
+`ThemeCard.tsx` (the theme on it), `ViewSettingsCard.tsx` (the View settings on it, holding the habits switch, HAB-23), `CasesPracticeCard.tsx` (Cases' practice switch on it, CHST-21), `src/app/theme.ts` and `src/app/useTheme.ts` (the theme worn by the page),
 `index.html` (the theme put on before the page is first drawn), `src/app/view.ts` (the views, and which is above which), `src/app/useView.ts` (the view kept in the address, and back climbing a level), `src/app/overlayHistory.ts` (back closing a sheet rather than leaving the app, UI-71), `src/app/viewIcons.ts` (each
 view's icon), `src/app/components/TickIcon.tsx` (the tick in a box that is ticked off),
 `src/app/rowControls.ts` (the shape and tones a row's controls share — a thumb's square in a
@@ -513,7 +517,7 @@ line standing for a group of choices, and the way back out of the ones it opens)
 **Tested in:** `src/app/components/SheetActions.test.tsx` (the row of icons and its **i**), `src/app/components/InfoButton.test.tsx` (the **i** beside a heading and the sheet it opens), `src/app/components/PickerPanel.test.tsx` (the aside and the sheet), `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
 items are large enough for a finger), `src/app/components/MorePage.test.tsx` (More's links), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
 view in the address, and back going a level up), `src/app/overlayHistory.test.ts` (back closing a sheet, and a sheet over a sheet first), `src/app/view.test.ts` (which view is above which), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel),
-`src/app/components/SettingsList.test.tsx` (the version on Settings, and the habits switch on it),
+`src/app/components/SettingsList.test.tsx` (the version on Settings, and the habits and cases practice switches on it),
 `src/app/components/ThemeCard.test.tsx` (picking a theme, by click and by arrow keys),
 `src/app/theme.test.ts` (the theme on the page and the bar, and `index.html` reading it back), `src/test/formFields.test.ts`
 (that every box in `src/app` carries a name for the browser, UI-69, read from the components' source by

@@ -26,13 +26,27 @@ export function describeAllowance({ used, allowed }: WarmUpProgress): string {
 }
 
 /** What is said when a habit is held back (WARM-8). */
-export function describeHeldBack({ day, allowed, daysLeft }: WarmUpProgress): string {
+/** What is said when a habit is held back (WARM-8). A pause keeps today's allowance (WARM-11). */
+export function describeHeldBack({ day, allowed, daysLeft, paused }: WarmUpProgress): string {
   const kept = allowed === 1 ? '1 habit' : `${String(allowed)} habits`
-  const then = daysLeft === 0 ? 'The warm-up is over tomorrow.' : 'Tomorrow allows one more.'
+  const then = heldBackThen(daysLeft, paused)
   return `Warming up: day ${String(day)} allows ${kept}. ${then}`
+}
+
+function heldBackThen(daysLeft: number, paused: boolean): string {
+  if (paused) return 'Paused, so that stays until you resume.'
+  if (daysLeft === 0) return 'The warm-up is over tomorrow.'
+  return 'Tomorrow allows one more.'
 }
 
 /** How long the warm-up has left, for the row that starts and ends it. */
 export function describeDaysLeft({ daysLeft }: WarmUpProgress): string {
   return daysLeft === 0 ? 'Last day' : `${describeDays(daysLeft)} left`
 }
+
+/**
+ * Asked before the warm-up is turned off (WARM-9). Ending it throws the month
+ * away, and the next time it is turned on is day one again.
+ */
+export const WARM_UP_DISABLE_WARNING =
+  'Disable the warm-up? Enabling it again starts from scratch, on day one.'

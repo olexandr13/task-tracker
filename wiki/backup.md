@@ -14,8 +14,9 @@ in. Both are on **Settings**, under the account (UI-35).
   Balance categories (BAL-12), the activity log (ACT-15), what
   completions earned (a *completion* in the counts is one task's points on one day), the
   redemptions, what clearing each period is worth (RWD-24, RWD-29), what a point is worth
-  (RWD-31), the warm-up under way (WARM-1), how the owner asked to be nudged (NUDGE-9) and the
-  check-in's setting (CHECKIN-9). What is kept on this device alone — the View options (STORE-30),
+  (RWD-31), the warm-up under way (WARM-1), how the owner asked to be nudged (NUDGE-9), the
+  check-in's setting (CHECKIN-9) and the feature switches (FEAT-1) — and all of it whatever is
+  switched off (FEAT-5). What is kept on this device alone — the View options (STORE-30),
   the sidebar (STORE-31), the cached quote, what the nudge has already said here (STORE-46) and what
   the check-in keeps here (STORE-54) — is not the account's, and is not in it. Nor are the devices
   check-ins are pushed to (STORE-53): a registration belongs to a browser that may be gone by the
@@ -73,7 +74,8 @@ in. Both are on **Settings**, under the account (UI-35).
   of its own**, and never changes one it has (BAK-6). Each period is its own: a file's week bonus
   can be taken while the account keeps its own for Today.
 - **BAK-15** A file holds the **warm-up** under way (WARM-1), as its one record: the day it began
-  on. A file made before there was a warm-up holds none, and is read as having none under way rather
+  on, and — while it is paused — the day that pause began, with the days already paused (WARM-11).
+  A file made before a warm-up could be paused is read as not paused. A file made before there was a warm-up holds none, and is read as having none under way rather
   than turned away (BAK-13). Like the bonuses it is **no record** (BAK-14): it is counted among
   neither what was imported nor what was already here, and an import takes the file's warm-up only
   where the account has **none of its own** — so restoring a backup cannot start a month that has
@@ -98,6 +100,11 @@ in. Both are on **Settings**, under the account (UI-35).
   record at all, here as in the account (STORE-52), and a file made before there was a check-in holds
   none either; both are read as asking for none (BAK-13). It is **no record** the same way (BAK-14),
   and an import takes the file's setting only where the account has **none of its own**.
+- **BAK-20** A file holds the **feature switches** (FEAT-1), as their one record: the features
+  switched off. Everything on is no record at all, here as in the account (STORE-56), and a file made
+  before there were switches holds none either; both are read as switching nothing off (BAK-13). It
+  is **no record** the same way (BAK-14), and an import takes the file's switches only where the
+  account has **none of its own** — a backup restored does not hide what was switched back on since.
 
 ---
 
@@ -105,7 +112,7 @@ in. Both are on **Settings**, under the account (UI-35).
 `firestoreBackupRepository.ts` (reading and adding to the account in Firestore), `localBackupRepository.ts`
 (the guest's), `backupFile.ts` (the file and its version), `taskSchema.ts`, `listSchema.ts`, `tagSchema.ts`,
 `prizeSchema.ts`, `categorySchema.ts`, `activitySchema.ts`, `rewardSchema.ts`, `warmUpSchema.ts`,
-`nudgeSchema.ts`, `checkInSchema.ts` (each record's own shape),
+`nudgeSchema.ts`, `checkInSchema.ts`, `featureSchema.ts` (each record's own shape),
 `src/app/useBackup.ts` (running them), `src/app/backupLabels.ts` (what is said),
 `src/app/downloadFile.ts`, `src/app/components/BackupCard.tsx`, `SettingsList.tsx`.
 **Tested in:** `src/storage/backupFile.test.ts` (the file, and reading one back),

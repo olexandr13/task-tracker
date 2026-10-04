@@ -24,7 +24,8 @@ interface WarmUpPanelProps {
  * beside it (WARM-6). It sits where habits are added, which is the only place
  * the allowance is ever felt. It says nothing about what today leaves — that is
  * the notice's to say, when a habit is actually held back (WARM-8) — and offers
- * no way out, the switch on Modes being that (WARM-9).
+ * no way out, the switch on Modes being that (WARM-9). While it is paused the line
+ * says so, the allowance being the one it froze on (WARM-11).
  */
 export function WarmUpPanel({ progress, onMoreInfo }: WarmUpPanelProps) {
   if (progress === null) return null
@@ -34,6 +35,7 @@ export function WarmUpPanel({ progress, onMoreInfo }: WarmUpPanelProps) {
       <WarmUpIcon />
       <p className={title}>
         Warm-up · {describeWarmUpDayShort(progress)}
+        {progress.paused && ' · Paused'}
         <span className="font-normal"> · {describeAllowance(progress)}</span>
       </p>
       <button type="button" onClick={onMoreInfo} className={action}>

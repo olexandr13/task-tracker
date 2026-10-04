@@ -2,11 +2,13 @@ import { BONUS_PERIODS } from '../core'
 import type { ActivityRepository } from './activityRepository'
 import type { CategoryRepository } from './categoryRepository'
 import type { CheckInRepository } from './checkInRepository'
+import type { FeatureRepository } from './featureRepository'
 import type { ListRepository } from './listRepository'
 import { loadGuestActivities } from './localActivityRepository'
 import { clearGuestAccount } from './localBackupRepository'
 import { loadGuestCategories } from './localCategoryRepository'
 import { loadGuestCheckIn } from './localCheckInRepository'
+import { loadGuestFeatures } from './localFeatureRepository'
 import { loadGuestLists } from './localListRepository'
 import { loadGuestNudge } from './localNudgeRepository'
 import { loadGuestPrizes } from './localPrizeRepository'
@@ -37,6 +39,7 @@ export async function importGuestAccount(
   categories: CategoryRepository,
   activities: ActivityRepository,
   checkIn: CheckInRepository,
+  features: FeatureRepository,
 ): Promise<void> {
   const guestTasks = loadGuestTasks()
   const guestLists = loadGuestLists()
@@ -48,6 +51,7 @@ export async function importGuestAccount(
   const guestCategories = loadGuestCategories()
   const guestActivities = loadGuestActivities()
   const guestCheckIn = loadGuestCheckIn()
+  const guestFeatures = loadGuestFeatures()
 
   const empty =
     guestTasks.length === 0 &&
@@ -62,7 +66,8 @@ export async function importGuestAccount(
     guestNudge === null &&
     guestCategories.length === 0 &&
     guestActivities.length === 0 &&
-    guestCheckIn === null
+    guestCheckIn === null &&
+    guestFeatures === null
 
   if (empty) {
     clearGuestAccount()
@@ -98,6 +103,7 @@ export async function importGuestAccount(
   if (guestWarmUp !== null) await warmUp.importWarmUp(guestWarmUp)
   if (guestNudge !== null) await nudge.importNudge(guestNudge)
   if (guestCheckIn !== null) await checkIn.importCheckIn(guestCheckIn)
+  if (guestFeatures !== null) await features.importFeatures(guestFeatures)
 
   clearGuestAccount()
 }

@@ -67,16 +67,17 @@ changes shape.
   write the one record. No record at all is nothing set, and the points are counted in points alone.
   It is kept under the ledger's version (STORE-24) and ignored, with a warning, when it cannot be
   read.
-- **STORE-48** What the **chest** asks of a day (CHST-3) is kept beside what a point is worth, as
-  **one more record of the settings**, named for itself for the same reason (STORE-42). No record at
-  all is what an account starts with — any cleared day earns a key — so there is no shape for "not
+- **STORE-48** What **Cases** asks of a day (CHST-3) is kept beside what a point is worth, as
+  **one more record of the settings**, named `chest` — the name it was first saved under — for the
+  same reason (STORE-42). No record at all is what an account starts with — any cleared day earns a
+  key — so there is no shape for "not"
   set" to be told from. A record saved while the jackpot could be worked out two ways also says
   which way; there is no choice any more (CHST-7), so that is read past rather than refused, and
   dropped on the next save. It is
   kept under the ledger's version (STORE-24) and ignored, with a warning, when it cannot be read,
-  which leaves the chest asking what it asks by default rather than asking nothing. It is **in the
+  which leaves Cases asking what it asks by default rather than asking nothing. It is **in the
   backup**, taken only by an account that has none of its own, as the bonuses and the point value
-  are (BAK-5). What the chest keeps on **this device** is the other half of it (STORE-49).
+  are (BAK-5). What Cases keeps on **this device** is the other half of it (STORE-49).
 - **STORE-43** Each prize and each wish (RWD-33, RWD-40) is saved as **its own record**, in one
   collection of its own beside the ledger — the record says which kind it is, and when a wish was
   bought — inside a versioned envelope like a list's (STORE-26). Changes are written **record by
@@ -167,13 +168,28 @@ changes shape.
   than the account's data, so it is **not in the backup** (BAK-2), and a guest has none (CHECKIN-11).
   It has **its own version**; one the sender cannot read is sent nothing.
 
+## The feature switches
+
+- **STORE-56** The **switches on Settings** (FEAT-1) are kept in the account as **one record**, named
+  for itself as the nudge's setting is (STORE-46): the features switched off, by name. **No record at
+  all is everything on**, whether nothing was ever switched off or everything was switched back on,
+  so a feature added to the app later starts on for everyone. Cases was saved as `chest`, and a
+  record that still says that is read as Cases. A name the app does not know — a
+  feature of a newer app — is passed over rather than costing the rest. It has **its own version**,
+  and one the app cannot read is ignored with a warning and read as everything on (STORE-7): hiding
+  part of the app on a guess would look like losing it. The **sender** reads it too, so a check-in
+  switched away with the modes or the activity log is not pushed (CHECKIN-10, FEAT-9). It is **in
+  the backup** (BAK-20).
+
 ## Warm-up
 
 - **STORE-44** The **warm-up** (WARM-1) is kept in the account as **one record**, named for itself
   rather than by an id, so the devices that start or end it write the one record and the later write
   wins. No record at all is no warm-up, whether there never was one or it was ended (WARM-9). All it
-  holds is the **day it began**; which day it is on and how many habits that allows are derived from
-  it and from now (WARM-3, WARM-4), so nothing is rewritten as the month goes by. It has **its own
+  holds is the **day it began**, how many **days have been paused**, and — while it is paused — the
+  **day that pause began** (WARM-11). Which day it is on and how many habits that allows are derived from
+  those and from now (WARM-3, WARM-4), so nothing is rewritten as the days go by. A warm-up saved
+  before it could be paused is read as not paused. It has **its own
   version**, apart from everything else's, and one the app cannot read — an unknown version, a day
   that is no day — is ignored with a warning and read as **no warm-up** (STORE-7), which asks
   nothing of anyone.
@@ -219,10 +235,10 @@ changes shape.
 
 - **STORE-37** As guest (AUTH-15), tasks, lists, tags, the wishlist, the Balance categories, the
   activity log — a record at a time — and the check-in's setting (STORE-51, STORE-52), the points ledger — the
-  bonuses, what a point is worth and what the chest asks with it (STORE-41, STORE-42, STORE-43,
+  bonuses, what a point is worth and what Cases asks with it (STORE-41, STORE-42, STORE-43,
   STORE-48), the warm-up
-  (STORE-44), Procrastination mode (STORE-45) and the nudge's setting (STORE-46) are kept in this
-  browser's `localStorage`, under the same versioned shapes as the account's (STORE-4, STORE-24,
+  (STORE-44), Procrastination mode (STORE-45), the nudge's setting (STORE-46) and the feature
+  switches (STORE-56) are kept in this browser's `localStorage`, under the same versioned shapes as the account's (STORE-4, STORE-24,
   STORE-27, STORE-34). A ledger kept before there were bonuses, or before a point had a value, holds
   none of them, rather than being unreadable for the lack of one. Nothing is sent to the account or any other device. A refresh or another tab
   on the same address sees the same records. There is nothing to sync, so the sync notice stays
@@ -230,9 +246,9 @@ changes shape.
 - **STORE-38** The first time a Google account is open here online after guest data was kept, that
   data is **moved into the account** — tasks, lists, tags, prizes, Balance categories, the activity
   log, points earned, redemptions, the bonuses, what a point is worth, the warm-up, the nudge's
-  setting and the check-in's — added alongside what the
+  setting, the check-in's and the feature switches — added alongside what the
   account already has, without overwriting tasks it already holds (STORE-20), or a bonus, point
-  value, warm-up, nudge or check-in it has already set, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
+  value, warm-up, nudge, check-in or switches it has already set, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
   signing in does not start its month again (WARM-10). A move that fails, offline say, is tried again next time.
 
 ## Kept on this device
@@ -262,17 +278,19 @@ changes shape.
   account** the first time the app is open, where the account has none of its own, and then dropped
   from the browser, as the tasks from before there were accounts are (STORE-19) — so a nudge turned
   on here stays on.
-- **STORE-49** What the **chest** keeps here — whether it makes a noise on this device, which
+- **STORE-49** What **Cases** keeps here — whether it makes a noise on this device, which
   opening it is still glowing from (by which quarter of the jackpot it came to), and whether it has
-  already said here that a key is waiting (CHST-19, CHST-23, CHST-24) — is kept the same way again,
+  already said here that a key is waiting, and whether it has already said here that Weekly is
+  here (CHST-19, CHST-23, CHST-24, CHST-30) — is kept the same way again,
   under a version of its own, apart from
-  what the chest asks of a day, which is the account's (STORE-48). The three are what only the
+  what Cases asks of a day, which is the account's (STORE-48). These are what only the
   device can answer: the room you are in is not the account you are in; a notice given on the laptop
-  is no reason to withhold it on the phone; and the ledger says what today's chest gave without
-  saying which colour it gave it in. A chest standing exactly as it arrives — a noise, nothing
-  opened, nothing said — keeps **no record at all**, and one the app cannot read is read as a chest
+  is no reason to withhold it on the phone; and the ledger says what today's case gave without
+  saying which colour it gave it in. A case standing exactly as it arrives — a noise, nothing
+  opened, nothing said — keeps **no record at all**, and one the app cannot read is read as a case
   arriving, the worst of it being one noise and one notice more than was wanted. A record from before
   the quarters, which named a tier instead, keeps its noise and its notice and forgets the opening.
+  A record from before Weekly has not said that Monday's case is here.
 - **STORE-54** What the **check-in** keeps here — the notice put away on this device (CHECKIN-4),
   the id this device's registration is kept under, and whether this device is reached while the app
   is closed (CHECKIN-11) — is kept the same way again, under a version of its own, apart from the

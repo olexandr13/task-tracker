@@ -10,7 +10,7 @@ import { RewardRulesPage } from './RewardRulesPage'
 
 afterEach(cleanup)
 
-function setup(bonuses: PeriodBonuses = NO_BONUSES, pointValue: PointValue | null = null, chest?: ReactNode) {
+function setup(bonuses: PeriodBonuses = NO_BONUSES, pointValue: PointValue | null = null, cases?: ReactNode) {
   const onChangeBonus = vi.fn()
   const onChangePointValue = vi.fn()
   render(
@@ -19,7 +19,7 @@ function setup(bonuses: PeriodBonuses = NO_BONUSES, pointValue: PointValue | nul
       pointValue={pointValue}
       onChangeBonus={onChangeBonus}
       onChangePointValue={onChangePointValue}
-      chest={chest}
+      cases={cases}
     />,
   )
   return { user: userEvent.setup(), onChangeBonus, onChangePointValue }
@@ -116,17 +116,17 @@ describe('what a point is worth (RWD-31)', () => {
   })
 })
 
-describe('the chest', () => {
-  it('carries what the chest asks of a day, beside the other rules (CHST-7)', () => {
+describe('Cases', () => {
+  it('carries what Cases asks of a day, beside the other rules (CHST-7)', () => {
     setup(NO_BONUSES, null, <p>Tasks a day must ask for</p>)
 
-    expect(screen.getByRole('region', { name: 'The chest' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Cases' })).toBeTruthy()
     expect(screen.getByText('Tasks a day must ask for')).toBeTruthy()
   })
 
   it('shows no such section where there is nothing to put in it', () => {
     setup()
 
-    expect(screen.queryByRole('region', { name: 'The chest' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Cases' })).toBeNull()
   })
 })

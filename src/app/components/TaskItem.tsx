@@ -32,6 +32,7 @@ import {
 import { dateChoices } from '../dateChoices'
 import { describeDueDate, describeTimeOfDay } from '../dueLabels'
 import { describeTimeProgress, describeTimerRunning } from '../durationLabels'
+import { useFeatureOn } from '../features'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { describeRepeatBriefly } from '../repeatLabels'
 import { describeReward, describeRewardHint } from '../rewardLabels'
@@ -175,6 +176,11 @@ export function TaskItem({
   onRevealed,
 }: TaskItemProps) {
   const phone = usePhoneLayout()
+  // A list, a tag or a reward has no control, no mark and no menu entry while its
+  // feature is switched off on Settings; what the task carries is kept (FEAT-3).
+  const listsOn = useFeatureOn('lists')
+  const tagsOn = useFeatureOn('tags')
+  const rewardsOn = useFeatureOn('rewards')
   const done = isComplete(task, now)
   const urgent = !done && task.urgent
   const checklist = countSubtasks(task, now)
@@ -277,10 +283,10 @@ export function TaskItem({
   const day = dueDay(task, now)
   const scheduled = task.repeat !== null || day !== null
   const timed = task.timeGoal !== null || spentSeconds > 0 || timerRunning
-  const rewarded = task.reward !== null
+  const rewarded = rewardsOn && task.reward !== null
   const checklisted = hasSubtasks(task)
   const described = hasDescription(task)
-  const tagged = hasTags(task)
+  const tagged = tagsOn && hasTags(task)
   // Labels, not controls: a click on one is a click on the row. One line of them,
   // each giving up room to the rest when there is not enough.
   const tags =
@@ -311,7 +317,7 @@ export function TaskItem({
       : spentSeconds > 0 || task.timeGoal !== null
         ? `${timeProgress}${separator}${describeTimerRunning(liveSeconds)}`
         : describeTimerRunning(liveSeconds)
-  const rewardLabel = task.reward === null ? null : describeReward(task.reward)
+  const rewardLabel = !rewarded || task.reward === null ? null : describeReward(task.reward)
   const schedule = detailed ? scheduleLabel : null
   const count = detailed && checklisted ? `${String(checklist.done)}/${String(checklist.total)}` : null
   const time = detailed && timed ? timeLabel(' · ') : null
@@ -386,9 +392,9 @@ export function TaskItem({
     },
     { label: 'Duplicate', icon: <DuplicateIcon />, onSelect: () => { actions.duplicate(task.id) } },
     // A panel of its own rather than a group, since it takes typing and more than one choice.
-    { label: 'Tags', icon: <TagIcon />, onSelect: () => { setTagsAt(menuAt) } },
+    ...(tagsOn ? [{ label: 'Tags', icon: <TagIcon />, onSelect: () => { setTagsAt(menuAt) } }] : []),
     // Only once there is a list to choose: the Inbox alone is no choice at all.
-    ...(lists.length === 0
+    ...(!listsOn || lists.length === 0
       ? []
       : [
           {
@@ -900,17 +906,20 @@ export function TaskItem({
 
             <div className={slot}>{(isActive || timed) && <TimePicker {...timePicker} />}</div>
 
-            <div className={slot}>
-              {(isActive || rewarded) && (
-                <RewardPicker
-                  reward={task.reward}
-                  startAt={defaultReward(task.repeat)}
-                  hint={describeRewardHint(task.repeat)}
-                  onChange={(reward) => { actions.changeReward(task.id, reward) }}
-                  label={`Reward for "${task.title}"`}
-                />
-              )}
-            </div>
+            {/* No slot at all without rewards: a column that is empty on every row is a gap (FEAT-3). */}
+            {rewardsOn && (
+              <div className={slot}>
+                {(isActive || rewarded) && (
+                  <RewardPicker
+                    reward={task.reward}
+                    startAt={defaultReward(task.repeat)}
+                    hint={describeRewardHint(task.repeat)}
+                    onChange={(reward) => { actions.changeReward(task.id, reward) }}
+                    label={`Reward for "${task.title}"`}
+                  />
+                )}
+              </div>
+            )}
 
             {/* In a slot of its own like the rest, so the delete beside it keeps its place
                 whether or not there is a description to show. */}
@@ -1020,7 +1029,7 @@ export function TaskItem({
         <div
           className={`flex flex-wrap items-center gap-1 border-t border-neutral-200 py-1 pr-2 md:pr-2.5 ${indent} dark:border-neutral-800`}
         >
-          {lists.length > 0 && (
+          {listsOn && lists.length > 0 && (
             <ListPicker
               listId={task.listId}
               lists={lists}
@@ -1029,14 +1038,16 @@ export function TaskItem({
               align="left"
             />
           )}
-          <TagPicker
-            tags={task.tags}
-            known={knownTags}
-            onAdd={(name) => { actions.addTag(task.id, name) }}
-            onRemove={(name) => { actions.removeTag(task.id, name) }}
-            label={`Tags for "${task.title}"`}
-            align="left"
-          />
+          {tagsOn && (
+            <TagPicker
+              tags={task.tags}
+              known={knownTags}
+              onAdd={(name) => { actions.addTag(task.id, name) }}
+              onRemove={(name) => { actions.removeTag(task.id, name) }}
+              label={`Tags for "${task.title}"`}
+              align="left"
+            />
+          )}
           <UrgentToggle
             urgent={task.urgent}
             onChange={(next) => { actions.changeUrgent(task.id, next) }}

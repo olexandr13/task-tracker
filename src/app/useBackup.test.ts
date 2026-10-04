@@ -24,10 +24,11 @@ const DATA: AccountData = {
   redemptions: [],
   bonuses: NO_BONUSES,
   pointValue: null,
-  chest: null,
+  cases: null,
   warmUp: null,
   nudge: null,
   checkIn: null,
+  features: null,
 }
 
 const ADDED: ImportSummary = {

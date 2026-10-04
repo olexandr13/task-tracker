@@ -24,6 +24,7 @@ import { useCompletionRefusal } from '../useCompletionRefusal'
 import { describeTimeProgress } from '../durationLabels'
 import { describeDueDate, describeShortDate, describeTimeOfDay } from '../dueLabels'
 import { describeRepeatBriefly } from '../repeatLabels'
+import { useFeatureOn } from '../features'
 import { describeReward, describeRewardHint } from '../rewardLabels'
 import {
   controlOff,
@@ -93,6 +94,10 @@ export function TaskSheet({
   onChangeRepeat,
   timer,
 }: TaskSheetProps) {
+  // No row for a list, the tags or a reward while its feature is switched off on Settings (FEAT-3).
+  const listsOn = useFeatureOn('lists')
+  const tagsOn = useFeatureOn('tags')
+  const rewardsOn = useFeatureOn('rewards')
   const done = isComplete(task, now)
   const timeReady = !done && isTimeGoalReached(task, now)
   // Every part ticked, task still not: the box offers the same green invitation
@@ -180,18 +185,22 @@ export function TaskSheet({
                 />
               ),
             },
-            {
-              name: 'List',
-              control: (
-                <ListPicker
-                  listId={task.listId}
-                  lists={lists}
-                  onChange={(listId) => { actions.changeList(task.id, listId) }}
-                  label={`List for "${task.title}"`}
-                  align="left"
-                />
-              ),
-            },
+            ...(listsOn
+              ? [
+                  {
+                    name: 'List',
+                    control: (
+                      <ListPicker
+                        listId={task.listId}
+                        lists={lists}
+                        onChange={(listId) => { actions.changeList(task.id, listId) }}
+                        label={`List for "${task.title}"`}
+                        align="left"
+                      />
+                    ),
+                  },
+                ]
+              : []),
             {
               name: 'Time',
               detail: timeLabel,
@@ -219,19 +228,23 @@ export function TaskSheet({
                 />
               ),
             },
-            {
-              name: 'Tags',
-              control: (
-                <TagPicker
-                  tags={task.tags}
-                  known={knownTags}
-                  onAdd={(name) => { actions.addTag(task.id, name) }}
-                  onRemove={(name) => { actions.removeTag(task.id, name) }}
-                  label={`Tags for "${task.title}"`}
-                  align="right"
-                />
-              ),
-            },
+            ...(tagsOn
+              ? [
+                  {
+                    name: 'Tags',
+                    control: (
+                      <TagPicker
+                        tags={task.tags}
+                        known={knownTags}
+                        onAdd={(name) => { actions.addTag(task.id, name) }}
+                        onRemove={(name) => { actions.removeTag(task.id, name) }}
+                        label={`Tags for "${task.title}"`}
+                        align="right"
+                      />
+                    ),
+                  },
+                ]
+              : []),
             {
               name: 'Urgent',
               detail: task.urgent ? 'Urgent' : null,
@@ -243,20 +256,24 @@ export function TaskSheet({
                 />
               ),
             },
-            {
-              name: 'Reward',
-              detail: task.reward === null ? null : describeReward(task.reward),
-              control: (
-                <RewardPicker
-                  reward={task.reward}
-                  startAt={defaultReward(task.repeat)}
-                  hint={describeRewardHint(task.repeat)}
-                  onChange={(reward) => { actions.changeReward(task.id, reward) }}
-                  label={`Reward for "${task.title}"`}
-                  align="right"
-                />
-              ),
-            },
+            ...(rewardsOn
+              ? [
+                  {
+                    name: 'Reward',
+                    detail: task.reward === null ? null : describeReward(task.reward),
+                    control: (
+                      <RewardPicker
+                        reward={task.reward}
+                        startAt={defaultReward(task.repeat)}
+                        hint={describeRewardHint(task.repeat)}
+                        onChange={(reward) => { actions.changeReward(task.id, reward) }}
+                        label={`Reward for "${task.title}"`}
+                        align="right"
+                      />
+                    ),
+                  },
+                ]
+              : []),
           ]}
         />
 

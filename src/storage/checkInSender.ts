@@ -1,6 +1,16 @@
-import { checkInSlotToSend, isSlotLogged, slotKey, wallClock, type ActivityEntry, type HourSlot } from '../core'
+import {
+  ALL_FEATURES_ON,
+  checkInSlotToSend,
+  isModeAvailable,
+  isSlotLogged,
+  slotKey,
+  wallClock,
+  type ActivityEntry,
+  type HourSlot,
+} from '../core'
 import { readActivityDay } from './activitySchema'
 import { readCheckIn } from './checkInSchema'
+import { readFeatures } from './featureSchema'
 import type { PushSubscriptionData } from './pushRepository'
 import { readPushRegistration, type SavedPushRegistration } from './pushSchema'
 
@@ -12,7 +22,8 @@ import { readPushRegistration, type SavedPushRegistration } from './pushSchema'
  * drift apart, and handed what it reads and sends through so it can be tested.
  *
  * For every device registered, in the device's own time zone: the account has
- * the check-in on, the hour that just ended is one it keeps to, it is still
+ * the check-in on, and the modes and the activity log it belongs to switched
+ * on as well (FEAT-9), the hour that just ended is one it keeps to, it is still
  * early in the next hour, nothing is logged under it yet, and it was not pushed
  * about already. Then it is pushed, and the hour is written down beside the
  * registration. A device the push service no longer knows is let go of.
@@ -36,6 +47,8 @@ export interface SenderStore {
   registrations(): Promise<readonly { readonly accountId: string; readonly deviceId: string; readonly data: unknown }[]>
   /** The account's check-in setting as saved, or undefined where there is none. */
   checkIn(accountId: string): Promise<unknown>
+  /** The account's feature switches as saved (FEAT-1), or undefined where there are none. */
+  features(accountId: string): Promise<unknown>
   /** A day of the account's activity log as saved, or undefined where there is none. */
   activityDay(accountId: string, day: string): Promise<unknown>
   /** Writes down the hour last pushed about beside the registration. */
@@ -126,6 +139,7 @@ export async function sendDueCheckIns(store: SenderStore, send: SendPush, now: D
   }
 
   const settings = new Map<string, ReturnType<typeof readCheckIn>>()
+  const available = new Map<string, boolean>()
   const days = new Map<string, ActivityEntry[] | null>()
 
   for (const { accountId, registration } of reach) {
@@ -134,7 +148,17 @@ export async function sendDueCheckIns(store: SenderStore, send: SendPush, now: D
       settings.set(accountId, saved === undefined ? null : readCheckIn(saved))
     }
     const preference = settings.get(accountId) ?? null
-    if (preference === null) continue
+    if (preference === null || !preference.on) continue
+
+    // A check-in switched away with the modes or the log (FEAT-9) asks nothing,
+    // its own switch left as it was for when they come back. Switches that
+    // cannot be read are everything on, as the app reads them (STORE-56).
+    if (!available.has(accountId)) {
+      const saved = await store.features(accountId)
+      const off = saved === undefined ? ALL_FEATURES_ON : (readFeatures(saved) ?? ALL_FEATURES_ON)
+      available.set(accountId, isModeAvailable(off, 'checkIn'))
+    }
+    if (available.get(accountId) !== true) continue
 
     const clock = wallClock(now, registration.timeZone)
     if (clock === null) continue

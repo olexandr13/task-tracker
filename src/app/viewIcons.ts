@@ -4,7 +4,7 @@ import { BalanceIcon } from './components/BalanceIcon'
 import { CalendarIcon } from './components/CalendarIcon'
 import { CalmIcon } from './components/CalmIcon'
 import { CheckInIcon } from './components/CheckInIcon'
-import { ChestIcon } from './components/ChestIcon'
+import { CasesIcon } from './components/CasesIcon'
 import { FlameIcon } from './components/FlameIcon'
 import { FolderIcon } from './components/FolderIcon'
 import { GiftIcon } from './components/GiftIcon'
@@ -45,7 +45,7 @@ export const VIEW_ICONS: Record<FixedView, ViewIcon> = {
   inbox: InboxIcon,
   habits: FlameIcon,
   rewards: StarIcon,
-  'rewards/chest': ChestIcon,
+  'rewards/cases': CasesIcon,
   'rewards/history': HistoryIcon,
   'rewards/prizes': GiftIcon,
   'rewards/wishlist': TrophyIcon,

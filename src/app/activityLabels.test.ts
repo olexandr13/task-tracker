@@ -8,7 +8,6 @@ import {
   describeNothingLogged,
   describePeriodInSentence,
   describePeriodTitle,
-  describeStreak,
 } from './activityLabels'
 import { describeCheckInQuestion, describeCheckInSilence, describeOthersNotLogged, describeSlot } from './checkInLabels'
 
@@ -44,10 +43,6 @@ describe('how much is logged (ACT-17, ACT-18)', () => {
     expect(describeDaysInFull({ inFull: 1, counted: 1 })).toBe('1 of 1 day logged in full')
   })
 
-  it('names the streak, or that there is none', () => {
-    expect(describeStreak(0)).toBe('No streak yet')
-    expect(describeStreak(3)).toBe('3-day streak')
-  })
 })
 
 describe('a record (ACT-7, ACT-11)', () => {

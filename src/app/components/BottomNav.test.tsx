@@ -3,12 +3,13 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createList, type List } from '../../core'
+import { createList, type FeaturesOff, type List } from '../../core'
+import { FeaturesContext } from '../features'
 import { LONG_PRESS_MS } from '../useLongPress'
 import type { View } from '../view'
 import { BottomNav } from './BottomNav'
 
-/* A phone's navigation bar. UI ids refer to wiki/interface.md. */
+/* A phone's navigation bar. UI ids refer to wiki/interface.md, FEAT ids to wiki/features.md. */
 
 afterEach(() => {
   cleanup()
@@ -329,11 +330,11 @@ describe('the Rewards tab', () => {
     await user.click(rewardsTab())
 
     const items = within(rewardsMenu() as HTMLElement).getAllByRole('menuitem').map((item) => item.textContent)
-    expect(items).toEqual(['Rewards', 'Chest', 'History', 'Prizes', 'Wishlist', 'Rules'])
+    expect(items).toEqual(['Rewards', 'Cases', 'History', 'Prizes', 'Wishlist', 'Rules'])
     const under = within(rewardsMenu() as HTMLElement).getByRole('group', { name: 'Rewards' })
     expect(within(under).getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
       'Rewards',
-      'Chest',
+      'Cases',
       'History',
       'Prizes',
       'Wishlist',
@@ -398,7 +399,7 @@ describe('the Rewards tab', () => {
 
     await user.click(rewardsTab())
 
-    for (const name of ['Rewards', 'Chest', 'History', 'Prizes', 'Wishlist', 'Rules']) {
+    for (const name of ['Rewards', 'Cases', 'History', 'Prizes', 'Wishlist', 'Rules']) {
       expect(screen.getByRole('menuitem', { name }).querySelector('svg')).not.toBeNull()
     }
     const history = screen.getByRole('menuitem', { name: 'History' })
@@ -493,5 +494,42 @@ describe('the More tab', () => {
     setup('today', [], true)
 
     expect(screen.getByRole('navigation', { name: 'Views' }).className).toMatch(/opacity-25/)
+  })
+
+  it('has no tab for a page switched off, the rest sharing the bar (FEAT-2)', () => {
+    const off: FeaturesOff = ['habits', 'rewards']
+    render(
+      <FeaturesContext value={off}>
+        <BottomNav view="today" lists={[]} onChange={vi.fn()} />
+      </FeaturesContext>,
+    )
+
+    expect(tabs().map((tab) => tab.textContent)).toEqual(['Settings', 'More', 'Tasks', 'Today'])
+  })
+
+  it('has no More tab once everything on its page is switched off (FEAT-2)', () => {
+    const off: FeaturesOff = ['lists', 'tags', 'activity', 'modes']
+    render(
+      <FeaturesContext value={off}>
+        <BottomNav view="today" lists={[]} onChange={vi.fn()} />
+      </FeaturesContext>,
+    )
+
+    expect(screen.queryByRole('button', { name: 'More' })).toBeNull()
+  })
+
+  it('offers only the trash from the Tasks tab while lists are switched off (FEAT-2)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const user = userEvent.setup({ advanceTimers: (ms) => { vi.advanceTimersByTime(ms) } })
+    const off: FeaturesOff = ['lists']
+    render(
+      <FeaturesContext value={off}>
+        <BottomNav view="tasks" lists={LISTS} onChange={vi.fn()} />
+      </FeaturesContext>,
+    )
+
+    await user.click(tasksTab())
+
+    expect(within(tasksMenu() as HTMLElement).getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Trash'])
   })
 })

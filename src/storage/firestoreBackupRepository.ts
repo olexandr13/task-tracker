@@ -13,20 +13,21 @@ import { readActivityDay, toStoredActivityDays } from './activitySchema'
 import { countRecords, NeedsConnectionError, newRecords, type BackupRepository, type KnownRecords } from './backupRepository'
 import { readCategory, toStoredCategory } from './categorySchema'
 import { CHECK_IN, readCheckIn, toStoredCheckIn } from './checkInSchema'
+import { FEATURES_RECORD, readFeatures, toStoredFeatures } from './featureSchema'
 import { accountCollection } from './firestoreAccount'
 import { commitInBatches } from './firestoreBatches'
 import { readList, toStoredList } from './listSchema'
 import { NUDGE, readNudge, toStoredNudge } from './nudgeSchema'
 import { readPrize, toStoredPrize } from './prizeSchema'
 import {
-  CHEST,
+  CASES_SETTING,
   POINT_VALUE,
-  readChestSettings,
+  readCaseSettings,
   readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
-  toStoredChestSettings,
+  toStoredCaseSettings,
   toStoredPointValue,
   toStoredRedemption,
   toStoredRewardDays,
@@ -68,6 +69,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   const categories = accountCollection(firestore, accountId, 'categories')
   const activityDays = accountCollection(firestore, accountId, 'activityDays')
   const checkIns = accountCollection(firestore, accountId, 'checkIn')
+  const featureSwitches = accountCollection(firestore, accountId, 'features')
 
   /** What the account earns for clearing each period, of everything its goals hold. */
   function bonusesIn(snapshot: QuerySnapshot): PeriodBonuses {
@@ -82,9 +84,9 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   const pointValueIn = (snapshot: QuerySnapshot) =>
     snapshot.docs.flatMap((saved) => (saved.id === POINT_VALUE ? (readPointValue(saved.data()) ?? []) : []))[0] ?? null
 
-  /** What the account asks of the chest, of everything its settings hold. */
-  const chestIn = (snapshot: QuerySnapshot) =>
-    snapshot.docs.flatMap((saved) => (saved.id === CHEST ? (readChestSettings(saved.data()) ?? []) : []))[0] ?? null
+  /** What the account asks of Cases, of everything its settings hold. */
+  const casesIn = (snapshot: QuerySnapshot) =>
+    snapshot.docs.flatMap((saved) => (saved.id === CASES_SETTING ? (readCaseSettings(saved.data()) ?? []) : []))[0] ?? null
 
   /** The warm-up the account has, of the one document it is ever kept as. */
   const warmUpIn = (snapshot: QuerySnapshot) =>
@@ -97,6 +99,12 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   /** How the account asked to be checked in on, of the one document it is ever kept as. */
   const checkInIn = (snapshot: QuerySnapshot) =>
     snapshot.docs.flatMap((saved) => (saved.id === CHECK_IN ? (readCheckIn(saved.data()) ?? []) : []))[0] ?? null
+
+  /** The features the account has switched off, of the one document they are ever kept as. */
+  function featuresIn(snapshot: QuerySnapshot) {
+    const saved = snapshot.docs.find((candidate) => candidate.id === FEATURES_RECORD)
+    return saved === undefined ? null : readFeatures(saved.data())
+  }
 
   return {
     // The server when there is a connection, the browser's copy when there is not.
@@ -115,10 +123,24 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         savedCategories,
         savedActivityDays,
         savedCheckIn,
+        savedFeatures,
       ] = await Promise.all(
-        [tasks, lists, tags, prizes, days, redemptions, goals, settings, warmUps, nudges, categories, activityDays, checkIns].map(
-          (collection) => getDocs(collection),
-        ),
+        [
+          tasks,
+          lists,
+          tags,
+          prizes,
+          days,
+          redemptions,
+          goals,
+          settings,
+          warmUps,
+          nudges,
+          categories,
+          activityDays,
+          checkIns,
+          featureSwitches,
+        ].map((collection) => getDocs(collection)),
       )
       const readAll = <T>(snapshot: QuerySnapshot, read: (data: unknown) => T | null): T[] =>
         snapshot.docs.flatMap((saved) => read(saved.data()) ?? [])
@@ -134,10 +156,11 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         redemptions: readAll(savedRedemptions, readRedemption),
         bonuses: bonusesIn(savedGoals),
         pointValue: pointValueIn(savedSettings),
-        chest: chestIn(savedSettings),
+        cases: casesIn(savedSettings),
         warmUp: warmUpIn(savedWarmUp),
         nudge: nudgeIn(savedNudge),
         checkIn: checkInIn(savedCheckIn),
+        features: featuresIn(savedFeatures),
       }
     },
 
@@ -157,6 +180,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         savedCategories,
         savedActivityDays,
         savedCheckIn,
+        savedFeatures,
       ] = await fromServer([
         tasks,
         lists,
@@ -171,6 +195,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         categories,
         activityDays,
         checkIns,
+        featureSwitches,
       ])
       const activityDaysRead = savedActivityDays.docs.map((saved) => ({ day: saved.id, entries: readActivityDay(saved.data()) }))
       const known: KnownRecords = {
@@ -185,10 +210,11 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         redemptionIds: ids(savedRedemptions),
         bonuses: bonusesIn(savedGoals),
         pointValue: pointValueIn(savedSettings),
-        chest: chestIn(savedSettings),
+        cases: casesIn(savedSettings),
         warmUp: warmUpIn(savedWarmUp),
         nudge: nudgeIn(savedNudge),
         checkIn: checkInIn(savedCheckIn),
+        features: featuresIn(savedFeatures),
         days: new Map(
           savedDays.docs.map((saved): [LocalDay, ReadonlySet<TaskId> | null] => {
             const entries = readRewardDay(saved.data())
@@ -199,10 +225,11 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
 
       const { fresh, alreadyHere } = newRecords(incoming, known, now)
       const value = fresh.pointValue
-      const chest = fresh.chest
+      const cases = fresh.cases
       const warmUp = fresh.warmUp
       const nudge = fresh.nudge === null ? null : toStoredNudge(fresh.nudge)
       const checkIn = fresh.checkIn === null ? null : toStoredCheckIn(fresh.checkIn)
+      const features = fresh.features === null ? null : toStoredFeatures(fresh.features)
 
       // A day is merged, never replaced, as when points are earned or time is
       // logged: only the entries it did not hold are added to it.
@@ -223,7 +250,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         ...fresh.redemptions.map((redemption) => (batch: WriteBatch) =>
           batch.set(doc(redemptions, redemption.id), toStoredRedemption(redemption)),
         ),
-        // The file's bonuses, point value, chest settings, warm-up, nudge and check-in are
+        // The file's bonuses, point value, cases settings, warm-up, nudge, check-in and switches are
         // only ever set where the account has none of its own (`newRecords`).
         ...BONUS_PERIODS.flatMap((period) => {
           const points = fresh.bonuses[period]
@@ -234,14 +261,15 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         ...(value === null
           ? []
           : [(batch: WriteBatch) => batch.set(doc(settings, POINT_VALUE), toStoredPointValue(value))]),
-        ...(chest === null
+        ...(cases === null
           ? []
-          : [(batch: WriteBatch) => batch.set(doc(settings, CHEST), toStoredChestSettings(chest))]),
+          : [(batch: WriteBatch) => batch.set(doc(settings, CASES_SETTING), toStoredCaseSettings(cases))]),
         ...(warmUp === null
           ? []
           : [(batch: WriteBatch) => batch.set(doc(warmUps, WARM_UP), toStoredWarmUp(warmUp))]),
         ...(nudge === null ? [] : [(batch: WriteBatch) => batch.set(doc(nudges, NUDGE), nudge)]),
         ...(checkIn === null ? [] : [(batch: WriteBatch) => batch.set(doc(checkIns, CHECK_IN), checkIn)]),
+        ...(features === null ? [] : [(batch: WriteBatch) => batch.set(doc(featureSwitches, FEATURES_RECORD), features)]),
       ])
 
       return { added: countRecords(fresh), alreadyHere }

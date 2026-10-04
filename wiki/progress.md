@@ -26,7 +26,7 @@ separately, on the [Rewards](rewards.md) pages — where clearing a bar of its o
   (LIST-2), until it is ticked off or passed over (RPT-34, RPT-38). A one-off with **no due date**
   belongs to **all three** while it is still to do, being work any of their days would take. So,
   still to do, a task is counted wherever its list shows it (LIST-2, LIST-5, LIST-13, LIST-18) —
-  which means today's bar, and the bonus and the chest's key that follow it (RWD-25, CHST-2), ask
+  which means today's bar, and the bonus and Cases' key that follow it (RWD-25, CHST-2), ask
   for everything overdue and the undated backlog along with the day's own work. Done, a one-off
   counts in the period it was completed in.
 - **PROG-6** A task counts as done for a period when its completion time falls inside that period.
@@ -51,6 +51,8 @@ separately, on the [Rewards](rewards.md) pages — where clearing a bar of its o
 - **PROG-15** The bars do not count occurrences — "done on five of this week's seven days". Repeating
   tasks now keep the days they were done on (RPT-27), so this could be counted, but the bars still
   count tasks. How often a habit was kept is on the Habits page instead (HAB-8).
+- **PROG-16** The bars can be **switched off** on Settings (FEAT-3), and are gone from beside the
+  tasks; with the daily quote off as well there is no rail, and the list takes its width.
 
 ---
 

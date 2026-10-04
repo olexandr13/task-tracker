@@ -9,7 +9,7 @@ import { useQuote } from './useQuote'
 
 /*
  * Today's quote: where it is asked for and what happens when the service is out
- * of reach. QUOTE ids refer to wiki/daily-quote.md.
+ * of reach. QUOTE ids refer to wiki/daily-quote.md, FEAT ids to wiki/features.md.
  */
 
 const TODAY = new Date(2026, 8, 17, 9, 0)
@@ -20,7 +20,11 @@ const FETCHED: Quote = { text: 'The secret of getting ahead is getting started.'
 afterEach(cleanup)
 
 /** A cache and a service the test drives: either can hand a quote over, or fail. */
-function setUp({ cached = null, fetchFails = false }: { cached?: DailyQuote | null; fetchFails?: boolean } = {}) {
+function setUp({
+  cached = null,
+  fetchFails = false,
+  on = true,
+}: { cached?: DailyQuote | null; fetchFails?: boolean; on?: boolean } = {}) {
   const saved: DailyQuote[] = []
   let asked = 0
 
@@ -39,12 +43,20 @@ function setUp({ cached = null, fetchFails = false }: { cached?: DailyQuote | nu
     },
   }
 
-  const hook = renderHook(() => useQuote(source, repository, TODAY))
+  const hook = renderHook(() => useQuote(source, repository, TODAY, on))
 
   return { ...hook, saved, asked: () => asked }
 }
 
 describe("today's quote", () => {
+  it('asks nothing of the service, and shows nothing, while switched off (FEAT-3)', async () => {
+    const { result, asked } = setUp({ on: false })
+
+    await Promise.resolve()
+    expect(result.current).toBeNull()
+    expect(asked()).toBe(0)
+  })
+
   it('shows nothing until it has settled, rather than flashing one quote (QUOTE-11)', () => {
     const { result } = setUp()
 

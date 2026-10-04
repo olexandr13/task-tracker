@@ -27,7 +27,7 @@ export const ACTIVITY_INTRO = [
   'Type the time in minutes, like "15", or with hours, like "1h 20m".',
   'Press a record to change it, or its "×" to delete it. While changing it, press another hour to move it there.',
   'Switch between "Day", "Week" and "Month" to see the totals, and use "‹" and "›" beside the date to look back.',
-  'Hours logged and the streak count the hours set for Check-in, from "From" to "To".',
+  'Hours logged count the hours set for Check-in, from "From" to "To".',
 ]
 
 export const PERIOD_CHOICES: readonly { readonly period: ActivityPeriod; readonly label: string }[] = [
@@ -104,11 +104,6 @@ export function describeLoggedHours({ ended, expected, logged }: LoggedHours): s
 /** How many days of a week or a month were logged in full (ACT-18): `3 of 5 days logged in full`. */
 export function describeDaysInFull({ inFull, counted }: DaysInFull): string {
   return `${String(inFull)} of ${String(counted)} ${counted === 1 ? 'day' : 'days'} logged in full`
-}
-
-/** The run of days logged in full (ACT-18): `3-day streak`, or that there is none yet. */
-export function describeStreak(days: number): string {
-  return days === 0 ? 'No streak yet' : `${String(days)}-day streak`
 }
 
 /** A record as it is listed: `Work 45m`. */

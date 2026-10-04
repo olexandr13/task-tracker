@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { createPointValue, DEFAULT_CHEST, type ChestSettings, type Redemption } from '../core'
+import { createPointValue, DEFAULT_CASES, type CaseSettings, type Redemption } from '../core'
 import {
-  readChestSettings,
+  readCaseSettings,
   readRedemption,
   readRewardDay,
   readPointValue,
   readRewardGoal,
   REWARD_SCHEMA_VERSION,
-  toStoredChestSettings,
+  toStoredCaseSettings,
   toStoredPointValue,
   toStoredRedemption,
   toStoredRewardGoal,
@@ -104,32 +104,32 @@ describe('readPointValue (STORE-42, STORE-24)', () => {
   })
 })
 
-describe('readChestSettings (STORE-48, STORE-24)', () => {
-  it('reads back what the chest asks of a day', () => {
-    const asking: ChestSettings = { leastTasks: 4 }
+describe('readCaseSettings (STORE-48, STORE-24)', () => {
+  it('reads back what Cases asks of a day', () => {
+    const asking: CaseSettings = { leastTasks: 4 }
 
-    expect(readChestSettings(toStoredChestSettings(asking))).toEqual(asking)
-    expect(readChestSettings(toStoredChestSettings(DEFAULT_CHEST))).toEqual(DEFAULT_CHEST)
+    expect(readCaseSettings(toStoredCaseSettings(asking))).toEqual(asking)
+    expect(readCaseSettings(toStoredCaseSettings(DEFAULT_CASES))).toEqual(DEFAULT_CASES)
   })
 
   it('reads settings saved with the old choice of jackpot, keeping how big a day must be', () => {
-    const saved = { ...toStoredChestSettings({ leastTasks: 4 }), settings: { leastTasks: 4, jackpot: 'typicalDay' } }
+    const saved = { ...toStoredCaseSettings({ leastTasks: 4 }), settings: { leastTasks: 4, jackpot: 'typicalDay' } }
 
-    expect(readChestSettings(saved)).toEqual({ leastTasks: 4 })
+    expect(readCaseSettings(saved)).toEqual({ leastTasks: 4 })
   })
 
   it('saves no choice of jackpot, there being none', () => {
-    expect(toStoredChestSettings({ leastTasks: 4 }).settings).toEqual({ leastTasks: 4 })
+    expect(toStoredCaseSettings({ leastTasks: 4 }).settings).toEqual({ leastTasks: 4 })
   })
 
   it('trusts nothing in a version it does not know, or not shaped as settings (STORE-24)', () => {
-    const saved = toStoredChestSettings({ leastTasks: 4 })
+    const saved = toStoredCaseSettings({ leastTasks: 4 })
 
-    expect(readChestSettings({ ...saved, version: 99 })).toBeNull()
-    expect(readChestSettings({ ...saved, name: 'pointValue' })).toBeNull()
-    expect(readChestSettings({ ...saved, settings: { leastTasks: 0 } })).toBeNull()
-    expect(readChestSettings({ ...saved, settings: { leastTasks: '4' } })).toBeNull()
-    expect(readChestSettings({ ...saved, settings: {} })).toBeNull()
-    expect(readChestSettings(null)).toBeNull()
+    expect(readCaseSettings({ ...saved, version: 99 })).toBeNull()
+    expect(readCaseSettings({ ...saved, name: 'pointValue' })).toBeNull()
+    expect(readCaseSettings({ ...saved, settings: { leastTasks: 0 } })).toBeNull()
+    expect(readCaseSettings({ ...saved, settings: { leastTasks: '4' } })).toBeNull()
+    expect(readCaseSettings({ ...saved, settings: {} })).toBeNull()
+    expect(readCaseSettings(null)).toBeNull()
   })
 })

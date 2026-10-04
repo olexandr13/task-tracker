@@ -4,7 +4,8 @@ import {
   NO_BONUSES,
   toLocalDay,
   type Category,
-  type ChestSettings,
+  type CaseSettings,
+  type FeaturesOff,
   type List,
   type PeriodBonuses,
   type Prize,
@@ -20,23 +21,24 @@ import type { AccountData } from './backupRepository'
 import { readCategory, toStoredCategory, type StoredCategory } from './categorySchema'
 import type { CheckInPreference } from './checkInRepository'
 import { readCheckIn, toStoredCheckIn, type StoredCheckIn } from './checkInSchema'
+import { readFeatures, toStoredFeatures, type StoredFeatures } from './featureSchema'
 import { readList, toStoredList, type StoredList } from './listSchema'
 import type { NudgePreference } from './nudgeRepository'
 import { readNudge, toStoredNudge, type StoredNudge } from './nudgeSchema'
 import { isRecord } from './plainData'
 import { readPrize, toStoredPrize, type StoredPrize } from './prizeSchema'
 import {
-  readChestSettings,
+  readCaseSettings,
   readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
-  toStoredChestSettings,
+  toStoredCaseSettings,
   toStoredPointValue,
   toStoredRedemption,
   toStoredRewardDays,
   toStoredRewardGoal,
-  type StoredChestSettings,
+  type StoredCaseSettings,
   type StoredPointValue,
   type StoredRedemption,
   type StoredRewardDay,
@@ -68,12 +70,13 @@ export const BACKUP_FORMAT = 'task-tracker-backup'
  * Version 6 held no Balance categories (BAL-12): a file made before there were
  * any is read as holding none. Version 7 held no activity log and no check-in
  * (ACT-1, CHECKIN-2): a file made before them is read as holding no records and
- * asking for no check-in.
+ * asking for no check-in. Version 8 held no feature switches (FEAT-1): a file
+ * made before there were any is read as switching nothing off.
  */
-export const BACKUP_VERSION = 8
+export const BACKUP_VERSION = 9
 
 /** The versions of the wrapper this app can still read, oldest first. */
-const READABLE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, BACKUP_VERSION]
+const READABLE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, BACKUP_VERSION]
 
 interface BackupFile {
   format: typeof BACKUP_FORMAT
@@ -93,12 +96,12 @@ interface BackupFile {
   rewardGoals: StoredRewardGoal[]
   /**
    * The standing settings of the points, a record each where anything says: what
-   * one point is worth (RWD-31), and what the chest asks of a day (CHST-3).
+   * one point is worth (RWD-31), and what Cases asks of a day (CHST-3).
    * A new kind of setting joins this array and leaves the wrapper as it is, so
-   * `BACKUP_VERSION` does not move for one — a file without the chest's record
+   * `BACKUP_VERSION` does not move for one — a file without Cases' record
    * is read as saying nothing about it, as a file without the point value is.
    */
-  rewardSettings: (StoredPointValue | StoredChestSettings)[]
+  rewardSettings: (StoredPointValue | StoredCaseSettings)[]
   /** The warm-up under way, as its one record, or nothing at all for none (WARM-1). */
   warmUp: StoredWarmUp[]
   /** How the owner asked to be nudged, as its one record, or nothing at all where it is off (NUDGE-9). */
@@ -107,6 +110,8 @@ interface BackupFile {
   activityDays: StoredActivityDay[]
   /** Whether the check-in is on and its hours, as its one record, or nothing at all at its defaults (CHECKIN-2). */
   checkIn: StoredCheckIn[]
+  /** The features switched off on Settings, as their one record, or nothing at all with every one on (FEAT-1). */
+  features: StoredFeatures[]
 }
 
 /** Why a file was not read at all. */
@@ -127,6 +132,12 @@ function nudgeRecord(preference: NudgePreference | null): StoredNudge[] {
 /** The check-in setting as the file holds it: its one record, or nothing at all at its defaults. */
 function checkInRecord(preference: CheckInPreference | null): StoredCheckIn[] {
   const stored = preference === null ? null : toStoredCheckIn(preference)
+  return stored === null ? [] : [stored]
+}
+
+/** The feature switches as the file holds them: their one record, or nothing at all with every feature on. */
+function featuresRecord(off: FeaturesOff | null): StoredFeatures[] {
+  const stored = off === null ? null : toStoredFeatures(off)
   return stored === null ? [] : [stored]
 }
 
@@ -154,13 +165,14 @@ export function writeBackupFile(data: AccountData, now: Date): string {
     }),
     rewardSettings: [
       ...(data.pointValue === null ? [] : [toStoredPointValue(data.pointValue)]),
-      ...(data.chest === null ? [] : [toStoredChestSettings(data.chest)]),
+      ...(data.cases === null ? [] : [toStoredCaseSettings(data.cases)]),
     ],
     warmUp: data.warmUp === null ? [] : [toStoredWarmUp(data.warmUp)],
     // A nudge back at its defaults keeps no record here either, as it keeps none in the account.
     nudge: nudgeRecord(data.nudge),
     activityDays: toStoredActivityDays(data.activities),
     checkIn: checkInRecord(data.checkIn),
+    features: featuresRecord(data.features),
   }
   return `${JSON.stringify(file, null, 2)}\n`
 }
@@ -193,6 +205,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
   const categories = file.version < 7 ? [] : file.categories
   const activityDays = file.version < 8 ? [] : file.activityDays
   const checkIn = file.version < 8 ? [] : file.checkIn
+  const features = file.version < 9 ? [] : file.features
   if (
     !Array.isArray(tasks) ||
     !Array.isArray(lists) ||
@@ -206,7 +219,8 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     !Array.isArray(nudge) ||
     !Array.isArray(categories) ||
     !Array.isArray(activityDays) ||
-    !Array.isArray(checkIn)
+    !Array.isArray(checkIn) ||
+    !Array.isArray(features)
   ) {
     return 'not-a-backup'
   }
@@ -223,12 +237,12 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
   // A settings record is one kind or the other, so it is only unreadable when
   // neither reader can make anything of it.
   let pointValue: PointValue | null = null
-  let chest: ChestSettings | null = null
+  let cases: CaseSettings | null = null
   for (const record of rewardSettings) {
     const value = readPointValue(record)
-    const asked = readChestSettings(record)
+    const asked = readCaseSettings(record)
     if (value !== null) pointValue ??= value
-    else if (asked !== null) chest ??= asked
+    else if (asked !== null) cases ??= asked
     else unreadable += 1
   }
 
@@ -247,10 +261,11 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     redemptions: readEach<Redemption>(redemptions, readRedemption),
     bonuses: bonuses as PeriodBonuses,
     pointValue,
-    chest,
+    cases,
     warmUp: readEach<WarmUp>(warmUp, readWarmUp)[0] ?? null,
     nudge: readEach<NudgePreference>(nudge, readNudge)[0] ?? null,
     checkIn: readEach<CheckInPreference>(checkIn, readCheckIn)[0] ?? null,
+    features: readEach<FeaturesOff>(features, readFeatures)[0] ?? null,
   }
   return { data, unreadable }
 }

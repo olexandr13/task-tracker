@@ -29,7 +29,7 @@ import type { TaskScope } from '../storage/taskRepository'
  * screens of their own.
  *
  * Rewards is six screens rather than one: how the points stand, and under it the
- * chest, the history, the prizes, the wishlist and the rules (RWD-19, RWD-30).
+ * cases, the history, the prizes, the wishlist and the rules (RWD-19, RWD-30).
  * They are named `rewards/…`, which
  * is what their addresses read as and what marks them as belonging under Rewards.
  * Modes is five in the same way (MODE-1): the list of them, and a page for each
@@ -47,7 +47,7 @@ export type FixedView =
   | 'inbox'
   | 'habits'
   | 'rewards'
-  | 'rewards/chest'
+  | 'rewards/cases'
   | 'rewards/history'
   | 'rewards/prizes'
   | 'rewards/wishlist'
@@ -89,17 +89,17 @@ export type TaskView = Exclude<
 >
 
 /**
- * The pages under Rewards, in the order they are listed: the chest a cleared day
+ * The pages under Rewards, in the order they are listed: Cases a cleared day
  * earns a key to, what was earned and spent, the prizes points buy again and
  * again, the wishlist they are saved up for, and what earns them (RWD-30).
  * Rewards itself is how the points stand, and heads them.
  *
- * The chest comes first of them, ahead of the history: a key nobody notices
+ * Cases comes first of them, ahead of the history: a key nobody notices
  * earns nothing, and the one page here with something waiting on it should be
  * the one the eye reaches first (CHST-22).
  */
 export const UNDER_REWARDS = [
-  'rewards/chest',
+  'rewards/cases',
   'rewards/history',
   'rewards/prizes',
   'rewards/wishlist',
@@ -359,7 +359,7 @@ export const VIEW_LABELS: Record<FixedView, string> = {
   inbox: 'Inbox',
   habits: 'Habits',
   rewards: 'Rewards',
-  'rewards/chest': 'Chest',
+  'rewards/cases': 'Cases',
   'rewards/history': 'History',
   'rewards/prizes': 'Prizes',
   'rewards/wishlist': 'Wishlist',
@@ -412,6 +412,8 @@ export function viewHash(view: View): string {
 /** The view an address's hash names, or null when it names none. */
 export function viewFromHash(hash: string): View | null {
   const name = hash.replace(/^#\/?/, '')
+  // Cases was addressed as the chest. A bookmark from then still opens it.
+  if (name === 'rewards/chest') return 'rewards/cases'
   if (isFixedView(name)) return name
 
   if (name.startsWith('list/')) {

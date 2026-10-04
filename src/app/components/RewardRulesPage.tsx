@@ -26,8 +26,8 @@ interface RewardRulesPageProps {
   onChangeBonus: (period: Period, points: number | null) => void
   /** Sets what one point is worth, or forgets it with null. */
   onChangePointValue: (value: PointValue | null) => void
-  /** What the chest asks of a day and what its key plays for (CHST-7). */
-  chest?: ReactNode
+  /** What Cases asks of a day and what its key plays for (CHST-7). */
+  cases?: ReactNode
 }
 
 const heading = 'text-sm font-medium text-neutral-700 dark:text-neutral-300'
@@ -37,7 +37,7 @@ const field =
 
 /**
  * What earns points and what they are worth: the bonus for clearing Today, this
- * week and this month (RWD-27, RWD-29), what the chest asks of a day and what
+ * week and this month (RWD-27, RWD-29), what Cases asks of a day and what
  * its key plays for (CHST-7), and the rate points are counted in money at
  * (RWD-31).
  *
@@ -49,7 +49,7 @@ const field =
  * made, as in the other pickers (RPT-22), and only what happens from then on
  * is affected.
  */
-export function RewardRulesPage({ bonuses, pointValue, onChangeBonus, onChangePointValue, chest }: RewardRulesPageProps) {
+export function RewardRulesPage({ bonuses, pointValue, onChangeBonus, onChangePointValue, cases }: RewardRulesPageProps) {
   return (
     <div className="flex flex-col gap-6">
       <section aria-label="Bonuses" className="flex flex-col gap-2">
@@ -79,10 +79,10 @@ export function RewardRulesPage({ bonuses, pointValue, onChangeBonus, onChangePo
         </ul>
       </section>
 
-      {chest !== undefined && (
-        <section aria-label="The chest" className="flex flex-col gap-2">
-          <h2 className={heading}>The chest</h2>
-          {chest}
+      {cases !== undefined && (
+        <section aria-label="Cases" className="flex flex-col gap-2">
+          <h2 className={heading}>Cases</h2>
+          {cases}
         </section>
       )}
 

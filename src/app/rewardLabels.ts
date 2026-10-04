@@ -1,6 +1,8 @@
 import {
   bonusPeriod,
-  CHEST_ID,
+  CASE_DAILY_ID,
+  CASE_TODAY_ID,
+  CASE_WEEK_ID,
   moneyFor,
   toLocalDay,
   type LocalDay,
@@ -44,17 +46,25 @@ export const BONUS_HINTS: Record<Period, string> = {
   month: 'Earned once a month, the moment everything this month asks for is done.',
 }
 
-/** What an opened chest reads as, where a task's title would be (RWD-44). */
-export const CHEST_TITLE = 'The chest'
+/** What an opened case reads as, where a task's title would be (RWD-44). */
+export const CASE_TODAY_TITLE = 'Payday'
+
+/** The Drop, where a task's title would be (RWD-44). */
+export const CASE_DAILY_TITLE = 'Drop'
+
+/** Weekly, where a task's title would be (RWD-44). */
+export const CASE_WEEK_TITLE = 'Weekly'
 
 /**
  * The title a ledger row carries: the task's, what the bonus was for (RWD-28),
- * or the chest a cleared day earned the key to (RWD-44).
+ * or Cases a cleared day earned the key to (RWD-44).
  */
 export function describeEarningTitle(taskId: TaskId, taskTitles: ReadonlyMap<TaskId, string>): string {
   const period = bonusPeriod(taskId)
   if (period !== null) return BONUS_TITLES[period]
-  if (taskId === CHEST_ID) return CHEST_TITLE
+  if (taskId === CASE_TODAY_ID) return CASE_TODAY_TITLE
+  if (taskId === CASE_DAILY_ID) return CASE_DAILY_TITLE
+  if (taskId === CASE_WEEK_ID) return CASE_WEEK_TITLE
   return taskTitles.get(taskId) ?? 'Deleted task'
 }
 

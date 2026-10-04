@@ -13,7 +13,7 @@ import {
   renameTask,
   startWarmUp,
   TRASH_RETENTION_MS,
-  type ChestSettings,
+  type CaseSettings,
 } from '../core'
 import type { CheckInPreference } from './checkInRepository'
 import type { NudgePreference } from './nudgeRepository'
@@ -34,7 +34,7 @@ const CHOCOLATE = createPrize('Chocolate', 20, 'prize', AT)
 const UAH = createPointValue(2.5)
 const WARMING_UP = startWarmUp(AT)
 const NUDGING: NudgePreference = { on: true, quietHours: 3, window: null }
-const ASKING: ChestSettings = { leastTasks: 4 }
+const ASKING: CaseSettings = { leastTasks: 4 }
 const REST = createCategory('Rest', AT)
 const READING = createActivityEntry('Reading', 900, { day: '2026-09-18', hour: 14 }, AT)
 const CHECKING_IN: CheckInPreference = { on: true, window: { from: '08:00', to: '20:00' } }
@@ -50,10 +50,11 @@ const EMPTY: AccountData = {
   redemptions: [],
   bonuses: NO_BONUSES,
   pointValue: null,
-  chest: null,
+  cases: null,
   warmUp: null,
   nudge: null,
   checkIn: null,
+  features: null,
 }
 
 const NOTHING_KNOWN: KnownRecords = {
@@ -68,10 +69,11 @@ const NOTHING_KNOWN: KnownRecords = {
   redemptionIds: new Set(),
   bonuses: NO_BONUSES,
   pointValue: null,
-  chest: null,
+  cases: null,
   warmUp: null,
   nudge: null,
   checkIn: null,
+  features: null,
   days: new Map(),
 }
 
@@ -88,10 +90,11 @@ describe('what an import adds', () => {
       redemptions: [COFFEE],
       bonuses: { today: 10, week: 40, month: null },
       pointValue: UAH,
-      chest: ASKING,
+      cases: ASKING,
       warmUp: WARMING_UP,
       nudge: NUDGING,
       checkIn: CHECKING_IN,
+      features: ['quote'],
     }
 
     expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
@@ -213,7 +216,7 @@ describe('what an import does with the bonuses and the point value', () => {
 
     expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
     // A warm-up of the account's own is left as it is: a file cannot start a month over.
-    expect(newRecords(incoming, { ...NOTHING_KNOWN, warmUp: { startedOn: '2026-09-01' } }, AT)).toEqual({
+    expect(newRecords(incoming, { ...NOTHING_KNOWN, warmUp: { startedOn: '2026-09-01', pausedOn: null, pausedDays: 0 } }, AT)).toEqual({
       fresh: EMPTY,
       alreadyHere: 0,
     })
@@ -264,6 +267,13 @@ describe('what an import does with the bonuses and the point value', () => {
       alreadyHere: 0,
     })
   })
+
+  it('takes the file\u2019s feature switches only where the account has none (BAK-20)', () => {
+    const incoming: AccountData = { ...EMPTY, features: ['rewards'] }
+
+    expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
+    expect(newRecords(incoming, { ...NOTHING_KNOWN, features: ['quote'] }, AT)).toEqual({ fresh: EMPTY, alreadyHere: 0 })
+  })
 })
 
 describe('counting records', () => {
@@ -282,10 +292,11 @@ describe('counting records', () => {
       redemptions: [],
       bonuses: { today: 10, week: null, month: null },
       pointValue: UAH,
-      chest: ASKING,
+      cases: ASKING,
       warmUp: WARMING_UP,
       nudge: NUDGING,
       checkIn: CHECKING_IN,
+      features: ['quote'],
     }
 
     // The bonuses, the point value and the warm-up are settings rather than records, and are counted as none.

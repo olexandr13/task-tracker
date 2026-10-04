@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   createRedemption,
-  DEFAULT_CHEST,
+  DEFAULT_CASES,
   NO_BONUSES,
-  type ChestSettings,
+  type CaseSettings,
   pointsBalance,
   type Period,
   type PointValue,
@@ -20,13 +20,13 @@ const EMPTY: PointsLedger = {
   redemptions: [],
   bonuses: NO_BONUSES,
   pointValue: null,
-  chest: DEFAULT_CHEST,
+  cases: DEFAULT_CASES,
 }
 
 /**
  * Holds the points ledger on screen: what completions earned, what was
  * redeemed, what clearing each period is worth (RWD-24, RWD-29), what a point is
- * worth in money (RWD-31) and what the chest asks of a day (CHST-3, CHST-7). What completions earn is written as tasks
+ * worth in money (RWD-31) and what Cases asks of a day (CHST-3, CHST-7). What completions earn is written as tasks
  * change (useTasks); this reads it back, redeems, sets the rules, and can take
  * an earning or a redemption off the ledger.
  *
@@ -153,13 +153,13 @@ export function useRewards(repository: RewardRepository, onProblem: ReportProble
   )
 
   /**
-   * Sets what the chest asks of a day and what its key plays for. Only days from
-   * here on are measured against it: a chest already opened stays opened and
+   * Sets what Cases asks of a day and what its key plays for. Only days from
+   * here on are measured against it: a case already opened stays opened and
    * keeps what it gave, as an earlier period keeps its bonus (RWD-3, CHST-6).
    */
-  const setChestSettings = useCallback(
-    (settings: ChestSettings) => {
-      attempt(repository.setChestSettings(settings), 'Could not save the chest settings.')
+  const setCaseSettings = useCallback(
+    (settings: CaseSettings) => {
+      attempt(repository.setCaseSettings(settings), 'Could not save Cases settings.')
     },
     [repository, attempt],
   )
@@ -191,6 +191,6 @@ export function useRewards(repository: RewardRepository, onProblem: ReportProble
     saveEarning,
     setBonus,
     setPointValue,
-    setChestSettings,
+    setCaseSettings,
   }
 }

@@ -6,7 +6,6 @@ import {
   DEFAULT_CHECK_IN_WINDOW,
   defaultLogSlot,
   expectedHours,
-  fullyLoggedStreak,
   hoursOfDay,
   isCheckInWindow,
   isDayLoggedInFull,
@@ -102,15 +101,6 @@ describe('days logged in full (ACT-18)', () => {
     expect(isDayLoggedInFull(fullDay('2026-10-02'), NINE_TO_TEN, '2026-10-02', now)).toBe(false)
   })
 
-  it('counts a run back from yesterday, today joining once logged in full', () => {
-    const entries = [...fullDay('2026-09-29'), ...fullDay('2026-09-30'), ...fullDay('2026-10-01')]
-
-    expect(fullyLoggedStreak(entries, NINE_TO_TEN, now)).toBe(3)
-    expect(fullyLoggedStreak([...entries, ...fullDay('2026-10-02')], NINE_TO_TEN, new Date(2026, 9, 2, 11))).toBe(4)
-    // A day missed breaks it.
-    expect(fullyLoggedStreak([...fullDay('2026-09-29'), ...fullDay('2026-10-01')], NINE_TO_TEN, now)).toBe(1)
-    expect(fullyLoggedStreak([], NINE_TO_TEN, now)).toBe(0)
-  })
 })
 
 describe('the clock somewhere else (CHECKIN-10)', () => {

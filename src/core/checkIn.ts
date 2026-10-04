@@ -23,7 +23,7 @@ import {
   type ActivityEntry,
   type HourSlot,
 } from './activity'
-import { isLocalDay, offsetDay, toLocalDay, type LocalDay, type LocalTime } from './day'
+import { isLocalDay, toLocalDay, type LocalDay, type LocalTime } from './day'
 import { isHoursWindow, isTimeWithinHours, type HoursWindow } from './hours'
 
 /** A working day's hours, asked about from 10:00, the end of the first, to 22:00. */
@@ -101,26 +101,6 @@ export function isDayLoggedInFull(
   now: Date = new Date(),
 ): boolean {
   return isLoggedInFull(loggedSlots(entries), window, day, now)
-}
-
-/** The longest run there can be, so a window of every hour logged for years still ends. */
-const MAX_STREAK_DAYS = 3660
-
-/**
- * How many days in a row, up to now, were logged in full (ACT-18): counted back
- * from yesterday, and from today once today is logged in full too — a day still
- * under way is no break in the run.
- */
-export function fullyLoggedStreak(entries: readonly ActivityEntry[], window: HoursWindow, now: Date = new Date()): number {
-  const logged = loggedSlots(entries)
-  const today = toLocalDay(now)
-  let day = isLoggedInFull(logged, window, today, now) ? today : offsetDay(today, -1)
-  let streak = 0
-  while (streak < MAX_STREAK_DAYS && isLoggedInFull(logged, window, day, now)) {
-    streak += 1
-    day = offsetDay(day, -1)
-  }
-  return streak
 }
 
 /** How many of the days given, up to today, were logged in full (ACT-18). */

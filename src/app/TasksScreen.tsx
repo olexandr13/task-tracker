@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import {
   allTags,
   countInboxOpen,
+  featuresOn,
+  isModeAvailable,
   prizesOfKind,
   groupByCompletion,
   habitTasks,
@@ -43,10 +45,11 @@ import { CheckInToast } from './components/CheckInToast'
 import { FolderIcon } from './components/FolderIcon'
 import { HabitList } from './components/HabitList'
 import { WarmUpNoticeToast } from './components/WarmUpNoticeToast'
-import { ChestNoticeToast } from './components/ChestNoticeToast'
-import { ChestPage } from './components/ChestPage'
-import { ChestSettingsCard } from './components/ChestSettingsCard'
+import { CaseNoticeToast } from './components/CaseNoticeToast'
+import { CasesPage } from './components/CasesPage'
+import { CasesSettingsCard } from './components/CasesSettingsCard'
 import { WarmUpPanel } from './components/WarmUpPanel'
+import { WarmUpPause } from './components/WarmUpPause'
 import { ProcrastinationPanel } from './components/ProcrastinationMode'
 import { ListsPage } from './components/ListsPage'
 import { ModePage } from './components/ModePage'
@@ -56,7 +59,7 @@ import { MorePage } from './components/MorePage'
 import { ProgressPanel } from './components/ProgressPanel'
 import { QuoteCard } from './components/QuoteCard'
 import { RewardRulesPage } from './components/RewardRulesPage'
-import { useChest } from './useChest'
+import { useCases } from './useCases'
 import { RewardsHistoryPage } from './components/RewardsHistoryPage'
 import { RewardsNav } from './components/RewardsNav'
 import { RewardsPage } from './components/RewardsPage'
@@ -78,6 +81,7 @@ import { TrashList } from './components/TrashList'
 import { UndoToast } from './components/UndoToast'
 import { ViewOptionsMenu } from './components/ViewOptionsMenu'
 import { footLink } from './footControls'
+import { CASE_DAILY_NOTICE, CASE_SHARE_NOTICE } from './caseLabels'
 import { describeEarningTitle } from './rewardLabels'
 import { POINTS_NOT_LOADED, TASKS_NOT_LOADED } from './storageProblem'
 import type { TaskActions } from './taskActions'
@@ -89,6 +93,8 @@ import { useCheckIn } from './useCheckIn'
 import { usePushDevice } from './usePushDevice'
 import { useServiceWorkerMessages } from './useServiceWorkerMessages'
 import { useCategories } from './useCategories'
+import { FeaturesContext, modesShown, nearestViewOn } from './features'
+import { useFeatures } from './useFeatures'
 import { useDeviceSetting } from './useDeviceSetting'
 import { useLists } from './useLists'
 import { usePrizes } from './usePrizes'
@@ -122,7 +128,6 @@ import {
   oneListView,
   showsTask,
   tagView,
-  UNDER_MODES,
   VIEW_LABELS,
   viewLabel,
   viewShowingTask,
@@ -229,7 +234,19 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // The activity log, hour by hour (ACT-1).
   const activities = useActivities(storage.activities, storageProblem.report)
   const backup = useBackup(storage.backup)
-  const [view, setView] = useView()
+  // Which parts of the app are in use, switched on Settings (FEAT-1): the
+  // account's, so a feature turned off at the laptop is off at the phone.
+  const features = useFeatures(storage.features, storageProblem.report)
+  const featuresOff = features.off
+  const on = featuresOn(featuresOff)
+  // The view the address names, and the one shown: a page switched off is not
+  // there to show, so its address lands on the nearest page above it that is
+  // (FEAT-2), and the address is put right to match below.
+  const [addressed, setView] = useView()
+  const view = nearestViewOn(addressed, featuresOff)
+  useEffect(() => {
+    if (view !== addressed) setView(view)
+  }, [view, addressed, setView])
   // The hour the activity log opens on — the one a check-in asked about — and a
   // count that starts the page afresh each time it is gone to that way (CHECKIN-4).
   const [activityOpen, setActivityOpen] = useState<{ slot: HourSlot | null; times: number }>({ slot: null, times: 0 })
@@ -244,21 +261,22 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   }
   // The detailed add sheet (UI-54): open from the Plus, from `N` on a task page
   // (UI-55), or from `H` for a habit (UI-56) — which opens Habits first if needed.
-  // `R` opens Rewards (UI-57) and `C` the chest under it (UI-72). `P` starts or
+  // `R` opens Rewards (UI-57) and `C` Cases under it (UI-72). `P` starts or
   // ends Procrastination mode (UI-58).
   const [adding, setAdding] = useState(false)
   useLetterShortcut('n', isTaskView(view) && !adding, () => { setAdding(true) })
-  useLetterShortcut('h', !adding, () => {
+  // A letter for a page switched off on Settings does nothing (FEAT-2).
+  useLetterShortcut('h', on.habits && !adding, () => {
     if (view !== 'habits') setView('habits')
     setAdding(true)
   })
-  useLetterShortcut('r', true, () => {
+  useLetterShortcut('r', on.rewards, () => {
     setAdding(false)
     if (view !== 'rewards') setView('rewards')
   })
-  useLetterShortcut('c', true, () => {
+  useLetterShortcut('c', on.cases, () => {
     setAdding(false)
-    if (view !== 'rewards/chest') setView('rewards/chest')
+    if (view !== 'rewards/cases') setView('rewards/cases')
   })
   // How the task views are shown: one set for all of them, kept on this device.
   const [viewOptions, setViewOptions] = useDeviceSetting(deviceStorage.viewOptions)
@@ -294,10 +312,16 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // (NUDGE-1). The same set Procrastination mode works on, and null while it
   // loads. Its setting is the account's (STORE-46); what it has already said
   // here is the device's (NUDGE-6).
+  // A mode whose feature is switched off on Settings does nothing, whatever its
+  // own switch says, and carries on when the feature is back (FEAT-9).
+  const procrastinationOn = isModeAvailable(featuresOff, 'procrastination')
+  const warmUpOn = isModeAvailable(featuresOff, 'warmUp')
+  const nudgeOn = isModeAvailable(featuresOff, 'nudge')
+  const checkInOn = isModeAvailable(featuresOff, 'checkIn')
   const nudge = useNudge(
     storage.nudge,
     deviceStorage.nudge,
-    isLoading ? null : todayTasks,
+    isLoading || !nudgeOn ? null : todayTasks,
     storageProblem.report,
   )
   // The check-in: the top of every hour asks what was done in the hour that
@@ -306,7 +330,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const checkIn = useCheckIn(
     storage.checkIn,
     deviceStorage.checkIn,
-    activities.isLoading ? null : activities.entries,
+    activities.isLoading || !checkInOn ? null : activities.entries,
     storageProblem.report,
     { onOpen: openActivityLog },
   )
@@ -314,19 +338,25 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // and a pushed one pressed while it is open (CHECKIN-10).
   const pushDevice = usePushDevice(storage.push, checkIn.device, checkIn.updateDevice, storageProblem.report)
   useServiceWorkerMessages(openActivityLog)
-  // The chest a cleared day earns the key to (CHST-2). Every live task, since
+  // Cases a cleared day earns the key to (CHST-2). Every live task, since
   // "everything in Today" is asked of the whole set the way the bars ask it;
   // what it asks and plays for is the account's (CHST-7), and the noise, the
   // last opening and the notice already given are this device's (CHST-24).
-  const chest = useChest(live, rewards, deviceStorage.chest, now, !rewards.isLoading && !isLoading)
-  // A key nobody notices earns nothing, so wherever the Chest is navigated from
-  // says one is waiting (CHST-22).
-  const keyWaiting = chest.blocked === null
+  const cases = useCases(live, rewards, deviceStorage.cases, now, !rewards.isLoading && !isLoading, {
+    watching: on.cases,
+    onOpen: () => { setView('rewards/cases') },
+  })
+  // Cases practice, switched on Settings and played on Cases' page
+  // (CHST-21). Kept nowhere, so it is off whenever the app is opened.
+  const [casesPractice, setCasesPractice] = useState(false)
+  // A key nobody notices earns nothing, so wherever Cases is navigated from
+  // says one is waiting (CHST-22) — while there is a case to open (FEAT-3).
+  const keyWaiting = on.cases && cases.blocked === null
   // The hours tasks are due at, watched against the clock: one that comes round
   // on a task still to do says so (REM-1). Every live task, not just Today's —
   // an hour is due at its moment wherever the task is filed — and null while
   // they load.
-  const reminders = useReminders(isLoading ? null : live)
+  const reminders = useReminders(isLoading ? null : live, on.reminders)
   // Warm-up mode: the account's, so every device agrees which day it is on, and
   // measured against every habit there is — null while those are still loading
   // (WARM-1, WARM-4).
@@ -402,11 +432,14 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // reader hears as one is carried, so it has to be the order on screen.
   const draggable = view === 'habits' ? habits : ordered
 
+  // Procrastination as Today feels it: off, whatever the account says, while the
+  // modes are switched off (FEAT-9).
+  const focusPhase = procrastinationOn ? procrastination.phase : 'off'
   // Focus dims every other row; a win keeps the finished task highlighted until Rest / next.
-  const focusId = view === 'today' ? procrastination.taskId : null
+  const focusId = view === 'today' && focusPhase !== 'off' ? procrastination.taskId : null
   // A finished focused task would sink with done work; keep it above the dimmed rows.
   const listed = pinFocusedFirst(ordered, focusId)
-  const dimChrome = procrastination.phase !== 'off'
+  const dimChrome = focusPhase !== 'off'
 
   // The modes, as the Modes pages read them: on or off, where each stands, and
   // the one way to turn it either way (MODE-2). Starting Procrastination opens
@@ -447,10 +480,11 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       },
     },
   })
-  const modesOn = UNDER_MODES.filter((mode) => modes[mode].on).length
+  // Only the modes there are count: one hidden with its feature is not on to anyone (FEAT-9).
+  const modesOn = modesShown(featuresOff).filter((mode) => modes[mode].on).length
 
   // Same as the Procrastination switch on Modes (JUST-1, JUST-8): start when off, end when on.
-  useLetterShortcut('p', view === 'today' && procrastination.available && !adding, () => {
+  useLetterShortcut('p', procrastinationOn && view === 'today' && procrastination.available && !adding, () => {
     if (procrastination.phase === 'off') procrastination.start()
     else procrastination.end()
   })
@@ -466,7 +500,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
 
   // The same `now` once more: which quote is today's is derived from the day it
   // falls in, so the quote and the bars can't disagree about which day it is.
-  const quote = useQuote(quotableQuoteSource, deviceStorage.quote, now)
+  const quote = useQuote(quotableQuoteSource, deviceStorage.quote, now, on.quote)
   /** What each ledger row is named after, the trash included: a purged task has no title left. */
   const taskTitles = new Map(tasks.map((task) => [task.id, task.title]))
 
@@ -640,7 +674,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     // Setting an hour is asking to be told when it comes round, so that is the
     // moment to ask the browser whether it may say so (REM-7).
     changeTime: (id, time) => {
-      if (time !== null) reminders.ask()
+      if (time !== null && on.reminders) reminders.ask()
       changeTime(id, time)
     },
     skip,
@@ -649,7 +683,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     // the same as adding one; turning a habit's own rule over is no new habit.
     changeRepeat: (id, repeat) => {
       const task = tasks.find((candidate) => candidate.id === id)
-      if (warmUp.holdsBack(repeat, task?.repeat ?? null)) return
+      if (warmUpOn && warmUp.holdsBack(repeat, task?.repeat ?? null)) return
       changeRepeat(id, repeat)
     },
     changeReward,
@@ -664,7 +698,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     // A copy of a habit is another habit (WARM-4).
     duplicate: (id) => {
       const task = tasks.find((candidate) => candidate.id === id)
-      if (warmUp.holdsBack(task?.repeat ?? null)) return
+      if (warmUpOn && warmUp.holdsBack(task?.repeat ?? null)) return
       duplicate(id)
     },
     addSubtask: addChecklistItem,
@@ -689,9 +723,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     listId: ListId | null,
     details?: Parameters<typeof addTask>[6],
   ): boolean {
-    if (warmUp.holdsBack(repeat)) return false
+    if (warmUpOn && warmUp.holdsBack(repeat)) return false
 
-    if (time !== null) reminders.ask()
+    if (time !== null && on.reminders) reminders.ask()
     addTask(title, repeat, day, time, taskTags, listId, details)
     return true
   }
@@ -709,477 +743,527 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const hasPlus = isTaskView(view) || view === 'habits'
 
   return (
-    // On a phone the page keeps clear of the notch and the rounded corners (UI-61), and its
-    // end scrolls clear of the bar — and of the Plus, where there is one — so nothing is left
-    // under them (UI-4).
-    <main
-      className={`mx-auto flex min-h-dvh w-full max-w-6xl flex-col pt-[max(1.5rem,calc(env(safe-area-inset-top)+0.75rem))] pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))] md:px-4 md:pt-6 md:pb-8 ${
-        hasPlus ? 'pb-[calc(10rem+env(safe-area-inset-bottom))]' : 'pb-[calc(6rem+env(safe-area-inset-bottom))]'
-      }`}
-    >
-      {/* Which view this is, for a screen reader only: on screen the navigation marks it. */}
-      <h1 className="sr-only">{viewLabel(view, lists.lists)}</h1>
-
-      {/* Around the navigation as well as the rows: a task can be dropped on a list in the sidebar to file it. */}
-      <TaskDragAndDrop tasks={draggable} onMove={move} onFile={changeList}>
-        <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-6">
-          <SideNav
-            view={view}
-            lists={lists.lists}
-            listsOpen={sideNav.listsOpen}
-            rewardsOpen={sideNav.rewardsOpen}
-            modesOpen={sideNav.modesOpen}
-            keyWaiting={keyWaiting}
-            dimmed={dimChrome}
-            onChange={setView}
-            onListsOpenChange={(listsOpen) => { setSideNav({ ...sideNav, listsOpen }) }}
-            onRewardsOpenChange={(rewardsOpen) => { setSideNav({ ...sideNav, rewardsOpen }) }}
-            onModesOpenChange={(modesOpen) => { setSideNav({ ...sideNav, modesOpen }) }}
-          />
-
-          <div className="flex min-w-0 flex-1 flex-col gap-5">
-            {view === 'settings' ? (
-              <section aria-label="Settings">
-                <SettingsList
-                  account={account}
-                  // This device stops being pushed check-ins for an account it is no longer signed into (CHECKIN-13).
-                  onSignOut={() => { void pushDevice.forget().finally(onSignOut) }}
-                  backup={backup.status}
-                  onExport={() => { void backup.exportAll() }}
-                  onImport={(file) => { void backup.importFile(file) }}
-                  theme={theme}
-                  onThemeChange={onThemeChange}
-                  habitView={habitViewOptions}
-                  onHabitViewChange={setHabitViewOptions}
-                />
-              </section>
-            ) : view === 'more' ? (
-              <section aria-label="More">
-                <MorePage onOpen={setView} modesOn={modesOn} />
-              </section>
-            ) : view === 'modes' ? (
-              <section aria-label="Modes">
-                <ModesPage modes={modes} onOpen={setView} />
-              </section>
-            ) : isModesView(view) ? (
-              <section aria-label={viewLabel(view)} className="flex flex-col gap-5">
-                {/* A phone has no sidebar listing the modes, so the way back is here (MODE-7). */}
-                <ModesBackLink onBack={() => { setView('modes') }} />
-                <ModePage
-                  mode={modes[view]}
-                  settings={
-                    // The nudge is the one mode with something to set (MODE-12),
-                    // and it is set whether it is on or off: a span and the hours
-                    // to keep to are what someone decides before turning it on.
-                    view === 'modes/nudge' ? (
-                      <NudgeSettings
-                        quietHours={nudge.preference.quietHours}
-                        window={nudge.preference.window}
-                        permission={nudge.permission}
-                        now={now}
-                        onQuietHoursChange={nudge.changeQuietHours}
-                        onWindowChange={nudge.changeWindow}
-                      />
-                    ) : view === 'modes/check-in' ? (
-                      // The check-in's hours, set whether it is on or off: they are also
-                      // the hours the activity log counts as meant to be logged (ACT-17).
-                      <CheckInSettings
-                        window={checkIn.preference.window}
-                        permission={checkIn.permission}
-                        now={now}
-                        onWindowChange={checkIn.changeWindow}
-                        device={
-                          <CheckInDevice
-                            support={pushDevice.support}
-                            on={pushDevice.on}
-                            busy={pushDevice.busy}
-                            outcome={pushDevice.outcome}
-                            onTurnOn={() => { void pushDevice.turnOn() }}
-                            onTurnOff={() => { void pushDevice.turnOff() }}
-                            onSendTest={pushDevice.sendTest}
-                          />
-                        }
-                      />
-                    ) : undefined
-                  }
-                />
-              </section>
-            ) : isRewardsView(view) ? (
-              <section aria-label={viewLabel(view)} className="flex flex-col gap-5">
-                {/* A phone has no sidebar to list the pages under Rewards, so they are here (RWD-30). */}
-                <RewardsNav view={view} keyWaiting={keyWaiting} onChange={setView} />
-                {rewards.isLoading ? (
-                  <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
-                ) : rewards.loadFailed ? (
-                  // Zeros here would read as points lost, rather than as points unread (RWD-22).
-                  <p className="py-10 text-center text-neutral-500 dark:text-neutral-400">{POINTS_NOT_LOADED}</p>
-                ) : view === 'rewards/chest' ? (
-                  <ChestPage chest={chest} />
-                ) : view === 'rewards/history' ? (
-                  <RewardsHistoryPage
-                    entries={rewards.entries}
-                    redemptions={rewards.redemptions}
-                    taskTitles={taskTitles}
-                    now={now}
-                    onRemoveEarning={handleRemoveEarning}
-                    onRemoveRedemption={handleRemoveRedemption}
-                  />
-                ) : view === 'rewards/prizes' || view === 'rewards/wishlist' ? (
-                  <PrizeListPage
-                    // Keyed by the list, so the add box starts empty on each.
-                    key={view}
-                    kind={view === 'rewards/wishlist' ? 'wish' : 'prize'}
-                    prizes={prizesOfKind(prizes.prizes, view === 'rewards/wishlist' ? 'wish' : 'prize')}
-                    balance={rewards.balance}
-                    pointValue={rewards.pointValue}
-                    now={now}
-                    onAdd={prizes.add}
-                    onRename={prizes.rename}
-                    onReprice={prizes.reprice}
-                    onDelete={prizes.remove}
-                    onRedeem={handleRedeemPrize}
-                    onRedeemOther={view === 'rewards/prizes' ? handleRedeem : undefined}
-                  />
-                ) : view === 'rewards/rules' ? (
-                  <RewardRulesPage
-                    bonuses={rewards.bonuses}
-                    pointValue={rewards.pointValue}
-                    onChangeBonus={rewards.setBonus}
-                    onChangePointValue={rewards.setPointValue}
-                    chest={
-                      <ChestSettingsCard
-                        settings={chest.settings}
-                        jackpot={chest.jackpot}
-                        onChange={chest.setSettings}
-                      />
-                    }
-                  />
-                ) : (
-                  <RewardsPage
-                    entries={rewards.entries}
-                    redemptions={rewards.redemptions}
-                    prizes={prizes.prizes}
-                    bonuses={rewards.bonuses}
-                    pointValue={rewards.pointValue}
-                    now={now}
-                    chest={{
-                      jackpot: chest.jackpot,
-                      waiting: chest.blocked === null,
-                      gave: chest.opened?.points ?? null,
-                    }}
-                    onOpenPrizes={() => { setView('rewards/prizes') }}
-                    onOpenWishlist={() => { setView('rewards/wishlist') }}
-                    onOpenChest={() => { setView('rewards/chest') }}
-                    onOpenRules={() => { setView('rewards/rules') }}
-                  />
-                )}
-              </section>
-            ) : isLoading ? (
-              <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
-            ) : isTaskView(view) ? (
-              <>
-                {/* The View button beside the box rather than in it: the box's own controls are
-                    for the task being added, the button is for how the tasks below are shown.
-                    A phone has neither — it adds from the Plus (UI-54), and its details belong
-                    to the sheet (UI-42) — so only the Plus is left of the form.
-                    Keyed by the view, so switching views starts the box on that view's day. */}
-                <AddTaskForm
-                  key={view}
-                  now={now}
-                  defaultDueDate={newTaskDueDay(view, now)}
-                  onOpenSheet={() => { setAdding(true) }}
-                  viewButton={phone ? null : <ViewOptionsMenu options={viewOptions} onChange={setViewOptions} />}
-                  onAdd={(title, repeat, dueDate, dueTime) => {
-                    handleAddTask(title, repeat, dueDate, dueTime, newTaskTags(view), newTaskListId(view))
-                  }}
-                />
-
-                {view === 'today' && procrastination.phase !== 'off' && (
-                  <ProcrastinationPanel
-                    phase={procrastination.phase}
-                    wonTask={procrastination.wonTask}
-                    canPick={procrastination.canPick}
-                    hasOtherTask={procrastination.hasOtherTask}
-                    pointsEarned={procrastination.pointsEarned}
-                    onOtherTask={procrastination.pickNext}
-                    onCreateTask={() => { setAdding(true) }}
-                    onMoreInfo={() => { setView('modes/procrastination') }}
-                    onEnd={procrastination.end}
-                    onRest={procrastination.rest}
-                    onGetOneMore={procrastination.pickNext}
-                    onGrantPoints={procrastination.grantPoints}
-                  />
-                )}
-
-                <section aria-label={viewLabel(view, lists.lists)}>
-                  <TaskList
-                    tasks={listed}
-                    now={now}
-                    knownTags={tags}
-                    lists={lists.lists}
-                    showDetails={viewOptions.showDetails}
-                    focusId={focusId}
-                    dimAll={procrastination.phase === 'idle'}
-                    doneSpans={spans}
-                    foldedSpans={foldedSpans(view)}
-                    history={history}
-                    emptyMessage={tasksNotLoaded ? TASKS_NOT_LOADED : emptyMessage(view, lists.lists)}
-                    allDoneMessage={allDoneMessage(view, lists.lists)}
-                    actions={taskActions}
-                    timer={taskTimer}
-                    revealId={revealId}
-                    onRevealed={revealed}
-                  />
-                </section>
-
-                {/* A phone's bar has no room for the lists or the trash, so they are kept at
-                    the foot of every task. The tags are on its More page. */}
-                {view === 'tasks' && (
-                  <nav aria-label="Under Tasks" className="flex flex-wrap gap-1 md:hidden">
-                    <button type="button" onClick={() => { setView('lists') }} className={footLink}>
-                      <FolderIcon />
-                      {VIEW_LABELS.lists}
-                    </button>
-                    <button type="button" onClick={() => { setView('trash') }} className={footLink}>
-                      <TrashIcon />
-                      {VIEW_LABELS.trash}
-                    </button>
-                  </nav>
-                )}
-              </>
-            ) : view === 'lists' ? (
-              <section aria-label="Lists">
-                {lists.isLoading ? (
-                  <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
-                ) : (
-                  <ListsPage
-                    lists={summarizeLists(lists.lists, live, now)}
-                    inboxOpen={countInboxOpen(live, lists.lists, now)}
-                    onOpenInbox={() => { setView('inbox') }}
-                    onOpen={(id) => { setView(oneListView(id)) }}
-                    onAdd={handleAddList}
-                    onRename={lists.rename}
-                    onDelete={handleDeleteList}
-                  />
-                )}
-              </section>
-            ) : view === 'tags' ? (
-              <section aria-label="Tags">
-                {savedTags.isLoading ? (
-                  <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
-                ) : (
-                  <TagList
-                    tags={summarizeTags(tags, live, now)}
-                    onOpen={(name) => { setView(tagView(name)) }}
-                    onAdd={handleAddTag}
-                    onRename={handleRenameTag}
-                    onDelete={handleDeleteTag}
-                  />
-                )}
-              </section>
-            ) : view === 'balance' ? (
-              <section aria-label="Balance">
-                {categories.isLoading ? (
-                  <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
-                ) : (
-                  <BalancePage
-                    categories={categories.categories}
-                    // Every task, the trash too: deleted time still counts until it is purged (BAL-3).
-                    tasks={tasks}
-                    knownTags={tags}
-                    now={now}
-                    onAdd={categories.add}
-                    onRename={categories.rename}
-                    onBind={handleBindTag}
-                    onUnbind={categories.unbind}
-                    onDelete={handleDeleteCategory}
-                  />
-                )}
-              </section>
-            ) : view === 'activity' ? (
-              <section aria-label="Activity log">
-                {activities.isLoading || checkIn.isLoading ? (
-                  <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
-                ) : (
-                  <ActivityPage
-                    // Opened afresh from a check-in, on the hour it asked about.
-                    key={activityOpen.times}
-                    entries={activities.entries}
-                    window={checkIn.preference.window}
-                    now={now}
-                    checkIn={modes['modes/check-in']}
-                    initialSlot={activityOpen.slot}
-                    onAdd={(activity, seconds, slot) => { activities.add(activity, seconds, slot) }}
-                    onChange={activities.change}
-                    onRemove={handleRemoveActivity}
-                    onOpenCheckIn={() => { setView('modes/check-in') }}
-                  />
-                )}
-              </section>
-            ) : view === 'habits' ? (
-              <>
-                {/* Where the warm-up is felt, so where it says where it stands (WARM-6). */}
-                <WarmUpPanel
-                  progress={warmUp.progress}
-                  onMoreInfo={() => { setView('modes/warm-up') }}
-                />
-
-                {/* The box alone, for a new habit: how the cards below start is set on
-                    Settings (HAB-23), so no View button stands beside it. */}
-                <AddTaskForm
-                  now={now}
-                  defaultDueDate={null}
-                  defaultRepeat={{ kind: 'daily' }}
-                  label="Add habit"
-                  onOpenSheet={() => { setAdding(true) }}
-                  onAdd={(title, repeat, dueDate, dueTime) => {
-                    handleAddTask(title, repeat ?? { kind: 'daily' }, dueDate, dueTime, [], null)
-                  }}
-                />
-
-                <section aria-label="Habits">
-                  <HabitList
-                    habits={habits}
-                    now={now}
-                    showDetails={habitViewOptions.showDetails}
-                    knownTags={tags}
-                    lists={lists.lists}
-                    actions={taskActions}
-                    onSetDay={setHabitDay}
-                    timer={taskTimer}
-                    revealId={revealId}
-                    onRevealed={revealed}
-                  />
-                </section>
-              </>
-            ) : (
-              <section aria-label="Trash">
-                <TrashList
-                  tasks={trashed}
-                  onRestore={restore}
-                  onPurge={purge}
-                  onEmpty={emptyTrash}
-                />
-              </section>
-            )}
-          </div>
-
-          {/* The bars above the quote everywhere: on a phone the rail follows the work and the quote ends the page. */}
-          {isTaskView(view) && (
-            <div className="flex flex-col gap-5 md:w-64 md:shrink-0">
-              <aside aria-label="Progress">
-                {!isLoading && <ProgressPanel tasks={live} now={now} dimmed={dimChrome} />}
-              </aside>
-
-              <QuoteCard quote={quote} dimmed={dimChrome} />
-            </div>
-          )}
-        </div>
-      </TaskDragAndDrop>
-
-      <BottomNav view={view} lists={lists.lists} keyWaiting={keyWaiting} dimmed={dimChrome} onChange={setView} />
-
-      {adding && (isTaskView(view) || view === 'habits') && (
-        <AddTaskSheet
-          key={view}
-          now={now}
-          label={view === 'habits' ? 'Add habit' : 'Add task'}
-          defaultDueDate={isTaskView(view) ? newTaskDueDay(view, now) : null}
-          defaultRepeat={view === 'habits' ? { kind: 'daily' } : undefined}
-          defaultTags={isTaskView(view) ? newTaskTags(view) : []}
-          defaultListId={isTaskView(view) ? newTaskListId(view) : null}
-          knownTags={tags}
-          lists={lists.lists}
-          onClose={() => { setAdding(false) }}
-          onAdd={(title, repeat, dueDate, dueTime, taskTags, listId, details) => {
-            // Held back by the warm-up, the sheet stays open with everything
-            // typed still in it, so the rule can be changed instead (WARM-8).
-            if (handleAddTask(title, repeat, dueDate, dueTime, taskTags, listId, details)) setAdding(false)
-          }}
-        />
-      )}
-
-      {/* A habit held back is said at the top of the window, above the add sheet
-          (z-40) rather than under it: the sheet is left open with everything
-          typed still in it, so the notice has to be readable over it (WARM-8). */}
-      {warmUp.notice !== null && (
-        <div className="pointer-events-none fixed inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-50 flex justify-center px-4">
-          <WarmUpNoticeToast progress={warmUp.notice} onDismiss={warmUp.dismissNotice} />
-        </div>
-      )}
-
-      {/* Today came clear, so a key is waiting (CHST-23). At the top like the
-          warm-up's notice rather than in the stack below: it is an offer to go
-          somewhere, not a note about what just happened, and the moment the last
-          task goes is the moment it is worth most. */}
-      {chest.unannounced && (
-        <div className="pointer-events-none fixed inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-50 flex justify-center px-4">
-          <ChestNoticeToast
-            onOpen={() => {
-              chest.announce()
-              setView('rewards/chest')
-            }}
-            onDismiss={chest.announce}
-          />
-        </div>
-      )}
-
-      {/* What the screen has to say, stacked: above a phone's navigation bar — beside the Plus
-          rather than under it — and at the foot of the window where there is no bar. */}
-      <div
-        className={`pointer-events-none fixed inset-x-0 ${ABOVE_PHONE_BAR} z-30 flex flex-col items-center gap-2 px-4 md:bottom-4 ${
-          hasPlus ? 'pr-20 md:pr-4' : ''
+    // What is switched off on Settings, for whatever is drawn below to ask (FEAT-3).
+    <FeaturesContext value={featuresOff}>
+      {/* On a phone the page keeps clear of the notch and the rounded corners (UI-61), and its
+          end scrolls clear of the bar — and of the Plus, where there is one — so nothing is left
+          under them (UI-4). */}
+      <main
+        className={`mx-auto flex min-h-dvh w-full max-w-6xl flex-col pt-[max(1.5rem,calc(env(safe-area-inset-top)+0.75rem))] pr-[max(1rem,env(safe-area-inset-right))] pl-[max(1rem,env(safe-area-inset-left))] md:px-4 md:pt-6 md:pb-8 ${
+          hasPlus ? 'pb-[calc(10rem+env(safe-area-inset-bottom))]' : 'pb-[calc(6rem+env(safe-area-inset-bottom))]'
         }`}
       >
-        {storageProblem.problem !== null && (
-          <StorageProblemNotice problem={storageProblem.problem} onDismiss={storageProblem.dismiss} />
-        )}
-        {syncNotice !== null && <SyncBadge notice={syncNotice} />}
-        {runningTimerTask !== null && taskTimer.state.status === 'running' && (
-          <RunningTimerChip
-            title={runningTimerTask.title}
-            startedAt={taskTimer.state.startedAt}
-            clock={taskTimer.clock}
-            onOpen={() => { revealTask(runningTimerTask) }}
-            onStop={taskTimer.stop}
-          />
-        )}
-        {taskTimer.goalNotice !== null && (
-          <GoalNoticeToast
-            title={taskTimer.goalNotice.title}
-            onDismiss={taskTimer.dismissGoalNotice}
-          />
-        )}
-        {reminderTask !== null && reminderNotice !== null && (
-          <ReminderToast
-            title={reminderNotice.title}
-            more={reminders.notices.length - 1}
-            onOpen={() => { revealTask(reminderTask); reminders.dismiss() }}
-            onDismiss={reminders.dismiss}
-          />
-        )}
-        {checkIn.notice !== null && view !== 'activity' && (
-          <CheckInToast
-            checkIn={checkIn.notice}
-            onLog={() => {
-              const asked = checkIn.notice
-              if (asked !== null) openActivityLog(asked.slot)
+        {/* Which view this is, for a screen reader only: on screen the navigation marks it. */}
+        <h1 className="sr-only">{viewLabel(view, lists.lists)}</h1>
+
+        {/* Around the navigation as well as the rows: a task can be dropped on a list in the sidebar to file it. */}
+        <TaskDragAndDrop tasks={draggable} onMove={move} onFile={changeList}>
+          <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-6">
+            <SideNav
+              view={view}
+              lists={lists.lists}
+              listsOpen={sideNav.listsOpen}
+              rewardsOpen={sideNav.rewardsOpen}
+              modesOpen={sideNav.modesOpen}
+              keyWaiting={keyWaiting}
+              dimmed={dimChrome}
+              onChange={setView}
+              onListsOpenChange={(listsOpen) => { setSideNav({ ...sideNav, listsOpen }) }}
+              onRewardsOpenChange={(rewardsOpen) => { setSideNav({ ...sideNav, rewardsOpen }) }}
+              onModesOpenChange={(modesOpen) => { setSideNav({ ...sideNav, modesOpen }) }}
+            />
+
+            <div className="flex min-w-0 flex-1 flex-col gap-5">
+              {view === 'settings' ? (
+                <section aria-label="Settings">
+                  <SettingsList
+                    account={account}
+                    // This device stops being pushed check-ins for an account it is no longer signed into (CHECKIN-13).
+                    onSignOut={() => { void pushDevice.forget().finally(onSignOut) }}
+                    backup={backup.status}
+                    onExport={() => { void backup.exportAll() }}
+                    onImport={(file) => { void backup.importFile(file) }}
+                    theme={theme}
+                    onThemeChange={onThemeChange}
+                    habitView={habitViewOptions}
+                    onHabitViewChange={setHabitViewOptions}
+                    casesPractice={casesPractice}
+                    onCasesPracticeChange={setCasesPractice}
+                    features={{ off: featuresOff, loading: features.isLoading }}
+                    onFeatureChange={features.turn}
+                  />
+                </section>
+              ) : view === 'more' ? (
+                <section aria-label="More">
+                  <MorePage onOpen={setView} modesOn={modesOn} />
+                </section>
+              ) : view === 'modes' ? (
+                <section aria-label="Modes">
+                  <ModesPage modes={modes} onOpen={setView} />
+                </section>
+              ) : isModesView(view) ? (
+                <section aria-label={viewLabel(view)} className="flex flex-col gap-5">
+                  {/* A phone has no sidebar listing the modes, so the way back is here (MODE-7). */}
+                  <ModesBackLink onBack={() => { setView('modes') }} />
+                  <ModePage
+                    mode={modes[view]}
+                    settings={
+                      // The nudge is the one mode with something to set (MODE-12),
+                      // and it is set whether it is on or off: a span and the hours
+                      // to keep to are what someone decides before turning it on.
+                      view === 'modes/nudge' ? (
+                        <NudgeSettings
+                          quietHours={nudge.preference.quietHours}
+                          window={nudge.preference.window}
+                          permission={nudge.permission}
+                          now={now}
+                          onQuietHoursChange={nudge.changeQuietHours}
+                          onWindowChange={nudge.changeWindow}
+                        />
+                      ) : view === 'modes/check-in' ? (
+                        // The check-in's hours, set whether it is on or off: they are also
+                        // the hours the activity log counts as meant to be logged (ACT-17).
+                        <CheckInSettings
+                          window={checkIn.preference.window}
+                          permission={checkIn.permission}
+                          now={now}
+                          onWindowChange={checkIn.changeWindow}
+                          device={
+                            <CheckInDevice
+                              support={pushDevice.support}
+                              on={pushDevice.on}
+                              busy={pushDevice.busy}
+                              outcome={pushDevice.outcome}
+                              onTurnOn={() => { void pushDevice.turnOn() }}
+                              onTurnOff={() => { void pushDevice.turnOff() }}
+                              onSendTest={pushDevice.sendTest}
+                            />
+                          }
+                        />
+                      ) : undefined
+                    }
+                  />
+                  {/* Pause only while one is under way: there is nothing to freeze before it starts (WARM-11). */}
+                  {view === 'modes/warm-up' && warmUp.progress !== null && (
+                    <WarmUpPause paused={warmUp.progress.paused} onChange={warmUp.setPaused} />
+                  )}
+                </section>
+              ) : isRewardsView(view) ? (
+                <section aria-label={viewLabel(view)} className="flex flex-col gap-5">
+                  {/* A phone has no sidebar to list the pages under Rewards, so they are here (RWD-30). */}
+                  <RewardsNav view={view} keyWaiting={keyWaiting} onChange={setView} />
+                  {rewards.isLoading ? (
+                    <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                  ) : rewards.loadFailed ? (
+                    // Zeros here would read as points lost, rather than as points unread (RWD-22).
+                    <p className="py-10 text-center text-neutral-500 dark:text-neutral-400">{POINTS_NOT_LOADED}</p>
+                  ) : view === 'rewards/cases' ? (
+                    <CasesPage cases={cases} practising={casesPractice} onPractisingChange={setCasesPractice} />
+                  ) : view === 'rewards/history' ? (
+                    <RewardsHistoryPage
+                      entries={rewards.entries}
+                      redemptions={rewards.redemptions}
+                      taskTitles={taskTitles}
+                      now={now}
+                      onRemoveEarning={handleRemoveEarning}
+                      onRemoveRedemption={handleRemoveRedemption}
+                    />
+                  ) : view === 'rewards/prizes' || view === 'rewards/wishlist' ? (
+                    <PrizeListPage
+                      // Keyed by the list, so the add box starts empty on each.
+                      key={view}
+                      kind={view === 'rewards/wishlist' ? 'wish' : 'prize'}
+                      prizes={prizesOfKind(prizes.prizes, view === 'rewards/wishlist' ? 'wish' : 'prize')}
+                      balance={rewards.balance}
+                      pointValue={rewards.pointValue}
+                      now={now}
+                      onAdd={prizes.add}
+                      onRename={prizes.rename}
+                      onReprice={prizes.reprice}
+                      onDelete={prizes.remove}
+                      onRedeem={handleRedeemPrize}
+                      onRedeemOther={view === 'rewards/prizes' ? handleRedeem : undefined}
+                    />
+                  ) : view === 'rewards/rules' ? (
+                    <RewardRulesPage
+                      bonuses={rewards.bonuses}
+                      pointValue={rewards.pointValue}
+                      onChangeBonus={rewards.setBonus}
+                      onChangePointValue={rewards.setPointValue}
+                      cases={
+                        on.cases ? (
+                          <CasesSettingsCard
+                            settings={cases.settings}
+                            jackpot={cases.jackpot}
+                            onChange={cases.setSettings}
+                          />
+                        ) : undefined
+                      }
+                    />
+                  ) : (
+                    <RewardsPage
+                      entries={rewards.entries}
+                      redemptions={rewards.redemptions}
+                      prizes={prizes.prizes}
+                      bonuses={rewards.bonuses}
+                      pointValue={rewards.pointValue}
+                      now={now}
+                      cases={
+                        on.cases
+                          ? {
+                              today: cases.spans.today,
+                              daily: cases.spans.daily,
+                              share: cases.slots.some((slot) => slot.source === 'week' && slot.state !== 'waiting')
+                                ? cases.spans.week
+                                : null,
+                              waiting: cases.blocked === null,
+                              gave: cases.opened?.points ?? null,
+                            }
+                          : null
+                      }
+                      onOpenPrizes={() => { setView('rewards/prizes') }}
+                      onOpenWishlist={() => { setView('rewards/wishlist') }}
+                      onOpenCases={() => { setView('rewards/cases') }}
+                      onOpenRules={() => { setView('rewards/rules') }}
+                    />
+                  )}
+                </section>
+              ) : isLoading ? (
+                <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+              ) : isTaskView(view) ? (
+                <>
+                  {/* The View button beside the box rather than in it: the box's own controls are
+                      for the task being added, the button is for how the tasks below are shown.
+                      A phone has neither — it adds from the Plus (UI-54), and its details belong
+                      to the sheet (UI-42) — so only the Plus is left of the form.
+                      Keyed by the view, so switching views starts the box on that view's day. */}
+                  <AddTaskForm
+                    key={view}
+                    now={now}
+                    defaultDueDate={newTaskDueDay(view, now)}
+                    onOpenSheet={() => { setAdding(true) }}
+                    viewButton={phone ? null : <ViewOptionsMenu options={viewOptions} onChange={setViewOptions} />}
+                    onAdd={(title, repeat, dueDate, dueTime) => {
+                      handleAddTask(title, repeat, dueDate, dueTime, newTaskTags(view), newTaskListId(view))
+                    }}
+                  />
+
+                  {view === 'today' && focusPhase !== 'off' && (
+                    <ProcrastinationPanel
+                      phase={focusPhase}
+                      wonTask={procrastination.wonTask}
+                      canPick={procrastination.canPick}
+                      hasOtherTask={procrastination.hasOtherTask}
+                      pointsEarned={procrastination.pointsEarned}
+                      onOtherTask={procrastination.pickNext}
+                      onCreateTask={() => { setAdding(true) }}
+                      onMoreInfo={() => { setView('modes/procrastination') }}
+                      onEnd={procrastination.end}
+                      onRest={procrastination.rest}
+                      onGetOneMore={procrastination.pickNext}
+                      onGrantPoints={procrastination.grantPoints}
+                    />
+                  )}
+
+                  <section aria-label={viewLabel(view, lists.lists)}>
+                    <TaskList
+                      tasks={listed}
+                      now={now}
+                      knownTags={tags}
+                      lists={lists.lists}
+                      showDetails={viewOptions.showDetails}
+                      focusId={focusId}
+                      dimAll={focusPhase === 'idle'}
+                      doneSpans={spans}
+                      foldedSpans={foldedSpans(view)}
+                      history={history}
+                      emptyMessage={tasksNotLoaded ? TASKS_NOT_LOADED : emptyMessage(view, lists.lists)}
+                      allDoneMessage={allDoneMessage(view, lists.lists)}
+                      actions={taskActions}
+                      timer={taskTimer}
+                      revealId={revealId}
+                      onRevealed={revealed}
+                    />
+                  </section>
+
+                  {/* A phone's bar has no room for the lists or the trash, so they are kept at
+                      the foot of every task. The tags are on its More page. */}
+                  {view === 'tasks' && (
+                    <nav aria-label="Under Tasks" className="flex flex-wrap gap-1 md:hidden">
+                      {on.lists && (
+                        <button type="button" onClick={() => { setView('lists') }} className={footLink}>
+                          <FolderIcon />
+                          {VIEW_LABELS.lists}
+                        </button>
+                      )}
+                      <button type="button" onClick={() => { setView('trash') }} className={footLink}>
+                        <TrashIcon />
+                        {VIEW_LABELS.trash}
+                      </button>
+                    </nav>
+                  )}
+                </>
+              ) : view === 'lists' ? (
+                <section aria-label="Lists">
+                  {lists.isLoading ? (
+                    <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                  ) : (
+                    <ListsPage
+                      lists={summarizeLists(lists.lists, live, now)}
+                      inboxOpen={countInboxOpen(live, lists.lists, now)}
+                      onOpenInbox={() => { setView('inbox') }}
+                      onOpen={(id) => { setView(oneListView(id)) }}
+                      onAdd={handleAddList}
+                      onRename={lists.rename}
+                      onDelete={handleDeleteList}
+                    />
+                  )}
+                </section>
+              ) : view === 'tags' ? (
+                <section aria-label="Tags">
+                  {savedTags.isLoading ? (
+                    <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                  ) : (
+                    <TagList
+                      tags={summarizeTags(tags, live, now)}
+                      onOpen={(name) => { setView(tagView(name)) }}
+                      onAdd={handleAddTag}
+                      onRename={handleRenameTag}
+                      onDelete={handleDeleteTag}
+                    />
+                  )}
+                </section>
+              ) : view === 'balance' ? (
+                <section aria-label="Balance">
+                  {categories.isLoading ? (
+                    <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                  ) : (
+                    <BalancePage
+                      categories={categories.categories}
+                      // Every task, the trash too: deleted time still counts until it is purged (BAL-3).
+                      tasks={tasks}
+                      knownTags={tags}
+                      now={now}
+                      onAdd={categories.add}
+                      onRename={categories.rename}
+                      onBind={handleBindTag}
+                      onUnbind={categories.unbind}
+                      onDelete={handleDeleteCategory}
+                    />
+                  )}
+                </section>
+              ) : view === 'activity' ? (
+                <section aria-label="Activity log">
+                  {activities.isLoading || checkIn.isLoading ? (
+                    <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                  ) : (
+                    <ActivityPage
+                      // Opened afresh from a check-in, on the hour it asked about.
+                      key={activityOpen.times}
+                      entries={activities.entries}
+                      window={checkIn.preference.window}
+                      now={now}
+                      checkIn={checkInOn ? modes['modes/check-in'] : null}
+                      initialSlot={activityOpen.slot}
+                      onAdd={(activity, seconds, slot) => { activities.add(activity, seconds, slot) }}
+                      onChange={activities.change}
+                      onRemove={handleRemoveActivity}
+                      onOpenCheckIn={() => { setView('modes/check-in') }}
+                    />
+                  )}
+                </section>
+              ) : view === 'habits' ? (
+                <>
+                  {/* Where the warm-up is felt, so where it says where it stands (WARM-6). */}
+                  {warmUpOn && (
+                    <WarmUpPanel
+                      progress={warmUp.progress}
+                      onMoreInfo={() => { setView('modes/warm-up') }}
+                    />
+                  )}
+
+                  {/* The box alone, for a new habit: how the cards below start is set on
+                      Settings (HAB-23), so no View button stands beside it. */}
+                  <AddTaskForm
+                    now={now}
+                    defaultDueDate={null}
+                    defaultRepeat={{ kind: 'daily' }}
+                    label="Add habit"
+                    onOpenSheet={() => { setAdding(true) }}
+                    onAdd={(title, repeat, dueDate, dueTime) => {
+                      handleAddTask(title, repeat ?? { kind: 'daily' }, dueDate, dueTime, [], null)
+                    }}
+                  />
+
+                  <section aria-label="Habits">
+                    <HabitList
+                      habits={habits}
+                      now={now}
+                      showDetails={habitViewOptions.showDetails}
+                      knownTags={tags}
+                      lists={lists.lists}
+                      actions={taskActions}
+                      onSetDay={setHabitDay}
+                      timer={taskTimer}
+                      revealId={revealId}
+                      onRevealed={revealed}
+                    />
+                  </section>
+                </>
+              ) : (
+                <section aria-label="Trash">
+                  <TrashList
+                    tasks={trashed}
+                    onRestore={restore}
+                    onPurge={purge}
+                    onEmpty={emptyTrash}
+                  />
+                </section>
+              )}
+            </div>
+
+            {/* The bars above the quote everywhere: on a phone the rail follows the work and the quote ends the page.
+                With both switched off on Settings there is no rail, and the work takes its width (FEAT-3). */}
+            {isTaskView(view) && (on.progress || on.quote) && (
+              <div className="flex flex-col gap-5 md:w-64 md:shrink-0">
+                {on.progress && (
+                  <aside aria-label="Progress">
+                    {!isLoading && <ProgressPanel tasks={live} now={now} dimmed={dimChrome} />}
+                  </aside>
+                )}
+
+                {on.quote && <QuoteCard quote={quote} dimmed={dimChrome} />}
+              </div>
+            )}
+          </div>
+        </TaskDragAndDrop>
+
+        <BottomNav view={view} lists={lists.lists} keyWaiting={keyWaiting} dimmed={dimChrome} onChange={setView} />
+
+        {adding && (isTaskView(view) || view === 'habits') && (
+          <AddTaskSheet
+            key={view}
+            now={now}
+            label={view === 'habits' ? 'Add habit' : 'Add task'}
+            defaultDueDate={isTaskView(view) ? newTaskDueDay(view, now) : null}
+            defaultRepeat={view === 'habits' ? { kind: 'daily' } : undefined}
+            defaultTags={isTaskView(view) ? newTaskTags(view) : []}
+            defaultListId={isTaskView(view) ? newTaskListId(view) : null}
+            knownTags={tags}
+            lists={lists.lists}
+            onClose={() => { setAdding(false) }}
+            onAdd={(title, repeat, dueDate, dueTime, taskTags, listId, details) => {
+              // Held back by the warm-up, the sheet stays open with everything
+              // typed still in it, so the rule can be changed instead (WARM-8).
+              if (handleAddTask(title, repeat, dueDate, dueTime, taskTags, listId, details)) setAdding(false)
             }}
-            onDismiss={checkIn.dismiss}
           />
         )}
-        {nudgeTask !== null && nudgeNotice !== null && (
-          <NudgeToast
-            title={nudgeNotice.title}
-            quietHours={nudgeNotice.quietHours}
-            onOpen={() => { revealTask(nudgeTask); nudge.dismiss() }}
-            onDismiss={nudge.dismiss}
-          />
+
+        {/* A habit held back is said at the top of the window, above the add sheet
+            (z-40) rather than under it: the sheet is left open with everything
+            typed still in it, so the notice has to be readable over it (WARM-8). */}
+        {warmUpOn && warmUp.notice !== null && (
+          <div className="pointer-events-none fixed inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-50 flex justify-center px-4">
+            <WarmUpNoticeToast progress={warmUp.notice} onDismiss={warmUp.dismissNotice} />
+          </div>
         )}
-        {undo.pending !== null && (
-          <UndoToast pending={undo.pending} onUndo={handleUndo} onDismiss={undo.dismiss} />
+
+        {/* Today came clear (CHST-23), the daily case's timer ran out (CHST-29),
+            or Monday brought Weekly (CHST-30). At the top like the warm-up's
+            notice rather than in the stack below: each is an offer to go
+            somewhere, and the moment it happens is the moment it is worth most. */}
+        {on.cases && (cases.unannounced || cases.dailyNotice || cases.shareNotice) && (
+          <div className="pointer-events-none fixed inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-50 flex flex-col items-center gap-2 px-4">
+            {cases.unannounced && (
+              <CaseNoticeToast
+                onOpen={() => {
+                  cases.announce()
+                  setView('rewards/cases')
+                }}
+                onDismiss={cases.announce}
+              />
+            )}
+            {cases.dailyNotice && (
+              <CaseNoticeToast
+                message={CASE_DAILY_NOTICE}
+                onOpen={() => {
+                  cases.dismissDailyNotice()
+                  setView('rewards/cases')
+                }}
+                onDismiss={cases.dismissDailyNotice}
+              />
+            )}
+            {cases.shareNotice && (
+              <CaseNoticeToast
+                message={CASE_SHARE_NOTICE}
+                onOpen={() => {
+                  cases.announceShare()
+                  setView('rewards/cases')
+                }}
+                onDismiss={cases.announceShare}
+              />
+            )}
+          </div>
         )}
-      </div>
-    </main>
+
+        {/* What the screen has to say, stacked: above a phone's navigation bar — beside the Plus
+            rather than under it — and at the foot of the window where there is no bar. */}
+        <div
+          className={`pointer-events-none fixed inset-x-0 ${ABOVE_PHONE_BAR} z-30 flex flex-col items-center gap-2 px-4 md:bottom-4 ${
+            hasPlus ? 'pr-20 md:pr-4' : ''
+          }`}
+        >
+          {storageProblem.problem !== null && (
+            <StorageProblemNotice problem={storageProblem.problem} onDismiss={storageProblem.dismiss} />
+          )}
+          {syncNotice !== null && <SyncBadge notice={syncNotice} />}
+          {runningTimerTask !== null && taskTimer.state.status === 'running' && (
+            <RunningTimerChip
+              title={runningTimerTask.title}
+              startedAt={taskTimer.state.startedAt}
+              clock={taskTimer.clock}
+              onOpen={() => { revealTask(runningTimerTask) }}
+              onStop={taskTimer.stop}
+            />
+          )}
+          {taskTimer.goalNotice !== null && (
+            <GoalNoticeToast
+              title={taskTimer.goalNotice.title}
+              onDismiss={taskTimer.dismissGoalNotice}
+            />
+          )}
+          {reminderTask !== null && reminderNotice !== null && (
+            <ReminderToast
+              title={reminderNotice.title}
+              more={reminders.notices.length - 1}
+              onOpen={() => { revealTask(reminderTask); reminders.dismiss() }}
+              onDismiss={reminders.dismiss}
+            />
+          )}
+          {checkInOn && checkIn.notice !== null && view !== 'activity' && (
+            <CheckInToast
+              checkIn={checkIn.notice}
+              onLog={() => {
+                const asked = checkIn.notice
+                if (asked !== null) openActivityLog(asked.slot)
+              }}
+              onDismiss={checkIn.dismiss}
+            />
+          )}
+          {nudgeOn && nudgeTask !== null && nudgeNotice !== null && (
+            <NudgeToast
+              title={nudgeNotice.title}
+              quietHours={nudgeNotice.quietHours}
+              onOpen={() => { revealTask(nudgeTask); nudge.dismiss() }}
+              onDismiss={nudge.dismiss}
+            />
+          )}
+          {undo.pending !== null && (
+            <UndoToast pending={undo.pending} onUndo={handleUndo} onDismiss={undo.dismiss} />
+          )}
+        </div>
+      </main>
+    </FeaturesContext>
   )
 }

@@ -12,9 +12,10 @@ import type { QuoteSource } from '../storage/quoteSource'
  * stays out of the way.
  *
  * Returns null until it has settled, so the card never flashes one quote and
- * swaps it for another.
+ * swaps it for another — and while the quote is switched off on Settings,
+ * `on` false, when the service is not asked at all (FEAT-3).
  */
-export function useQuote(source: QuoteSource, repository: QuoteRepository, now: Date): Quote | null {
+export function useQuote(source: QuoteSource, repository: QuoteRepository, now: Date, on = true): Quote | null {
   const [quote, setQuote] = useState<Quote | null>(null)
 
   // `now` is a fresh Date on every render, so what this depends on is the *day*
@@ -23,6 +24,7 @@ export function useQuote(source: QuoteSource, repository: QuoteRepository, now: 
   const today = toLocalDay(now)
 
   useEffect(() => {
+    if (!on) return
     let cancelled = false
 
     async function settle(): Promise<void> {
@@ -52,7 +54,7 @@ export function useQuote(source: QuoteSource, repository: QuoteRepository, now: 
     return () => {
       cancelled = true
     }
-  }, [source, repository, today])
+  }, [source, repository, today, on])
 
-  return quote
+  return on ? quote : null
 }

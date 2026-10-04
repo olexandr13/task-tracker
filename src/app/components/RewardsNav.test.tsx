@@ -21,7 +21,7 @@ describe('RewardsNav (RWD-30)', () => {
 
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
       'Rewards',
-      'Chest',
+      'Cases',
       'History',
       'Prizes',
       'Wishlist',

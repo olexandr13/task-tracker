@@ -1,6 +1,6 @@
 import {
   BONUS_PERIODS,
-  type ChestSettings,
+  type CaseSettings,
   isCurrency,
   isLeastTasks,
   isLocalDay,
@@ -136,14 +136,19 @@ export function readRewardGoal(data: unknown): { period: Period; points: number 
 /**
  * A standing setting of the points, kept one record per setting under a name of
  * its own rather than an id — the same reasoning as a bonus above. What one
- * point is worth (RWD-31) and what the chest asks of a day (CHST-3) are
+ * point is worth (RWD-31) and what Cases asks of a day (CHST-3) are
  * the two there are; a new one is a name here and a watcher in the repository.
+ */
+/**
+ * `chest` is the name Cases was first saved under. A document and a backup
+ * already written still use it, so the name stays.
  */
 export type RewardSetting = 'pointValue' | 'chest'
 
 export const POINT_VALUE: RewardSetting = 'pointValue'
 
-export const CHEST: RewardSetting = 'chest'
+/** The Cases settings record. Named `chest` so a record already saved still matches. */
+export const CASES_SETTING: RewardSetting = 'chest'
 
 export interface StoredPointValue {
   version: number
@@ -170,21 +175,21 @@ export function readPointValue(data: unknown): PointValue | null {
 }
 
 /**
- * What the chest asks of a day (CHST-3). One record, named for itself, so the
+ * What Cases asks of a day (CHST-3). One record, named for itself, so the
  * two devices that set it write the one record and the later write wins.
  */
-export interface StoredChestSettings {
+export interface StoredCaseSettings {
   version: number
   name: RewardSetting
-  settings: ChestSettings
+  settings: CaseSettings
 }
 
-export function toStoredChestSettings(settings: ChestSettings): StoredChestSettings {
-  return { version: REWARD_SCHEMA_VERSION, name: CHEST, settings }
+export function toStoredCaseSettings(settings: CaseSettings): StoredCaseSettings {
+  return { version: REWARD_SCHEMA_VERSION, name: CASES_SETTING, settings }
 }
 
 /**
- * Saved chest settings, or null when they can't be trusted.
+ * Saved cases settings, or null when they can't be trusted.
  *
  * Settings saved before the jackpot became everything earned today also say
  * which of two ways it was worked out (`jackpot: 'bestTask' | 'typicalDay'`).
@@ -192,8 +197,8 @@ export function toStoredChestSettings(settings: ChestSettings): StoredChestSetti
  * record is otherwise the same shape, and refusing it would throw away the one
  * setting that is left. It is dropped on the next save.
  */
-export function readChestSettings(data: unknown): ChestSettings | null {
-  if (!isRecord(data) || data.version !== REWARD_SCHEMA_VERSION || data.name !== CHEST || !isRecord(data.settings)) {
+export function readCaseSettings(data: unknown): CaseSettings | null {
+  if (!isRecord(data) || data.version !== REWARD_SCHEMA_VERSION || data.name !== CASES_SETTING || !isRecord(data.settings)) {
     return null
   }
 

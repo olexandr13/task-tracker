@@ -1,6 +1,7 @@
+import { modesShown, useFeaturesOff } from '../features'
 import type { ModeState } from '../modes'
 import { describeModeHint, MODE_SUMMARY } from '../modeLabels'
-import { UNDER_MODES, VIEW_LABELS, type ModeView } from '../view'
+import { VIEW_LABELS, type ModeView } from '../view'
 import { VIEW_ICONS } from '../viewIcons'
 import { ChevronIcon } from './ChevronIcon'
 import { ModeSwitch } from './ModeSwitch'
@@ -30,11 +31,16 @@ interface ModesPageProps {
  * A mode is a spell of the app behaving differently — one task at a time, or
  * one more habit with each day — which is more than a name can carry, so the row is
  * two things at once: the switch, and the way to read about it first.
+ *
+ * A mode whose feature is switched off on Settings — the warm-up without the
+ * habits, the check-in without the activity log — is not listed (FEAT-9).
  */
 export function ModesPage({ modes, onOpen }: ModesPageProps) {
+  const off = useFeaturesOff()
+
   return (
     <ul className="flex flex-col gap-1.5">
-      {UNDER_MODES.map((view) => (
+      {modesShown(off).map((view) => (
         <li key={view}>
           <ModeRow mode={modes[view]} onOpen={() => { onOpen(view) }} />
         </li>
@@ -75,6 +81,7 @@ export function ModeRow({ mode, onOpen }: { mode: ModeState; onOpen: () => void 
         state={mode.status.state}
         checked={mode.on}
         blocked={mode.blocked}
+        confirmOff={mode.confirmOff}
         onChange={mode.toggle}
       />
     </div>

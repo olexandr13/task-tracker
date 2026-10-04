@@ -195,11 +195,11 @@ describe('what it adds up to (ACT-12 to ACT-18)', () => {
   const yesterday = entry('Work', 60, { day: '2026-10-01', hour: 9 })
   const today = entry('Reading', 30, { day: '2026-10-02', hour: 9 })
 
-  it('opens on today, with how much of it is logged and the streak', () => {
+  it('opens on today, with how much of it is logged', () => {
     setUp({ entries: [today] })
 
     expect(title().textContent).toBe('Today')
-    expect(screen.getByText('1 of 6 hours logged so far · No streak yet')).toBeDefined()
+    expect(screen.getByText('1 of 6 hours logged so far')).toBeDefined()
     expect(screen.getByRole('img').getAttribute('aria-label')).toBe('Time spent today, 30m: Reading 30m, 100%')
   })
 
@@ -209,7 +209,7 @@ describe('what it adds up to (ACT-12 to ACT-18)', () => {
     expect(screen.getByRole('button', { name: 'The day after' }).className).toContain('invisible')
     await user.click(screen.getByRole('button', { name: 'The day before' }))
     expect(title().textContent).toBe('Yesterday')
-    expect(screen.getByText('1 of 13 hours logged · No streak yet')).toBeDefined()
+    expect(screen.getByText('1 of 13 hours logged')).toBeDefined()
     expect(screen.getByRole('img').getAttribute('aria-label')).toBe('Time spent yesterday, 1h: Work 1h, 100%')
   })
 
@@ -218,7 +218,7 @@ describe('what it adds up to (ACT-12 to ACT-18)', () => {
 
     await user.click(screen.getByRole('radio', { name: 'Week' }))
     expect(title().textContent).toBe('This week')
-    expect(screen.getByText('0 of 5 days logged in full · No streak yet')).toBeDefined()
+    expect(screen.getByText('0 of 5 days logged in full')).toBeDefined()
 
     const days = within(screen.getByRole('region', { name: 'By day' })).getAllByRole('button')
     expect(days.map((day) => day.getAttribute('aria-label'))).toContain('Thu, Oct 1 · 1h: Work 1h')

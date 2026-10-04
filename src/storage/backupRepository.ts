@@ -5,7 +5,8 @@ import {
   isExpired,
   type Category,
   type CategoryId,
-  type ChestSettings,
+  type CaseSettings,
+  type FeaturesOff,
   sameTag,
   type List,
   type ListId,
@@ -55,11 +56,11 @@ export interface AccountData {
   /** What one point is worth (RWD-31), or null while nothing says. A setting, as the bonuses are. */
   readonly pointValue: PointValue | null
   /**
-   * What the chest asks of a day and what its key plays for (CHST-7), or null
+   * What Cases asks of a day and what its key plays for (CHST-7), or null
    * where nothing says and it stands at what an account starts with. A setting
    * again, taken by an import only where the account has none of its own.
    */
-  readonly chest: ChestSettings | null
+  readonly cases: CaseSettings | null
   /**
    * The warm-up under way, or null for none (WARM-1). A setting again: it is
    * counted as none of the records, and an import takes it only where the
@@ -79,6 +80,12 @@ export interface AccountData {
    * registration is a device's, not the account's data (STORE-53).
    */
   readonly checkIn: CheckInPreference | null
+  /**
+   * The features switched off on Settings (FEAT-1), or null where nothing says
+   * and every one is on. A setting again, taken by an import only where the
+   * account has none of its own.
+   */
+  readonly features: FeaturesOff | null
 }
 
 /** How many of each kind of record there are. A completion is one entry of the ledger. */
@@ -143,14 +150,16 @@ export interface KnownRecords {
   readonly bonuses: PeriodBonuses
   /** What the account says a point is worth already, or null when it says nothing. */
   readonly pointValue: PointValue | null
-  /** What the account asks of the chest already, or null when it says nothing. */
-  readonly chest: ChestSettings | null
+  /** What the account asks of Cases already, or null when it says nothing. */
+  readonly cases: CaseSettings | null
   /** The warm-up the account has already, or null when it has none. */
   readonly warmUp: WarmUp | null
   /** How the account already asked to be nudged, or null when it says nothing. */
   readonly nudge: NudgePreference | null
   /** How the account already asked to be checked in on, or null when it says nothing. */
   readonly checkIn: CheckInPreference | null
+  /** The features the account has switched off already, or null when it says nothing. */
+  readonly features: FeaturesOff | null
   /**
    * The tasks each saved day holds an entry for, or null for a day the app
    * cannot read — which is left as it is, so nothing is added to it.
@@ -185,9 +194,9 @@ export function countRecords(data: AccountData): RecordCounts {
  * so an import never makes a second record of one tag. The bonuses and what a
  * point is worth are the things in here that are no records: the file's are
  * taken only where the account has none, and count towards neither what was
- * added nor what was already here. So are the chest's settings, the warm-up and
- * the nudge and the check-in: a file's
- * is taken only by an account with none of its own, which keeps a restored
+ * added nor what was already here. So are Cases' settings, the warm-up and
+ * the nudge, the check-in and the feature switches: a
+ * file's is taken only by an account with none of its own, which keeps a restored
  * backup from starting a month that has already been served, or from turning a
  * nudge back on that was turned off since.
  */
@@ -251,10 +260,11 @@ export function newRecords(
       redemptions: unseen(incoming.redemptions, (redemption) => redemption.id, known.redemptionIds),
       bonuses,
       pointValue: known.pointValue === null ? incoming.pointValue : null,
-      chest: known.chest === null ? incoming.chest : null,
+      cases: known.cases === null ? incoming.cases : null,
       warmUp: known.warmUp === null ? incoming.warmUp : null,
       nudge: known.nudge === null ? incoming.nudge : null,
       checkIn: known.checkIn === null ? incoming.checkIn : null,
+      features: known.features === null ? incoming.features : null,
     },
     alreadyHere,
   }

@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { DEFAULT_CHECK_IN_WINDOW, DEFAULT_NUDGE_WINDOW, type NudgeWindow, type QuietHours, type WarmUpProgress } from '../core'
 import { modeStates } from './modes'
+import { WARM_UP_DISABLE_WARNING } from './warmUpLabels'
 
 /* The modes as the Modes pages read them. MODE ids refer to wiki/modes.md;
    JUST ids to wiki/just-one.md, WARM ids to wiki/warm-up.md, CHECKIN ids to wiki/check-ins.md. */
 
-const WARMING_UP: WarmUpProgress = { day: 3, daysLeft: 27, allowed: 3, used: 2, remaining: 1 }
+const WARMING_UP: WarmUpProgress = { day: 3, daysLeft: 27, allowed: 3, used: 2, remaining: 1, paused: false }
 
 function sources(over: {
   phase?: 'off' | 'idle' | 'focus' | 'won'
@@ -64,6 +65,13 @@ describe('modeStates', () => {
     expect(warmUp.status).toEqual({ state: 'Enabled', detail: 'Day 3 of 30 · 27 days left' })
   })
 
+  it('says a paused warm-up is still on, held on the day it froze (MODE-3, WARM-11)', () => {
+    const warmUp = modeStates(sources({ progress: { ...WARMING_UP, paused: true } }))['modes/warm-up']
+
+    expect(warmUp.on).toBe(true)
+    expect(warmUp.status).toEqual({ state: 'Enabled', detail: 'Paused · Day 3 of 30 · 27 days left' })
+  })
+
   it('blocks Procrastination mode while Today has nothing to do (MODE-6, JUST-2)', () => {
     const modes = modeStates(sources({ available: false }))
 
@@ -119,6 +127,11 @@ describe('modeStates', () => {
     modes['modes/warm-up'].toggle(false)
     expect(given.warmUp.onEnd).toHaveBeenCalledOnce()
     expect(given.warmUp.onStart).not.toHaveBeenCalled()
+    // Ending it is asked for first, on the switch: enabling it again starts over (WARM-9).
+    expect(modes['modes/warm-up'].confirmOff).toBe(WARM_UP_DISABLE_WARNING)
+    expect(modes['modes/procrastination'].confirmOff).toBeUndefined()
+    expect(modes['modes/nudge'].confirmOff).toBeUndefined()
+    expect(modes['modes/check-in'].confirmOff).toBeUndefined()
 
     modes['modes/nudge'].toggle(true)
     expect(given.nudge.onTurnOn).toHaveBeenCalledExactlyOnceWith(true)

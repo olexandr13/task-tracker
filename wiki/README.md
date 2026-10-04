@@ -24,9 +24,9 @@ lets this be read as a description of the app rather than a wish list.
 | [Trash](trash.md) | Deleting, the undo window, retention and purging |
 | [Progress](progress.md) | The three bars: today, this week, this month |
 | [Habits](habits.md) | Daily tasks as habits: streaks, rates and the grid of days |
-| [Warm-up](warm-up.md) | The month that lets the habits in one at a time: one on day one, two on day two |
+| [Warm-up](warm-up.md) | The month that lets the habits in one at a time: one on day one, two on day two. Pausing holds the allowance where it is |
 | [Rewards](rewards.md) | Points a task earns on every completion, the bonus for clearing a period, the prizes and the wishlist they are spent on, and the Rewards pages |
-| [The chest](chest.md) | A cleared day earns a key, and the key opens a chest worth anything from 1 point to everything earned today |
+| [Cases](cases.md) | Finishing Today earns Payday, the Drop arrives at a random time, and Weekly is ready on Monday |
 | [Time goals](time-goals.md) | A length of time a task asks for, sessions logged against it, and the hint to tick it off |
 | [Balance](balance.md) | Where the logged time went: categories named by the owner, bound to tags, and the time each took today, this week or this month |
 | [Activity log](activity-log.md) | The day hour by hour: what was done and for how long, the records added and changed, and what they add up to over a day, a week or a month |
@@ -34,6 +34,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Reminders](reminders.md) | The hour a task is due at coming round: what is said, when, and how it reaches you |
 | [Nudges](nudges.md) | The app noticing nothing is getting done: the quiet stretch, the task it points at, the hours it may speak in, and the notification |
 | [Daily quote](daily-quote.md) | One quote a day, from the quote service, cached for the day |
+| [Features](features.md) | Switching parts of the app off on Settings, and everything that goes with each |
 | [Interface](interface.md) | Layout, navigation, popovers, phone behaviour, accessibility |
 | [Offline](offline.md) | Opening with no connection, changes kept and synced later, the sync notice, installing |
 | [Storage](storage.md) | Where data lives, schema versions and migrations |

@@ -37,6 +37,7 @@ export const MODE_POINTS: Record<ModeView, readonly string[]> = {
   'modes/warm-up': [
     'Lets you increase your productivity gradually. No rush, no extra effort, and no promises to yourself you end up breaking.',
     'Allows only one new habit a day: 1 habit on day one, 2 habits on day two and so on.',
+    'Turn on "Pause" to hold the allowance where it is. Days on pause add no habit, and the habits you already have stay.',
     'Ends automatically after 30 days.',
   ],
   // What the nudge watches for and what it names is the line it is summed up in
@@ -138,5 +139,6 @@ export function describeCheckInStatus(on: boolean, window: HoursWindow): ModeSta
 /** Where the warm-up stands: how far through its month it is, or that there is none (MODE-3). */
 export function describeWarmUpStatus(progress: WarmUpProgress | null): ModeStatus {
   if (progress === null) return { state: MODE_DISABLED, detail: null }
-  return { state: MODE_ENABLED, detail: `${describeWarmUpDay(progress)} · ${describeDaysLeft(progress)}` }
+  const place = `${describeWarmUpDay(progress)} · ${describeDaysLeft(progress)}`
+  return { state: MODE_ENABLED, detail: progress.paused ? `Paused · ${place}` : place }
 }

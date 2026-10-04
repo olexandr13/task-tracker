@@ -15,7 +15,7 @@ import {
   startWarmUp,
   type PeriodBonuses,
   type RewardEntry,
-  type ChestSettings,
+  type CaseSettings,
 } from '../core'
 import { backupFileName, BACKUP_FORMAT, BACKUP_VERSION, readBackupFile, writeBackupFile } from './backupFile'
 import { ACTIVITY_SCHEMA_VERSION } from './activitySchema'
@@ -23,6 +23,7 @@ import type { AccountData } from './backupRepository'
 import { CATEGORY_SCHEMA_VERSION } from './categorySchema'
 import type { CheckInPreference } from './checkInRepository'
 import { CHECK_IN_SCHEMA_VERSION } from './checkInSchema'
+import { FEATURES_SCHEMA_VERSION } from './featureSchema'
 import { LIST_SCHEMA_VERSION } from './listSchema'
 import type { NudgePreference } from './nudgeRepository'
 import { NUDGE_SCHEMA_VERSION } from './nudgeSchema'
@@ -50,7 +51,7 @@ const BONUSES: PeriodBonuses = { today: 10, week: 40, month: null }
 const UAH = createPointValue(2.5)
 const WARMING_UP = startWarmUp(AT)
 const NUDGING: NudgePreference = { on: true, quietHours: 3, window: { from: '09:00', to: '22:00' } }
-const ASKING: ChestSettings = { leastTasks: 4 }
+const ASKING: CaseSettings = { leastTasks: 4 }
 const REST = bindTag(createCategory('Rest', AT), 'walk')
 const READING = createActivityEntry('Reading', 900, { day: '2026-09-18', hour: 14 }, AT)
 const WORKING = createActivityEntry('Work', 2700, { day: '2026-09-18', hour: 14 }, AT)
@@ -67,14 +68,18 @@ const DATA: AccountData = {
   redemptions: [TREAT],
   bonuses: BONUSES,
   pointValue: UAH,
-  chest: ASKING,
+  cases: ASKING,
   warmUp: WARMING_UP,
   nudge: NUDGING,
   checkIn: CHECKING_IN,
+  features: ['rewards', 'quote'],
 }
 
-/** What a file from before the activity log and the check-in reads as (BAK-18, BAK-19). */
-const BEFORE_ACTIVITIES = { activities: [], checkIn: null }
+/** What a file from before the feature switches reads as (BAK-20). */
+const BEFORE_FEATURES = { features: null }
+
+/** What a file from before the activity log and the check-in reads as (BAK-18, BAK-19), and so before the switches too. */
+const BEFORE_ACTIVITIES = { activities: [], checkIn: null, ...BEFORE_FEATURES }
 
 function fileWith(changes: Record<string, unknown>): string {
   return JSON.stringify({ ...(JSON.parse(writeBackupFile(DATA, AT)) as object), ...changes })
@@ -110,7 +115,14 @@ describe('writing a backup', () => {
       ],
       nudge: [{ version: NUDGE_SCHEMA_VERSION, name: 'nudge', nudge: NUDGING }],
       checkIn: [{ version: CHECK_IN_SCHEMA_VERSION, name: 'checkIn', checkIn: CHECKING_IN }],
+      features: [{ version: FEATURES_SCHEMA_VERSION, name: 'features', off: ['rewards', 'quote'] }],
     })
+  })
+
+  it('keeps no record of the switches while every feature is on (BAK-20)', () => {
+    const file = JSON.parse(writeBackupFile({ ...DATA, features: [] }, AT)) as { features: unknown }
+
+    expect(file.features).toEqual([])
   })
 
   it('keeps the activity log a day at a time, as the account does (BAK-18)', () => {
@@ -168,6 +180,7 @@ describe('reading a backup', () => {
     expect(readBackupFile(fileWith({ categories: undefined }))).toBe('not-a-backup')
     expect(readBackupFile(fileWith({ activityDays: undefined }))).toBe('not-a-backup')
     expect(readBackupFile(fileWith({ checkIn: undefined }))).toBe('not-a-backup')
+    expect(readBackupFile(fileWith({ features: undefined }))).toBe('not-a-backup')
   })
 
   it('reads a file from before tags were backed up as keeping none (BAK-12)', () => {
@@ -195,7 +208,7 @@ describe('reading a backup', () => {
         categories: [],
         bonuses: NO_BONUSES,
         pointValue: null,
-        chest: null,
+        cases: null,
         warmUp: null,
         nudge: null,
       },
@@ -219,7 +232,7 @@ describe('reading a backup', () => {
     )
 
     expect(read).toEqual({
-      data: { ...DATA, ...BEFORE_ACTIVITIES, prizes: [], categories: [], bonuses: NO_BONUSES, pointValue: null, chest: null, warmUp: null, nudge: null },
+      data: { ...DATA, ...BEFORE_ACTIVITIES, prizes: [], categories: [], bonuses: NO_BONUSES, pointValue: null, cases: null, warmUp: null, nudge: null },
       unreadable: 0,
     })
   })
@@ -239,7 +252,7 @@ describe('reading a backup', () => {
     )
 
     expect(read).toEqual({
-      data: { ...DATA, ...BEFORE_ACTIVITIES, prizes: [], categories: [], pointValue: null, chest: null, warmUp: null, nudge: null },
+      data: { ...DATA, ...BEFORE_ACTIVITIES, prizes: [], categories: [], pointValue: null, cases: null, warmUp: null, nudge: null },
       unreadable: 0,
     })
   })
@@ -251,6 +264,19 @@ describe('reading a backup', () => {
 
     expect(read).toEqual({
       data: { ...DATA, ...BEFORE_ACTIVITIES, categories: [], warmUp: null, nudge: null },
+      unreadable: 0,
+    })
+  })
+
+  it('reads a warm-up saved before it could be paused as not paused (BAK-15)', () => {
+    const read = readBackupFile(
+      fileWith({
+        warmUp: [{ version: 1, name: 'warmUp', warmUp: { startedOn: '2026-09-01' } }],
+      }),
+    )
+
+    expect(read).toEqual({
+      data: { ...DATA, warmUp: { startedOn: '2026-09-01', pausedOn: null, pausedDays: 0 } },
       unreadable: 0,
     })
   })
@@ -276,6 +302,12 @@ describe('reading a backup', () => {
     expect(read).toEqual({ data: { ...DATA, ...BEFORE_ACTIVITIES }, unreadable: 0 })
   })
 
+  it('reads a file from before the feature switches as switching nothing off (BAK-20)', () => {
+    const read = readBackupFile(fileWith({ version: 8, features: undefined }))
+
+    expect(read).toEqual({ data: { ...DATA, ...BEFORE_FEATURES }, unreadable: 0 })
+  })
+
   it('says so when a backup was made by a newer version of the app (BAK-9)', () => {
     expect(readBackupFile(fileWith({ version: BACKUP_VERSION + 1 }))).toBe('newer-version')
   })
@@ -298,6 +330,7 @@ describe('reading a backup', () => {
         categories: [{ version: CATEGORY_SCHEMA_VERSION, category: { ...REST, tags: ['two words'] } }],
         activityDays: [{ version: ACTIVITY_SCHEMA_VERSION, day: '2026-09-18', entries: { x: { activity: '', seconds: 60, hour: 9 } } }],
         checkIn: [{ version: CHECK_IN_SCHEMA_VERSION, name: 'checkIn', checkIn: { on: true, window: { from: '09:30', to: '22:00' } } }],
+        features: [{ version: FEATURES_SCHEMA_VERSION + 1, name: 'features', off: ['quote'] }],
       }),
     )
 
@@ -313,12 +346,13 @@ describe('reading a backup', () => {
         redemptions: [TREAT],
         bonuses: BONUSES,
         pointValue: UAH,
-        chest: ASKING,
+        cases: ASKING,
         warmUp: WARMING_UP,
         nudge: NUDGING,
         checkIn: null,
+        features: null,
       },
-      unreadable: 9,
+      unreadable: 10,
     })
   })
 })

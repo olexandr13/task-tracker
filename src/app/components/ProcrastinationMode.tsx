@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import type { Task } from '../../core'
+import { useFeatureOn } from '../features'
 import { describePoints, describeReward } from '../rewardLabels'
 import { CalmIcon } from './CalmIcon'
 import { CelebrateIcon } from './CelebrateIcon'
@@ -187,6 +188,8 @@ function ProcrastinationWin({
   onEnd: () => void
 }) {
   const [tip, setTip] = useState<string | null>(null)
+  // No points to add while Rewards is switched off on Settings (FEAT-3).
+  const rewardsOn = useFeatureOn('rewards')
 
   useEffect(() => {
     if (tip === null) return
@@ -211,28 +214,30 @@ function ProcrastinationWin({
       </div>
 
       <div className="relative flex w-full items-stretch gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            const total = pointsEarned + 1
-            onGrantPoints(total)
-            setTip(describeReward(total))
-          }}
-          className={`inline-flex flex-1 items-center justify-center gap-1.5 ${pointsChip}`}
-          aria-label={
-            pointsEarned > 0
-              ? `Reward +1, ${describePoints(pointsEarned)} so far`
-              : 'Reward +1'
-          }
-        >
-          <span aria-hidden="true">⭐</span>
-          Reward +1
-          {pointsEarned > 0 && (
-            <span className="tabular-nums text-green-700/75 dark:text-green-200/70">
-              · {describePoints(pointsEarned)}
-            </span>
-          )}
-        </button>
+        {rewardsOn && (
+          <button
+            type="button"
+            onClick={() => {
+              const total = pointsEarned + 1
+              onGrantPoints(total)
+              setTip(describeReward(total))
+            }}
+            className={`inline-flex flex-1 items-center justify-center gap-1.5 ${pointsChip}`}
+            aria-label={
+              pointsEarned > 0
+                ? `Reward +1, ${describePoints(pointsEarned)} so far`
+                : 'Reward +1'
+            }
+          >
+            <span aria-hidden="true">⭐</span>
+            Reward +1
+            {pointsEarned > 0 && (
+              <span className="tabular-nums text-green-700/75 dark:text-green-200/70">
+                · {describePoints(pointsEarned)}
+              </span>
+            )}
+          </button>
+        )}
         {tip !== null && (
           <span
             role="status"

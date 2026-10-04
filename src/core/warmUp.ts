@@ -5,17 +5,20 @@
  * behind by the weekend, and falling behind is what the app is for fighting.
  * So a warm-up lets the habits in slowly — one on its first day, two on its
  * second, and so on for a month, after which it is over and asks nothing.
+ * Pausing holds that still: the days it is paused add no habit, and the habits
+ * already there stay (WARM-11).
  *
  * Only habits (./habit) are held back. Ordinary tasks are what a day actually
  * holds and are never limited: the warm-up is about what is taken on for every
  * day to come, not about what there is to do today.
  *
  * Pure derivation over the tasks, the day it started and the day it is now, in
- * the way of the rest of this layer. What is stored is the one thing that
- * cannot be worked out — the day it began (`WarmUp`); the day it is on, what it
- * allows and whether that is used up all follow from the tasks as they stand,
- * so nothing has to be rewritten at midnight for tomorrow to allow one more
- * (PRIN-2).
+ * the way of the rest of this layer. What is stored is what cannot be worked
+ * out — the day it began, how many days have already been paused, and, while
+ * it is paused, the day that pause began (`WarmUp`). The day it is on, what it
+ * allows and whether that is used up all follow from those and from the tasks
+ * as they stand, so nothing has to be rewritten at midnight for tomorrow to
+ * allow one more (PRIN-2).
  */
 
 import { daysBetween, toLocalDay, type LocalDay } from './day'
@@ -26,22 +29,74 @@ import type { Task } from './task'
 export const WARM_UP_DAYS = 30
 
 /**
- * A warm-up under way, or being remembered: the day it began, which is all it
- * takes to say which day it is on and how much it allows.
+ * A warm-up under way, or being remembered. The day it began never moves.
+ * `pausedDays` is how many days have already been skipped, and `pausedOn` is
+ * the day the current pause began — null while the allowance is still growing.
  */
 export interface WarmUp {
-  /** The local day it was started on — its day one. */
+  /** The local day it was started on — its day one, before any pause. */
   readonly startedOn: LocalDay
+  /** The local day the current pause began, or null while it is running. */
+  readonly pausedOn: LocalDay | null
+  /** Days already spent paused, which do not count toward the month. */
+  readonly pausedDays: number
 }
 
-/** A warm-up beginning today. */
+/** A warm-up beginning today, running. */
 export function startWarmUp(now: Date = new Date()): WarmUp {
-  return { startedOn: toLocalDay(now) }
+  return { startedOn: toLocalDay(now), pausedOn: null, pausedDays: 0 }
+}
+
+/**
+ * Freezes the warm-up on the day `now` falls in (WARM-11). The days after that
+ * add no habit until it is resumed. Pausing one that is already paused, or one
+ * that has already run its course, leaves it as it is.
+ *
+ * A clock sitting before the day it began pauses on that day, which is the day
+ * the warm-up reads as its first: a device a day behind is not owed a warm-up
+ * of its own.
+ */
+export function pauseWarmUp(warmUp: WarmUp, now: Date = new Date()): WarmUp {
+  if (warmUp.pausedOn !== null || warmUpDay(warmUp, now) === null) return warmUp
+
+  const today = toLocalDay(now)
+  const pausedOn = daysBetween(warmUp.startedOn, today) < 0 ? warmUp.startedOn : today
+  return { startedOn: warmUp.startedOn, pausedOn, pausedDays: warmUp.pausedDays }
+}
+
+/**
+ * Lets a paused warm-up run again (WARM-11). The same day stays the day it
+ * froze on. A later day allows one more — the days between were the pause, and
+ * each of them is remembered in `pausedDays` rather than as a habit. A clock
+ * that has not yet reached the pause leaves it paused.
+ *
+ * Resuming once the last day has already been spent ends the month: there is
+ * no day after the thirtieth, and the day it began stays the day it began.
+ */
+export function resumeWarmUp(warmUp: WarmUp, now: Date = new Date()): WarmUp {
+  if (warmUp.pausedOn === null) return warmUp
+
+  const today = toLocalDay(now)
+  const since = daysBetween(warmUp.pausedOn, today)
+  if (since < 0) return warmUp
+
+  // The resume day itself counts, once it is a new day. The days strictly
+  // between the pause and today are the ones the pause skipped.
+  return {
+    startedOn: warmUp.startedOn,
+    pausedOn: null,
+    pausedDays: warmUp.pausedDays + Math.max(0, since - 1),
+  }
 }
 
 /**
  * Which day of the warm-up `now` falls in — 1 on the day it began, up to
  * `WARM_UP_DAYS` — or null when there is no warm-up, or it has run its course.
+ *
+ * While it is paused the day stays the one it was paused on, however many
+ * calendar days pass (WARM-11). Days already paused are taken off the count,
+ * so a month can stretch past thirty calendar days and still be thirty days
+ * of running.
  *
  * A day before it began reads as its first day rather than as a day zero or a
  * negative one: a device whose clock is a day behind is not owed a warm-up of
@@ -50,7 +105,8 @@ export function startWarmUp(now: Date = new Date()): WarmUp {
 export function warmUpDay(warmUp: WarmUp | null, now: Date = new Date()): number | null {
   if (warmUp === null) return null
 
-  const day = daysBetween(warmUp.startedOn, toLocalDay(now)) + 1
+  const asOf = warmUp.pausedOn ?? toLocalDay(now)
+  const day = daysBetween(warmUp.startedOn, asOf) + 1 - warmUp.pausedDays
   if (day > WARM_UP_DAYS) return null
   return Math.max(1, day)
 }
@@ -77,6 +133,8 @@ export interface WarmUpProgress {
   readonly used: number
   /** How many more may be taken on today, 0 once the allowance is used up. */
   readonly remaining: number
+  /** Whether the allowance is frozen (WARM-11). */
+  readonly paused: boolean
 }
 
 /**
@@ -89,7 +147,8 @@ export interface WarmUpProgress {
  * round it: converting an old task to a daily rule, or duplicating a habit,
  * counts exactly as much as writing a new one. An account that already keeps
  * more habits than the day allows takes none on until the days catch up, and
- * loses none of the ones it has — a warm-up never deletes anything.
+ * loses none of the ones it has — a warm-up never deletes anything. Pausing
+ * keeps both the allowance and the habits where they are (WARM-11).
  */
 export function warmUpProgress(
   warmUp: WarmUp | null,
@@ -97,7 +156,7 @@ export function warmUpProgress(
   now: Date = new Date(),
 ): WarmUpProgress | null {
   const day = warmUpDay(warmUp, now)
-  if (day === null) return null
+  if (day === null || warmUp === null) return null
 
   const allowed = habitAllowance(day)
   const used = habitTasks(tasks).length
@@ -108,6 +167,7 @@ export function warmUpProgress(
     allowed,
     used,
     remaining: Math.max(0, allowed - used),
+    paused: warmUp.pausedOn !== null,
   }
 }
 

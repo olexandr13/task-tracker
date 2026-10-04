@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MODE_POINTS } from '../modeLabels'
 import type { ModeState } from '../modes'
 import type { ModeView } from '../view'
+import { WARM_UP_DISABLE_WARNING } from '../warmUpLabels'
 import { ModePage } from './ModePage'
 
 /* One mode's own page. MODE ids refer to wiki/modes.md. */
@@ -27,6 +28,7 @@ describe('ModePage', () => {
     const points = screen.getByRole('list')
     expect(points.children).toHaveLength(MODE_POINTS['modes/warm-up'].length)
     expect(points.textContent).toContain('Allows only one new habit a day')
+    expect(points.textContent).toContain('Pause')
   })
 
   it('carries the mode, where it stands and its switch (MODE-5)', () => {
@@ -49,6 +51,30 @@ describe('ModePage', () => {
 
     await userEvent.click(screen.getByRole('switch', { name: 'Warm-up' }))
     expect(toggle).toHaveBeenCalledExactlyOnceWith(true)
+  })
+
+  it('asks before the warm-up is turned off, and leaves it on when cancelled (WARM-9)', async () => {
+    const toggle = vi.fn()
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    render(
+      <ModePage
+        mode={mode('modes/warm-up', {
+          on: true,
+          status: ON,
+          confirmOff: WARM_UP_DISABLE_WARNING,
+          toggle,
+        })}
+      />,
+    )
+
+    await userEvent.click(screen.getByRole('switch', { name: 'Warm-up' }))
+    expect(confirm.mock.calls[0]?.[0]).toBe(WARM_UP_DISABLE_WARNING)
+    expect(toggle).not.toHaveBeenCalled()
+
+    confirm.mockReturnValue(true)
+    await userEvent.click(screen.getByRole('switch', { name: 'Warm-up' }))
+    expect(toggle).toHaveBeenCalledExactlyOnceWith(false)
+    confirm.mockRestore()
   })
 
   it('wears the face the mode puts you in (MODE-11)', () => {

@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { completeTask, createTask, setDueDate, setDueTime, toLocalDay, type Task } from '../core'
 import { useReminders } from './useReminders'
 
-/* REM ids refer to wiki/reminders.md. */
+/* REM ids refer to wiki/reminders.md, FEAT ids to wiki/features.md. */
 
 const NINE = new Date(2026, 8, 16, 9, 0)
 const BEFORE = new Date(2026, 8, 16, 8, 59, 30)
@@ -79,6 +79,36 @@ describe('useReminders', () => {
 
     expect(result.current.notices).toHaveLength(1)
     expect(notify).toHaveBeenCalledTimes(1)
+  })
+
+  it('says nothing while switched off, nor about the hours that struck meanwhile once back on (FEAT-3)', async () => {
+    vi.useFakeTimers({ now: BEFORE })
+    const notify = allowNotifications()
+
+    const tasks = [at('09:00')]
+    const { result, rerender } = renderHook(({ on }) => useReminders(tasks, on), { initialProps: { on: false } })
+    vi.setSystemTime(new Date(2026, 8, 16, 9, 0, 5))
+    await tick()
+    expect(result.current.notices).toEqual([])
+
+    rerender({ on: true })
+    await tick()
+    expect(result.current.notices).toEqual([])
+    expect(notify).not.toHaveBeenCalled()
+  })
+
+  it('puts away what was standing when switched off (FEAT-3)', async () => {
+    vi.useFakeTimers({ now: BEFORE })
+    allowNotifications()
+
+    const tasks = [at('09:00')]
+    const { result, rerender } = renderHook(({ on }) => useReminders(tasks, on), { initialProps: { on: true } })
+    vi.setSystemTime(new Date(2026, 8, 16, 9, 0, 5))
+    await tick()
+    expect(result.current.notices).toHaveLength(1)
+
+    rerender({ on: false })
+    expect(result.current.notices).toEqual([])
   })
 
   it('says nothing about an hour that went by before it started watching (REM-3)', async () => {

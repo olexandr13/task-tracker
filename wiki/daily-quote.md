@@ -25,6 +25,8 @@ bars, which changes once a day.
 - **QUOTE-12** While **Procrastination mode** is on the card is dimmed to a quarter opacity with
   the rest of what is not the one task (JUST-5). A quote is worth reading on any other day; on this
   one it is something else to read instead of starting.
+- **QUOTE-13** The quote can be **switched off** on Settings (FEAT-3): the card is gone, and the
+  quote service is not asked for one.
 
 ---
 

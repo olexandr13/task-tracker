@@ -67,12 +67,12 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   same day leaves one completion's worth, and two devices recording the same completion count
   it once.
 
-- **RWD-44** What the **chest** gave is a row of the ledger like any other (RWD-23), named **The
-  chest** rather than for a task, deleted the same way, and counting the same way towards the
-  balance and the period tiles (RWD-17, RWD-21). It is earned on the day the chest was opened, and —
+- **RWD-44** What **Cases** gave is a row of the ledger like any other (RWD-23), named **Payday**,
+  **Drop** or **Weekly** rather than for a task, deleted the same way, and counting the same way towards the
+  balance and the period tiles (RWD-17, RWD-21). It is earned on the day Cases was opened, and —
   unlike a period's bonus (RWD-26) — is **never taken back** by the day coming unclear again
-  (CHST-5). What the chest asks of a day and what its key plays for are set on **Rules** (RWD-39,
-  CHST-7); the rest of it is on [its own page](chest.md).
+  (CHST-5). What Cases asks of a day and what its key plays for are set on **Rules** (RWD-39,
+  CHST-7); the rest of it is on [its own page](cases.md).
 
 ## Clearing a period
 
@@ -187,16 +187,15 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   money where a point has a value (RWD-32); what was **earned** in each period (RWD-21); **Finish
   everything, earn extra** — the three period bonuses **side by side in one row**, each its amount
   and where it stands: `+5 earned`, `+20 all done = earned`, or `— no bonus` (RWD-27, RWD-29); where
-  the **chest** stands — what a cleared day's key can give, from 1 point up to the jackpot, and
-  whether one is waiting or already spent (CHST-23, CHST-26); and what the balance reaches on each
+  **Cases** stands — Payday for clearing Today, paying from the cheapest task up to half of today, the Drop, which arrives at a random time, paying from 1 up to yesterday divided by its tasks, and Weekly, ready on Monday and planned until then, paying from the cheapest task last week up to last week divided by its tasks, and
+  whether one is waiting or already spent (CHST-23, CHST-26, CHST-28); and what the balance reaches on each
   list (RWD-37). Nothing is spent or set here. None of the five pages has a box for adding a task,
   or a rail (UI-2).
-- **RWD-30** Rewards is **six pages**: **Rewards** itself (RWD-20), the **Chest** a cleared day
-  earns a key to ([the chest](chest.md), CHST-22), **History** (RWD-38),
+- **RWD-30** Rewards is **six pages**: **Rewards** itself (RWD-20), **Cases**, which a cleared day
+  earns a key to ([Cases](cases.md), CHST-22), **History** (RWD-38),
   **Prizes** and **Wishlist** (RWD-40) and **Rules** (RWD-39). Their addresses are `#/rewards`,
-  `#/rewards/chest`,
-  `#/rewards/history`, `#/rewards/prizes`, `#/rewards/wishlist` and `#/rewards/rules` (UI-36). The
-  Chest comes **first of the five under Rewards**: it is the only one with something waiting on it. On a wide screen they are
+  `#/rewards/cases`,
+  `#/rewards/history`, `#/rewards/prizes`, `#/rewards/wishlist` and `#/rewards/rules` (UI-36). Cases comes **first of the five under Rewards**: it is the only one with something waiting on it. On a wide screen they are
   reached from the sidebar (RWD-19); on a phone, which has no sidebar, a **strip of them runs
   across the top of whichever is open**, the one you are on marked, and the **Rewards tab's menu**
   holds them too, so one is two taps away from anywhere in the app (UI-67). Each page answers one question:
@@ -209,7 +208,7 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   a page of its own rather than the foot of how the points stand: a year of days is a long page, and
   how you are doing should not be behind it.
 - **RWD-39** **Rules** is what earns points and what they are worth: the bonus for clearing
-  **Today**, **this week** and **this month** (RWD-27), what the **chest** asks of a day and what
+  **Today**, **this week** and **this month** (RWD-27), what **Cases** asks of a day and what
   its key plays for (CHST-3, CHST-7), and what a point is worth in money (RWD-31).
   What a *task* earns is not here — that is set on the task, with its star (RWD-5), being that
   task's own; everything on Rules is one amount for the whole account.
@@ -250,7 +249,7 @@ and their addresses), `src/app/components/SideNav.tsx` (the entry and its fold),
 `src/storage/rewardRepository.ts`, `firestoreRewardRepository.ts`, `rewardSchema.ts`,
 `prizeRepository.ts`, `firestorePrizeRepository.ts`, `localPrizeRepository.ts`, `prizeSchema.ts` —
 see [Storage](storage.md).
-**The chest**, which a cleared day earns the key to, has [a page of its own](chest.md).
+**Cases**, which a cleared day earns the key to, has [a page of its own](cases.md).
 **Tested in:** `src/core/reward.test.ts`, `src/core/bonus.test.ts`, `src/core/prize.test.ts`,
 `src/core/pointValue.test.ts`, `src/core/redemption.test.ts`, `src/core/task.test.ts`,
 `src/storage/rewardSchema.test.ts`, `src/storage/prizeSchema.test.ts`,

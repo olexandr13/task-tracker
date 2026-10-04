@@ -20,6 +20,7 @@ import {
   tagTypedAtCaret,
   takeTypedTag,
 } from '../descriptionBox'
+import { useFeatureOn } from '../features'
 import { panelItem } from '../panelControls'
 
 /**
@@ -95,7 +96,9 @@ export function TaskDescription({ description, title, tags, knownTags, onChange,
   const dismissed = useRef(false)
   const list = useRef<HTMLUListElement>(null)
   const listId = useId()
-  const suggestions = typing === null ? [] : suggestTags(knownTags, typing.query, tags)
+  // Tags switched off on Settings, `#` is only a character again (FEAT-3).
+  const tagsOn = useFeatureOn('tags')
+  const suggestions = typing === null || !tagsOn ? [] : suggestTags(knownTags, typing.query, tags)
   const isSuggesting = suggestions.length > 0
   const active = Math.min(highlighted, suggestions.length - 1)
 

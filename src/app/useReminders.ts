@@ -38,9 +38,17 @@ export interface ReminderControl {
  * and a morning's worth of notifications at six in the evening would be noise.
  * What a standing notice still has to say is derived from the tasks each render
  * (`standingReminders`), so finishing its task anywhere takes it away.
+ *
+ * Switched off on Settings (FEAT-3), `on` false, nothing is said and the hours
+ * striking meanwhile are spent unsaid: turning reminders back on does not bring
+ * an afternoon's worth of them at once.
  */
-export function useReminders(tasks: readonly Task[] | null): ReminderControl {
+export function useReminders(tasks: readonly Task[] | null, on = true): ReminderControl {
   const [standing, setStanding] = useState<readonly Reminder[]>([])
+  // Switched off, what was standing goes too.
+  if (!on && standing.length > 0) {
+    setStanding([])
+  }
   const [permission, setPermission] = useState<NotifyPermission>(() => notifyPermission())
   const [clock, setClock] = useState(() => new Date())
 
@@ -50,8 +58,10 @@ export function useReminders(tasks: readonly Task[] | null): ReminderControl {
   // The latest tasks, for the tick to read: the tick runs on the clock, not on
   // every render, and must not see the set as it was when it was set up.
   const tasksRef = useRef(tasks)
+  const onRef = useRef(on)
   useLayoutEffect(() => {
     tasksRef.current = tasks
+    onRef.current = on
   })
 
   useEffect(() => {
@@ -60,6 +70,11 @@ export function useReminders(tasks: readonly Task[] | null): ReminderControl {
   }, [])
 
   useEffect(() => {
+    // Switched off: the stretch is spent without a word.
+    if (!onRef.current) {
+      watchedTo.current = clock
+      return
+    }
     const inPlay = tasksRef.current
     // Still loading: the stretch is left unspent rather than read against no
     // tasks at all, so an hour that struck while they arrived is not lost.

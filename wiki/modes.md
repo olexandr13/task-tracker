@@ -2,7 +2,7 @@
 
 The parts of the app that are turned on and off rather than used:
 [Procrastination](just-one.md), which puts one task in front of you and dims the rest, the
-[warm-up](warm-up.md), which allows one more habit with each of its thirty days, the
+[warm-up](warm-up.md), which allows one more habit with each of its thirty days unless it is paused, the
 [nudge](nudges.md), which speaks up when nothing is getting done, and the
 [check-in](check-ins.md), which asks at the top of every hour what was done. Each changes how the rest of the
 app behaves for a while, which is more than a name on a switch can carry — so they have a page,
@@ -16,7 +16,7 @@ and each mode a page of its own that says what it does, and sets what it has to 
   (MODE-7). The addresses are `#/modes` and, for a mode, `#/modes/procrastination`,
   `#/modes/warm-up`, `#/modes/nudge` and `#/modes/check-in` (UI-36).
 - **MODE-2** The page **lists every mode there is** — Procrastination first, then Warm-up, then
-  Nudge, then Check-in — each with its own glyph (🫠, 🌱, 🔔, ⏰), its name, and the one line it is
+  Nudge, then Check-in, less any switched away on Settings with what it needs (FEAT-9) — each with its own glyph (🫠, 🌱, 🔔, ⏰), its name, and the one line it is
   summed up in: *One task out of Today, and everything else dimmed until it is done*, *Increase your
   productivity gradually: one new habit a day, for thirty days*, *Speaks up when nothing has been
   finished for a while, and names the task to pick up*, *Asks at the top of every hour what you did,
@@ -24,12 +24,13 @@ and each mode a page of its own that says what it does, and sets what it has to 
 
 ## Turning one on
 
-- **MODE-3** Each row carries a **switch** that turns its mode on or off from this page, at once
-  and with no confirm, with **`Enabled` or `Disabled` under it** — a track and a knob say which way
-  is on only to someone who already knows which side is which, so the word sits with the switch
-  rather than with the mode's name. Whatever else there is to say about **where the mode stands**
-  — `Resting`, `A win to enjoy`, `Day 3 of 30 · 27 days left` — reads under the line the mode is
-  summed up in, and a mode with nothing to add says nothing there. Starting Procrastination opens
+- **MODE-3** Each row carries a **switch** that turns its mode on or off from this page, with
+  **`Enabled` or `Disabled` under it** — a track and a knob say which way is on only to someone who
+  already knows which side is which, so the word sits with the switch rather than with the mode's
+  name. Procrastination, the nudge and the check-in turn at once, with no confirm. The warm-up asks
+  before it is turned off: enabling it again starts from scratch (WARM-9). Whatever else there is to
+  say about **where the mode stands** — `Resting`, `A win to enjoy`, `Day 3 of 30 · 27 days left` —
+  reads under the line the mode is summed up in, and a mode with nothing to add says nothing there. Starting Procrastination opens
   **Today**, there being nothing to focus on anywhere else (JUST-1); starting or ending the warm-up
   stays where it is (WARM-2). A mode that is on takes the same sky tint its banner wears.
 - **MODE-6** A mode with **nothing to do cannot be turned on**: with everything in Today ticked
@@ -78,7 +79,8 @@ and each mode a page of its own that says what it does, and sets what it has to 
   wins, and the **P** shortcut. The warm-up: **why going gradually is the point** — no rush, no
   extra effort, no promises to yourself you end up breaking — then what each day allows, that only
   new habits are held back, what counts against the allowance, that nothing already there is
-  touched, where it is shown, and how it ends. The nudge, in **one line**: the two ways it arrives,
+  touched, that **Pause** holds the allowance still (WARM-11), where it is shown, and how it ends. The nudge, in
+  **one line**: the two ways it arrives,
   that pressing the notice goes straight to the task, and **how far its reach goes** — while the app
   is open, nothing once it is closed (NUDGE-10). What it watches for and what it names is the line
   it is summed up in, right above (MODE-2), and what there is to set is the **Settings** below

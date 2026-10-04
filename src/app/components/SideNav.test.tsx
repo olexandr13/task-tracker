@@ -2,12 +2,13 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createList, type List } from '../../core'
+import { createList, type FeaturesOff, type List } from '../../core'
+import { FeaturesContext } from '../features'
 import type { View } from '../view'
 import { SideNav } from './SideNav'
 
 /* The sidebar. UI ids refer to wiki/interface.md, TAG ids to wiki/tags.md, RWD ids to
-   wiki/rewards.md, LST ids to wiki/lists.md, MODE ids to wiki/modes.md. */
+   wiki/rewards.md, LST ids to wiki/lists.md, MODE ids to wiki/modes.md, FEAT ids to wiki/features.md. */
 
 afterEach(cleanup)
 
@@ -73,7 +74,7 @@ describe('SideNav', () => {
       'Lists',
       'Inbox',
       'Rewards',
-      'Chest',
+      'Cases',
       'History',
       'Prizes',
       'Wishlist',
@@ -243,7 +244,7 @@ describe('SideNav', () => {
 
     const under = within(screen.getByRole('list', { name: 'Rewards' }))
     expect(under.getAllByRole('button').map((button) => button.textContent)).toEqual([
-      'Chest',
+      'Cases',
       'History',
       'Prizes',
       'Wishlist',
@@ -352,6 +353,33 @@ describe('SideNav', () => {
 
     for (const name of ['Today', 'Week', 'Lists', 'Settings']) {
       expect(screen.getByRole('button', { name }).closest('li')?.className ?? '').not.toMatch(/opacity-25/)
+    }
+  })
+
+  it('has no entry for a page switched off, nor for what is under it (FEAT-2, FEAT-9)', () => {
+    const off: FeaturesOff = ['habits', 'cases', 'balance', 'activity']
+    render(
+      <FeaturesContext value={off}>
+        <SideNav
+          view="today"
+          lists={[]}
+          listsOpen
+          rewardsOpen
+          modesOpen
+          onChange={vi.fn()}
+          onListsOpenChange={vi.fn()}
+          onRewardsOpenChange={vi.fn()}
+          onModesOpenChange={vi.fn()}
+        />
+      </FeaturesContext>,
+    )
+
+    const nav = screen.getByRole('navigation', { name: 'Views' })
+    for (const name of ['Habits', 'Cases', 'Balance', 'Activity log', 'Warm-up', 'Check-in']) {
+      expect(within(nav).queryByRole('button', { name })).toBeNull()
+    }
+    for (const name of ['Rewards', 'History', 'Modes', 'Procrastination', 'Nudge']) {
+      expect(within(nav).getByRole('button', { name })).toBeDefined()
     }
   })
 })

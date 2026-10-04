@@ -62,7 +62,7 @@ are each device's own.
   **sender** — the app's one part that runs on a server (PRIN-16) — pushes the same check-in to it,
   and the device shows it as a notification however long the app has been closed. It asks on the
   **device's own clock**, in its own time zone, and only what the app would: the check-in is on,
-  the hour that ended is one kept to, nothing is logged under it, and it has not been asked already.
+  the modes and the activity log are not switched off on Settings (FEAT-9), the hour that ended is one kept to, nothing is logged under it, and it has not been asked already.
   It comes within the first minutes of the hour — no later than three quarters of the way into it,
   past which the hour is let go — and one waiting for a device that is off is dropped once stale. A
   notification pressed opens the app on the Activity log at that hour, or brings the open app

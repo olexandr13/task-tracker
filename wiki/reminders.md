@@ -39,6 +39,9 @@ the right moment — so a task written down at nine in the morning is not rememb
 - **REM-7** Setting an hour on a task is what **asks the browser for permission** to notify, once —
   that being what setting one is implicitly asking for. It is the same permission the nudge asks for
   (NUDGE-9) and is the browser's to give, so it is granted per device rather than per account.
+- **REM-8** Reminders can be **switched off** on Settings (FEAT-3): nothing is said, on screen or by
+  the browser, setting an hour asks for no permission, and the hours that strike meanwhile are spent
+  unsaid, so switching them back on does not bring an afternoon's worth at once.
 
 ---
 

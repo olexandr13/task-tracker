@@ -2,7 +2,6 @@ import {
   affordablePrizes,
   bonusEarned,
   BONUS_PERIODS,
-  MIN_CHEST_POINTS,
   nextPrize,
   pointsBalance,
   pointsShort,
@@ -14,10 +13,10 @@ import {
   type Redemption,
   type RewardEntry,
 } from '../../core'
-import { describeChestRange } from '../chestLabels'
+import { describeCasesOffer } from '../caseLabels'
 import { describeMoney, describePoints, PERIOD_NAMES } from '../rewardLabels'
 import { VIEW_LABELS } from '../view'
-import { ChestIcon } from './ChestIcon'
+import { CasesIcon } from './CasesIcon'
 import { GiftIcon } from './GiftIcon'
 import { InfoButton } from './InfoButton'
 import { RewardTotals } from './RewardTotals'
@@ -35,12 +34,22 @@ interface RewardsPageProps {
   pointValue: PointValue | null
   /** The moment the totals are counted for: which day, week, month and year it is. */
   now: Date
-  /** What a cleared day's key plays for, and where the chest stands (CHST-22). */
-  chest: { readonly jackpot: number; readonly waiting: boolean; readonly gave: number | null }
+  /**
+   * What a cleared day's key plays for, and where Cases stands (CHST-22);
+   * null while Cases is switched off on Settings (FEAT-3).
+   */
+  cases: {
+    readonly today: { readonly least: number; readonly most: number }
+    readonly daily: { readonly least: number; readonly most: number }
+    /** Weekly’s range on Monday, or null while that case is only planned (CHST-30). */
+    readonly share: { readonly least: number; readonly most: number } | null
+    readonly waiting: boolean
+    readonly gave: number | null
+  } | null
   onOpenPrizes: () => void
   onOpenWishlist: () => void
-  /** Opens the chest, a cleared day's key in hand. */
-  onOpenChest: () => void
+  /** Opens Cases, a cleared day's key in hand. */
+  onOpenCases: () => void
   /** Opens the rules, to set what a period is worth. */
   onOpenRules: () => void
 }
@@ -68,10 +77,10 @@ export function RewardsPage({
   bonuses,
   pointValue,
   now,
-  chest,
+  cases,
   onOpenPrizes,
   onOpenWishlist,
-  onOpenChest,
+  onOpenCases,
   onOpenRules,
 }: RewardsPageProps) {
   const balance = pointsBalance(entries, redemptions)
@@ -148,33 +157,35 @@ export function RewardsPage({
         </dl>
       </section>
 
-      <section aria-label="The chest" className="flex flex-col gap-2">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className={`${heading} flex items-center gap-2`}>
-            <ChestIcon className="size-4 shrink-0 text-neutral-400 dark:text-neutral-500" />
-            {VIEW_LABELS['rewards/chest']}
-          </h2>
-          <button type="button" onClick={onOpenChest} className={link}>
-            {chest.waiting ? 'Open it' : 'Open'}
-          </button>
-        </div>
-        <div
-          className={`${card} flex items-center justify-between gap-3 px-4 py-3.5 ${
-            chest.waiting ? 'border-amber-300 bg-amber-50 dark:border-amber-700/60 dark:bg-amber-950/30' : ''
-          }`}
-        >
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <p className="text-sm text-neutral-900 dark:text-neutral-100">
-              {chest.gave !== null
-                ? `Opened today, for ${describePoints(chest.gave)}.`
-                : chest.waiting
-                  ? 'A key is waiting.'
-                  : 'Clear everything in Today to earn a key.'}
-            </p>
-            <p className={note}>{`One chest a day, for ${describeChestRange(MIN_CHEST_POINTS, chest.jackpot)}.`}</p>
+      {cases !== null && (
+        <section aria-label="Cases" className="flex flex-col gap-2">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className={`${heading} flex items-center gap-2`}>
+              <CasesIcon className="size-4 shrink-0 text-neutral-400 dark:text-neutral-500" />
+              {VIEW_LABELS['rewards/cases']}
+            </h2>
+            <button type="button" onClick={onOpenCases} className={link}>
+              {cases.waiting ? 'Open it' : 'Open'}
+            </button>
           </div>
-        </div>
-      </section>
+          <div
+            className={`${card} flex items-center justify-between gap-3 px-4 py-3.5 ${
+              cases.waiting ? 'border-amber-300 bg-amber-50 dark:border-amber-700/60 dark:bg-amber-950/30' : ''
+            }`}
+          >
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <p className="text-sm text-neutral-900 dark:text-neutral-100">
+                {cases.gave !== null
+                  ? `Opened today, for ${describePoints(cases.gave)}.`
+                  : cases.waiting
+                    ? 'A case is waiting.'
+                    : 'Finish everything in Today to earn a case.'}
+              </p>
+              <p className={note}>{describeCasesOffer(cases.today, cases.daily, cases.share)}</p>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section aria-label="Spending" className="grid gap-2 sm:grid-cols-2">
         <div className={`${card} flex flex-col gap-1.5 px-4 py-3.5`}>

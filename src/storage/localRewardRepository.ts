@@ -1,7 +1,7 @@
 import {
-  DEFAULT_CHEST,
+  DEFAULT_CASES,
   NO_BONUSES,
-  type ChestSettings,
+  type CaseSettings,
   type PeriodBonuses,
   type PointValue,
   type Redemption,
@@ -10,20 +10,20 @@ import {
 import { isRecord } from './plainData'
 import type { PointsLedger, RewardRepository } from './rewardRepository'
 import {
-  CHEST,
+  CASES_SETTING,
   POINT_VALUE,
-  readChestSettings,
+  readCaseSettings,
   readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
   REWARD_SCHEMA_VERSION,
-  toStoredChestSettings,
+  toStoredCaseSettings,
   toStoredPointValue,
   toStoredRedemption,
   toStoredRewardDays,
   toStoredRewardGoal,
-  type StoredChestSettings,
+  type StoredCaseSettings,
   type StoredPointValue,
   type StoredRedemption,
   type StoredRewardDay,
@@ -38,7 +38,7 @@ interface StoredLedger {
   /** What clearing a period earns, by period (RWD-24, RWD-29). A period with none is not in here. */
   goals: Record<string, StoredRewardGoal>
   /** The standing settings of the points, by name (RWD-31, CHST-7). One not set is not in here. */
-  settings: Record<string, StoredPointValue | StoredChestSettings>
+  settings: Record<string, StoredPointValue | StoredCaseSettings>
 }
 
 type Listener = (ledger: PointsLedger) => void
@@ -62,7 +62,7 @@ function readStore(): StoredLedger {
       // holds none, rather than being unreadable for the lack of them.
       goals: isRecord(parsed.goals) ? (parsed.goals as Record<string, StoredRewardGoal>) : {},
       settings: isRecord(parsed.settings)
-        ? (parsed.settings as Record<string, StoredPointValue | StoredChestSettings>)
+        ? (parsed.settings as Record<string, StoredPointValue | StoredCaseSettings>)
         : {},
     }
   } catch (error) {
@@ -117,10 +117,10 @@ function toLedger(stored: StoredLedger): PointsLedger {
     console.warn('Ignoring the saved guest point value: unexpected shape.')
   }
 
-  const savedChest: unknown = stored.settings[CHEST]
-  const chest = savedChest === undefined ? null : readChestSettings(savedChest)
-  if (savedChest !== undefined && chest === null) {
-    console.warn('Ignoring the saved guest chest settings: unexpected shape.')
+  const savedCases: unknown = stored.settings[CASES_SETTING]
+  const cases = savedCases === undefined ? null : readCaseSettings(savedCases)
+  if (savedCases !== undefined && cases === null) {
+    console.warn('Ignoring the saved guest cases settings: unexpected shape.')
   }
 
   return {
@@ -128,7 +128,7 @@ function toLedger(stored: StoredLedger): PointsLedger {
     redemptions,
     bonuses: bonuses as PeriodBonuses,
     pointValue,
-    chest: chest ?? DEFAULT_CHEST,
+    cases: cases ?? DEFAULT_CASES,
   }
 }
 
@@ -215,9 +215,9 @@ export function createLocalRewardRepository(): RewardRepository {
       emit(stored)
     },
 
-    async setChestSettings(chest) {
+    async setCaseSettings(cases) {
       const stored = readStore()
-      stored.settings[CHEST] = toStoredChestSettings(chest)
+      stored.settings[CASES_SETTING] = toStoredCaseSettings(cases)
       writeStore(stored)
       emit(stored)
     },
@@ -238,10 +238,10 @@ export function createLocalRewardRepository(): RewardRepository {
       emit(stored)
     },
 
-    async importChestSettings(chest) {
+    async importCaseSettings(cases) {
       const stored = readStore()
-      if (stored.settings[CHEST] !== undefined) return
-      stored.settings[CHEST] = toStoredChestSettings(chest)
+      if (stored.settings[CASES_SETTING] !== undefined) return
+      stored.settings[CASES_SETTING] = toStoredCaseSettings(cases)
       writeStore(stored)
       emit(stored)
     },
@@ -253,14 +253,14 @@ export function loadGuestLedger(): PointsLedger {
 }
 
 /**
- * What the guest asks of the chest, or null while nothing says — which the
+ * What the guest asks of Cases, or null while nothing says — which the
  * ledger cannot answer, standing at what an account starts with either way. A
  * backup needs to tell the two apart, so that importing a file never writes over
  * settings this device chose for itself.
  */
-export function loadGuestChestSettings(): ChestSettings | null {
-  const saved: unknown = readStore().settings[CHEST]
-  return saved === undefined ? null : readChestSettings(saved)
+export function loadGuestCaseSettings(): CaseSettings | null {
+  const saved: unknown = readStore().settings[CASES_SETTING]
+  return saved === undefined ? null : readCaseSettings(saved)
 }
 
 /** Writes a full ledger (backup import), merging days field by field. */
@@ -269,7 +269,7 @@ export function replaceGuestLedger(
   redemptions: readonly Redemption[],
   bonuses: PeriodBonuses,
   pointValue: PointValue | null,
-  chest: ChestSettings | null,
+  cases: CaseSettings | null,
 ): void {
   const stored = empty()
   for (const day of toStoredRewardDays(entries)) stored.days[day.day] = day
@@ -278,7 +278,7 @@ export function replaceGuestLedger(
     if (points !== null) stored.goals[period] = toStoredRewardGoal(period as keyof PeriodBonuses, points)
   }
   if (pointValue !== null) stored.settings[POINT_VALUE] = toStoredPointValue(pointValue)
-  if (chest !== null) stored.settings[CHEST] = toStoredChestSettings(chest)
+  if (cases !== null) stored.settings[CASES_SETTING] = toStoredCaseSettings(cases)
   writeStore(stored)
   emit(stored)
 }
