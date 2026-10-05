@@ -7,7 +7,6 @@ import {
   caseOpened,
   caseQuarter,
   caseSpan,
-  caseWorking,
   nextShareAt,
   openSpan,
   summarize,
@@ -19,7 +18,6 @@ import {
   type CaseQuarter,
   type CaseSettings,
   type CaseSpan,
-  type CaseWorking,
   type RewardEntry,
   type Task,
 } from '../core'
@@ -36,8 +34,6 @@ export interface Cases {
   readonly jackpot: number
   /** What each case can pay, from the ledger as it stands (CHST-10). */
   readonly spans: Readonly<Record<CaseSource, CaseSpan>>
-  /** The numbers each range is worked out from, for the i on Cases (CHST-22). */
-  readonly workings: Readonly<Record<CaseSource, CaseWorking>>
   /** Why there is nothing to open, or null while a key is waiting. */
   readonly blocked: CaseBlock | null
   /** How many tasks Today asked for, which is what `tooSmall` is measured against. */
@@ -139,15 +135,10 @@ export function useCases(
   const blocked = ready ? caseBlock(tasks, ledger.entries, settings, moment) : 'unclear'
   const opened = caseOpened(ledger.entries, moment)
   const jackpot = caseJackpot(ledger.entries, moment)
-  const workings = {
-    today: caseWorking('today', ledger.entries, moment),
-    daily: caseWorking('daily', ledger.entries, moment),
-    week: caseWorking('week', ledger.entries, moment),
-  }
   const spans = {
-    today: workings.today.span,
-    daily: workings.daily.span,
-    week: workings.week.span,
+    today: caseSpan('today', ledger.entries, moment),
+    daily: caseSpan('daily', ledger.entries, moment),
+    week: caseSpan('week', ledger.entries, moment),
   }
   const dayAsked = summarize(tasks, 'today', moment).total
   const slots = caseSlots(tasks, ledger.entries, settings, moment)
@@ -207,7 +198,6 @@ export function useCases(
     settings,
     jackpot,
     spans,
-    workings,
     blocked,
     dayAsked,
     opened,

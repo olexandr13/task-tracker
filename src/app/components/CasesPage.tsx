@@ -4,7 +4,6 @@ import { CASE_RESULT_HOLD_MS } from '../caseTiming'
 import {
   CASES_ODDS,
   CASES_RULES,
-  describeCaseWorking,
   describeTally,
   PRACTICE_BAND,
   PRACTICE_JACKPOT_LABEL,
@@ -175,7 +174,6 @@ export function CasesPage({ cases, practising, onPractisingChange }: CasesPagePr
               {rule.lines.map((line) => (
                 <p key={line}>{line}</p>
               ))}
-              <p>{describeCaseWorking(cases.workings[rule.source])}</p>
             </div>
           ))}
           <p>{CASES_ODDS}</p>

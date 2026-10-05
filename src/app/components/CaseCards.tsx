@@ -33,18 +33,18 @@ interface CaseCardsProps {
  * more today raises the next reward. Weekly is among them every day: planned
  * until Monday, then ready (CHST-30).
  *
- * The cards share their rows. A possible win sits on the first of them, and a
- * case without one leaves that row empty, so the crates and the names stay
- * level (CHST-28). The three sit in a row once there is room; on a narrow
- * screen Weekly wraps under the other two.
+ * The cards share their rows, so the names stay level (CHST-28). A possible
+ * win sits inside a ready case, above the crate. While any case is ready,
+ * every case keeps that band, so the crates stay level. The three sit in a
+ * row once there is room; on a narrow screen Weekly wraps under the other two.
  */
 export function CaseCards({ ranges, slots, busy, onOpen }: CaseCardsProps) {
   if (slots.length === 0) return null
 
-  // The win is only drawn on a ready case. Reserving the row whenever one
-  // case has it keeps the other card from sitting higher.
+  // The win is only drawn on a ready case. The band stays on every case while
+  // one of them is ready, so a crate without a win does not sit higher.
   const reserveWin = slots.some((slot) => slot.state === 'ready')
-  const span = reserveWin ? 'row-span-4' : 'row-span-3'
+  const span = 'row-span-3'
   const shell = `${span} grid w-full min-w-0 grid-rows-subgrid rounded-2xl border border-transparent p-1.5 text-center`
   const wide = slots.length > 2
 
@@ -65,12 +65,24 @@ export function CaseCards({ ranges, slots, busy, onOpen }: CaseCardsProps) {
         const caption = opened ? emphasizeToday(describeNextCase(slot.source)) : ready ? SOURCE_RULE[slot.source] : waitingLine(slot.source)
         const body = (
           <>
-            {reserveWin && <span className="case-card-win w-full">{ready && <CaseRange odds={odds} />}</span>}
-            <span className="relative block aspect-[5/4] w-full overflow-hidden rounded-xl">
+            <span className="case-card-plate relative flex h-full w-full flex-col overflow-hidden rounded-xl">
               <span className={`absolute inset-0 bg-neutral-900 ${plateDim}`}>
                 <span aria-hidden="true" className={`absolute inset-x-0 top-0 z-[1] h-1 ${STRIPE[slot.source]}`} />
-                <span className={`absolute inset-[8%] ${opened ? 'opacity-40' : ''}`}>
-                  <CaseArt state={opened ? 'open' : 'shut'} />
+              </span>
+              {reserveWin && (
+                <span className="case-card-head z-[2] mx-1.5 mt-2 flex h-10 shrink-0 items-center">
+                  {ready && (
+                    <span className="case-card-win flex h-full w-full items-center">
+                      <CaseRange odds={odds} />
+                    </span>
+                  )}
+                </span>
+              )}
+              <span className={`relative z-[1] mx-[8%] flex flex-1 items-center ${reserveWin ? 'mt-1 mb-[8%]' : 'my-[8%]'} ${opened ? 'opacity-40' : plateDim}`}>
+                <span className="relative aspect-[5/4] w-full">
+                  <span className="absolute inset-0">
+                    <CaseArt state={opened ? 'open' : 'shut'} />
+                  </span>
                 </span>
               </span>
               {slot.at !== null && (

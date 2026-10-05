@@ -116,13 +116,6 @@ describe('where Cases stands', () => {
       { taskId: 'b', day: '2026-09-17', points: 12 },
     ]
     expect(setUp({ entries }).result.current.spans.today).toEqual({ least: 12, most: 21 })
-    expect(setUp({ entries }).result.current.workings.today).toEqual({
-      source: 'today',
-      cheapest: 12,
-      earned: 42,
-      half: 21,
-      span: { least: 12, most: 21 },
-    })
   })
 
   it('pays the daily case from yesterday’s rewards divided by yesterday’s tasks (CHST-10)', () => {
@@ -131,13 +124,6 @@ describe('where Cases stands', () => {
       { taskId: 'b', day: '2026-09-16', points: 8 },
     ]
     expect(setUp({ entries }).result.current.spans.daily).toEqual({ least: 1, most: 9 })
-    expect(setUp({ entries }).result.current.workings.daily).toEqual({
-      source: 'daily',
-      earned: 18,
-      tasks: 2,
-      share: 9,
-      span: { least: 1, most: 9 },
-    })
   })
 
   it('pays Weekly from last week, ready on Monday and planned until then (CHST-30)', () => {
@@ -149,14 +135,6 @@ describe('where Cases stands', () => {
     const { result } = setUp({ tasks: [], entries, now: monday })
 
     expect(result.current.spans.week).toEqual({ least: 4, most: 7 })
-    expect(result.current.workings.week).toEqual({
-      source: 'week',
-      cheapest: 4,
-      earned: 14,
-      tasks: 2,
-      share: 7,
-      span: { least: 4, most: 7 },
-    })
     expect(result.current.slots.find((slot) => slot.source === 'week')?.state).toBe('ready')
     expect(setUp({ entries }).result.current.slots.find((slot) => slot.source === 'week')?.state).toBe('waiting')
   })

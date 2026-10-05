@@ -5,12 +5,7 @@ import {
   type CaseOdds,
   type CaseQuarter,
   type CaseSpan,
-  type CaseWorking,
-  type DailyWorking,
-  type TodayWorking,
-  type WeekWorking,
 } from '../core'
-import { describePoints } from './rewardLabels'
 
 /**
  * How Cases reads on screen. The rules live in ../core/cases; wording is
@@ -23,12 +18,7 @@ import { describePoints } from './rewardLabels'
 
 export const CASES_NAME = 'Cases'
 
-/**
- * The rules behind the i on Cases (CHST-22, UI-73). One case a block.
- * Where the reward depends on a day, on yesterday, or on last week, the rule
- * says exactly how. The working for that rule, as the ledger stands, is
- * `describeCaseWorking`.
- */
+/** The rules behind the i on Cases (CHST-22, UI-73). One case a block. */
 export const CASES_RULES: readonly {
   readonly source: CaseSource
   readonly name: string
@@ -38,8 +28,8 @@ export const CASES_RULES: readonly {
     source: 'today',
     name: 'Payday',
     lines: [
-      'Finish everything in Today and this case is yours.',
-      'The reward depends on what you finish today: from the cheapest task finished today, up to half of everything earned today.',
+      'Finish everything in "Today" to get this case.',
+      'Reward depends on number of points earned today.',
     ],
   },
   {
@@ -47,71 +37,18 @@ export const CASES_RULES: readonly {
     name: 'Drop',
     lines: [
       'Arrives once a day, at a random time.',
-      'The reward depends on yesterday: from 1 point, up to everything earned yesterday divided by how many tasks that was.',
+      'Reward depends on number of points earned yesterday.',
     ],
   },
   {
     source: 'week',
     name: 'Weekly',
     lines: [
-      'Appears on Monday.',
-      'The reward depends on last week: from the cheapest task finished last week, up to everything earned last week divided by how many tasks that was.',
+      'Appears weekly on Monday.',
+      'The reward depends on number of points earned last week.',
     ],
   },
 ]
-
-/**
- * How this case’s range stands just now, in one sentence of the working and
- * one of what it pays (CHST-22). The short rule under the case says where the
- * number comes from; this is that sum, from the ledger.
- */
-export function describeCaseWorking(working: CaseWorking): string {
-  switch (working.source) {
-    case 'today':
-      return describeTodayWorking(working)
-    case 'daily':
-      return describeDailyWorking(working)
-    case 'week':
-      return describeWeekWorking(working)
-  }
-}
-
-function describeTodayWorking(working: TodayWorking): string {
-  const pays = `Payday pays ${describeCaseRange(working.span.least, working.span.most)}.`
-  if (working.cheapest === null && working.earned === 0) {
-    return `No task has been finished today, and nothing has been earned yet. ${pays}`
-  }
-
-  const cheapest =
-    working.cheapest === null
-      ? 'No task has been finished today.'
-      : `The cheapest task finished today is ${describePoints(working.cheapest)}.`
-  const half =
-    working.cheapest !== null && working.half < working.cheapest
-      ? `${describePoints(working.half)}, which is less than that task`
-      : describePoints(working.half)
-
-  return `${cheapest} Everything earned today is ${describePoints(working.earned)}, so half is ${half}. ${pays}`
-}
-
-function describeDailyWorking(working: DailyWorking): string {
-  const pays = `The Drop pays ${describeCaseRange(working.span.least, working.span.most)}.`
-  if (working.tasks === 0) return `Yesterday had no tasks. ${pays}`
-
-  return `Yesterday earned ${describePoints(working.earned)} across ${describeTasks(working.tasks)}, which comes to ${describePoints(working.share)}. ${pays}`
-}
-
-function describeWeekWorking(working: WeekWorking): string {
-  const pays = `Weekly pays ${describeCaseRange(working.span.least, working.span.most)}.`
-  if (working.cheapest === null) return `Last week had no tasks. ${pays}`
-
-  const share =
-    working.share < working.cheapest
-      ? `${describePoints(working.share)}, which is less than that task`
-      : describePoints(working.share)
-
-  return `The cheapest task finished last week is ${describePoints(working.cheapest)}. Last week earned ${describePoints(working.earned)} across ${describeTasks(working.tasks)}, which comes to ${share}. ${pays}`
-}
 
 /** Every amount inside a case’s own range is drawn the same way (CHST-10). */
 export const CASES_ODDS = 'Each amount in a case’s range is as likely as any other.'
@@ -164,11 +101,11 @@ export function describeOpenCase(source: CaseSource): string {
 /** What a case still on its way says, in place of a possible win. */
 export const SOURCE_WAITING: Record<CaseSource, string> = {
   today:
-    'Finish everything in Today and a case is yours. Reward depends on the cheapest task today, up to half of today’s rewards.',
+    'Finish everything in Today to get this case. Reward depends on number of points earned today.',
   daily:
-    'Arrives once a day, at a random time. Reward depends on yesterday: from 1 point, up to yesterday’s rewards divided by yesterday’s tasks.',
+    'Arrives once a day, at a random time. Reward depends on number of points earned yesterday.',
   week:
-    'Arrives on Monday. Reward depends on last week: from the cheapest task last week, up to last week’s rewards divided by last week’s tasks.',
+    'Appears weekly on Monday. Reward depends on number of points earned last week.',
 }
 
 /**

@@ -218,7 +218,7 @@ export function openSpan(span: CaseSpan, random: () => number = Math.random): Ca
 
 /**
  * The numbers one case's range is worked out from (CHST-10). `span` is what
- * the case then pays. The rest is the working, so it can be shown.
+ * the case then pays.
  */
 export type CaseWorking = TodayWorking | DailyWorking | WeekWorking
 
