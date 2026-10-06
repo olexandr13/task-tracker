@@ -186,16 +186,25 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   Lists** for anyone who does not know the tab's menu is there (UI-45), and **Tasks** stays marked
   while either is open, or one list or the Inbox. The sidebar keeps its own entries, so the buttons
   are only on a phone.
-- **UI-35** **Settings** holds the signed-in account and the way out (AUTH-9), and under it
-  **Backup**: exporting the account to a file and importing one back (BAK-1, BAK-4), then
-  **Features**: a switch for each part of the app that can be done without (FEAT-1), then the
-  **Theme** (UI-63) and **View settings**: how the pages start out, kept
-  on this device, one switch to a line, each naming the page it speaks for. It holds **Show habit
-  details by default** (HAB-23), and anything later about how a page starts out belongs there
-  rather than on a card of its own. It is not the task views' **View settings** panel (UI-41),
-  which stands beside the add box and changes those views as you read them. Then **Cases**, holding
-  Cases' **Practice mode** switch (CHST-21): a way to try Cases rather than to use it, so
-  not on Cases' page. A card whose part is switched off goes with it (FEAT-3). What belongs to one
+- **UI-35** **Settings** is a tree: a few **sections**, each a card whose heading **folds it away**
+  and brings it back, and inside a section, settings belonging to something sit **under** it. The
+  whole heading row is the button, with a chevron in front of the name that points down while the
+  section is open and to the side while it is folded; a folded section is its heading alone. In
+  order:
+  - **Account** — the signed-in account and the way out (AUTH-9), and under them **Backup**:
+    exporting the account to a file and importing one back (BAK-1, BAK-4).
+  - **Features** — a switch for each part of the app that can be done without (FEAT-1), and under a
+    part with settings of its own, those settings, folded under its switch (FEAT-10): **Show habit
+    details by default** under Habits (HAB-23); **Count unrewarded tasks** (CHST-32) and **Practice
+    mode** (CHST-21) under Cases.
+  - **Appearance** — the **Theme** (UI-63).
+
+  Every section starts **open**, so the page shows everything the first time it is opened, and a
+  feature's own settings start **folded**, so the features read as a list. What is folded is kept
+  on this device (STORE-57), as the sidebar's groups are (STORE-31): a phone and a desktop are each
+  folded their own way, and the page opens as it was left. Anything new to set goes in the section
+  it belongs to, and a setting of one part of the app under that part's switch, rather than on a
+  card of its own. What belongs to one
   **mode** is set on that mode's own page instead, not here (MODE-12): the nudge's span and the hours
   it may speak in are read beside what the nudge does (NUDGE-9). Under those, the **version** of the app that is open — `MAJOR.MINOR.PATCH` from `package.json`,
   baked in when the app is built. The number is bumped with each change to the app (patch for a
@@ -436,7 +445,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   appears: a task's title in the add box, in the sheet and in the row alike.
 - **UI-73** A page or settings card that has something to explain — what it is for, how it works —
   carries an **i** beside its heading rather than the explanation sitting on the page itself: a tap
-  opens it in a sheet (UI-48), closing the same ways any sheet does. The page stays to its controls;
+  opens it in a sheet (UI-48), headed with what it explains — or with a heading of its own where
+  that says more, as Cases' does (CHST-22) — **centred**, and closing the same ways any sheet does.
+  The **i** itself is always named for what it explains: *About Cases*. The page stays to its controls;
   the words are a tap away for whoever wants them, read once or come back to.
 - **UI-24** The box a description is written in reads as a multi-line text box, and the emphasis
   in it is marked up as well as drawn: bold words are heard as bold rather than only seen.
@@ -455,7 +466,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-39** The app's icon, shown in the browser tab, is a **progress ring** about three-quarters full
   around a check, drawn in the app's blue on a dark tile, so it reads well on light and dark tab bars.
   The same icon stands for the app once installed on a home screen or a desktop (OFF-10).
-- **UI-63** **Settings** has a **Theme**: **System**, **Light** or **Dark**, one always chosen, side by
+- **UI-63** **Settings** has a **Theme**, under **Appearance** (UI-35): **System**, **Light** or **Dark**, one always chosen, side by
   side as one control. **System** — where it starts — follows the device's light or dark mode, and
   changes with it; **Light** and **Dark** stay put whatever the device is set to. Picking one colours
   the whole app at once, the sign-in screen included, the browser's own parts (UI-11) and the bar a
@@ -503,8 +514,12 @@ button and its panel), `src/app/components/ViewOptionsMenu.tsx` (the
 task views' options), `src/app/useDeviceSetting.ts` (keeping them on this device), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/components/PickerPanel.tsx` (what all of them open: the aside beside a row, the sheet inside a sheet, UI-64), `src/app/usePanelPlacement.ts` (an aside kept inside the window and brought into view), `src/app/useLongPress.ts` (a press told from a
 long press), `src/app/useRowSwipe.ts` and `src/app/rowSwipe.ts` (a phone's swipe to complete or
 delete), `src/app/components/SettingsList.tsx` (and the version on it, from `package.json` via
-`vite.config.ts`), `src/app/components/AccountCard.tsx` (the account on it), `BackupCard.tsx` (the backup on it),
-`ThemeCard.tsx` (the theme on it), `ViewSettingsCard.tsx` (the View settings on it, holding the habits switch, HAB-23), `CasesPracticeCard.tsx` (Cases' practice switch on it, CHST-21), `src/app/theme.ts` and `src/app/useTheme.ts` (the theme worn by the page),
+`vite.config.ts`), `src/app/components/SettingsSection.tsx` (a section that folds),
+`src/storage/settingsLayoutRepository.ts`, `settingsLayoutSchema.ts` and
+`localStorageSettingsLayoutRepository.ts` (what is folded, kept on this device),
+`src/app/components/AccountSummary.tsx` (the account on it), `BackupActions.tsx` (the backup on it),
+`ThemePicker.tsx` (the theme on it), `FeatureSwitches.tsx` (the features, and a feature's own settings under it),
+`CasesSettings.tsx` (Cases' settings under Cases: counting tasks without points, CHST-32, and practice, CHST-21), `src/app/theme.ts` and `src/app/useTheme.ts` (the theme worn by the page),
 `index.html` (the theme put on before the page is first drawn), `src/app/view.ts` (the views, and which is above which), `src/app/useView.ts` (the view kept in the address, and back climbing a level), `src/app/overlayHistory.ts` (back closing a sheet rather than leaving the app, UI-71), `src/app/viewIcons.ts` (each
 view's icon), `src/app/components/TickIcon.tsx` (the tick in a box that is ticked off),
 `src/app/rowControls.ts` (the shape and tones a row's controls share — a thumb's square in a
@@ -517,8 +532,9 @@ line standing for a group of choices, and the way back out of the ones it opens)
 **Tested in:** `src/app/components/SheetActions.test.tsx` (the row of icons and its **i**), `src/app/components/InfoButton.test.tsx` (the **i** beside a heading and the sheet it opens), `src/app/components/PickerPanel.test.tsx` (the aside and the sheet), `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
 items are large enough for a finger), `src/app/components/MorePage.test.tsx` (More's links), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
 view in the address, and back going a level up), `src/app/overlayHistory.test.ts` (back closing a sheet, and a sheet over a sheet first), `src/app/view.test.ts` (which view is above which), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel),
-`src/app/components/SettingsList.test.tsx` (the version on Settings, and the habits and cases practice switches on it),
-`src/app/components/ThemeCard.test.tsx` (picking a theme, by click and by arrow keys),
+`src/app/components/SettingsList.test.tsx` (the sections and their folding, the version, and the settings under Habits and Cases),
+`src/storage/settingsLayoutSchema.test.ts` (what is folded, read back), `src/app/useDeviceSetting.test.ts`,
+`src/app/components/ThemePicker.test.tsx` (picking a theme, by click and by arrow keys),
 `src/app/theme.test.ts` (the theme on the page and the bar, and `index.html` reading it back), `src/test/formFields.test.ts`
 (that every box in `src/app` carries a name for the browser, UI-69, read from the components' source by
 `src/test/formFields.ts`), `src/app/components/TaskItem.test.tsx`

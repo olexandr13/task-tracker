@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { CASE_FOR_SOURCE, CASE_QUARTERS, caseQuarter, oddsForSpan, openCase, type CaseOdds, type CaseSlot, type CaseSource, type CaseOpen, type CaseQuarter } from '../../core'
 import { CASE_RESULT_HOLD_MS } from '../caseTiming'
 import {
-  CASES_ODDS,
-  CASES_RULES,
+  CASES_RULES_HEADING,
   describeTally,
   PRACTICE_BAND,
   PRACTICE_JACKPOT_LABEL,
@@ -16,6 +15,7 @@ import {
 import type { Cases as CasesState } from '../useCases'
 import { CaseOpening } from './CaseOpening'
 import { CaseCards } from './CaseCards'
+import { CaseRules } from './CaseRules'
 import { InfoButton } from './InfoButton'
 
 const heading = 'text-sm font-medium text-neutral-700 dark:text-neutral-300'
@@ -167,20 +167,18 @@ export function CasesPage({ cases, practising, onPractisingChange }: CasesPagePr
   return (
     <div className="flex flex-col gap-6">
       <div className="flex">
-        <InfoButton label="Cases">
-          {CASES_RULES.map((rule) => (
-            <div key={rule.source} className="flex flex-col gap-1">
-              <h3 className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{rule.name}</h3>
-              {rule.lines.map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-            </div>
-          ))}
-          <p>{CASES_ODDS}</p>
+        <InfoButton label="Cases" heading={CASES_RULES_HEADING}>
+          <CaseRules countUnpaid={cases.settings.countUnpaid} />
         </InfoButton>
       </div>
 
-      <CaseCards ranges={ranges} slots={slots} busy={busy} onOpen={openSource} />
+      <CaseCards
+        ranges={ranges}
+        slots={slots}
+        busy={busy}
+        countUnpaid={cases.settings.countUnpaid}
+        onOpen={openSource}
+      />
 
       {performance !== null && (
         <div className="flex justify-center">

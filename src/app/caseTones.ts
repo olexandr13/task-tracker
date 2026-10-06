@@ -1,4 +1,4 @@
-import type { CaseQuarter } from '../core'
+import type { CaseQuarter, CaseSource } from '../core'
 
 /**
  * What each quarter of the jackpot looks like (CHST-15). Every card on the reel
@@ -58,4 +58,15 @@ export const CASE_UNKNOWN_TONE: CaseTone = {
   light: '#e7e0cf',
   deep: '#8a8270',
   points: 'text-stone-700 dark:text-stone-200',
+}
+
+/**
+ * A band of each case's own colour, so the cases read apart before their names
+ * do: along the top of a card on the page, down the side of its rule (CHST-22,
+ * CHST-28).
+ */
+export const CASE_STRIPE: Record<CaseSource, string> = {
+  today: 'bg-amber-400',
+  daily: 'bg-fuchsia-400',
+  week: 'bg-sky-400',
 }

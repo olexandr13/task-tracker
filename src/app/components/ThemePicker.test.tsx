@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Theme } from '../../storage/themeRepository'
-import { ThemeCard } from './ThemeCard'
+import { ThemePicker } from './ThemePicker'
 
 /* The theme on Settings (UI-63 in wiki/interface.md). */
 
@@ -14,9 +14,9 @@ function checked(name: string) {
   return (screen.getByRole('radio', { name }) as HTMLInputElement).checked
 }
 
-describe('ThemeCard', () => {
+describe('ThemePicker', () => {
   it('offers System, Light and Dark, with the current one chosen', () => {
-    render(<ThemeCard theme="system" onChange={vi.fn()} />)
+    render(<ThemePicker theme="system" onChange={vi.fn()} />)
 
     expect(screen.getByRole('radiogroup', { name: 'Theme' })).not.toBeNull()
     expect(screen.getAllByRole('radio').map((radio) => radio.getAttribute('value'))).toEqual(['system', 'light', 'dark'])
@@ -27,7 +27,7 @@ describe('ThemeCard', () => {
   it('picks a theme with a click', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<ThemeCard theme="dark" onChange={onChange} />)
+    render(<ThemePicker theme="dark" onChange={onChange} />)
 
     await user.click(screen.getByText('Light'))
 
@@ -40,7 +40,7 @@ describe('ThemeCard', () => {
     function Card() {
       const [theme, setTheme] = useState<Theme>('system')
       return (
-        <ThemeCard
+        <ThemePicker
           theme={theme}
           onChange={(next) => {
             onChange(next)

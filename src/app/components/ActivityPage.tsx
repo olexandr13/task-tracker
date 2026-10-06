@@ -9,6 +9,7 @@ import {
   hoursOfDay,
   knownActivities,
   loggedHours,
+  otherHoursSoFar,
   shiftActivityPeriod,
   toLocalDay,
   type ActivityChange,
@@ -26,6 +27,7 @@ import {
   describeNothingLogged,
   describePeriodInSentence,
   describePeriodTitle,
+  EVERY_HOUR,
   isCurrentPeriod,
   PERIOD_CHOICES,
 } from '../activityLabels'
@@ -40,6 +42,8 @@ import { ModeRow } from './ModesPage'
 import { TimeSplitChart } from './TimeSplitChart'
 
 const card = 'rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+const reveal =
+  'flex h-8 items-center gap-1 self-start rounded-lg px-2 text-sm text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-100 md:h-7 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:active:bg-neutral-800'
 const stepper =
   'flex size-9 shrink-0 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-100 md:size-7 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:active:bg-neutral-800'
 
@@ -92,12 +96,15 @@ export function ActivityPage({
   const [period, setPeriod] = useState<ActivityPeriod>('day')
   const [anchor, setAnchor] = useState<LocalDay>(initialSlot?.day ?? today)
   const [pickedHour, setPickedHour] = useState<number | null>(initialSlot?.hour ?? null)
+  // Whether today lists every hour so far, not only the hours to log (ACT-20).
+  const [everyHour, setEveryHour] = useState(false)
   const [editing, setEditing] = useState<ActivityEntry | null>(null)
   const [pinned, setPinned] = useState<string | null>(null)
   const [pointed, setPointed] = useState<string | null>(null)
   const input = useRef<HTMLInputElement>(null)
   const form = useRef<HTMLDivElement>(null)
   const headingId = useId()
+  const hoursId = useId()
   // Asks for the form to be brought into view with the caret in it — once the
   // render that points it at its hour or record is on screen, since a record
   // being changed starts a form of its own.
@@ -124,7 +131,11 @@ export function ActivityPage({
   const changing = editing === null ? null : (entries.find((entry) => entry.id === editing.id) ?? null)
   // The hour picked in the list — while a record is changed, the one it is moved to (ACT-10).
   const hour = pickedHour ?? changing?.hour ?? defaultLogSlot(entries, window, anchor, now).hour
-  const hours = [...new Set([...hoursOfDay(entries, window, anchor, now), hour])].sort((a, b) => a - b)
+  // Today's other hours so far, listed on asking (ACT-20); the one picked is listed either way.
+  const others = otherHoursSoFar(entries, window, anchor, now).filter((other) => other !== hour)
+  const hours = [...new Set([...hoursOfDay(entries, window, anchor, now), ...(everyHour ? others : []), hour])].sort(
+    (a, b) => a - b,
+  )
 
   function show(nextPeriod: ActivityPeriod, nextAnchor: LocalDay) {
     setPeriod(nextPeriod)
@@ -132,6 +143,7 @@ export function ActivityPage({
       setAnchor(nextAnchor)
       setPickedHour(null)
       setEditing(null)
+      setEveryHour(false)
     }
   }
 
@@ -275,7 +287,21 @@ export function ActivityPage({
             />
           </div>
 
+          {others.length > 0 && (
+            <button
+              type="button"
+              onClick={() => { setEveryHour(!everyHour) }}
+              aria-expanded={everyHour}
+              aria-controls={hoursId}
+              className={reveal}
+            >
+              <ChevronIcon className={`size-3.5${everyHour ? ' rotate-180' : ''}`} />
+              {everyHour ? EVERY_HOUR.hide : EVERY_HOUR.show}
+            </button>
+          )}
+
           <ActivityHours
+            id={hoursId}
             day={anchor}
             hours={hours}
             entries={entries}

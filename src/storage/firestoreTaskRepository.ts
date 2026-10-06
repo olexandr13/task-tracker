@@ -30,7 +30,7 @@ function asked(tasks: CollectionReference, filters: readonly TaskFilter[]): Quer
  * alone (`firestore.rules`).
  *
  * Not every task is read as the app opens: history, done work finished before
- * this week and this month began, is left behind until a span reaching back to
+ * last week and this month began, is left behind until a span reaching back to
  * it is opened (STORE-55). What is held is the answer to several questions
  * asked at once (./taskQueries), put together in ./heldTasks.
  *

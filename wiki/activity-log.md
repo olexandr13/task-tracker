@@ -12,7 +12,7 @@ having to be a task first. The [Check-in](check-ins.md) asks for it at the top o
   heading **Activity log** with an **i** beside it (UI-73), saying in plain sentences what the page
   is for and how each control is used; then the Check-in's row (ACT-19); then what the period shown
   adds up to (ACT-12 to ACT-18); and, on a day, the day itself — the form to add to it and its hours
-  (ACT-2 to ACT-11). It has no box for adding a task and no Plus: it is not a list of tasks.
+  (ACT-2 to ACT-11, ACT-20). It has no box for adding a task and no Plus: it is not a list of tasks.
 
 ## Adding to it
 
@@ -51,17 +51,17 @@ having to be a task first. The [Check-in](check-ins.md) asks for it at the top o
 
 - **ACT-7** On **Day** the hours are listed under the form, in clock order: the hours **meant to be
   logged** (ACT-17) that have begun — all of them on a day gone by — and any other hour with something
-  logged under it, so a record made at night is never hidden. The hour under way is marked **now**,
-  and the hour the form is pointed at is picked out. Each hour lists its records in the order they
-  were written down, each as what and how long — `Work 45m` — after a swatch of its activity's colour,
-  and ends with the hour's total. A long day **scrolls inside its own box** rather than pushing the
+  logged under it, so a record made at night is never hidden; today, on asking, every other hour so
+  far as well (ACT-20). The hour under way is marked **now**, and the hour the form is pointed at is
+  picked out. Each hour lists its records in the order they were written down, each as what and how
+  long — `Work 45m` — after a swatch of its activity's colour, and ends with the hour's total. A long day **scrolls inside its own box** rather than pushing the
   page down, and the hour picked is kept in view in it, scrolled within the box alone.
 - **ACT-8** Each hour carries a **bar the hour long**: a full bar is the whole hour, each record a
   piece of it in its activity's colour (ACT-16), so a day read down the list shows at a glance which
   hours were full, which half-empty and which were what. More than an hour logged under one hour
   fills the bar, and the total says how much more — `+20m`.
 - **ACT-9** An hour meant to be logged with nothing under it says **not logged**, and a **Log**
-  button beside it points the form at it (ACT-5). An hour picked that is not one of them says
+  button beside it points the form at it (ACT-5). Any other hour listed with nothing under it says
   **nothing logged**.
 - **ACT-10** Pressing a record **changes it** in the form: a line over the boxes names it and its
   hour — `Change “Work 45m” · 09:00–10:00` — and says **Press another hour to move it.**; the boxes hold
@@ -70,6 +70,13 @@ having to be a task first. The [Check-in](check-ins.md) asks for it at the top o
   **Cancel** or Escape leaves it as it was. A refusal is the same as when adding (ACT-6).
 - **ACT-11** A record's **×**, or **Delete** while changing it, takes it out of the log, with the
   few seconds' **Undo** a deleted task has (UI-38), naming it: `Deleted “Work 45m” at 10:00`.
+- **ACT-20** **Today**, any hour that has begun can be logged, not only the hours meant to be logged.
+  While some are not listed — the night before them, say, or the hour under way after them — a
+  **Show every hour so far** button over the list lists every hour of today from 00:00 to the one
+  under way, in clock order with the rest, the hour picked kept in view. Pressed again, as **Show
+  only the hours to log**, it puts the others away; an hour picked or with something logged under it
+  stays listed either way. A day gone by has no such button: it keeps to its hours meant to be logged.
+  Which way it was left is not kept: the page, and each day stepped to, opens on the hours to log.
 
 ## What it adds up to
 
@@ -112,8 +119,8 @@ having to be a task first. The [Check-in](check-ins.md) asks for it at the top o
 ---
 
 **Where it lives:** `src/core/activity.ts` (a record, the names, the activities offered, what they
-add up to, the periods), `src/core/checkIn.ts` (the hours meant to be logged, how much of a day is
-logged, the hour the form starts on), `src/app/useActivities.ts`,
+add up to, the periods), `src/core/checkIn.ts` (the hours meant to be logged, the other hours of today, how much of a
+day is logged, the hour the form starts on), `src/app/useActivities.ts`,
 `src/app/components/ActivityPage.tsx`, `src/app/components/ActivityForm.tsx` (adding and changing a
 record), `src/app/components/ActivityHours.tsx` (the day, hour by hour),
 `src/app/components/TimeSplitChart.tsx` and `src/app/components/DayColumnsChart.tsx` (the charts,

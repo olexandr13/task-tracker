@@ -1,7 +1,7 @@
 # Backup
 
 Everything the account keeps, as one file to keep somewhere else — and a file like it brought back
-in. Both are on **Settings**, under the account (UI-35).
+in. Both are on **Settings**, under the account in its **Account** section (UI-35).
 
 ## Exporting
 
@@ -114,7 +114,7 @@ in. Both are on **Settings**, under the account (UI-35).
 `prizeSchema.ts`, `categorySchema.ts`, `activitySchema.ts`, `rewardSchema.ts`, `warmUpSchema.ts`,
 `nudgeSchema.ts`, `checkInSchema.ts`, `featureSchema.ts` (each record's own shape),
 `src/app/useBackup.ts` (running them), `src/app/backupLabels.ts` (what is said),
-`src/app/downloadFile.ts`, `src/app/components/BackupCard.tsx`, `SettingsList.tsx`.
+`src/app/downloadFile.ts`, `src/app/components/BackupActions.tsx`, `SettingsList.tsx`.
 **Tested in:** `src/storage/backupFile.test.ts` (the file, and reading one back),
 `src/storage/backupRepository.test.ts` (what an import adds), `src/app/backupLabels.test.ts`,
-`src/app/useBackup.test.ts`, `src/app/components/BackupCard.test.tsx`.
+`src/app/useBackup.test.ts`, `src/app/components/BackupActions.test.tsx`.

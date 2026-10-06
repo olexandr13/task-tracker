@@ -187,7 +187,7 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   money where a point has a value (RWD-32); what was **earned** in each period (RWD-21); **Finish
   everything, earn extra** — the three period bonuses **side by side in one row**, each its amount
   and where it stands: `+5 earned`, `+20 all done = earned`, or `— no bonus` (RWD-27, RWD-29); where
-  **Cases** stands — Payday for clearing Today, paying from the cheapest task up to half of today, the Drop, which arrives at a random time, paying from 1 up to yesterday divided by its tasks, and Weekly, ready on Monday and planned until then, paying from the cheapest task last week up to last week divided by its tasks, and
+  **Cases** stands — Payday for clearing Today, the Drop, which arrives at a random time, and Weekly, ready on Monday and planned until then, each with what it can pay (CHST-10), and
   whether one is waiting or already spent (CHST-23, CHST-26, CHST-28); and what the balance reaches on each
   list (RWD-37). Nothing is spent or set here. None of the five pages has a box for adding a task,
   or a rail (UI-2).

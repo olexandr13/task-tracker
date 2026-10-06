@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { BackupStatus } from '../useBackup'
-import { BackupCard } from './BackupCard'
+import { BackupActions } from './BackupActions'
 
 /* Export and import on Settings. BAK ids refer to wiki/backup.md. */
 
@@ -13,13 +13,13 @@ function setup(status: BackupStatus = { state: 'idle' }) {
   const user = userEvent.setup()
   const onExport = vi.fn()
   const onImport = vi.fn<(file: File) => void>()
-  render(<BackupCard status={status} onExport={onExport} onImport={onImport} />)
+  render(<BackupActions status={status} onExport={onExport} onImport={onImport} />)
   return { user, onExport, onImport }
 }
 
 const backupFile = () => new File(['{}'], 'task-tracker-backup-2026-09-19.json', { type: 'application/json' })
 
-describe('BackupCard', () => {
+describe('BackupActions', () => {
   it('exports on a click (BAK-1)', async () => {
     const { user, onExport } = setup()
 

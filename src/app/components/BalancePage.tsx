@@ -42,7 +42,7 @@ const smallControl =
 const chip =
   'flex max-w-40 min-w-0 items-center gap-0.5 rounded-full bg-neutral-100 py-0.5 pr-0.5 pl-2 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
 
-/** A segment of the period control; its radio is the one it wears the focus ring for (as ThemeCard). */
+/** A segment of the period control; its radio is the one it wears the focus ring for (as ThemePicker). */
 const segment =
   'flex min-h-10 cursor-pointer items-center justify-center rounded-md px-3 text-sm text-neutral-500 transition-colors outline-offset-2 hover:text-neutral-900 has-checked:bg-white has-checked:font-medium has-checked:text-neutral-900 has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-blue-500 md:min-h-8 dark:text-neutral-400 dark:hover:text-neutral-100 dark:has-checked:bg-neutral-700 dark:has-checked:text-neutral-100'
 

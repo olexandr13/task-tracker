@@ -137,6 +137,18 @@ export function hoursOfDay(entries: readonly ActivityEntry[], window: HoursWindo
 }
 
 /**
+ * The hours of today that have begun by `now` and that the log leaves out
+ * (`hoursOfDay`) — outside the hours meant to be logged, nothing under them —
+ * which it lists on asking, so any of them can still be logged (ACT-20). None
+ * on any other day: a day gone by keeps to its hours meant to be logged.
+ */
+export function otherHoursSoFar(entries: readonly ActivityEntry[], window: HoursWindow, day: LocalDay, now: Date = new Date()): number[] {
+  if (day !== toLocalDay(now)) return []
+  const listed = new Set(hoursOfDay(entries, window, day, now))
+  return Array.from({ length: now.getHours() + 1 }, (_, hour) => hour).filter((hour) => !listed.has(hour))
+}
+
+/**
  * The hour a record is logged under unless another is picked (ACT-5). Today,
  * the hour that just ended while nothing is logged under it — what a check-in
  * asks about — and otherwise the hour under way. A day gone by, its first hour

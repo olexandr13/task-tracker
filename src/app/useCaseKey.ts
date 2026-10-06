@@ -38,7 +38,8 @@ export interface KeyTimerControl extends KeyTimerState {
 }
 
 /**
- * Watches the daily case's arrival (CHST-28, CHST-29).
+ * Watches the daily case's arrival (CHST-28, CHST-29), at the moment that is
+ * this account's.
  *
  * The countdown on the case ticks on its own. This waits for the moment itself,
  * once, and when it arrives says so — on screen, and as a browser notification
@@ -50,6 +51,7 @@ export function useKeyTimer(
   tasks: readonly Task[],
   entries: readonly RewardEntry[],
   settings: CaseSettings,
+  accountId: string,
   now: Date,
   watch: DailyCaseWatch = {},
 ): KeyTimerControl {
@@ -63,7 +65,7 @@ export function useKeyTimer(
 
   // Whoever is asking may be behind the arrival this hook has already seen.
   const moment = now.getTime() >= clock.getTime() ? now : clock
-  const next = nextKeyTime(tasks, entries, settings, moment)
+  const next = nextKeyTime(tasks, entries, settings, accountId, moment)
   const dueAt = next?.at.getTime() ?? null
 
   useEffect(() => {

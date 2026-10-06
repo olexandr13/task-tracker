@@ -28,5 +28,6 @@ export const FEATURES_HINT = [
   'A part that is off disappears everywhere: its page, its place in the menu, its buttons on tasks and its notices.',
   'Nothing is deleted. Turn it back on and everything is where you left it.',
   'Cases are part of Rewards, and Balance needs Tags, so each is offered only while the other is on. Warm-up needs Habits, and Check-in needs the Activity log.',
+  'A part with settings of its own has an arrow in front of it. Press the arrow to show its settings under it.',
   'The switches are saved to your account, so they are the same on every device.',
 ] as const

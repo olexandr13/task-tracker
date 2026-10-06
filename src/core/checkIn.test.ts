@@ -10,6 +10,7 @@ import {
   isCheckInWindow,
   isDayLoggedInFull,
   loggedHours,
+  otherHoursSoFar,
   pendingCheckIn,
   slotJustEnded,
   wallClock,
@@ -152,6 +153,18 @@ describe('the hours the log lists (ACT-7)', () => {
 
     expect(hoursOfDay(entries, DEFAULT_CHECK_IN_WINDOW, '2026-10-02', new Date(2026, 9, 2, 11, 30))).toEqual([7, 9, 10, 11])
     expect(hoursOfDay(entries, NINE_TO_TEN, '2026-10-01', new Date(2026, 9, 2, 11, 30))).toEqual([9, 23])
+  })
+
+  it('lists, today on asking, every other hour begun so far (ACT-20)', () => {
+    const entries = [logged({ day: '2026-10-02', hour: 7 })]
+
+    expect(otherHoursSoFar(entries, DEFAULT_CHECK_IN_WINDOW, '2026-10-02', new Date(2026, 9, 2, 11, 30))).toEqual([0, 1, 2, 3, 4, 5, 6, 8])
+    // Before the hours kept to begin, every hour so far, the one under way too.
+    expect(otherHoursSoFar([], DEFAULT_CHECK_IN_WINDOW, '2026-10-02', new Date(2026, 9, 2, 2, 5))).toEqual([0, 1, 2])
+    // Past the hours kept to, those after them too.
+    expect(otherHoursSoFar([], NINE_TO_TEN, '2026-10-02', new Date(2026, 9, 2, 11, 30))).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11])
+    // A day gone by keeps to its hours kept to.
+    expect(otherHoursSoFar([], DEFAULT_CHECK_IN_WINDOW, '2026-10-01', new Date(2026, 9, 2, 11, 30))).toEqual([])
   })
 })
 

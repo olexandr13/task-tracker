@@ -36,6 +36,15 @@ export function isRewardAmount(points: number): boolean {
 }
 
 /**
+ * Whether one entry of the ledger can hold this many points: a whole number,
+ * 0 included. The Drop can pay 0 (CHST-11), and an opening of 0 was written
+ * while Payday could too, and its day still reads whole.
+ */
+export function isEarnedAmount(points: number): boolean {
+  return Number.isInteger(points) && points >= 0
+}
+
+/**
  * What a reward starts at when one is first given to a task: more for a task
  * that comes round less often. A weekly rule on all seven days is a daily one
  * under another name, and is worth what a daily one is.

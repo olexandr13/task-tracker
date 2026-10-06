@@ -1,33 +1,42 @@
 import { useEffect, useState } from 'react'
-import { toLocalDay } from '../../core'
-import { DROP_TIMER_LABEL } from '../caseLabels'
+import { CaseLock } from './CaseLock'
 
-/** What the timer shows: when the daily case arrives, or null when there is none. */
 interface KeyTimerProps {
+  /** When the case arrives, or null when there is nothing to wait for. */
   readonly at: Date | null
+  /** What the timer is called for someone who cannot see it: `Time until the Drop`. */
+  readonly label: string
 }
 
-/** `1h 2m 3s`, `2m 3s`, or `3s`. Hours and minutes are left off while they are zero. */
-function describeRemaining(remainingMs: number): string {
-  const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000))
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
+const MINUTE_MS = 60_000
+const DAY_MINUTES = 24 * 60
 
-  const parts: string[] = []
-  if (hours > 0) parts.push(`${String(hours)}h`)
-  if (minutes > 0 || hours > 0) parts.push(`${String(minutes)}m`)
-  parts.push(`${String(seconds)}s`)
-  return parts.join(' ')
+/**
+ * `2d 3h`, `1h 2m` or `2m`. A day or more away reads in days and hours
+ * (CHST-30); under that, the hours are left off while they are zero. Minutes
+ * are rounded up, so the last minute reads `1m` rather than `0m`.
+ */
+function describeRemaining(remainingMs: number): string {
+  const totalMinutes = Math.max(0, Math.ceil(remainingMs / MINUTE_MS))
+  const days = Math.floor(totalMinutes / DAY_MINUTES)
+  const hours = Math.floor((totalMinutes % DAY_MINUTES) / 60)
+  const minutes = totalMinutes % 60
+
+  if (days > 0) return `${String(days)}d ${String(hours)}h`
+  return hours > 0 ? `${String(hours)}h ${String(minutes)}m` : `${String(minutes)}m`
 }
 
 /**
- * A countdown on today's Drop (CHST-28). Ticks every second until that
- * moment. Another day's time shows nothing: tomorrow is not counted. The
- * arrival is one instant, so a parent handing a fresh Date for the same time
- * does not start the second over.
+ * A countdown on a case still on its way: today's Drop (CHST-29) and Weekly,
+ * to Monday (CHST-30). It checks the clock every second, so the minute turns
+ * over on time, and shows nothing once the arrival has passed: by then the
+ * case is ready. The arrival is one instant, so a parent handing a fresh Date
+ * for the same time does not start the count over.
+ *
+ * It is the case's padlock (CHST-31): it sits on the crate, and goes with
+ * the countdown, so a case whose time has come is left with no lock on it.
  */
-export function KeyTimer({ at }: KeyTimerProps) {
+export function KeyTimer({ at, label }: KeyTimerProps) {
   const due = at?.getTime() ?? null
   const [now, setNow] = useState(() => Date.now())
 
@@ -37,13 +46,12 @@ export function KeyTimer({ at }: KeyTimerProps) {
     return () => { window.clearInterval(id) }
   }, [due])
 
-  if (due === null || toLocalDay(new Date(due)) !== toLocalDay(new Date(now))) return null
+  if (due === null || due <= now) return null
 
   return (
-    <div role="timer" aria-label={DROP_TIMER_LABEL} className="flex items-center justify-center gap-1.5 leading-none">
-      <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-amber-500 motion-safe:animate-pulse dark:bg-amber-300" />
-      <p className="text-[10px] font-medium tracking-[0.12em] text-neutral-500 uppercase dark:text-neutral-400">Arrives in</p>
-      <p className="text-xs font-semibold text-amber-700 tabular-nums dark:text-amber-300">{describeRemaining(due - now)}</p>
-    </div>
+    <CaseLock role="timer" label={label}>
+      <span className="text-[11px] text-neutral-300">Arrives in</span>{' '}
+      <span className="text-[13px] font-semibold text-amber-300 tabular-nums">{describeRemaining(due - now)}</span>
+    </CaseLock>
   )
 }

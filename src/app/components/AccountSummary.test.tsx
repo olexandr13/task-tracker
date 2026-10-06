@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Account } from '../../storage/authService'
-import { AccountCard } from './AccountCard'
+import { AccountSummary } from './AccountSummary'
 
 /* The signed-in account on Settings. AUTH ids refer to wiki/account.md. */
 
@@ -19,13 +19,13 @@ const ADA: Account = {
 function setup(account: Account = ADA) {
   const user = userEvent.setup()
   const onSignOut = vi.fn()
-  const { container } = render(<AccountCard account={account} onSignOut={onSignOut} />)
+  const { container } = render(<AccountSummary account={account} onSignOut={onSignOut} />)
   return { user, onSignOut, container }
 }
 
-const card = () => screen.getByRole('region', { name: 'Account' })
+const card = () => document.body
 
-describe('AccountCard', () => {
+describe('AccountSummary', () => {
   it('names the account, the address and the service on the page (AUTH-9)', () => {
     setup()
 

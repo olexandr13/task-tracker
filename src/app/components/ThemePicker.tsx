@@ -8,29 +8,26 @@ const LABELS: Record<Theme, string> = { system: 'System', light: 'Light', dark: 
 const segment =
   'flex min-h-10 cursor-pointer items-center justify-center rounded-md px-3 text-sm text-neutral-500 transition-colors outline-offset-2 hover:text-neutral-900 has-checked:bg-white has-checked:font-medium has-checked:text-neutral-900 has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-blue-500 md:min-h-8 dark:text-neutral-400 dark:hover:text-neutral-100 dark:has-checked:bg-neutral-700 dark:has-checked:text-neutral-100'
 
-interface ThemeCardProps {
+interface ThemePickerProps {
   theme: Theme
   onChange: (theme: Theme) => void
 }
 
 /**
- * The theme, on Settings (UI-63): one control of three segments, one of them
+ * The theme, under Appearance on Settings (UI-63): one control of three segments, one of them
  * always chosen. Each is a real radio behind its label, so the arrow keys move
  * along them as in any radio group, and the page changes as they do.
  */
-export function ThemeCard({ theme, onChange }: ThemeCardProps) {
+export function ThemePicker({ theme, onChange }: ThemePickerProps) {
   const name = useId()
   const headingId = useId()
 
   return (
-    <section
-      aria-labelledby={headingId}
-      className="flex flex-col rounded-xl border border-neutral-200 bg-white px-4 py-3.5 dark:border-neutral-800 dark:bg-neutral-900"
-    >
+    <div className="flex flex-col">
       <div className="flex items-center gap-1.5">
-        <h2 id={headingId} className="text-sm font-medium">
+        <h3 id={headingId} className="text-sm font-medium">
           Theme
-        </h2>
+        </h3>
         <InfoButton label="Theme">
           <p>System follows this device’s light or dark mode. Kept on this device only.</p>
         </InfoButton>
@@ -55,6 +52,6 @@ export function ThemeCard({ theme, onChange }: ThemeCardProps) {
           </label>
         ))}
       </div>
-    </section>
+    </div>
   )
 }

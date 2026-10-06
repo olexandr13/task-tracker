@@ -285,6 +285,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const [habitViewOptions, setHabitViewOptions] = useDeviceSetting(deviceStorage.habitViewOptions)
   // Which of the sidebar's groups are folded away, kept on this device too.
   const [sideNav, setSideNav] = useDeviceSetting(deviceStorage.sideNav)
+  const [settingsLayout, setSettingsLayout] = useDeviceSetting(deviceStorage.settingsLayout)
   // A phone has no add box and no task View settings (UI-54, UI-41): both are a
   // wide screen's, where a row of details has room under every task.
   const phone = usePhoneLayout()
@@ -341,8 +342,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // Cases a cleared day earns the key to (CHST-2). Every live task, since
   // "everything in Today" is asked of the whole set the way the bars ask it;
   // what it asks and plays for is the account's (CHST-7), and the noise, the
-  // last opening and the notice already given are this device's (CHST-24).
-  const cases = useCases(live, rewards, deviceStorage.cases, now, !rewards.isLoading && !isLoading, {
+  // last opening and the notice already given are this device's (CHST-24). The
+  // Drop's moment is the account's own (CHST-29).
+  const cases = useCases(live, rewards, deviceStorage.cases, account.id, now, !rewards.isLoading && !isLoading, {
     watching: on.cases,
     onOpen: () => { setView('rewards/cases') },
   })
@@ -787,10 +789,14 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     onThemeChange={onThemeChange}
                     habitView={habitViewOptions}
                     onHabitViewChange={setHabitViewOptions}
+                    casesCounting={{ countUnpaid: cases.settings.countUnpaid, loading: rewards.isLoading }}
+                    onCasesCountUnpaidChange={(countUnpaid) => { cases.setSettings({ ...cases.settings, countUnpaid }) }}
                     casesPractice={casesPractice}
                     onCasesPracticeChange={setCasesPractice}
                     features={{ off: featuresOff, loading: features.isLoading }}
                     onFeatureChange={features.turn}
+                    layout={settingsLayout}
+                    onFoldChange={(part, open) => { setSettingsLayout((latest) => ({ ...latest, [part]: open })) }}
                   />
                 </section>
               ) : view === 'more' ? (

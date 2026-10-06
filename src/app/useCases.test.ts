@@ -23,6 +23,8 @@ import type { DailyCaseWatch } from './useCaseKey'
 
 /* Opening Cases. CHST ids refer to wiki/cases.md. */
 
+/** The account the Drop's moment is worked out for: 12:25 on THU_17. */
+const ACCOUNT = 'account-a'
 const WED_16 = new Date(2026, 8, 16, 9, 0)
 const THU_17 = new Date(2026, 8, 17, 9, 0)
 
@@ -74,7 +76,7 @@ function setUp({
   const saveEarning = vi.fn()
   const setCaseSettings = vi.fn()
   const ledger = { entries, cases: settings, saveEarning, setCaseSettings }
-  const { result } = renderHook(() => useCases(tasks, ledger, device.device, now, ready, watch))
+  const { result } = renderHook(() => useCases(tasks, ledger, device.device, ACCOUNT, now, ready, watch))
   return { result, saveEarning, setCaseSettings, device }
 }
 
@@ -88,7 +90,7 @@ describe('where Cases stands', () => {
   })
 
   it('has none while the day is smaller than the settings ask for (CHST-3)', () => {
-    const { result } = setUp({ tasks: [today('pack', true)], settings: { leastTasks: 3 } })
+    const { result } = setUp({ tasks: [today('pack', true)], settings: { leastTasks: 3, countUnpaid: true } })
 
     expect(result.current.blocked).toBe('bonusWaiting')
     expect(result.current.dayAsked).toBe(1)
@@ -111,19 +113,34 @@ describe('where Cases stands', () => {
   })
 
   it('pays Today from the cheapest task up to half of today (CHST-10)', () => {
+    const tasks = [today('pack', true), today('post', true)]
     const entries = [
-      { taskId: 'a', day: '2026-09-17', points: 30 },
-      { taskId: 'b', day: '2026-09-17', points: 12 },
+      { taskId: tasks[0].id, day: '2026-09-17', points: 30 },
+      { taskId: tasks[1].id, day: '2026-09-17', points: 12 },
     ]
-    expect(setUp({ entries }).result.current.spans.today).toEqual({ least: 12, most: 21 })
+    expect(setUp({ tasks, entries }).result.current.spans.today).toEqual({ least: 12, most: 21 })
   })
 
-  it('pays the daily case from yesterday’s rewards divided by yesterday’s tasks (CHST-10)', () => {
+  it('adds a task finished with no points to Today’s most, never as the cheapest (CHST-10)', () => {
+    const tasks = [today('pack', true), today('post', true)]
+    const entries = [
+      { taskId: tasks[0].id, day: '2026-09-17', points: 30 },
+      { taskId: tasks[1].id, day: '2026-09-17', points: 12 },
+    ]
+    const unpaid = today('water', true)
+    // `water` earned nothing, so it is not the cheapest, at 0: Today still runs from 12, and up to 21 + 1.
+    expect(setUp({ tasks: [...tasks, unpaid], entries }).result.current.spans.today).toEqual({ least: 12, most: 22 })
+    // Not counted, it adds nothing (CHST-32).
+    const settings = { leastTasks: 1, countUnpaid: false }
+    expect(setUp({ tasks: [...tasks, unpaid], entries, settings }).result.current.spans.today).toEqual({ least: 12, most: 21 })
+  })
+
+  it('pays the daily case from 0 up to yesterday’s average task plus yesterday’s tasks (CHST-10)', () => {
     const entries = [
       { taskId: 'a', day: '2026-09-16', points: 10 },
       { taskId: 'b', day: '2026-09-16', points: 8 },
     ]
-    expect(setUp({ entries }).result.current.spans.daily).toEqual({ least: 1, most: 9 })
+    expect(setUp({ entries }).result.current.spans.daily).toEqual({ least: 0, most: 11 })
   })
 
   it('pays Weekly from last week, ready on Monday and planned until then (CHST-30)', () => {
@@ -134,7 +151,8 @@ describe('where Cases stands', () => {
     ]
     const { result } = setUp({ tasks: [], entries, now: monday })
 
-    expect(result.current.spans.week).toEqual({ least: 4, most: 7 })
+    // An average of 7 across two tasks: 7 + 2 = 9.
+    expect(result.current.spans.week).toEqual({ least: 4, most: 9 })
     expect(result.current.slots.find((slot) => slot.source === 'week')?.state).toBe('ready')
     expect(setUp({ entries }).result.current.slots.find((slot) => slot.source === 'week')?.state).toBe('waiting')
   })
@@ -152,12 +170,12 @@ describe('opening it', () => {
 
     const given = result.current.open('daily')
 
-    // Yesterday earned 14 across 2 tasks, so the range is 1–7. Halfway is 4.
-    expect(given).toEqual({ points: 4, jackpot: 7, least: 1 })
+    // Yesterday's 2 tasks averaged 7, so the range is 0–9. Halfway is 5.
+    expect(given).toEqual({ points: 5, jackpot: 9, least: 0 })
     expect(saveEarning).toHaveBeenCalledExactlyOnceWith({
       taskId: CASE_DAILY_ID,
       day: '2026-09-17',
-      points: 4,
+      points: 5,
     })
   })
 
@@ -232,8 +250,8 @@ describe('opening it', () => {
 
     const given = result.current.open('week')
 
-    // Last week earned 14 across 2 tasks, cheapest 4, so the range is 4–7. The lowest roll is 4.
-    expect(given).toEqual({ points: 4, jackpot: 7, least: 4 })
+    // Last week's 2 tasks averaged 7, cheapest 4, so the range is 4–9. The lowest roll is 4.
+    expect(given).toEqual({ points: 4, jackpot: 9, least: 4 })
     expect(saveEarning).toHaveBeenCalledExactlyOnceWith({
       taskId: CASE_WEEK_ID,
       day: '2026-09-14',
@@ -338,7 +356,7 @@ describe('the notice and the noise', () => {
   })
 
   it('does not say the day came clear when only the daily case is ready (CHST-23)', () => {
-    const after = new Date(dailyKeyTime('2026-09-17').getTime() + 1000)
+    const after = new Date(dailyKeyTime('2026-09-17', ACCOUNT).getTime() + 1000)
     const { result } = setUp({ tasks: [today('pack')], now: after })
 
     expect(result.current.blocked).toBeNull()
@@ -346,7 +364,7 @@ describe('the notice and the noise', () => {
   })
 
   it('says the daily case is here when its timer runs out, on screen and to the browser (CHST-29)', async () => {
-    const at = dailyKeyTime('2026-10-04')
+    const at = dailyKeyTime('2026-10-04', ACCOUNT)
     const before = new Date(at.getTime() - 5000)
     vi.useFakeTimers({ now: before })
     const notify = allowNotifications()
@@ -379,7 +397,7 @@ describe('the notice and the noise', () => {
   })
 
   it('opens Cases from the browser notification and puts the notice away (CHST-29)', async () => {
-    const at = dailyKeyTime('2026-10-04')
+    const at = dailyKeyTime('2026-10-04', ACCOUNT)
     const before = new Date(at.getTime() - 5000)
     vi.useFakeTimers({ now: before })
     const notify = allowNotifications()
@@ -400,7 +418,7 @@ describe('the notice and the noise', () => {
   })
 
   it('does not announce a daily case whose time has already passed (CHST-29)', async () => {
-    const at = dailyKeyTime('2026-10-04')
+    const at = dailyKeyTime('2026-10-04', ACCOUNT)
     const after = new Date(at.getTime() + 60_000)
     vi.useFakeTimers({ now: after })
     const notify = allowNotifications()
@@ -416,7 +434,7 @@ describe('the notice and the noise', () => {
   })
 
   it('says nothing about the daily case while Cases is switched off (CHST-29, FEAT-3)', async () => {
-    const at = dailyKeyTime('2026-10-04')
+    const at = dailyKeyTime('2026-10-04', ACCOUNT)
     const before = new Date(at.getTime() - 5000)
     vi.useFakeTimers({ now: before })
     const notify = allowNotifications()
@@ -446,8 +464,8 @@ describe('the notice and the noise', () => {
   it('writes a changed setting to the account rather than the device (CHST-7)', () => {
     const { result, setCaseSettings } = setUp()
 
-    result.current.setSettings({ leastTasks: 3 })
+    result.current.setSettings({ leastTasks: 3, countUnpaid: true })
 
-    expect(setCaseSettings).toHaveBeenCalledExactlyOnceWith({ leastTasks: 3 })
+    expect(setCaseSettings).toHaveBeenCalledExactlyOnceWith({ leastTasks: 3, countUnpaid: true })
   })
 })

@@ -179,6 +179,35 @@ describe('the day (ACT-7 to ACT-11)', () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith(work.id, { activity: 'Work', seconds: 2700, hour: 11 })
   })
 
+  it('lists every hour of today so far on asking, so any of them can be logged (ACT-20)', async () => {
+    const { user, onAdd } = setUp()
+    const show = screen.getByRole('button', { name: 'Show every hour so far' })
+    expect(show.getAttribute('aria-expanded')).toBe('false')
+    expect(hourRow('07:00')).toBeUndefined()
+
+    await user.click(show)
+    expect(hours().map((row) => row.textContent?.slice(0, 5))).toEqual(
+      Array.from({ length: 16 }, (_, hour) => `${String(hour).padStart(2, '0')}:00`),
+    )
+    expect(hourRow('07:00').textContent).toContain('nothing logged')
+
+    await user.click(within(hourRow('07:00')).getByRole('button', { name: 'Log into 07:00–08:00', pressed: false }))
+    await user.type(activityBox(), 'Run')
+    await user.type(durationBox(), '30{Enter}')
+    expect(onAdd).toHaveBeenCalledExactlyOnceWith('Run', 1800, { day: '2026-10-02', hour: 7 })
+
+    // Put away again, the hour picked stays listed.
+    await user.click(screen.getByRole('button', { name: 'Show only the hours to log' }))
+    expect(hours().map((row) => row.textContent?.slice(0, 5))).toEqual(['07:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00'])
+  })
+
+  it('keeps a day gone by to its hours meant to be logged (ACT-20)', async () => {
+    const { user } = setUp()
+
+    await user.click(screen.getByRole('button', { name: 'The day before' }))
+    expect(screen.queryByRole('button', { name: 'Show every hour so far' })).toBeNull()
+  })
+
   it('deletes a record from its × or from the form (ACT-11)', async () => {
     const { user, onRemove } = setUp({ entries: [work] })
 

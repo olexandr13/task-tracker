@@ -1,12 +1,14 @@
 # Cases
 
 A cleared day earns **Payday**. Another case, the **Drop**, arrives once a day, at a random time.
-A third, **Weekly**, is ready on Monday and planned on every other day. The three pay different ranges. **Payday** pays any whole
-number from the points of the cheapest task finished today up to half of everything earned today.
-The **Drop** pays any whole number from 1 up to everything earned yesterday divided by how many
-tasks that was. **Weekly** pays any whole number from the points of the cheapest task finished
-last week up to everything earned last week divided by how many tasks that was. Each amount in a
-case's own range is as likely as any other.
+A third, **Weekly**, is ready on Monday and planned on every other day. The three pay different
+ranges (CHST-10). **Payday** pays any whole number from the points of the cheapest task finished
+today up to half of everything earned today plus the tasks finished today without points. The
+**Drop** pays any whole number from 0 up to yesterday's average task plus every task finished
+yesterday. **Weekly** pays any whole number from the points of the cheapest task finished last
+week up to last week's average task plus every task finished last week. A task finished without
+points adds to a case's most only while **Count unrewarded tasks** is on, on Settings (CHST-32).
+Each amount in a case's own range is as likely as any other.
 
 A task's reward pays a known amount for a known
 piece of work, and a period bonus pays a known amount for clearing a stretch of it
@@ -49,46 +51,74 @@ slowing to a crawl — are as much the feature as the points are.
   before Payday is opened can raise what that case pays.
 - **CHST-8** Cases' own opening is **left out** of what any case is worked out from: it cannot
   be part of the sum it was drawn from, and the Today tile goes on to count it once it is open.
-- **CHST-9** A case is never asked to pay less than **1**, and its most is never under its least.
-  A day that earned nothing yet, a yesterday with no tasks, or a previous week with no tasks,
-  pays 1 rather than nothing (CHST-11).
+- **CHST-9** Payday and Weekly are never asked to pay less than **1**; the Drop's least is **0**
+  (CHST-11). A case's most is never under its least. A day that earned nothing yet, or a previous
+  week with no tasks, pays 1 rather than nothing; a yesterday with no tasks pays 0.
 - **CHST-10** Each case pays **any whole number from its least to its most, every one of them as
-  likely as any other**. There are no tiers and no table.
+  likely as any other**. There are no tiers and no table. A task **with points** is one that
+  earned some on that day, as the ledger has it, even if it has since gone to the trash; a task
+  **without points** is one finished that day that earned nothing. A task without points is never
+  the cheapest and never in an average, but it is **counted** wherever a case counts tasks — while
+  the account counts them at all (CHST-32); switched off, every case below counts only the tasks
+  with points, and Payday adds none. The
+  **average task** is what the tasks with points earned, divided by how many they were, the
+  remainder dropped, and 0 where there were none; a bonus is not a task, so it is not in it. A
+  task is one completion: the same task written twice on a day is one, and a task finished on two
+  days is two.
   **Payday**, earned by finishing everything in Today, runs from the **points of the cheapest task
-  finished today** up to **everything earned today divided by 2**, the remainder dropped. A bonus
-  counts in the sum and is not a task, so it cannot be the cheapest. Where half of today is less
-  than that cheapest task — a day of one task is the usual one — the case pays **exactly** that
-  task's points, so it never pays less than the cheapest task.
-  The **Drop**, the one that arrives at a random moment, runs from **1** up to **everything earned
-  yesterday divided by how many tasks were finished yesterday**, the remainder dropped, and never
-  under 1. The same task written twice is one task. Yesterday with no tasks pays 1.
-  **Weekly**, ready on Monday and planned until then (CHST-30), runs from the **points of the cheapest task
-  finished in the previous week** up to **everything earned that week divided by how many tasks
-  were finished that week**, the remainder dropped. A task finished on two days of that week is
-  two tasks. A bonus counts in the sum and is not a task, so it cannot be the cheapest. Where
-  that average falls short of the cheapest task, the case pays **exactly** those points. A
-  previous week with no tasks pays 1.
+  finished today**, or **1** where no task today has points, up to **everything earned today
+  divided by 2**, the remainder dropped, **plus the number of tasks finished today without
+  points**. Everything earned counts a bonus too (CHST-7). Where that most is less than the
+  cheapest task — a day of one task is the usual one — the case pays **exactly** that task's
+  points, so it never pays less than the cheapest task.
+  The **Drop**, the one that arrives at a random moment, runs from **0** up to **yesterday's
+  average task plus the number of tasks finished yesterday**, with points and without. Yesterday
+  with no tasks pays 0.
+  **Weekly**, ready on Monday and planned until then (CHST-30), runs from the **points of the
+  cheapest task finished in the previous week**, or **1** where no task that week had points, up
+  to **that week's average task plus the number of tasks finished that week**, with points and
+  without. A previous week with no tasks pays 1.
+  Last week's done tasks are loaded as the app opens, so tasks without points are all counted
+  (STORE-55).
+- **CHST-32** Whether a task finished **without points** adds to what a case can pay is the
+  account's to say, with a switch on **Settings**, under the **Cases** switch in Features (FEAT-10):
+  **Count unrewarded tasks**, *Each
+  task done without points adds 1 to the most a case can pay.* It is **on** to begin with, which is
+  how every case was worked out before there was a switch. **Off**, such a task adds nothing
+  anywhere: Payday runs up to half of everything earned today and no further, and the Drop and
+  Weekly add one for each task **with points** only. The averages are of tasks with points either
+  way, and the least a case pays does not change, so a day of tasks without points alone still
+  gives Payday's 1 and an empty Drop. Every line that says how a case is worked out — under a
+  ready case (CHST-26), behind the **i** on Cases (CHST-22), and on Rules (CHST-7) — names only
+  the tasks that are counted. It is kept with what Cases asks of a day (STORE-48), so it travels
+  with the account, and like that it only changes cases not yet opened (CHST-6). Until the
+  account's settings have arrived, *Loading…* stands in place of the switch, so a press
+  cannot save the starting settings over the ones the account holds. Some work earns nothing on
+  purpose — a habit kept for itself, a chore not worth pricing — and someone who prices everything
+  they care about may not want it inflating a case.
 
 ## What a case holds
 
-- **CHST-11** A case is **never empty**: the least it gives is 1 point. An app
-  that fights procrastination must not answer a cleared day with nothing, however good a gamble that
-  would make it.
+- **CHST-11** **Payday and Weekly are never empty**: the least they give is 1 point. An app that
+  fights procrastination must not answer a cleared day, or a week of work, with nothing, however
+  good a gamble that would make it. The **Drop** can be empty: its least is **0**. It is not earned
+  by clearing anything, and a yesterday with nothing done is worth nothing. An empty Drop opens as
+  any other, and writes *+0* to the ledger.
 - **CHST-28** The page shows **three cases** until the day ends (CHST-30). The cards share their
   rows, so the names stay level. A possible win sits inside a ready case, above the crate. While any
   case is ready, every case keeps that band, so the crates stay level. The three sit in a row once there is room; on a narrow screen Weekly wraps
   under the other two.
-  **Payday** is earned by finishing everything in Today, and pays from the cheapest task finished
-  today up to half of everything earned today (CHST-10). The **Drop** arrives at a random moment and
-  pays from 1 up to everything earned yesterday divided by how many tasks that was. A ready case
-  says that rule under it. While a case is planned and not yet
+  **Payday** is earned by finishing everything in Today, and the **Drop** arrives at a random
+  moment; each pays inside a range of its own (CHST-10). A ready case says that rule under it. While a case is planned and not yet
   available — Today still has work left, the Drop's moment has not come, or Weekly is waiting for
-  Monday — it is shown **half transparent**. While Payday is still to be earned it reads *Finish everything in Today to get this case. Reward depends on number of points earned today.*, with
-  **Today** set in bold. While the Drop is still on its way it reads *Arrives once a day, at a random
+  Monday — it is shown **half transparent**, its crate **grey**, and a **padlock** on the crate
+  says when it will be ready (CHST-31). While Payday is still to be earned it reads *Finish everything in Today to get this case. Reward depends on number of points earned today.*, with
+  **Today** set in bold, and it says how many tasks are left. While the Drop is still on its way it reads *Arrives once a day, at a random
   time. Reward depends on number of points earned yesterday.*, and it
-  carries a small **timer** on it, counting down every second, until that moment arrives and the
-  case is ready (CHST-29). The timer is only for today's Drop. While Weekly is still to come it
-  reads *Appears weekly on Monday. Reward depends on number of points earned last week.*, and it carries no timer. A case that has been opened stays
+  carries a small **timer** on it, counting down in hours and minutes, until that moment arrives and the
+  case is ready (CHST-29). While Weekly is still to come it
+  reads *Appears weekly on Monday. Reward depends on number of points earned last week.*, and it
+  carries a timer too, counting down to Monday (CHST-30). A case that has been opened stays
   until the end of the day, with its
   **lid open** and the picture **dimmed**, and it is not a button. Under it, it says when the next
   one comes. Payday reads *Take the next one tomorrow after completing all planned tasks.*
@@ -101,19 +131,34 @@ slowing to a crawl — are as much the feature as the points are.
   the page until then: it appears for that opening, plays it, and leaves once the show has
   finished. A case is not chosen
   first, and none is drawn with a frame around it.
+- **CHST-31** A case still on its way is **locked**, and says **when it will be ready** on the
+  crate itself. Its crate loses its colour and fades, so it reads as shut rather than merely faint
+  beside a ready one, and across the dial sits a dark tag with a **padlock** and what will open it,
+  which stays solid while the rest of the case is half transparent. **Payday** says how many tasks
+  are left: *3 tasks left*, *1 task left*. That is the tasks in Today still to be finished, and
+  where Today asks for fewer tasks than a case needs (CHST-3) the ones still to be added as well,
+  so two tasks with one done, where three are needed, read *2 tasks left*. It changes as tasks are
+  ticked off and has no clock: Payday is earned, not waited for. The **Drop** reads *Arrives in
+  2h 15m* (CHST-29) and **Weekly** *Arrives in 5d 16h* (CHST-30). Each is drawn light on dark
+  whatever the theme (CHST-25). The moment a countdown runs out, the padlock goes with it. A case
+  ready or opened has no padlock and keeps its colour; an opened one says under it when the next
+  one comes (CHST-28).
 - **CHST-26** A **ready** case says **what it can give**, as a line headed **Possible win** inside
   the case, above the crate: *4–20 points* where that is Payday’s range, *1–7 points* for the Drop, marked
-  out in gold. Under a ready case the rule is written out: *From the cheapest task today, up to
-  half of today’s rewards.*, *From 1 point, up to yesterday’s rewards divided by yesterday’s
-  tasks.* and, for Weekly, *From the cheapest task last week, up to last week’s rewards divided
-  by last week’s tasks.* A case that
+  out in gold, or *0–7 points* where the Drop can come up empty. Under a ready case the rule is
+  written out: *From the cheapest task today, up to half of today’s rewards plus today’s tasks
+  without points.*, *From 0 points, up to yesterday’s average task plus yesterday’s tasks.* and,
+  for Weekly, *From the cheapest task last week, up to last week’s average task plus last week’s
+  tasks.* While tasks without points are not counted (CHST-32), Payday's reads *From the cheapest
+  task today, up to half of today’s rewards.*, and the Drop's and Weekly's end *tasks with
+  points.* A case that
   is only planned has **no** possible win, including when it would only have read *1 point*.
   Neither does one already opened. In
   practice every case is ready, Weekly included, and there is no timer: each runs from 1 up to the number typed
   just below (CHST-21). While a case is ready and that range is a single point, its line reads
   *1 point*. How the points stand says what today has earned (RWD-20), and Rules says the same,
-  with how each case is worked out (CHST-7, CHST-10). The **i** on Cases says where each reward
-  comes from (CHST-22).
+  with how each case is worked out (CHST-7, CHST-10). The **i** on Cases says how each case is worked out
+  (CHST-22).
 
 ## Opening it
 
@@ -123,7 +168,8 @@ slowing to a crawl — are as much the feature as the points are.
   already opening. Shut, that cabinet is a **supply crate** — cream enamel over a teal
   body, chipped at the corners, a band of hazard stripes where the lid meets it, a latch each side
   and a **dial lock** in the middle. What tells a key is there, before a word is read, is the ready
-  case itself: solid, and a button, where a case still on its way is half transparent (CHST-28).
+  case itself: solid, in colour, and a button, where a case still on its way is half transparent,
+  grey and padlocked (CHST-28, CHST-31).
 - **CHST-14** Opening takes about **six seconds**, and the shape of them is the point. The crate
   **squashes into its floor** as it is pressed; its **dial turns** three quarters round and its lamp
   goes white; the **latches spring off** with a hiss and a puff each side, the lid lifts a hair and
@@ -209,7 +255,8 @@ slowing to a crawl — are as much the feature as the points are.
 ## Practice
 
 - **CHST-21** **Practice mode** is for seeing how Cases goes without waiting for a day to
-  clear. Its switch is on **Settings**, under **Cases** (UI-35), rather than on Cases' page: it
+  clear. Its switch is on **Settings**, under the **Cases** switch in Features (FEAT-10), after
+  **Count unrewarded tasks** (CHST-32), rather than on Cases' page: it
   is a way to try Cases, not to use it, and kept off the page it cannot sit beside every real
   opening. While it is on, a case opens **as often as you like**, whatever the day stands at, and
   **nothing is earned and nothing is saved**: no points, no record, no notice. A band across the
@@ -228,16 +275,23 @@ slowing to a crawl — are as much the feature as the points are.
 - **CHST-22** **Cases** is a page under **Rewards**, at `#/rewards/cases` (UI-36) — an address still
   written `#/rewards/chest` opens it too — and it comes
   **first of them**, ahead of the history (RWD-30): a key nobody notices earns nothing. Pressing
-  **C** opens it from anywhere (UI-72). An **i** at its head (UI-73) says the rules, one case at a
-  time: Payday is earned by finishing everything in Today, and its reward depends on the number of
-  points earned today. The Drop arrives once a day, at a random time, and its reward depends on the
-  number of points earned yesterday. Weekly appears weekly on Monday, and its reward depends on the
-  number of points earned last week. Each amount in a case’s range is as likely as any other. The
-  page itself holds the cases (CHST-28), what each can give while a key is waiting
+  **C** opens it from anywhere (UI-72). An **i** at its head (UI-73) says **how each case is
+  worked out**, in general and without anyone's numbers, one case at a time (CHST-10), in a sheet
+  headed **How much each case pays**. Each case is a **card** of its own, banded down its side in
+  the case's colour as its card on the page is (CHST-28), with the case's name at the top and,
+  under it, **Min** and **Max** as small labels beside what each one is. The ÷ and + in a rule are
+  drawn heavier than the words between them, so the sum reads at a glance. How a case
+  is earned is not said again there: a case still on its way already says it (CHST-28). Payday's
+  Min is *Cheapest task finished today* and its Max *Half of points earned today + number of
+  unrewarded tasks done*. The Drop's Min is *0* and its Max *Yesterday’s average task value + number
+  of tasks done*. Weekly's Min is *Cheapest task finished last week* and its Max *Last week’s
+  average task value + number of tasks done*. While tasks without points are not counted (CHST-32),
+  Payday's Max is *Half of points earned today*, and the Drop's and Weekly's say *number of
+  rewarded tasks done*. Nothing follows them. The page itself holds the cases (CHST-28), what each can give while a key is waiting
   (CHST-26), the cabinet once a case is opened, and, while practice mode is on, how
   the practice run is going (CHST-21); what it *asks* and plays for is set on Rules, with
-  everything else that is one amount for the whole account (CHST-7), and practice mode is switched
-  on Settings. While a key is
+  everything else that is one amount for the whole account (CHST-7), and whether tasks without
+  points count (CHST-32) and practice mode are switched on Settings. While a key is
   waiting, Cases is **marked wherever it is reached from** —
   its entry in the sidebar, its pill in the phone's strip, the Rewards tab — with a dot and the
   words behind it, a mark that is only a colour saying nothing to someone who cannot see it.
@@ -247,8 +301,13 @@ slowing to a crawl — are as much the feature as the points are.
   on its own is said separately (CHST-29), and so is Weekly on Monday (CHST-30). The last task going is the moment Cases
   is worth most, and a key found a day later is a key half wasted. How the points stand says it too
   (RWD-20): what the key plays for, and whether it is waiting or already spent.
-- **CHST-29** While today's Drop is still on its way, its timer **counts down** every second. A time
-  on another day is not shown, and an opened Drop does not count toward tomorrow. The
+- **CHST-29** The Drop's moment is **the account's own**: worked out from the day and the account,
+  somewhere between 06:00 and 21:59. Every device signed into the account waits for the same moment,
+  and another account waits for another one. Nothing is saved for it, and it is a different moment
+  each day. While today's Drop is still on its way, its timer **counts down** in hours and
+  minutes, with no seconds: *2h 15m*, then *45m*. The minutes are rounded up, so the last minute
+  reads *1m* until the case arrives. An opened Drop does not count toward tomorrow's: that
+  moment is not shown before its day. The
   moment that time arrives, the case is ready — the timer goes, and what it can give is shown
   (CHST-26) — and the app **says so**: *The Drop is here.*, with **Open Cases** beside it,
   at the top of the window. Said **once**, the moment the timer runs out while the app is open, and
@@ -259,9 +318,13 @@ slowing to a crawl — are as much the feature as the points are.
   cases. A browser that has no notifications, or is blocking them, loses only the reach: the notice
   on screen says the same thing.
 - **CHST-30** **Weekly** is ready on **Monday**, from the start of the day. On every other day it
-  is **planned**: half transparent, not a button, with no possible win and no timer. It pays from
+  is **planned**: half transparent, grey, not a button, with no possible win, and with a **timer**
+  on its padlock (CHST-31),
+  counting down to midnight on Monday — in days and hours while a day or more is left, *5d 16h*,
+  then in hours and minutes as the Drop's is (CHST-29). As Monday begins, the timer goes and the
+  case is ready. It pays from
   the cheapest task finished in the previous week — Monday to Sunday, the week just closed — up to
-  everything earned that week divided by how many tasks that was (CHST-10). A ready Weekly says
+  that week's average task plus the number of tasks finished that week (CHST-10). A ready Weekly says
   that rule under it, and what it
   can give. Once opened it stays until Monday ends, and reads *A new case will be given next
   Monday.* The next day it is planned again. The app **says so** once that Monday on this device,
@@ -273,8 +336,8 @@ slowing to a crawl — are as much the feature as the points are.
 - **CHST-24** What Cases keeps on this device, rather than in the account: whether it **makes a
   noise here**, which opening it is **still glowing from** — which quarter of the jackpot it came to
   — whether it has **already said here** that a key is waiting, and whether it has **already said
-  here** that Weekly is here (STORE-49). What it asks of a day
-  is the account's (STORE-48) — how someone wants to be paid travels with them — but the room you are
+  here** that Weekly is here (STORE-49). What it asks of a day, and whether it counts tasks without
+  points (CHST-32), are the account's (STORE-48) — how someone wants to be paid travels with them — but the room you are
   in is not, a
   notice given on the laptop is no reason to withhold it on the phone, and the ledger says what
   Payday, the Drop or Weekly gave without saying which colour it gave it in, that being the show rather than the
@@ -284,14 +347,14 @@ slowing to a crawl — are as much the feature as the points are.
 
 **Where it lives:** `src/core/cases.ts` (what an opening draws, each case’s range, which quarter of it an
 amount is, and whether a key is waiting), `src/core/caseKind.ts` (how a range is spread), `src/app/useCases.ts` (Cases as its page reads it, and
-the one way to open it), `src/app/useCaseKey.ts` (watching the Drop arrive), `src/app/components/KeyTimer.tsx` (the countdown on it), `src/app/components/CasesPage.tsx` (the page), `src/app/components/CaseCards.tsx` (the cases),
+the one way to open it), `src/app/useCaseKey.ts` (watching the Drop arrive), `src/app/components/KeyTimer.tsx` (the countdown on it, and on Weekly), `src/app/components/CaseLock.tsx` and `LockIcon.tsx` (the padlock on a case still on its way), `src/app/components/CasesPage.tsx` (the page), `src/app/components/CaseCards.tsx` (the cases),
 `src/app/components/CaseOpening.tsx` (the opening), `src/app/components/CaseArt.tsx` (the crate),
 `src/app/components/CaseReel.tsx` (the screen, the reel, the cards and the card once it is out),
 `src/app/caseReel.ts` (the reel built round an opening, the near miss, and when each card ticks),
 `src/app/components/CaseBurst.tsx` (what is thrown off the card),
 `src/app/components/CaseRange.tsx` (the possible win inside a case),
 `src/app/components/CasesSettingsCard.tsx` (what it asks and plays for, on Rules),
-`src/app/components/CasesPracticeCard.tsx` and `SettingsList.tsx` (the practice switch, on Settings),
+`src/app/components/CasesSettings.tsx` and `SettingsList.tsx` (counting tasks without points, and the practice switch, under Cases on Settings),
 `src/app/components/CaseNoticeToast.tsx` (the notice when Today comes clear, when the Drop arrives, and when Weekly is here),
 `src/app/browserNotification.ts` (the browser notification, shared with reminders, nudges and check-ins),
 `src/app/components/KeyWaitingMark.tsx` (the mark on the way in),
@@ -310,7 +373,7 @@ unlocking, the screen, the cards, the starburst, the flash, the rings),
 keeps) — see [Storage](storage.md).
 **Tested in:** `src/core/cases.test.ts`, `src/core/caseKind.test.ts`, `src/app/useCases.test.ts`, `src/app/components/KeyTimer.test.tsx`, `src/app/caseReel.test.ts`,
 `src/app/components/CaseOpening.test.tsx`, `CasesPage.test.tsx`, `CasesSettingsCard.test.tsx`,
-`SettingsList.test.tsx` (the practice switch),
+`SettingsList.test.tsx` (counting tasks without points, and the practice switch),
 `src/storage/rewardSchema.test.ts`, `src/storage/caseDeviceSchema.test.ts`,
 `src/app/components/RewardsPage.test.tsx` (where the points stand),
 `RewardRulesPage.test.tsx` (the settings' place), `src/app/components/SideNav.test.tsx`,

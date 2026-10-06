@@ -26,6 +26,7 @@ export const ACTIVITY_INTRO = [
   'Press an hour in the list to pick it. Then type what you did and how long it took, and press "Add".',
   'Type the time in minutes, like "15", or with hours, like "1h 20m".',
   'Press a record to change it, or its "×" to delete it. While changing it, press another hour to move it there.',
+  'To log an hour of today outside the hours set for Check-in, press "Show every hour so far" above the list.',
   'Switch between "Day", "Week" and "Month" to see the totals, and use "‹" and "›" beside the date to look back.',
   'Hours logged count the hours set for Check-in, from "From" to "To".',
 ]
@@ -118,6 +119,9 @@ export function describeEntryDeleted(entry: ActivityEntry): string {
 
 /** What changing a record says about moving it (ACT-10). */
 export const MOVE_HINT = 'Press another hour to move it.'
+
+/** What the button over today's hours says, to list every hour so far or only the hours to log again (ACT-20). */
+export const EVERY_HOUR = { show: 'Show every hour so far', hide: 'Show only the hours to log' } as const
 
 /** An hour with nothing logged under it, as its row says (ACT-7). */
 export const NOT_LOGGED = 'not logged'

@@ -20,25 +20,22 @@ const PROVIDERS: Record<
   },
 }
 
-interface AccountCardProps {
+interface AccountSummaryProps {
   account: Account
   onSignOut: () => void
 }
 
 /**
- * Who is signed in, on Settings: the mark of the service they signed in through,
+ * Who is signed in, at the head of Settings' Account section (UI-35): the mark of the service they signed in through,
  * their name, their address and the way out. All on the page rather than behind a
  * button — a page of settings has the room to say it outright, and where the
  * account lives is the one place nothing else is competing for the space.
  */
-export function AccountCard({ account, onSignOut }: AccountCardProps) {
+export function AccountSummary({ account, onSignOut }: AccountSummaryProps) {
   const provider = PROVIDERS[account.provider]
 
   return (
-    <section
-      aria-label="Account"
-      className="flex flex-wrap items-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3.5 dark:border-neutral-800 dark:bg-neutral-900"
-    >
+    <div className="flex flex-wrap items-center gap-3">
       <ProviderMark provider={account.provider} />
 
       <div className="min-w-0 flex-1">
@@ -56,7 +53,7 @@ export function AccountCard({ account, onSignOut }: AccountCardProps) {
       >
         {account.provider === 'guest' ? 'Leave' : 'Sign out'}
       </button>
-    </section>
+    </div>
   )
 }
 

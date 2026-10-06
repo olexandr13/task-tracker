@@ -23,6 +23,11 @@ const REDEMPTION: Redemption = {
 }
 
 describe('readRewardDay (STORE-21, STORE-24)', () => {
+  it('reads an opening written as 0, rather than losing the day (STORE-21)', () => {
+    const data = { version: REWARD_SCHEMA_VERSION, day: '2026-09-17', entries: { 'chest-open': { points: 0 } } }
+    expect(readRewardDay(data)).toEqual([{ taskId: 'chest-open', day: '2026-09-17', points: 0 }])
+  })
+
   it('reads an entry per task done on the day', () => {
     const data = { version: REWARD_SCHEMA_VERSION, day: '2026-09-17', entries: { run: { points: 2 }, read: { points: 5 } } }
 
@@ -48,7 +53,8 @@ describe('readRewardDay (STORE-21, STORE-24)', () => {
     expect(readRewardDay({ ...day, version: 99 })).toBeNull()
     expect(readRewardDay({ ...day, day: '2026-02-30' })).toBeNull()
     expect(readRewardDay({ ...day, entries: [] })).toBeNull()
-    expect(readRewardDay({ ...day, entries: { run: { points: 0 } } })).toBeNull()
+    expect(readRewardDay({ ...day, entries: { run: { points: -1 } } })).toBeNull()
+    expect(readRewardDay({ ...day, entries: { run: { points: 1.5 } } })).toBeNull()
     expect(readRewardDay({ ...day, entries: { run: 2 } })).toBeNull()
     expect(readRewardDay(null)).toBeNull()
   })
@@ -105,30 +111,40 @@ describe('readPointValue (STORE-42, STORE-24)', () => {
 })
 
 describe('readCaseSettings (STORE-48, STORE-24)', () => {
-  it('reads back what Cases asks of a day', () => {
-    const asking: CaseSettings = { leastTasks: 4 }
+  it('reads back what Cases asks of a day, and whether it counts tasks without points', () => {
+    const asking: CaseSettings = { leastTasks: 4, countUnpaid: false }
 
     expect(readCaseSettings(toStoredCaseSettings(asking))).toEqual(asking)
     expect(readCaseSettings(toStoredCaseSettings(DEFAULT_CASES))).toEqual(DEFAULT_CASES)
   })
 
   it('reads settings saved with the old choice of jackpot, keeping how big a day must be', () => {
-    const saved = { ...toStoredCaseSettings({ leastTasks: 4 }), settings: { leastTasks: 4, jackpot: 'typicalDay' } }
+    const saved = { ...toStoredCaseSettings(DEFAULT_CASES), settings: { leastTasks: 4, jackpot: 'typicalDay' } }
 
-    expect(readCaseSettings(saved)).toEqual({ leastTasks: 4 })
+    expect(readCaseSettings(saved)).toEqual({ leastTasks: 4, countUnpaid: true })
+  })
+
+  it('reads settings saved before tasks without points could be left out as counting them (CHST-32)', () => {
+    const saved = { ...toStoredCaseSettings(DEFAULT_CASES), settings: { leastTasks: 4 } }
+
+    expect(readCaseSettings(saved)).toEqual({ leastTasks: 4, countUnpaid: true })
   })
 
   it('saves no choice of jackpot, there being none', () => {
-    expect(toStoredCaseSettings({ leastTasks: 4 }).settings).toEqual({ leastTasks: 4 })
+    expect(toStoredCaseSettings({ leastTasks: 4, countUnpaid: false }).settings).toEqual({
+      leastTasks: 4,
+      countUnpaid: false,
+    })
   })
 
   it('trusts nothing in a version it does not know, or not shaped as settings (STORE-24)', () => {
-    const saved = toStoredCaseSettings({ leastTasks: 4 })
+    const saved = toStoredCaseSettings({ leastTasks: 4, countUnpaid: true })
 
     expect(readCaseSettings({ ...saved, version: 99 })).toBeNull()
     expect(readCaseSettings({ ...saved, name: 'pointValue' })).toBeNull()
     expect(readCaseSettings({ ...saved, settings: { leastTasks: 0 } })).toBeNull()
     expect(readCaseSettings({ ...saved, settings: { leastTasks: '4' } })).toBeNull()
+    expect(readCaseSettings({ ...saved, settings: { leastTasks: 4, countUnpaid: 'no' } })).toBeNull()
     expect(readCaseSettings({ ...saved, settings: {} })).toBeNull()
     expect(readCaseSettings(null)).toBeNull()
   })

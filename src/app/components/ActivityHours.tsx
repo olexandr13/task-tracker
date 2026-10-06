@@ -31,8 +31,10 @@ const addButton =
   'flex h-8 items-center gap-1 rounded-lg px-2 text-sm text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-100 md:h-7 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:active:bg-neutral-800'
 
 interface ActivityHoursProps {
+  /** For the button that lists more hours to name what it opens (ACT-20). */
+  id: string
   day: LocalDay
-  /** The hours listed, in clock order (`hoursOfDay`, with the one picked). */
+  /** The hours listed, in clock order (`hoursOfDay`, with the one picked, and today's others so far on asking). */
   hours: readonly number[]
   /** The whole log; the day's records are read from it. */
   entries: readonly ActivityEntry[]
@@ -61,6 +63,7 @@ interface ActivityHoursProps {
  * page itself never moves for it.
  */
 export function ActivityHours({
+  id,
   day,
   hours,
   entries,
@@ -76,6 +79,7 @@ export function ActivityHours({
   const current = slotAt(now)
   const list = useRef<HTMLUListElement>(null)
 
+  // Kept in view as it is picked, and as hours listed above it come and go (ACT-20).
   useEffect(() => {
     const box = list.current
     const row = box?.querySelector<HTMLElement>('[data-picked="true"]')
@@ -85,11 +89,12 @@ export function ActivityHours({
     else if (row.offsetTop + row.offsetHeight > box.scrollTop + box.clientHeight) {
       box.scrollTop = row.offsetTop + row.offsetHeight - box.clientHeight
     }
-  }, [day, pickedHour])
+  }, [day, pickedHour, hours.length])
 
   return (
     <ul
       ref={list}
+      id={id}
       aria-label="Hours"
       className="relative -mx-1 flex max-h-[min(26rem,60dvh)] flex-col gap-0.5 overflow-y-auto overscroll-y-contain px-1 py-0.5"
     >

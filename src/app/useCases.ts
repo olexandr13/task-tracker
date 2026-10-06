@@ -32,7 +32,7 @@ export interface Cases {
   readonly settings: CaseSettings
   /** Everything earned today, which Today’s case takes half of (CHST-7). */
   readonly jackpot: number
-  /** What each case can pay, from the ledger as it stands (CHST-10). */
+  /** What each case can pay, from the tasks and the ledger as they stand (CHST-10). */
   readonly spans: Readonly<Record<CaseSource, CaseSpan>>
   /** Why there is nothing to open, or null while a key is waiting. */
   readonly blocked: CaseBlock | null
@@ -86,7 +86,8 @@ interface Ledger {
  * already happened.
  *
  * `tasks` is the live tasks, which is what "everything in Today" is asked of,
- * and `ready` says whether they and the ledger have arrived. **Nothing is
+ * `accountId` whose Drop moment it is (CHST-29), and `ready` says whether they
+ * and the ledger have arrived. **Nothing is
  * answered before they have.** A ledger not read yet reads as a case not
  * opened, which would say a key was waiting over one already spent — and worse,
  * would let an opening write over what the morning's gave, the two being one
@@ -97,6 +98,7 @@ export function useCases(
   tasks: readonly Task[],
   ledger: Ledger,
   device: CaseDeviceRepository,
+  accountId: string,
   now: Date,
   ready: boolean,
   watch: DailyCaseWatch = {},
@@ -108,7 +110,7 @@ export function useCases(
   // not watched: it is not said later (CHST-29, FEAT-3). Weekly's midnight
   // is not watched either; opening the app on Monday still says it (CHST-30).
   const watching = ready && (watch.watching ?? true)
-  const keyTimer = useKeyTimer(tasks, ledger.entries, settings, now, {
+  const keyTimer = useKeyTimer(tasks, ledger.entries, settings, accountId, now, {
     watching,
     onOpen: watch.onOpen,
   })
@@ -132,16 +134,16 @@ export function useCases(
   }, [watching, shareDue])
   const moment = shareClock !== null && shareClock.getTime() > keyTimer.now.getTime() ? shareClock : keyTimer.now
   const today = toLocalDay(moment)
-  const blocked = ready ? caseBlock(tasks, ledger.entries, settings, moment) : 'unclear'
+  const blocked = ready ? caseBlock(tasks, ledger.entries, settings, accountId, moment) : 'unclear'
   const opened = caseOpened(ledger.entries, moment)
   const jackpot = caseJackpot(ledger.entries, moment)
   const spans = {
-    today: caseSpan('today', ledger.entries, moment),
-    daily: caseSpan('daily', ledger.entries, moment),
-    week: caseSpan('week', ledger.entries, moment),
+    today: caseSpan('today', tasks, ledger.entries, settings, moment),
+    daily: caseSpan('daily', tasks, ledger.entries, settings, moment),
+    week: caseSpan('week', tasks, ledger.entries, settings, moment),
   }
   const dayAsked = summarize(tasks, 'today', moment).total
-  const slots = caseSlots(tasks, ledger.entries, settings, moment)
+  const slots = caseSlots(tasks, ledger.entries, settings, accountId, moment)
 
   // The last opening and the notice both belong to a day, so a day that has
   // turned leaves them behind rather than glowing over this morning's cases.
@@ -165,15 +167,15 @@ export function useCases(
     const day = toLocalDay(moment)
     const mark = `${day}/${source}`
     if (!ready || openedHere.current.has(mark)) return null
-    const slot = caseSlots(tasks, ledger.entries, settings, moment).find((item) => item.source === source)
+    const slot = caseSlots(tasks, ledger.entries, settings, accountId, moment).find((item) => item.source === source)
     if (slot?.state !== 'ready') return null
 
-    const result = openSpan(caseSpan(source, ledger.entries, moment))
+    const result = openSpan(caseSpan(source, tasks, ledger.entries, settings, moment))
     openedHere.current.add(mark)
     ledger.saveEarning({ taskId: caseIdFor(source), day, points: result.points })
     setKept({ ...latest.current, lastOpen: { day, quarter: caseQuarter(result.points, result.jackpot) } })
     return result
-  }, [ready, tasks, ledger, settings, moment, setKept])
+  }, [ready, tasks, ledger, settings, accountId, moment, setKept])
 
   const setSound = useCallback(
     (on: boolean) => {

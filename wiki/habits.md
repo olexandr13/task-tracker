@@ -108,8 +108,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   Each card folds on its own, so opening one never moves one being reached for, and a card starts
   in the default again when the page is next opened. A screen reader hears the fold as a button
   named for its habit (`Record of "stretch"`), reporting whether it is open.
-- **HAB-23** How the cards start is set on **Settings**, under **View settings** with the rest of
-  how the pages start out (UI-35):
+- **HAB-23** How the cards start is set on **Settings**, under the **Habits** switch in Features,
+  folded there until its arrow is pressed (FEAT-10):
   one switch, **Show habit details by default**, its name alone with no picture beside it and no line
   under it saying what it does. On, each card starts open, showing its numbers and grid (HAB-21); off, every card starts
   folded, which is how it begins. The choice is kept on this device (STORE-36), and Habits is drawn
@@ -208,12 +208,12 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 `src/core/due.ts` (`isSkippedToday`, `unskipToday`), `src/app/useTasks.ts`
 (`setHabitDay`, `unskip`, `changeRepeat` putting a task taken on at the end, and rests ahead dropped as the tasks arrive), `src/app/components/AddTaskForm.tsx` (the add box), `src/app/components/AddTaskSheet.tsx` (the detailed
 sheet, starting daily), `src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`H` opens it),
-`src/app/components/ViewSettingsCard.tsx` and `src/app/useDeviceSetting.ts`
-(the switch under Settings' View settings, and keeping whether cards start folded on this device), `src/core/order.ts` (`moveTask`, the order itself),
+`src/app/components/SettingsList.tsx` and `src/app/useDeviceSetting.ts`
+(the switch under Habits on Settings, and keeping whether cards start folded on this device), `src/core/order.ts` (`moveTask`, the order itself),
 `src/app/useSortableTask.ts`, `src/app/components/SortableTasks.tsx` and
 `src/app/components/TaskDragAndDrop.tsx` (picking a card up and dropping it, shared with the rows),
 `src/app/components/GripIcon.tsx` and `src/app/rowControls.ts` (`dragGrip`).
 **Tested in:** `src/core/habit.test.ts`, `src/core/due.test.ts` (a skip taken back), `src/core/task.test.ts`, `src/app/useTasks.test.ts`,
-`src/app/components/HabitList.test.tsx`, `src/app/components/ViewSettingsCard.test.tsx`,
+`src/app/components/HabitList.test.tsx`, `src/app/components/SettingsList.test.tsx`,
 `src/app/components/AddTaskForm.test.tsx`, `src/app/letterShortcut.test.ts` and
 `src/app/useLetterShortcut.test.ts` (`H` opens the sheet).

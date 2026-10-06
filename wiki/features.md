@@ -7,15 +7,24 @@ thing every account keeps.
 
 ## The switches
 
-- **FEAT-1** **Settings** has a **Features** card, under Backup (UI-35), with **one switch for each
+- **FEAT-1** **Settings** has a **Features** section, under Account (UI-35), with **one switch for each
   part** of the app that can be done without, in this order: **Habits**, **Rewards**, **Cases**,
   **Lists**, **Tags**, **Balance**, **Activity log**, **Modes**, **Progress bars**, **Daily quote** and
   **Reminders**. Each carries the glyph its page is navigated by, its name, and a line saying what it
   is in plain words — *Points for finished tasks, and prizes and a wishlist to spend them on*. A
   switch turns its part on or off **at once, with no confirm**: nothing is lost either way (FEAT-5).
-  The **i** beside the heading (UI-73) says what the card is for, one thing a sentence: what off
-  means, that nothing is deleted, which parts belong to which (FEAT-4), and that the switches are the
-  account's (FEAT-6).
+  The **i** beside the heading (UI-73) says what the section is for, one thing a sentence: what off
+  means, that nothing is deleted, which parts belong to which (FEAT-4), that a part with settings of
+  its own has an arrow that shows them (FEAT-10), and that the switches are the account's (FEAT-6).
+- **FEAT-10** A part with **settings of its own** keeps them **under its switch**, one step down
+  the same tree, rather than on a card of its own: **Habits** holds how the habit cards start out
+  (HAB-23), **Cases** whether tasks without points count (CHST-32) and practice (CHST-21). A
+  **chevron** in front of the part's switch, named *Habits settings* or *Cases settings*, folds them
+  away and brings them back; they start folded, and what is folded is kept on this device
+  (STORE-57). Unfolded, they sit under the part's name, joined to it by a line down from its icon.
+  Every switch keeps the chevron's column, so the switches start in one line whether or not they
+  have anything under them. A part switched off takes its settings and its chevron with it (FEAT-3).
+  A new setting of one part goes under that part.
 - **FEAT-7** What cannot be switched off is what the app is: the **tasks**, their days, hours,
   repeats, checklists, time goals and descriptions, the period views, Tasks, the **trash**, and
   Settings itself with the account, the backup and the theme.
@@ -42,10 +51,10 @@ thing every account keeps.
     Procrastination's win card (JUST-9).
   - **Cases** — its card on Rewards (RWD-30), its section on Rules (CHST-3), the dot saying a key is
     waiting (CHST-22), the notice when Payday is earned (CHST-23), the notice when the Drop
-    arrives (CHST-29), the notice when Weekly is here on Monday (CHST-30), and its practice card on Settings
-    (CHST-21).
-  - **Habits** — Settings' **View settings**, which holds only how the habit cards start out
-    (HAB-23).
+    arrives (CHST-29), the notice when Weekly is here on Monday (CHST-30), and its settings under its
+    switch on Settings, counting tasks without points and practice (FEAT-10).
+  - **Habits** — its settings under its switch on Settings: how the habit cards start out
+    (HAB-23, FEAT-10).
   - **Progress bars** and **Daily quote** — each from the rail beside the tasks (UI-1); with both
     off there is no rail, and the list takes its width. The quote service is not asked while the
     quote is off.
@@ -100,8 +109,8 @@ needs, switching one), `src/storage/featureRepository.ts`, `featureSchema.ts`,
 `src/storage/checkInSender.ts` (the sender asking nothing while the check-in is switched away),
 `src/app/useFeatures.ts` (loading and switching), `src/app/features.ts` (`FeaturesContext` and
 `useFeatureOn`, for what is drawn inside a row or a sheet; which pages are there, and where an
-address lands), `src/app/featureLabels.ts` (the wording), `src/app/components/FeaturesCard.tsx` and
-`SettingsList.tsx` (the card), `src/app/TasksScreen.tsx` (the shortcuts, the notices, the modes, the
+address lands), `src/app/featureLabels.ts` (the wording), `src/app/components/FeatureSwitches.tsx` and
+`SettingsList.tsx` (the switches, and a part's own settings under its switch), `src/app/TasksScreen.tsx` (the shortcuts, the notices, the modes, the
 rail), `SideNav.tsx`, `BottomNav.tsx`, `MorePage.tsx`, `RewardsNav.tsx`, `ModesPage.tsx` (the
 navigation), `TaskItem.tsx`, `TaskSheet.tsx`, `AddTaskSheet.tsx`, `TaskDescription.tsx`,
 `ProcrastinationMode.tsx`, `RewardsPage.tsx`, `ActivityPage.tsx` (what goes with a part),

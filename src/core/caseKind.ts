@@ -15,7 +15,7 @@
  * Where the jackpot is 1 the three meet, and each pays 1.
  */
 
-import { MIN_CASE_POINTS, openFairCase, type CaseOpen, type CaseSource, type CaseSpan } from './cases'
+import { DROP_LEAST, MIN_CASE_POINTS, openFairCase, type CaseOpen, type CaseSource, type CaseSpan } from './cases'
 
 /** The cases, safest first. Fair is the one chosen to begin with. */
 export const CASE_KINDS = ['steady', 'fair', 'toss'] as const
@@ -26,8 +26,8 @@ export type CaseKindId = (typeof CASE_KINDS)[number]
  * How each case spreads the range `caseSpan` gives it. Today, the daily case
  * and Weekly each pay any whole number from their least to their most,
  * each as likely as any other. The ends are not this kind's: Today's least is
- * the cheapest task today, the daily case's most is yesterday divided by its
- * tasks, and Weekly's ends are last week's.
+ * the cheapest task today, the daily case's range is yesterday's and starts at
+ * 0, and Weekly's ends are last week's.
  */
 export const CASE_FOR_SOURCE = { today: 'fair', daily: 'fair', week: 'fair' } as const satisfies Record<CaseSource, CaseKindId>
 
@@ -41,9 +41,9 @@ export interface CaseOdds {
   readonly most: number
 }
 
-/** The line in front of a case, from the range it can pay. */
+/** The line in front of a case, from the range it can pay. Only the Drop's starts at 0 (CHST-11). */
 export function oddsForSpan(span: CaseSpan): CaseOdds {
-  const least = Math.max(MIN_CASE_POINTS, Math.floor(span.least))
+  const least = Math.max(DROP_LEAST, Math.floor(span.least))
   const most = Math.max(least, Math.floor(span.most))
   return least === most ? { shape: 'exact', least, most } : { shape: 'span', least, most }
 }

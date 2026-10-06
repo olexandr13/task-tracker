@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { isLeastTasks, MAX_LEAST_TASKS, MIN_LEAST_TASKS, type CaseSettings } from '../../core'
-import { describeJackpotToday, JACKPOT_HINT, JACKPOT_LABEL, LEAST_TASKS_HINT, LEAST_TASKS_LABEL } from '../caseLabels'
+import { describeJackpotHint, describeJackpotToday, JACKPOT_LABEL, LEAST_TASKS_HINT, LEAST_TASKS_LABEL } from '../caseLabels'
 import { describePoints } from '../rewardLabels'
 
 const card = 'rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
@@ -49,7 +49,7 @@ export function CasesSettingsCard({
 
       <div className={`${card} flex flex-col gap-0.5 px-4 py-3`}>
         <span className="text-sm text-neutral-900 dark:text-neutral-100">{JACKPOT_LABEL}</span>
-        <span className="text-xs text-neutral-500 dark:text-neutral-400">{JACKPOT_HINT}</span>
+        <span className="text-xs text-neutral-500 dark:text-neutral-400">{describeJackpotHint(settings.countUnpaid)}</span>
         <span className="text-xs font-medium text-amber-700 tabular-nums dark:text-amber-300">
           {describeJackpotToday(describePoints(jackpot))}
         </span>

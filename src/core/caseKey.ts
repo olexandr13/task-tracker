@@ -3,14 +3,15 @@
  *
  * A day has two keys (CHST-27). The first is earned the hard way: clear
  * everything in Today. The second is a bonus that becomes available at a
- * random moment during the day — the same moment for everyone, so it is
- * derived from the day rather than chosen per device. Monday has a third,
- * Weekly, ready from midnight and only planned again on Tuesday (CHST-30).
+ * random moment during the day — the account's own moment, so it is derived
+ * from the day and the account rather than chosen per device. Monday has a
+ * third, Weekly, ready from midnight and only planned again on Tuesday (CHST-30).
  *
- * The random moment is deterministic: a hash of the day's date picks an
- * hour and minute, so every device agrees on when the key arrives without
- * anything being stored. It falls between 06:00 and 21:59, so it lands in
- * waking hours.
+ * The random moment is deterministic: a hash of the day's date and the
+ * account's id picks an hour and minute, so every device of the account agrees
+ * on when the key arrives without anything being stored, and two accounts wait
+ * for different moments (CHST-29). It falls between 06:00 and 21:59, so it
+ * lands in waking hours.
  */
 
 import { startOfLocalDay, toLocalDay, type LocalDay } from './day'
@@ -61,13 +62,13 @@ export function weekCaseOpened(entries: readonly RewardEntry[], now: Date = new 
 }
 
 /**
- * The moment the bonus key becomes available on a given day, derived from
- * the day itself so every device agrees. Deterministic: the same day always
- * yields the same moment.
+ * The moment the bonus key becomes available on a given day for an account,
+ * derived from the two so every device of the account agrees. Deterministic:
+ * the same day and account always yield the same moment.
  */
-export function dailyKeyTime(day: LocalDay): Date {
+export function dailyKeyTime(day: LocalDay, accountId: string): Date {
   const start = startOfLocalDay(day)
-  const hash = hashDay(day)
+  const hash = hashText(`${day}/${accountId}`)
 
   // Pick an hour between KEY_HOUR_EARLIEST and KEY_HOUR_LATEST inclusive.
   const hourSpan = KEY_HOUR_LATEST - KEY_HOUR_EARLIEST + 1
@@ -80,23 +81,32 @@ export function dailyKeyTime(day: LocalDay): Date {
 }
 
 /**
- * A simple deterministic hash of the day string. Same input, same output —
- * that is what makes the random time agree across devices.
+ * A deterministic hash of a string, 32 bits unsigned. Same input, same output —
+ * that is what makes the random time agree across devices. FNV-1a, then
+ * MurmurHash3's finalizer to mix the bits: tomorrow's date differs from
+ * today's in its last character, and a plain rolling hash would only move the
+ * moment on by an hour a day.
  */
-function hashDay(day: LocalDay): number {
-  let hash = 0
-  for (let i = 0; i < day.length; i++) {
-    hash = ((hash << 5) - hash + day.charCodeAt(i)) | 0
+function hashText(text: string): number {
+  let hash = 0x811c9dc5
+  for (let i = 0; i < text.length; i++) {
+    hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193)
   }
-  return Math.abs(hash)
+  hash = Math.imul(hash ^ (hash >>> 16), 0x85ebca6b)
+  hash = Math.imul(hash ^ (hash >>> 13), 0xc2b2ae35)
+  return (hash ^ (hash >>> 16)) >>> 0
 }
 
 /**
  * Whether the bonus key is available right now: the day's random moment has
  * passed and the bonus key has not been opened yet.
  */
-export function bonusKeyAvailable(entries: readonly RewardEntry[], now: Date = new Date()): boolean {
-  const timeReached = now.getTime() >= dailyKeyTime(toLocalDay(now)).getTime()
+export function bonusKeyAvailable(
+  entries: readonly RewardEntry[],
+  accountId: string,
+  now: Date = new Date(),
+): boolean {
+  const timeReached = now.getTime() >= dailyKeyTime(toLocalDay(now), accountId).getTime()
   return timeReached && !dailyCaseOpened(entries, now)
 }
 
@@ -112,11 +122,12 @@ export function nextKeyTime(
   _tasks: readonly Task[],
   entries: readonly RewardEntry[],
   _settings: CaseSettings,
+  accountId: string,
   now: Date = new Date(),
 ): { at: Date; way: KeyWay } | null {
   if (dailyCaseOpened(entries, now)) return null
 
-  const at = dailyKeyTime(toLocalDay(now))
+  const at = dailyKeyTime(toLocalDay(now), accountId)
   if (now.getTime() >= at.getTime()) return null
   return { at, way: 'daily' }
 }
@@ -129,6 +140,7 @@ export function anyKeyAvailable(
   tasks: readonly Task[],
   entries: readonly RewardEntry[],
   settings: CaseSettings,
+  accountId: string,
   now: Date = new Date(),
 ): boolean {
   const held = now.getDay() === 1 ? KEYS_PER_DAY + 1 : KEYS_PER_DAY
@@ -143,5 +155,5 @@ export function anyKeyAvailable(
   if (now.getDay() === 1 && !weekCaseOpened(entries, now)) return true
 
   // Has the bonus time passed?
-  return bonusKeyAvailable(entries, now)
+  return bonusKeyAvailable(entries, accountId, now)
 }

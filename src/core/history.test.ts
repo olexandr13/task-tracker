@@ -14,17 +14,23 @@ function doneAt(at: Date): Task {
 }
 
 describe('historyStart', () => {
-  it('is the first day of this week when the week began last month (STORE-55)', () => {
-    // The week began on Monday 28 September, before the month did.
-    expect(historyStart(NOW)).toBe('2026-09-28')
+  it('is the first day of last week when that week began last month (STORE-55)', () => {
+    // This week began on Monday 28 September, so last week on the 21st, before the month did.
+    expect(historyStart(NOW)).toBe('2026-09-21')
   })
 
-  it('is the first of the month once the week began inside it (STORE-55)', () => {
+  it('is the first of the month once last week began inside it (STORE-55)', () => {
+    // Last week began on Monday 5 October.
     expect(historyStart(new Date(2026, 9, 14, 9, 0))).toBe('2026-10-01')
   })
 
   it('is the day both began when they began together (STORE-55)', () => {
-    expect(historyStart(new Date(2026, 5, 3, 9, 0))).toBe('2026-06-01')
+    expect(historyStart(new Date(2026, 5, 10, 9, 0))).toBe('2026-06-01')
+  })
+
+  it('holds the whole of last week on a Monday, for Weekly to count (STORE-55, CHST-10)', () => {
+    // Monday 5 October: last week ran from Monday 28 September, before the month began.
+    expect(historyStart(new Date(2026, 9, 5, 9, 0))).toBe('2026-09-28')
   })
 })
 

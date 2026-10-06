@@ -1,7 +1,9 @@
 import {
   BONUS_PERIODS,
   type CaseSettings,
+  DEFAULT_CASES,
   isCurrency,
+  isEarnedAmount,
   isLeastTasks,
   isLocalDay,
   isPointAmount,
@@ -74,7 +76,7 @@ export function readRewardDay(data: unknown): RewardEntry[] | null {
 
   const read: RewardEntry[] = []
   for (const [taskId, entry] of Object.entries(entries)) {
-    if (!isRecord(entry) || typeof entry.points !== 'number' || !isRedemptionAmount(entry.points)) return null
+    if (!isRecord(entry) || typeof entry.points !== 'number' || !isEarnedAmount(entry.points)) return null
     read.push({ taskId, day, points: entry.points })
   }
   return read
@@ -175,8 +177,9 @@ export function readPointValue(data: unknown): PointValue | null {
 }
 
 /**
- * What Cases asks of a day (CHST-3). One record, named for itself, so the
- * two devices that set it write the one record and the later write wins.
+ * What Cases asks of a day (CHST-3), and whether it counts tasks without
+ * points (CHST-32). One record, named for itself, so the two devices that set
+ * it write the one record and the later write wins.
  */
 export interface StoredCaseSettings {
   version: number
@@ -196,14 +199,21 @@ export function toStoredCaseSettings(settings: CaseSettings): StoredCaseSettings
  * There is no choice any more, so that is read past rather than refused: the
  * record is otherwise the same shape, and refusing it would throw away the one
  * setting that is left. It is dropped on the next save.
+ *
+ * Settings saved before tasks without points could be left out of the cases
+ * (CHST-32) have no `countUnpaid`, and are read as counting them, which is what
+ * every case did then. The field is added rather than the version bumped: the
+ * version is the whole ledger's (STORE-24), and a device not yet updated would
+ * then refuse every day of it rather than read past one field.
  */
 export function readCaseSettings(data: unknown): CaseSettings | null {
   if (!isRecord(data) || data.version !== REWARD_SCHEMA_VERSION || data.name !== CASES_SETTING || !isRecord(data.settings)) {
     return null
   }
 
-  const { leastTasks } = data.settings
+  const { leastTasks, countUnpaid = DEFAULT_CASES.countUnpaid } = data.settings
   if (typeof leastTasks !== 'number' || !isLeastTasks(leastTasks)) return null
+  if (typeof countUnpaid !== 'boolean') return null
 
-  return { leastTasks }
+  return { leastTasks, countUnpaid }
 }

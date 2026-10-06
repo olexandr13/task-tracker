@@ -32,8 +32,9 @@ changes shape.
   [Offline](offline.md).
 - **STORE-55** Opening the app does **not load every task**. Left behind is **history**: a task that
   happens once, is done, is not in the trash, and was finished — and is due, if at all — before
-  this week or this month began, whichever began first. Nothing on screen counts it: every list,
-  bar and bonus is today's, this week's or this month's. So what is downloaded as the app opens is
+  last week or this month began, whichever began first. Nothing on screen counts it: every list,
+  bar and bonus is today's, this week's or this month's, and Cases counts today, yesterday and last
+  week, tasks without points included (CHST-10). So what is downloaded as the app opens is
   the work in play, not everything ever done. History is loaded a stretch of days at a time, as a
   span of done work reaching back to it is opened (TASK-74), and stays loaded until a reload; how
   many tasks a view has is asked of the server without loading them. Deleting or renaming a tag
@@ -46,7 +47,8 @@ changes shape.
 - **STORE-21** What completions earned is saved in the account **apart from the tasks**, so it
   outlives a task deleted and purged (RWD-13). It is kept as **one record per day**, holding what
   each task done that day earned. Reading the ledger costs a record a day, however many tasks were
-  done.
+  done. An entry is a whole number of points, **0 included**: no case pays 0 (CHST-9), but an
+  opening of 0 written while Payday could pay nothing still reads, and so does its day.
 - **STORE-22** A day is only ever changed **task by task**: earning adds that task's points to the
   day, taking back removes them, and nothing else on the day is touched. Two devices completing
   different tasks on the same day keep both. The same completion recorded twice is recorded once. A
@@ -67,13 +69,18 @@ changes shape.
   write the one record. No record at all is nothing set, and the points are counted in points alone.
   It is kept under the ledger's version (STORE-24) and ignored, with a warning, when it cannot be
   read.
-- **STORE-48** What **Cases** asks of a day (CHST-3) is kept beside what a point is worth, as
+- **STORE-48** What **Cases** asks of a day (CHST-3), and whether it counts tasks without points
+  (CHST-32), is kept beside what a point is worth, as
   **one more record of the settings**, named `chest` — the name it was first saved under — for the
   same reason (STORE-42). No record at all is what an account starts with — any cleared day earns a
   key — so there is no shape for "not"
   set" to be told from. A record saved while the jackpot could be worked out two ways also says
   which way; there is no choice any more (CHST-7), so that is read past rather than refused, and
-  dropped on the next save. It is
+  dropped on the next save. A record saved before tasks without points could be left out says
+  nothing about them, and reads as counting them, which is what every case did then; the field was
+  added without a new version because the version is the whole ledger's, and a device not yet
+  updated would refuse every day of it rather than read past one field. A value that is not on or
+  off is not trusted, and the record with it. It is
   kept under the ledger's version (STORE-24) and ignored, with a warning, when it cannot be read,
   which leaves Cases asking what it asks by default rather than asking nothing. It is **in the
   backup**, taken only by an account that has none of its own, as the bonuses and the point value
@@ -266,6 +273,12 @@ changes shape.
   browser's `localStorage`, not in the account, under a version of its own, read at once when the
   app opens, and back to the default — unfolded — when it cannot be read. A layout saved before
   there were pages under Rewards, or before the modes were listed, is read as leaving those open.
+- **STORE-57** What is **folded on Settings** — its sections, and a feature's own settings under
+  its switch (UI-35, FEAT-10) — is kept the same way as the sidebar's layout (STORE-31): in this
+  browser's `localStorage`, under a version of its own, read at once when the app opens. Only what
+  has been folded or unfolded is kept, so a part of Settings added later starts as it should — a
+  section open, a feature's settings folded — without a new version; a part Settings no longer has
+  is read past. A layout that cannot be read is no layout: everything as it starts.
 - **STORE-36** How the habits view is shown — whether cards start open, set on Settings (HAB-23) — is
   kept the same way again, under a version of its own, apart from the task View options (STORE-30). A phone and a
   desktop have different room, so each is set its own way. Options the app cannot read fall back to

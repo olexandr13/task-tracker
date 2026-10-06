@@ -3,25 +3,28 @@
  * reaching back to it is opened.
  *
  * Every period a list, a bar or a bonus counts — today, this week, this month —
- * starts on or after the first day of this week or of this month, whichever
- * comes first. A task done once and for all before that day, and not due on or
- * after it, is counted by none of them: it is only ever looked at under a span
- * of done work (TASK-74). Leaving it out of what is loaded when the app opens
+ * starts on or after the first day of this week or of this month, and every
+ * day a case counts — today, yesterday, last week — on or after the first day
+ * of last week (CHST-10). A task done once and for all before the first of
+ * those, and not due on or after it, is counted by none of them: it is only
+ * ever looked at under a span of done work (TASK-74). Leaving it out of what is loaded when the app opens
  * keeps that load the size of the work in play rather than of everything ever
  * done (STORE-55).
  */
 
 import { spanStart, type CompletionSpan } from './completed'
-import { startOfLocalDay, toLocalDay, type LocalDay } from './day'
+import { offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from './day'
 import { periodRange } from './progress'
 import type { Task } from './task'
 
 /**
- * The first day of this week or of this month, whichever comes first: done
- * work finished before it can be history.
+ * The first day of last week or of this month, whichever comes first: done
+ * work finished before it can be history. Last week, not this one, because
+ * Weekly and the Drop count the tasks finished then, with points or without
+ * (CHST-10), and a task without points is only in the tasks.
  */
 export function historyStart(now: Date = new Date()): LocalDay {
-  const week = toLocalDay(periodRange('week', now).start)
+  const week = offsetDay(toLocalDay(periodRange('week', now).start), -7)
   const month = toLocalDay(periodRange('month', now).start)
   return week < month ? week : month
 }

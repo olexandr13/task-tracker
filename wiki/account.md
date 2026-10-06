@@ -74,8 +74,8 @@ device alone.
 a Google account's data is kept, and where a guest's),
 `failFastAuthFetch.ts` (so start-up does not wait on Google when there is no connection),
 `src/app/App.tsx` (nothing without an account or guest), `src/app/useAuth.ts`,
-`src/app/components/SignInScreen.tsx`, `AppLogo.tsx` (the icon on it), `AccountCard.tsx` (the account on Settings), `GuestMark.tsx`.
+`src/app/components/SignInScreen.tsx`, `AppLogo.tsx` (the icon on it), `AccountSummary.tsx` (the account on Settings), `GuestMark.tsx`.
 The project itself: `firebase.json`, `.firebaserc`, `firestore.rules`; its settings: `.env.example`.
 **Tested in:** `src/app/useAuth.test.ts`, `src/app/components/SignInScreen.test.tsx`,
-`src/app/components/AccountCard.test.tsx`, `src/storage/appAuthService.test.ts`,
+`src/app/components/AccountSummary.test.tsx`, `src/storage/appAuthService.test.ts`,
 `src/storage/failFastAuthFetch.test.ts`.

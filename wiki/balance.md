@@ -33,7 +33,7 @@ anywhere else, by tagging it: a walk with the dog tagged `walk`, with `walk` bou
   (TIME-8). Such a session is not listed in the clock's panel, so it cannot be taken back there; it
   drops out of the history by itself once old enough. Dropping a task's rule lets go of them early
   (TIME-8). A timer still running counts once it is stopped and logged (TIME-15). Time logged on a
-  task finished before this week and this month counts once that task is loaded (STORE-55).
+  task finished before last week and this month counts once that task is loaded (STORE-55).
 - **BAL-4** A task's time is **divided evenly** between the categories its tags are bound to. A
   30-minute walk to the office tagged `job` and `walk` counts 15 minutes toward Work and 15 toward
   Rest; a task bound to one category through two of its tags counts once. So the pieces always add

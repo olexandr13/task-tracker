@@ -223,7 +223,7 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-73** On **Tasks** the spans fold the same way (TASK-72): **Done today** is open, and
   **Done yesterday**, **Done in the last 7 days**, **Done in the last 30 days** and **Done earlier**
   start folded, each opened and folded again from its heading.
-- **TASK-74** Done work finished before this week and this month began is **not loaded** when the
+- **TASK-74** Done work finished before last week and this month began is **not loaded** when the
   app opens (STORE-55); a folded span reaching back to it **loads it as it is opened**. Until its
   tasks are all loaded, the span's heading has **no count**, and once open it shows the tasks it has
   so far with **Loading…** under them; then the count and the rest arrive. A span is headed while
