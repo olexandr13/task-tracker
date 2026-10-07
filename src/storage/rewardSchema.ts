@@ -138,19 +138,23 @@ export function readRewardGoal(data: unknown): { period: Period; points: number 
 /**
  * A standing setting of the points, kept one record per setting under a name of
  * its own rather than an id — the same reasoning as a bonus above. What one
- * point is worth (RWD-31) and what Cases asks of a day (CHST-3) are
- * the two there are; a new one is a name here and a watcher in the repository.
+ * point is worth (RWD-31), what Cases asks of a day (CHST-3) and the reward a
+ * new task starts with (RWD-45) are the three there are; a new one is a name
+ * here and a watcher in the repository.
  */
 /**
  * `chest` is the name Cases was first saved under. A document and a backup
  * already written still use it, so the name stays.
  */
-export type RewardSetting = 'pointValue' | 'chest'
+export type RewardSetting = 'pointValue' | 'chest' | 'newTaskReward'
 
 export const POINT_VALUE: RewardSetting = 'pointValue'
 
 /** The Cases settings record. Named `chest` so a record already saved still matches. */
 export const CASES_SETTING: RewardSetting = 'chest'
+
+/** The record of the reward a new task starts with (RWD-45). */
+export const NEW_TASK_REWARD: RewardSetting = 'newTaskReward'
 
 export interface StoredPointValue {
   version: number
@@ -216,4 +220,27 @@ export function readCaseSettings(data: unknown): CaseSettings | null {
   if (typeof countUnpaid !== 'boolean') return null
 
   return { leastTasks, countUnpaid }
+}
+
+/**
+ * The reward a new task starts with (RWD-45): one amount for every task added,
+ * whatever its rule. No record at all is none, which is what an account starts
+ * with — a new task earns nothing until it is given a reward (RWD-1).
+ */
+export interface StoredNewTaskReward {
+  version: number
+  name: RewardSetting
+  points: number
+}
+
+export function toStoredNewTaskReward(points: number): StoredNewTaskReward {
+  return { version: REWARD_SCHEMA_VERSION, name: NEW_TASK_REWARD, points }
+}
+
+/** A saved reward for new tasks, or null when it can't be trusted. */
+export function readNewTaskReward(data: unknown): number | null {
+  if (!isRecord(data) || data.version !== REWARD_SCHEMA_VERSION || data.name !== NEW_TASK_REWARD) return null
+
+  const { points } = data
+  return typeof points === 'number' && isRewardAmount(points) ? points : null
 }

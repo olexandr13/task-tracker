@@ -1,31 +1,78 @@
 // @vitest-environment jsdom
 import type { ReactNode } from 'react'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createPointValue, NO_BONUSES, type PeriodBonuses, type PointValue } from '../../core'
+import { BONUS_IDS, createPointValue, NO_BONUSES, type PeriodBonuses, type PointValue, type RewardEntry } from '../../core'
 import { RewardRulesPage } from './RewardRulesPage'
 
 /* The rewards rules page. RWD ids refer to wiki/rewards.md. */
 
 afterEach(cleanup)
 
-function setup(bonuses: PeriodBonuses = NO_BONUSES, pointValue: PointValue | null = null, cases?: ReactNode) {
+const NOW = new Date(2026, 9, 7, 12)
+
+function setup(
+  bonuses: PeriodBonuses = NO_BONUSES,
+  pointValue: PointValue | null = null,
+  cases?: ReactNode,
+  newTaskReward: number | null = null,
+  entries: readonly RewardEntry[] = [],
+) {
   const onChangeBonus = vi.fn()
   const onChangePointValue = vi.fn()
+  const onChangeNewTaskReward = vi.fn()
   render(
     <RewardRulesPage
       bonuses={bonuses}
+      entries={entries}
+      now={NOW}
       pointValue={pointValue}
+      newTaskReward={newTaskReward}
       onChangeBonus={onChangeBonus}
       onChangePointValue={onChangePointValue}
+      onChangeNewTaskReward={onChangeNewTaskReward}
       cases={cases}
     />,
   )
-  return { user: userEvent.setup(), onChangeBonus, onChangePointValue }
+  return { user: userEvent.setup(), onChangeBonus, onChangePointValue, onChangeNewTaskReward }
 }
 
+describe('the reward for a new task (RWD-45)', () => {
+  it('starts as none, and gives one point at a touch', async () => {
+    const { user, onChangeNewTaskReward } = setup()
+
+    await user.click(screen.getByRole('button', { name: 'Reward for a new task: No reward' }))
+
+    expect(onChangeNewTaskReward).toHaveBeenCalledExactlyOnceWith(1)
+  })
+
+  it('says what is set, steps it, and takes it away in one tap', async () => {
+    const { user, onChangeNewTaskReward } = setup(NO_BONUSES, null, undefined, 3)
+
+    await user.click(screen.getByRole('button', { name: 'Reward for a new task: 3 points' }))
+    await user.click(screen.getByRole('button', { name: 'More points' }))
+    expect(onChangeNewTaskReward).toHaveBeenLastCalledWith(4)
+
+    await user.click(screen.getByRole('button', { name: 'Remove reward for new tasks' }))
+    expect(onChangeNewTaskReward).toHaveBeenLastCalledWith(null)
+  })
+})
+
 describe('the bonuses (RWD-27, RWD-29)', () => {
+  it('shows where each stands, as Rewards does (RWD-20, RWD-39)', () => {
+    const earned: RewardEntry[] = [{ taskId: BONUS_IDS.today, day: '2026-10-07', points: 5 }]
+    setup({ today: 5, week: 40, month: null }, null, undefined, null, earned)
+
+    const tiles = screen.getByRole('region', { name: 'Bonuses' }).querySelector('dl') as HTMLElement
+    expect(tiles.className).toContain('grid-cols-3')
+    expect(within(tiles).getByText('+5')).toBeTruthy()
+    expect(within(tiles).getByText('earned')).toBeTruthy()
+    expect(within(tiles).getByText('+40')).toBeTruthy()
+    expect(within(tiles).getByText('all done = earned')).toBeTruthy()
+    expect(within(tiles).getByText('no bonus')).toBeTruthy()
+  })
+
   it('has one for Today, this week and this month, each saying what it earns', () => {
     setup({ today: 5, week: 40, month: null })
 

@@ -26,7 +26,7 @@ const COFFEE: Redemption = {
   redeemedAt: '2026-09-17T09:00:00.000Z',
 }
 
-const EMPTY_LEDGER: PointsLedger = { entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES }
+const EMPTY_LEDGER: PointsLedger = { entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES, newTaskReward: null }
 
 afterEach(() => {
   cleanup()
@@ -40,6 +40,7 @@ function fakeRewardRepository(initial: PointsLedger) {
   const bonuses: { period: Period; points: number | null }[] = []
   const values: (PointValue | null)[] = []
   const savedCases: CaseSettings[] = []
+  const startingRewards: (number | null)[] = []
 
   const repository: RewardRepository = {
     subscribe(callback) {
@@ -70,9 +71,14 @@ function fakeRewardRepository(initial: PointsLedger) {
       savedCases.push(settings)
       return Promise.resolve()
     },
+    setNewTaskReward(points) {
+      startingRewards.push(points)
+      return Promise.resolve()
+    },
     importBonus: () => Promise.resolve(),
     importPointValue: () => Promise.resolve(),
     importCaseSettings: () => Promise.resolve(),
+    importNewTaskReward: () => Promise.resolve(),
   }
 
   return {
@@ -83,6 +89,7 @@ function fakeRewardRepository(initial: PointsLedger) {
     bonuses,
     values,
     savedCases,
+    startingRewards,
     arrive: (ledger: PointsLedger) => {
       act(() => {
         onLedger(ledger)
@@ -123,6 +130,23 @@ describe('useRewards, the period bonuses (RWD-27, RWD-29)', () => {
   })
 })
 
+describe('useRewards, the reward a new task starts with (RWD-45)', () => {
+  it('saves the reward, and takes it away with null', () => {
+    const { result, startingRewards } = setUp(EMPTY_LEDGER)
+
+    act(() => { result.current.setNewTaskReward(3) })
+    act(() => { result.current.setNewTaskReward(null) })
+
+    expect(startingRewards).toEqual([3, null])
+  })
+
+  it('reads back what is saved', () => {
+    const { result } = setUp({ ...EMPTY_LEDGER, newTaskReward: 3 })
+
+    expect(result.current.newTaskReward).toBe(3)
+  })
+})
+
 describe('useRewards, what a point is worth (RWD-31)', () => {
   it('saves the rate, and forgets it with null', () => {
     const rate = createPointValue(2.5)
@@ -144,7 +168,7 @@ describe('useRewards, what a point is worth (RWD-31)', () => {
 
 describe('useRewards, removing ledger rows', () => {
   it('removes an earning at once and hands it back to undo (RWD-23)', () => {
-    const { result, saved } = setUp({ entries: [RUN], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES })
+    const { result, saved } = setUp({ entries: [RUN], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES, newTaskReward: null })
 
     let removed: RewardEntry | null = null
     act(() => {
@@ -156,7 +180,7 @@ describe('useRewards, removing ledger rows', () => {
   })
 
   it('restores a deleted earning (RWD-23)', () => {
-    const { result, saved } = setUp({ entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES })
+    const { result, saved } = setUp({ entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES, newTaskReward: null })
 
     act(() => {
       result.current.saveEarning(RUN)
@@ -166,7 +190,7 @@ describe('useRewards, removing ledger rows', () => {
   })
 
   it('removes a redemption at once and hands it back to undo (RWD-18)', () => {
-    const { result, removed } = setUp({ entries: [], redemptions: [COFFEE], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES })
+    const { result, removed } = setUp({ entries: [], redemptions: [COFFEE], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES, newTaskReward: null })
 
     let deleted: Redemption | null = null
     act(() => {
@@ -178,7 +202,7 @@ describe('useRewards, removing ledger rows', () => {
   })
 
   it('restores a deleted redemption with the same id and day (RWD-18)', () => {
-    const { result, redeemed } = setUp({ entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES })
+    const { result, redeemed } = setUp({ entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES, newTaskReward: null })
 
     act(() => {
       result.current.restoreRedemption(COFFEE)
@@ -192,10 +216,10 @@ describe('when the repository refuses', () => {
   it('reports a write it refused (STORE-13)', async () => {
     expectConsole('Could not delete the redemption.')
     const onProblem = vi.fn()
-    const fake = fakeRewardRepository({ entries: [RUN], redemptions: [COFFEE], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES })
+    const fake = fakeRewardRepository({ entries: [RUN], redemptions: [COFFEE], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES, newTaskReward: null })
     const repository: RewardRepository = { ...fake.repository, removeRedemption: () => Promise.reject(new Error('denied')) }
     const { result } = renderHook(() => useRewards(repository, onProblem))
-    fake.arrive({ entries: [RUN], redemptions: [COFFEE], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES })
+    fake.arrive({ entries: [RUN], redemptions: [COFFEE], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES, newTaskReward: null })
 
     await act(async () => {
       result.current.removeRedemption(COFFEE.id)
@@ -210,7 +234,7 @@ describe('when the repository refuses', () => {
     const onProblem = vi.fn()
     let refuse: (error: unknown) => void = () => {}
     const repository: RewardRepository = {
-      ...fakeRewardRepository({ entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES }).repository,
+      ...fakeRewardRepository({ entries: [], redemptions: [], bonuses: NO_BONUSES, pointValue: null, cases: DEFAULT_CASES, newTaskReward: null }).repository,
       subscribe(_onLedger, onError) {
         refuse = onError
         return () => {}

@@ -62,6 +62,12 @@ export interface AccountData {
    */
   readonly cases: CaseSettings | null
   /**
+   * The reward a new task starts with (RWD-45), or null where it starts with
+   * none. A setting again, taken by an import only where the account has none
+   * of its own.
+   */
+  readonly newTaskReward: number | null
+  /**
    * The warm-up under way, or null for none (WARM-1). A setting again: it is
    * counted as none of the records, and an import takes it only where the
    * account has none of its own.
@@ -152,6 +158,8 @@ export interface KnownRecords {
   readonly pointValue: PointValue | null
   /** What the account asks of Cases already, or null when it says nothing. */
   readonly cases: CaseSettings | null
+  /** The reward the account's new tasks start with already, or null when they start with none. */
+  readonly newTaskReward: number | null
   /** The warm-up the account has already, or null when it has none. */
   readonly warmUp: WarmUp | null
   /** How the account already asked to be nudged, or null when it says nothing. */
@@ -194,7 +202,8 @@ export function countRecords(data: AccountData): RecordCounts {
  * so an import never makes a second record of one tag. The bonuses and what a
  * point is worth are the things in here that are no records: the file's are
  * taken only where the account has none, and count towards neither what was
- * added nor what was already here. So are Cases' settings, the warm-up and
+ * added nor what was already here. So are Cases' settings, the reward new tasks
+ * start with, the warm-up and
  * the nudge, the check-in and the feature switches: a
  * file's is taken only by an account with none of its own, which keeps a restored
  * backup from starting a month that has already been served, or from turning a
@@ -261,6 +270,7 @@ export function newRecords(
       bonuses,
       pointValue: known.pointValue === null ? incoming.pointValue : null,
       cases: known.cases === null ? incoming.cases : null,
+      newTaskReward: known.newTaskReward === null ? incoming.newTaskReward : null,
       warmUp: known.warmUp === null ? incoming.warmUp : null,
       nudge: known.nudge === null ? incoming.nudge : null,
       checkIn: known.checkIn === null ? incoming.checkIn : null,

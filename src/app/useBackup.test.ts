@@ -25,6 +25,7 @@ const DATA: AccountData = {
   bonuses: NO_BONUSES,
   pointValue: null,
   cases: null,
+  newTaskReward: null,
   warmUp: null,
   nudge: null,
   checkIn: null,

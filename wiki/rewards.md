@@ -7,8 +7,8 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
 
 ## The reward
 
-- **RWD-1** A task earns **nothing until it is given a reward**, and no task has one to begin with.
-  A reward is a **whole number of points from 1 to 999**, earned on each completion.
+- **RWD-1** A task earns **nothing until it is given a reward**, and a new task has none to begin
+  with unless a reward for new tasks is set (RWD-45). A reward is a **whole number of points from 1 to 999**, earned on each completion.
 - **RWD-2** A new reward **starts at what the task's rule is worth**. Daily is **1**, and so is a weekly
   rule on all seven days, which reads "Daily" (RPT-25). Weekly is **5**, monthly is **25**, and a
   task that happens once is **1**. It is where **+** lands when stepping up **from 0** in the panel
@@ -16,6 +16,16 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
 - **RWD-3** Changing or removing a reward only affects **completions from then on**. What earlier
   completions earned stays as it was (RWD-13).
 - **RWD-4** A duplicated task carries the reward of the original (TASK-51).
+- **RWD-45** A **reward for new tasks** can be set on **Rules** (RWD-39): a whole number of points
+  from 1 to 999 that **every task added starts with**, whatever its rule, from the one-line box, the
+  add sheet and the Habits page alike. There is none to begin with, and **0 is none**, so until one
+  is set new tasks start without a reward. It is set with the same star panel a task's reward uses
+  (RWD-5, RWD-6, RWD-42), under the line **Points a new task starts with**: **+** from 0 gives **1**.
+  On the add sheet the reward starts at it, spelled out under the star (UI-63), and can be changed or
+  taken away before the task is added. It is only where a task **starts**: changing it or taking it
+  away leaves the tasks already made with the rewards they have, and a duplicated task carries its
+  original's (RWD-4) rather than this one. A task added while Rewards is switched off starts at it
+  too (FEAT-5).
 
 ## Setting a reward
 
@@ -210,11 +220,13 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   slight tint and no more, since they are one story. Within a day what was spent comes first. It is
   a page of its own rather than the foot of how the points stand: a year of days is a long page, and
   how you are doing should not be behind it.
-- **RWD-39** **Rules** is what earns points and what they are worth: the bonus for clearing
-  **Today**, **this week** and **this month** (RWD-27), what **Cases** asks of a day and what
-  its key plays for (CHST-3, CHST-7), and what a point is worth in money (RWD-31).
-  What a *task* earns is not here — that is set on the task, with its star (RWD-5), being that
-  task's own; everything on Rules is one amount for the whole account.
+- **RWD-39** **Rules** is what earns points and what they are worth, top to bottom: the reward a
+  **new task** starts with (RWD-45), the bonus for clearing **Today**, **this week** and **this
+  month** (RWD-27) — under **Finish everything, earn extra**, the same three tiles of where each
+  stands that how the points stand shows (RWD-20), with the amounts to set below them — what **Cases** asks of a day and what its key plays for (CHST-3, CHST-7), and
+  what a point is worth in money (RWD-31). What a task earns once it is made is not here — that is
+  set on the task, with its star (RWD-5), being that task's own; everything on Rules is one amount
+  for the whole account.
 - **RWD-21** Points **earned** are shown on how the points stand, for **today**, **this week**
   (Monday to Sunday, PROG-2), **this month**, **this year** and **all time**, one tile each. Underneath is what was redeemed in
   that period, when anything was. A completion counts on the day it was done for, so an earlier
@@ -238,8 +250,10 @@ and takes back), `src/core/bonus.ts` (whether a period is clear, and what cleari
 `src/core/prize.ts` (the prizes and the wishlist), `src/core/pointValue.ts` (what a point is worth),
 `src/core/redemption.ts` (redeeming, the balance, the totals and the histories),
 `src/app/components/RewardPicker.tsx` (the panel), `src/app/components/TaskItem.tsx` (the star on the
-row), `src/app/components/RewardsPage.tsx` (how the points stand), `RewardsHistoryPage.tsx`,
+row), `src/app/components/AddTaskSheet.tsx` and `src/app/TasksScreen.tsx` (a new task's starting
+reward), `src/app/components/RewardsPage.tsx` (how the points stand), `RewardsHistoryPage.tsx`,
 `LedgerList.tsx` (the one run of rows), `PrizeListPage.tsx` (both lists), `RewardRulesPage.tsx`,
+`BonusTiles.tsx` (where each bonus stands, on both pages),
 `RewardsNav.tsx` (the strip on a phone), `RedeemForm.tsx`, `RewardTotals.tsx`, `StarIcon.tsx`,
 `GiftIcon.tsx`, `TrophyIcon.tsx`, `HistoryIcon.tsx`, `src/app/rewardLabels.ts` and
 `src/app/prizeLabels.ts` (wording), `src/app/useUndoToast.ts` (what a toast says), `src/app/useTasks.ts`
@@ -261,7 +275,7 @@ see [Storage](storage.md).
 `src/app/components/RewardsPage.test.tsx`, `src/app/components/PrizeListPage.test.tsx`,
 `src/app/components/LedgerList.test.tsx`,
 `src/app/components/RewardRulesPage.test.tsx`, `src/app/components/RewardsNav.test.tsx`,
-`src/app/components/RedeemForm.test.tsx`,
+`src/app/components/RedeemForm.test.tsx`, `src/app/components/AddTaskSheet.test.tsx`,
 `src/app/components/TaskItem.test.tsx`, `src/app/components/SideNav.test.tsx`,
 `src/app/components/BottomNav.test.tsx`, `src/app/components/MorePage.test.tsx`,
 `src/app/letterShortcut.test.ts` and `src/app/useLetterShortcut.test.ts` (`R` opens Rewards).

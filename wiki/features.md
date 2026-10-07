@@ -65,7 +65,8 @@ thing every account keeps.
 - **FEAT-5** **Nothing is deleted.** A task keeps its list, its tags and its reward; the points,
   prizes, Balance categories and activity log all stay where they are; and a switch turned back on
   finds everything as it was. A task finished while Rewards is off still earns its points, and they
-  are there when Rewards is back — what is earned stays earned (RWD-13). The backup holds everything
+  are there when Rewards is back — what is earned stays earned (RWD-13). A task added while it is
+  off still starts at the reward set for new tasks (RWD-45). The backup holds everything
   whatever is switched off (BAK-2).
 
 ## Parts of another

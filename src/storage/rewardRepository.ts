@@ -11,8 +11,8 @@ import type {
 
 /**
  * Everything the points are read from: what completions earned, what was
- * redeemed, what clearing each period earns, what a point is worth, and what the
- * cases asks of a day.
+ * redeemed, what clearing each period earns, what a point is worth, what the
+ * cases asks of a day, and the reward a new task starts with.
  */
 export interface PointsLedger {
   readonly entries: readonly RewardEntry[]
@@ -23,6 +23,8 @@ export interface PointsLedger {
   readonly pointValue: PointValue | null
   /** What Cases asks of a day and what its key plays for (CHST-2, CHST-7). */
   readonly cases: CaseSettings
+  /** The reward a new task starts with (RWD-45), or null where it starts with none. */
+  readonly newTaskReward: number | null
 }
 
 /**
@@ -47,10 +49,14 @@ export interface RewardRepository {
   setPointValue(value: PointValue | null): Promise<void>
   /** Sets what Cases asks of a day and what its key plays for. */
   setCaseSettings(settings: CaseSettings): Promise<void>
+  /** Sets the reward a new task starts with, or has new tasks start with none with null. */
+  setNewTaskReward(points: number | null): Promise<void>
   /** Takes on a bonus from elsewhere — the guest's — only where there is none already, as `importTasks` does. */
   importBonus(period: Period, points: number): Promise<void>
   /** Takes on a point value from elsewhere, only where there is none already. */
   importPointValue(value: PointValue): Promise<void>
   /** Takes on cases settings from elsewhere, only where there are none already. */
   importCaseSettings(settings: CaseSettings): Promise<void>
+  /** Takes on a reward for new tasks from elsewhere, only where there is none already. */
+  importNewTaskReward(points: number): Promise<void>
 }

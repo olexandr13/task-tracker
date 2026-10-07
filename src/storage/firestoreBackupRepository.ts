@@ -21,13 +21,16 @@ import { NUDGE, readNudge, toStoredNudge } from './nudgeSchema'
 import { readPrize, toStoredPrize } from './prizeSchema'
 import {
   CASES_SETTING,
+  NEW_TASK_REWARD,
   POINT_VALUE,
   readCaseSettings,
+  readNewTaskReward,
   readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
   toStoredCaseSettings,
+  toStoredNewTaskReward,
   toStoredPointValue,
   toStoredRedemption,
   toStoredRewardDays,
@@ -87,6 +90,10 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   /** What the account asks of Cases, of everything its settings hold. */
   const casesIn = (snapshot: QuerySnapshot) =>
     snapshot.docs.flatMap((saved) => (saved.id === CASES_SETTING ? (readCaseSettings(saved.data()) ?? []) : []))[0] ?? null
+
+  /** The reward the account's new tasks start with, of everything its settings hold. */
+  const newTaskRewardIn = (snapshot: QuerySnapshot) =>
+    snapshot.docs.flatMap((saved) => (saved.id === NEW_TASK_REWARD ? (readNewTaskReward(saved.data()) ?? []) : []))[0] ?? null
 
   /** The warm-up the account has, of the one document it is ever kept as. */
   const warmUpIn = (snapshot: QuerySnapshot) =>
@@ -157,6 +164,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         bonuses: bonusesIn(savedGoals),
         pointValue: pointValueIn(savedSettings),
         cases: casesIn(savedSettings),
+        newTaskReward: newTaskRewardIn(savedSettings),
         warmUp: warmUpIn(savedWarmUp),
         nudge: nudgeIn(savedNudge),
         checkIn: checkInIn(savedCheckIn),
@@ -211,6 +219,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         bonuses: bonusesIn(savedGoals),
         pointValue: pointValueIn(savedSettings),
         cases: casesIn(savedSettings),
+        newTaskReward: newTaskRewardIn(savedSettings),
         warmUp: warmUpIn(savedWarmUp),
         nudge: nudgeIn(savedNudge),
         checkIn: checkInIn(savedCheckIn),
@@ -226,6 +235,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
       const { fresh, alreadyHere } = newRecords(incoming, known, now)
       const value = fresh.pointValue
       const cases = fresh.cases
+      const newTaskReward = fresh.newTaskReward
       const warmUp = fresh.warmUp
       const nudge = fresh.nudge === null ? null : toStoredNudge(fresh.nudge)
       const checkIn = fresh.checkIn === null ? null : toStoredCheckIn(fresh.checkIn)
@@ -250,8 +260,8 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         ...fresh.redemptions.map((redemption) => (batch: WriteBatch) =>
           batch.set(doc(redemptions, redemption.id), toStoredRedemption(redemption)),
         ),
-        // The file's bonuses, point value, cases settings, warm-up, nudge, check-in and switches are
-        // only ever set where the account has none of its own (`newRecords`).
+        // The file's bonuses, point value, cases settings, new tasks' reward, warm-up, nudge, check-in
+        // and switches are only ever set where the account has none of its own (`newRecords`).
         ...BONUS_PERIODS.flatMap((period) => {
           const points = fresh.bonuses[period]
           return points === null
@@ -264,6 +274,9 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         ...(cases === null
           ? []
           : [(batch: WriteBatch) => batch.set(doc(settings, CASES_SETTING), toStoredCaseSettings(cases))]),
+        ...(newTaskReward === null
+          ? []
+          : [(batch: WriteBatch) => batch.set(doc(settings, NEW_TASK_REWARD), toStoredNewTaskReward(newTaskReward))]),
         ...(warmUp === null
           ? []
           : [(batch: WriteBatch) => batch.set(doc(warmUps, WARM_UP), toStoredWarmUp(warmUp))]),

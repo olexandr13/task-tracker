@@ -51,6 +51,7 @@ const EMPTY: AccountData = {
   bonuses: NO_BONUSES,
   pointValue: null,
   cases: null,
+  newTaskReward: null,
   warmUp: null,
   nudge: null,
   checkIn: null,
@@ -70,6 +71,7 @@ const NOTHING_KNOWN: KnownRecords = {
   bonuses: NO_BONUSES,
   pointValue: null,
   cases: null,
+  newTaskReward: null,
   warmUp: null,
   nudge: null,
   checkIn: null,
@@ -91,6 +93,7 @@ describe('what an import adds', () => {
       bonuses: { today: 10, week: 40, month: null },
       pointValue: UAH,
       cases: ASKING,
+      newTaskReward: 3,
       warmUp: WARMING_UP,
       nudge: NUDGING,
       checkIn: CHECKING_IN,
@@ -211,6 +214,13 @@ describe('what an import does with the bonuses and the point value', () => {
     })
   })
 
+  it('takes the reward for new tasks only where the account has none (BAK-14)', () => {
+    const incoming: AccountData = { ...EMPTY, newTaskReward: 3 }
+
+    expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
+    expect(newRecords(incoming, { ...NOTHING_KNOWN, newTaskReward: 1 }, AT)).toEqual({ fresh: EMPTY, alreadyHere: 0 })
+  })
+
   it('takes the file\u2019s warm-up only where the account has none (BAK-15)', () => {
     const incoming: AccountData = { ...EMPTY, warmUp: WARMING_UP }
 
@@ -293,6 +303,7 @@ describe('counting records', () => {
       bonuses: { today: 10, week: null, month: null },
       pointValue: UAH,
       cases: ASKING,
+      newTaskReward: 3,
       warmUp: WARMING_UP,
       nudge: NUDGING,
       checkIn: CHECKING_IN,

@@ -715,8 +715,10 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   /**
    * Adds a task, unless a warm-up holds the habit it would be back (WARM-4).
    * Every way of adding goes through here, so the one-line box, the detailed
-   * sheet and Habits' own box are all held to the same allowance. Says whether
-   * the task was added, so a sheet knows whether to close.
+   * sheet and Habits' own box are all held to the same allowance, and all start
+   * a task at the reward set for new tasks (RWD-45) — unless the sheet says what
+   * it is worth, none included. Says whether the task was added, so a sheet
+   * knows whether to close.
    */
   function handleAddTask(
     title: string,
@@ -730,7 +732,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     if (warmUpOn && warmUp.holdsBack(repeat)) return false
 
     if (time !== null && on.reminders) reminders.ask()
-    addTask(title, repeat, day, time, taskTags, listId, details)
+    addTask(title, repeat, day, time, taskTags, listId, { reward: rewards.newTaskReward, ...details })
     return true
   }
 
@@ -895,9 +897,13 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   ) : view === 'rewards/rules' ? (
                     <RewardRulesPage
                       bonuses={rewards.bonuses}
+                      entries={rewards.entries}
+                      now={now}
                       pointValue={rewards.pointValue}
+                      newTaskReward={rewards.newTaskReward}
                       onChangeBonus={rewards.setBonus}
                       onChangePointValue={rewards.setPointValue}
+                      onChangeNewTaskReward={rewards.setNewTaskReward}
                       cases={
                         on.cases ? (
                           <CasesSettingsCard
@@ -1157,6 +1163,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
             defaultRepeat={view === 'habits' ? { kind: 'daily' } : undefined}
             defaultTags={isTaskView(view) ? newTaskTags(view) : []}
             defaultListId={isTaskView(view) ? newTaskListId(view) : null}
+            newTaskReward={rewards.newTaskReward}
             knownTags={tags}
             lists={lists.lists}
             onClose={() => { setAdding(false) }}

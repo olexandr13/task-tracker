@@ -85,6 +85,12 @@ changes shape.
   which leaves Cases asking what it asks by default rather than asking nothing. It is **in the
   backup**, taken only by an account that has none of its own, as the bonuses and the point value
   are (BAK-5). What Cases keeps on **this device** is the other half of it (STORE-49).
+- **STORE-58** The reward a new task starts with (RWD-45) is kept beside what a point is worth, as
+  **one more record of the settings**, named `newTaskReward`, for the same reason (STORE-42). No
+  record at all is none, so taking it away deletes the record. It is kept under the ledger's
+  version (STORE-24) and ignored, with a warning, when it cannot be read, which leaves new tasks
+  starting without a reward. It is **in the backup**, taken only by an account that has none of its
+  own (BAK-14).
 - **STORE-43** Each prize and each wish (RWD-33, RWD-40) is saved as **its own record**, in one
   collection of its own beside the ledger — the record says which kind it is, and when a wish was
   bought — inside a versioned envelope like a list's (STORE-26). Changes are written **record by
@@ -242,8 +248,8 @@ changes shape.
 
 - **STORE-37** As guest (AUTH-15), tasks, lists, tags, the wishlist, the Balance categories, the
   activity log — a record at a time — and the check-in's setting (STORE-51, STORE-52), the points ledger — the
-  bonuses, what a point is worth and what Cases asks with it (STORE-41, STORE-42, STORE-43,
-  STORE-48), the warm-up
+  bonuses, what a point is worth, what Cases asks and the reward new tasks start with, with it
+  (STORE-41, STORE-42, STORE-43, STORE-48, STORE-58), the warm-up
   (STORE-44), Procrastination mode (STORE-45), the nudge's setting (STORE-46) and the feature
   switches (STORE-56) are kept in this browser's `localStorage`, under the same versioned shapes as the account's (STORE-4, STORE-24,
   STORE-27, STORE-34). A ledger kept before there were bonuses, or before a point had a value, holds
@@ -252,10 +258,10 @@ changes shape.
   quiet (OFF-7).
 - **STORE-38** The first time a Google account is open here online after guest data was kept, that
   data is **moved into the account** — tasks, lists, tags, prizes, Balance categories, the activity
-  log, points earned, redemptions, the bonuses, what a point is worth, the warm-up, the nudge's
-  setting, the check-in's and the feature switches — added alongside what the
-  account already has, without overwriting tasks it already holds (STORE-20), or a bonus, point
-  value, warm-up, nudge, check-in or switches it has already set, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
+  log, points earned, redemptions, the bonuses, what a point is worth, the reward new tasks start
+  with, the warm-up, the nudge's setting, the check-in's and the feature switches — added alongside
+  what the account already has, without overwriting tasks it already holds (STORE-20), or a bonus,
+  point value, reward for new tasks, warm-up, nudge, check-in or switches it has already set, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
   signing in does not start its month again (WARM-10). A move that fails, offline say, is tried again next time.
 
 ## Kept on this device
@@ -394,7 +400,8 @@ loaded of the tasks, asked in parts and put together),
 copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgrades), `localTaskImport.ts` (tasks kept in the browser before accounts),
 `guestImport.ts` (moving guest data into an account), `localCollection.ts` (records in `localStorage`),
 `firestoreBatches.ts` (writing in batches), `firestoreAccount.ts` (every collection an account keeps), `rewardRepository.ts`, `firestoreRewardRepository.ts`, `localRewardRepository.ts` and
-`rewardSchema.ts` (the points ledger, the period bonuses and what a point is worth),
+`rewardSchema.ts` (the points ledger, the period bonuses, what a point is worth and the reward new
+tasks start with),
 `categoryRepository.ts`, `firestoreCategoryRepository.ts`, `localCategoryRepository.ts` and
 `categorySchema.ts` (the Balance categories), `src/app/useCategories.ts`,
 `prizeRepository.ts`, `firestorePrizeRepository.ts`, `localPrizeRepository.ts` and `prizeSchema.ts`

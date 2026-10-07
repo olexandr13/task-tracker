@@ -62,6 +62,7 @@ export async function importGuestAccount(
     ledger.redemptions.length === 0 &&
     BONUS_PERIODS.every((period) => ledger.bonuses[period] === null) &&
     ledger.pointValue === null &&
+    ledger.newTaskReward === null &&
     guestWarmUp === null &&
     guestNudge === null &&
     guestCategories.length === 0 &&
@@ -98,6 +99,7 @@ export async function importGuestAccount(
     if (points !== null) await rewards.importBonus(period, points)
   }
   if (ledger.pointValue !== null) await rewards.importPointValue(ledger.pointValue)
+  if (ledger.newTaskReward !== null) await rewards.importNewTaskReward(ledger.newTaskReward)
   // A warm-up begun as guest keeps the day it began on, so signing in does not
   // start the month again (WARM-10).
   if (guestWarmUp !== null) await warmUp.importWarmUp(guestWarmUp)

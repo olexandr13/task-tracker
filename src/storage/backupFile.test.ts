@@ -69,6 +69,7 @@ const DATA: AccountData = {
   bonuses: BONUSES,
   pointValue: UAH,
   cases: ASKING,
+  newTaskReward: 3,
   warmUp: WARMING_UP,
   nudge: NUDGING,
   checkIn: CHECKING_IN,
@@ -112,6 +113,7 @@ describe('writing a backup', () => {
       rewardSettings: [
         { version: REWARD_SCHEMA_VERSION, name: 'pointValue', value: UAH },
         { version: REWARD_SCHEMA_VERSION, name: 'chest', settings: ASKING },
+        { version: REWARD_SCHEMA_VERSION, name: 'newTaskReward', points: 3 },
       ],
       nudge: [{ version: NUDGE_SCHEMA_VERSION, name: 'nudge', nudge: NUDGING }],
       checkIn: [{ version: CHECK_IN_SCHEMA_VERSION, name: 'checkIn', checkIn: CHECKING_IN }],
@@ -209,6 +211,7 @@ describe('reading a backup', () => {
         bonuses: NO_BONUSES,
         pointValue: null,
         cases: null,
+        newTaskReward: null,
         warmUp: null,
         nudge: null,
       },
@@ -232,7 +235,7 @@ describe('reading a backup', () => {
     )
 
     expect(read).toEqual({
-      data: { ...DATA, ...BEFORE_ACTIVITIES, prizes: [], categories: [], bonuses: NO_BONUSES, pointValue: null, cases: null, warmUp: null, nudge: null },
+      data: { ...DATA, ...BEFORE_ACTIVITIES, prizes: [], categories: [], bonuses: NO_BONUSES, pointValue: null, cases: null, newTaskReward: null, warmUp: null, nudge: null },
       unreadable: 0,
     })
   })
@@ -252,7 +255,7 @@ describe('reading a backup', () => {
     )
 
     expect(read).toEqual({
-      data: { ...DATA, ...BEFORE_ACTIVITIES, prizes: [], categories: [], pointValue: null, cases: null, warmUp: null, nudge: null },
+      data: { ...DATA, ...BEFORE_ACTIVITIES, prizes: [], categories: [], pointValue: null, cases: null, newTaskReward: null, warmUp: null, nudge: null },
       unreadable: 0,
     })
   })
@@ -347,6 +350,7 @@ describe('reading a backup', () => {
         bonuses: BONUSES,
         pointValue: UAH,
         cases: ASKING,
+        newTaskReward: 3,
         warmUp: WARMING_UP,
         nudge: NUDGING,
         checkIn: null,

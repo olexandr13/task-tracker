@@ -53,6 +53,8 @@ interface AddTaskSheetProps {
   defaultRepeat?: Repeat | null
   defaultTags?: readonly string[]
   defaultListId?: ListId | null
+  /** The reward the task starts with, set on Rules (RWD-45), or null for none. */
+  newTaskReward?: number | null
   knownTags: readonly string[]
   lists: readonly List[]
   onClose: () => void
@@ -84,6 +86,7 @@ export function AddTaskSheet({
   defaultRepeat,
   defaultTags = [],
   defaultListId = null,
+  newTaskReward = null,
   knownTags,
   lists,
   onClose,
@@ -103,7 +106,7 @@ export function AddTaskSheet({
   const [time, setTime] = useState<LocalTime | null>(null)
   const [listId, setListId] = useState<ListId | null>(defaultListId)
   const [tags, setTags] = useState<string[]>(() => [...defaultTags])
-  const [reward, setReward] = useState<number | null>(null)
+  const [reward, setReward] = useState<number | null>(newTaskReward)
   const [urgent, setUrgent] = useState(false)
   const [timeGoal, setTimeGoal] = useState<number | null>(null)
   const [sessions, setSessions] = useState<TimeEntry[]>([])

@@ -54,6 +54,7 @@ export function createLocalBackupRepository(): BackupRepository {
         bonuses: ledger.bonuses,
         pointValue: ledger.pointValue,
         cases: loadGuestCaseSettings(),
+        newTaskReward: ledger.newTaskReward,
         warmUp: loadGuestWarmUp(),
         nudge: loadGuestNudge(),
         checkIn: loadGuestCheckIn(),
@@ -77,6 +78,7 @@ export function createLocalBackupRepository(): BackupRepository {
         bonuses: ledger.bonuses,
         pointValue: ledger.pointValue,
         cases: loadGuestCaseSettings(),
+        newTaskReward: ledger.newTaskReward,
         warmUp: loadGuestWarmUp(),
         nudge: loadGuestNudge(),
         checkIn: loadGuestCheckIn(),
@@ -92,8 +94,8 @@ export function createLocalBackupRepository(): BackupRepository {
       await prizes.save({ saved: fresh.prizes, removed: [] })
       await categories.save({ saved: fresh.categories, removed: [] })
       await activities.save({ saved: fresh.activities, removed: [] })
-      // The file's bonuses, point value and cases settings only where there are
-      // none here already (`newRecords`).
+      // The file's bonuses, point value, cases settings and new tasks' reward
+      // only where there are none here already (`newRecords`).
       const bonuses = Object.fromEntries(
         BONUS_PERIODS.map((period) => [period, ledger.bonuses[period] ?? fresh.bonuses[period]]),
       ) as PeriodBonuses
@@ -103,6 +105,7 @@ export function createLocalBackupRepository(): BackupRepository {
         bonuses,
         ledger.pointValue ?? fresh.pointValue,
         loadGuestCaseSettings() ?? fresh.cases,
+        ledger.newTaskReward ?? fresh.newTaskReward,
       )
 
       // The file's warm-up, nudge, check-in and switches only where there are none here already (`newRecords`).

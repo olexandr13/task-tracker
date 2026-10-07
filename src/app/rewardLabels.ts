@@ -46,6 +46,10 @@ export const BONUS_HINTS: Record<Period, string> = {
   month: 'Earned once a month, the moment everything this month asks for is done.',
 }
 
+/** What the reward for new tasks does, under its name on Rules (RWD-45). */
+export const NEW_TASK_REWARD_HINT =
+  'Every task you add starts with these points. You can still change them on the task. Tasks you already have keep theirs.'
+
 /** What an opened case reads as, where a task's title would be (RWD-44). */
 export const CASE_TODAY_TITLE = 'Payday'
 

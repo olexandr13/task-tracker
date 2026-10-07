@@ -1,7 +1,5 @@
 import {
   affordablePrizes,
-  bonusEarned,
-  BONUS_PERIODS,
   nextPrize,
   pointsBalance,
   pointsShort,
@@ -14,8 +12,9 @@ import {
   type RewardEntry,
 } from '../../core'
 import { describeCasesOffer } from '../caseLabels'
-import { describeMoney, describePoints, PERIOD_NAMES } from '../rewardLabels'
+import { describeMoney, describePoints } from '../rewardLabels'
 import { VIEW_LABELS } from '../view'
+import { BonusTiles } from './BonusTiles'
 import { CasesIcon } from './CasesIcon'
 import { GiftIcon } from './GiftIcon'
 import { InfoButton } from './InfoButton'
@@ -127,34 +126,7 @@ export function RewardsPage({
             {bonuses.today === null && bonuses.week === null && bonuses.month === null ? 'Set a bonus' : 'Change'}
           </button>
         </div>
-        {/* Three at a glance, side by side: one row reads as one rule with three amounts. */}
-        <dl className="grid grid-cols-3 gap-2">
-          {BONUS_PERIODS.map((period) => {
-            const bonus = bonuses[period]
-            const given = bonusEarned(entries, period, now)
-            return (
-              <div key={period} className={`${card} flex flex-col gap-0.5 px-3 py-2.5`}>
-                <dt className="text-xs text-neutral-500 dark:text-neutral-400">{PERIOD_NAMES[period]}</dt>
-                <dd className="flex flex-col">
-                  <span
-                    className={`text-xl font-semibold tabular-nums ${
-                      bonus === null
-                        ? 'text-neutral-300 dark:text-neutral-600'
-                        : given !== null
-                          ? 'text-emerald-700 dark:text-emerald-400'
-                          : 'text-neutral-900 dark:text-neutral-100'
-                    }`}
-                  >
-                    {bonus === null ? '—' : `+${bonus}`}
-                  </span>
-                  <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                    {bonus === null ? 'no bonus' : given !== null ? 'earned' : 'all done = earned'}
-                  </span>
-                </dd>
-              </div>
-            )
-          })}
-        </dl>
+        <BonusTiles bonuses={bonuses} entries={entries} now={now} />
       </section>
 
       {cases !== null && (

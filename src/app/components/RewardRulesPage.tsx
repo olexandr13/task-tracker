@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import {
   BONUS_PERIODS,
   createPointValue,
+  defaultReward,
   DEFAULT_BONUS,
   DEFAULT_CURRENCY,
   DEFAULT_POINT_AMOUNT,
@@ -12,18 +13,28 @@ import {
   type Period,
   type PeriodBonuses,
   type PointValue,
+  type RewardEntry,
 } from '../../core'
-import { BONUS_HINTS, BONUS_LABELS, describeMoney, PERIOD_NAMES } from '../rewardLabels'
+import { BONUS_HINTS, BONUS_LABELS, describeMoney, NEW_TASK_REWARD_HINT, PERIOD_NAMES } from '../rewardLabels'
 import { deleteControl } from '../rowControls'
+import { BonusTiles } from './BonusTiles'
 import { RewardPicker } from './RewardPicker'
 
 interface RewardRulesPageProps {
   /** What clearing each period earns (RWD-24, RWD-29). */
   bonuses: PeriodBonuses
+  /** What the ledger holds, for whether each bonus has been earned yet (RWD-20). */
+  entries: readonly RewardEntry[]
+  /** Which day, week and month it is. */
+  now: Date
   /** What one point is worth, or null while nothing says (RWD-31). */
   pointValue: PointValue | null
+  /** The reward a new task starts with, or null where it starts with none (RWD-45). */
+  newTaskReward: number | null
   /** Sets what clearing the period earns from here on, or takes its bonus away with null. */
   onChangeBonus: (period: Period, points: number | null) => void
+  /** Sets the reward a new task starts with, or has new tasks start with none with null. */
+  onChangeNewTaskReward: (points: number | null) => void
   /** Sets what one point is worth, or forgets it with null. */
   onChangePointValue: (value: PointValue | null) => void
   /** What Cases asks of a day and what its key plays for (CHST-7). */
@@ -36,24 +47,58 @@ const field =
   'min-w-0 rounded-lg border border-neutral-300 bg-transparent px-2.5 py-2 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-500'
 
 /**
- * What earns points and what they are worth: the bonus for clearing Today, this
- * week and this month (RWD-27, RWD-29), what Cases asks of a day and what
- * its key plays for (CHST-7), and the rate points are counted in money at
- * (RWD-31).
+ * What earns points and what they are worth: the reward a new task starts with
+ * (RWD-45), the bonus for clearing Today, this week and this month (RWD-27,
+ * RWD-29) under the same tiles of where each stands that Rewards shows (RWD-20),
+ * what Cases asks of a day and what its key plays for (CHST-7), and
+ * the rate points are counted in money at (RWD-31).
  *
- * What a *task* earns is not here — it is set on the task, with its star
- * (RWD-5), because it is that task's own. Everything on this page is one amount
- * for the whole account.
+ * What a task earns once it is made is not here — it is set on the task, with
+ * its star (RWD-5), because it is that task's own. Everything on this page is
+ * one amount for the whole account.
  *
  * Nothing is confirmed: every step and every number typed is saved as it is
  * made, as in the other pickers (RPT-22), and only what happens from then on
  * is affected.
  */
-export function RewardRulesPage({ bonuses, pointValue, onChangeBonus, onChangePointValue, cases }: RewardRulesPageProps) {
+export function RewardRulesPage({
+  bonuses,
+  entries,
+  now,
+  pointValue,
+  newTaskReward,
+  onChangeBonus,
+  onChangePointValue,
+  onChangeNewTaskReward,
+  cases,
+}: RewardRulesPageProps) {
   return (
     <div className="flex flex-col gap-6">
+      <section aria-label="New tasks" className="flex flex-col gap-2">
+        <h2 className={heading}>New tasks</h2>
+        <div className={`${card} flex items-center justify-between gap-3 px-4 py-3`}>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-sm text-neutral-900 dark:text-neutral-100">Reward for a new task</span>
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">{NEW_TASK_REWARD_HINT}</span>
+          </div>
+          <div className="w-32 shrink-0">
+            <RewardPicker
+              reward={newTaskReward}
+              startAt={defaultReward(null)}
+              onChange={onChangeNewTaskReward}
+              label="Reward for a new task"
+              hint="Points a new task starts with"
+              showAmount
+              noneLabel="No reward"
+              removeLabel="Remove reward for new tasks"
+            />
+          </div>
+        </div>
+      </section>
+
       <section aria-label="Bonuses" className="flex flex-col gap-2">
-        <h2 className={heading}>Clearing a period</h2>
+        <h2 className={heading}>Finish everything, earn extra</h2>
+        <BonusTiles bonuses={bonuses} entries={entries} now={now} />
         <ul className="flex flex-col gap-1">
           {BONUS_PERIODS.map((period) => (
             <li key={period} className={`${card} flex items-center justify-between gap-3 px-4 py-3`}>

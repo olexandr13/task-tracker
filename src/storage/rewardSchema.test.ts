@@ -2,12 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { createPointValue, DEFAULT_CASES, type CaseSettings, type Redemption } from '../core'
 import {
   readCaseSettings,
+  readNewTaskReward,
   readRedemption,
   readRewardDay,
   readPointValue,
   readRewardGoal,
   REWARD_SCHEMA_VERSION,
   toStoredCaseSettings,
+  toStoredNewTaskReward,
   toStoredPointValue,
   toStoredRedemption,
   toStoredRewardGoal,
@@ -147,5 +149,24 @@ describe('readCaseSettings (STORE-48, STORE-24)', () => {
     expect(readCaseSettings({ ...saved, settings: { leastTasks: 4, countUnpaid: 'no' } })).toBeNull()
     expect(readCaseSettings({ ...saved, settings: {} })).toBeNull()
     expect(readCaseSettings(null)).toBeNull()
+  })
+})
+
+describe('readNewTaskReward (STORE-58, STORE-24)', () => {
+  it('reads back what was saved', () => {
+    expect(readNewTaskReward(toStoredNewTaskReward(3))).toBe(3)
+  })
+
+  it('trusts nothing in a version it does not know, another setting, or what is no reward (STORE-24)', () => {
+    const saved = toStoredNewTaskReward(3)
+
+    expect(readNewTaskReward({ ...saved, version: 99 })).toBeNull()
+    expect(readNewTaskReward({ ...saved, name: 'pointValue' })).toBeNull()
+    expect(readNewTaskReward({ ...saved, points: 0 })).toBeNull()
+    expect(readNewTaskReward({ ...saved, points: 1000 })).toBeNull()
+    expect(readNewTaskReward({ ...saved, points: 2.5 })).toBeNull()
+    expect(readNewTaskReward({ ...saved, points: '3' })).toBeNull()
+    expect(readNewTaskReward(toStoredPointValue(createPointValue(2.5)))).toBeNull()
+    expect(readNewTaskReward(null)).toBeNull()
   })
 })

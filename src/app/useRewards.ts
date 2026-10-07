@@ -21,12 +21,14 @@ const EMPTY: PointsLedger = {
   bonuses: NO_BONUSES,
   pointValue: null,
   cases: DEFAULT_CASES,
+  newTaskReward: null,
 }
 
 /**
  * Holds the points ledger on screen: what completions earned, what was
  * redeemed, what clearing each period is worth (RWD-24, RWD-29), what a point is
- * worth in money (RWD-31) and what Cases asks of a day (CHST-3, CHST-7). What completions earn is written as tasks
+ * worth in money (RWD-31), what Cases asks of a day (CHST-3, CHST-7) and the
+ * reward a new task starts with (RWD-45). What completions earn is written as tasks
  * change (useTasks); this reads it back, redeems, sets the rules, and can take
  * an earning or a redemption off the ledger.
  *
@@ -165,6 +167,17 @@ export function useRewards(repository: RewardRepository, onProblem: ReportProble
   )
 
   /**
+   * Sets the reward a new task starts with, or has new tasks start with none
+   * with null. Tasks already made keep the reward they have (RWD-45).
+   */
+  const setNewTaskReward = useCallback(
+    (points: number | null) => {
+      attempt(repository.setNewTaskReward(points), 'Could not save the reward for new tasks.')
+    },
+    [repository, attempt],
+  )
+
+  /**
    * Writes what one completion earned, in place of whatever it earned before:
    * a deleted earning put back, or the win card's extra points (JUST-9).
    */
@@ -192,5 +205,6 @@ export function useRewards(repository: RewardRepository, onProblem: ReportProble
     setBonus,
     setPointValue,
     setCaseSettings,
+    setNewTaskReward,
   }
 }

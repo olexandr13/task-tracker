@@ -43,7 +43,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   list's own day, so the next task never inherits a rule or a date unnoticed.
 - **TASK-7** New tasks join the end of the list.
 - **TASK-66** A **Plus** button opens a **sheet** for adding with every field the edit sheet has —
-  title, schedule, list, time, tags, urgent, reward, checklist and description (UI-54). Pressing **N**
+  title, schedule, list, time, tags, urgent, reward, checklist and description (UI-54). The reward
+  starts at the one set for new tasks, where there is one (RWD-45). Pressing **N**
   opens the same sheet from the keyboard on a task page (UI-55). On a wide screen the one-line box
   still adds a title in a hurry (TASK-4); on a phone the sheet is the only way in. In the sheet, **Enter** in the title (or the phone keyboard's Done/Return)
   adds when there is a title, as does the Add button; without a title neither does. Closing the

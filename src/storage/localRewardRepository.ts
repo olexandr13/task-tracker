@@ -11,19 +11,23 @@ import { isRecord } from './plainData'
 import type { PointsLedger, RewardRepository } from './rewardRepository'
 import {
   CASES_SETTING,
+  NEW_TASK_REWARD,
   POINT_VALUE,
   readCaseSettings,
+  readNewTaskReward,
   readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
   REWARD_SCHEMA_VERSION,
   toStoredCaseSettings,
+  toStoredNewTaskReward,
   toStoredPointValue,
   toStoredRedemption,
   toStoredRewardDays,
   toStoredRewardGoal,
   type StoredCaseSettings,
+  type StoredNewTaskReward,
   type StoredPointValue,
   type StoredRedemption,
   type StoredRewardDay,
@@ -37,9 +41,11 @@ interface StoredLedger {
   redemptions: Record<string, StoredRedemption>
   /** What clearing a period earns, by period (RWD-24, RWD-29). A period with none is not in here. */
   goals: Record<string, StoredRewardGoal>
-  /** The standing settings of the points, by name (RWD-31, CHST-7). One not set is not in here. */
-  settings: Record<string, StoredPointValue | StoredCaseSettings>
+  /** The standing settings of the points, by name (RWD-31, CHST-7, RWD-45). One not set is not in here. */
+  settings: Record<string, StoredSetting>
 }
+
+type StoredSetting = StoredPointValue | StoredCaseSettings | StoredNewTaskReward
 
 type Listener = (ledger: PointsLedger) => void
 
@@ -61,9 +67,7 @@ function readStore(): StoredLedger {
       // A ledger kept before there were bonuses, or before a point had a value,
       // holds none, rather than being unreadable for the lack of them.
       goals: isRecord(parsed.goals) ? (parsed.goals as Record<string, StoredRewardGoal>) : {},
-      settings: isRecord(parsed.settings)
-        ? (parsed.settings as Record<string, StoredPointValue | StoredCaseSettings>)
-        : {},
+      settings: isRecord(parsed.settings) ? (parsed.settings as Record<string, StoredSetting>) : {},
     }
   } catch (error) {
     console.warn('Ignoring saved guest rewards: could not be read.', error)
@@ -123,12 +127,19 @@ function toLedger(stored: StoredLedger): PointsLedger {
     console.warn('Ignoring the saved guest cases settings: unexpected shape.')
   }
 
+  const savedNewTaskReward: unknown = stored.settings[NEW_TASK_REWARD]
+  const newTaskReward = savedNewTaskReward === undefined ? null : readNewTaskReward(savedNewTaskReward)
+  if (savedNewTaskReward !== undefined && newTaskReward === null) {
+    console.warn('Ignoring the saved guest reward for new tasks: unexpected shape.')
+  }
+
   return {
     entries,
     redemptions,
     bonuses: bonuses as PeriodBonuses,
     pointValue,
     cases: cases ?? DEFAULT_CASES,
+    newTaskReward,
   }
 }
 
@@ -222,6 +233,14 @@ export function createLocalRewardRepository(): RewardRepository {
       emit(stored)
     },
 
+    async setNewTaskReward(points) {
+      const stored = readStore()
+      if (points === null) delete stored.settings[NEW_TASK_REWARD]
+      else stored.settings[NEW_TASK_REWARD] = toStoredNewTaskReward(points)
+      writeStore(stored)
+      emit(stored)
+    },
+
     async importBonus(period, points) {
       const stored = readStore()
       if (stored.goals[period] !== undefined) return
@@ -242,6 +261,14 @@ export function createLocalRewardRepository(): RewardRepository {
       const stored = readStore()
       if (stored.settings[CASES_SETTING] !== undefined) return
       stored.settings[CASES_SETTING] = toStoredCaseSettings(cases)
+      writeStore(stored)
+      emit(stored)
+    },
+
+    async importNewTaskReward(points) {
+      const stored = readStore()
+      if (stored.settings[NEW_TASK_REWARD] !== undefined) return
+      stored.settings[NEW_TASK_REWARD] = toStoredNewTaskReward(points)
       writeStore(stored)
       emit(stored)
     },
@@ -270,6 +297,7 @@ export function replaceGuestLedger(
   bonuses: PeriodBonuses,
   pointValue: PointValue | null,
   cases: CaseSettings | null,
+  newTaskReward: number | null,
 ): void {
   const stored = empty()
   for (const day of toStoredRewardDays(entries)) stored.days[day.day] = day
@@ -279,6 +307,7 @@ export function replaceGuestLedger(
   }
   if (pointValue !== null) stored.settings[POINT_VALUE] = toStoredPointValue(pointValue)
   if (cases !== null) stored.settings[CASES_SETTING] = toStoredCaseSettings(cases)
+  if (newTaskReward !== null) stored.settings[NEW_TASK_REWARD] = toStoredNewTaskReward(newTaskReward)
   writeStore(stored)
   emit(stored)
 }

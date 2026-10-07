@@ -22,14 +22,17 @@ import { commitInBatches } from './firestoreBatches'
 import type { RewardRepository } from './rewardRepository'
 import {
   CASES_SETTING,
+  NEW_TASK_REWARD,
   POINT_VALUE,
   readCaseSettings,
+  readNewTaskReward,
   readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
   REWARD_SCHEMA_VERSION,
   toStoredCaseSettings,
+  toStoredNewTaskReward,
   toStoredPointValue,
   toStoredRedemption,
   toStoredRewardGoal,
@@ -50,7 +53,10 @@ import {
  *   and no document at all is nothing set;
  * - what Cases asks of a day and what its key plays for, at
  *   `users/{accountId}/rewardSettings/cases`, and no document at all is what an
- *   account starts with (CHST-7).
+ *   account starts with (CHST-7);
+ * - the reward a new task starts with, at
+ *   `users/{accountId}/rewardSettings/newTaskReward`, and no document at all is
+ *   none (RWD-45).
  *
  * A day is only ever written field by field — merged, never replaced — so two
  * devices completing different tasks on one day keep both, and the same
@@ -64,27 +70,38 @@ export function createFirestoreRewardRepository(firestore: Firestore, accountId:
   const settings = accountCollection(firestore, accountId, 'rewardSettings')
   const pointValue = doc(settings, POINT_VALUE)
   const caseSettings = doc(settings, CASES_SETTING)
+  const newTaskReward = doc(settings, NEW_TASK_REWARD)
 
   return {
     subscribe(onLedger, onError) {
-      // Five watchers, one ledger: nothing is handed on until all of them are
+      // Six watchers, one ledger: nothing is handed on until all of them are
       // known, so a balance is never drawn from part of it. The bonuses, the
-      // point value and Cases' settings are held as boxes rather than
-      // values, there being nothing set to tell from not knowing yet.
+      // point value, Cases' settings and the new tasks' reward are held as
+      // boxes rather than values, there being nothing set to tell from not
+      // knowing yet.
       let entries: RewardEntry[] | null = null
       let spent: Redemption[] | null = null
       let bonuses: { of: PeriodBonuses } | null = null
       let value: { of: PointValue | null } | null = null
       let cases: { of: CaseSettings } | null = null
+      let startsWith: { of: number | null } | null = null
 
       function emit() {
-        if (entries !== null && spent !== null && bonuses !== null && value !== null && cases !== null) {
+        if (
+          entries !== null &&
+          spent !== null &&
+          bonuses !== null &&
+          value !== null &&
+          cases !== null &&
+          startsWith !== null
+        ) {
           onLedger({
             entries,
             redemptions: spent,
             bonuses: bonuses.of,
             pointValue: value.of,
             cases: cases.of,
+            newTaskReward: startsWith.of,
           })
         }
       }
@@ -155,12 +172,24 @@ export function createFirestoreRewardRepository(firestore: Firestore, accountId:
         onError,
       )
 
+      const stopNewTaskReward = onSnapshot(
+        newTaskReward,
+        (saved) => {
+          const read = saved.exists() ? readNewTaskReward(saved.data()) : null
+          if (saved.exists() && read === null) console.warn('Ignoring the saved reward for new tasks: unexpected shape.')
+          startsWith = { of: read }
+          emit()
+        },
+        onError,
+      )
+
       return () => {
         stopDays()
         stopRedemptions()
         stopGoals()
         stopValue()
         stopCases()
+        stopNewTaskReward()
       }
     },
 
@@ -200,6 +229,10 @@ export function createFirestoreRewardRepository(firestore: Firestore, accountId:
       return setDoc(caseSettings, toStoredCaseSettings(cases))
     },
 
+    setNewTaskReward(points) {
+      return points === null ? deleteDoc(newTaskReward) : setDoc(newTaskReward, toStoredNewTaskReward(points))
+    },
+
     async importBonus(period, points) {
       const goal = doc(goals, period)
       const existing = await getDocFromServer(goal)
@@ -217,6 +250,12 @@ export function createFirestoreRewardRepository(firestore: Firestore, accountId:
       const existing = await getDocFromServer(caseSettings)
       if (existing.exists()) return
       await setDoc(caseSettings, toStoredCaseSettings(cases))
+    },
+
+    async importNewTaskReward(points) {
+      const existing = await getDocFromServer(newTaskReward)
+      if (existing.exists()) return
+      await setDoc(newTaskReward, toStoredNewTaskReward(points))
     },
   }
 }

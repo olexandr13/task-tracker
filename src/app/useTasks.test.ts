@@ -70,9 +70,11 @@ function fakeRewardRepository() {
     setBonus: () => Promise.resolve(),
     setPointValue: () => Promise.resolve(),
     setCaseSettings: () => Promise.resolve(),
+    setNewTaskReward: () => Promise.resolve(),
     importBonus: () => Promise.resolve(),
     importPointValue: () => Promise.resolve(),
     importCaseSettings: () => Promise.resolve(),
+    importNewTaskReward: () => Promise.resolve(),
     removeRedemption: () => Promise.resolve(),
   }
   return { repository, recorded }

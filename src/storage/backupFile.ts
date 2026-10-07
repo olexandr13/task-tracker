@@ -29,16 +29,19 @@ import { isRecord } from './plainData'
 import { readPrize, toStoredPrize, type StoredPrize } from './prizeSchema'
 import {
   readCaseSettings,
+  readNewTaskReward,
   readPointValue,
   readRedemption,
   readRewardDay,
   readRewardGoal,
   toStoredCaseSettings,
+  toStoredNewTaskReward,
   toStoredPointValue,
   toStoredRedemption,
   toStoredRewardDays,
   toStoredRewardGoal,
   type StoredCaseSettings,
+  type StoredNewTaskReward,
   type StoredPointValue,
   type StoredRedemption,
   type StoredRewardDay,
@@ -96,12 +99,13 @@ interface BackupFile {
   rewardGoals: StoredRewardGoal[]
   /**
    * The standing settings of the points, a record each where anything says: what
-   * one point is worth (RWD-31), and what Cases asks of a day (CHST-3).
+   * one point is worth (RWD-31), what Cases asks of a day (CHST-3), and the
+   * reward a new task starts with (RWD-45).
    * A new kind of setting joins this array and leaves the wrapper as it is, so
    * `BACKUP_VERSION` does not move for one — a file without Cases' record
    * is read as saying nothing about it, as a file without the point value is.
    */
-  rewardSettings: (StoredPointValue | StoredCaseSettings)[]
+  rewardSettings: (StoredPointValue | StoredCaseSettings | StoredNewTaskReward)[]
   /** The warm-up under way, as its one record, or nothing at all for none (WARM-1). */
   warmUp: StoredWarmUp[]
   /** How the owner asked to be nudged, as its one record, or nothing at all where it is off (NUDGE-9). */
@@ -166,6 +170,7 @@ export function writeBackupFile(data: AccountData, now: Date): string {
     rewardSettings: [
       ...(data.pointValue === null ? [] : [toStoredPointValue(data.pointValue)]),
       ...(data.cases === null ? [] : [toStoredCaseSettings(data.cases)]),
+      ...(data.newTaskReward === null ? [] : [toStoredNewTaskReward(data.newTaskReward)]),
     ],
     warmUp: data.warmUp === null ? [] : [toStoredWarmUp(data.warmUp)],
     // A nudge back at its defaults keeps no record here either, as it keeps none in the account.
@@ -234,15 +239,18 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     })
   }
 
-  // A settings record is one kind or the other, so it is only unreadable when
-  // neither reader can make anything of it.
+  // A settings record is one kind or another, so it is only unreadable when
+  // no reader can make anything of it.
   let pointValue: PointValue | null = null
   let cases: CaseSettings | null = null
+  let newTaskReward: number | null = null
   for (const record of rewardSettings) {
     const value = readPointValue(record)
     const asked = readCaseSettings(record)
+    const startsWith = readNewTaskReward(record)
     if (value !== null) pointValue ??= value
     else if (asked !== null) cases ??= asked
+    else if (startsWith !== null) newTaskReward ??= startsWith
     else unreadable += 1
   }
 
@@ -262,6 +270,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     bonuses: bonuses as PeriodBonuses,
     pointValue,
     cases,
+    newTaskReward,
     warmUp: readEach<WarmUp>(warmUp, readWarmUp)[0] ?? null,
     nudge: readEach<NudgePreference>(nudge, readNudge)[0] ?? null,
     checkIn: readEach<CheckInPreference>(checkIn, readCheckIn)[0] ?? null,
