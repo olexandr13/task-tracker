@@ -6,6 +6,7 @@ import {
   hushCase,
   playLanded,
   playLatches,
+  playPowerOff,
   playPowerOn,
   playReelTick,
   playRefusal,
@@ -104,6 +105,8 @@ interface CaseOpeningProps {
   skipWait?: boolean
   /** What a practice opening is marked with under Cases, or null when it is real. */
   band?: string | null
+  /** The show is over and the cabinet is on its way out: it switches off (CHST-25). */
+  leaving?: boolean
 }
 
 /**
@@ -144,6 +147,7 @@ export function CaseOpening({
   caseKind = 'fair',
   skipWait = false,
   band = null,
+  leaving = false,
 }: CaseOpeningProps) {
   // A handed opening is already on its way on the first paint: the page drew it,
   // and this cabinet only plays it (CHST-13). A press still starts from shut.
@@ -191,6 +195,13 @@ export function CaseOpening({
   useEffect(() => {
     if (!sound) hushCase()
   }, [sound])
+
+  // The set switching off as the cabinet goes. Only the moment it starts:
+  // turning the sound on while it goes does not play it late.
+  useEffect(() => {
+    if (leaving && sound) playPowerOff()
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- the noise belongs to the moment it starts
+  }, [leaving])
 
   function after(ms: number, run: () => void): void {
     timers.current.push(window.setTimeout(run, ms))
@@ -359,7 +370,7 @@ export function CaseOpening({
     <div className="case-frame flex w-full flex-col items-center gap-5">
       <div
         style={glow}
-        className={[cabinet, out && 'case-cabinet-open', refused && 'case-refusal-shake', top && !quick && 'case-shake']
+        className={[cabinet, out && 'case-cabinet-open', refused && 'case-refusal-shake', top && !quick && !leaving && 'case-shake', leaving && 'case-off']
           .filter(Boolean)
           .join(' ')}
       >
@@ -446,13 +457,19 @@ export function CaseOpening({
 
       {/* Under Cases rather than over it, where it never covers the card. */}
       {band !== null && (
-        <p className="rounded-full bg-neutral-900/90 px-3 py-1 text-[11px] font-semibold tracking-[0.08em] text-white uppercase dark:bg-white/90 dark:text-neutral-900">
+        <p
+          className={`rounded-full bg-neutral-900/90 px-3 py-1 text-[11px] font-semibold tracking-[0.08em] text-white uppercase dark:bg-white/90 dark:text-neutral-900 ${leaving ? 'case-fade-away' : ''}`}
+        >
           {band}
         </p>
       )}
 
       {/* What came of it, or what would earn a key. Spoken, so it is never only a colour. */}
-      <div role="status" aria-live="polite" className="flex min-h-16 flex-col items-center justify-start text-center">
+      <div
+        role="status"
+        aria-live="polite"
+        className={`flex min-h-16 flex-col items-center justify-start text-center ${leaving ? 'case-fade-away' : ''}`}
+      >
         {landed && tone !== null ? (
           <>
             <p key={`n${String(bursts)}`} className={`case-number case-type text-5xl font-bold tabular-nums ${tone.points}`}>

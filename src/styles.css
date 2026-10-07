@@ -209,12 +209,13 @@ body {
   }
 }
 
-/* A box that would not tick its task off, the checklist still having a part to
-   do (CHK-11). The row shakes once — a small sideways nudge, the width of a
+/* A click turned down: a box that would not tick its task off, the checklist
+   still having a part to do (CHK-11), or a day a repeating task cannot be moved
+   to (DUE-27). The row, or the calendar, shakes once — a small sideways nudge, the width of a
    couple of characters — so the refusal is felt where the click was, and the
    note beside it says why. Short and level: it moves nothing on the line and
    leaves no room behind it, so the list does not jump. */
-@keyframes completion-refusal-shake {
+@keyframes refusal-shake {
   0%,
   100% {
     transform: translate3d(0, 0, 0);
@@ -229,14 +230,14 @@ body {
   }
 }
 
-.completion-refusal-shake {
-  animation: completion-refusal-shake 0.4s ease-in-out;
+.refusal-shake {
+  animation: refusal-shake 0.4s ease-in-out;
 }
 
 /* A device asking for less motion keeps the note and loses the shake: the words
    are what carries the refusal, and the movement only points at them. */
 @media (prefers-reduced-motion: reduce) {
-  .completion-refusal-shake {
+  .refusal-shake {
     animation: none;
   }
 }
@@ -1212,6 +1213,107 @@ body {
   animation: case-refusal-shake 0.42s cubic-bezier(0.3, 0.6, 0.4, 1);
 }
 
+/* The show over, the cabinet goes as the set it is would (CHST-25): a flare,
+   the picture squeezed to a line of light, the line drawn in to a dot, and
+   the dot gone — the screen's own switching off, the whole cabinet this time.
+   The number under it goes into it. Then the room it took on the page closes
+   up, so what is under it rises rather than jumps. The lengths are
+   `CASE_OFF_MS` and `CASE_CLOSE_MS` in `caseTiming.ts`. */
+.case-off {
+  /* How white the line burns. White on a light page would be no line at all,
+     so there it keeps some of the dark cabinet in it. */
+  --case-glare: 0.2;
+  pointer-events: none;
+  animation: case-off 0.56s cubic-bezier(0.55, 0, 0.7, 0.35) forwards;
+
+  @variant dark {
+    --case-glare: 1;
+  }
+}
+
+/* The light the picture leaves as it goes: white at the heart, the card's
+   colour at the ends of the line. */
+.case-off::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  background: radial-gradient(
+    60% 80% at 50% 50%,
+    #fff 0%,
+    color-mix(in srgb, var(--case-glow) 55%, #fff) 45%,
+    color-mix(in srgb, var(--case-glow) 70%, #d8e4ff) 100%
+  );
+  animation: case-off-glare 0.56s ease-in forwards;
+}
+
+@keyframes case-off {
+  0% {
+    transform: none;
+    filter: none;
+  }
+  16% {
+    transform: scale(1.02, 1.04);
+    filter: brightness(1.4);
+  }
+  55% {
+    transform: scale(1, 0.006);
+    filter: brightness(2);
+    opacity: 1;
+  }
+  82% {
+    transform: scale(0.012, 0.006);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0, 0.006);
+    opacity: 0;
+  }
+}
+
+@keyframes case-off-glare {
+  0% {
+    opacity: 0;
+  }
+  16% {
+    opacity: calc(var(--case-glare) * 0.12);
+  }
+  40% {
+    opacity: calc(var(--case-glare) * 0.45);
+  }
+  55%,
+  100% {
+    opacity: var(--case-glare);
+  }
+}
+
+.case-fade-away {
+  animation: case-fade-away 0.36s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+}
+
+@keyframes case-fade-away {
+  to {
+    opacity: 0;
+    transform: translateY(-1.25rem) scale(0.6);
+    filter: blur(3px);
+  }
+}
+
+/* The cabinet's row closing once it is dark. The margin takes back the gap
+   Cases' page leaves between it and what is under it (`gap-6`). */
+.case-closing {
+  grid-template-rows: 1fr;
+  animation: case-closing 0.32s cubic-bezier(0.4, 0, 0.2, 1) 0.56s forwards;
+}
+
+@keyframes case-closing {
+  to {
+    grid-template-rows: 0fr;
+    margin-top: -1.5rem;
+  }
+}
+
 /* A device asking for less motion gets the card out and the number on screen
    at once, and none of the rest: no breathing, no dust, no reel, no flash, no
    rings, nothing thrown — the wait goes with the movement, there being nothing
@@ -1266,5 +1368,25 @@ body {
   .case-ambient-on {
     animation: none;
     opacity: 0.7;
+  }
+
+  /* Going, it only fades, and the room it took goes with it at the end. */
+  .case-off,
+  .case-fade-away {
+    animation: case-fade-out 0.56s ease-out forwards;
+  }
+
+  .case-off::after {
+    display: none;
+  }
+
+  .case-closing {
+    animation: none;
+  }
+}
+
+@keyframes case-fade-out {
+  to {
+    opacity: 0;
   }
 }

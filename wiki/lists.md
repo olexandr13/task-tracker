@@ -98,7 +98,9 @@ reasons; requirements here are `LST-`.
   current occurrence. A list whose tasks are all done shows no number, and is still listed. The
   Inbox carries its own count the same way.
 - **LST-19** Beside each list is a button that **renames** it in place (LST-6), and one that
-  **deletes** it, after asking. Deleting puts every task that was in it **back in the Inbox** —
+  **deletes** it, after asking in the app's own sheet (UI-74): **Delete the list "Work"?**, then
+  `Its tasks go back to the Inbox.` and `The tasks themselves are not deleted.` **Delete** goes
+  ahead; anything else leaves the list as it was. Deleting puts every task that was in it **back in the Inbox** —
   tasks in the trash too, so restoring one does not file it under a list that has gone — and the
   tasks themselves stay as they were otherwise. A finished task not loaded yet (STORE-55) goes on
   naming the list, and reads as being in the Inbox all the same (LST-12). There is no undo.

@@ -14,6 +14,19 @@ function saved(...without: string[]): Record<string, unknown> {
 }
 
 describe('migrateTasks', () => {
+  it('gives each session of a task saved before comments none (STORE-1, TIME-23)', () => {
+    const [task] = migrateTasks(18, [{ ...saved(), timeLog: [{ id: 'a', seconds: 600, loggedAt: NOW.toISOString() }] }]) ?? []
+
+    expect(task?.timeLog).toEqual([{ id: 'a', seconds: 600, loggedAt: NOW.toISOString(), comment: null }])
+  })
+
+  it('carries comments through from an older shape still (STORE-1)', () => {
+    const v15 = { ...saved('dueTime', 'startDay'), timeLog: [{ id: 'a', minutes: 10, loggedAt: NOW.toISOString() }] }
+    const [task] = migrateTasks(15, [v15]) ?? []
+
+    expect(task?.timeLog).toEqual([{ id: 'a', seconds: 600, loggedAt: NOW.toISOString(), comment: null }])
+  })
+
   it('gives a task saved before there were hours no hour to be due at (STORE-1)', () => {
     const [task] = migrateTasks(17, [saved('dueTime')]) ?? []
 

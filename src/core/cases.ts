@@ -116,6 +116,9 @@ export type CaseBlock = 'opened' | 'unclear' | 'tooSmall' | 'bonusWaiting'
 /** Where a case comes from: clearing Today, the moment that arrives on its own, or the week. */
 export type CaseSource = 'today' | 'daily' | 'week'
 
+/** The cases in the order the page shows them: Payday, the Drop, then Weekly (CHST-28). */
+export const CASE_SOURCES: readonly CaseSource[] = ['today', 'daily', 'week']
+
 const CASE_ID_FOR_SOURCE = {
   today: CASE_TODAY_ID,
   daily: CASE_DAILY_ID,
@@ -545,8 +548,24 @@ export function hasKey(
   return caseBlock(tasks, entries, settings, accountId, now) === null
 }
 
-/** All of today's openings, in the order they were written. */
-export function caseOpenings(entries: readonly RewardEntry[], now: Date = new Date()): RewardEntry[] {
+/** One case opened today, and what it gave (CHST-33). */
+export interface OpenedCase {
+  readonly source: CaseSource
+  readonly points: number
+}
+
+/**
+ * What today's cases gave (CHST-33), in the order the page shows the cases.
+ * The ledger keeps which case and how much, not when, so that is the only
+ * order there is. Each case opens once a day (CHST-4), so there are three at
+ * most, and an earlier day's are not among them.
+ */
+export function caseOpenings(entries: readonly RewardEntry[], now: Date = new Date()): OpenedCase[] {
   const today = toLocalDay(now)
-  return entries.filter((entry) => entry.taskId === CASE_TODAY_ID && entry.day === today)
+  const openings: OpenedCase[] = []
+  for (const source of CASE_SOURCES) {
+    const entry = entries.find((each) => each.taskId === caseIdFor(source) && each.day === today)
+    if (entry !== undefined) openings.push({ source, points: entry.points })
+  }
+  return openings
 }

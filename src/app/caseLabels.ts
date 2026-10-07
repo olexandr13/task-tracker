@@ -132,6 +132,9 @@ export function describeTasksLeftUnit(tasks: number): string {
   return tasks === 1 ? 'task left' : 'tasks left'
 }
 
+/** The tag on the crate of a case the day has already had (CHST-28). */
+export const OPENED_TAG = 'Opened'
+
 /**
  * What an opened case says about the next one of its kind, until the day ends
  * (CHST-28, CHST-30). Payday comes back tomorrow once every planned task is
@@ -211,6 +214,14 @@ export function describeOpened(points: number): string {
 /** `+12`, as the ledger spells an earning out. */
 export function describeCasePoints(points: number): string {
   return `+${String(points)}`
+}
+
+/** What heads the list of what today's cases gave, on Cases (CHST-33). */
+export const OPENED_TODAY_LABEL = 'Opened today'
+
+/** `point` or `points`, after the number a case gave, for someone who cannot see that it is points. */
+export function describePointsUnit(points: number): string {
+  return points === 1 ? 'point' : 'points'
 }
 
 /** The line above the setting for how big a day has to be. */

@@ -1,4 +1,5 @@
 import type { DailyQuote, QuoteRepository } from './quoteRepository'
+import { repairMojibake } from './repairMojibake'
 
 const STORAGE_KEY = 'task-tracker/quote'
 
@@ -7,7 +8,7 @@ const STORAGE_KEY = 'task-tracker/quote'
  * as the tasks. Kept under its own key and its own version, because a quote and
  * a task list have no reason to change shape together.
  */
-const SCHEMA_VERSION = 3
+const SCHEMA_VERSION = 4
 
 interface StoredQuote {
   version: number
@@ -19,8 +20,9 @@ function migrate(stored: StoredQuote): DailyQuote | null {
   // Nothing older is migrated — version 2 and before carried the language a
   // quote was written in, from when there were Ukrainian days. A cached quote is
   // a day old at most and the service can simply be asked again, so there is
-  // nothing here worth carrying forward.
-  if (stored.version !== SCHEMA_VERSION) {
+  // nothing here worth carrying forward. Version 3 may hold a quote saved
+  // before garbled text was repaired (QUOTE-9), so it is repaired on the way in.
+  if (stored.version !== SCHEMA_VERSION && stored.version !== 3) {
     return null
   }
 
@@ -37,6 +39,10 @@ function migrate(stored: StoredQuote): DailyQuote | null {
   const { text, author } = quote as { text: unknown; author: unknown }
   if (typeof text !== 'string' || typeof author !== 'string') {
     return null
+  }
+
+  if (stored.version === 3) {
+    return { day, quote: { text: repairMojibake(text), author: repairMojibake(author) } }
   }
 
   return { day, quote: { text, author } }

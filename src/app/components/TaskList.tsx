@@ -20,6 +20,7 @@ import { SortableTasks } from './SortableTasks'
 import { TaskItem } from './TaskItem'
 import type { TaskActions } from '../taskActions'
 import type { TaskTimer } from '../useTaskTimer'
+import type { Reveal } from '../view'
 
 /** A phone leaves room between rows so a tap aimed at one does not catch the next. */
 const rows = 'flex flex-col gap-1.5 md:gap-1'
@@ -117,7 +118,7 @@ interface TaskListProps {
   actions: TaskActions
   timer?: Pick<TaskTimer, 'clock' | 'start' | 'stop' | 'isRunningFor' | 'state'>
   /** The task being gone to (TIME-20): its row is brought into view and opened. */
-  revealId?: TaskId | null
+  reveal?: Reveal | null
   /** Its row has been brought into view and opened. */
   onRevealed?: () => void
 }
@@ -137,7 +138,7 @@ export function TaskList({
   allDoneMessage,
   actions,
   timer,
-  revealId = null,
+  reveal = null,
   onRevealed,
 }: TaskListProps) {
   /** Whether all of a folded span's tasks are held, so its count is how many it has. */
@@ -178,7 +179,7 @@ export function TaskList({
         emphasized={!dimAll && focusId !== null && focusId === task.id}
         actions={actions}
         timer={timer}
-        revealed={revealId === task.id}
+        revealed={reveal?.taskId === task.id ? reveal.part : null}
         onRevealed={onRevealed}
       />
     )
@@ -245,7 +246,7 @@ export function TaskList({
           held={isHeld(span)}
           shown={group.length > 0 || mayHoldMore(span)}
           fade={doneSpanClass(span)}
-          holdsReveal={revealId !== null && group.some((task) => task.id === revealId)}
+          holdsReveal={reveal !== null && group.some((task) => task.id === reveal.taskId)}
           onReach={() => { history?.onReachBack(spanStart(span, now)) }}
         >
           {group.map((task) => row(task))}

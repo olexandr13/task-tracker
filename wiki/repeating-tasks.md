@@ -11,8 +11,8 @@ and whether it reads as done is derived from the occurrence currently in play ra
   background: what builds up is a list of the days it was done on (RPT-27), kept on the task itself.
 - **RPT-3** A rule stores no dates of its own. It answers one question — given a moment, which day
   is the occurrence in play? — and whether the task reads as done follows from that answer and the
-  single stored completion time. The day a rule **starts** on is the task's, not the rule's
-  (DUE-18): the same rule started on another day is the same rule.
+  single stored completion time. A day **picked** for the task is the task's, not the rule's
+  (DUE-18): the same rule with an occurrence moved is the same rule.
 
 ## Which occurrence is in play
 
@@ -50,8 +50,9 @@ and whether it reads as done is derived from the occurrence currently in play ra
 
 - **RPT-12** An existing task can be given a rule, swapped to another, or have its rule dropped,
   and the change is saved straight away — no separate confirm step. Picking a date for it from its
-  schedule button leaves the rule alone: that date is the day the rule **starts** on (DUE-18). A
-  task given a **daily** rule becomes a habit and moves to the end of the habits (HAB-30).
+  schedule button leaves the rule alone: that date is the day the occurrence in play is due on, this
+  time only — a habit's, the day it starts (DUE-18) — and only the days that can be are offered
+  (DUE-27). A task given a **daily** rule becomes a habit and moves to the end of the habits (HAB-30).
 - **RPT-13** Giving a rule to a one-off that was finished today keeps that completion: it is still
   done today.
 - **RPT-14** Dropping the rule while the task is **not** currently done clears the stale completion
@@ -113,16 +114,17 @@ and whether it reads as done is derived from the occurrence currently in play ra
   due tomorrow, a Monday task missed and skipped on Wednesday is due next Monday — so it is no
   longer overdue, and is in Today, Week or Month by that day (LIST-2, LIST-3, LIST-11). The day marked
   as chosen in its menu and panel moves on with it (DUE-14, DUE-15), as the schedule button's
-  reading does (DUE-12); the day its rule was told to start on stays what it was (DUE-18). It stays
-  to do, records nothing in its history and earns nothing. Only a task still to do, with an
-  occurrence in play (DUE-11), can skip; a one-off has no next day to move on to. Picking the
-  skipped day again takes the skip back (DUE-26).
+  reading does (DUE-12). An occurrence moved to another day (DUE-18) skips to the rule's first day
+  after the one it was moved to. It stays to do, records nothing in its history and earns nothing.
+  Only a task still to do, with an occurrence in play (DUE-11), can skip; a one-off has no next day
+  to move on to. Picking the skipped day again takes the skip back (DUE-26) — on a habit, which
+  takes no day once begun (DUE-27), its pressed skip does (HAB-31).
 - **RPT-35** Skipping again passes over the next occurrence too — a Monday task skipped twice is
   away for two Mondays. **A habit is the exception** (HAB-32): its rule comes round every day, so the
   occurrence a rest moves it on to is tomorrow, and passing that over would store a rest for a day
   nobody has reached yet, which would then arrive already resting. A habit rests today and no
   further, and while it is resting nothing offers it another skip — its menu, its schedule panel and
-  the foot of its sheet each offer the way back instead (HAB-32, DUE-26). A task skipped ahead and
+  the foot of its sheet each offer the way back instead, the skip drawn pressed as **Skipped** (HAB-32). A task skipped ahead and
   then made daily drops its skips after today, and a habit holding any is cleared of them as the
   tasks arrive (HAB-33).
 - **RPT-36** **Done wins**: ticking a skipped task off does the occurrence in play after all — it
@@ -155,7 +157,7 @@ and whether it reads as done is derived from the occurrence currently in play ra
 
 ---
 
-**Where it lives:** `src/core/repeat.ts` (the rules, `nextOccurrence` and `occurrenceFrom`), `src/core/task.ts` (`isComplete`,
+**Where it lives:** `src/core/repeat.ts` (the rules and `nextOccurrence`), `src/core/task.ts` (`isComplete`,
 `setRepeat`, `startDay`, `doneDays`, `skippedDays`, `settleHistory`, `passOverMissedOccurrence` and `forgetRestsAhead`),
 `src/core/due.ts` (`skipOccurrence`), `src/app/repeatDraft.ts` (what the picker holds while choosing),
 `src/app/repeatLabels.ts` (wording), `src/app/components/RepeatChoices.tsx` (the repeat half of

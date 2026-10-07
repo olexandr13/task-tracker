@@ -3,12 +3,14 @@ import { completeTask, createTask, duplicateTask, isComplete, setRepeat, uncompl
 import {
   hasTimeGoal,
   InvalidTimeError,
+  isTimeComment,
   isTimeGoalReached,
   keptEntries,
   logSeconds,
   logTime,
   MAX_SESSION_MINUTES,
   MAX_SESSION_SECONDS,
+  MAX_TIME_COMMENT_LENGTH,
   MAX_TIME_GOAL_MINUTES,
   removeTimeEntry,
   secondsSpent,
@@ -101,6 +103,32 @@ describe('logTime (TIME-3)', () => {
   })
 })
 
+describe('a comment on a session (TIME-23)', () => {
+  it('is kept with the session it was given for, trimmed, and only that one', () => {
+    const task = logTime(logTime(sport(), 20, TUE_15, '  intervals  '), 10, TUE_15_EVENING)
+
+    expect(task.timeLog.map((entry) => entry.comment)).toEqual(['intervals', null])
+  })
+
+  it('goes with a timer’s run too (TIME-22)', () => {
+    expect(logSeconds(sport(), 90, TUE_15, 'warm-up').timeLog[0]?.comment).toBe('warm-up')
+  })
+
+  it('is none when nothing but spaces is given', () => {
+    expect(logTime(sport(), 20, TUE_15, '   ').timeLog[0]?.comment).toBeNull()
+  })
+
+  it('is one line of at most the longest a comment can be', () => {
+    expect(isTimeComment('a'.repeat(MAX_TIME_COMMENT_LENGTH))).toBe(true)
+    expect(isTimeComment('a'.repeat(MAX_TIME_COMMENT_LENGTH + 1))).toBe(false)
+    expect(isTimeComment('two\nlines')).toBe(false)
+    expect(isTimeComment('  ')).toBe(false)
+
+    expect(() => logTime(sport(), 20, TUE_15, 'a'.repeat(MAX_TIME_COMMENT_LENGTH + 1))).toThrow(InvalidTimeError)
+    expect(() => logTime(sport(), 20, TUE_15, 'two\nlines')).toThrow(InvalidTimeError)
+  })
+})
+
 describe('isTimeGoalReached (TIME-5)', () => {
   it('is reached once the time logged is at least the goal', () => {
     const started = logTime(sport(), 40, TUE_15)
@@ -158,7 +186,7 @@ describe('time under a repeating task (TIME-7)', () => {
   it('lets go of sessions that no longer count when the rule is dropped, history too, keeping those that do', () => {
     // Yesterday's session is still on the task: nothing has been logged since to let go of it.
     const task = logTime(sport(), 10, TUE_15)
-    const stale = { ...task, timeLog: [{ id: 'old', seconds: 50 * 60, loggedAt: MON_14.toISOString() }, ...task.timeLog] }
+    const stale = { ...task, timeLog: [{ id: 'old', seconds: 50 * 60, loggedAt: MON_14.toISOString(), comment: null }, ...task.timeLog] }
 
     const oneOff = setRepeat(stale, null, TUE_15_EVENING)
 
@@ -235,7 +263,7 @@ describe('duplicateTask (TIME-9)', () => {
 })
 
 describe('the history of time (TIME-8, BAL-3)', () => {
-  const at = (moment: Date): TimeEntry => ({ id: moment.toISOString(), seconds: 60, loggedAt: moment.toISOString() })
+  const at = (moment: Date): TimeEntry => ({ id: moment.toISOString(), seconds: 60, loggedAt: moment.toISOString(), comment: null })
 
   it('reaches thirty days back, today among them', () => {
     expect(TIME_HISTORY_DAYS).toBe(30)

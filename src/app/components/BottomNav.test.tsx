@@ -406,6 +406,22 @@ describe('the Rewards tab', () => {
     expect(history.className).toContain('min-h-14')
     expect(history.className).toContain('pl-[3.125rem]')
   })
+
+  it('marks Cases in its menu while a key is waiting, as it marks the tab (CHST-22)', async () => {
+    const user = userEvent.setup()
+    const { rerender } = render(<BottomNav view="rewards" lists={[]} keyWaiting onChange={() => {}} />)
+
+    const tab = screen.getByRole('button', { name: /Rewards/ })
+    expect(tab.textContent).toContain('a key is waiting')
+    await user.click(tab)
+
+    expect(screen.getByRole('menuitem', { name: /^Cases\s*a key is waiting$/ })).not.toBeNull()
+    expect(screen.getByRole('menuitem', { name: 'History' }).textContent).toBe('History')
+
+    rerender(<BottomNav view="rewards" lists={[]} onChange={() => {}} />)
+
+    expect(screen.getByRole('menuitem', { name: 'Cases' }).textContent).toBe('Cases')
+  })
 })
 
 describe('a tab\'s menu as a panel on the bar (UI-66)', () => {

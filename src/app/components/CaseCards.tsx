@@ -4,6 +4,7 @@ import {
   describeOpenCase,
   describeSourceRule,
   describeTasksLeftUnit,
+  OPENED_TAG,
   SOURCE_LABEL,
   SOURCE_WAITING,
   TIMER_LABEL,
@@ -12,7 +13,9 @@ import { CASE_STRIPE } from '../caseTones'
 import { CaseArt } from './CaseArt'
 import { CaseRange } from './CaseRange'
 import { CaseLock } from './CaseLock'
+import { CaseTag } from './CaseTag'
 import { KeyTimer } from './KeyTimer'
+import { TickIcon } from './TickIcon'
 
 interface CaseCardsProps {
   /** What each case can pay. Practice passes the number typed in; a real day passes `caseSpan`. */
@@ -33,11 +36,12 @@ interface CaseCardsProps {
  * Monday — is shown half transparent, its crate grey, and a padlock on the
  * crate says when it will be ready: Payday how many tasks are left (CHST-31),
  * the Drop and Weekly a countdown (CHST-29, CHST-30).
- * One already opened stays until the day ends, with the lid up and the picture
- * dimmed, and it is not a button. Under it, the line says when the next one
- * comes. The opened Drop does not say at what time, and it says that earning
- * more today raises the next reward. Weekly is among them every day: planned
- * until Monday, then ready (CHST-30).
+ * One already opened stays until the day ends, with the lid up, the picture
+ * dimmed and *Opened* on the crate where the padlock would be, and it is not
+ * a button. Under it, the line says when the next one comes. The opened Drop
+ * does not say at what time, and it says that earning more today raises the
+ * next reward. Weekly is among them every day: planned until Monday, then
+ * ready (CHST-30).
  *
  * The cards share their rows, so the names stay level (CHST-28). A possible
  * win sits inside a ready case, above the crate. While any case is ready,
@@ -72,7 +76,7 @@ export function CaseCards({ ranges, slots, busy, countUnpaid, onOpen }: CaseCard
         const crateLook = ready ? '' : opened ? 'opacity-40' : 'opacity-40 grayscale'
         const textDim = ready ? '' : 'opacity-50'
         const caption = opened ? emphasizeToday(describeNextCase(slot.source)) : ready ? describeSourceRule(slot.source, countUnpaid) : waitingLine(slot.source)
-        const arrival = whenReady(slot)
+        const tag = opened ? <OpenedTag /> : whenReady(slot)
         const body = (
           <>
             <span className="case-card-plate relative flex h-full w-full flex-col overflow-hidden rounded-xl">
@@ -94,8 +98,8 @@ export function CaseCards({ ranges, slots, busy, countUnpaid, onOpen }: CaseCard
                     <CaseArt state={opened ? 'open' : 'shut'} />
                   </span>
                 </span>
-                {arrival !== null && (
-                  <span className="case-card-lock absolute inset-0 flex items-center justify-center px-1.5">{arrival}</span>
+                {tag !== null && (
+                  <span className="case-card-tag absolute inset-0 flex items-center justify-center px-1.5">{tag}</span>
                 )}
               </span>
             </span>
@@ -132,12 +136,24 @@ export function CaseCards({ ranges, slots, busy, countUnpaid, onOpen }: CaseCard
 /**
  * The padlock on a case still on its way, saying when it will be ready:
  * Payday how many tasks are left (CHST-31), the Drop and Weekly a countdown
- * (CHST-29, CHST-30). Nothing on a case ready or opened.
+ * (CHST-29, CHST-30). Nothing on a ready case; an opened one has its own tag.
  */
 function whenReady(slot: CaseSlot) {
   if (slot.source !== 'today' && slot.at !== null) return <KeyTimer at={slot.at} label={TIMER_LABEL[slot.source]} />
   if (slot.tasksLeft !== undefined) return <TasksLeft tasks={slot.tasksLeft} />
   return null
+}
+
+/**
+ * The tag on an opened case, where a planned one has its padlock (CHST-28),
+ * so the case reads as had today rather than merely faint.
+ */
+function OpenedTag() {
+  return (
+    <CaseTag icon={<TickIcon className="size-3.5 shrink-0 text-emerald-400" />}>
+      <span className="text-[13px] font-semibold text-neutral-100">{OPENED_TAG}</span>
+    </CaseTag>
+  )
 }
 
 /**

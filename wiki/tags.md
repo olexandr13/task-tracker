@@ -78,9 +78,12 @@ it is deleted, whether or not a task carries it.
   menu (TAG-7, TAG-16), or `#` in its description (TAG-8).
 - **TAG-21** The Tags page is not a list of tasks, so it has no box for adding one and no rail (UI-2).
   Its box makes a tag instead (TAG-23).
-- **TAG-22** Beside each tag is a button that **deletes it**, after asking: the tag comes off every
-  task carrying it — tasks in the trash too, so restoring one does not bring it back — the tasks
-  themselves stay as they were otherwise, and the tag is gone from everywhere it was offered. It is
+- **TAG-22** Beside each tag is a button that **deletes it**, after asking in the app's own sheet
+  (UI-74) — **Delete the tag "work"?**, then `It comes off every task that carries it.` and
+  `The tasks themselves are not deleted.` — **Delete** going ahead and anything else leaving the
+  tag as it was. Deleted, the tag comes off every task carrying it — tasks in the trash too, so
+  restoring one does not bring it back — the tasks themselves stay as they were otherwise, and the
+  tag is gone from everywhere it was offered. It is
   unbound from every Balance category too (BAL-11). There is no undo. Reaching every task means
   loading the finished ones not loaded yet (STORE-55) first, so the tag goes once they have
   arrived — with no connection, once there is one.

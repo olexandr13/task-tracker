@@ -11,6 +11,7 @@ import {
   InvalidTimeOfDayError,
   isLocalDay,
   isLocalTime,
+  offsetDay,
   toLocalDay,
   type LocalDay,
   type LocalTime,
@@ -18,7 +19,14 @@ import {
 // Type-only: ./list reads the task's rules, so nothing is imported back from it.
 import type { ListId } from './list'
 import type { Placement } from './placement'
-import { assertValidRepeat, countsForCurrentOccurrence, currentOccurrence, repeatsEveryDay, type Repeat } from './repeat'
+import {
+  assertValidRepeat,
+  countsForCurrentOccurrence,
+  currentOccurrence,
+  nextOccurrence,
+  repeatsEveryDay,
+  type Repeat,
+} from './repeat'
 import { createSubtask, isSubtaskComplete, reorderSubtasks, type Subtask, type SubtaskId } from './subtask'
 import { currentEntries, type TimeEntry } from './timeLog'
 import { normalizeTitle } from './title'
@@ -65,7 +73,7 @@ export interface Task {
    * task whose occurrence has gone by (`passOverMissedOccurrence`). Done wins:
    * an occurrence ticked off after all reads as done, and the day stays here
    * only so that taking the tick back passes it over again. Picking a day for
-   * the rule to start on puts the days from it on back in play (`setStartDay`).
+   * the task puts the days from it on back in play (`setStartDay`).
    * A habit holds none for a day still to come (`forgetRestsAhead`).
    */
   readonly skippedDays: readonly LocalDay[]
@@ -75,11 +83,13 @@ export interface Task {
    */
   readonly dueDate: LocalDay | null
   /**
-   * The local day a repeating task's rule starts on, or null for one that starts
-   * where it was written. Occurrences before it asked nothing of the task, and
-   * the task is due on the first one from it — so a daily task given next Monday
-   * is due next Monday, not today. Always null on a one-off, which has a date of
-   * its own instead. See `dueDay` in ./due.
+   * The local day picked for a repeating task, or null for one whose rule runs
+   * from where it was written. The task is due on that day itself, and the rule
+   * takes over again from the first of its days after it: a Monday task given a
+   * Thursday is due the Thursday and then the Monday after, and a daily task
+   * given next Monday starts there. The rule's days before it asked nothing of
+   * the task. Always null on a one-off, which has a date of its own instead. See
+   * `dueDay` in ./due, and `pickableDays` for which days can be picked.
    */
   readonly startDay: LocalDay | null
   /**
@@ -372,7 +382,10 @@ function passOverMissedOccurrence(task: Task, now: Date): Task {
     return task
   }
 
-  const occurrence = toLocalDay(currentOccurrence(task.repeat, now))
+  // A day picked stands in for the rule's own until the rule comes round after
+  // it (`startDay`), so it is that day that has gone by.
+  const natural = toLocalDay(currentOccurrence(task.repeat, now))
+  const occurrence = task.startDay !== null && natural < task.startDay ? task.startDay : natural
   if (occurrence >= toLocalDay(now) || occurrence < toLocalDay(new Date(task.createdAt))) {
     return task
   }
@@ -518,10 +531,12 @@ export class StartDayOnOneOffError extends Error {
 }
 
 /**
- * Says which day a repeating task's rule starts on, moves it, or lets it go with
- * null — where the rule starts on the day the task was written. The rule itself
- * is untouched: a Monday task started on a Thursday is still a Monday task, and
- * is due on the Monday after (see `dueDay` in ./due).
+ * Gives a repeating task the day picked for it, moves it, or lets it go with
+ * null — where the rule runs from the day the task was written. The task is due
+ * on that day, and the rule itself is untouched: a Monday task given a Thursday
+ * is still a Monday task, due the Thursday and then the Monday after (see
+ * `dueDay` in ./due). Whether a day may be picked at all is `scheduleOn`'s to
+ * ask; this only writes it.
  *
  * A day picked is a day the owner wants the task due from, so an occurrence
  * passed over from that day on — skipped, or missed and reopened — is back in
@@ -548,23 +563,98 @@ export function setStartDay(task: Task, startDay: LocalDay | null): Task {
 }
 
 /**
- * Gives the task the day picked for it, or takes it away with null: a one-off is
- * due on that day, a repeating task starts its rule there. One day picked, read
- * by whichever of the two the task is — which is what the schedule button offers.
+ * Gives the task the day picked for it, or takes it away with null: either way
+ * the task is due on that day — a one-off as its date, a repeating task as the
+ * occurrence in play, its rule carrying on after it (`setStartDay`). One day
+ * picked, read by whichever of the two the task is, which is what the schedule
+ * button offers.
+ *
+ * A repeating task takes only a day `pickableDays` holds; anything else leaves
+ * it as it is.
  *
  * Returns a new task; the one passed in is never modified.
  */
-export function scheduleOn(task: Task, day: LocalDay | null): Task {
-  return task.repeat === null ? setDueDate(task, day) : setStartDay(task, day)
+export function scheduleOn(task: Task, day: LocalDay | null, now: Date = new Date()): Task {
+  if (task.repeat === null) {
+    return setDueDate(task, day)
+  }
+
+  if (day !== null && isLocalDay(day) && !isPickable(pickableDays(task, now), day)) {
+    return task
+  }
+
+  return setStartDay(task, day)
+}
+
+/** The days that can be picked: from `first` to `last`, each end open where it is null. */
+export interface PickableDays {
+  readonly first: LocalDay | null
+  readonly last: LocalDay | null
 }
 
 /**
- * The day the task carries itself — a one-off's date, a repeating task's start —
- * or null where it carries none. This is the day a picker marks as chosen and
- * offers to take away; which day the task is actually *due* is `dueDay` in ./due.
+ * The days that can be picked for the task now (DUE-27), or null where none can.
+ *
+ * Any day suits a one-off. A repeating task takes a day only for an occurrence
+ * still to do: once it is done, a day picked could not tell a tick ahead of that
+ * day from the tick of the occurrence before it. Then it is the rule's own days
+ * that decide (`pickableDaysFor`), and a **habit** takes a day only until its
+ * first one has gone by. Its rule asks for every day, so a later start would
+ * read every day it had already been asked for as never asked — its misses
+ * wiped (HAB-12) — and from then on it has a skip instead (HAB-31). Today counts
+ * only once it is done, so a habit begun today can still start tomorrow.
  */
-export function scheduledDay(task: Task): LocalDay | null {
-  return task.repeat === null ? task.dueDate : task.startDay
+export function pickableDays(task: Task, now: Date = new Date()): PickableDays | null {
+  if (task.repeat === null) {
+    return pickableDaysFor(null, now)
+  }
+
+  if (isComplete(task, now)) {
+    return null
+  }
+
+  if (repeatsEveryDay(task.repeat) && startedOn(task) < toLocalDay(now)) {
+    return null
+  }
+
+  return pickableDaysFor(task.repeat, now)
+}
+
+/**
+ * The days a task under this rule — or none — can be given, before anything has
+ * happened to it: what the add row offers (DUE-6), and what `pickableDays`
+ * narrows for a task that has a history.
+ *
+ * A one-off takes any day. A repeating task takes today or a later one, a day
+ * gone by being one the rule has already come round over. A daily rule's day is
+ * the day it starts, so any later day will do. Any other rule's day is the day
+ * the occurrence in play is done instead of its own, so it reaches only as far
+ * as the day before the rule comes round again: a Monday task on a Wednesday
+ * moves to Wednesday up to Sunday. Further than that would be doing next
+ * Monday's in its place, and a tick made before that Monday could not say which
+ * of the two it was for — passing it over is what a skip is for (RPT-34).
+ */
+export function pickableDaysFor(repeat: Repeat | null, now: Date = new Date()): PickableDays {
+  if (repeat === null) {
+    return { first: null, last: null }
+  }
+
+  const today = toLocalDay(now)
+  if (repeatsEveryDay(repeat)) {
+    return { first: today, last: null }
+  }
+
+  const next = nextOccurrence(repeat, currentOccurrence(repeat, now))
+  return { first: today, last: offsetDay(toLocalDay(next), -1) }
+}
+
+/** Whether a day is one of those that can be picked; never, where none can. */
+export function isPickable(days: PickableDays | null, day: LocalDay): boolean {
+  if (days === null) {
+    return false
+  }
+
+  return (days.first === null || day >= days.first) && (days.last === null || day <= days.last)
 }
 
 /**

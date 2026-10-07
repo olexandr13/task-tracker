@@ -461,6 +461,17 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   nothing, and stays neutral. The sheet's **Delete** (UI-48) is the exception: a word with a bin
   beside it rather than a bare ×, and **red at rest**, since a phone has no pointer to hover over it
   and warn first.
+- **UI-74** What cannot be taken back is **asked about first, in a sheet of the app's own**, never
+  the browser's confirm, which speaks in the browser's voice under the site's address and reads as
+  a fault rather than a question. It slides up on a phone and is a dialog in the middle of a wide
+  screen (UI-48, UI-54). Its heading is the question — *Delete the list "Work"?* — and under it,
+  a plain sentence each, what saying yes costs and what it spares. Two buttons end it: **Cancel**,
+  and one named for what it does — **Delete**, **Empty trash**, **Disable** — red at rest, as the
+  sheet's **Delete** is (UI-38). Cancel, Escape, back (UI-71) and a tap outside the sheet all leave
+  things as they were. Should what was asked about go elsewhere while the sheet is up — on another
+  device — the sheet goes too, there being nothing left to ask. Asked before deleting a list
+  (LST-19), a tag (TAG-22) or a prize (RWD-34), emptying the trash (TRASH-10) and disabling the
+  warm-up (WARM-9).
 - **UI-14** The whole screen is drawn for one moment, so the list order, each row, the three bars,
   the trash countdown and the quote can never disagree about which day it is.
 - **UI-39** The app's icon, shown in the browser tab, is a **progress ring** about three-quarters full
@@ -501,7 +512,8 @@ row at rest and awake), `src/app/components/TaskSheet.tsx` and `src/app/componen
 phone's look at a task, and a wide screen's dialog), `src/app/components/SheetActions.tsx` and
 `src/app/components/InfoIcon.tsx` (the row of icons, the line of what is set, and the **i** that
 names them, UI-63), `src/app/components/InfoButton.tsx` (the **i** beside a heading that opens a
-sheet with what the page explains, UI-73), `src/app/sheetDrag.ts` and `src/app/useSheetDrag.ts`
+sheet with what the page explains, UI-73), `src/app/components/ConfirmSheet.tsx` (asking before what
+cannot be taken back, UI-74), `src/app/sheetDrag.ts` and `src/app/useSheetDrag.ts`
 (pulling a sheet down to close it), `src/app/usePhoneLayout.ts` (whether the screen is a phone's, and
 how high above the bar the Plus and the notices float), `index.html` (the page running under the
 notch and the home indicator), `src/app/components/TaskList.tsx` (the room between rows), `src/app/components/ContextMenu.tsx` (a task's menu), `src/app/components/FloatingPanel.tsx` (a menu or panel floating where the pointer was), `src/app/textOffsetAtPoint.ts` (which character a click landed on), `src/app/components/SideNav.tsx`,

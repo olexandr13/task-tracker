@@ -30,7 +30,10 @@ in which it can be fetched out of the trash.
   record, and a repeating task comes back on the same occurrence it left on.
 - **TRASH-9** A single task can be deleted for good from its row, with nothing left to restore.
 - **TRASH-10** **Empty trash** clears everything at once, and asks first: it is the one action that
-  cannot be undone from the screen it happens on.
+  cannot be undone from the screen it happens on. It asks in the app's own sheet (UI-74): **Empty
+  the trash?**, then how many go — `All 3 tasks in it are deleted for good.`, or `The task in it`
+  for one — and `"Restore" cannot bring them back after that.` The sheet's **Empty trash** clears
+  it; anything else leaves the trash as it was.
 - **TRASH-11** The trash says deleted tasks are kept for a day — at the top while there are any, and
   in the empty state when there are none.
 
@@ -47,4 +50,5 @@ in which it can be fetched out of the trash.
 **Where it lives:** `src/core/trash.ts` (retention and expiry), `src/core/task.ts` (`deleteTask`,
 `restoreTask`), `src/app/components/TrashList.tsx`,
 `UndoToast.tsx`, `src/app/useUndoToast.ts`, `src/app/useTasks.ts` (purging on load and on write).
-**Tested in:** `src/core/trash.test.ts`, `src/core/task.test.ts`.
+**Tested in:** `src/core/trash.test.ts`, `src/core/task.test.ts`,
+`src/app/components/TrashList.test.tsx` (asking before the trash is emptied).

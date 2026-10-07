@@ -75,7 +75,7 @@ describe('AddTaskForm', () => {
     expect(onAdd).toHaveBeenCalledWith('stretch', { kind: 'daily' }, null, null)
   })
 
-  it('starts a rule on a day picked beside it, the rule staying (DUE-6, DUE-18)', async () => {
+  it('makes a day picked beside a rule the day its first occurrence is due, the rule staying (DUE-6, DUE-18)', async () => {
     const { user, onAdd } = setupForm(null)
 
     await user.click(scheduleButton())
@@ -87,9 +87,9 @@ describe('AddTaskForm', () => {
     await user.click(screen.getByRole('button', { name: 'Back from repeat' }))
     await user.click(screen.getByRole('button', { name: /^Tomorrow/ }))
 
-    // Weekly starts on today's weekday, so the rule is Mon and Wed; started on the
-    // Thursday, the first day it comes round on is the Monday after.
-    expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Every Mon, Wed · Sep 21')
+    // Weekly starts on today's weekday, so the rule is Mon and Wed; the day picked
+    // is the day it is first due, the rule carrying on after it.
+    expect(scheduleButton()).toHaveProperty('ariaLabel', 'Schedule: Every Mon, Wed · Tomorrow')
     await user.type(box(), 'stretch{Enter}')
     expect(onAdd).toHaveBeenCalledWith('stretch', { kind: 'weekly', weekdays: [1, 3] }, '2026-09-17', null)
   })

@@ -14,19 +14,20 @@
 
 import { atLocalTime, offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from './day'
 import { periodRange, type Period } from './progress'
-import { currentOccurrence, nextOccurrence, occurrenceFrom, repeatsEveryDay, type Repeat } from './repeat'
+import { currentOccurrence, nextOccurrence, repeatsEveryDay } from './repeat'
 import { hasDueDay, isComplete, isDeleted, startedOn, type Task, type TaskId } from './task'
 
 /**
  * The day the task is due as of `now`, or null when it has none.
  *
  * A repeating task's occurrence from before its rule started asked nothing of
- * it. What that leaves depends on where the start came from. A day **chosen**
- * for it (`startDay`) is a day the owner picked, so the task is due on the first
- * occurrence from it: a Monday task started on a Thursday is due the Monday
- * after. A rule with no day chosen starts where the task was written, and there
- * is simply no occurrence in play yet — a weekly Monday task written on a
- * Tuesday is next due on Monday, not overdue from the day before it was thought of.
+ * it. What that leaves depends on where the start came from. A day **picked**
+ * for it (`startDay`) is the day the owner wants it done, so the task is due on
+ * that day itself until the rule comes round after it: a Monday task given a
+ * Thursday is due the Thursday, and the Monday after. A rule with no day picked
+ * starts where the task was written, and there is simply no occurrence in play
+ * yet — a weekly Monday task written on a Tuesday is next due on Monday, not
+ * overdue from the day before it was thought of.
  *
  * A skipped occurrence hands the task on to the next one the rule gives, and
  * that one on again while it was skipped too — unless the task was done after
@@ -42,7 +43,7 @@ export function dueDay(task: Task, now: Date = new Date()): LocalDay | null {
     if (task.startDay === null) {
       return null
     }
-    occurrence = startOfLocalDay(firstDueDay(task.repeat, task.startDay))
+    occurrence = startOfLocalDay(task.startDay)
   }
 
   if (!isComplete(task, now)) {
@@ -54,12 +55,23 @@ export function dueDay(task: Task, now: Date = new Date()): LocalDay | null {
 }
 
 /**
- * The first day from `start` the rule comes round on — `start` itself where the
- * rule falls on it. The day a rule started there is first due, before any of its
- * occurrences has been and gone.
+ * The day a repeating task done for its occurrence in play is due again: the
+ * rule's first day after that occurrence that was not passed over already. Null
+ * for a task still to do, whose day is `dueDay`, and for a one-off, which has no
+ * day to come round again. It is what the schedule says in place of days to pick
+ * once the occurrence is done (DUE-27).
  */
-export function firstDueDay(repeat: Repeat, start: LocalDay): LocalDay {
-  return toLocalDay(occurrenceFrom(repeat, startOfLocalDay(start)))
+export function dueAgainOn(task: Task, now: Date = new Date()): LocalDay | null {
+  if (task.repeat === null || !isComplete(task, now)) {
+    return null
+  }
+
+  const done = dueDay(task, now) ?? toLocalDay(currentOccurrence(task.repeat, now))
+  let next = nextOccurrence(task.repeat, startOfLocalDay(done))
+  while (task.skippedDays.includes(toLocalDay(next))) {
+    next = nextOccurrence(task.repeat, next)
+  }
+  return toLocalDay(next)
 }
 
 /**

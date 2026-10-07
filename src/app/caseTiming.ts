@@ -77,10 +77,28 @@ export const CASE_SETTLED_AT = Math.max(
 /**
  * How long a result with no reel stays up before the cabinet leaves (CHST-18,
  * CHST-25). Less motion, and practice skipping the wait, put the number on
- * screen at once, so it needs a moment to be read. The full show has already
- * held the result through the counting; it leaves as soon as that is over.
+ * screen at once, so it needs a moment to be read.
  */
 export const CASE_RESULT_HOLD_MS = 2000
+
+/**
+ * How long the full show's result stays up once it has settled, before the
+ * cabinet leaves (CHST-25). The number has only just stopped counting, so it
+ * gets a moment more to be read.
+ */
+export const CASE_LINGER_MS = 1000
+
+/**
+ * How the cabinet leaves (CHST-25): it switches off as an old set does — a
+ * flare, the picture squeezed to a line, the line drawn in to a dot — and then
+ * the room it took on the page closes up. Written into `.case-off` and
+ * `.case-closing` in `src/styles.css` too.
+ */
+export const CASE_OFF_MS = 560
+export const CASE_CLOSE_MS = 320
+
+/** From the cabinet starting to switch off to its being gone from the page. */
+export const CASE_LEAVE_MS = CASE_OFF_MS + CASE_CLOSE_MS
 
 /** How long a refused press shakes the cabinet and jerks the dial for. */
 export const CASE_REFUSAL_MS = 420

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MODE_POINTS } from '../modeLabels'
 import type { ModeState } from '../modes'
 import type { ModeView } from '../view'
-import { WARM_UP_DISABLE_WARNING } from '../warmUpLabels'
+import { describeWarmUpDisable } from '../warmUpLabels'
 import { ModePage } from './ModePage'
 
 /* One mode's own page. MODE ids refer to wiki/modes.md. */
@@ -53,28 +53,40 @@ describe('ModePage', () => {
     expect(toggle).toHaveBeenCalledExactlyOnceWith(true)
   })
 
-  it('asks before the warm-up is turned off, and leaves it on when cancelled (WARM-9)', async () => {
+  it('asks before the warm-up is turned off, and leaves it on when the sheet is left (WARM-9)', async () => {
     const toggle = vi.fn()
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
-    render(
-      <ModePage
-        mode={mode('modes/warm-up', {
-          on: true,
-          status: ON,
-          confirmOff: WARM_UP_DISABLE_WARNING,
-          toggle,
-        })}
-      />,
+    const warmUp = mode('modes/warm-up', {
+      on: true,
+      status: ON,
+      confirmOff: describeWarmUpDisable({ day: 12, daysLeft: 18, allowed: 12, used: 4, remaining: 8, paused: true }),
+      toggle,
+    })
+    const { rerender } = render(<ModePage mode={warmUp} />)
+
+    await userEvent.click(screen.getByRole('switch', { name: 'Warm-up' }))
+    expect(screen.getByRole('dialog', { name: 'Disable the warm-up?' }).textContent).toContain(
+      'Your warm-up is paused on day 12 of 30.',
     )
 
-    await userEvent.click(screen.getByRole('switch', { name: 'Warm-up' }))
-    expect(confirm.mock.calls[0]?.[0]).toBe(WARM_UP_DISABLE_WARNING)
+    // Escape is a way out like Cancel: the warm-up runs on.
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).toBeNull()
     expect(toggle).not.toHaveBeenCalled()
 
-    confirm.mockReturnValue(true)
     await userEvent.click(screen.getByRole('switch', { name: 'Warm-up' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Disable' }))
     expect(toggle).toHaveBeenCalledExactlyOnceWith(false)
-    confirm.mockRestore()
+
+    // Ended on another device while asked, there is nothing left to ask about.
+    toggle.mockClear()
+    rerender(<ModePage mode={warmUp} />)
+    await userEvent.click(screen.getByRole('switch', { name: 'Warm-up' }))
+    expect(screen.getByRole('dialog')).toBeDefined()
+    rerender(<ModePage mode={{ ...warmUp, on: false, status: OFF }} />)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    rerender(<ModePage mode={warmUp} />)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(toggle).not.toHaveBeenCalled()
   })
 
   it('wears the face the mode puts you in (MODE-11)', () => {

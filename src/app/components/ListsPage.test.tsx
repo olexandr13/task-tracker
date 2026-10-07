@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { appendList, createList, type ListSummary } from '../../core'
+import { WAYS_OUT } from '../../test/confirmSheet'
 import { ListsPage } from './ListsPage'
 
 /* The Lists page. LST ids refer to wiki/lists.md. */
@@ -170,27 +171,33 @@ describe('renaming a list', () => {
 })
 
 describe('deleting a list', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it('asks first, and says its tasks go back to the Inbox (LST-19)', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('asks first, in a sheet, saying its tasks go back to the Inbox (LST-19)', async () => {
     const { user, onDelete } = setup()
 
     await user.click(screen.getByRole('button', { name: 'Delete the list "Work"' }))
 
-    expect(confirm.mock.calls[0][0]).toContain('back to the Inbox')
-    expect(onDelete).toHaveBeenCalledWith(WORK.id)
-  })
-
-  it('deletes nothing when the asking is turned down (LST-19)', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
-    const { user, onDelete } = setup()
-
-    await user.click(screen.getByRole('button', { name: 'Delete the list "Work"' }))
-
+    const sheet = screen.getByRole('dialog', { name: 'Delete the list "Work"?' })
+    expect([...sheet.querySelectorAll('p')].map((line) => line.textContent)).toEqual([
+      'Its tasks go back to the Inbox.',
+      'The tasks themselves are not deleted.',
+    ])
     expect(onDelete).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Delete' }))
+
+    expect(onDelete).toHaveBeenCalledExactlyOnceWith(WORK.id)
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it.each(WAYS_OUT)('deletes nothing when %s closes the sheet (LST-19)', async (_, leave) => {
+    const { user, onDelete } = setup()
+
+    await user.click(screen.getByRole('button', { name: 'Delete the list "Work"' }))
+    await leave(user)
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(onDelete).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Work: 2 to do' })).toBeTruthy()
   })
 
   it('offers nothing to rename or delete on the Inbox: it is not a record (LST-11)', () => {

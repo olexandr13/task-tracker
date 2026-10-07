@@ -8,7 +8,8 @@
  * tick is still the owner's to give, so time never finishes a task by itself.
  *
  * A session keeps its length to the second, so short timer runs add up: three
- * runs of 20 seconds make a minute. Time spent is read in whole minutes.
+ * runs of 20 seconds make a minute. Time spent is read in whole minutes. A
+ * session can carry a comment — what the time went on — given as it is logged.
  *
  * Under a repeating task a session counts for the occurrence it was logged in,
  * the same trick a checklist tick uses (./subtask): a daily hour starts from
@@ -33,6 +34,8 @@ export interface TimeEntry {
   readonly seconds: number
   /** ISO 8601 timestamp. Which occurrence the session counts for follows from it. */
   readonly loggedAt: string
+  /** What the time went on, in the owner's words (`isTimeComment`), or null for nothing said. */
+  readonly comment: string | null
 }
 
 /** The longest goal a task can ask for: a hundred hours. */
@@ -64,6 +67,26 @@ export function isSessionLength(minutes: number): boolean {
 /** Whether one session can be this many seconds long. */
 export function isSessionSeconds(seconds: number): boolean {
   return Number.isInteger(seconds) && seconds >= 1 && seconds <= MAX_SESSION_SECONDS
+}
+
+/** The longest comment a session can carry. */
+export const MAX_TIME_COMMENT_LENGTH = 200
+
+/** Whether a session can carry this comment: some words, on one line, of at most `MAX_TIME_COMMENT_LENGTH` characters. */
+export function isTimeComment(text: string): boolean {
+  const trimmed = text.trim()
+  return trimmed.length > 0 && trimmed.length <= MAX_TIME_COMMENT_LENGTH && !/[\r\n]/u.test(trimmed)
+}
+
+/** A comment as kept: trimmed, and none for nothing but spaces. */
+function toTimeComment(text: string | null): string | null {
+  if (text === null || text.trim() === '') return null
+  if (!isTimeComment(text)) {
+    throw new InvalidTimeError(
+      `"${text}" is not a comment: a comment is one line of at most ${String(MAX_TIME_COMMENT_LENGTH)} characters.`,
+    )
+  }
+  return text.trim()
 }
 
 /**
@@ -131,36 +154,42 @@ export function keptEntries(entries: readonly TimeEntry[], repeat: Repeat | null
 }
 
 /**
- * Logs a session of whole minutes, as typed or clicked. Whether the task is
- * done is left alone either way: time reaching the goal says the task is
- * ready, not that it was done.
+ * Logs a session of whole minutes, as typed or clicked, with what it went on
+ * when that is said. Whether the task is done is left alone either way: time
+ * reaching the goal says the task is ready, not that it was done.
  *
  * Returns a new task; the one passed in is never modified.
  */
-export function logTime(task: Task, minutes: number, now: Date = new Date()): Task {
+export function logTime(task: Task, minutes: number, now: Date = new Date(), comment: string | null = null): Task {
   if (!isSessionLength(minutes)) {
     throw new InvalidTimeError(
       `${String(minutes)} is not a session: a session is a whole number of minutes from 1 to ${String(MAX_SESSION_MINUTES)}.`,
     )
   }
 
-  return logSeconds(task, minutes * 60, now)
+  return logSeconds(task, minutes * 60, now, comment)
 }
 
 /**
- * Logs a session to the second, as a timer ran it. Seconds add up across
- * sessions, so runs too short to make a minute alone still count together.
+ * Logs a session to the second, as a timer ran it, with what it went on when
+ * that is said. Seconds add up across sessions, so runs too short to make a
+ * minute alone still count together.
  *
  * Returns a new task; the one passed in is never modified.
  */
-export function logSeconds(task: Task, seconds: number, now: Date = new Date()): Task {
+export function logSeconds(task: Task, seconds: number, now: Date = new Date(), comment: string | null = null): Task {
   if (!isSessionSeconds(seconds)) {
     throw new InvalidTimeError(
       `${String(seconds)} is not a session: a session is a whole number of seconds from 1 to ${String(MAX_SESSION_SECONDS)}.`,
     )
   }
 
-  const entry: TimeEntry = { id: crypto.randomUUID(), seconds, loggedAt: now.toISOString() }
+  const entry: TimeEntry = {
+    id: crypto.randomUUID(),
+    seconds,
+    loggedAt: now.toISOString(),
+    comment: toTimeComment(comment),
+  }
   return { ...task, timeLog: [...keptEntries(task.timeLog, task.repeat, now), entry] }
 }
 

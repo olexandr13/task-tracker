@@ -29,7 +29,8 @@ export type TaskTimer = {
   /** Wall clock for live elapsed while a timer is running. */
   readonly clock: Date
   readonly start: (taskId: TaskId) => void
-  readonly stop: () => void
+  /** Stops the run and logs it, with what it went on or null for nothing said (TIME-23). */
+  readonly stop: (comment: string | null) => void
   readonly isRunningFor: (taskId: TaskId) => boolean
   readonly goalNotice: GoalNotice | null
   readonly dismissGoalNotice: () => void
@@ -44,10 +45,11 @@ function requestNotificationIfNeeded(goal: number | null): void {
 function finishRun(
   running: Extract<TaskTimerState, { status: 'running' }>,
   now: Date,
-  onLog: (taskId: TaskId, seconds: number) => void,
+  onLog: (taskId: TaskId, seconds: number, comment: string | null) => void,
+  comment: string | null,
 ): void {
   const seconds = Math.min(elapsedSeconds(running.startedAt, now), MAX_SESSION_SECONDS)
-  if (seconds >= 1) onLog(running.taskId, seconds)
+  if (seconds >= 1) onLog(running.taskId, seconds, comment)
 }
 
 /**
@@ -58,7 +60,7 @@ function finishRun(
 export function useTaskTimer(
   repository: TaskTimerRepository,
   describe: (taskId: TaskId) => TaskTimerInfo | null,
-  onLog: (taskId: TaskId, seconds: number) => void,
+  onLog: (taskId: TaskId, seconds: number, comment: string | null) => void,
 ): TaskTimer {
   const [state, setState] = useState<TaskTimerState>(() => repository.load())
   const [clock, setClock] = useState(() => new Date())
@@ -104,10 +106,10 @@ export function useTaskTimer(
     notifyBrowser('Time goal reached', `Time goal reached for “${info.title}”`)
   }, [state, clock, persist])
 
-  const stop = useCallback(() => {
+  const stop = useCallback((comment: string | null) => {
     const current = stateRef.current
     if (current.status !== 'running') return
-    finishRun(current, new Date(), onLogRef.current)
+    finishRun(current, new Date(), onLogRef.current, comment)
     persist(TASK_TIMER_IDLE)
   }, [persist])
 
@@ -117,7 +119,7 @@ export function useTaskTimer(
       const current = stateRef.current
       if (current.status === 'running') {
         if (current.taskId === taskId) return
-        finishRun(current, now, onLogRef.current)
+        finishRun(current, now, onLogRef.current, null)
       }
       const info = describeRef.current(taskId)
       requestNotificationIfNeeded(info?.goal ?? null)

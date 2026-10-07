@@ -372,6 +372,24 @@ export function playPowerOn(): void {
 }
 
 /**
+ * The set switching off as the cabinet goes: the snap of the switch, the coil
+ * winding down, the whine falling away and a last crackle as the dot goes out.
+ * Quieter than coming on — the show is over.
+ */
+export function playPowerOff(): void {
+  const r = audio()
+  if (r === null) return
+
+  click(r, { freq: 2200, gain: 0.06 })
+  thump(r, { from: 70, to: 30, ms: 420, gain: 0.28, send: 0.2 })
+  tone(r, { shape: 'sawtooth', from: 90, to: 38, ms: 380, gain: 0.05, filter: { from: 900, to: 80 } })
+  tone(r, { from: 7800, to: 2400, ms: 520, gain: 0.006 })
+  for (let crack = 0; crack < 5; crack++) {
+    noise(r, { start: 220 + Math.random() * 240, ms: 5 + Math.random() * 10, gain: 0.025 + Math.random() * 0.035, filter: { type: 'highpass', from: 3600 } })
+  }
+}
+
+/**
  * What the reel runs over, for as long as it runs: a low drone whose filter
  * opens as the reel slows, pulsing faster towards the end, and a rush of air
  * rising under the last of it — the room holding its breath. It stops dead as

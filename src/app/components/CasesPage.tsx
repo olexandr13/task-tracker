@@ -1,9 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
-import { CASE_FOR_SOURCE, CASE_QUARTERS, caseQuarter, oddsForSpan, openCase, type CaseOdds, type CaseSlot, type CaseSource, type CaseOpen, type CaseQuarter } from '../../core'
-import { CASE_RESULT_HOLD_MS } from '../caseTiming'
+import {
+  CASE_FOR_SOURCE,
+  CASE_QUARTERS,
+  caseQuarter,
+  oddsForSpan,
+  openCase,
+  type CaseOdds,
+  type CaseSlot,
+  type CaseSource,
+  type CaseOpen,
+  type CaseQuarter,
+  type OpenedCase,
+} from '../../core'
+import { CASE_LEAVE_MS, CASE_LINGER_MS, CASE_RESULT_HOLD_MS } from '../caseTiming'
 import {
   CASES_RULES_HEADING,
+  describeCasePoints,
+  describePointsUnit,
   describeTally,
+  OPENED_TODAY_LABEL,
   PRACTICE_BAND,
   PRACTICE_JACKPOT_LABEL,
   PRACTICE_LABEL,
@@ -11,7 +26,10 @@ import {
   PRACTICE_ON,
   PRACTICE_SKIP_LABEL,
   QUARTER_NAMES,
+  SOURCE_LABEL,
 } from '../caseLabels'
+import { CASE_STRIPE } from '../caseTones'
+import { panelScrollMargin } from '../panelControls'
 import type { Cases as CasesState } from '../useCases'
 import { CaseOpening } from './CaseOpening'
 import { CaseCards } from './CaseCards'
@@ -59,7 +77,8 @@ interface CasesPageProps {
  * Cases' page: what it is, and the cases for today — ready, still on their
  * way, or opened and kept until the day ends (CHST-26, CHST-28). Pressing a
  * ready case opens it, and the cabinet appears for that opening, then leaves
- * once the show has finished (CHST-13, CHST-22, CHST-25).
+ * once the show has finished (CHST-13, CHST-22, CHST-25). Under the cases,
+ * what each one opened today gave (CHST-33).
  *
  * The settings are not here — what Cases asks of a day and what its key
  * plays for are on Rules, with everything else that is one amount for the whole
@@ -75,10 +94,13 @@ export function CasesPage({ cases, practising, onPractisingChange }: CasesPagePr
   const [performance, setPerformance] = useState<Show | null>(null)
   /** True from the press until the show has settled, so a second case does nothing meanwhile (CHST-16). */
   const [busy, setBusy] = useState(false)
+  /** The show whose cabinet is on its way out. A later press is a new show, so it never inherits this. */
+  const [leaving, setLeaving] = useState<number | null>(null)
   const [practiceSeen, setPracticeSeen] = useState(practising)
   const shows = useRef(0)
   /** Takes the cabinet down once the show is over, without cutting a later opening short. */
   const dismissTimer = useRef<number | null>(null)
+  const stage = useRef<HTMLDivElement>(null)
 
   function clearDismiss(): void {
     if (dismissTimer.current === null) return
@@ -92,6 +114,17 @@ export function CasesPage({ cases, practising, onPractisingChange }: CasesPagePr
     },
     [],
   )
+
+  // The cabinet comes in under the cases, which on a phone is below the fold:
+  // each press brings it up, clear of the bottom bar, so the reel is watched
+  // rather than heard (CHST-13).
+  const showId = performance?.id ?? null
+  useEffect(() => {
+    const cabinet = stage.current
+    // A test's page has no layout, and so no way to scroll.
+    if (showId === null || cabinet === null || typeof cabinet.scrollIntoView !== 'function') return
+    cabinet.scrollIntoView({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
+  }, [showId])
 
   // Practice turned off: the show it left on screen is not today's case.
   if (practiceSeen !== practising) {
@@ -121,6 +154,11 @@ export function CasesPage({ cases, practising, onPractisingChange }: CasesPagePr
         { source: 'week', state: 'ready', at: null },
       ]
     : cases.slots
+  // An opening is in the ledger from the press (CHST-16), so its row waits for
+  // the reel to stop rather than saying first what the show is about to.
+  // Practice opens every case afresh, and lists none of the day's.
+  const playing = busy && performance !== null ? performance.source : null
+  const openings = practising ? [] : cases.openings.filter((opening) => opening.source !== playing)
 
   /** A practice opening of one case: drawn the same way, written nowhere (CHST-21). */
   function drawPractice(source: CaseSource): CaseOpen {
@@ -145,23 +183,21 @@ export function CasesPage({ cases, practising, onPractisingChange }: CasesPagePr
   }
 
   /**
-   * The show is over. Another case can be opened. The cabinet leaves now,
-   * except where there was no reel: that result stays long enough to be read
-   * (CHST-25).
+   * The show is over. Another case can be opened. The result stays a moment
+   * more to be read — longer where there was no reel to watch it arrive — then
+   * the cabinet switches off and the room it took closes up (CHST-25).
    */
   function finishShow(id: number): void {
     setBusy(false)
     clearDismiss()
-    const pause = (practising && skipWait) || prefersReducedMotion() ? CASE_RESULT_HOLD_MS : 0
-    const leave = () => {
-      dismissTimer.current = null
-      setPerformance((current) => (current?.id === id ? null : current))
-    }
-    if (pause === 0) {
-      leave()
-      return
-    }
-    dismissTimer.current = window.setTimeout(leave, pause)
+    const pause = (practising && skipWait) || prefersReducedMotion() ? CASE_RESULT_HOLD_MS : CASE_LINGER_MS
+    dismissTimer.current = window.setTimeout(() => {
+      setLeaving(id)
+      dismissTimer.current = window.setTimeout(() => {
+        dismissTimer.current = null
+        setPerformance((current) => (current?.id === id ? null : current))
+      }, CASE_LEAVE_MS)
+    }, pause)
   }
 
   return (
@@ -181,29 +217,36 @@ export function CasesPage({ cases, practising, onPractisingChange }: CasesPagePr
       />
 
       {performance !== null && (
-        <div className="flex justify-center">
-          <CaseOpening
-            // Keyed by the press, so the next case starts a fresh show, and a
-            // practice opening is left behind once practice is turned off.
-            key={performance.id}
-            script={performance.opening}
-            caseKind={CASE_FOR_SOURCE[performance.source]}
-            blocked={null}
-            dayAsked={cases.dayAsked}
-            leastTasks={cases.settings.leastTasks}
-            openedPoints={null}
-            openedQuarter={null}
-            sound={cases.sound}
-            onSound={cases.setSound}
-            onOpen={() => null}
-            onSettled={() => {
-              finishShow(performance.id)
-            }}
-            skipWait={practising && skipWait}
-            band={practising ? PRACTICE_BAND : null}
-          />
+        // A grid of one row, so the room the cabinet takes can close up as it
+        // leaves rather than the page jumping (CHST-25).
+        <div ref={stage} className={`grid ${panelScrollMargin} ${leaving === performance.id ? 'case-closing' : ''}`}>
+          <div className="flex min-h-0 justify-center">
+            <CaseOpening
+              // Keyed by the press, so the next case starts a fresh show, and a
+              // practice opening is left behind once practice is turned off.
+              key={performance.id}
+              script={performance.opening}
+              caseKind={CASE_FOR_SOURCE[performance.source]}
+              blocked={null}
+              dayAsked={cases.dayAsked}
+              leastTasks={cases.settings.leastTasks}
+              openedPoints={null}
+              openedQuarter={null}
+              sound={cases.sound}
+              onSound={cases.setSound}
+              onOpen={() => null}
+              onSettled={() => {
+                finishShow(performance.id)
+              }}
+              skipWait={practising && skipWait}
+              band={practising ? PRACTICE_BAND : null}
+              leaving={leaving === performance.id}
+            />
+          </div>
         </div>
       )}
+
+      {openings.length > 0 && <OpenedToday openings={openings} />}
 
       {practising && (
         <section aria-label={PRACTICE_LABEL} className="flex flex-col gap-2">
@@ -270,5 +313,33 @@ export function CasesPage({ cases, practising, onPractisingChange }: CasesPagePr
         </section>
       )}
     </div>
+  )
+}
+
+/**
+ * What each case opened today gave (CHST-33), banded down its side in the
+ * case's colour as its card is (CHST-28). Today's only, and only to read:
+ * every day's is on History, where a row can be deleted (RWD-44).
+ */
+function OpenedToday({ openings }: { openings: readonly OpenedCase[] }) {
+  return (
+    <section aria-label={OPENED_TODAY_LABEL} className="flex flex-col gap-2">
+      <h2 className={heading}>{OPENED_TODAY_LABEL}</h2>
+      <ul className="flex flex-col gap-1">
+        {openings.map((opening) => (
+          <li
+            key={opening.source}
+            className={`${card} relative flex items-center justify-between gap-3 overflow-hidden py-2 pr-4 pl-5 text-sm`}
+          >
+            <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${CASE_STRIPE[opening.source]}`} />
+            <span className="min-w-0 text-neutral-900 dark:text-neutral-100">{SOURCE_LABEL[opening.source]}</span>
+            <span className="shrink-0 text-emerald-700 tabular-nums dark:text-emerald-400">
+              {describeCasePoints(opening.points)}
+              <span className="sr-only">{` ${describePointsUnit(opening.points)}`}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }

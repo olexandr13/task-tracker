@@ -120,16 +120,17 @@ slowing to a crawl — are as much the feature as the points are.
   reads *Appears weekly on Monday. Reward depends on number of points earned last week.*, and it
   carries a timer too, counting down to Monday (CHST-30). A case that has been opened stays
   until the end of the day, with its
-  **lid open** and the picture **dimmed**, and it is not a button. Under it, it says when the next
-  one comes. Payday reads *Take the next one tomorrow after completing all planned tasks.*
+  **lid open** and the picture **dimmed**, and it is not a button. Across the dial, where a planned
+  case has its padlock, a dark tag with a green tick reads **Opened**, so the case reads as had today
+  rather than merely faint. Under it, it says when the next one comes. Payday reads *Take the next one tomorrow after completing all planned tasks.*
   The Drop reads *A new case will be given tomorrow. Earn more points today to increase reward.*
   It does not say at what time. Tomorrow’s Drop is worked out from today, so points earned
   today raise what that next case can pay.
   Weekly reads *A new case will be given next Monday.*
   The next day the opened case is gone, and Weekly is planned again until the following Monday. An
   empty day plans no Payday. Pressing a ready case opens it. The big cabinet is not on
-  the page until then: it appears for that opening, plays it, and leaves once the show has
-  finished. A case is not chosen
+  the page until then: it appears for that opening, plays it, and leaves a moment after the show
+  has finished (CHST-25). A case is not chosen
   first, and none is drawn with a frame around it.
 - **CHST-31** A case still on its way is **locked**, and says **when it will be ready** on the
   crate itself. Its crate loses its colour and fades, so it reads as shut rather than merely faint
@@ -141,8 +142,8 @@ slowing to a crawl — are as much the feature as the points are.
   ticked off and has no clock: Payday is earned, not waited for. The **Drop** reads *Arrives in
   2h 15m* (CHST-29) and **Weekly** *Arrives in 5d 16h* (CHST-30). Each is drawn light on dark
   whatever the theme (CHST-25). The moment a countdown runs out, the padlock goes with it. A case
-  ready or opened has no padlock and keeps its colour; an opened one says under it when the next
-  one comes (CHST-28).
+  ready or opened has no padlock and keeps its colour; an opened one is tagged *Opened* in the
+  padlock's place, and says under it when the next one comes (CHST-28).
 - **CHST-26** A **ready** case says **what it can give**, as a line headed **Possible win** inside
   the case, above the crate: *4–20 points* where that is Payday’s range, *1–7 points* for the Drop, marked
   out in gold, or *0–7 points* where the Drop can come up empty. Under a ready case the rule is
@@ -165,7 +166,8 @@ slowing to a crawl — are as much the feature as the points are.
 - **CHST-13** **A ready case is the button** — the whole of its card takes the press — and **Enter**
   or **Space** on it opens it too. There is no frame to mark one chosen, no lever to drag and
   nothing to confirm: a key is spent the moment the case is pressed, and the big cabinet appears
-  already opening. Shut, that cabinet is a **supply crate** — cream enamel over a teal
+  already opening, under the cases. The page scrolls it into view, clear of the bottom bar, so on
+  a phone the opening is not left playing below the fold. Shut, that cabinet is a **supply crate** — cream enamel over a teal
   body, chipped at the corners, a band of hazard stripes where the lid meets it, a latch each side
   and a **dial lock** in the middle. What tells a key is there, before a word is read, is the ready
   case itself: solid, in colour, and a button, where a case still on its way is half transparent,
@@ -219,7 +221,7 @@ slowing to a crawl — are as much the feature as the points are.
   screen: no breathing, no dust, no unlocking, no reel, no flash or rings, nothing thrown, no
   counting. The card and its light are still there; they simply do not arrive. The wait goes with the movement, there being
   nothing to watch it for. The result stays about two seconds, long enough to be read, and then the
-  cabinet leaves (CHST-25).
+  cabinet **fades out** rather than switching off (CHST-25).
 - **CHST-19** Cases **makes a noise**, and it is meant to sound like heavy things in a big room
   rather than a toy: every impact is a low thump under a strike of metal, and all of it has a little
   room round it. A clunk, the ratchet of the dial and a clank as it stops; the latches either side
@@ -229,7 +231,7 @@ slowing to a crawl — are as much the feature as the points are.
   stops and a breath drawn in through the beat; and as the card comes out a **boom**, a rush of air
   and a swept **chord** that is taller and longer for a higher quarter, with **bells** rising from
   the second quarter up and, for the top quarter, a second hit and a long shimmer. The counting clicks over
-  like a counter's wheels. Turning the sound off in the middle of the show stops it there and then. A **speaker button in the
+  like a counter's wheels. As the cabinet goes, the switch snaps and the tube winds down. Turning the sound off in the middle of the show stops it there and then. A **speaker button in the
   corner of the cabinet** turns it off and on, and says which it will do. It starts **on**, which
   nothing else in the app does: pressing a case is as plain a yes as a control gets, and silence is
   half the moment. Where the device can buzz, it buzzes as it is pressed, as the latches go, as the reel stops
@@ -247,8 +249,12 @@ slowing to a crawl — are as much the feature as the points are.
   in the paint, a lamp somewhere above it and hazard stripes along its foot —
   as a jeweller's box is lined whatever room it is opened in, and on a light page it reads as a box
   on the page rather than a hole in it. Open, it is **ringed in the colour** of what came out of it.
-  Once the show has finished, the cabinet leaves. Where the show had no wait, the result stays
-  about two seconds and then the cabinet leaves (CHST-18). While a case is still ready, the cabinet
+  Once the show has finished, the result stays **a second more**, to be read, and then the cabinet
+  **switches off** as an old set does: a flare, the picture squeezed to a line of light, the line
+  drawn in to a dot and the dot gone, with the number under it drawn up into it. Then the room it
+  took on the page **closes up**, so what is under it rises rather than jumps. Where the show had
+  no wait, the result stays about two seconds before the cabinet goes (CHST-18). A case pressed
+  while the cabinet is going starts its own show at once. While a case is still ready, the cabinet
   stays off the page until that case is pressed (CHST-13). An opened case remains in the row until
   the day ends (CHST-28).
 
@@ -288,13 +294,24 @@ slowing to a crawl — are as much the feature as the points are.
   average task value + number of tasks done*. While tasks without points are not counted (CHST-32),
   Payday's Max is *Half of points earned today*, and the Drop's and Weekly's say *number of
   rewarded tasks done*. Nothing follows them. The page itself holds the cases (CHST-28), what each can give while a key is waiting
-  (CHST-26), the cabinet once a case is opened, and, while practice mode is on, how
-  the practice run is going (CHST-21); what it *asks* and plays for is set on Rules, with
+  (CHST-26), the cabinet once a case is opened, what today's cases gave (CHST-33), and, while
+  practice mode is on, how the practice run is going (CHST-21); what it *asks* and plays for is set on Rules, with
   everything else that is one amount for the whole account (CHST-7), and whether tasks without
   points count (CHST-32) and practice mode are switched on Settings. While a key is
   waiting, Cases is **marked wherever it is reached from** —
-  its entry in the sidebar, its pill in the phone's strip, the Rewards tab — with a dot and the
+  its entry in the sidebar, its pill in the phone's strip, the Rewards tab and its entry in that
+  tab's menu (UI-67) — with a dot and the
   words behind it, a mark that is only a colour saying nothing to someone who cannot see it.
+- **CHST-33** Under the cases, the page says **what each case opened today gave**, in a list
+  headed **Opened today**: a row for each, its name and what it gave as the ledger spells it —
+  *Payday +14*, *Drop +0* — banded down its side in the case's colour as its card is (CHST-28).
+  The rows go in the cases' own order, Payday, the Drop, then Weekly: the ledger keeps which case
+  gave how much, not when (RWD-44). It is **today's only** — every day's is on History (RWD-38),
+  which is where a row is deleted; here there is nothing to press. With nothing opened yet today
+  there is no list. What an opening gives is written the moment its case is pressed (CHST-16),
+  but its row **waits for the reel to stop**, so the list never says first what the show is
+  about to; one opened on another device, or before a reload, is simply there. Practice opens
+  every case afresh (CHST-21), so while it is on the day's openings are not listed.
 - **CHST-23** The moment the day comes clear, the app **says so**: *Today is clear. Payday is
   waiting.*, with **Open Cases** beside it, at the top of the window. Said **once a day on this
   device**, and dismissed either by going or by its ×. It is Payday: the Drop arriving
@@ -346,8 +363,8 @@ slowing to a crawl — are as much the feature as the points are.
 ---
 
 **Where it lives:** `src/core/cases.ts` (what an opening draws, each case’s range, which quarter of it an
-amount is, and whether a key is waiting), `src/core/caseKind.ts` (how a range is spread), `src/app/useCases.ts` (Cases as its page reads it, and
-the one way to open it), `src/app/useCaseKey.ts` (watching the Drop arrive), `src/app/components/KeyTimer.tsx` (the countdown on it, and on Weekly), `src/app/components/CaseLock.tsx` and `LockIcon.tsx` (the padlock on a case still on its way), `src/app/components/CasesPage.tsx` (the page), `src/app/components/CaseCards.tsx` (the cases),
+amount is, whether a key is waiting, and what today's cases gave), `src/core/caseKind.ts` (how a range is spread), `src/app/useCases.ts` (Cases as its page reads it, and
+the one way to open it), `src/app/useCaseKey.ts` (watching the Drop arrive), `src/app/components/KeyTimer.tsx` (the countdown on it, and on Weekly), `src/app/components/CaseLock.tsx` and `LockIcon.tsx` (the padlock on a case still on its way), `src/app/components/CasesPage.tsx` (the page, and what today's cases gave), `src/app/components/CaseCards.tsx` (the cases),
 `src/app/components/CaseOpening.tsx` (the opening), `src/app/components/CaseArt.tsx` (the crate),
 `src/app/components/CaseReel.tsx` (the screen, the reel, the cards and the card once it is out),
 `src/app/caseReel.ts` (the reel built round an opening, the near miss, and when each card ticks),

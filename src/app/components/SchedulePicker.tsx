@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import type { LocalDay, LocalTime } from '../../core'
+import { pickableDaysFor, type LocalDay, type LocalTime, type PickableDays } from '../../core'
 import type { SkipChoice } from '../dateChoices'
 import { describeDueAt, describeTimeOfDay } from '../dueLabels'
 import { toRepeat, type RepeatDraft } from '../repeatDraft'
@@ -28,17 +28,19 @@ interface SchedulePickerProps {
    */
   dueDate: LocalDay | null
   /**
-   * The day a repeating task's rule was told to start on, where one was picked
-   * for it — what **Remove start date** takes away. Null on a one-off, whose own
-   * day is `dueDate` already. The day marked as chosen is `dueDate` either way.
+   * The days that can be picked now (`pickableDays`), or null where none can
+   * (DUE-27). Left out, they are the ones a new task under the rule being chosen
+   * can be given (`pickableDaysFor`) — which is what the add row asks.
    */
-  startDay?: LocalDay | null
+  pickable?: PickableDays | null
+  /** Said in place of the calendar where no day can be picked (`noDayNote`). */
+  noDay?: string
   /** The repeat rule being chosen, `once` when the task happens once. */
   draft: RepeatDraft
   now: Date
   /**
-   * The day picked, or taken away: a one-off is due on it, a repeating task
-   * starts its rule there. The rule is untouched either way.
+   * The day picked, or taken away: the task is due on it — a one-off as its
+   * date, a repeating task as the occurrence in play. The rule is untouched.
    */
   onChangeDay: (day: LocalDay | null) => void
   /** The hour the task is due at, where it is due at one (DUE-19). */
@@ -48,6 +50,8 @@ interface SchedulePickerProps {
   onChangeRepeat: (draft: RepeatDraft) => void
   /** Passing over a repeating task's occurrence, where it has one to pass over. */
   skip?: SkipChoice
+  /** Taking a habit's rest today back (HAB-31), while today is one. */
+  unskip?: () => void
   /** Due on a day already gone and still to do. */
   overdue?: boolean
   /** What this picker is for, when there is more than one on screen. */
@@ -76,7 +80,8 @@ interface SchedulePickerProps {
  */
 export function SchedulePicker({
   dueDate,
-  startDay = null,
+  pickable,
+  noDay,
   draft,
   now,
   onChangeDay,
@@ -84,6 +89,7 @@ export function SchedulePicker({
   onChangeTime,
   onChangeRepeat,
   skip,
+  unskip,
   overdue = false,
   label = 'Schedule',
   showSummary = false,
@@ -184,10 +190,13 @@ export function SchedulePicker({
             <>
               <DueChoices
                 dueDate={dueDate}
-                scheduled={rule === null ? dueDate : startDay}
+                scheduled={rule === null ? dueDate : null}
                 now={now}
-                repeats={rule !== null}
+                rule={rule}
+                pickable={pickable === undefined ? pickableDaysFor(rule, now) : pickable}
+                noDay={noDay}
                 skip={skip}
+                unskip={unskip}
                 onChange={onChangeDay}
                 onDone={close}
               />

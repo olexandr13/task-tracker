@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import type { Task, TaskId } from '../../core'
 import { deleteControl } from '../rowControls'
+import { ConfirmSheet, type Confirmation } from './ConfirmSheet'
 import { TrashIcon } from './TrashIcon'
 
 interface TrashListProps {
@@ -12,11 +14,28 @@ interface TrashListProps {
 
 const action = 'shrink-0 rounded-lg px-2 py-1 text-xs transition-colors'
 
+/** Asked before the trash is emptied, the one thing here that cannot be undone (TRASH-10). */
+function askEmpty(count: number): Confirmation {
+  return {
+    question: 'Empty the trash?',
+    lines:
+      count === 1
+        ? ['The task in it is deleted for good.', '"Restore" cannot bring it back after that.']
+        : [`All ${String(count)} tasks in it are deleted for good.`, '"Restore" cannot bring them back after that.'],
+    confirm: 'Empty trash',
+  }
+}
+
 /**
  * What has been deleted and has not yet been cleared out. Everything here is
  * still recoverable, so the only irreversible controls are the two that say so.
  */
 export function TrashList({ tasks, onRestore, onPurge, onEmpty }: TrashListProps) {
+  const [asking, setAsking] = useState(false)
+  // Emptied elsewhere — on another device, or by the day running out — while asked, there is
+  // nothing left to ask about.
+  if (asking && tasks.length === 0) setAsking(false)
+
   if (tasks.length === 0) {
     return (
       <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">
@@ -25,21 +44,15 @@ export function TrashList({ tasks, onRestore, onPurge, onEmpty }: TrashListProps
     )
   }
 
-  function handleEmpty() {
-    // The one action here that cannot be undone from the screen it happens on,
-    // so it is the one that asks first.
-    if (window.confirm('Delete everything in the trash for good?')) {
-      onEmpty()
-    }
-  }
-
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-neutral-500 dark:text-neutral-400">Deleted tasks are kept for a day.</p>
         <button
           type="button"
-          onClick={handleEmpty}
+          // The one action here that cannot be undone from the screen it happens on,
+          // so it is the one that asks first.
+          onClick={() => { setAsking(true) }}
           className={`${action} text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40`}
         >
           Empty trash
@@ -76,6 +89,17 @@ export function TrashList({ tasks, onRestore, onPurge, onEmpty }: TrashListProps
           </li>
         ))}
       </ul>
+
+      {asking && (
+        <ConfirmSheet
+          confirmation={askEmpty(tasks.length)}
+          onCancel={() => { setAsking(false) }}
+          onConfirm={() => {
+            setAsking(false)
+            onEmpty()
+          }}
+        />
+      )}
     </div>
   )
 }

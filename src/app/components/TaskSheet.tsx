@@ -10,6 +10,7 @@ import {
   isOverdue,
   isSkippedToday,
   isTimeGoalReached,
+  pickableDays,
   sessionSeconds,
   skipOccurrence,
   wholeMinutes,
@@ -18,9 +19,9 @@ import {
   type LocalTime,
   type Task,
 } from '../../core'
-import type { SkipChoice } from '../dateChoices'
+import { noDayNote, restsToday, type SkipChoice } from '../dateChoices'
 import type { RepeatDraft } from '../repeatDraft'
-import { useCompletionRefusal } from '../useCompletionRefusal'
+import { useRefusal } from '../useRefusal'
 import { describeTimeProgress } from '../durationLabels'
 import { describeDueDate, describeShortDate, describeTimeOfDay } from '../dueLabels'
 import { describeRepeatBriefly } from '../repeatLabels'
@@ -74,6 +75,8 @@ interface TaskSheetProps {
   onChangeRepeat: (draft: RepeatDraft) => void
   /** The screen's timer, when one is offered for logging time by running a clock. */
   timer?: Pick<TaskTimer, 'clock' | 'start' | 'stop' | 'isRunningFor' | 'state'>
+  /** The time panel opens over the sheet: gone to from the running timer's chip (TIME-20). */
+  openTime?: boolean
 }
 
 /**
@@ -93,6 +96,7 @@ export function TaskSheet({
   onChangeTime,
   onChangeRepeat,
   timer,
+  openTime = false,
 }: TaskSheetProps) {
   // No row for a list, the tags or a reward while its feature is switched off on Settings (FEAT-3).
   const listsOn = useFeatureOn('lists')
@@ -111,6 +115,8 @@ export function TaskSheet({
     timerRunning && timer !== undefined && timer.state.status === 'running'
       ? timer.state.startedAt
       : null
+  // Which days can be picked for it now (DUE-27): none once done, and a habit only before its first day.
+  const pickable = pickableDays(task, now)
   const skipTo = canSkipOccurrence(task, now) ? dueDay(skipOccurrence(task, now), now) : null
   const skip: SkipChoice | undefined =
     skipTo === null ? undefined : { to: skipTo, onSkip: () => { actions.skip(task.id) } }
@@ -118,7 +124,7 @@ export function TaskSheet({
   const skippedToday = !done && isSkippedToday(task, now)
   // The sheet holds the checklist itself, so a refused tick and the parts it is
   // waiting on are on screen together (CHK-11).
-  const { refused, refuse } = useCompletionRefusal()
+  const { refused, refuse } = useRefusal()
   const blocked = !done && hasOpenSubtasks(task, now)
 
   // What the icons hold, spelled out under them (UI-63). A repeating task's days
@@ -143,7 +149,7 @@ export function TaskSheet({
       {/* The head alone shakes, not the sheet around it: a sheet that moved would
           read as being dismissed rather than as a tick turned down (CHK-11). */}
       <div
-        className={`flex shrink-0 items-start gap-3 px-4 pb-3${refused ? ' completion-refusal-shake' : ''}`}
+        className={`flex shrink-0 items-start gap-3 px-4 pb-3${refused ? ' refusal-shake' : ''}`}
       >
         <CompletionBox
           title={task.title}
@@ -171,7 +177,8 @@ export function TaskSheet({
               control: (
                 <SchedulePicker
                   dueDate={due}
-                  startDay={task.startDay}
+                  pickable={pickable}
+                  noDay={noDayNote(task, pickable, now)}
                   draft={draft}
                   now={now}
                   overdue={overdue}
@@ -180,6 +187,7 @@ export function TaskSheet({
                   onChangeTime={onChangeTime}
                   onChangeRepeat={onChangeRepeat}
                   skip={skip}
+                  unskip={restsToday(task, now) ? () => { actions.unskip(task.id) } : undefined}
                   label={`Schedule for "${task.title}"`}
                   align="left"
                 />
@@ -209,11 +217,12 @@ export function TaskSheet({
                   goal={task.timeGoal}
                   sessions={sessions}
                   now={now}
-                  onLog={(minutes) => { actions.logTime(task.id, minutes) }}
+                  onLog={(minutes, comment) => { actions.logTime(task.id, minutes, comment) }}
                   onRemove={(entryId) => { actions.removeTimeEntry(task.id, entryId) }}
                   onChangeGoal={(minutes) => { actions.changeTimeGoal(task.id, minutes) }}
                   label={`Time for "${task.title}"`}
                   align="left"
+                  startOpen={openTime}
                   timer={
                     timer === undefined
                       ? undefined
@@ -222,7 +231,7 @@ export function TaskSheet({
                           startedAt: timerStartedAt,
                           clock: timer.clock,
                           onStart: () => { timer.start(task.id) },
-                          onStop: () => { timer.stop() },
+                          onStop: (comment) => { timer.stop(comment) },
                         }
                   }
                 />

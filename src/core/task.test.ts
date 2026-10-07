@@ -23,8 +23,10 @@ import {
   renameTask,
   restoreTask,
   hasDueDay,
+  isPickable,
+  pickableDays,
+  pickableDaysFor,
   scheduleOn,
-  scheduledDay,
   setDescription,
   setDueDate,
   setDueTime,
@@ -37,6 +39,7 @@ import {
 
 const NOW = new Date('2026-09-15T10:00:00.000Z')
 const LATER = new Date('2026-09-15T18:30:00.000Z')
+const SEP_1 = new Date('2026-09-01T10:00:00.000Z')
 
 describe('createTask', () => {
   it('trims surrounding whitespace from the title', () => {
@@ -484,22 +487,105 @@ describe('setStartDay', () => {
 })
 
 describe('scheduleOn', () => {
-  it('gives a one-off its date, and a repeating task the day its rule starts on', () => {
+  it('gives a one-off its date, and a repeating task the day it is due on', () => {
     const task = createTask('file taxes', null, NOW)
     const daily = createTask('stretch', { kind: 'daily' }, NOW)
 
-    expect(scheduleOn(task, '2026-09-20')).toEqual(setDueDate(task, '2026-09-20'))
-    expect(scheduleOn(daily, '2026-09-20')).toEqual(setStartDay(daily, '2026-09-20'))
+    expect(scheduleOn(task, '2026-09-20', NOW)).toEqual(setDueDate(task, '2026-09-20'))
+    expect(scheduleOn(daily, '2026-09-20', NOW)).toEqual(setStartDay(daily, '2026-09-20'))
     // The rule is untouched: a date picked no longer ends it.
-    expect(scheduleOn(daily, '2026-09-20').repeat).toEqual({ kind: 'daily' })
+    expect(scheduleOn(daily, '2026-09-20', NOW).repeat).toEqual({ kind: 'daily' })
   })
 
   it('takes the day away with null, whichever day the task carried', () => {
     const dated = setDueDate(createTask('file taxes', null, NOW), '2026-09-20')
     const started = setStartDay(createTask('stretch', { kind: 'daily' }, NOW), '2026-09-20')
 
-    expect(scheduleOn(dated, null).dueDate).toBeNull()
-    expect(scheduleOn(started, null).startDay).toBeNull()
+    expect(scheduleOn(dated, null, NOW).dueDate).toBeNull()
+    expect(scheduleOn(started, null, NOW).startDay).toBeNull()
+  })
+
+  it('gives a one-off a day gone by, and refuses one to a repeating task (DUE-27)', () => {
+    const task = createTask('file taxes', null, NOW)
+    const weekly = createTask('water the plants', MONDAYS, NOW)
+
+    expect(scheduleOn(task, '2026-09-10', NOW).dueDate).toBe('2026-09-10')
+    expect(scheduleOn(weekly, '2026-09-10', NOW)).toBe(weekly)
+    expect(scheduleOn(weekly, '2026-09-15', NOW).startDay).toBe('2026-09-15')
+  })
+
+  it('moves an occurrence no further than the day before the rule comes round again (DUE-27)', () => {
+    const weekly = createTask('water the plants', MONDAYS, NOW)
+
+    expect(scheduleOn(weekly, '2026-09-20', NOW).startDay).toBe('2026-09-20')
+    expect(scheduleOn(weekly, '2026-09-21', NOW)).toBe(weekly)
+  })
+
+  it('leaves a task alone where no day can be picked (DUE-27)', () => {
+    const begun = createTask('stretch', { kind: 'daily' }, SEP_1)
+    const done = completeTask(createTask('water the plants', MONDAYS, NOW), NOW)
+
+    expect(scheduleOn(begun, '2026-09-20', NOW)).toBe(begun)
+    expect(scheduleOn(done, '2026-09-20', NOW)).toBe(done)
+  })
+
+  it('still refuses a day that is not a day', () => {
+    const weekly = createTask('water the plants', MONDAYS, NOW)
+
+    expect(() => scheduleOn(weekly, 'monday', NOW)).toThrow(InvalidDayError)
+  })
+})
+
+describe('pickableDays (DUE-27)', () => {
+  it('is any day for a one-off, done or not', () => {
+    const task = createTask('file taxes', null, NOW)
+
+    expect(pickableDays(task, NOW)).toEqual({ first: null, last: null })
+    expect(pickableDays(completeTask(task, NOW), NOW)).toEqual({ first: null, last: null })
+  })
+
+  it('is today up to the day before the rule comes round again, for an occurrence still to do', () => {
+    // Tuesday the 15th: a Monday task can move to any day up to Sunday the 20th,
+    // a monthly one on the 5th up to the 4th of October.
+    const weekly = createTask('water the plants', MONDAYS, NOW)
+    const monthly = createTask('pay rent', { kind: 'monthly', day: 5 }, NOW)
+
+    expect(pickableDays(weekly, NOW)).toEqual({ first: '2026-09-15', last: '2026-09-20' })
+    expect(pickableDays(monthly, NOW)).toEqual({ first: '2026-09-15', last: '2026-10-04' })
+  })
+
+  it('is none once the occurrence in play is done', () => {
+    expect(pickableDays(completeTask(createTask('water the plants', MONDAYS, NOW), NOW), NOW)).toBeNull()
+  })
+
+  it('is any day from today for a habit, only until its first day has gone by (HAB-12)', () => {
+    const begunToday = createTask('stretch', { kind: 'daily' }, NOW)
+    const begunEarlier = createTask('stretch', { kind: 'daily' }, SEP_1)
+    const startingLater = setStartDay(begunEarlier, '2026-09-20')
+
+    expect(pickableDays(begunToday, NOW)).toEqual({ first: '2026-09-15', last: null })
+    expect(pickableDays(completeTask(begunToday, NOW), NOW)).toBeNull()
+    expect(pickableDays(begunEarlier, NOW)).toBeNull()
+    expect(pickableDays(startingLater, NOW)).toEqual({ first: '2026-09-15', last: null })
+  })
+})
+
+describe('pickableDaysFor', () => {
+  it('is what a new task under the rule can be given', () => {
+    expect(pickableDaysFor(null, NOW)).toEqual({ first: null, last: null })
+    expect(pickableDaysFor({ kind: 'daily' }, NOW)).toEqual({ first: '2026-09-15', last: null })
+    expect(pickableDaysFor(MONDAYS, NOW)).toEqual({ first: '2026-09-15', last: '2026-09-20' })
+  })
+})
+
+describe('isPickable', () => {
+  it('holds a day between the ends, either end open, and nothing where none can be picked', () => {
+    expect(isPickable({ first: '2026-09-15', last: '2026-09-20' }, '2026-09-15')).toBe(true)
+    expect(isPickable({ first: '2026-09-15', last: '2026-09-20' }, '2026-09-20')).toBe(true)
+    expect(isPickable({ first: '2026-09-15', last: '2026-09-20' }, '2026-09-14')).toBe(false)
+    expect(isPickable({ first: '2026-09-15', last: '2026-09-20' }, '2026-09-21')).toBe(false)
+    expect(isPickable({ first: null, last: null }, '1999-01-01')).toBe(true)
+    expect(isPickable(null, '2026-09-15')).toBe(false)
   })
 })
 
@@ -583,17 +669,6 @@ describe('hasDueDay', () => {
     expect(hasDueDay(createTask('file taxes', null, NOW))).toBe(false)
     expect(hasDueDay(setDueDate(createTask('file taxes', null, NOW), '2026-09-20'))).toBe(true)
     expect(hasDueDay(createTask('stretch', { kind: 'daily' }, NOW))).toBe(true)
-  })
-})
-
-describe('scheduledDay', () => {
-  it('is the day the task carries itself: a one-off\'s date, a repeating task\'s start', () => {
-    const dated = setDueDate(createTask('file taxes', null, NOW), '2026-09-20')
-    const daily = createTask('stretch', { kind: 'daily' }, NOW)
-
-    expect(scheduledDay(dated)).toBe('2026-09-20')
-    expect(scheduledDay(daily)).toBeNull()
-    expect(scheduledDay(setStartDay(daily, '2026-09-20'))).toBe('2026-09-20')
   })
 })
 

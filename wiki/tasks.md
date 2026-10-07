@@ -16,7 +16,7 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 | `completedAt` | When it was most recently completed, or nothing while it is todo. |
 | `repeat` | A recurrence rule, or nothing for a task that happens once. See [Repeating tasks](repeating-tasks.md). |
 | `dueDate` | The local day a one-off is due, or nothing. Always nothing on a repeating task. See [Due dates](due-dates.md). |
-| `startDay` | The local day a repeating task's rule starts on, or nothing for one that starts where it was written. Always nothing on a one-off. See [Due dates](due-dates.md). |
+| `startDay` | The local day picked for a repeating task: its occurrence in play is due on it, and the rule carries on after it — a habit's, the day it starts. Nothing for one whose rule runs from where it was written, and always nothing on a one-off. See [Due dates](due-dates.md). |
 | `subtasks` | The checklist, in the order it was written, or empty. See [Checklists](checklists.md). |
 | `tags` | The tags it carries, in the order they were put on, or empty. See [Tags](tags.md). |
 | `listId` | The list it is filed under, by id, or nothing for one in no list — the Inbox. One at a time. See [Lists](lists.md). |

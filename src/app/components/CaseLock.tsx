@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { CaseTag } from './CaseTag'
 import { LockIcon } from './LockIcon'
 
 interface CaseLockProps {
@@ -11,19 +12,12 @@ interface CaseLockProps {
 
 /**
  * The padlock on a case still on its way (CHST-31), with what will open it
- * under it. It sits on the crate itself, over the dial, solid while the crate
- * under it is grey and faded, and is drawn light on dark whatever the theme,
- * as the plate it stands on is (CHST-25).
+ * beside it, on the crate's tag.
  */
 export function CaseLock({ children, role, label }: CaseLockProps) {
   return (
-    <div
-      role={role}
-      aria-label={label}
-      className="flex max-w-full items-center gap-1.5 rounded-lg bg-neutral-950/90 px-2 py-1.5 leading-none whitespace-nowrap shadow-lg ring-1 shadow-black/60 ring-white/15"
-    >
-      <LockIcon className="size-3.5 shrink-0 text-neutral-300" />
-      <p className="flex items-baseline gap-1">{children}</p>
-    </div>
+    <CaseTag icon={<LockIcon className="size-3.5 shrink-0 text-neutral-300" />} role={role} label={label}>
+      {children}
+    </CaseTag>
   )
 }

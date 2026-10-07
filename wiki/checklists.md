@@ -163,7 +163,7 @@ than allowed to speak past the parts (CHK-11).
 the box asks before it ticks), `src/app/components/SubtaskList.tsx`,
 `SubtaskItem.tsx`, `SubtaskDraft.tsx` (the line Enter opens), `TaskItem.tsx` (the button and the
 block), `src/app/components/CompletionBox.tsx` (the box that turns the click down),
-`src/app/components/CompletionRefusal.tsx` and `src/app/useCompletionRefusal.ts` (the words and how
+`src/app/components/CompletionRefusal.tsx` and `src/app/useRefusal.ts` (the words and how
 long they stay), `src/app/completionLabels.ts` (what they say), `src/styles.css` (the shake),
 `src/app/dragSensors.ts` (what a press on a checklist does to the row around it),
 `src/app/useTasks.ts`.
@@ -173,5 +173,5 @@ CHK-6, 7, 19, 25, 26), `src/app/components/CompletionBox.test.tsx` (what a refus
 and the green invitation once every item is ticked — CHK-31, CHK-32),
 `src/app/components/TaskItem.test.tsx` and `src/app/components/HabitList.test.tsx` (what a refused
 tick looks like on a row, in a sheet and on a card — CHK-31),
-`src/app/useCompletionRefusal.test.ts` (how long the words stay),
+`src/app/useRefusal.test.ts` (how long the words stay),
 `src/app/dragSensors.test.ts` (which press picks what up — CHK-28).

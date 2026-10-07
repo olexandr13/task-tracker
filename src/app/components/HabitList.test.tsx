@@ -81,7 +81,7 @@ describe("a habit's box against its checklist (CHK-11, CHK-16)", () => {
     await user.click(screen.getByRole('button', { name: 'Mark "stretch" as done today' }))
 
     expect(screen.getByRole('alert')).toHaveProperty('textContent', 'Complete subtasks first')
-    expect(screen.getByRole('listitem').className).toContain('completion-refusal-shake')
+    expect(screen.getByRole('listitem').className).toContain('refusal-shake')
     expect(onComplete).not.toHaveBeenCalled()
   })
 
@@ -354,7 +354,7 @@ describe('HabitList', () => {
     await user.click(within(sheet).getByRole('button', { name: 'Time for "swim": 0m of 1h' }))
     await user.click(screen.getByRole('button', { name: 'Log 15m' }))
 
-    expect(onLogTime).toHaveBeenCalledWith('other', 15)
+    expect(onLogTime).toHaveBeenCalledWith('other', 15, null)
   })
 
   it('opens the sheet of a habit gone to from elsewhere (TIME-20)', () => {
@@ -366,15 +366,31 @@ describe('HabitList', () => {
       <HabitList
         {...listProps([habit, { ...habit, id: 'other', title: 'swim' }])}
         showDetails={false}
-        revealId={habit.id}
+        reveal={{ taskId: habit.id, part: 'task' }}
         onRevealed={onRevealed}
       />,
     )
 
     expect(screen.getByRole('dialog', { name: 'Details of "stretch"' })).toBeDefined()
     expect(screen.queryByRole('dialog', { name: 'Details of "swim"' })).toBeNull()
+    expect(screen.queryByRole('dialog', { name: 'Time for "stretch"' })).toBeNull()
     expect(scrollIntoView).toHaveBeenCalledOnce()
     expect(onRevealed).toHaveBeenCalledOnce()
+  })
+
+  it('opens a habit’s sheet on its time panel when gone to from the running timer (TIME-20)', () => {
+    Object.defineProperty(Element.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() })
+    const habit = stretch()
+    render(
+      <HabitList
+        {...listProps([habit])}
+        showDetails={false}
+        reveal={{ taskId: habit.id, part: 'time' }}
+      />,
+    )
+
+    expect(screen.getByRole('dialog', { name: 'Details of "stretch"' })).toBeDefined()
+    expect(screen.getByRole('dialog', { name: 'Time for "stretch"' })).toBeDefined()
   })
 
   it('opens the task sheet from the ⋮ without unfolding the card (HAB-25, HAB-22)', async () => {

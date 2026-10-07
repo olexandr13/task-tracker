@@ -6,7 +6,7 @@ import type { FeaturesOff } from '../../core'
 import { FeaturesContext } from '../features'
 import type { ModeState } from '../modes'
 import type { ModeView } from '../view'
-import { WARM_UP_DISABLE_WARNING } from '../warmUpLabels'
+import { describeWarmUpDisable } from '../warmUpLabels'
 import { ModesPage } from './ModesPage'
 
 /* The page listing the modes. MODE ids refer to wiki/modes.md, FEAT ids to wiki/features.md. */
@@ -85,16 +85,16 @@ describe('ModesPage', () => {
     expect(end).toHaveBeenCalledExactlyOnceWith(false)
   })
 
-  it('asks before the warm-up is turned off, and leaves it on when cancelled (WARM-9)', async () => {
+  it('asks before the warm-up is turned off, in a sheet, and leaves it on when cancelled (WARM-9)', async () => {
     const toggle = vi.fn()
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const confirm = vi.spyOn(window, 'confirm')
     render(
       <ModesPage
         modes={modes({
           'modes/warm-up': mode('modes/warm-up', {
             on: true,
             status: { state: 'Enabled', detail: 'Day 3 of 30 · 27 days left' },
-            confirmOff: WARM_UP_DISABLE_WARNING,
+            confirmOff: describeWarmUpDisable({ day: 3, daysLeft: 27, allowed: 3, used: 2, remaining: 1, paused: false }),
             toggle,
           }),
         })}
@@ -103,31 +103,37 @@ describe('ModesPage', () => {
     )
 
     await userEvent.click(screen.getByRole('switch', { name: 'Warm-up' }))
-    expect(confirm.mock.calls[0]?.[0]).toBe(WARM_UP_DISABLE_WARNING)
+    const sheet = screen.getByRole('dialog', { name: 'Disable the warm-up?' })
+    expect(sheet.textContent).toContain('Your warm-up is on day 3 of 30.')
+    expect(sheet.textContent).toContain('it starts from scratch: day 1')
+    // The app's own sheet, not the browser's.
+    expect(confirm).not.toHaveBeenCalled()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
     expect(toggle).not.toHaveBeenCalled()
 
-    confirm.mockReturnValue(true)
     await userEvent.click(screen.getByRole('switch', { name: 'Warm-up' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Disable' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
     expect(toggle).toHaveBeenCalledExactlyOnceWith(false)
     confirm.mockRestore()
   })
 
   it('turns the warm-up on without asking (WARM-2)', async () => {
     const toggle = vi.fn()
-    const confirm = vi.spyOn(window, 'confirm')
     render(
       <ModesPage
         modes={modes({
-          'modes/warm-up': mode('modes/warm-up', { confirmOff: WARM_UP_DISABLE_WARNING, toggle }),
+          'modes/warm-up': mode('modes/warm-up', { confirmOff: describeWarmUpDisable(null), toggle }),
         })}
         onOpen={vi.fn()}
       />,
     )
 
     await userEvent.click(screen.getByRole('switch', { name: 'Warm-up' }))
-    expect(confirm).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).toBeNull()
     expect(toggle).toHaveBeenCalledExactlyOnceWith(true)
-    confirm.mockRestore()
   })
 
   it('opens a mode on a click on the row, saying so in a tooltip (MODE-4, MODE-5)', async () => {

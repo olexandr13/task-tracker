@@ -263,17 +263,26 @@ describe('useTasks, a day picked for a task (DUE-18)', () => {
   /** A week before, so there is an occurrence gone by to have logged time against. */
   const THU_10 = new Date(2026, 8, 10, 9, 0)
 
-  it('starts a repeating task’s rule on the day, keeping the rule', () => {
-    const task = logTime(createTask('stretch', { kind: 'daily' }, THU_10), 30, THU_10)
+  it('moves a repeating task’s occurrence to the day, keeping the rule', () => {
+    const task = logTime(createTask('water the plants', { kind: 'weekly', weekdays: [4] }, THU_10), 30, THU_10)
     const { result } = setUp([task])
 
-    act(() => { result.current.changeDay(task.id, '2026-09-25') })
+    act(() => { result.current.changeDay(task.id, '2026-09-19') })
 
-    expect(result.current.tasks[0].repeat).toEqual({ kind: 'daily' })
-    expect(result.current.tasks[0].startDay).toBe('2026-09-25')
+    expect(result.current.tasks[0].repeat).toEqual({ kind: 'weekly', weekdays: [4] })
+    expect(result.current.tasks[0].startDay).toBe('2026-09-19')
     expect(result.current.tasks[0].dueDate).toBeNull()
     // Nothing was let go of with the rule, because no rule ended (TIME-7).
     expect(result.current.tasks[0].timeLog).toHaveLength(1)
+  })
+
+  it('leaves a habit that has begun as it is, a later start being a way to wipe its misses (DUE-27)', () => {
+    const habit = createTask('stretch', { kind: 'daily' }, THU_10)
+    const { result } = setUp([habit])
+
+    act(() => { result.current.changeDay(habit.id, '2026-09-25') })
+
+    expect(result.current.tasks[0]).toEqual(habit)
   })
 
   it('gives a one-off the day it is due', () => {

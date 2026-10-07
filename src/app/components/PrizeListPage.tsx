@@ -12,10 +12,11 @@ import {
   type PrizeId,
   type PrizeKind,
 } from '../../core'
-import { PRIZE_WORDS } from '../prizeLabels'
+import { PRIZE_WORDS, type PrizeKindWords } from '../prizeLabels'
 import { describeBoughtOn, describeMoney, describePoints } from '../rewardLabels'
 import { deleteControl } from '../rowControls'
 import { VIEW_LABELS } from '../view'
+import { ConfirmSheet, type Confirmation } from './ConfirmSheet'
 import { GiftIcon } from './GiftIcon'
 import { InfoButton } from './InfoButton'
 import { RedeemForm } from './RedeemForm'
@@ -36,6 +37,18 @@ const redeemButton =
   'shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-40'
 const addButton =
   'shrink-0 self-stretch rounded-lg px-3 text-base text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-100 disabled:pointer-events-none disabled:opacity-40 md:self-auto md:px-2.5 md:py-1 md:text-sm dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:active:bg-neutral-800'
+
+/**
+ * Asked before one is taken off its list, there being nothing to undo it from.
+ * What it was already redeemed for stays in the history (RWD-34).
+ */
+function askDelete(prize: Prize, words: PrizeKindWords): Confirmation {
+  return {
+    question: `Delete the ${words.one} "${prize.name}"?`,
+    lines: ['It comes off this list.', `The times you redeemed it stay in "${VIEW_LABELS['rewards/history']}".`],
+    confirm: 'Delete',
+  }
+}
 
 interface PrizeListPageProps {
   /** Which list this is: the prizes that come round again, or the wishlist (RWD-40). */
@@ -103,6 +116,11 @@ export function PrizeListPage({
   const [editing, setEditing] = useState<Draft | null>(null)
   // Where a name one of them has already was typed: under the box, or under the row.
   const [taken, setTaken] = useState<PrizeId | 'new' | null>(null)
+  // The one asked about before it is taken off.
+  const [asking, setAsking] = useState<PrizeId | null>(null)
+  const asked = prizes.find((prize) => prize.id === asking)
+  // Taken off elsewhere — on another device — while asked, there is nothing left to ask about.
+  if (asking !== null && asked === undefined) setAsking(null)
 
   const typedPoints = Number(points)
   const canAdd = isPrizeName(name) && points.trim() !== '' && isPrizePoints(typedPoints)
@@ -149,14 +167,6 @@ export function PrizeListPage({
       event.preventDefault()
       setEditing(null)
       setTaken(null)
-    }
-  }
-
-  function handleDelete(prize: Prize) {
-    // It goes for good, with nothing to undo it from, so it asks first. What it
-    // was already redeemed for stays in the history.
-    if (window.confirm(`Take "${prize.name}" off the list? What it was redeemed for stays in the history.`)) {
-      onDelete(prize.id)
     }
   }
 
@@ -329,7 +339,8 @@ export function PrizeListPage({
 
                       <button
                         type="button"
-                        onClick={() => { handleDelete(prize) }}
+                        // It goes for good, with nothing to undo it from, so it asks first.
+                        onClick={() => { setAsking(prize.id) }}
                         aria-label={`Delete the ${words.one} "${prize.name}"`}
                         title={`Delete ${words.one}`}
                         className={`flex h-6 shrink-0 items-center rounded-lg px-1.5 text-base leading-none ${deleteControl}`}
@@ -359,6 +370,17 @@ export function PrizeListPage({
           <h2 className={heading}>Something else</h2>
           <RedeemForm balance={balance} onRedeem={onRedeemOther} />
         </section>
+      )}
+
+      {asked !== undefined && (
+        <ConfirmSheet
+          confirmation={askDelete(asked, words)}
+          onCancel={() => { setAsking(null) }}
+          onConfirm={() => {
+            setAsking(null)
+            onDelete(asked.id)
+          }}
+        />
       )}
     </div>
   )

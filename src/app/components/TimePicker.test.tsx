@@ -62,12 +62,40 @@ describe('TimePicker timer', () => {
     expect(screen.getByText('1:30')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Stop' }))
     expect(onStop).toHaveBeenCalledTimes(1)
+    expect(onStop).toHaveBeenCalledWith(null)
+  })
+
+  it('logs the comment typed with the run on Stop (TIME-23)', async () => {
+    const onStop = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <TimePicker
+        goal={null}
+        sessions={[]}
+        now={new Date(2026, 8, 21, 10, 0)}
+        onLog={vi.fn()}
+        onRemove={vi.fn()}
+        onChangeGoal={vi.fn()}
+        timer={{
+          running: true,
+          startedAt: '2026-09-21T10:00:00.000Z',
+          clock: new Date('2026-09-21T10:01:30.000Z'),
+          onStart: vi.fn(),
+          onStop,
+        }}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /timer running/i }))
+    await user.type(screen.getByRole('textbox', { name: 'Comment on the time logged' }), 'drafted intro')
+    await user.click(screen.getByRole('button', { name: 'Stop' }))
+    expect(onStop).toHaveBeenCalledWith('drafted intro')
   })
 })
 
 describe('TimePicker panel', () => {
   const NOW = new Date(2026, 8, 21, 10, 0)
-  const logged = [{ id: 'a', seconds: 20 * 60, loggedAt: NOW.toISOString() }]
+  const logged = [{ id: 'a', seconds: 20 * 60, loggedAt: NOW.toISOString(), comment: null }]
 
   function renderPicker(goal: number | null, onLog = vi.fn()) {
     const user = userEvent.setup()
@@ -108,8 +136,54 @@ describe('TimePicker panel', () => {
 
     await user.type(screen.getByRole('textbox', { name: 'Time to log' }), '25m')
     await user.click(log)
-    expect(onLog).toHaveBeenCalledWith(25)
+    expect(onLog).toHaveBeenCalledWith(25, null)
     expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Time to log' }).value).toBe('')
+  })
+
+  it('logs the comment typed with the next session, quick or typed, and then lets it go (TIME-23)', async () => {
+    const onLog = vi.fn()
+    const user = renderPicker(null, onLog)
+    await user.click(screen.getByRole('button', { name: /Time:/ }))
+    const comment = screen.getByRole<HTMLInputElement>('textbox', { name: 'Comment on the time logged' })
+
+    await user.type(comment, ' read chapter 3 ')
+    await user.click(screen.getByRole('button', { name: 'Log 15m' }))
+    expect(onLog).toHaveBeenLastCalledWith(15, 'read chapter 3')
+    expect(comment.value).toBe('')
+
+    await user.click(screen.getByRole('button', { name: 'Log 5m' }))
+    expect(onLog).toHaveBeenLastCalledWith(5, null)
+
+    await user.type(screen.getByRole('textbox', { name: 'Time to log' }), '25m')
+    await user.type(comment, 'notes{Enter}')
+    expect(onLog).toHaveBeenLastCalledWith(25, 'notes')
+    expect(onLog).toHaveBeenCalledTimes(3)
+  })
+
+  it('logs nothing on Enter in the comment with no length typed (TIME-23)', async () => {
+    const onLog = vi.fn()
+    const user = renderPicker(null, onLog)
+    await user.click(screen.getByRole('button', { name: /Time:/ }))
+
+    await user.type(screen.getByRole('textbox', { name: 'Comment on the time logged' }), 'notes{Enter}')
+    expect(onLog).not.toHaveBeenCalled()
+  })
+
+  it('shows each session’s comment in the list (TIME-23)', async () => {
+    const user = userEvent.setup()
+    render(
+      <TimePicker
+        goal={null}
+        sessions={[{ ...logged[0]!, comment: 'read chapter 3' }]}
+        now={NOW}
+        onLog={vi.fn()}
+        onRemove={vi.fn()}
+        onChangeGoal={vi.fn()}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /Time:/ }))
+
+    expect(screen.getByRole('list', { name: 'Sessions' }).textContent).toContain('read chapter 3')
   })
 
   it('says what would do when a typed length cannot be read (TIME-11)', async () => {

@@ -3,9 +3,9 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { firstDueDay, type LocalDay, type LocalTime } from '../../core'
+import type { LocalDay, LocalTime, PickableDays } from '../../core'
 import type { SkipChoice } from '../dateChoices'
-import { emptyDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
+import { emptyDraft, type RepeatDraft } from '../repeatDraft'
 import { SchedulePicker } from './SchedulePicker'
 
 /* Choosing when a task is due: its day, or the rule that gives it its days. DUE and RPT ids refer to the wiki. */
@@ -21,9 +21,12 @@ interface PickerProps {
   overdue?: boolean
   showSummary?: boolean
   skip?: SkipChoice
+  unskip?: () => void
+  pickable?: PickableDays | null
+  noDay?: string
 }
 
-/** Holds both as a parent does: the day is the task's date, or where its rule starts. */
+/** Holds both as a parent does: the day is the one the task is due on, rule or not. */
 function Picker({
   initial = null,
   initialTime = null,
@@ -31,15 +34,18 @@ function Picker({
   overdue = false,
   showSummary,
   skip,
+  unskip,
+  pickable,
+  noDay,
 }: PickerProps) {
   const [day, setDay] = useState(initial)
   const [time, setTime] = useState(initialTime)
   const [draft, setDraft] = useState(initialDraft)
-  const repeat = toRepeat(draft)
   return (
     <SchedulePicker
-      dueDate={repeat === null || day === null ? day : firstDueDay(repeat, day)}
-      startDay={repeat === null ? null : day}
+      dueDate={day}
+      pickable={pickable}
+      noDay={noDay}
       draft={draft}
       now={WED_16}
       overdue={overdue}
@@ -49,6 +55,7 @@ function Picker({
       onChangeTime={setTime}
       onChangeRepeat={setDraft}
       skip={skip}
+      unskip={unskip}
     />
   )
 }
@@ -278,41 +285,136 @@ describe('SchedulePicker, repeating', () => {
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Daily · Tomorrow')
   })
 
-  it('marks the day it is due from the start picked, and takes that start away again (DUE-18)', async () => {
+  it('marks the day picked, with nothing to remove: the rule gives the task its day (DUE-18)', async () => {
     const user = setup({ initial: '2026-09-16', initialDraft: { ...emptyDraft(WED_16), kind: 'daily' } })
 
     await user.click(trigger())
     expect(screen.getByRole('button', { name: /^Today/ })).toHaveProperty('ariaPressed', 'true')
     expect(screen.getByRole('gridcell', { selected: true }).textContent).toBe('16')
-
-    // The rule stays, so what goes is the day it was told to start on.
-    await user.click(screen.getByRole('button', { name: 'Remove start date' }))
-    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Daily')
+    expect(screen.queryByRole('button', { name: /^Remove (start )?date/ })).toBeNull()
   })
 
-  it('marks the first day the rule comes round on from its start, not the start itself (DUE-15, DUE-18)', async () => {
-    // A Monday rule started on the Friday is due on the Monday after, which is the day filled.
-    const user = setup({ initial: '2026-09-25', initialDraft: { ...emptyDraft(WED_16), kind: 'weekly', weekdays: [1] } })
+  it('marks the day picked itself, whether or not the rule falls on it (DUE-15, DUE-18)', async () => {
+    // A Monday task moved to the Friday is due on the Friday, which is the day filled.
+    const user = setup({ initial: '2026-09-18', initialDraft: { ...emptyDraft(WED_16), kind: 'weekly', weekdays: [1] } })
 
     await user.click(trigger())
 
-    expect(screen.getByRole('gridcell', { selected: true }).textContent).toBe('28')
-    expect(screen.getByRole('button', { name: 'Remove start date' })).toBeDefined()
+    expect(screen.getByRole('gridcell', { selected: true }).textContent).toBe('18')
   })
 
-  it('starts the rule on a day picked in the calendar, the rule saying which day is due (DUE-18)', async () => {
+  it('moves the occurrence to a day picked in the calendar, this time only (DUE-18, DUE-27)', async () => {
     const user = setup({ initialDraft: { ...emptyDraft(WED_16), kind: 'weekly', weekdays: [1] } })
 
     await user.click(trigger())
 
-    // Every day in the grid says what picking it does, the note above being out of
-    // the way once the eye is on the calendar — the dot that picks today included.
-    expect(screen.getByRole('button', { name: 'Friday, September 25, 2026' }).title).toBe('Starts the repeat')
-    expect(screen.getByRole('button', { name: 'Select today' }).title).toBe('Select today · Starts the repeat')
+    // Every day there is to pick says what picking it does — the dot that picks today included.
+    expect(screen.getByRole('button', { name: 'Friday, September 18, 2026' }).title).toBe('This time only')
+    expect(screen.getByRole('button', { name: 'Select today' }).title).toBe('Select today · This time only')
 
-    // Started on the Friday, a Monday rule is first due on the Monday after it.
+    await user.click(screen.getByRole('button', { name: 'Friday, September 18, 2026' }))
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Every Mon · Sep 18')
+  })
+
+  it('offers no quick day past the one before the rule comes round again (DUE-27)', async () => {
+    // A Monday task on the Wednesday moves up to Sunday the 20th, so Next week (the 27th) is not offered.
+    const user = setup({ initialDraft: { ...emptyDraft(WED_16), kind: 'weekly', weekdays: [1] } })
+
+    await user.click(trigger())
+
+    expect(screen.getByRole('button', { name: /^Today/ }).title).toBe('Today · This time only')
+    expect(screen.getByRole('button', { name: /^Tomorrow/ }).title).toBe('Tomorrow · This time only')
+    expect(screen.queryByRole('button', { name: /^Next week/ })).toBeNull()
+  })
+
+  it('refuses a day past the rule\'s next one in place, saying when that is (DUE-27)', async () => {
+    const user = setup({
+      initialDraft: { ...emptyDraft(WED_16), kind: 'weekly', weekdays: [1] },
+      skip: { to: '2026-09-21', onSkip: vi.fn() },
+    })
+
+    await user.click(trigger())
+    const later = screen.getByRole('button', { name: 'Friday, September 25, 2026' })
+    // Faded, and with nothing to say about the rule, it being no day to pick.
+    expect(later.title).toBe('')
+    expect(later.className).toContain('text-neutral-400')
+
+    await user.click(later)
+
+    expect(screen.getByRole('alert').textContent).toBe(
+      'The next one is due on Sep 21, so pick a day before then. To pass this one over, use "Skip".',
+    )
+    expect(panel()).not.toBeNull()
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Every Mon')
+  })
+
+  it('points to no skip where there is none to press, as in the add row (DUE-27)', async () => {
+    const user = setup({ initialDraft: { ...emptyDraft(WED_16), kind: 'weekly', weekdays: [1] } })
+
+    await user.click(trigger())
     await user.click(screen.getByRole('button', { name: 'Friday, September 25, 2026' }))
-    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Every Mon · Sep 28')
+
+    expect(screen.getByRole('alert').textContent).toBe('The next one is due on Sep 21, so pick a day before then.')
+  })
+
+  it('refuses a day gone by on a repeating task in place (DUE-27)', async () => {
+    const user = setup({ initialDraft: { ...emptyDraft(WED_16), kind: 'daily' } })
+
+    await user.click(trigger())
+    await user.click(screen.getByRole('button', { name: 'Tuesday, September 15, 2026' }))
+
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Pick today or a later day. A repeating task cannot be due on a day that has gone by.',
+    )
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Daily')
+  })
+
+  it('still gives a one-off a day gone by (DUE-27)', async () => {
+    const user = setup()
+
+    await user.click(trigger())
+    await user.click(screen.getByRole('button', { name: 'Tuesday, September 15, 2026' }))
+
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Yesterday')
+  })
+
+  it('has no calendar where no day can be picked, and says why instead (DUE-27)', async () => {
+    const user = setup({
+      initial: '2026-09-16',
+      initialDraft: { ...emptyDraft(WED_16), kind: 'daily' },
+      pickable: null,
+      noDay: 'A habit is due every day.',
+      skip: { to: '2026-09-17', onSkip: vi.fn() },
+    })
+
+    await user.click(trigger())
+
+    expect(screen.queryByRole('grid')).toBeNull()
+    expect(screen.getByText('A habit is due every day.')).toBeDefined()
+    expect(within(screen.getByRole('group', { name: 'Date' })).getAllByRole('button').map((b) => b.ariaLabel)).toEqual([
+      'Skip occurrence',
+      'What each icon means',
+    ])
+  })
+
+  it('offers a habit\'s rest back as the skip, pressed, and closes (HAB-31, DUE-27)', async () => {
+    const unskip = vi.fn()
+    const user = setup({
+      initial: '2026-09-17',
+      initialDraft: { ...emptyDraft(WED_16), kind: 'daily' },
+      pickable: null,
+      unskip,
+    })
+
+    await user.click(trigger())
+    const skipped = screen.getByRole('button', { name: 'Skipped' })
+    expect(skipped).toHaveProperty('ariaPressed', 'true')
+    expect(skipped.title).toBe('Skipped today · Take it back')
+
+    await user.click(skipped)
+
+    expect(unskip).toHaveBeenCalledTimes(1)
+    expect(panel()).toBeNull()
   })
 
   it('leaves a one-off\'s calendar days without a tooltip, there being nothing to warn of (DUE-15)', async () => {
@@ -565,7 +667,7 @@ describe('the i that spells the Date row out (DUE-25)', () => {
     expect(legend()).toEqual([])
   })
 
-  it('says on a repeating task that each day starts the repeat, and where the skip leads (DUE-18, RPT-34)', async () => {
+  it('says on a habit yet to begin that each day starts the repeat, and where the skip leads (DUE-18, RPT-34)', async () => {
     const user = setup({
       initial: '2026-09-16',
       initialDraft: { ...emptyDraft(WED_16), kind: 'daily' },
@@ -579,7 +681,6 @@ describe('the i that spells the Date row out (DUE-25)', () => {
       'Tomorrow · Starts the repeat',
       'Next week · Sep 27 · Starts the repeat',
       'Skip to Sep 17',
-      'Remove start date',
     ])
   })
 

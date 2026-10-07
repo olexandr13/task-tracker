@@ -29,7 +29,8 @@ export interface TaskActions {
   readonly changeReward: (id: TaskId, reward: number | null) => void
   readonly changeUrgent: (id: TaskId, urgent: boolean) => void
   readonly changeTimeGoal: (id: TaskId, minutes: number | null) => void
-  readonly logTime: (id: TaskId, minutes: number) => void
+  /** Logs a session, with what it went on or null for nothing said (TIME-23). */
+  readonly logTime: (id: TaskId, minutes: number, comment: string | null) => void
   readonly removeTimeEntry: (id: TaskId, entryId: TimeEntryId) => void
   /** Files the task under a list, or in no list — the Inbox — with null. */
   readonly changeList: (id: TaskId, listId: ListId | null) => void

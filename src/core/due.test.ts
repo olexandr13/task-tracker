@@ -3,8 +3,8 @@ import {
   canSkipOccurrence,
   dueDay,
   dueMoment,
+  dueAgainOn,
   dueReminders,
-  firstDueDay,
   isInPeriod,
   isOverdue,
   isSkippedToday,
@@ -25,6 +25,7 @@ import {
   setDueTime,
   setStartDay,
   renameTask,
+  scheduleOn,
   uncompleteTask,
   type Task,
 } from './task'
@@ -38,6 +39,7 @@ const WED_16_EVENING = new Date(2026, 8, 16, 21, 0)
 
 const DAILY: Repeat = { kind: 'daily' }
 const MONDAYS: Repeat = { kind: 'weekly', weekdays: [1] }
+const MONDAYS_AND_THURSDAYS: Repeat = { kind: 'weekly', weekdays: [1, 4] }
 
 /** A one-off written on the Monday, due on `day`. */
 function dueOn(day: string | null): Task {
@@ -88,10 +90,28 @@ describe('dueDay', () => {
     expect(dueDay(writtenTuesday, new Date(2026, 8, 21, 9, 0))).toBe('2026-09-21')
   })
 
-  it('is the first occurrence from the day a rule was told to start on (DUE-18)', () => {
-    // Friday the 18th, so a daily task starts there and a Monday task on the 21st.
+  it('is the day picked itself, whether or not the rule falls on it (DUE-18)', () => {
+    // Friday the 18th: a daily task starts there, and a Monday task is due there too.
     expect(dueDay(startedOnDay(DAILY, '2026-09-18'), WED_16)).toBe('2026-09-18')
-    expect(dueDay(startedOnDay(MONDAYS, '2026-09-18'), WED_16)).toBe('2026-09-21')
+    expect(dueDay(startedOnDay(MONDAYS, '2026-09-18'), WED_16)).toBe('2026-09-18')
+  })
+
+  it('hands the task back to the rule on its first day after the day picked (DUE-18)', () => {
+    const thursday = startedOnDay(MONDAYS, '2026-09-17')
+
+    expect(dueDay(thursday, new Date(2026, 8, 18, 9, 0))).toBe('2026-09-17')
+    expect(isOverdue(thursday, new Date(2026, 8, 18, 9, 0))).toBe(true)
+    expect(dueDay(thursday, new Date(2026, 8, 21, 9, 0))).toBe('2026-09-21')
+    expect(dueDay(completeTask(thursday, WED_16), new Date(2026, 8, 21, 9, 0))).toBe('2026-09-21')
+  })
+
+  it('passes over the rule\'s days before the day picked (DUE-18)', () => {
+    // Monday the 14th missed, moved to Friday: Thursday the 17th asks nothing.
+    const friday = startedOnDay(MONDAYS_AND_THURSDAYS, '2026-09-18')
+
+    expect(dueDay(friday, new Date(2026, 8, 17, 9, 0))).toBe('2026-09-18')
+    expect(isOverdue(friday, new Date(2026, 8, 17, 9, 0))).toBe(false)
+    expect(isInToday(friday, new Date(2026, 8, 17, 9, 0))).toBe(false)
   })
 
   it('is the occurrence in play again once the start has gone by', () => {
@@ -109,11 +129,23 @@ describe('dueDay', () => {
   })
 })
 
-describe('firstDueDay', () => {
-  it('is the start itself where the rule falls on it, and the next day it does otherwise', () => {
-    expect(firstDueDay(DAILY, '2026-09-18')).toBe('2026-09-18')
-    expect(firstDueDay(MONDAYS, '2026-09-14')).toBe('2026-09-14')
-    expect(firstDueDay(MONDAYS, '2026-09-15')).toBe('2026-09-21')
+describe('dueAgainOn', () => {
+  it('is the rule\'s next day once the occurrence in play is done', () => {
+    expect(dueAgainOn(completeTask(repeating(MONDAYS), WED_16), WED_16)).toBe('2026-09-21')
+    expect(dueAgainOn(completeTask(repeating(DAILY), WED_16), WED_16)).toBe('2026-09-17')
+  })
+
+  it('goes on from a day picked, and past a day already skipped', () => {
+    const thursday = completeTask(startedOnDay(MONDAYS, '2026-09-17'), WED_16)
+    expect(dueAgainOn(thursday, WED_16)).toBe('2026-09-21')
+
+    const skippedAhead = { ...completeTask(repeating(MONDAYS), WED_16), skippedDays: ['2026-09-21'] }
+    expect(dueAgainOn(skippedAhead, WED_16)).toBe('2026-09-28')
+  })
+
+  it('is nothing for a task still to do, or a one-off', () => {
+    expect(dueAgainOn(repeating(MONDAYS), WED_16)).toBeNull()
+    expect(dueAgainOn(completeTask(dueOn('2026-09-16'), WED_16), WED_16)).toBeNull()
   })
 })
 
@@ -592,14 +624,27 @@ describe('skipOccurrence', () => {
   })
 
   it('is undone by picking the skipped day again, which puts the task back on it (DUE-26)', () => {
+    const skipped = skipOccurrence(repeating(MONDAYS), MON_14)
+    expect(dueDay(skipped, MON_14)).toBe('2026-09-21')
+
+    const pickedAgain = scheduleOn(skipped, '2026-09-14', MON_14)
+
+    expect(dueDay(pickedAgain, MON_14)).toBe('2026-09-14')
+    expect(isInToday(pickedAgain, MON_14)).toBe(true)
+    expect(canSkipOccurrence(pickedAgain, MON_14)).toBe(true)
+  })
+
+  it('is undone on a habit by taking the rest back, not by picking a day (HAB-31, DUE-27)', () => {
     const skipped = skipOccurrence(repeating(DAILY), WED_16)
-    expect(dueDay(skipped, WED_16)).toBe('2026-09-17')
 
-    const pickedAgain = setStartDay(skipped, '2026-09-16')
+    expect(scheduleOn(skipped, '2026-09-16', WED_16)).toBe(skipped)
+    expect(dueDay(unskipToday(skipped, WED_16), WED_16)).toBe('2026-09-16')
+  })
 
-    expect(dueDay(pickedAgain, WED_16)).toBe('2026-09-16')
-    expect(isInToday(pickedAgain, WED_16)).toBe(true)
-    expect(canSkipOccurrence(pickedAgain, WED_16)).toBe(true)
+  it('moves a day picked on to the rule\'s next day after it (RPT-34)', () => {
+    const thursday = startedOnDay(MONDAYS, '2026-09-17')
+
+    expect(dueDay(skipOccurrence(thursday, WED_16), WED_16)).toBe('2026-09-21')
   })
 
   it('stands when a day after it is picked, and when the start is taken away (DUE-26, DUE-18)', () => {
@@ -609,14 +654,16 @@ describe('skipOccurrence', () => {
     expect(dueDay(setStartDay(skipped, null), WED_16)).toBe('2026-09-17')
   })
 
-  it('brings back a missed occurrence passed over by reopening, once that day is picked (DUE-26, RPT-38)', () => {
+  it('leaves a missed occurrence passed over by reopening behind, today being the day to pick (DUE-26, RPT-38)', () => {
     const reopened = uncompleteTask(completeTask(repeating(MONDAYS), WED_16), WED_16)
     expect(dueDay(reopened, WED_16)).toBe('2026-09-21')
 
-    const pickedAgain = setStartDay(reopened, '2026-09-14')
+    // The Monday has gone by, so it is not a day to pick; today is.
+    expect(scheduleOn(reopened, '2026-09-14', WED_16)).toBe(reopened)
+    const today = scheduleOn(reopened, '2026-09-16', WED_16)
 
-    expect(dueDay(pickedAgain, WED_16)).toBe('2026-09-14')
-    expect(isOverdue(pickedAgain, WED_16)).toBe(true)
+    expect(dueDay(today, WED_16)).toBe('2026-09-16')
+    expect(isOverdue(today, WED_16)).toBe(false)
   })
 })
 
@@ -646,6 +693,16 @@ describe('reopening a missed occurrence', () => {
     expect(reopened.skippedDays).toEqual([])
     expect(dueDay(reopened, WED_16)).toBe('2026-09-16')
     expect(isInToday(reopened, WED_16)).toBe(true)
+  })
+
+  it('passes over a day picked once it has gone by, not the rule\'s day before it (RPT-38, DUE-18)', () => {
+    // Moved from Monday the 14th to Tuesday, done then, and unticked on the Wednesday.
+    const tuesday = completeTask(startedOnDay(MONDAYS, '2026-09-15'), TUE_15)
+    const reopened = uncompleteTask(tuesday, WED_16)
+
+    expect(reopened.skippedDays).toEqual(['2026-09-15'])
+    expect(dueDay(reopened, WED_16)).toBe('2026-09-21')
+    expect(isOverdue(reopened, WED_16)).toBe(false)
   })
 
   it('passes over nothing from before the task was written (DUE-11)', () => {

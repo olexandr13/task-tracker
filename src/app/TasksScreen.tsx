@@ -131,6 +131,8 @@ import {
   VIEW_LABELS,
   viewLabel,
   viewShowingTask,
+  type Reveal,
+  type RevealPart,
 } from './view'
 
 interface TasksScreenProps {
@@ -392,19 +394,19 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   useEffect(() => {
     if (isLoading) return
     if (runningTimerTaskId !== null && runningTimerTask === null) {
-      stopTaskTimer()
+      stopTaskTimer(null)
     }
   }, [isLoading, runningTimerTaskId, runningTimerTask, stopTaskTimer])
   // The task being gone to from the timer's chip (TIME-20), until its row or card has
   // brought itself into view and opened — then let go of, so no row opening later,
   // on another view, takes it for a new request.
-  const [revealId, setRevealId] = useState<TaskId | null>(null)
-  const revealed = () => { setRevealId(null) }
+  const [reveal, setReveal] = useState<Reveal | null>(null)
+  const revealed = () => { setReveal(null) }
 
   /** Going to a task: the view open if it shows the task, or one that does. */
-  function revealTask(task: Task) {
+  function revealTask(task: Task, part: RevealPart = 'task') {
     setView(viewShowingTask(task, view, now, lists.lists))
-    setRevealId(task.id)
+    setReveal({ taskId: task.id, part })
   }
   // Every tag there is: the kept ones, whether or not a task carries them, and
   // any a live task carries that is not kept yet.
@@ -987,7 +989,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                       allDoneMessage={allDoneMessage(view, lists.lists)}
                       actions={taskActions}
                       timer={taskTimer}
-                      revealId={revealId}
+                      reveal={reveal}
                       onRevealed={revealed}
                     />
                   </section>
@@ -1111,7 +1113,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                       actions={taskActions}
                       onSetDay={setHabitDay}
                       timer={taskTimer}
-                      revealId={revealId}
+                      reveal={reveal}
                       onRevealed={revealed}
                     />
                   </section>
@@ -1229,8 +1231,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
               title={runningTimerTask.title}
               startedAt={taskTimer.state.startedAt}
               clock={taskTimer.clock}
-              onOpen={() => { revealTask(runningTimerTask) }}
-              onStop={taskTimer.stop}
+              onOpen={() => { revealTask(runningTimerTask, 'time') }}
+              onStop={() => { taskTimer.stop(null) }}
             />
           )}
           {taskTimer.goalNotice !== null && (

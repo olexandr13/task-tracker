@@ -16,6 +16,9 @@ bars, which changes once a day.
   quietly, with only a console warning — the card stays away rather than showing something else.
 - **QUOTE-8** Quotes are asked for by theme — motivational, inspirational, success — and kept short
   enough not to turn the card into a wall of text.
+- **QUOTE-9** A few quotes come from the service garbled — its text was once misread, so "…"
+  arrives as "â€¦" and "’" as "â€™". They are read back as what they were before they are shown or
+  cached; text that was never garbled, accents included, is left as it is.
 
 ## How it shows
 
@@ -31,6 +34,7 @@ bars, which changes once a day.
 ---
 
 **Where it lives:** `src/core/quote.ts` (what a quote is),
-`src/storage/quotableQuoteSource.ts` (the service), `src/storage/localStorageQuoteRepository.ts`
-(the cache), `src/app/useQuote.ts`, `src/app/components/QuoteCard.tsx`.
-**Tested in:** `src/app/useQuote.test.ts`.
+`src/storage/quotableQuoteSource.ts` (the service), `src/storage/repairMojibake.ts` (garbled
+text), `src/storage/localStorageQuoteRepository.ts` (the cache), `src/app/useQuote.ts`, `src/app/components/QuoteCard.tsx`.
+**Tested in:** `src/app/useQuote.test.ts`, `src/storage/repairMojibake.test.ts`,
+`src/storage/localStorageQuoteRepository.test.ts`.

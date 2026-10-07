@@ -20,7 +20,7 @@ interface BottomNavProps {
   view: View
   /** Every list there is, to go to from the Tasks tab's menu. */
   lists: readonly List[]
-  /** Whether a key is waiting, which marks the Rewards tab (CHST-22). */
+  /** Whether a key is waiting, which marks the Rewards tab and Cases in its menu (CHST-22). */
   keyWaiting?: boolean
   /** Soften the bar while Procrastination mode is on (JUST-5). */
   dimmed?: boolean
@@ -146,10 +146,18 @@ export function BottomNav({ view, lists, keyWaiting = false, dimmed = false, onC
     onLongPress: (button, fromKeyboard) => { openMenu('rewards', button, fromKeyboard) },
   })
 
-  /** A page's entry in a tab's menu: its name and icon, going there. */
+  /**
+   * A page's entry in a tab's menu: its name and icon, going there — and Cases
+   * marked while a key is waiting, as the tab is (CHST-22).
+   */
   function pageItem(value: FixedView): ContextMenuItem {
     const Icon = VIEW_ICONS[value]
-    return { label: VIEW_LABELS[value], icon: <Icon />, onSelect: () => { onChange(value) } }
+    return {
+      label: VIEW_LABELS[value],
+      icon: <Icon />,
+      mark: value === 'rewards/cases' && keyWaiting ? <KeyWaitingMark /> : undefined,
+      onSelect: () => { onChange(value) },
+    }
   }
 
   // Each with its icon, as every other entry of a tab's menu has one: three bare

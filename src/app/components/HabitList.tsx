@@ -22,7 +22,7 @@ import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { dragGrip } from '../rowControls'
 import { HABIT_DAY_TONES } from '../habitTones'
 import { textOffsetAtPoint } from '../textOffsetAtPoint'
-import { useCompletionRefusal } from '../useCompletionRefusal'
+import { useRefusal } from '../useRefusal'
 import { useSortableTask } from '../useSortableTask'
 import { ChevronIcon } from './ChevronIcon'
 import { CompletionBox } from './CompletionBox'
@@ -35,6 +35,7 @@ import { SortableTasks } from './SortableTasks'
 import { TaskSheet } from './TaskSheet'
 import type { TaskActions } from '../taskActions'
 import type { TaskTimer } from '../useTaskTimer'
+import type { Reveal, RevealPart } from '../view'
 
 interface HabitListProps {
   /** Already chosen and ordered by `habitTasks`. */
@@ -53,7 +54,7 @@ interface HabitListProps {
   onSetDay: (id: TaskId, day: LocalDay, done: boolean) => void
   timer?: Pick<TaskTimer, 'clock' | 'start' | 'stop' | 'isRunningFor' | 'state'>
   /** The habit being gone to (TIME-20): its card is brought into view and its sheet opened. */
-  revealId?: TaskId | null
+  reveal?: Reveal | null
   /** Its card has been brought into view and its sheet opened. */
   onRevealed?: () => void
 }
@@ -116,7 +117,7 @@ export function HabitList({
   actions,
   onSetDay,
   timer,
-  revealId = null,
+  reveal = null,
   onRevealed,
 }: HabitListProps) {
   // Per-card folds override the page default; clearing them when the default
@@ -166,7 +167,7 @@ export function HabitList({
               actions={actions}
               onSetDay={onSetDay}
               timer={timer}
-              revealed={revealId === habit.id}
+              revealed={reveal?.taskId === habit.id ? reveal.part : null}
               onRevealed={onRevealed}
               isOpen={isOpen(habit.id)}
               onToggleOpen={() => { toggleOpen(habit.id) }}
@@ -230,8 +231,8 @@ function HabitCard({
   habit: Task
   isOpen: boolean
   onToggleOpen: () => void
-  revealed: boolean
-} & Omit<HabitListProps, 'habits' | 'showDetails' | 'revealId'>) {
+  revealed: RevealPart | null
+} & Omit<HabitListProps, 'habits' | 'showDetails' | 'reveal'>) {
   const done = isComplete(habit, now)
   const timeReady = !done && isTimeGoalReached(habit, now)
   // A habit's checklist comes back open with every occurrence (CHK-16), so its
@@ -240,7 +241,7 @@ function HabitCard({
   // a reached time goal does (CHK-32), just for a different reason.
   const subtasksReady = !done && hasSubtasks(habit) && !hasOpenSubtasks(habit, now)
   const ready = timeReady ? 'time' : subtasksReady ? 'subtasks' : undefined
-  const { refused, refuse } = useCompletionRefusal()
+  const { refused, refuse } = useRefusal()
   const blocked = !done && hasOpenSubtasks(habit, now)
   const { currentStreak, bestStreak } = habitStats(habit, now)
   const [isEditing, setIsEditing] = useState(false)
@@ -265,10 +266,10 @@ function HabitCard({
 
   // Gone to from elsewhere (TIME-20): the sheet opens with the render that asks,
   // and the card is scrolled to once it is drawn.
-  const [wasRevealed, setWasRevealed] = useState(false)
+  const [wasRevealed, setWasRevealed] = useState<RevealPart | null>(null)
   if (revealed !== wasRevealed) {
     setWasRevealed(revealed)
-    if (revealed) setIsEditing(true)
+    if (revealed !== null) setIsEditing(true)
   }
 
   const bringUp = useEffectEvent(() => {
@@ -277,7 +278,7 @@ function HabitCard({
   })
 
   useEffect(() => {
-    if (revealed) bringUp()
+    if (revealed !== null) bringUp()
   }, [revealed])
 
   function closeEdit() {
@@ -383,7 +384,7 @@ function HabitCard({
       className={[
         `group relative flex touch-manipulation flex-col rounded-xl border bg-white dark:bg-neutral-900 ${surface}`,
         // The card shakes whole, as a row does: it is the habit that is not done.
-        refused && 'completion-refusal-shake',
+        refused && 'refusal-shake',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -499,6 +500,7 @@ function HabitCard({
           onChangeTime={changeTime}
           onChangeRepeat={handleRepeatChange}
           timer={timer}
+          openTime={revealed === 'time'}
         />
       )}
     </li>

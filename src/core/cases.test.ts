@@ -9,6 +9,7 @@ import {
   caseBlock,
   caseJackpot,
   caseOpened,
+  caseOpenings,
   caseQuarter,
   caseSpan,
   caseWorking,
@@ -439,6 +440,26 @@ describe('earning a key', () => {
   it('says what today’s case gave', () => {
     const opened = [earned(CASE_TODAY_ID, '2026-09-17', 12), earned('a', '2026-09-17', 3)]
     expect(caseOpened(opened, THU_17)).toEqual({ taskId: CASE_TODAY_ID, day: '2026-09-17', points: 12 })
+  })
+
+  it('lists what each case opened today gave, in the order the page shows the cases (CHST-33)', () => {
+    const ledger = [
+      earned(CASE_WEEK_ID, '2026-09-17', 9),
+      earned('a', '2026-09-17', 3),
+      earned(CASE_DAILY_ID, '2026-09-17', 0),
+      earned(CASE_TODAY_ID, '2026-09-16', 12),
+      earned(CASE_TODAY_ID, '2026-09-17', 7),
+    ]
+    expect(caseOpenings(ledger, THU_17)).toEqual([
+      { source: 'today', points: 7 },
+      { source: 'daily', points: 0 },
+      { source: 'week', points: 9 },
+    ])
+  })
+
+  it('lists none of an earlier day’s openings (CHST-33)', () => {
+    const ledger = [earned(CASE_TODAY_ID, '2026-09-16', 12), earned(CASE_DAILY_ID, '2026-09-16', 4)]
+    expect(caseOpenings(ledger, THU_17)).toEqual([])
   })
 })
 

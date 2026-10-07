@@ -14,6 +14,7 @@ import {
   type ListId,
   type LocalDay,
   type Task,
+  type TaskId,
 } from '../core'
 import type { TaskScope } from '../storage/taskRepository'
 
@@ -256,6 +257,18 @@ export function showsTask(view: TaskView, task: Task, now: Date, lists: readonly
   if (isOneListView(view)) return isInList(task, viewListId(view))
   if (isTagView(view)) return hasTag(task, viewTag(view))
   return isInPeriod(task, view, now)
+}
+
+/**
+ * What going to a task from elsewhere opens (TIME-20): the task, as a tap on it
+ * would, or its time as well — what the running timer's chip is about.
+ */
+export type RevealPart = 'task' | 'time'
+
+/** A task being gone to from elsewhere (TIME-20), and what of it opens. */
+export interface Reveal {
+  readonly taskId: TaskId
+  readonly part: RevealPart
 }
 
 /**

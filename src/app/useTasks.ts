@@ -223,7 +223,7 @@ export function useTasks(
         reward?: number | null
         urgent?: boolean
         timeGoal?: number | null
-        timeLogMinutes?: readonly number[]
+        timeLog?: readonly { minutes: number; comment: string | null }[]
         subtasks?: readonly { title: string; done: boolean }[]
       } = {},
     ) => {
@@ -232,7 +232,7 @@ export function useTasks(
         // The hour goes on after the day, which is what it hangs on (`setDueTime`):
         // a new task with an hour and no day of any kind would have no moment to
         // be due at, so the hour is simply not taken.
-        let task = moveToList(scheduleOn(createTask(title, repeat), day), listId)
+        let task = moveToList(scheduleOn(createTask(title, repeat), day, new Date()), listId)
         if (time !== null && hasDueDay(task)) {
           task = setDueTime(task, time)
         }
@@ -249,8 +249,8 @@ export function useTasks(
         if (details.timeGoal !== undefined) {
           task = setTimeGoal(task, details.timeGoal)
         }
-        for (const minutes of details.timeLogMinutes ?? []) {
-          task = logTime(task, minutes)
+        for (const entry of details.timeLog ?? []) {
+          task = logTime(task, entry.minutes, new Date(), entry.comment)
         }
         for (const item of details.subtasks ?? []) {
           task = insertSubtask(task, task.subtasks.length, item.title)
@@ -304,12 +304,16 @@ export function useTasks(
   )
 
   /**
-   * The day picked for a task, or taken away: a one-off is due on it, a
-   * repeating task starts its rule there (DUE-12). The rule itself is left alone.
+   * The day picked for a task, or taken away: the task is due on it, a repeating
+   * task's rule carrying on after it (DUE-18). The rule itself is left alone, and
+   * a day the task cannot be given now changes nothing (DUE-27).
    */
   const changeDay = useCallback(
     (id: TaskId, day: LocalDay | null) => {
-      apply((current) => current.map((task) => (task.id === id ? scheduleOn(task, day) : task)))
+      apply((current) => {
+        const now = new Date()
+        return current.map((task) => (task.id === id ? scheduleOn(task, day, now) : task))
+      })
     },
     [apply],
   )
@@ -382,18 +386,20 @@ export function useTasks(
     [apply],
   )
 
-  /** Logs a session of time spent on a task. Whether the task is done is left to its box. */
+  /** Logs a session of time spent on a task, and what it went on (TIME-23). Whether the task is done is left to its box. */
   const logTaskTime = useCallback(
-    (id: TaskId, minutes: number) => {
-      apply((current) => current.map((task) => (task.id === id ? logTime(task, minutes) : task)))
+    (id: TaskId, minutes: number, comment: string | null) => {
+      apply((current) => current.map((task) => (task.id === id ? logTime(task, minutes, new Date(), comment) : task)))
     },
     [apply],
   )
 
-  /** Logs a timer's run to the second, so short runs add up (TIME-22). */
+  /** Logs a timer's run to the second, so short runs add up (TIME-22), and what it went on (TIME-23). */
   const logTaskSeconds = useCallback(
-    (id: TaskId, seconds: number) => {
-      apply((current) => current.map((task) => (task.id === id ? logSeconds(task, seconds) : task)))
+    (id: TaskId, seconds: number, comment: string | null) => {
+      apply((current) =>
+        current.map((task) => (task.id === id ? logSeconds(task, seconds, new Date(), comment) : task)),
+      )
     },
     [apply],
   )

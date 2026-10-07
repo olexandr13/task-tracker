@@ -18,7 +18,7 @@ import {
   isSkippedToday,
   isTimeGoalReached,
   listOf,
-  scheduledDay,
+  pickableDays,
   sessionSeconds,
   skipOccurrence,
   sortLists,
@@ -29,7 +29,7 @@ import {
   type Task,
   type TimeEntryId,
 } from '../../core'
-import { dateChoices } from '../dateChoices'
+import { dateChoices, noDayNote, restsToday } from '../dateChoices'
 import { describeDueDate, describeTimeOfDay } from '../dueLabels'
 import { describeTimeProgress, describeTimerRunning } from '../durationLabels'
 import { useFeatureOn } from '../features'
@@ -49,13 +49,14 @@ import {
 } from '../rowControls'
 import { isInTextEntry } from '../textEntry'
 import { textOffsetAtPoint } from '../textOffsetAtPoint'
-import { useCompletionRefusal } from '../useCompletionRefusal'
+import { useRefusal } from '../useRefusal'
 import { isHeldInPlace } from '../useLongPress'
 import { usePhoneLayout } from '../usePhoneLayout'
 import { useRowSwipe } from '../useRowSwipe'
 import { useSortableTask } from '../useSortableTask'
 import type { TaskActions } from '../taskActions'
 import type { TaskTimer } from '../useTaskTimer'
+import type { RevealPart } from '../view'
 import { CalendarIcon } from './CalendarIcon'
 import { ChecklistIcon } from './ChecklistIcon'
 import { ClockIcon } from './ClockIcon'
@@ -102,8 +103,11 @@ interface TaskItemProps {
   actions: TaskActions
   /** The screen's timer, when one is offered for logging time by running a clock. */
   timer?: Pick<TaskTimer, 'clock' | 'start' | 'stop' | 'isRunningFor' | 'state'>
-  /** Gone to from elsewhere (TIME-20): brought into view and opened, as a click on it would. */
-  revealed?: boolean
+  /**
+   * Gone to from elsewhere (TIME-20): brought into view and opened, as a click on
+   * it would — and on a phone, with `time`, its sheet opens on the time panel.
+   */
+  revealed?: RevealPart | null
   /** Said once the row has been brought into view and opened. */
   onRevealed?: () => void
 }
@@ -172,7 +176,7 @@ export function TaskItem({
   emphasized = false,
   actions,
   timer,
-  revealed = false,
+  revealed = null,
   onRevealed,
 }: TaskItemProps) {
   const phone = usePhoneLayout()
@@ -232,6 +236,9 @@ export function TaskItem({
   // and either can be put away again without leaving the row.
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false)
   const [isChecklistOpen, setIsChecklistOpen] = useState(false)
+  // A phone's sheet opened from the running timer's chip opens on the time panel
+  // (TIME-20), until the sheet is put away.
+  const [sheetOnTime, setSheetOnTime] = useState(false)
   // Where the caret goes when the title opens as a box: where it was clicked, or
   // the end when there is no such place.
   const caret = useRef<number | null>(null)
@@ -253,7 +260,7 @@ export function TaskItem({
   // The tick this row turned down, its checklist still having a part to do
   // (CHK-11). Every way of ticking the task off goes through it — the box, and
   // the swipe on a phone — so the row answers the same however it was asked.
-  const { refused, refuse } = useCompletionRefusal()
+  const { refused, refuse } = useRefusal()
   const blocked = !done && hasOpenSubtasks(task, now)
   // Every part ticked, task still not: the box offers the same green invitation
   // a reached time goal does (CHK-32), just for a different reason.
@@ -345,7 +352,7 @@ export function TaskItem({
     goal: task.timeGoal,
     sessions,
     now,
-    onLog: (minutes: number) => { actions.logTime(task.id, minutes) },
+    onLog: (minutes: number, comment: string | null) => { actions.logTime(task.id, minutes, comment) },
     onRemove: (entryId: TimeEntryId) => { actions.removeTimeEntry(task.id, entryId) },
     onChangeGoal: (minutes: number | null) => { actions.changeTimeGoal(task.id, minutes) },
     label: `Time for "${task.title}"`,
@@ -357,7 +364,7 @@ export function TaskItem({
             startedAt: timerStartedAt,
             clock: timer.clock,
             onStart: () => { timer.start(task.id) },
-            onStop: () => { timer.stop() },
+            onStop: (comment: string | null) => { timer.stop(comment) },
           },
   }
   // The list the task is filed under, or null in the Inbox.
@@ -365,23 +372,28 @@ export function TaskItem({
   // Where skipping the occurrence in play would move the task on to, while it has one to skip.
   const skipTo = canSkipOccurrence(task, now) ? dueDay(skipOccurrence(task, now), now) : null
   const skip = skipTo === null ? undefined : { to: skipTo, onSkip: () => { actions.skip(task.id) } }
+  // A habit resting today offers the rest back in the skip's place (HAB-31).
+  const unskip = restsToday(task, now) ? () => { actions.unskip(task.id) } : undefined
+  // Which days can be picked for it now (DUE-27): none once done, and a habit only before its first day.
+  const pickable = pickableDays(task, now)
   // The quick day choices of the task's menu (DUE-14), which adds Select date,
   // having no calendar of its own. The day marked is the one the task is due on,
   // as the schedule button reads it.
   const dateOptions = {
     due: day,
-    scheduled: scheduledDay(task),
+    scheduled: task.dueDate,
     now,
-    repeats: task.repeat !== null,
+    rule: task.repeat,
+    pickable,
     skip,
+    unskip,
     onChange: changeDay,
   }
+  const dateIcons = dateChoices({ ...dateOptions, onSelectDate: () => { setDateAt(menuAt) } })
   const menuItems: ContextMenuEntry[] = [
-    // The same quick choices as the date panel; Select date opens that panel, calendar and all, where the menu was.
-    {
-      group: 'Date',
-      icons: dateChoices({ ...dateOptions, onSelectDate: () => { setDateAt(menuAt) } }),
-    },
+    // The same quick choices as the date panel; Select date opens that panel, calendar and all, where the menu
+    // was. A repeating task done for now has no day to offer, and then the row is left out (DUE-27).
+    ...(dateIcons.length === 0 ? [] : [{ group: 'Date', icons: dateIcons }]),
     // A mark that is on or off, not one of a set: tinted rather than ticked, so it
     // starts where Duplicate and Tags start (UI-31).
     {
@@ -451,6 +463,14 @@ export function TaskItem({
     }
   }, [isActive, phone])
 
+  // Which part to open is taken with the render that asks: the request is let go
+  // of as the row is brought up, before its sheet is drawn.
+  const [wasRevealed, setWasRevealed] = useState<RevealPart | null>(null)
+  if (revealed !== wasRevealed) {
+    setWasRevealed(revealed)
+    if (revealed === 'time') setSheetOnTime(true)
+  }
+
   const bringUp = useEffectEvent(() => {
     row.current?.scrollIntoView({ block: 'center' })
     wake()
@@ -458,7 +478,7 @@ export function TaskItem({
   })
 
   useEffect(() => {
-    if (revealed) bringUp()
+    if (revealed !== null) bringUp()
   }, [revealed])
 
   /**
@@ -485,6 +505,7 @@ export function TaskItem({
     setIsActive(false)
     setIsChecklistOpen(false)
     setIsDescriptionOpen(false)
+    setSheetOnTime(false)
   }
 
   /**
@@ -577,8 +598,9 @@ export function TaskItem({
   }
 
   /**
-   * A day picked for the task, or taken away: the task is due on it, or its rule
-   * starts there (DUE-12). The rule is left as it is, so the draft is too.
+   * A day picked for the task, or taken away: the task is due on it, a
+   * repeating task's rule carrying on after it (DUE-18). The rule is left as it
+   * is, so the draft is too.
    */
   function changeDay(day: LocalDay | null) {
     actions.changeDay(task.id, day)
@@ -701,7 +723,7 @@ export function TaskItem({
           : `group relative touch-manipulation ${surface}${emphasized ? ' my-3' : ''}`,
         // The whole row shakes, box and title together: it is the task that would
         // not be ticked off, not the box that failed to take a click (CHK-11).
-        refused && 'completion-refusal-shake',
+        refused && 'refusal-shake',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -871,7 +893,8 @@ export function TaskItem({
               {(isActive || scheduled) && (
                 <SchedulePicker
                   dueDate={dueDay(task, now)}
-                  startDay={task.startDay}
+                  pickable={pickable}
+                  noDay={noDayNote(task, pickable, now)}
                   draft={draft}
                   now={now}
                   overdue={overdue}
@@ -880,6 +903,7 @@ export function TaskItem({
                   onChangeTime={changeTime}
                   onChangeRepeat={handleRepeatChange}
                   skip={skip}
+                  unskip={unskip}
                   label={`Schedule for "${task.title}"`}
                 />
               )}
@@ -1110,6 +1134,7 @@ export function TaskItem({
           onChangeTime={changeTime}
           onChangeRepeat={handleRepeatChange}
           timer={timer}
+          openTime={sheetOnTime}
         />
       )}
 
@@ -1136,10 +1161,13 @@ export function TaskItem({
         >
           <DueChoices
             dueDate={day}
-            scheduled={scheduledDay(task)}
+            scheduled={task.dueDate}
             now={now}
-            repeats={task.repeat !== null}
+            rule={task.repeat}
+            pickable={pickable}
+            noDay={noDayNote(task, pickable, now)}
             skip={skip}
+            unskip={unskip}
             onChange={changeDay}
             onDone={() => { setDateAt(null) }}
           />

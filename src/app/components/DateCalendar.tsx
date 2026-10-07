@@ -15,6 +15,9 @@ const dayAhead = 'text-neutral-800 hover:bg-neutral-100 dark:text-neutral-100 da
 const dayFaded =
   'text-neutral-400 hover:bg-neutral-100 hover:text-neutral-800 dark:text-neutral-500 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
 
+/** Every day, for a calendar that has no day it cannot pick. */
+const anyDay = () => true
+
 /** Where a key moves the day in reach from `from`, or null for a key that does not move it. */
 function moveByKey(event: KeyboardEvent, from: LocalDay): LocalDay | null {
   switch (event.key) {
@@ -47,10 +50,17 @@ interface DateCalendarProps {
   now: Date
   /**
    * What picking a day does beyond setting it, as every day's tooltip — on a
-   * repeating task, that it ends the rule (DUE-12). Left out where a day only
+   * repeating task, what it does to the rule (DUE-12). Left out where a day only
    * sets the day, which needs no telling.
    */
   hint?: string
+  /**
+   * Whether a day can be picked (DUE-27). One that cannot is faded and says
+   * nothing in its tooltip, but is still there to click: the caller answers the
+   * click with why, rather than the day sitting there dimmed with no reason.
+   * Every day can be, when left out.
+   */
+  canPick?: (day: LocalDay) => boolean
   onSelect: (day: LocalDay) => void
 }
 
@@ -65,7 +75,7 @@ interface DateCalendarProps {
  * Home and End to the ends of the week, Page Up and Page Down a month (a year
  * with Shift), the month shown following along, and Enter picks.
  */
-export function DateCalendar({ selected, opensOn = selected, now, hint, onSelect }: DateCalendarProps) {
+export function DateCalendar({ selected, opensOn = selected, now, hint, canPick = anyDay, onSelect }: DateCalendarProps) {
   const today = toLocalDay(now)
   // The day in reach of the keys. The month shown is always the one it falls in.
   const [active, setActive] = useState(opensOn ?? today)
@@ -107,7 +117,7 @@ export function DateCalendar({ selected, opensOn = selected, now, hint, onSelect
       ? dayChosen
       : shown === today
         ? dayToday
-        : shown < today || monthOf(shown) !== month
+        : shown < today || monthOf(shown) !== month || !canPick(shown)
           ? dayFaded
           : dayAhead
 
@@ -179,7 +189,7 @@ export function DateCalendar({ selected, opensOn = selected, now, hint, onSelect
                   tabIndex={shown === active ? 0 : -1}
                   aria-label={describeFullDate(shown)}
                   // The day is under the pointer already; the tooltip is for what picking it costs.
-                  title={hint}
+                  title={canPick(shown) ? hint : undefined}
                   aria-current={shown === today ? 'date' : undefined}
                   onClick={() => { onSelect(shown) }}
                   className={`${day} ${tone(shown)}`}

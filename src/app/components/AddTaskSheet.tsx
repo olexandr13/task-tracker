@@ -2,7 +2,8 @@ import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import {
   createSubtask,
   defaultReward,
-  firstDueDay,
+  isPickable,
+  pickableDaysFor,
   reorderSubtasks,
   sameTag,
   sessionSeconds,
@@ -38,8 +39,8 @@ export interface NewTaskDetails {
   readonly reward: number | null
   readonly urgent: boolean
   readonly timeGoal: number | null
-  /** Sessions already logged, oldest first. */
-  readonly timeLogMinutes: readonly number[]
+  /** Sessions already logged, oldest first, each with what it went on (TIME-23). */
+  readonly timeLog: readonly { minutes: number; comment: string | null }[]
   /** Checklist items in order; `done` is whether each starts ticked. */
   readonly subtasks: readonly { title: string; done: boolean }[]
 }
@@ -117,9 +118,8 @@ export function AddTaskSheet({
   // is said, and the hour rides with whichever of the two that is (DUE-19), on a
   // line of its own under the day. The list and the tags are spelled out nowhere
   // here (UI-63): their icons and panels say it in the width they have.
-  const due = repeat === null ? day : day === null ? null : firstDueDay(repeat, day)
   const scheduleWords =
-    repeat !== null ? describeRepeatBriefly(repeat) : due === null ? null : describeDueDate(due, now)
+    repeat !== null ? describeRepeatBriefly(repeat) : day === null ? null : describeDueDate(day, now)
   const scheduleLabel =
     scheduleWords === null ? null : time === null ? scheduleWords : `${scheduleWords} ${describeTimeOfDay(time)}`
   const spent = wholeMinutes(sessionSeconds(sessions))
@@ -136,7 +136,7 @@ export function AddTaskSheet({
       reward,
       urgent,
       timeGoal,
-      timeLogMinutes: sessions.map((entry) => entry.seconds / 60),
+      timeLog: sessions.map((entry) => ({ minutes: entry.seconds / 60, comment: entry.comment })),
       subtasks: subtasks.map((subtask) => ({
         title: subtask.title,
         done: subtask.completedAt !== null,
@@ -157,11 +157,13 @@ export function AddTaskSheet({
    * The day goes with the shape it was picked for, as it does on a task
    * (`setRepeat`): a date belongs to a one-off, a start to a rule, so turning
    * one into the other starts again with no day. A rule swapped for another
-   * keeps the day it starts on.
+   * keeps its day while the new rule can still take it (DUE-27).
    */
   function handleRepeatChange(next: RepeatDraft) {
     setDraft(next)
-    if ((toRepeat(next) === null) !== (repeat === null)) setDay(null)
+    const rule = toRepeat(next)
+    const keeps = day === null || isPickable(pickableDaysFor(rule, now), day)
+    if ((rule === null) !== (repeat === null) || !keeps) setDay(null)
   }
 
   /**
@@ -201,8 +203,7 @@ export function AddTaskSheet({
               detail: scheduleLabel,
               control: (
                 <SchedulePicker
-                  dueDate={repeat === null || day === null ? day : firstDueDay(repeat, day)}
-                  startDay={repeat === null ? null : day}
+                  dueDate={day}
                   draft={draft}
                   now={now}
                   onChangeDay={handleDayChange}
@@ -238,13 +239,14 @@ export function AddTaskSheet({
                   goal={timeGoal}
                   sessions={sessions}
                   now={now}
-                  onLog={(minutes) => {
+                  onLog={(minutes, comment) => {
                     setSessions((current) => [
                       ...current,
                       {
                         id: crypto.randomUUID(),
                         seconds: minutes * 60,
                         loggedAt: now.toISOString(),
+                        comment,
                       },
                     ])
                   }}

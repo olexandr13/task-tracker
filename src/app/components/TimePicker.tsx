@@ -1,7 +1,8 @@
-import { useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useEffectEvent, useId, useRef, useState, type KeyboardEvent } from 'react'
 import {
   elapsedSeconds,
   isSessionLength,
+  MAX_TIME_COMMENT_LENGTH,
   isTimeGoal,
   sessionSeconds,
   wholeMinutes,
@@ -48,7 +49,8 @@ interface TimePickerProps {
   sessions: readonly TimeEntry[]
   /** The moment the sessions are read for, to say when each was logged. */
   now: Date
-  onLog: (minutes: number) => void
+  /** A session logged by hand, with the comment typed for it or null for none (TIME-23). */
+  onLog: (minutes: number, comment: string | null) => void
   onRemove: (entryId: TimeEntryId) => void
   onChangeGoal: (minutes: number | null) => void
   /** What this picker is for, when there is more than one on screen. */
@@ -65,8 +67,11 @@ interface TimePickerProps {
     /** Wall clock while the timer ticks; ignored when not running. */
     readonly clock: Date
     readonly onStart: () => void
-    readonly onStop: () => void
+    /** Ends the run, logging it with the comment typed for it or null for none (TIME-23). */
+    readonly onStop: (comment: string | null) => void
   }
+  /** Opens the panel as a tap on the clock would, once the clock is drawn (TIME-20). */
+  startOpen?: boolean
 }
 
 /**
@@ -76,7 +81,8 @@ interface TimePickerProps {
  * Like the other pickers there is nothing to confirm. A quick session is logged
  * as it is clicked, and one typed — `25m`, `1h`, `1:30` — on Enter or Log. The goal is
  * kept on Enter or on leaving the panel, and an empty goal is none; Escape drops
- * a goal half-typed. Start/Stop runs a timer that becomes a session on Stop.
+ * a goal half-typed. Start/Stop runs a timer that becomes a session on Stop. A
+ * comment typed goes with the next session logged here, by hand or by Stop.
  */
 export function TimePicker({
   goal,
@@ -88,11 +94,14 @@ export function TimePicker({
   label = 'Time',
   align = 'right',
   timer,
+  startOpen = false,
 }: TimePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   // What is typed into each box. The goal's starts as the goal, and is only
   // kept once it is left or Enter is pressed: `1h30` passes through `1` on the way.
   const [session, setSession] = useState('')
+  // What the next session logged here went on (TIME-23); spaces alone say nothing.
+  const [comment, setComment] = useState('')
   const [goalText, setGoalText] = useState('')
   const [isSessionInvalid, setIsSessionInvalid] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -100,6 +109,7 @@ export function TimePicker({
   const logHeading = `${ids}-log`
   const sessionsHeading = `${ids}-sessions`
   const sessionHint = `${ids}-hint`
+  const said = comment.trim() === '' ? null : comment.trim()
 
   const spentSeconds = sessionSeconds(sessions)
   const liveSeconds =
@@ -141,10 +151,28 @@ export function TimePicker({
       return
     }
     setSession('')
+    setComment('')
     setIsSessionInvalid(false)
     setGoalText(goal === null ? '' : describeDuration(goal))
     setIsOpen(true)
   }
+
+  /** Logs a session with the comment typed, which then goes: it was this session's. */
+  function log(minutes: number) {
+    onLog(minutes, said)
+    setComment('')
+  }
+
+  // After the clock is drawn rather than with it: the panel reads off the page
+  // whether it opens inside a sheet, and so as a sheet of its own (UI-64).
+  const openAtStart = useEffectEvent(() => {
+    if (!isOpen) toggle()
+  })
+
+  useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- the clock has to be on the page before its panel opens
+    if (startOpen) openAtStart()
+  }, [startOpen])
 
   /** Logs the length typed, when it is one; anything else marks the box and says what would do. */
   function logTyped() {
@@ -155,12 +183,19 @@ export function TimePicker({
       setIsSessionInvalid(true)
       return
     }
-    onLog(minutes)
+    log(minutes)
     setSession('')
   }
 
   function handleSessionKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== 'Enter') return
+    event.preventDefault()
+    logTyped()
+  }
+
+  function handleCommentKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== 'Enter') return
+    // Enter logs the length typed, when there is one; a comment alone is nothing to log.
     event.preventDefault()
     logTyped()
   }
@@ -262,7 +297,10 @@ export function TimePicker({
                 </span>
                 <button
                   type="button"
-                  onClick={() => { timer.onStop() }}
+                  onClick={() => {
+                    timer.onStop(said)
+                    setComment('')
+                  }}
                   className="ml-auto flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-red-600 px-3 text-sm font-medium text-white transition-colors hover:bg-red-700 active:bg-red-700 md:h-6 md:rounded-md md:px-2 md:text-xs dark:bg-red-500 dark:hover:bg-red-400 [&>svg]:size-3.5 md:[&>svg]:size-3"
                 >
                   <StopIcon />
@@ -286,12 +324,26 @@ export function TimePicker({
             <p id={logHeading} className={heading}>
               Log time
             </p>
+            <input
+              type="text"
+              name="time-comment"
+              value={comment}
+              onChange={(event) => { setComment(event.target.value) }}
+              onKeyDown={handleCommentKeyDown}
+              maxLength={MAX_TIME_COMMENT_LENGTH}
+              placeholder="Comment (optional)"
+              aria-label="Comment on the time logged"
+              title="Saved with the next time you log, or with Stop."
+              autoComplete="off"
+              enterKeyHint="done"
+              className={`${field} w-full`}
+            />
             <div className="grid grid-cols-4 gap-1.5 md:gap-1">
               {QUICK_SESSIONS.map((minutes) => (
                 <button
                   key={minutes}
                   type="button"
-                  onClick={() => { onLog(minutes) }}
+                  onClick={() => { log(minutes) }}
                   aria-label={`Log ${describeDuration(minutes)}`}
                   className={chip}
                 >
@@ -309,7 +361,7 @@ export function TimePicker({
                   setIsSessionInvalid(false)
                 }}
                 onKeyDown={handleSessionKeyDown}
-                placeholder="Other, e.g. 25m"
+                placeholder="e.g. '13' or '13m'"
                 aria-label="Time to log"
                 aria-invalid={isSessionInvalid}
                 aria-describedby={isSessionInvalid ? sessionHint : undefined}
@@ -344,7 +396,12 @@ export function TimePicker({
                   const at = describeLoggedAt(entry.loggedAt, now)
                   return (
                     <li key={entry.id} className="flex items-center gap-2 pl-1 text-sm md:text-xs">
-                      <span className="text-neutral-500 tabular-nums dark:text-neutral-400">{at}</span>
+                      <span className="flex min-w-0 flex-col">
+                        <span className="text-neutral-500 tabular-nums dark:text-neutral-400">{at}</span>
+                        {entry.comment !== null && (
+                          <span className="break-words text-neutral-800 dark:text-neutral-200">{entry.comment}</span>
+                        )}
+                      </span>
                       <span className="ml-auto font-medium text-neutral-900 tabular-nums dark:text-neutral-100">
                         {describeSessionLength(entry.seconds)}
                       </span>

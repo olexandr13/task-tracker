@@ -3,6 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TagSummary } from '../../core'
+import { WAYS_OUT } from '../../test/confirmSheet'
 import { TagList } from './TagList'
 
 /* The Tags page. TAG ids refer to wiki/tags.md. */
@@ -37,18 +38,51 @@ describe('TagList', () => {
     expect(onOpen).toHaveBeenCalledWith('work')
   })
 
-  it('deletes a tag from its button once confirmed, and not otherwise (TAG-22)', async () => {
+  it('deletes a tag from its button once asked in a sheet, saying the tasks stay (TAG-22)', async () => {
     const user = userEvent.setup()
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
     const { onOpen, onDelete } = setUp([{ name: 'work', open: 1 }])
 
     await user.click(screen.getByRole('button', { name: 'Delete the tag "work"' }))
+
+    const sheet = screen.getByRole('dialog', { name: 'Delete the tag "work"?' })
+    expect([...sheet.querySelectorAll('p')].map((line) => line.textContent)).toEqual([
+      'It comes off every task that carries it.',
+      'The tasks themselves are not deleted.',
+    ])
     expect(onDelete).not.toHaveBeenCalled()
 
-    await user.click(screen.getByRole('button', { name: 'Delete the tag "work"' }))
-    expect(onDelete).toHaveBeenCalledWith('work')
+    await user.click(screen.getByRole('button', { name: 'Delete' }))
+    expect(onDelete).toHaveBeenCalledExactlyOnceWith('work')
     expect(onOpen).not.toHaveBeenCalled()
-    confirm.mockRestore()
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it.each(WAYS_OUT)('deletes nothing when %s closes the sheet (TAG-22)', async (_, leave) => {
+    const user = userEvent.setup()
+    const { onOpen, onDelete } = setUp([{ name: 'work', open: 1 }])
+
+    await user.click(screen.getByRole('button', { name: 'Delete the tag "work"' }))
+    await leave(user)
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(onDelete).not.toHaveBeenCalled()
+    expect(onOpen).not.toHaveBeenCalled()
+  })
+
+  it('stops asking once the tag is gone from elsewhere (TAG-22)', async () => {
+    const user = userEvent.setup()
+    const onDelete = vi.fn()
+    const props = { onOpen: vi.fn(), onAdd: vi.fn(() => true), onRename: vi.fn(() => true), onDelete }
+    const { rerender } = render(<TagList tags={[{ name: 'work', open: 1 }]} {...props} />)
+
+    await user.click(screen.getByRole('button', { name: 'Delete the tag "work"' }))
+    rerender(<TagList tags={[]} {...props} />)
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    // Made again under the same name, it is not asked about by itself.
+    rerender(<TagList tags={[{ name: 'work', open: 0 }]} {...props} />)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(onDelete).not.toHaveBeenCalled()
   })
 
   it('turns a tag\'s name into a box with the caret in it from its rename button (TAG-24)', async () => {

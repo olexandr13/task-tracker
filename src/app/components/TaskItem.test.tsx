@@ -557,7 +557,7 @@ describe('a row that will not tick its task off (CHK-11)', () => {
     await user.click(box())
 
     expect(screen.getByRole('alert')).toHaveProperty('textContent', 'Complete subtasks first')
-    expect(screen.getAllByRole('listitem')[0].className).toContain('completion-refusal-shake')
+    expect(screen.getAllByRole('listitem')[0].className).toContain('refusal-shake')
     expect(complete).not.toHaveBeenCalled()
     expect(box().getAttribute('aria-pressed')).toBe('false')
   })
@@ -566,7 +566,7 @@ describe('a row that will not tick its task off (CHK-11)', () => {
     withChecklist(1, 2)
 
     expect(screen.queryByRole('alert')).toBeNull()
-    expect(screen.getAllByRole('listitem')[0].className).not.toContain('completion-refusal-shake')
+    expect(screen.getAllByRole('listitem')[0].className).not.toContain('refusal-shake')
   })
 
   it('ticks off as it always did once every item is done, inviting the click first (CHK-32)', async () => {
@@ -1046,13 +1046,13 @@ describe('the menu a right-click opens on a task row', () => {
       expect(onSkipOccurrence).toHaveBeenCalledTimes(1)
     })
 
-    it('marks the day a repeating task is due: the occurrence in play, or the first from the start picked (DUE-14, DUE-18)', async () => {
+    it('marks the day a repeating task is due: the occurrence in play, or the day picked (DUE-14, DUE-18)', async () => {
       const user = renderDated(createTask(TASK, { kind: 'daily' }, NOW))
 
       await openMenu(user)
       expect(screen.getByRole('menuitemradio', { name: 'Today' }).getAttribute('aria-checked')).toBe('true')
-      // The rule gives the task its day; no start was picked, so there is none to take away.
-      expect(icons()).not.toContain('Remove start date')
+      // The rule gives the task its day, so there is no date of its own to take away.
+      expect(icons()).not.toContain('Remove date')
       await user.keyboard('{Escape}')
       cleanup()
 
@@ -1061,7 +1061,7 @@ describe('the menu a right-click opens on a task row', () => {
 
       expect(screen.getByRole('menuitemradio', { name: 'Tomorrow' }).getAttribute('aria-checked')).toBe('true')
       expect(screen.getByRole('menuitemradio', { name: 'Today' }).getAttribute('aria-checked')).toBe('false')
-      expect(icons()).toContain('Remove start date')
+      expect(icons()).not.toContain('Remove start date')
     })
 
     it('moves the mark on with a skip, so it says the same as the schedule button (DUE-14, RPT-34)', async () => {
@@ -1071,8 +1071,54 @@ describe('the menu a right-click opens on a task row', () => {
 
       expect(screen.getByRole('menuitemradio', { name: 'Tomorrow' }).getAttribute('aria-checked')).toBe('true')
       expect(screen.getByRole('menuitemradio', { name: 'Today' }).getAttribute('aria-checked')).toBe('false')
-      // The start picked stays what Remove start date takes away.
-      expect(icons()).toContain('Remove start date')
+    })
+
+    it('offers a habit that has begun its skip alone, never a day (DUE-27, HAB-12)', async () => {
+      const begun = createTask(TASK, { kind: 'daily' }, new Date('2026-09-01T10:00:00.000Z'))
+      const user = renderDated(begun)
+
+      await openMenu(user)
+
+      expect(icons()).toEqual(['Skip occurrence'])
+    })
+
+    it('offers a habit resting today the rest back, pressed, in the skip\'s place (HAB-31, DUE-27)', async () => {
+      const onUnskip = vi.fn()
+      const rested = skipOccurrence(createTask(TASK, { kind: 'daily' }, new Date('2026-09-01T10:00:00.000Z')), NOW)
+      const user = renderDated(rested, { unskip: onUnskip })
+
+      await openMenu(user)
+      expect(icons()).toEqual(['Skipped'])
+      await user.click(screen.getByRole('menuitemradio', { name: 'Skipped' }))
+
+      expect(onUnskip).toHaveBeenCalledTimes(1)
+    })
+
+    it('says on a rule with gaps that a day picked is for this time only, up to its next day (DUE-18, DUE-27)', async () => {
+      // Today's weekday: the task can move up to the day before it comes round next week.
+      const weekly = createTask(TASK, { kind: 'weekly', weekdays: [NOW.getDay() as 0] }, NOW)
+      const user = renderDated(weekly)
+
+      await openMenu(user)
+
+      expect(screen.getByRole('menuitemradio', { name: 'Tomorrow' }).title).toBe('Tomorrow · This time only')
+    })
+
+    it('has no Date row, and a line in the panel saying when it is due again, once a rule with gaps is done (DUE-27)', async () => {
+      const done = completeTask(createTask(TASK, { kind: 'weekly', weekdays: [NOW.getDay() as 0] }, NOW), NOW)
+      const user = renderDated(done)
+
+      await openMenu(user)
+      expect(within(menu() as HTMLElement).queryByRole('group', { name: 'Date' })).toBeNull()
+      await user.keyboard('{Escape}')
+
+      await user.click(screen.getByRole('button', { name: /^Schedule for/ }))
+      expect(schedulePanel().queryByRole('grid')).toBeNull()
+      expect(
+        schedulePanel().getByText(
+          `Done for now. It is due again on ${describeShortDate(offsetDay(TODAY, 7), NOW)}, and can be moved once it is to do.`,
+        ),
+      ).toBeDefined()
     })
 
     it('says in each day\'s tooltip that picking it starts the repeat (DUE-18, DUE-14)', async () => {
@@ -1129,12 +1175,12 @@ describe('the menu a right-click opens on a task row', () => {
       expect(icons()).toContain('Skip occurrence')
     })
 
-    it('has no skip for a repeating task already done (RPT-34)', async () => {
+    it('has no skip, nor any day, for a repeating task already done (RPT-34, DUE-27)', async () => {
       const user = renderDated(completeTask(createTask(TASK, { kind: 'daily' }, NOW), NOW))
 
       await openMenu(user)
 
-      expect(icons()).not.toContain('Skip occurrence')
+      expect(within(menu() as HTMLElement).queryByRole('group', { name: 'Date' })).toBeNull()
     })
 
     it('opens the date panel where the menu was, its calendar ready for the keys (DUE-14)', async () => {
@@ -1400,7 +1446,7 @@ describe('the time on a task row', () => {
     await user.click(screen.getByRole('button', { name: 'Log 30m' }))
     await user.type(screen.getByRole('textbox', { name: 'Time to log' }), '1h 15m{Enter}')
 
-    expect(onLogTime.mock.calls).toEqual([[expect.any(String), 30], [expect.any(String), 75]])
+    expect(onLogTime.mock.calls).toEqual([[expect.any(String), 30, null], [expect.any(String), 75, null]])
     expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Time to log' }).value).toBe('')
     expect(screen.getByRole('dialog', { name: 'Time for "sport"' })).toBeDefined()
   })
@@ -1488,7 +1534,7 @@ describe('a task row gone to from elsewhere', () => {
           now={NOW}
           knownTags={[]}
           lists={[]}
-          revealed={revealed}
+          revealed={revealed ? 'task' : null}
           onRevealed={onRevealed}
         />
       </ul>
@@ -1542,12 +1588,38 @@ describe('on a phone, tapping a task', () => {
     const task = createTask(TASK, null, NOW)
     render(
       <ul>
-        <TaskItem actions={NO_TASK_ACTIONS} task={task} now={NOW} knownTags={[]} lists={[]} revealed />
+        <TaskItem actions={NO_TASK_ACTIONS} task={task} now={NOW} knownTags={[]} lists={[]} revealed="task" />
       </ul>,
     )
 
     expect(sheet()).toBeDefined()
+    expect(screen.queryByRole('dialog', { name: `Time for "${TASK}"` })).toBeNull()
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center' })
+  })
+
+  it('opens the sheet on its time panel when gone to from the running timer (TIME-20)', async () => {
+    stubScrollIntoView()
+    const user = userEvent.setup()
+    const task = createTask(TASK, null, NOW)
+    render(
+      <ul>
+        <TaskItem actions={NO_TASK_ACTIONS} task={task} now={NOW} knownTags={[]} lists={[]} revealed="time" />
+      </ul>,
+    )
+
+    expect(sheet()).toBeDefined()
+    expect(screen.getByRole('dialog', { name: `Time for "${TASK}"` })).toBeDefined()
+
+    // Put away, the sheet stays, and opening it afresh is a tap's: the task alone.
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: `Time for "${TASK}"` })).toBeNull()
+    expect(sheet()).toBeDefined()
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: `Details of "${TASK}"` })).toBeNull()
+
+    await user.click(screen.getByRole('listitem'))
+    expect(sheet()).toBeDefined()
+    expect(screen.queryByRole('dialog', { name: `Time for "${TASK}"` })).toBeNull()
   })
 
   it('opens a sheet from the bottom with the details and the action buttons (UI-48)', async () => {
@@ -1590,7 +1662,7 @@ describe('on a phone, tapping a task', () => {
     expect(within(sheet()).getByRole('alert')).toHaveProperty('textContent', 'Complete subtasks first')
     expect(onComplete).not.toHaveBeenCalled()
     // The sheet stays put: only its head shakes, so it does not read as being dismissed.
-    expect(sheet().className).not.toContain('completion-refusal-shake')
+    expect(sheet().className).not.toContain('refusal-shake')
   })
 
   it('edits the title only from the sheet (TASK-8, UI-48)', async () => {

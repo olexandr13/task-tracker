@@ -141,7 +141,10 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   about; the box says **There is a prize called that already.** rather than making one.
 - **RWD-34** One is **changed in place**: the pencil beside it opens its name and its price
   together, Enter or leaving them both keeps the change, Escape gives it up. The **×** takes it off
-  its list, asking first, since there is nothing to undo it from. Renaming, repricing or deleting
+  its list, asking first in the app's own sheet (UI-74), since there is nothing to undo it from:
+  **Delete the prize "Coffee"?** — or **the wish** on the wishlist — then `It comes off this list.`
+  and `The times you redeemed it stay in "History".` **Delete** goes ahead; anything else leaves it
+  on the list. Renaming, repricing or deleting
   one **never rewrites what it was already redeemed for**: that redemption keeps the name and the
   points it was made with, as a completion keeps what it earned (RWD-3, RWD-17).
 - **RWD-35** Each list shows **what can still be bought first, cheapest first**, then by name, so

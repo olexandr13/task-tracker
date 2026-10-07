@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent } from 'react'
 import { isListName, MAX_LIST_NAME_LENGTH, type ListId, type ListSummary } from '../../core'
 import { deleteControl } from '../rowControls'
+import { ConfirmSheet, type Confirmation } from './ConfirmSheet'
 import { FolderIcon } from './FolderIcon'
 import { InboxIcon } from './InboxIcon'
 import { PencilIcon } from './PencilIcon'
@@ -14,6 +15,15 @@ const smallControl =
   'flex size-6 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
 const field =
   'min-w-0 flex-1 rounded-lg border border-neutral-300 bg-transparent px-2.5 py-2 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-500'
+
+/** Asked before a list is deleted, there being nothing to undo it from (LST-19). */
+function askDelete(name: string): Confirmation {
+  return {
+    question: `Delete the list "${name}"?`,
+    lines: ['Its tasks go back to the Inbox.', 'The tasks themselves are not deleted.'],
+    confirm: 'Delete',
+  }
+}
 
 interface ListsPageProps {
   /** Every list, in the order they are shown, as `summarizeLists` gives them. */
@@ -57,6 +67,11 @@ export function ListsPage({
   const [editing, setEditing] = useState<{ id: ListId; name: string } | null>(null)
   // What went wrong with the last name tried, under the box or the row it was typed in.
   const [taken, setTaken] = useState<ListId | 'new' | null>(null)
+  // The list asked about before it is deleted.
+  const [asking, setAsking] = useState<ListId | null>(null)
+  const asked = lists.find(({ list }) => list.id === asking)?.list
+  // Deleted elsewhere — on another device — while asked, there is nothing left to ask about.
+  if (asking !== null && asked === undefined) setAsking(null)
 
   function handleAdd() {
     if (!isListName(typed)) return
@@ -96,13 +111,6 @@ export function ListsPage({
       event.preventDefault()
       setEditing(null)
       setTaken(null)
-    }
-  }
-
-  function handleDelete(id: ListId, name: string) {
-    // The list goes for good, with nothing to undo it from, so it asks first.
-    if (window.confirm(`Delete the list "${name}"? Its tasks go back to the Inbox; the tasks stay.`)) {
-      onDelete(id)
     }
   }
 
@@ -219,7 +227,8 @@ export function ListsPage({
 
                   <button
                     type="button"
-                    onClick={() => { handleDelete(list.id, list.name) }}
+                    // The list goes for good, with nothing to undo it from, so it asks first.
+                    onClick={() => { setAsking(list.id) }}
                     aria-label={`Delete the list "${list.name}"`}
                     title="Delete list"
                     className={`flex h-6 shrink-0 items-center rounded-lg px-1.5 text-base leading-none ${deleteControl}`}
@@ -243,6 +252,17 @@ export function ListsPage({
         <p className="py-6 text-center text-neutral-400 dark:text-neutral-600">
           No lists yet. Name one above — Work, Home — and file your tasks under it.
         </p>
+      )}
+
+      {asked !== undefined && (
+        <ConfirmSheet
+          confirmation={askDelete(asked.name)}
+          onCancel={() => { setAsking(null) }}
+          onConfirm={() => {
+            setAsking(null)
+            onDelete(asked.id)
+          }}
+        />
       )}
     </div>
   )

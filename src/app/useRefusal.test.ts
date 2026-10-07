@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { useCompletionRefusal } from './useCompletionRefusal'
+import { useRefusal } from './useRefusal'
 
 /* CHK ids refer to wiki/checklists.md. */
 
@@ -9,14 +9,14 @@ afterEach(() => { vi.useRealTimers() })
 
 describe('a tick the checklist turned down (CHK-11)', () => {
   it('says nothing until a tick is actually refused', () => {
-    const { result } = renderHook(() => useCompletionRefusal())
+    const { result } = renderHook(() => useRefusal())
 
     expect(result.current.refused).toBe(false)
   })
 
   it('shows the refusal, then lets the row settle back to itself', () => {
     vi.useFakeTimers()
-    const { result } = renderHook(() => useCompletionRefusal())
+    const { result } = renderHook(() => useRefusal())
 
     act(() => { result.current.refuse() })
     expect(result.current.refused).toBe(true)
@@ -30,7 +30,7 @@ describe('a tick the checklist turned down (CHK-11)', () => {
 
   it('renews the note on a second refusal rather than letting the first run out', () => {
     vi.useFakeTimers()
-    const { result } = renderHook(() => useCompletionRefusal())
+    const { result } = renderHook(() => useRefusal())
 
     act(() => { result.current.refuse() })
     act(() => { vi.advanceTimersByTime(3000) })
@@ -46,7 +46,7 @@ describe('a tick the checklist turned down (CHK-11)', () => {
 
   it('takes its timer with it when the row leaves the screen', () => {
     vi.useFakeTimers()
-    const { result, unmount } = renderHook(() => useCompletionRefusal())
+    const { result, unmount } = renderHook(() => useRefusal())
 
     act(() => { result.current.refuse() })
     unmount()

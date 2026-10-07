@@ -6,13 +6,20 @@ import { isRecord } from './plainData'
  * changes, and add a step below: storing the version means old saved data can be
  * upgraded rather than silently breaking.
  */
-export const SCHEMA_VERSION = 18
+export const SCHEMA_VERSION = 19
+
+/**
+ * Version 18 had no comment on a session: time logged said how long and when,
+ * never what it went on.
+ */
+type TimeEntryV18 = Omit<TimeEntry, 'comment'>
+type TaskV18 = Omit<Task, 'timeLog'> & { readonly timeLog: readonly TimeEntryV18[] }
 
 /**
  * Version 17 had no hour to a task: it was due on a day and no time of day, so
  * nothing could come round at a moment and say so.
  */
-type TaskV17 = Omit<Task, 'dueTime'>
+type TaskV17 = Omit<TaskV18, 'dueTime'>
 
 /**
  * Version 16 had no day for a rule to start on: a repeating task's occurrences
@@ -24,7 +31,7 @@ type TaskV16 = Omit<TaskV17, 'startDay'>
  * Version 15 kept a session in whole minutes, so a timer run under a minute was
  * lost. Today's shape keeps it to the second: a minute is sixty of them.
  */
-type TimeEntryV15 = Omit<TimeEntry, 'seconds'> & { readonly minutes: number }
+type TimeEntryV15 = Omit<TimeEntryV18, 'seconds'> & { readonly minutes: number }
 type TaskV15 = Omit<TaskV16, 'timeLog'> & { readonly timeLog: readonly TimeEntryV15[] }
 
 /**
@@ -72,8 +79,12 @@ type TaskV2 = Omit<TaskV3, 'deletedAt'>
 /** Version 1 knew nothing about repeating either: every task happened once. */
 type TaskV1 = Omit<TaskV2, 'repeat'>
 
+function fromV18(task: TaskV18): Task {
+  return { ...task, timeLog: task.timeLog.map((entry) => ({ ...entry, comment: null })) }
+}
+
 function fromV17(task: TaskV17): Task {
-  return { ...task, dueTime: null }
+  return fromV18({ ...task, dueTime: null })
 }
 
 function fromV16(task: TaskV16): Task {
@@ -199,6 +210,8 @@ export function migrateTasks(version: unknown, tasks: unknown): Task[] | null {
       return (tasks as TaskV16[]).map(fromV16)
     case 17:
       return (tasks as TaskV17[]).map(fromV17)
+    case 18:
+      return (tasks as TaskV18[]).map(fromV18)
     case SCHEMA_VERSION:
       return tasks as Task[]
     default:

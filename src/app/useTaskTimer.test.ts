@@ -42,9 +42,9 @@ describe('useTaskTimer', () => {
     expect(result.current.isRunningFor('a')).toBe(true)
 
     act(() => { vi.advanceTimersByTime(90_400) })
-    act(() => { result.current.stop() })
+    act(() => { result.current.stop(null) })
 
-    expect(onLog).toHaveBeenCalledWith('a', 90)
+    expect(onLog).toHaveBeenCalledWith('a', 90, null)
     expect(result.current.state).toEqual(TASK_TIMER_IDLE)
     expect(repo.load()).toEqual(TASK_TIMER_IDLE)
   })
@@ -58,9 +58,23 @@ describe('useTaskTimer', () => {
 
     act(() => { result.current.start('a') })
     act(() => { vi.advanceTimersByTime(20_000) })
-    act(() => { result.current.stop() })
+    act(() => { result.current.stop(null) })
 
-    expect(onLog).toHaveBeenCalledWith('a', 20)
+    expect(onLog).toHaveBeenCalledWith('a', 20, null)
+  })
+
+  it('logs the run with the comment given on Stop (TIME-23)', () => {
+    vi.useFakeTimers({ now: new Date('2026-09-21T10:00:00.000Z') })
+    const onLog = vi.fn()
+    const { result } = renderHook(() =>
+      useTaskTimer(memory(), (id) => INFO[id] ?? null, onLog),
+    )
+
+    act(() => { result.current.start('a') })
+    act(() => { vi.advanceTimersByTime(20_000) })
+    act(() => { result.current.stop('drafted intro') })
+
+    expect(onLog).toHaveBeenCalledWith('a', 20, 'drafted intro')
   })
 
   it('logs nothing when stopped under a second', () => {
@@ -72,7 +86,7 @@ describe('useTaskTimer', () => {
 
     act(() => { result.current.start('a') })
     act(() => { vi.advanceTimersByTime(900) })
-    act(() => { result.current.stop() })
+    act(() => { result.current.stop(null) })
 
     expect(onLog).not.toHaveBeenCalled()
   })
@@ -88,7 +102,7 @@ describe('useTaskTimer', () => {
     act(() => { vi.advanceTimersByTime(120_000) })
     act(() => { result.current.start('b') })
 
-    expect(onLog).toHaveBeenCalledWith('a', 120)
+    expect(onLog).toHaveBeenCalledWith('a', 120, null)
     expect(result.current.state).toMatchObject({ status: 'running', taskId: 'b' })
   })
 

@@ -10,6 +10,7 @@ import {
   type Prize,
   type PrizeKind,
 } from '../../core'
+import { WAYS_OUT } from '../../test/confirmSheet'
 import { PrizeListPage } from './PrizeListPage'
 
 /* The prizes and the wishlist. RWD ids refer to wiki/rewards.md. */
@@ -227,22 +228,39 @@ describe('keeping a list (RWD-33, RWD-34)', () => {
     expect(screen.getByRole('button', { name: 'Change the prize "Chocolate"' })).toBeTruthy()
   })
 
-  it('asks before taking one off, the history keeping what it was redeemed for (RWD-34)', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('asks in a sheet before taking one off, the history keeping what it was redeemed for (RWD-34)', async () => {
     const { user, onDelete } = setup()
 
     await user.click(screen.getByRole('button', { name: 'Delete the prize "Chocolate"' }))
 
-    expect(confirm.mock.calls[0][0]).toContain('stays in the history')
-    expect(onDelete).toHaveBeenCalledWith(CHOCOLATE.id)
+    const sheet = screen.getByRole('dialog', { name: 'Delete the prize "Chocolate"?' })
+    expect([...sheet.querySelectorAll('p')].map((line) => line.textContent)).toEqual([
+      'It comes off this list.',
+      'The times you redeemed it stay in "History".',
+    ])
+    expect(onDelete).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Delete' }))
+
+    expect(onDelete).toHaveBeenCalledExactlyOnceWith(CHOCOLATE.id)
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
-  it('takes nothing off when the asking is turned down', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('asks about a wish as a wish (RWD-34, RWD-40)', async () => {
+    const { user } = setup({ kind: 'wish' })
+
+    await user.click(screen.getByRole('button', { name: 'Delete the wish "A trip"' }))
+
+    expect(screen.getByRole('dialog', { name: 'Delete the wish "A trip"?' })).toBeTruthy()
+  })
+
+  it.each(WAYS_OUT)('takes nothing off when %s closes the sheet (RWD-34)', async (_, leave) => {
     const { user, onDelete } = setup()
 
     await user.click(screen.getByRole('button', { name: 'Delete the prize "Chocolate"' }))
+    await leave(user)
 
+    expect(screen.queryByRole('dialog')).toBeNull()
     expect(onDelete).not.toHaveBeenCalled()
   })
 })

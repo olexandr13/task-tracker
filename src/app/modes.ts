@@ -1,4 +1,5 @@
 import type { HoursWindow, NudgeWindow, QuietHours, WarmUpProgress } from '../core'
+import type { Confirmation } from './components/ConfirmSheet'
 import type { ProcrastinationPhase } from './components/ProcrastinationMode'
 import {
   describeCheckInStatus,
@@ -11,7 +12,7 @@ import {
   NOTHING_TO_FOCUS_ON,
 } from './modeLabels'
 import type { ModeView } from './view'
-import { WARM_UP_DISABLE_WARNING } from './warmUpLabels'
+import { describeWarmUpDisable } from './warmUpLabels'
 
 /**
  * A mode as the Modes page and each mode's own page need it: whether it is on,
@@ -32,10 +33,11 @@ export interface ModeState {
   /** Why it cannot be turned on just now, or null while it can (MODE-6, MODE-8). */
   readonly blocked: string | null
   /**
-   * Asked before it is turned off, or absent when it turns off at once. Only
-   * the warm-up asks: enabling it again starts from scratch (WARM-9).
+   * Asked before it is turned off, in the app's own sheet, or absent when it
+   * turns off at once. Only the warm-up asks: enabling it again starts from
+   * scratch (WARM-9).
    */
-  readonly confirmOff?: string
+  readonly confirmOff?: Confirmation
   /** Turns it on, or off once any warning has been accepted. */
   readonly toggle: (on: boolean) => void
 }
@@ -101,7 +103,7 @@ export function modeStates({ procrastination, warmUp, nudge, checkIn }: ModeSour
       // A warm-up not read yet reads as none, and turning it on would start a
       // fresh month over the one already running (WARM-2).
       blocked: warmUp.loading ? MODE_NOT_LOADED : null,
-      confirmOff: WARM_UP_DISABLE_WARNING,
+      confirmOff: describeWarmUpDisable(warmUp.progress),
       toggle: (on) => { if (on) warmUp.onStart(); else warmUp.onEnd() },
     },
     'modes/nudge': {

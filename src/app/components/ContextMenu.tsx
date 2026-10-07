@@ -20,6 +20,8 @@ export interface ContextMenuItem {
   toggled?: boolean
   /** A glyph drawn before the label, for an action found at a glance. */
   icon?: ReactNode
+  /** Drawn after the label: something waiting there, such as a key on Cases (CHST-22). */
+  mark?: ReactNode
 }
 
 /** Items that belong together, under a heading of their own and set off from the rest by a line. */
@@ -265,6 +267,7 @@ function MenuItem({
   checked,
   toggled,
   icon,
+  mark,
   indented = false,
   onClose,
 }: ContextMenuItem & { indented?: boolean; onClose: () => void }) {
@@ -294,6 +297,7 @@ function MenuItem({
         </span>
       )}
       <span className="min-w-0 truncate">{label}</span>
+      {mark}
     </button>
   )
 }

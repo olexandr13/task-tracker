@@ -53,7 +53,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 
 - **HAB-12** A day can only be **missed once the habit has started**. From the day it starts — the
   day picked for its rule (DUE-18), or the day the task was written when none was — a day
-  with no tick is a miss. Before that nothing was asked of it, so an unticked day is **not
+  with no tick is a miss. That day can be picked only until it has gone by (DUE-27): a later start
+  on a habit already running would turn its misses back into days nothing was asked of. Before that nothing was asked of it, so an unticked day is **not
   tracked**. A day marked done before the habit started still counts as done, and the days
   around it stay not tracked (HAB-16). This is the same reading a repeating task's due days get
   (DUE-11). A task that was a one-off, or repeated another way, before it became daily counts its
@@ -177,16 +178,20 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   schedule (DUE-9), and a day skipped there — or on the task's row elsewhere — reads the same way.
   A screen reader hears the button as `Skip "stretch"`, and as pressed, `Skipped "stretch" today`,
   while today is skipped. Every task's sheet has the button while its occurrence can be skipped
-  (RPT-34), a habit's being the one whose page reads the rest.
+  (RPT-34), a habit's being the one whose page reads the rest. A habit's schedule panel and menu
+  have the same skip in their Date row, and the same pressed **Skipped** while today is a rest —
+  which is all that row holds once the habit has begun (DUE-27).
 - **HAB-32** **A habit rests today and no further.** While today is a rest, nothing offers to skip
   it again: the sheet's schedule (DUE-9) and the task's menu (DUE-14) drop **Skip occurrence** for
   as long as the rest stands, the way they do for a task already done (RPT-34). A habit's rule comes
   round every day, so another skip would pass over **tomorrow** — storing a rest for a day nobody has
   reached yet, which would then arrive asking nothing of the habit, counting for nothing, and never
   having been passed over on purpose. This is the one place a habit parts from RPT-35, where a rule
-  with gaps in it does have a further occurrence to pass over. The ways back from a rest stay where
-  they were: the foot's **Skipped** (HAB-31), and picking today again (DUE-26). A habit whose rule
-  has yet to start (DUE-18) offers no skip either — nothing is asked of it today to rest from.
+  with gaps in it does have a further occurrence to pass over. The way back from a rest is the
+  pressed **Skipped**, at the sheet's foot and in the Date row of its panel and menu (HAB-31), not
+  picking today again: on a habit that has begun, a day picked would start it afresh (DUE-27). A
+  habit whose rule has yet to start (DUE-18) offers no skip either — nothing is asked of it today to
+  rest from.
 - **HAB-33** **A habit keeps no rest for a day still to come.** Before HAB-32, skipping a habit again
   stored a rest for tomorrow, and the day after on the next press. A phone left open on an older
   version could still do it. A weekly task skipped ahead and then made daily carries its skips over

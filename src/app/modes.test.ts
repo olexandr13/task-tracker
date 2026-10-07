@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { DEFAULT_CHECK_IN_WINDOW, DEFAULT_NUDGE_WINDOW, type NudgeWindow, type QuietHours, type WarmUpProgress } from '../core'
 import { modeStates } from './modes'
-import { WARM_UP_DISABLE_WARNING } from './warmUpLabels'
+import { describeWarmUpDisable } from './warmUpLabels'
 
 /* The modes as the Modes pages read them. MODE ids refer to wiki/modes.md;
    JUST ids to wiki/just-one.md, WARM ids to wiki/warm-up.md, CHECKIN ids to wiki/check-ins.md. */
@@ -128,7 +128,7 @@ describe('modeStates', () => {
     expect(given.warmUp.onEnd).toHaveBeenCalledOnce()
     expect(given.warmUp.onStart).not.toHaveBeenCalled()
     // Ending it is asked for first, on the switch: enabling it again starts over (WARM-9).
-    expect(modes['modes/warm-up'].confirmOff).toBe(WARM_UP_DISABLE_WARNING)
+    expect(modes['modes/warm-up'].confirmOff).toEqual(describeWarmUpDisable(WARMING_UP))
     expect(modes['modes/procrastination'].confirmOff).toBeUndefined()
     expect(modes['modes/nudge'].confirmOff).toBeUndefined()
     expect(modes['modes/check-in'].confirmOff).toBeUndefined()

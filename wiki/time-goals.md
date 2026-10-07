@@ -23,9 +23,18 @@ ticked off. The tick itself stays the owner's.
   logs keeps its seconds (TIME-22). The panel stays open after logging, so the new total is in view.
   Time can be logged on a task without a goal too; it is then just time spent.
 - **TIME-4** The panel lists the sessions that count (TIME-7) under **Sessions**, each with when it
-  was logged — its time today, its date and time before that — and its length in whole minutes,
-  `<1m` for a timer's run under a minute. The **×** beside one
-  takes it back (UI-38), for a session logged by mistake. A long list scrolls inside the panel.
+  was logged — its time today, its date and time before that — its comment under that when it has
+  one (TIME-23), and its length in whole minutes, `<1m` for a timer's run under a minute. The **×**
+  beside one takes it back (UI-38), for a session logged by mistake. A long list scrolls inside the
+  panel.
+- **TIME-23** A session can carry a **comment** — what the time went on. The box for it heads the
+  panel's **Log time**, marked `Comment (optional)`, and what is typed there goes with the **next
+  session logged from that panel**: a quick one, one typed, or the timer's run on the panel's
+  **Stop** (TIME-15). Enter in it logs the length typed beside **Log**, when there is one. Once a
+  session takes it the box is empty again, and closing the panel lets go of a comment not yet
+  used. A comment is one line of at most 200 characters; spaces alone are none. Stop on the chip at
+  the foot of the screen (TIME-18), and a timer stopped by starting another (TIME-16), log without
+  one. A comment is not changed once logged: the session is taken back and logged again.
 
 ## Ready to tick off
 
@@ -102,7 +111,9 @@ ticked off. The tick itself stays the owner's.
   shows the task (Habits does for a habit); otherwise the app goes to Today when Today shows the
   task, or else to Tasks, which shows every task. There the task is scrolled into view and opened
   as a tap on it would: its sheet on a phone, its woken row on a wide window, and a habit's sheet on
-  Habits. **Stop** beside it only stops the timer.
+  Habits. Where that is a sheet, the clock's panel (TIME-21) opens over it, so the timer is the
+  first thing there; put away, it leaves the task's sheet open under it. **Stop** beside it only
+  stops the timer.
 
 ## Seconds
 
@@ -129,7 +140,7 @@ dropped), `src/app/components/TimePicker.tsx` (the clock and its panel), `src/ap
 `src/app/rowControls.ts` (the ready box), `src/app/useTasks.ts`, `src/app/useTaskTimer.ts`,
 `src/app/view.ts` (which page goes to the task), `src/app/TasksScreen.tsx` (going there),
 `src/storage/taskTimerRepository.ts`, `src/storage/localStorageTaskTimerRepository.ts`,
-`src/storage/taskSchema.ts` (sessions saved in whole minutes, read as seconds).
+`src/storage/taskSchema.ts` (sessions saved in whole minutes, read as seconds; those saved before comments, given none).
 **Tested in:** `src/core/timeLog.test.ts`, `src/core/taskTimer.test.ts`, `src/app/durationLabels.test.ts`,
 `src/app/useTaskTimer.test.ts`, `src/app/components/TimePicker.test.tsx`,
 `src/app/components/TaskItem.test.tsx`, `src/app/components/HabitList.test.tsx`,

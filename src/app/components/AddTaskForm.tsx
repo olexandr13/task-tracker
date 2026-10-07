@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
-import { firstDueDay, type LocalDay, type LocalTime, type Repeat } from '../../core'
+import { isPickable, pickableDaysFor, type LocalDay, type LocalTime, type Repeat } from '../../core'
 import { emptyDraft, toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { ABOVE_PHONE_BAR, usePhoneLayout } from '../usePhoneLayout'
 import { PlusIcon } from './PlusIcon'
@@ -21,7 +21,7 @@ interface AddTaskFormProps {
    */
   viewButton?: ReactNode
   /**
-   * The day picked: the task is due on it, or its rule starts there (DUE-6) —
+   * The day picked: the task is due on it, rule or not (DUE-6) —
    * and the hour on that day, where one was picked too (DUE-19).
    */
   onAdd: (title: string, repeat: Repeat | null, day: LocalDay | null, time: LocalTime | null) => void
@@ -47,11 +47,13 @@ export function AddTaskForm({
    * The day goes with the shape it was picked for, as it does on a task
    * (`setRepeat`): a date belongs to a one-off, a start to a rule, so turning
    * one into the other starts again with no day. A rule swapped for another
-   * keeps the day it starts on.
+   * keeps its day while the new rule can still take it (DUE-27).
    */
   function handleRepeatChange(next: RepeatDraft) {
     setDraft(next)
-    if ((toRepeat(next) === null) !== (repeat === null)) setDay(null)
+    const rule = toRepeat(next)
+    const keeps = day === null || isPickable(pickableDaysFor(rule, now), day)
+    if ((rule === null) !== (repeat === null) || !keeps) setDay(null)
   }
 
   /**
@@ -105,12 +107,11 @@ export function AddTaskForm({
               className="min-w-0 flex-1 bg-transparent text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none dark:text-neutral-100 dark:placeholder:text-neutral-500"
             />
 
-            {/* A rule says which days the task is due, so the button reads the rule with the
-                first day it comes round on. A day picked is the task's date, or the day its
-                rule starts on, as it is on a task row (DUE-6). */}
+            {/* A rule says which days the task is due, so the button reads the rule, and the
+                day picked where there is one: the task's date, or the day its first
+                occurrence is due on, as on a task row (DUE-6). */}
             <SchedulePicker
-              dueDate={repeat === null || day === null ? day : firstDueDay(repeat, day)}
-              startDay={repeat === null ? null : day}
+              dueDate={day}
               draft={draft}
               now={now}
               onChangeDay={handleDayChange}

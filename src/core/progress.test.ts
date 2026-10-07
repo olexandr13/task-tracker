@@ -303,6 +303,15 @@ describe('summarize, a rule with a day to start on (DUE-18)', () => {
     expect(summarize([fromMonday], 'today', TUE_15).total).toBe(1)
   })
 
+  it('counts a missed occurrence moved to a later day on that day, not its own (DUE-18)', () => {
+    const toThursday = setStartDay(task(MONDAYS), '2026-09-17')
+
+    expect(summarize([task(MONDAYS)], 'today', TUE_15).total).toBe(1)
+    expect(summarize([toThursday], 'today', TUE_15).total).toBe(0)
+    expect(summarize([toThursday], 'week', TUE_15).total).toBe(1)
+    expect(summarize([completeTask(toThursday, TUE_15_EVENING)], 'week', TUE_15_EVENING).completed).toBe(1)
+  })
+
   it('leaves a period out entirely when the rule starts after it', () => {
     const nextMonth = setStartDay(task(DAILY), '2026-10-01')
 

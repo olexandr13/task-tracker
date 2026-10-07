@@ -272,6 +272,21 @@ describe('opening it', () => {
     expect(result.current.opened).toEqual({ taskId: CASE_TODAY_ID, day: '2026-09-17', points: 12 })
   })
 
+  it('says what each case opened today gave, leaving earlier days out (CHST-33)', () => {
+    const { result } = setUp({
+      entries: [
+        { taskId: CASE_DAILY_ID, day: '2026-09-17', points: 3 },
+        { taskId: CASE_TODAY_ID, day: '2026-09-17', points: 12 },
+        { taskId: CASE_TODAY_ID, day: '2026-09-16', points: 8 },
+      ],
+    })
+
+    expect(result.current.openings).toEqual([
+      { source: 'today', points: 12 },
+      { source: 'daily', points: 3 },
+    ])
+  })
+
   it('leaves yesterday’s glow behind, the last opening belonging to its day', () => {
     const { result } = setUp({ device: fakeDevice({ ...CASES_AT_REST, lastOpen: { day: '2026-09-16', quarter: 3 } }) })
 

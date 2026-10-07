@@ -1,4 +1,5 @@
 import { WARM_UP_DAYS, type WarmUpProgress } from '../core'
+import type { Confirmation } from './components/ConfirmSheet'
 import { describeDays } from './habitLabels'
 
 /**
@@ -46,7 +47,26 @@ export function describeDaysLeft({ daysLeft }: WarmUpProgress): string {
 
 /**
  * Asked before the warm-up is turned off (WARM-9). Ending it throws the month
- * away, and the next time it is turned on is day one again.
+ * away, and the next time it is turned on is day one again — so the sheet says
+ * which day would be lost, and that the habits are not.
  */
-export const WARM_UP_DISABLE_WARNING =
-  'Disable the warm-up? Enabling it again starts from scratch, on day one.'
+export function describeWarmUpDisable(progress: WarmUpProgress | null): Confirmation {
+  const where =
+    progress === null
+      ? []
+      : [
+          progress.paused
+            ? `Your warm-up is paused on day ${String(progress.day)} of ${String(WARM_UP_DAYS)}.`
+            : `Your warm-up is on day ${String(progress.day)} of ${String(WARM_UP_DAYS)}.`,
+        ]
+
+  return {
+    question: 'Disable the warm-up?',
+    lines: [
+      ...where,
+      'If you enable it again, it starts from scratch: day 1, with one habit allowed.',
+      'Your habits stay as they are.',
+    ],
+    confirm: 'Disable',
+  }
+}

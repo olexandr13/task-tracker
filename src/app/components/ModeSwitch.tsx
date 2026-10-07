@@ -1,3 +1,6 @@
+import { useState } from 'react'
+import { ConfirmSheet, type Confirmation } from './ConfirmSheet'
+
 interface ModeSwitchProps {
   /** What it turns on, for a screen reader: the mode's name. */
   label: string
@@ -6,8 +9,8 @@ interface ModeSwitchProps {
   checked: boolean
   /** Why it cannot be turned on just now, or null while it can (MODE-6). */
   blocked: string | null
-  /** Asked before it is turned off. Cancelling leaves it on (WARM-9). */
-  confirmOff?: string
+  /** Asked before it is turned off, in a sheet. Cancelling leaves it on (WARM-9). */
+  confirmOff?: Confirmation
   onChange: (checked: boolean) => void
 }
 
@@ -25,9 +28,16 @@ const knob = 'absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow-sm t
  * already knows which side is which.
  */
 export function ModeSwitch({ label, state, checked, blocked, confirmOff, onChange }: ModeSwitchProps) {
+  const [asking, setAsking] = useState(false)
+  // Turned off elsewhere — on another device — while asked, there is nothing left to ask about.
+  if (asking && !checked) setAsking(false)
+
   function change() {
     const next = !checked
-    if (!next && confirmOff !== undefined && !window.confirm(confirmOff)) return
+    if (!next && confirmOff !== undefined) {
+      setAsking(true)
+      return
+    }
     onChange(next)
   }
 
@@ -57,6 +67,17 @@ export function ModeSwitch({ label, state, checked, blocked, confirmOff, onChang
       <span aria-hidden="true" className="text-[11px] leading-none text-neutral-500 dark:text-neutral-400">
         {state}
       </span>
+
+      {asking && confirmOff !== undefined && (
+        <ConfirmSheet
+          confirmation={confirmOff}
+          onCancel={() => { setAsking(false) }}
+          onConfirm={() => {
+            setAsking(false)
+            onChange(false)
+          }}
+        />
+      )}
     </span>
   )
 }

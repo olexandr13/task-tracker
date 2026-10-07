@@ -216,7 +216,7 @@ describe('done spans folded away behind their headings (TASK-72)', () => {
         lists={[]}
         emptyMessage={EMPTY}
         allDoneMessage={ALL_DONE}
-        revealId={revealId}
+        reveal={revealId === null ? null : { taskId: revealId, part: 'task' }}
       />
     )
   }

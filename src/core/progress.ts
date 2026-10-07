@@ -131,8 +131,11 @@ function inPlayDuring(task: Task, period: Period, range: PeriodRange, now: Date)
 
 /**
  * Whether the rule falls on a day of the range that was not skipped: a skipped
- * occurrence asks nothing of it, and neither does a day before the rule starts
- * (`startDay`) — a habit that starts next month is no part of this month's count.
+ * occurrence asks nothing of it, and neither does a day before the one picked
+ * for the task (`startDay`) — a habit that starts next month is no part of this
+ * month's count. The day picked itself, where the rule does not fall on it, is
+ * counted as any day a task is due on is: by `isInPeriod` while still to do, and
+ * by its completion once done.
  */
 function occursWithin(
   repeat: Repeat,

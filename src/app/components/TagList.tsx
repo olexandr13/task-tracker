@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent } from 'react'
 import { isTagName, type TagSummary } from '../../core'
 import { deleteControl } from '../rowControls'
+import { ConfirmSheet, type Confirmation } from './ConfirmSheet'
 import { PencilIcon } from './PencilIcon'
 import { TagIcon } from './TagIcon'
 
@@ -16,6 +17,15 @@ const smallControl =
 /** A tag is typed with its `#` as often as without. */
 function bare(typed: string): string {
   return typed.trim().replace(/^#+/u, '')
+}
+
+/** Asked before a tag is deleted, there being nothing to undo it from (TAG-22). */
+function askDelete(tag: string): Confirmation {
+  return {
+    question: `Delete the tag "${tag}"?`,
+    lines: ['It comes off every task that carries it.', 'The tasks themselves are not deleted.'],
+    confirm: 'Delete',
+  }
 }
 
 interface TagListProps {
@@ -45,6 +55,11 @@ export function TagList({ tags, onOpen, onAdd, onRename, onDelete }: TagListProp
   const [editing, setEditing] = useState<{ tag: string; name: string } | null>(null)
   // Which box was last refused a name some tag has already: the new one's, or a row's.
   const [taken, setTaken] = useState<string | null>(null)
+  // The tag asked about before it is deleted.
+  const [asking, setAsking] = useState<string | null>(null)
+  const asked = tags.some(({ name: tag }) => tag === asking) ? asking : null
+  // Deleted or renamed elsewhere — on another device — while asked, there is nothing left to ask about.
+  if (asking !== null && asked === null) setAsking(null)
 
   const name = bare(typed)
   const canAdd = isTagName(name)
@@ -89,13 +104,6 @@ export function TagList({ tags, onOpen, onAdd, onRename, onDelete }: TagListProp
       event.preventDefault()
       setEditing(null)
       setTaken(null)
-    }
-  }
-
-  function handleDelete(tag: string) {
-    // It comes off every task at once, with nothing to undo it from, so it asks first.
-    if (window.confirm(`Delete the tag "${tag}"? It comes off every task that carries it; the tasks stay.`)) {
-      onDelete(tag)
     }
   }
 
@@ -204,7 +212,8 @@ export function TagList({ tags, onOpen, onAdd, onRename, onDelete }: TagListProp
 
                     <button
                       type="button"
-                      onClick={() => { handleDelete(tag) }}
+                      // It comes off every task at once, with nothing to undo it from, so it asks first.
+                      onClick={() => { setAsking(tag) }}
                       aria-label={`Delete the tag "${tag}"`}
                       title="Delete tag"
                       className={`flex h-6 shrink-0 items-center rounded-lg px-1.5 text-base leading-none ${deleteControl}`}
@@ -228,6 +237,17 @@ export function TagList({ tags, onOpen, onAdd, onRename, onDelete }: TagListProp
             </li>
           ))}
         </ul>
+      )}
+
+      {asked !== null && (
+        <ConfirmSheet
+          confirmation={askDelete(asked)}
+          onCancel={() => { setAsking(null) }}
+          onConfirm={() => {
+            setAsking(null)
+            onDelete(asked)
+          }}
+        />
       )}
     </div>
   )

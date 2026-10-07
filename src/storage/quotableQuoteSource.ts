@@ -1,5 +1,6 @@
 import type { Quote } from '../core'
 import type { QuoteSource } from './quoteSource'
+import { repairMojibake } from './repairMojibake'
 
 /**
  * Quotes from the community-run Quotable mirror.
@@ -74,6 +75,8 @@ export const quotableQuoteSource: QuoteSource = {
       throw new Error('The quote service answered in a shape this app does not know.')
     }
 
-    return { text: body.quote.content, author: body.quote.author.name }
+    // A few quotes are stored garbled ("â€¦" for "…"), so they are read back
+    // as what they were (QUOTE-9).
+    return { text: repairMojibake(body.quote.content), author: repairMojibake(body.quote.author.name) }
   },
 }

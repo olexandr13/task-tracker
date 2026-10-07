@@ -70,10 +70,16 @@ there is never a limit on them.
 ## Leaving it
 
 - **WARM-9** Turning the switch on **Modes** off (MODE-3), on its row or on its own page, asks
-  first. The warning says that enabling it again starts from scratch, on day one: the month under
-  way ends, and a later start begins a new one from that day. Cancelling leaves it running.
-  Confirmed, nothing is held back from then on. That switch is the only way out: the panel on
-  Habits (WARM-6) has none, so a warm-up is not ended by a stray tap where habits are added.
+  first, in a sheet of the app's own rather than the browser's confirm (UI-74) — a sheet sliding up on a
+  phone, a dialog in the middle of a wide screen (UI-48). It asks **Disable the warm-up?** and
+  says, a sentence each, the day it is on (`Your warm-up is on day 12 of 30.`, or `paused on`
+  while it is), that enabling it again starts from scratch on day 1 with one habit allowed, and
+  that the habits stay as they are: the month under way ends, and a later start begins a new one
+  from that day. **Cancel** leaves it running, and so do Escape, back and a tap outside the sheet;
+  **Disable** ends it, and nothing is held back from then on. Ended on another device while the
+  sheet is up, the sheet goes, there being nothing left to ask. That switch is the only way out:
+  the panel on Habits (WARM-6) has none, so a warm-up is not ended by a stray tap where habits are
+  added.
 - **WARM-10** A warm-up ends **by itself** once thirty days of it have run. Nothing runs at midnight and
   nothing is rewritten to end it: the day it is on is asked for as it is needed, so a page left open
   across midnight allows one more habit on its next render (PRIN-2). A pause holds the ending off:
@@ -90,7 +96,8 @@ there is never a limit on them.
 `src/app/components/WarmUpPause.tsx` (pausing it, on its own page),
 `src/app/components/WarmUpNoticeToast.tsx` (a habit held back),
 `src/app/components/WarmUpIcon.tsx`, `src/app/modes.ts` and `src/app/components/ModesPage.tsx`
-(starting and ending it),
+(starting and ending it), `src/app/components/ModeSwitch.tsx` and `ConfirmSheet.tsx` (asking
+before it ends),
 `src/app/TasksScreen.tsx` (every way of adding a habit held to the allowance),
 `src/storage/warmUpRepository.ts` (the interface), `firestoreWarmUpRepository.ts` (the account's),
 `localWarmUpRepository.ts` (the guest's), `warmUpSchema.ts` (the saved shape and its version).
@@ -98,5 +105,6 @@ Who may read it: `firestore.rules`.
 **Tested in:** `src/core/warmUp.test.ts`, `src/core/day.test.ts` (`daysBetween`),
 `src/app/useWarmUp.test.ts`, `src/app/warmUpLabels.test.ts`,
 `src/app/components/WarmUpPanel.test.tsx`, `src/app/components/WarmUpPause.test.tsx`,
-`src/app/modes.test.ts` and `src/app/components/ModesPage.test.tsx` (starting and ending it),
+`src/app/modes.test.ts`, `src/app/components/ModesPage.test.tsx` and `ModePage.test.tsx`
+(starting and ending it, and asking first),
 `src/storage/warmUpSchema.test.ts` (reading a saved warm-up back).

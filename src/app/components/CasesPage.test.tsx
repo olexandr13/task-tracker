@@ -3,9 +3,9 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DEFAULT_CASES, type CaseSlot, type CaseSpan } from '../../core'
+import { DEFAULT_CASES, type CaseSlot, type CaseSource, type CaseSpan, type OpenedCase } from '../../core'
 import { describeNextCase } from '../caseLabels'
-import { CASE_RESULT_HOLD_MS, CASE_SETTLED_AT } from '../caseTiming'
+import { CASE_LEAVE_MS, CASE_LINGER_MS, CASE_RESULT_HOLD_MS, CASE_SETTLED_AT } from '../caseTiming'
 import type { Cases as CasesState } from '../useCases'
 import { CasesPage } from './CasesPage'
 
@@ -15,6 +15,7 @@ afterEach(() => {
   cleanup()
   vi.useRealTimers()
   Reflect.deleteProperty(window, 'matchMedia')
+  Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView')
 })
 
 /** Less motion, so an opening lands in one go and the test need not wait. */
@@ -52,12 +53,12 @@ function slotsFor(blocked: CasesState['blocked']): readonly CaseSlot[] {
   ]
 }
 
-function setup(over: Partial<CasesState> = {}, { practising = false } = {}) {
-  const open = vi.fn(() => ({ points: 2, jackpot: 20 }))
+/** What the page is handed, wherever the test does not say otherwise. */
+function casesFor(over: Partial<CasesState> = {}): CasesState {
   const blocked = over.blocked === undefined ? null : over.blocked
   const jackpot = over.jackpot ?? 20
   const span = (most: number): CaseSpan => ({ least: 1, most })
-  const cases: CasesState = {
+  return {
     isLoading: false,
     settings: DEFAULT_CASES,
     jackpot,
@@ -65,10 +66,11 @@ function setup(over: Partial<CasesState> = {}, { practising = false } = {}) {
     blocked,
     dayAsked: 2,
     opened: null,
+    openings: [],
     lastQuarter: null,
     sound: false,
     setSound: vi.fn(),
-    open,
+    open: vi.fn(() => ({ points: 2, jackpot: 20 })),
     setSettings: vi.fn(),
     unannounced: false,
     announce: vi.fn(),
@@ -80,8 +82,33 @@ function setup(over: Partial<CasesState> = {}, { practising = false } = {}) {
     keyTimer: over.keyTimer ?? { remainingMs: null, way: null, at: null },
     slots: over.slots ?? slotsFor(blocked),
   }
+}
+
+function setup(over: Partial<CasesState> = {}, { practising = false } = {}) {
+  const open = vi.fn(() => ({ points: 2, jackpot: 20 }))
+  const cases = casesFor({ open, ...over })
   render(<Practising cases={cases} from={practising} />)
   return { user: userEvent.setup(), open, cases }
+}
+
+/**
+ * The page over a ledger that takes an opening the moment its case is pressed,
+ * as the real one does: the row is there before the reel has run (CHST-16).
+ */
+function Ledgered({ cases }: { cases: CasesState }) {
+  const [openings, setOpenings] = useState<readonly OpenedCase[]>(cases.openings)
+  const open = (source: CaseSource = 'today') => {
+    setOpenings((before) => [...before, { source, points: 2 }])
+    return { points: 2, jackpot: 20 }
+  }
+  return <CasesPage cases={{ ...cases, openings, open }} practising={false} onPractisingChange={() => {}} />
+}
+
+/** The rows of what today's cases gave, as they read, or null while there is no list. */
+function openedToday(): (string | null)[] | null {
+  const list = screen.queryByRole('region', { name: 'Opened today' })
+  if (list === null) return null
+  return within(list).getAllByRole('listitem').map((row) => row.textContent)
 }
 
 /** One case card. The name also appears in the waiting line, so the card is the list item that holds it. */
@@ -184,11 +211,11 @@ describe('what the page says', () => {
       'Arrives once a day, at a random time. Reward depends on number of points earned yesterday.',
     )
     const timer = screen.getByRole('timer', { name: 'Time until the Drop' })
-    expect(timer.closest('.case-card-lock')).toBe(daily?.querySelector('.case-card-lock'))
+    expect(timer.closest('.case-card-tag')).toBe(daily?.querySelector('.case-card-tag'))
     expect(timer.closest('.opacity-50, .opacity-40')).toBeNull()
     // The ready case keeps its colour; the planned one beside it does not.
     expect(today?.querySelector('.grayscale')).toBeNull()
-    expect(today?.querySelector('.case-card-lock')).toBeNull()
+    expect(today?.querySelector('.case-card-tag')).toBeNull()
     expect(daily?.querySelector('.grayscale')).toBeTruthy()
     expect(screen.queryByText('The most is everything you earned today.')).toBeNull()
   })
@@ -226,7 +253,7 @@ describe('what the page says', () => {
     })
 
     const today = caseCard('Payday')
-    const lock = today.querySelector('.case-card-lock')
+    const lock = today.querySelector('.case-card-tag')
     expect(lock?.textContent).toContain('3 tasks left')
     expect(lock?.closest('.case-card-plate')).toBe(today.querySelector('.case-card-plate'))
     // The crate under it is grey and faded; the padlock stays solid.
@@ -268,6 +295,21 @@ describe('what the page says', () => {
     expect(within(screen.getByRole('status')).getByText('+2')).toBeTruthy()
   })
 
+  it('brings the cabinet into view when a case is pressed, below the fold on a phone (CHST-13)', async () => {
+    atOnce()
+    const scrolled = vi.fn<(this: HTMLElement, options?: ScrollIntoViewOptions) => void>(function (this: HTMLElement) {})
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scrolled })
+    const { user } = setup()
+
+    expect(scrolled).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: /Open the Payday case/ }))
+
+    expect(scrolled).toHaveBeenCalledOnce()
+    expect(scrolled.mock.contexts[0].querySelector('.case-stage')).toBeTruthy()
+    expect(scrolled.mock.calls[0][0]).toEqual({ block: 'nearest', behavior: 'auto' })
+  })
+
   it('opens one case at a time while the cabinet is still opening (CHST-16)', () => {
     const { open } = setup({
       slots: [
@@ -283,7 +325,7 @@ describe('what the page says', () => {
     expect(screen.getByRole('button', { name: /Open the Drop case/ }).getAttribute('aria-disabled')).toBe('true')
   })
 
-  it('keeps an opened case until the day ends, dimmed, with the lid open, and says when the next one appears (CHST-25, CHST-28)', () => {
+  it('keeps an opened case until the day ends, dimmed, with the lid open, tagged Opened, and says when the next one appears (CHST-25, CHST-28)', () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 9, 4, 15, 0))
     setup({
@@ -310,7 +352,8 @@ describe('what the page says', () => {
     expect(caseText('Drop')).toContain(describeNextCase('daily'))
     expect(caseText('Drop')).toContain('Earn more points today to increase reward.')
     expect(caseText('Payday')).not.toContain('Earn more points today')
-    expect(caseText('Drop')).not.toContain('Opened')
+    expect(within(caseCard('Payday')).getByText('Opened')).toBeTruthy()
+    expect(within(caseCard('Drop')).getByText('Opened')).toBeTruthy()
   })
 
   it('takes the cabinet away once a show with no reel has been read (CHST-18, CHST-25)', () => {
@@ -330,15 +373,50 @@ describe('what the page says', () => {
     act(() => {
       vi.advanceTimersByTime(CASE_RESULT_HOLD_MS - 1)
     })
-    expect(document.querySelector('.case-stage')).toBeTruthy()
+    expect(document.querySelector('.case-off')).toBeNull()
 
     act(() => {
       vi.advanceTimersByTime(1)
     })
+    // Switching off, and still there until it has.
+    expect(document.querySelector('.case-stage.case-off')).toBeTruthy()
+
+    act(() => {
+      vi.advanceTimersByTime(CASE_LEAVE_MS)
+    })
     expect(document.querySelector('.case-stage')).toBeNull()
   })
 
-  it('takes the cabinet away when the opening has settled (CHST-25)', () => {
+  it('starts a fresh show for a case pressed while the last cabinet is going (CHST-25)', () => {
+    atOnce()
+    vi.useFakeTimers()
+    setup({
+      slots: [
+        { source: 'today', state: 'ready', at: null },
+        { source: 'daily', state: 'ready', at: null },
+      ],
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /Open the Payday case/ }))
+    act(() => {
+      vi.advanceTimersByTime(CASE_RESULT_HOLD_MS)
+    })
+    expect(document.querySelector('.case-off')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: /Open the Drop case/ }))
+    expect(document.querySelector('.case-stage')).toBeTruthy()
+    expect(document.querySelector('.case-off')).toBeNull()
+    expect(document.querySelector('.case-closing')).toBeNull()
+
+    // The last one's going never takes the new one with it.
+    act(() => {
+      vi.advanceTimersByTime(CASE_LEAVE_MS)
+    })
+    expect(document.querySelector('.case-stage')).toBeTruthy()
+    expect(document.querySelector('.case-off')).toBeNull()
+  })
+
+  it('takes the cabinet away a moment after the opening has settled (CHST-25)', () => {
     vi.useFakeTimers()
     const getContext = HTMLCanvasElement.prototype.getContext
     HTMLCanvasElement.prototype.getContext = (() => null) as typeof getContext
@@ -354,7 +432,20 @@ describe('what the page says', () => {
       expect(document.querySelector('.case-stage')).toBeTruthy()
 
       act(() => {
-        vi.advanceTimersByTime(CASE_SETTLED_AT)
+        vi.advanceTimersByTime(CASE_SETTLED_AT + CASE_LINGER_MS - 1)
+      })
+      // The number stays up a moment more to be read.
+      expect(document.querySelector('.case-stage')).toBeTruthy()
+      expect(document.querySelector('.case-off')).toBeNull()
+
+      act(() => {
+        vi.advanceTimersByTime(1)
+      })
+      expect(document.querySelector('.case-stage.case-off')).toBeTruthy()
+      expect(document.querySelector('.case-closing')).toBeTruthy()
+
+      act(() => {
+        vi.advanceTimersByTime(CASE_LEAVE_MS)
       })
       expect(document.querySelector('.case-stage')).toBeNull()
     } finally {
@@ -372,6 +463,61 @@ describe('what the page says', () => {
     expect(screen.queryByText('Payday gave +9.')).toBeNull()
   })
 
+  it('lists what each case opened today gave, under the cases (CHST-33)', () => {
+    setup({
+      blocked: 'opened',
+      openings: [
+        { source: 'today', points: 9 },
+        { source: 'daily', points: 0 },
+      ],
+      slots: [
+        { source: 'today', state: 'opened', at: null },
+        { source: 'daily', state: 'opened', at: null },
+        { source: 'week', state: 'waiting', at: LATER },
+      ],
+    })
+
+    const list = screen.getByRole('region', { name: 'Opened today' })
+    expect(within(list).getByRole('heading', { name: 'Opened today' })).toBeTruthy()
+    expect(openedToday()).toEqual(['Payday+9 points', 'Drop+0 points'])
+    // Only to read: deleting an earning is History's (RWD-44).
+    expect(within(list).queryByRole('button')).toBeNull()
+  })
+
+  it('lists nothing while no case has been opened today (CHST-33)', () => {
+    setup()
+
+    expect(openedToday()).toBeNull()
+  })
+
+  it('lists what a case gave once its reel has stopped, not while it runs (CHST-16, CHST-33)', () => {
+    vi.useFakeTimers()
+    const getContext = HTMLCanvasElement.prototype.getContext
+    HTMLCanvasElement.prototype.getContext = (() => null) as typeof getContext
+    try {
+      const cases = casesFor({
+        openings: [{ source: 'today', points: 9 }],
+        slots: [
+          { source: 'today', state: 'opened', at: null },
+          { source: 'daily', state: 'ready', at: null },
+        ],
+      })
+      render(<Ledgered cases={cases} />)
+      expect(openedToday()).toEqual(['Payday+9 points'])
+
+      fireEvent.click(screen.getByRole('button', { name: /Open the Drop case/ }))
+      // Written already, and still not said: the reel is running.
+      expect(openedToday()).toEqual(['Payday+9 points'])
+
+      act(() => {
+        vi.advanceTimersByTime(CASE_SETTLED_AT)
+      })
+      expect(openedToday()).toEqual(['Payday+9 points', 'Drop+2 points'])
+    } finally {
+      HTMLCanvasElement.prototype.getContext = getContext
+    }
+  })
+
   it('lists no table of chances, only what each case can give', () => {
     setup()
 
@@ -381,6 +527,12 @@ describe('what the page says', () => {
 })
 
 describe('practice', () => {
+  it('lists none of the day’s openings, every case being ready afresh (CHST-21, CHST-33)', () => {
+    setup({ openings: [{ source: 'today', points: 9 }] }, { practising: true })
+
+    expect(openedToday()).toBeNull()
+  })
+
   it('has no switch on the page, and says nothing of practice while it is off (CHST-21)', () => {
     setup()
 

@@ -5,6 +5,7 @@ import {
   caseIdFor,
   caseJackpot,
   caseOpened,
+  caseOpenings,
   caseQuarter,
   caseSpan,
   nextShareAt,
@@ -18,6 +19,7 @@ import {
   type CaseQuarter,
   type CaseSettings,
   type CaseSpan,
+  type OpenedCase,
   type RewardEntry,
   type Task,
 } from '../core'
@@ -40,6 +42,8 @@ export interface Cases {
   readonly dayAsked: number
   /** What today's case gave, or null while it is still shut. */
   readonly opened: RewardEntry | null
+  /** What each case opened today gave, in the order the page shows the cases (CHST-33). */
+  readonly openings: readonly OpenedCase[]
   /** Which quarter of the jackpot today's opening came to, where this device saw it happen (CHST-24). */
   readonly lastQuarter: CaseQuarter | null
   readonly sound: boolean
@@ -136,6 +140,7 @@ export function useCases(
   const today = toLocalDay(moment)
   const blocked = ready ? caseBlock(tasks, ledger.entries, settings, accountId, moment) : 'unclear'
   const opened = caseOpened(ledger.entries, moment)
+  const openings = caseOpenings(ledger.entries, moment)
   const jackpot = caseJackpot(ledger.entries, moment)
   const spans = {
     today: caseSpan('today', tasks, ledger.entries, settings, moment),
@@ -203,6 +208,7 @@ export function useCases(
     blocked,
     dayAsked,
     opened,
+    openings,
     lastQuarter,
     sound: kept.sound,
     setSound,
