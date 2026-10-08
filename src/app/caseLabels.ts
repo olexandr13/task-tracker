@@ -149,9 +149,10 @@ export function describeNextCase(source: CaseSource): string {
 }
 
 /**
- * The rule under a ready case (CHST-10). The number in front of it is what
- * that rule comes to today; this line says where the number comes from, and
- * names only the tasks that are counted (CHST-32).
+ * The line under a ready case (CHST-10). For Payday and Weekly the number in
+ * front of it is what that rule comes to today; this line says where the number
+ * comes from, and names only the tasks that are counted (CHST-32). The Drop
+ * says instead that what today earns raises tomorrow's.
  */
 export function describeSourceRule(source: CaseSource, countUnpaid: boolean): string {
   const withPoints = countUnpaid ? '' : ' with points'
@@ -161,7 +162,7 @@ export function describeSourceRule(source: CaseSource, countUnpaid: boolean): st
         ? 'From the cheapest task today, up to half of today’s rewards plus today’s tasks without points.'
         : 'From the cheapest task today, up to half of today’s rewards.'
     case 'daily':
-      return `From 0 points, up to yesterday’s average task plus yesterday’s tasks${withPoints}.`
+      return 'Earn more points today to get a bigger reward tomorrow.'
     case 'week':
       return `From the cheapest task last week, up to last week’s average task plus last week’s tasks${withPoints}.`
   }
@@ -211,9 +212,9 @@ export function describeOpened(points: number): string {
   return `Payday gave ${describeCasePoints(points)}.`
 }
 
-/** `+12`, as the ledger spells an earning out. */
+/** `+12`, as the ledger spells an earning out, and `0` for nothing: nothing gained has no sign. */
 export function describeCasePoints(points: number): string {
-  return `+${String(points)}`
+  return points === 0 ? '0' : `+${String(points)}`
 }
 
 /** What heads the list of what today's cases gave, on Cases (CHST-33). */

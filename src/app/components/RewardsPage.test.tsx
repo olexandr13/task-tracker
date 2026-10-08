@@ -116,7 +116,7 @@ describe('what the balance reaches (RWD-37, RWD-40)', () => {
     setup()
 
     expect(screen.getByText('Within reach: Chocolate')).toBeTruthy()
-    expect(screen.getByText(/Saving up for A new phone: 4975 points to go/)).toBeTruthy()
+    expect(screen.getByText(/Saving up for A new phone: 4\s975 points to go/)).toBeTruthy()
   })
 
   it('says nothing is within reach yet where nothing is', () => {

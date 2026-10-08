@@ -1,7 +1,15 @@
-import { useEffect, useEffectEvent, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useEffectEvent, useState, type ReactNode, type RefObject, type SyntheticEvent } from 'react'
 import { panelScrollMargin } from '../panelControls'
 import { usePanelPlacement } from '../usePanelPlacement'
 import { BottomSheet } from './BottomSheet'
+
+/**
+ * A press in the aside is the panel's: the row it hangs off would otherwise take
+ * it as the start of a drag, so dragging the clock's hand carried the task off.
+ */
+function keepInside(event: SyntheticEvent) {
+  event.stopPropagation()
+}
 
 interface PickerPanelProps {
   /** The control the panel belongs to: what it opens beside, and what a click in is not outside. */
@@ -79,6 +87,8 @@ export function PickerPanel({
       ref={panel}
       role="dialog"
       aria-label={label}
+      onMouseDown={keepInside}
+      onTouchStart={keepInside}
       className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} z-10 mt-1.5 flex flex-col rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-900 ${width} ${content} ${panelScrollMargin}`}
     >
       {children}

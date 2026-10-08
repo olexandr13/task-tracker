@@ -7,6 +7,7 @@ import {
   createPrize,
   markBought,
   prizesOfKind,
+  type PointValue,
   type Prize,
   type PrizeKind,
 } from '../../core'
@@ -31,7 +32,7 @@ function setup({
   kind = 'prize' as PrizeKind,
   balance = 25,
   prizes = [CHOCOLATE, COFFEE, PHONE, TRIP] as readonly Prize[],
-  pointValue = createPointValue(2.5),
+  pointValue = createPointValue(2.5) as PointValue | null,
   withOther = true,
 } = {}) {
   const handlers = {
@@ -41,6 +42,7 @@ function setup({
     onDelete: vi.fn(),
     onRedeem: vi.fn(),
     onRedeemOther: vi.fn(),
+    onOpenRules: vi.fn(),
   }
   render(
     <PrizeListPage
@@ -100,6 +102,33 @@ describe('what a list shows (RWD-35, RWD-36)', () => {
     setup({ kind: 'prize', balance: 25 })
 
     expect(screen.getByText('25 to go')).toBeTruthy()
+  })
+
+  it('sets every amount’s thousands apart, and says what each price is counted in (RWD-46)', () => {
+    setup({ kind: 'wish', balance: 1730 })
+
+    // A space a line never breaks at: one number, read the same in any country.
+    expect(screen.getByText(/points to spend/).textContent).toBe('1\u00A0730 points to spend — worth 4\u00A0325 UAH')
+    const phone = screen.getByText('A new phone').closest('li')
+    expect(phone?.textContent).toContain('5\u00A0000 points')
+    expect(phone?.textContent).toContain('12\u00A0500 UAH')
+    expect(phone?.textContent).toContain('3\u00A0270 to go')
+  })
+
+  it('says the rate the money is counted at, and opens Rules to change it (RWD-32)', async () => {
+    const { user, onOpenRules } = setup({ balance: 25 })
+
+    expect(screen.getByText(/^Rate:/).textContent).toBe('Rate: 1 point = 2.50 UAH · Change')
+    await user.click(screen.getByRole('button', { name: 'Change what a point is worth, on "Rules"' }))
+    expect(onOpenRules).toHaveBeenCalledOnce()
+  })
+
+  it('says no rate, and no money, while a point is worth nothing in money (RWD-32)', () => {
+    setup({ kind: 'wish', pointValue: null })
+
+    expect(screen.queryByText(/^Rate:/)).toBeNull()
+    expect(screen.getByText(/points to spend/).textContent).not.toContain('worth')
+    expect(screen.getByText('A new phone').closest('li')?.textContent).not.toContain('UAH')
   })
 
   it('says how to start when the list is empty', () => {

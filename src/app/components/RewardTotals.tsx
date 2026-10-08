@@ -1,5 +1,5 @@
 import type { PeriodPoints, RewardPeriod } from '../../core'
-import { describePoints } from '../rewardLabels'
+import { describeAmount, describePoints } from '../rewardLabels'
 
 interface RewardTotalsProps {
   /** As `rewardTotals` gives them. */
@@ -31,10 +31,10 @@ export function RewardTotals({ totals }: RewardTotalsProps) {
                 aria-label={`${describePoints(earned)} earned`}
                 className="text-xl font-semibold text-neutral-900 tabular-nums dark:text-neutral-100"
               >
-                {earned}
+                {describeAmount(earned)}
               </span>
               {redeemed > 0 && (
-                <span className="text-xs text-neutral-500 tabular-nums dark:text-neutral-400">−{redeemed} redeemed</span>
+                <span className="text-xs text-neutral-500 tabular-nums dark:text-neutral-400">−{describeAmount(redeemed)} redeemed</span>
               )}
             </dd>
           </div>

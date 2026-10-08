@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react'
 import type { LocalTime } from '../../core'
 import { describeTimeOfDay } from '../dueLabels'
 import {
@@ -9,12 +9,14 @@ import {
   hourAt,
   MINUTE_LABELS,
   ringAtDistance,
+  readTyped,
   ringOf,
   RING_RADIUS,
   stepAtPoint,
   stepOf,
   stepOffset,
   timeParts,
+  typedDigits,
   withHour,
   withMinute,
   wrapStep,
@@ -37,9 +39,13 @@ const labelOff = 'text-neutral-700 hover:bg-neutral-200 dark:text-neutral-200 da
 /** The number the hand rests on, filled as the chosen day is in the calendar (DUE-15). */
 const labelOn = 'bg-blue-600 font-semibold text-white dark:bg-blue-500'
 
-/** Half of the readout — the hour, or the minutes — and what switches the face to it. */
+/**
+ * Half of the readout — the hour, or the minutes — typed into, and what switches
+ * the face to it. Two digits wide. Typing over it, what it held shows faintly
+ * until the first digit replaces it.
+ */
 const readout =
-  'rounded-xl px-2 py-0.5 text-3xl font-semibold tabular-nums transition-colors md:rounded-lg md:text-2xl'
+  'w-[calc(2ch+1rem)] rounded-xl px-2 py-0.5 text-center text-3xl font-semibold tabular-nums outline-none transition-colors placeholder:text-current placeholder:opacity-40 focus:ring-2 focus:ring-blue-500/40 md:rounded-lg md:text-2xl'
 
 const readoutOn = 'bg-blue-600/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400'
 
@@ -69,6 +75,8 @@ interface ClockDialProps {
   /** Whole hours only, as a check-in's hours are (CHECKIN-2): the minutes stay at :00, and the face on the hours. */
   hoursOnly?: boolean
   onChange: (time: LocalTime) => void
+  /** Enter in the readout: the hour typed is the one wanted. */
+  onSubmit?: () => void
 }
 
 /**
@@ -86,11 +94,15 @@ interface ClockDialProps {
  * rather than stopping at its ends. A tap lands on the number tapped; a drag
  * reads every minute, so 7:05 and 7:07 are both an ordinary movement away.
  *
- * There is nothing to confirm, as in the other pickers: the hour is set as it is
- * picked, and picking the hour hands the face to the minutes, which is what is
- * left to say.
+ * The readout is typed into as well: `0655` is the hour, the minutes after it,
+ * the hand following each digit, and the hour hands the typing on to the minutes
+ * once it is all said.
+ *
+ * Every change is handed up as it is made, and picking the hour hands the face
+ * to the minutes, which is what is left to say. Whether a change is kept at once
+ * or only on a Set is the holder's to decide.
  */
-export function ClockDial({ value, now, hoursOnly = false, onChange }: ClockDialProps) {
+export function ClockDial({ value, now, hoursOnly = false, onChange, onSubmit }: ClockDialProps) {
   const [unit, setUnit] = useState<DialUnit>('hour')
   // Where the keys start out when the task has no hour: the hour coming, which is
   // the likeliest one. Nothing is set by resting there, and it never moves after.
@@ -102,6 +114,13 @@ export function ClockDial({ value, now, hoursOnly = false, onChange }: ClockDial
   // been answered as it went down, and is not answered again; one from the
   // keyboard — Enter or Space, which come after a key — is the only word there is.
   const fromPointer = useRef(false)
+  // The half of the readout being typed into, and what has been typed there since
+  // it took the focus: nothing yet shows what it held, faintly, for the first digit to replace.
+  const [typing, setTyping] = useState<{ unit: DialUnit; digits: string } | null>(null)
+  const minuteBox = useRef<HTMLInputElement>(null)
+  // The hour typed in full before there was an hour to hang the minutes on: the
+  // minutes' box opens once it comes back, and the typing moves on to it then.
+  const toMinutes = useRef(false)
 
   // With no hour set there are no minutes to set either, so the face stays on the hour.
   const shown: DialUnit = value === null || hoursOnly ? 'hour' : unit
@@ -115,10 +134,24 @@ export function ClockDial({ value, now, hoursOnly = false, onChange }: ClockDial
   // lends it to the nearer, so the face is always one stop and never none.
   const inReach = shown === 'hour' ? hour : (Math.round(minute / 5) * 5) % 60
 
-  function set(picked: number) {
-    if (hoursOnly) onChange(withMinute(withHour(base, picked), 0))
-    else onChange(shown === 'hour' ? withHour(base, picked) : withMinute(base, picked))
+  function setHour(picked: number) {
+    onChange(hoursOnly ? withMinute(withHour(base, picked), 0) : withHour(base, picked))
   }
+
+  function setMinute(picked: number) {
+    onChange(withMinute(base, picked))
+  }
+
+  function set(picked: number) {
+    if (shown === 'hour') setHour(picked)
+    else setMinute(picked)
+  }
+
+  useEffect(() => {
+    if (!toMinutes.current || value === null) return
+    toMinutes.current = false
+    minuteBox.current?.focus()
+  }, [value])
 
   // A key moved the hand: the focus follows it onto the number it came to rest by.
   useEffect(() => {
@@ -126,6 +159,53 @@ export function ClockDial({ value, now, hoursOnly = false, onChange }: ClockDial
     moved.current = false
     face.current?.querySelector<HTMLElement>('[tabindex="0"]')?.focus()
   }, [inReach, shown])
+
+  /** A half of the readout taking the focus: the face turns to it, and typing starts afresh. */
+  function handleBoxFocus(typed: DialUnit) {
+    setUnit(typed)
+    setTyping({ unit: typed, digits: '' })
+  }
+
+  /**
+   * A digit typed into a half of the readout. The hand follows every one; a digit
+   * that cannot follow those before it — a `5` after a `2` for the hour — is not
+   * taken, and the box keeps what it had. An hour all said moves on to the minutes.
+   */
+  function handleTyped(event: ChangeEvent<HTMLInputElement>, typed: DialUnit) {
+    const digits = typedDigits(event.target.value)
+    const read = readTyped(digits, typed)
+    if (digits !== '' && read === null) return
+    setTyping({ unit: typed, digits })
+    if (read === null) return
+
+    if (typed === 'minute') {
+      setMinute(read.value)
+      return
+    }
+    setHour(read.value)
+    if (!read.complete || hoursOnly) return
+    // Open already, the minutes' box takes the focus now; otherwise once the hour is back.
+    if (minuteBox.current !== null && !minuteBox.current.disabled) minuteBox.current.focus()
+    else toMinutes.current = true
+  }
+
+  /** Up and Down step a half of the readout as they step the hand, and Enter says the hour is the one wanted. */
+  function handleBoxKeyDown(event: KeyboardEvent<HTMLInputElement>, typed: DialUnit) {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      event.stopPropagation()
+      onSubmit?.()
+      return
+    }
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
+
+    event.preventDefault()
+    event.stopPropagation()
+    const by = event.key === 'ArrowUp' ? 1 : -1
+    setTyping({ unit: typed, digits: '' })
+    if (typed === 'hour') setHour(wrapStep(hour + by, DAY_HOURS))
+    else setMinute(wrapStep(minute + by, DIAL_STEPS.minute))
+  }
 
   /** Where a pointer is on the face, or null while the face has no size to measure — as in a test. */
   function pointUnder(event: PointerEvent, over: number): { step: number; ring: DialRing } | null {
@@ -222,16 +302,22 @@ export function ClockDial({ value, now, hoursOnly = false, onChange }: ClockDial
       </p>
 
       <div className="flex items-baseline">
-        <button
-          type="button"
-          onClick={() => { setUnit('hour') }}
-          aria-pressed={shown === 'hour'}
-          aria-label={isSet ? `Hour, ${String(hour)}` : 'Hour, not set'}
-          title="Set the hour"
+        <input
+          type="text"
+          name="time-hour"
+          inputMode="numeric"
+          autoComplete="off"
+          enterKeyHint="done"
+          value={typing?.unit === 'hour' ? typing.digits : isSet ? pad(hour) : ''}
+          placeholder={isSet ? pad(hour) : '--'}
+          onFocus={() => { handleBoxFocus('hour') }}
+          onBlur={() => { setTyping(null) }}
+          onChange={(event) => { handleTyped(event, 'hour') }}
+          onKeyDown={(event) => { handleBoxKeyDown(event, 'hour') }}
+          aria-label="Hour"
+          title="Type the hour, or pick it on the face"
           className={`${readout} ${shown === 'hour' ? readoutOn : readoutOff}`}
-        >
-          {isSet ? String(hour).padStart(2, '0') : '--'}
-        </button>
+        />
         <span aria-hidden="true" className="text-2xl font-semibold text-neutral-400 md:text-xl dark:text-neutral-500">
           :
         </span>
@@ -241,17 +327,24 @@ export function ClockDial({ value, now, hoursOnly = false, onChange }: ClockDial
             00
           </span>
         ) : (
-          <button
-            type="button"
-            onClick={() => { setUnit('minute') }}
+          <input
+            ref={minuteBox}
+            type="text"
+            name="time-minute"
+            inputMode="numeric"
+            autoComplete="off"
+            enterKeyHint="done"
+            value={typing?.unit === 'minute' ? typing.digits : isSet ? pad(minute) : ''}
+            placeholder={isSet ? pad(minute) : '--'}
+            onFocus={() => { handleBoxFocus('minute') }}
+            onBlur={() => { setTyping(null) }}
+            onChange={(event) => { handleTyped(event, 'minute') }}
+            onKeyDown={(event) => { handleBoxKeyDown(event, 'minute') }}
             disabled={!isSet}
-            aria-pressed={shown === 'minute'}
-            aria-label={isSet ? `Minutes, ${String(minute)}` : 'Minutes, no hour set yet'}
-            title={isSet ? 'Set the minutes' : 'Pick an hour first'}
+            aria-label="Minutes"
+            title={isSet ? 'Type the minutes, or pick them on the face' : 'Pick an hour first'}
             className={`${readout} ${shown === 'minute' ? readoutOn : readoutOff} disabled:pointer-events-none disabled:opacity-40`}
-          >
-            {isSet ? String(minute).padStart(2, '0') : '--'}
-          </button>
+          />
         )}
       </div>
 
@@ -309,11 +402,16 @@ export function ClockDial({ value, now, hoursOnly = false, onChange }: ClockDial
               style={place(stepOf(written, shown), ring)}
               className={`${label} ${ringLabel[ring]} ${on ? labelOn : labelOff}`}
             >
-              {String(written).padStart(2, '0')}
+              {pad(written)}
             </button>
           )
         })}
       </div>
     </div>
   )
+}
+
+/** A number as the readout and the face write it, two digits wide. */
+function pad(number: number): string {
+  return String(number).padStart(2, '0')
 }

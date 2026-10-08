@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { BONUS_IDS, ledgerHistory, type Redemption, type RewardEntry, type TaskId } from '../../core'
+import { BONUS_IDS, CASE_DAILY_ID, ledgerHistory, type Redemption, type RewardEntry, type TaskId } from '../../core'
 import { LedgerList } from './LedgerList'
 
 /* What happened to the points. RWD ids refer to wiki/rewards.md. */
@@ -50,6 +50,13 @@ describe('LedgerList (RWD-38)', () => {
     expect(rows[1]).toContain('Morning run')
     expect(rows[1]).toContain('+5')
     expect(rows[2]).toContain('Read')
+  })
+
+  it('gives no sign to a row that moved nothing, as an empty Drop', () => {
+    setup([{ taskId: CASE_DAILY_ID, day: '2026-09-17', points: 0 }], [], titles())
+
+    const points = screen.getByLabelText('0 points earned')
+    expect(points.textContent).toBe('0')
   })
 
   it('tells the two apart by tint as well as by sign', () => {

@@ -81,7 +81,15 @@ export function BottomSheet({ label, onClose, children }: BottomSheetProps) {
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-40 flex items-end md:items-center md:justify-center md:p-6" onClick={keepInside}>
+    <div
+      className="fixed inset-0 z-40 flex items-end md:items-center md:justify-center md:p-6"
+      // Drawn over the page but held by whatever opened it — a task's row — so
+      // a click or a press here goes no further: a press held on the sheet is not
+      // the row's, to pick up or swipe away behind it.
+      onClick={keepInside}
+      onMouseDown={keepInside}
+      onTouchStart={keepInside}
+    >
       <div
         className="sheet-dim-enter absolute inset-0 bg-black/40 transition-opacity dark:bg-black/60"
         // Pulled down, the page behind brightens as the sheet goes.

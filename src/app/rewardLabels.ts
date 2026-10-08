@@ -72,9 +72,30 @@ export function describeEarningTitle(taskId: TaskId, taskTitles: ReadonlyMap<Tas
   return taskTitles.get(taskId) ?? 'Deleted task'
 }
 
-/** `1 point`, `5 points`, `-3 points`. */
+/**
+ * Where a number's thousands are set apart: a space that a line never breaks
+ * at, so `1 000 000` stays one number — read the same whichever way the reader's
+ * country writes a decimal point, as a comma or a dot would not be. A whole
+ * space, not the narrow one typesetting asks for: in the system font that is
+ * under two pixels, and the figures run back together.
+ */
+const THOUSANDS = '\u00A0'
+
+/**
+ * An amount, its thousands set apart: `1 730`, `1 000 000`, and the pennies
+ * only when there are any — `62.50`. Every number the rewards spell out —
+ * points, money, what is still to go — is written this way (RWD-46).
+ */
+export function describeAmount(amount: number): string {
+  const pennies = Number.isInteger(amount) ? 0 : 2
+  return amount
+    .toLocaleString('en-US', { minimumFractionDigits: pennies, maximumFractionDigits: pennies })
+    .replaceAll(',', THOUSANDS)
+}
+
+/** `1 point`, `5 points`, `-3 points`, `1 000 points`. */
 export function describePoints(points: number): string {
-  return `${String(points)} ${Math.abs(points) === 1 ? 'point' : 'points'}`
+  return `${describeAmount(points)} ${Math.abs(points) === 1 ? 'point' : 'points'}`
 }
 
 /**
@@ -109,15 +130,15 @@ export function describeEarnedOn(day: LocalDay, now: Date): string {
 }
 
 /**
- * What this many points come to in money: `25 UAH`, `0.21 UAH`. Null while
- * nothing says what a point is worth, which is where the money is left unsaid
- * rather than shown as nothing (RWD-32). Pennies are only spelled out when
- * there are any.
+ * What this many points come to in money: `25 UAH`, `0.21 UAH`, `1 730 UAH`.
+ * Null while nothing says what a point is worth, which is where the money is
+ * left unsaid rather than shown as nothing (RWD-32). Pennies are only spelled
+ * out when there are any.
  */
 export function describeMoney(points: number, value: PointValue | null): string | null {
   const money = moneyFor(points, value)
   if (money === null || value === null) return null
-  return `${Number.isInteger(money) ? String(money) : money.toFixed(2)} ${value.currency}`
+  return `${describeAmount(money)} ${value.currency}`
 }
 
 /** The rate itself, as the rules page says it: `1 point = 2.50 UAH`. */

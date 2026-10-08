@@ -8,9 +8,11 @@ import {
   stepAtPoint,
   stepOffset,
   stepOf,
+  readTyped,
   timeAt,
   timeParts,
   withHour,
+  typedDigits,
   withMinute,
   wrapStep,
 } from './clockDial'
@@ -167,5 +169,36 @@ describe('where the dial opens with no hour set', () => {
 
   it('comes round the midnight rather than past it', () => {
     expect(comingHour(new Date(2026, 8, 16, 23, 40))).toBe('00:00')
+  })
+})
+
+describe('an hour typed into the readout', () => {
+  it('keeps the digits, two at most, a third starting the number again', () => {
+    expect(typedDigits('1')).toBe('1')
+    expect(typedDigits('14')).toBe('14')
+    expect(typedDigits('145')).toBe('5')
+    expect(typedDigits('1a')).toBe('1')
+    expect(typedDigits('')).toBe('')
+  })
+
+  it('reads an hour, all said at two digits or at one no second could follow', () => {
+    expect(readTyped('1', 'hour')).toEqual({ value: 1, complete: false })
+    expect(readTyped('2', 'hour')).toEqual({ value: 2, complete: false })
+    expect(readTyped('3', 'hour')).toEqual({ value: 3, complete: true })
+    expect(readTyped('14', 'hour')).toEqual({ value: 14, complete: true })
+    expect(readTyped('06', 'hour')).toEqual({ value: 6, complete: true })
+    expect(readTyped('23', 'hour')).toEqual({ value: 23, complete: true })
+  })
+
+  it('reads the minutes the same way, up to 59', () => {
+    expect(readTyped('5', 'minute')).toEqual({ value: 5, complete: false })
+    expect(readTyped('6', 'minute')).toEqual({ value: 6, complete: true })
+    expect(readTyped('59', 'minute')).toEqual({ value: 59, complete: true })
+  })
+
+  it('reads nothing into digits that are no hour or minute', () => {
+    expect(readTyped('24', 'hour')).toBeNull()
+    expect(readTyped('60', 'minute')).toBeNull()
+    expect(readTyped('', 'hour')).toBeNull()
   })
 })

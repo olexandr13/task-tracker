@@ -162,7 +162,11 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   bought comes last.
 - **RWD-36** **Redeem** beside one spends its price on its name, there and then. It is **off while
   the balance does not cover it** (RWD-16), and the row says how many points are still to earn —
-  `4975 to go` — and off for a wish already bought. Under the **Prizes** list, **Something else**
+  `4 975 to go` — and off for a wish already bought. A row reads across in **columns** that line
+  up from row to row, the same whatever the name or the price: the price in points with its unit —
+  `100 000 points` — then in money where a point has a value (RWD-32), **Redeem**, and what is
+  still to go, so a long price never pushes the button along. A phone has room for the price in
+  points alone, written as a bare number. Under the **Prizes** list, **Something else**
   is the plain redeem form (RWD-15), for a treat that is not worth writing down; the wishlist has
   none, a wish being something you write down first.
 - **RWD-41** Redeeming **says so**: a toast names what the points went on and how many they were —
@@ -183,8 +187,18 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   back to what is saved. The **×** forgets the rate again.
 - **RWD-32** The value **counts nothing**. It changes no balance, no earning and no redemption — it
   only spells the points out in money beside them: the balance on how the points stand and on both
-  lists, and each prize's and wish's price. With no value set, nothing says it and the points are counted in
-  points alone. It is always the rate **as it stands now**, never the rate a point was earned at.
+  lists, and each prize's and wish's price. Both lists also say the **rate** itself under the
+  balance — `Rate: 1 point = 10 UAH` — so a price in money can be checked against the points, with
+  **Change** beside it, which opens Rules (RWD-39). With no value set, nothing says it, the rate
+  included, and the points are counted in points alone. It is always the rate **as it stands
+  now**, never the rate a point was earned at.
+- **RWD-46** Every amount the rewards spell out has its **thousands set apart** by a space —
+  `1 730`, `100 000 points`, `1 000 000 UAH`, `99 827 to go` — from four figures on, with
+  pennies only where there are any (`62.50 UAH`). The space is one a line never breaks at, so a
+  number never splits across two lines, and a space reads the same whichever way the reader's
+  country writes a decimal point, as a comma or a dot would not. It is how the balance, a price,
+  money, what is still to go, what each period earned and History's rows are written, and what a
+  toast says was spent.
 
 ## The Rewards pages
 
@@ -217,7 +231,8 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
 - **RWD-38** **History** is everything that happened to the points in **one run**, most recent
   first: what was earned (RWD-23) and what was spent (RWD-18) together, each row its day, what it
   was, and how many points it moved — **+5** earned, **−3** spent, told apart by the sign and a
-  slight tint and no more, since they are one story. Within a day what was spent comes first. It is
+  slight tint and no more, since they are one story. A row that moved nothing, an empty Drop
+  (CHST-11), reads **0**, with no sign. Within a day what was spent comes first. It is
   a page of its own rather than the foot of how the points stand: a year of days is a long page, and
   how you are doing should not be behind it.
 - **RWD-39** **Rules** is what earns points and what they are worth, top to bottom: the reward a
@@ -256,7 +271,7 @@ reward), `src/app/components/RewardsPage.tsx` (how the points stand), `RewardsHi
 `BonusTiles.tsx` (where each bonus stands, on both pages),
 `RewardsNav.tsx` (the strip on a phone), `RedeemForm.tsx`, `RewardTotals.tsx`, `StarIcon.tsx`,
 `GiftIcon.tsx`, `TrophyIcon.tsx`, `HistoryIcon.tsx`, `src/app/rewardLabels.ts` and
-`src/app/prizeLabels.ts` (wording), `src/app/useUndoToast.ts` (what a toast says), `src/app/useTasks.ts`
+`src/app/prizeLabels.ts` (wording; how an amount is written — `describeAmount`), `src/app/useUndoToast.ts` (what a toast says), `src/app/useTasks.ts`
 (recording what a change earns), `src/app/useRewards.ts`, `src/app/usePrizes.ts`,
 `src/app/storageProblem.ts` (what a refused load says), `src/app/useUndoToast.ts` (undo after
 deleting an earning or a redemption), `src/app/TasksScreen.tsx`, `src/app/view.ts` (the pages
@@ -273,7 +288,7 @@ see [Storage](storage.md).
 `src/app/useTasks.test.ts` (what a change records), `src/app/useRewards.test.ts`,
 `src/app/usePrizes.test.ts`, `src/app/components/RewardPicker.test.tsx`,
 `src/app/components/RewardsPage.test.tsx`, `src/app/components/PrizeListPage.test.tsx`,
-`src/app/components/LedgerList.test.tsx`,
+`src/app/components/LedgerList.test.tsx`, `src/app/rewardLabels.test.ts` (how an amount is written),
 `src/app/components/RewardRulesPage.test.tsx`, `src/app/components/RewardsNav.test.tsx`,
 `src/app/components/RedeemForm.test.tsx`, `src/app/components/AddTaskSheet.test.tsx`,
 `src/app/components/TaskItem.test.tsx`, `src/app/components/SideNav.test.tsx`,
