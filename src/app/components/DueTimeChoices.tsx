@@ -1,7 +1,8 @@
-import { useId } from 'react'
+import { useId, useState } from 'react'
 import type { LocalTime } from '../../core'
 import { describeTimeOfDay } from '../dueLabels'
 import { panelChip as chip, panelHeading } from '../panelControls'
+import { useRefusal } from '../useRefusal'
 import { ClockDial } from './ClockDial'
 
 /** The hours offered at a click, being the ones most days are shaped around. */
@@ -12,6 +13,13 @@ const QUICK_TIMES: readonly { readonly time: LocalTime; readonly label: string }
 ]
 
 const chipOn = 'bg-blue-600/10 text-blue-600 hover:bg-blue-600/20 dark:bg-blue-400/10 dark:text-blue-400'
+
+/** Set: the one button here that saves, so filled with the app's blue, a chip's size. */
+const setButton =
+  'grid h-10 min-w-0 place-items-center rounded-xl bg-blue-600 px-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 md:h-7 md:rounded-lg md:text-xs dark:bg-blue-500 dark:hover:bg-blue-400'
+
+/** Set with nothing on the face (refused in place): amber, as a refused day is, since nothing has gone wrong. */
+const refusal = 'px-2 text-xs text-amber-700 dark:text-amber-400'
 
 interface DueTimeChoicesProps {
   /** The hour the task is due at, or null for one due on the day with no hour to it. */
@@ -30,28 +38,55 @@ interface DueTimeChoicesProps {
   named?: boolean
   onChange: (time: LocalTime | null) => void
   /**
-   * Called once a choice leaves nothing further to choose here, so a panel
-   * showing the hours on their own can hand the panel back. Left out where the
-   * hours sit under the day already, there being nowhere to go (DUE-20).
+   * Called once a choice leaves nothing further to choose here — a quick hour,
+   * Set or Clear — so a panel showing the hours on their own can hand the panel
+   * back. Left out where the hours sit under the day already, there being
+   * nowhere to go (DUE-20).
    */
   onDone?: () => void
 }
 
 /**
  * The time half of the schedule panel: three quick hours, a clock face for any
- * other (DUE-24), and a way to take the hour back off. Setting one is what asks
+ * other (DUE-24), and **Clear** and **Set** under it. Setting one is what asks
  * the app to say something when it comes round (REM-1).
+ *
+ * A quick hour is saved at a click, there being nothing more to say. The face
+ * and its readout are worked at leisure instead — the hand dragged round, the
+ * hour typed — and only Set saves what they show, so the row does not move
+ * about under the panel at every minute the hand passes (DUE-10). Leaving
+ * without Set leaves the hour as it was. Clear takes the hour off.
  *
  * Nothing here closes the panel of its own accord: where the hours sit under the
  * day (DUE-20) an hour is picked in the same breath as the day, and closing out
  * from under that would mean opening the panel again to finish the thought.
- * Where they are a view of their own, a quick hour — which leaves nothing more
- * to say — hands that view back (onDone), while the face stays open for as long
- * as the hand is being moved round it. The day is what was left behind, not the panel.
+ * Where they are a view of their own, a quick hour, Set and Clear hand that view
+ * back (onDone). The day is what was left behind, not the panel.
  */
 export function DueTimeChoices({ dueTime, now, hasDay, named = true, onChange, onDone }: DueTimeChoicesProps) {
   const ids = useId()
   const heading = `${ids}-time`
+  // What the face shows, kept until Set. It starts from the hour saved, and starts
+  // again from it whenever that changes from outside — another device, say.
+  const [draft, setDraft] = useState(dueTime)
+  const [saved, setSaved] = useState(dueTime)
+  if (saved !== dueTime) {
+    setSaved(dueTime)
+    setDraft(dueTime)
+  }
+  const { refused, refuse } = useRefusal()
+
+  function save(time: LocalTime | null) {
+    setDraft(time)
+    if (time !== dueTime) onChange(time)
+    onDone?.()
+  }
+
+  /** Set with the face still empty has nothing to save: it says so, where it was pressed. */
+  function handleSet() {
+    if (draft === null) refuse()
+    else save(draft)
+  }
 
   return (
     <div role="group" aria-labelledby={heading} className="flex flex-col gap-1 pt-0.5">
@@ -72,10 +107,7 @@ export function DueTimeChoices({ dueTime, now, hasDay, named = true, onChange, o
               <button
                 key={time}
                 type="button"
-                onClick={() => {
-                  onChange(time)
-                  onDone?.()
-                }}
+                onClick={() => { save(time) }}
                 aria-label={`${label}, ${describeTimeOfDay(time)}`}
                 aria-pressed={time === dueTime}
                 className={time === dueTime ? `${chip} ${chipOn}` : chip}
@@ -85,19 +117,20 @@ export function DueTimeChoices({ dueTime, now, hasDay, named = true, onChange, o
             ))}
           </div>
 
-          <ClockDial value={dueTime} now={now} onChange={onChange} />
+          <ClockDial value={draft} now={now} onChange={setDraft} onSubmit={handleSet} />
 
-          {dueTime !== null && (
-            <button
-              type="button"
-              onClick={() => {
-                onChange(null)
-                onDone?.()
-              }}
-              className={chip}
-            >
-              Remove time
+          <div className={`grid grid-cols-2 gap-1.5 md:gap-1${refused ? ' refusal-shake' : ''}`}>
+            <button type="button" onClick={() => { save(null) }} title="Take the time off the task" className={chip}>
+              Clear
             </button>
+            <button type="button" onClick={handleSet} title="Save the time on the face" className={setButton}>
+              Set
+            </button>
+          </div>
+          {refused && draft === null && (
+            <p role="alert" className={refusal}>
+              Pick an hour on the face, or type one, then Set.
+            </p>
           )}
         </div>
       )}

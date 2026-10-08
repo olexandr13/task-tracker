@@ -170,7 +170,7 @@ describe('what the page says', () => {
     })
 
     expect(caseText('Payday')).toContain('From the cheapest task today, up to half of today’s rewards.')
-    expect(caseText('Drop')).toContain('From 0 points, up to yesterday’s average task plus yesterday’s tasks with points.')
+    expect(caseText('Drop')).toContain('Earn more points today to get a bigger reward tomorrow.')
     expect(caseText('Weekly')).toContain(
       'From the cheapest task last week, up to last week’s average task plus last week’s tasks with points.',
     )
@@ -479,7 +479,8 @@ describe('what the page says', () => {
 
     const list = screen.getByRole('region', { name: 'Opened today' })
     expect(within(list).getByRole('heading', { name: 'Opened today' })).toBeTruthy()
-    expect(openedToday()).toEqual(['Payday+9 points', 'Drop+0 points'])
+    // Nothing gained has no sign.
+    expect(openedToday()).toEqual(['Payday+9 points', 'Drop0 points'])
     // Only to read: deleting an earning is History's (RWD-44).
     expect(within(list).queryByRole('button')).toBeNull()
   })
@@ -598,7 +599,7 @@ describe('practice', () => {
     expect(caseText('Payday')).toContain('1–400')
     expect(caseText('Drop')).toContain('1–400')
     expect(caseText('Weekly')).toContain('1–400')
-    expect(caseText('Drop')).toContain('From 0 points, up to yesterday’s average task plus yesterday’s tasks.')
+    expect(caseText('Drop')).toContain('Earn more points today to get a bigger reward tomorrow.')
   })
 
   it('offers to skip the wait, so thirty openings do not cost three minutes of reels', () => {

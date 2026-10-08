@@ -438,18 +438,20 @@ describe('a task moving between the runs while its row is open', () => {
 
   const sheet = () => screen.getByRole('dialog', { name: 'Details of "plan"' })
 
-  it('keeps a phone’s sheet and the clock face open as an hour before now turns the task overdue (DUE-10, DUE-24)', async () => {
+  it('keeps a phone’s sheet and the schedule panel open as an hour before now turns the task overdue (DUE-10, DUE-20)', async () => {
     const user = userEvent.setup()
     render(<Holder />)
 
     await user.click(screen.getByRole('listitem'))
     await user.click(within(sheet()).getByRole('button', { name: /^Schedule for/ }))
     await user.click(screen.getByRole('button', { name: /^Time:/ }))
-    // Eight o'clock, an hour gone by: the task is overdue the moment it is picked (DUE-10).
+    // Eight o'clock, an hour gone by: the task is overdue the moment it is set (DUE-10).
     await user.click(screen.getByRole('button', { name: '08' }))
+    expect(screen.queryByRole('heading')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Set' }))
 
     expect(screen.getByRole('heading').textContent).toBe('Overdue1')
     expect(sheet()).toBeDefined()
-    expect(screen.getByRole('group', { name: 'Minutes' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Time: 08:00' })).toBeDefined()
   })
 })

@@ -27,9 +27,9 @@ interface TimeOfDayPickerProps {
  * browser's design and not the app's.
  *
  * There is nothing to confirm, as in the other pickers: the hour is set as it is
- * picked. The face stays open while the minutes are still to say, and closes on
- * a click outside it or Escape — the panel hears the click itself, and Escape is
- * this control's to hear, as it is the time picker's.
+ * picked, or typed. The face stays open while the minutes are still to say, and
+ * closes on Enter in its readout, a click outside it or Escape — the panel hears
+ * the click itself, and Escape is this control's to hear, as it is the time picker's.
  */
 export function TimeOfDayPicker({ label, value, now, align = 'left', hoursOnly = false, onChange }: TimeOfDayPickerProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -71,7 +71,13 @@ export function TimeOfDayPicker({ label, value, now, align = 'left', hoursOnly =
             content="gap-2 rounded-2xl p-3 md:gap-1.5 md:rounded-xl md:p-2"
             onClose={() => { setIsOpen(false) }}
           >
-            <ClockDial value={value} now={now} hoursOnly={hoursOnly} onChange={onChange} />
+            <ClockDial
+              value={value}
+              now={now}
+              hoursOnly={hoursOnly}
+              onChange={onChange}
+              onSubmit={() => { setIsOpen(false) }}
+            />
           </PickerPanel>
 
           {/* The panel hangs over the page rather than in it, so where the page

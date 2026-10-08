@@ -181,7 +181,7 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   The two runs are **one list**, the heading standing among the rows rather than boxing the overdue
   in, so a task that turns overdue while its row is open — an hour before now picked for it
   (DUE-10), say — moves up into the Overdue run with everything open on it still open: the row's
-  panel, a phone's sheet (UI-48) and the clock face in it (DUE-24) stay where they were.
+  panel and a phone's sheet (UI-48) stay where they were.
 - **TASK-19** An empty list encourages a start and points at the box above it.
 - **TASK-50** A list whose tasks are all done shows a praise banner above the done tasks: a soft
   green panel with a spark icon and clear, high-contrast praise. The moment one is open again, the
@@ -244,7 +244,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   left. The grip shows when the pointer is over the row, and on a woken row; a done row has none
   (TASK-71). A press inside a text box being
   typed in selects text instead, and a press on the row's checklist moves an item on it rather than
-  the row (CHK-28).
+  the row (CHK-28). A press inside a panel or sheet the row opened — dragging the clock's hand, say
+  — is that panel's alone, and never picks the row up or swipes it.
 - **TASK-39** With a mouse, a drag starts only once the pointer has moved a few pixels, so a click
   is still a click. With a finger, you hold for a moment first, so a vertical swipe still scrolls
   the page and a horizontal one can complete or delete the task (UI-60); let go there without

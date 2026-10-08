@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SHEET_CLOSE_DISTANCE } from '../sheetDrag'
@@ -63,6 +63,24 @@ describe('BottomSheet', () => {
     await user.click(screen.getByRole('dialog', { name: 'Details' }).previousElementSibling as HTMLElement)
 
     expect(onClose).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps a press to itself, so the row that opened it is not picked up behind it (TASK-38)', () => {
+    // Drawn over the page, but a child of the row that opened it: a press there
+    // would reach the row's drag and swipe as well as its own.
+    const pressed = vi.fn()
+    render(
+      <div onMouseDown={pressed} onTouchStart={pressed}>
+        <BottomSheet label="Details" onClose={vi.fn()}>
+          <button type="button">Inside</button>
+        </BottomSheet>
+      </div>,
+    )
+
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'Inside' }))
+    fireEvent.touchStart(screen.getByRole('button', { name: 'Inside' }))
+
+    expect(pressed).not.toHaveBeenCalled()
   })
 
   it('closes on back, so a phone’s back does not leave the app (UI-71)', async () => {

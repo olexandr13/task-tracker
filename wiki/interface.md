@@ -285,8 +285,11 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-10** Escape inside an open panel closes the panel rather than reaching anything behind it.
 - **UI-40** A panel's buttons are **compact** and the same in every panel — its choices, a
   stepper's **−** and **+**. A panel is a quick aside beside its button, kept inside the window's
-  gutter and brought into view, so nothing in it outweighs the screen behind it. On a phone a
-  menu's items are the exception (UI-49), and so is a panel opened from inside a sheet (UI-64).
+  gutter and brought into view, so nothing in it outweighs the screen behind it. Once open it
+  **stays where it is on the screen** while the row it hangs off moves — an hour picked in it can
+  carry the row into the Overdue run or out of it (TASK-68) — since the next click is aimed at where
+  the panel was; it goes with the page only as the page scrolls. On a phone a menu's items are the
+  exception (UI-49), and so is a panel opened from inside a sheet (UI-64).
 - **UI-15** A description is **not** a popover: on a wide screen it opens as an area inside the row, pushing the list
   down rather than floating over it, and a click outside keeps what was written instead of
   dismissing it. On a phone it is in the sheet (UI-48).
@@ -523,7 +526,7 @@ and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet, `R` opens Reward
 Procrastination mode), `src/app/components/MorePage.tsx` (More's list of
 links), `src/app/components/ModesPage.tsx` and `ModePage.tsx` (the modes), `src/app/components/ViewMenu.tsx` (the View
 button and its panel), `src/app/components/ViewOptionsMenu.tsx` (the
-task views' options), `src/app/useDeviceSetting.ts` (keeping them on this device), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/components/PickerPanel.tsx` (what all of them open: the aside beside a row, the sheet inside a sheet, UI-64), `src/app/usePanelPlacement.ts` (an aside kept inside the window and brought into view), `src/app/useLongPress.ts` (a press told from a
+task views' options), `src/app/useDeviceSetting.ts` (keeping them on this device), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/components/PickerPanel.tsx` (what all of them open: the aside beside a row, the sheet inside a sheet, UI-64), `src/app/usePanelPlacement.ts` (an aside kept inside the window, brought into view, and kept in its place on the screen as its row moves), `src/app/useLongPress.ts` (a press told from a
 long press), `src/app/useRowSwipe.ts` and `src/app/rowSwipe.ts` (a phone's swipe to complete or
 delete), `src/app/components/SettingsList.tsx` (and the version on it, from `package.json` via
 `vite.config.ts`), `src/app/components/SettingsSection.tsx` (a section that folds),

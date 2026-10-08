@@ -154,14 +154,21 @@ puts a task in front of you on the right day instead of in a long list of everyt
   day it is without an AM or a PM after it, the face it is picked off included (DUE-24).
 - **DUE-20** The hour is set from the schedule panel's **Time** line (DUE-23), which opens over the
   day: three hours at a click — **Morning** (09:00), **Midday** (12:00) and **Evening**
-  (18:00) — a **clock face** for any other (DUE-24), and **Remove time**. Unlike a day, choosing
-  an hour **does not close the panel**: a quick hour, which leaves nothing more to say, hands it
-  back to the day with the hour on its line, since an hour is usually picked in the same breath as
-  the day it falls on. The face stays where it is for as long as the hand is being moved round it —
-  an hour that has already gone by included, which makes the task overdue and moves its row
-  (DUE-10) without taking the face, or a phone's sheet, with it (TASK-68).
-  A change is saved as it is made, the same as a day. Where the hours sit under the day instead of
-  behind a line — the menu's **Select date** (DUE-14) — nothing moves at all.
+  (18:00) — a **clock face** for any other (DUE-24), and under it two buttons, **Clear** and
+  **Set**. Unlike a day, choosing an hour **does not close the panel**: it hands it back to the
+  day with the hour on its line, since an hour is usually picked in the same breath as the day it
+  falls on.
+  - A quick hour is saved at a click, as a day is, there being nothing more to say.
+  - The face and its readout are worked at leisure — the hand moved round, the hour typed — and
+    **nothing is saved until Set**, so the row stays put while the hand passes an hour that has
+    already gone by. Set saves what the face shows; leaving any other way — the heading, Escape,
+    a click outside — leaves the hour as it was. Set with nothing on the face saves nothing and
+    says under the buttons to pick or type an hour first.
+  - **Clear** takes the hour off.
+  An hour that has already gone by makes the task overdue and moves its row (DUE-10) as it is
+  saved, without taking the panel, or a phone's sheet, with it (TASK-68). Where the hours sit under
+  the day instead of behind a line — the menu's **Select date** (DUE-14) — the same three save it,
+  and nothing moves at all.
 - **DUE-21** An hour needs a **day to fall on**, since an hour on no day is due at no moment at all.
   Until the task has one — a date, or a repeat rule, which gives it days of its own — the Time line
   reads "Pick a day first" and will not open, the day being a click away above it. It follows that the hour
@@ -180,9 +187,16 @@ puts a task in front of you on the right day instead of in a long list of everyt
   `09:45` — each of which puts the face back on its own half, so an hour set a moment ago is
   changed without starting again. The number the hand rests on is filled, as the chosen day is in
   the calendar (DUE-15), and the hand reaches as far as that number's ring.
+  - Each half of the readout is **typed into** too, a phone bringing up its number pad: `0655`
+    is 06:55, the hand following every digit, and the typing moves on to the minutes once the
+    hour is all said — at two digits, or at one no second could follow, as a `7`. What a half held
+    shows faintly until the first digit replaces it, a third digit starts the half again, and a
+    digit that makes no hour or minute is not taken (`25` stops at `2`). Up and Down step a half
+    by one, round the day. **Enter** is Set (DUE-20); where an hour is saved as it is picked —
+    the From and To of nudges and check-ins (NUDGE-12, CHECKIN-2) — it closes the face.
   - A **click on a number** picks it, and picking the hour hands the face to the minutes. The
     **hand itself can be dragged**, which reads every minute rather than the fives written on the
-    face, so 7:07 is a movement away rather than something to type. Dragging the hand in or out
+    face, so 7:07 is a movement away as well as four digits to type. Dragging the hand in or out
     across the hours crosses between the rings, an hour in the morning to the same hour at night.
   - The face is **one stop** for Tab, on the number the hand rests on. The arrow keys move the
     hand an hour or a minute at a time and come round the **day** rather than round the face, so

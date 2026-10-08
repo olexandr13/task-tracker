@@ -103,7 +103,7 @@ slowing to a crawl — are as much the feature as the points are.
   fights procrastination must not answer a cleared day, or a week of work, with nothing, however
   good a gamble that would make it. The **Drop** can be empty: its least is **0**. It is not earned
   by clearing anything, and a yesterday with nothing done is worth nothing. An empty Drop opens as
-  any other, and writes *+0* to the ledger.
+  any other, and writes *0* to the ledger: nothing gained has no sign.
 - **CHST-28** The page shows **three cases** until the day ends (CHST-30). The cards share their
   rows, so the names stay level. A possible win sits inside a ready case, above the crate. While any
   case is ready, every case keeps that band, so the crates stay level. The three sit in a row once there is room; on a narrow screen Weekly wraps
@@ -146,13 +146,13 @@ slowing to a crawl — are as much the feature as the points are.
   padlock's place, and says under it when the next one comes (CHST-28).
 - **CHST-26** A **ready** case says **what it can give**, as a line headed **Possible win** inside
   the case, above the crate: *4–20 points* where that is Payday’s range, *1–7 points* for the Drop, marked
-  out in gold, or *0–7 points* where the Drop can come up empty. Under a ready case the rule is
-  written out: *From the cheapest task today, up to half of today’s rewards plus today’s tasks
-  without points.*, *From 0 points, up to yesterday’s average task plus yesterday’s tasks.* and,
-  for Weekly, *From the cheapest task last week, up to last week’s average task plus last week’s
-  tasks.* While tasks without points are not counted (CHST-32), Payday's reads *From the cheapest
-  task today, up to half of today’s rewards.*, and the Drop's and Weekly's end *tasks with
-  points.* A case that
+  out in gold, or *0–7 points* where the Drop can come up empty. Under a ready Payday and Weekly the
+  rule is written out: *From the cheapest task today, up to half of today’s rewards plus today’s
+  tasks without points.* and *From the cheapest task last week, up to last week’s average task plus
+  last week’s tasks.* While tasks without points are not counted (CHST-32), Payday's reads *From
+  the cheapest task today, up to half of today’s rewards.*, and Weekly's ends *tasks with points.*
+  Under a ready Drop is a nudge instead of its rule: *Earn more points today to get a bigger reward
+  tomorrow.* A case that
   is only planned has **no** possible win, including when it would only have read *1 point*.
   Neither does one already opened. In
   practice every case is ready, Weekly included, and there is no timer: each runs from 1 up to the number typed
@@ -304,7 +304,7 @@ slowing to a crawl — are as much the feature as the points are.
   words behind it, a mark that is only a colour saying nothing to someone who cannot see it.
 - **CHST-33** Under the cases, the page says **what each case opened today gave**, in a list
   headed **Opened today**: a row for each, its name and what it gave as the ledger spells it —
-  *Payday +14*, *Drop +0* — banded down its side in the case's colour as its card is (CHST-28).
+  *Payday +14*, *Drop 0* — banded down its side in the case's colour as its card is (CHST-28).
   The rows go in the cases' own order, Payday, the Drop, then Weekly: the ledger keeps which case
   gave how much, not when (RWD-44). It is **today's only** — every day's is on History (RWD-38),
   which is where a row is deleted; here there is nothing to press. With nothing opened yet today

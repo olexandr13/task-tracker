@@ -514,13 +514,14 @@ describe('the hour a task is due at', () => {
     expect(screen.getByRole('grid', { name: 'September 2026' })).toBeDefined()
   })
 
-  it('takes the hour back off, leaving the day (DUE-19)', async () => {
+  it('takes the hour back off with Clear, leaving the day (DUE-19, DUE-20)', async () => {
     const user = setup({ initial: '2026-09-16', initialTime: '09:00', showSummary: true })
     await user.click(trigger())
     await user.click(timeRow())
-    await user.click(screen.getByRole('button', { name: 'Remove time' }))
+    await user.click(screen.getByRole('button', { name: 'Clear' }))
 
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today')
+    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: Any time')
   })
 
   it('offers an hour on a repeating task with no day picked, its rule giving it days (DUE-19)', async () => {
@@ -545,15 +546,56 @@ describe('the hour a task is due at', () => {
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Daily · Today at 12:00')
   })
 
-  it('takes any other hour off the clock face, the minutes after it (DUE-19, DUE-24)', async () => {
+  it('takes any other hour off the clock face, the minutes after it, saved on Set (DUE-19, DUE-20, DUE-24)', async () => {
     const user = setup({ initial: '2026-09-16', showSummary: true })
     await user.click(trigger())
     await user.click(timeRow())
 
     await user.click(screen.getByRole('button', { name: '07' }))
     await user.click(screen.getByRole('button', { name: '45 minutes' }))
+    // The face is worked at leisure: nothing is saved until Set.
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today')
+
+    await user.click(screen.getByRole('button', { name: 'Set' }))
 
     expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today at 07:45')
+    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: 07:45')
+  })
+
+  it('sets an hour typed into the readout, Enter being Set (DUE-20, DUE-24)', async () => {
+    const user = setup({ initial: '2026-09-16', showSummary: true })
+    await user.click(trigger())
+    await user.click(timeRow())
+
+    await user.click(screen.getByRole('textbox', { name: 'Hour' }))
+    await user.keyboard('0930{Enter}')
+
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today at 09:30')
+    expect(screen.getByRole('grid', { name: 'September 2026' })).toBeDefined()
+  })
+
+  it('leaves the hour as it was when the face is left without Set (DUE-20)', async () => {
+    const user = setup({ initial: '2026-09-16', initialTime: '09:00', showSummary: true })
+    await user.click(trigger())
+    await user.click(timeRow())
+
+    await user.click(screen.getByRole('button', { name: '07' }))
+    await user.keyboard('{Escape}')
+
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today at 09:00')
+    expect(timeRow()).toHaveProperty('ariaLabel', 'Time: 09:00')
+  })
+
+  it('says what to do when Set finds nothing on the face, rather than saving nothing (DUE-20)', async () => {
+    const user = setup({ initial: '2026-09-16', showSummary: true })
+    await user.click(trigger())
+    await user.click(timeRow())
+
+    await user.click(screen.getByRole('button', { name: 'Set' }))
+
+    expect(screen.getByRole('alert').textContent).toBe('Pick an hour on the face, or type one, then Set.')
+    expect(screen.getByRole('group', { name: 'Hour' })).toBeDefined()
+    expect(trigger()).toHaveProperty('ariaLabel', 'Schedule: Today')
   })
 
   it('stays on the face while the hand is being moved round it (DUE-20, DUE-24)', async () => {

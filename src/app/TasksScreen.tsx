@@ -893,6 +893,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                       onDelete={prizes.remove}
                       onRedeem={handleRedeemPrize}
                       onRedeemOther={view === 'rewards/prizes' ? handleRedeem : undefined}
+                      onOpenRules={() => { setView('rewards/rules') }}
                     />
                   ) : view === 'rewards/rules' ? (
                     <RewardRulesPage

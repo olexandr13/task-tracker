@@ -12,7 +12,7 @@ import {
   type RewardEntry,
 } from '../../core'
 import { describeCasesOffer } from '../caseLabels'
-import { describeMoney, describePoints } from '../rewardLabels'
+import { describeAmount, describeMoney, describePoints } from '../rewardLabels'
 import { VIEW_LABELS } from '../view'
 import { BonusTiles } from './BonusTiles'
 import { CasesIcon } from './CasesIcon'
@@ -93,7 +93,7 @@ export function RewardsPage({
       <section aria-label="Balance" className={`${card} flex flex-col gap-1 px-4 py-3.5`}>
         <div className="flex items-start justify-between gap-2">
           <p className="flex items-baseline gap-2">
-            <span className="text-3xl font-semibold text-neutral-900 tabular-nums dark:text-neutral-100">{balance}</span>
+            <span className="text-3xl font-semibold text-neutral-900 tabular-nums dark:text-neutral-100">{describeAmount(balance)}</span>
             <span className="text-sm text-neutral-500 dark:text-neutral-400">
               {Math.abs(balance) === 1 ? 'point' : 'points'} to spend
             </span>

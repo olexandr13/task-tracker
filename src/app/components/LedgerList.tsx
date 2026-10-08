@@ -1,5 +1,5 @@
 import type { LedgerRow, RedemptionId, RewardKey, TaskId } from '../../core'
-import { describeEarnedOn, describeEarningTitle, describePoints } from '../rewardLabels'
+import { describeAmount, describeEarnedOn, describeEarningTitle, describePoints } from '../rewardLabels'
 import { deleteControl } from '../rowControls'
 
 interface LedgerListProps {
@@ -17,7 +17,8 @@ interface LedgerListProps {
 /**
  * Everything that happened to the points, one run of it: each row its day, what
  * it was — a task, the bonus a period paid, or what points went on — and how
- * many points it moved, **+** earned or **−** spent (RWD-38).
+ * many points it moved, **+** earned or **−** spent, and no sign where it
+ * moved none, as an empty Drop (RWD-38).
  *
  * The two sides are told apart by the sign and a tint, and no more than that:
  * they belong to one story, and a list striped in two colours would read as two
@@ -58,8 +59,8 @@ export function LedgerList({ rows, taskTitles, now, onRemoveEarning, onRemoveRed
                 earned ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
               }`}
             >
-              {earned ? '+' : '−'}
-              {points}
+              {points === 0 ? '' : earned ? '+' : '−'}
+              {describeAmount(points)}
             </span>
             <button
               type="button"

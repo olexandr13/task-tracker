@@ -13,7 +13,7 @@ import {
   type PrizeKind,
 } from '../../core'
 import { PRIZE_WORDS, type PrizeKindWords } from '../prizeLabels'
-import { describeBoughtOn, describeMoney, describePoints } from '../rewardLabels'
+import { describeAmount, describeBoughtOn, describeMoney, describePoints, describePointValue } from '../rewardLabels'
 import { deleteControl } from '../rowControls'
 import { VIEW_LABELS } from '../view'
 import { ConfirmSheet, type Confirmation } from './ConfirmSheet'
@@ -23,8 +23,22 @@ import { RedeemForm } from './RedeemForm'
 import { PencilIcon } from './PencilIcon'
 import { TrophyIcon } from './TrophyIcon'
 
+/**
+ * The list is one grid, each row a share of its columns — the glyph, the name,
+ * the price in points and in money, Redeem, what is still to go, and the two
+ * controls — so the numbers stand in columns from row to row rather than
+ * wherever each row's name leaves them (RWD-36). A column no row fills takes no
+ * room: what sets the columns apart is each cell's own margin, not a gap.
+ */
+const list = 'grid grid-cols-[auto_minmax(0,1fr)_repeat(6,auto)] gap-y-1'
+/**
+ * A phone has no room for a column of what is still to go: it is written under
+ * the price instead, a second line the rest of the row stands centred beside.
+ */
+const besideBoth = 'row-span-2 sm:row-span-1'
+const item = 'col-span-full grid grid-cols-subgrid gap-y-1'
 const row =
-  'flex items-center gap-2 rounded-xl border border-neutral-200 bg-white py-2 pr-1.5 pl-3 transition-colors hover:border-neutral-300 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700'
+  'col-span-full grid grid-cols-subgrid items-center rounded-xl border border-neutral-200 bg-white py-2 pr-1.5 pl-3 transition-colors hover:border-neutral-300 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700'
 /** A wish already bought: still listed, plainly behind us. */
 const rowBought = 'border-dashed opacity-60'
 const glyph = 'size-4 shrink-0 text-neutral-400 dark:text-neutral-500'
@@ -33,8 +47,10 @@ const smallControl =
 const field =
   'min-w-0 rounded-lg border border-neutral-300 bg-transparent px-2.5 py-2 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-500'
 const heading = 'text-sm font-medium text-neutral-700 dark:text-neutral-300'
+const link =
+  'rounded-lg text-blue-600 underline-offset-2 transition-colors hover:underline dark:text-blue-400'
 const redeemButton =
-  'shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-40'
+  'col-start-5 row-span-2 ml-3 shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:pointer-events-none disabled:opacity-40 sm:row-span-1'
 const addButton =
   'shrink-0 self-stretch rounded-lg px-3 text-base text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 active:bg-neutral-100 disabled:pointer-events-none disabled:opacity-40 md:self-auto md:px-2.5 md:py-1 md:text-sm dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:active:bg-neutral-800'
 
@@ -69,6 +85,8 @@ interface PrizeListPageProps {
   onRedeem: (prize: Prize) => void
   /** Spends points on something that is on neither list (RWD-15). Only the prizes page offers it. */
   onRedeemOther?: (points: number, note: string) => void
+  /** Opens Rules, where what a point is worth is set (RWD-31). */
+  onOpenRules?: () => void
   now: Date
 }
 
@@ -106,6 +124,7 @@ export function PrizeListPage({
   onDelete,
   onRedeem,
   onRedeemOther,
+  onOpenRules,
   now,
 }: PrizeListPageProps) {
   const words = PRIZE_WORDS[kind]
@@ -122,6 +141,7 @@ export function PrizeListPage({
   // Taken off elsewhere — on another device — while asked, there is nothing left to ask about.
   if (asking !== null && asked === undefined) setAsking(null)
 
+  const worth = describeMoney(balance, pointValue)
   const typedPoints = Number(points)
   const canAdd = isPrizeName(name) && points.trim() !== '' && isPrizePoints(typedPoints)
 
@@ -172,12 +192,36 @@ export function PrizeListPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          <span className="font-medium text-neutral-900 tabular-nums dark:text-neutral-100">{balance}</span>{' '}
-          {Math.abs(balance) === 1 ? 'point' : 'points'} to spend
-          {describeMoney(balance, pointValue) !== null && ` — worth ${String(describeMoney(balance, pointValue))}`}
-        </p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            <span className="font-medium text-neutral-900 tabular-nums dark:text-neutral-100">
+              {describeAmount(balance)}
+            </span>{' '}
+            {Math.abs(balance) === 1 ? 'point' : 'points'} to spend
+            {worth !== null && ` — worth ${worth}`}
+          </p>
+          {/* The rate the money is counted at, so a price in money can be checked
+              against the points (RWD-32); it is set on Rules, a click away. */}
+          {pointValue !== null && (
+            <p className="text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
+              Rate: {describePointValue(pointValue)}
+              {onOpenRules !== undefined && (
+                <>
+                  {' · '}
+                  <button
+                    type="button"
+                    onClick={onOpenRules}
+                    aria-label={`Change what a point is worth, on "${VIEW_LABELS['rewards/rules']}"`}
+                    className={link}
+                  >
+                    Change
+                  </button>
+                </>
+              )}
+            </p>
+          )}
+        </div>
         <InfoButton label={VIEW_LABELS[kind === 'wish' ? 'rewards/wishlist' : 'rewards/prizes']}>
           <p>{words.hint}</p>
         </InfoButton>
@@ -239,13 +283,17 @@ export function PrizeListPage({
       {prizes.length === 0 ? (
         <p className="py-6 text-center text-neutral-400 dark:text-neutral-600">{words.empty}</p>
       ) : (
-        <ul className="flex flex-col gap-1">
+        <ul className={list}>
           {prizes.map((prize) => {
             const affordable = canAfford(prize, balance)
             const bought = !isAvailable(prize)
             const money = describeMoney(prize.points, pointValue)
+            // Still to go: on a phone, said on a line of its own under the price,
+            // which then sits on the first of the two lines rather than across both.
+            const short = !bought && !affordable
+            const priceLines = short ? 'row-start-1 self-end sm:self-auto' : besideBoth
             return (
-              <li key={prize.id} className="flex flex-col gap-1">
+              <li key={prize.id} className={item}>
                 <div className={bought ? `${row} ${rowBought}` : row}>
                   {editing?.id === prize.id ? (
                     // The name and the price are one change: it is kept once the
@@ -254,7 +302,7 @@ export function PrizeListPage({
                       onBlur={(event) => {
                         if (!event.currentTarget.contains(event.relatedTarget)) commitEditing()
                       }}
-                      className="flex min-w-0 flex-1 items-center gap-2"
+                      className="col-span-full flex min-w-0 items-center gap-2"
                     >
                       <Icon className={glyph} />
                       <input
@@ -290,19 +338,26 @@ export function PrizeListPage({
                     </div>
                   ) : (
                     <>
-                      <Icon className={glyph} />
+                      <Icon className={`col-start-1 ${besideBoth} ${glyph}`} />
                       <span
-                        className={`min-w-0 flex-1 break-words text-sm text-neutral-900 dark:text-neutral-100${bought ? ' line-through' : ''}`}
+                        className={`col-start-2 ${besideBoth} ml-2 min-w-0 break-words text-sm text-neutral-900 dark:text-neutral-100${bought ? ' line-through' : ''}`}
                       >
                         {prize.name}
                       </span>
-                      <span className="shrink-0 text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
-                        {prize.points}
-                        {money !== null && <span className="hidden sm:inline"> · {money}</span>}
+                      {/* The price spelled out in both, each with what it is counted in;
+                          a phone has room for the points alone. */}
+                      <span className={`col-start-3 ${priceLines} ml-3 text-right text-sm whitespace-nowrap text-neutral-700 tabular-nums dark:text-neutral-300`}>
+                        {describeAmount(prize.points)}
+                        <span className="hidden sm:inline"> {prize.points === 1 ? 'point' : 'points'}</span>
                       </span>
+                      {money !== null && (
+                        <span className="col-start-4 ml-3 hidden text-right text-sm whitespace-nowrap text-neutral-500 tabular-nums sm:block dark:text-neutral-400">
+                          {money}
+                        </span>
+                      )}
 
                       {bought ? (
-                        <span className="shrink-0 px-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        <span className={`col-span-2 col-start-5 ${besideBoth} ml-3 px-1 text-xs whitespace-nowrap text-neutral-500 dark:text-neutral-400`}>
                           {describeBoughtOn(prize.boughtAt ?? '', now)}
                         </span>
                       ) : (
@@ -317,9 +372,9 @@ export function PrizeListPage({
                             Redeem
                           </button>
 
-                          {!affordable && (
-                            <span className="shrink-0 text-xs text-neutral-400 tabular-nums dark:text-neutral-500">
-                              {pointsShort(prize, balance)} to go
+                          {short && (
+                            <span className="col-start-3 row-start-2 ml-3 self-start text-right text-xs whitespace-nowrap sm:col-start-6 sm:row-start-1 sm:ml-2 sm:self-auto text-neutral-400 tabular-nums dark:text-neutral-500">
+                              {describeAmount(pointsShort(prize, balance))} to go
                             </span>
                           )}
                         </>
@@ -331,7 +386,7 @@ export function PrizeListPage({
                           onClick={() => { startEditing(prize) }}
                           aria-label={`Change the ${words.one} "${prize.name}"`}
                           title={`Change ${words.one}`}
-                          className={smallControl}
+                          className={`col-start-7 ${besideBoth} ml-2 ${smallControl}`}
                         >
                           <PencilIcon className="size-3.5 shrink-0" />
                         </button>
@@ -343,7 +398,7 @@ export function PrizeListPage({
                         onClick={() => { setAsking(prize.id) }}
                         aria-label={`Delete the ${words.one} "${prize.name}"`}
                         title={`Delete ${words.one}`}
-                        className={`flex h-6 shrink-0 items-center rounded-lg px-1.5 text-base leading-none ${deleteControl}`}
+                        className={`col-start-8 ${besideBoth} ml-1 flex h-6 shrink-0 items-center rounded-lg px-1.5 text-base leading-none ${deleteControl}`}
                       >
                         ×
                       </button>
@@ -352,7 +407,7 @@ export function PrizeListPage({
                 </div>
 
                 {taken === prize.id && (
-                  <p role="alert" className="px-1 text-xs text-red-600 dark:text-red-400">
+                  <p role="alert" className="col-span-full px-1 text-xs text-red-600 dark:text-red-400">
                     {words.taken}
                   </p>
                 )}

@@ -127,3 +127,30 @@ export function comingHour(now: Date): LocalTime {
   const { hour } = timeParts(toLocalTime(now))
   return timeAt(hour + 1, 0)
 }
+
+/** The most each half of the readout can say: the last hour of the day, the last minute of the hour. */
+const TYPED_MAX: Readonly<Record<DialUnit, number>> = { hour: DAY_HOURS - 1, minute: 59 }
+
+/**
+ * The digits in a half of the readout after a key, at most two. A third is the
+ * start of a new number rather than one too many, so a half already said is
+ * said again by typing over it, without clearing it first.
+ */
+export function typedDigits(entered: string): string {
+  const digits = entered.replace(/\D/g, '')
+  return digits.length > 2 ? digits.slice(-1) : digits
+}
+
+/**
+ * What digits typed into a half of the readout say: the number, and whether it
+ * is all said — two digits, or one no second could follow, as a `7` for the hour
+ * or a `6` for the minutes. Null for no digits, or for two that are not an hour
+ * or a minute at all, as `25` or `61`.
+ */
+export function readTyped(digits: string, unit: DialUnit): { value: number; complete: boolean } | null {
+  if (!/^\d{1,2}$/.test(digits)) return null
+  const value = Number(digits)
+  const max = TYPED_MAX[unit]
+  if (digits.length === 1) return { value, complete: value * 10 > max }
+  return value > max ? null : { value, complete: true }
+}
