@@ -11,7 +11,7 @@ import { MorePage } from './MorePage'
 afterEach(cleanup)
 
 describe('MorePage', () => {
-  it('links to Lists, Tags, Modes, Balance and the activity log, in the sidebar\'s order (UI-30, UI-45, LST-24, BAL-1, ACT-1)', () => {
+  it('links to Lists, Tags, Modes, Balance, the activity log and the journal, in the sidebar\'s order (UI-30, UI-45, LST-24, BAL-1, ACT-1, JRN-1)', () => {
     render(<MorePage onOpen={vi.fn()} />)
 
     expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual([
@@ -20,7 +20,16 @@ describe('MorePage', () => {
       'Modes',
       'Balance',
       'Activity log',
+      'Journal',
     ])
+  })
+
+  it('opens the journal (JRN-1)', async () => {
+    const onOpen = vi.fn()
+    render(<MorePage onOpen={onOpen} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Journal' }))
+    expect(onOpen).toHaveBeenCalledExactlyOnceWith('journal')
   })
 
   it('opens the activity log (ACT-1)', async () => {
@@ -95,7 +104,7 @@ describe('MorePage', () => {
   })
 
   it('lists no page switched off (FEAT-2)', () => {
-    const off: FeaturesOff = ['tags', 'modes']
+    const off: FeaturesOff = ['tags', 'modes', 'journal']
     render(
       <FeaturesContext value={off}>
         <MorePage onOpen={vi.fn()} />

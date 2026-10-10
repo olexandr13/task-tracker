@@ -10,6 +10,7 @@ import {
   type CategoryId,
   type Period,
   type Task,
+  type TimeEntryChange,
   type TimeEntryId,
 } from '../../core'
 import {
@@ -67,6 +68,8 @@ interface BalancePageProps {
   onLogTime: (id: CategoryId, minutes: number, comment: string | null) => void
   /** Takes back a session logged straight to a category (BAL-15). */
   onRemoveTime: (id: CategoryId, entryId: TimeEntryId) => void
+  /** Changes how long a session logged straight to a category was and what it went on (BAL-15). */
+  onChangeTime: (id: CategoryId, entryId: TimeEntryId, change: TimeEntryChange) => void
   onDelete: (id: CategoryId) => void
 }
 
@@ -91,6 +94,7 @@ export function BalancePage({
   onUnbind,
   onLogTime,
   onRemoveTime,
+  onChangeTime,
   onDelete,
 }: BalancePageProps) {
   const [period, setPeriod] = useState<Period>('today')
@@ -121,6 +125,7 @@ export function BalancePage({
         onUnbind={onUnbind}
         onLogTime={onLogTime}
         onRemoveTime={onRemoveTime}
+        onChangeTime={onChangeTime}
         onDelete={onDelete}
       />
     </div>
@@ -236,6 +241,7 @@ interface CategoriesProps {
   onUnbind: (id: CategoryId, tag: string) => void
   onLogTime: (id: CategoryId, minutes: number, comment: string | null) => void
   onRemoveTime: (id: CategoryId, entryId: TimeEntryId) => void
+  onChangeTime: (id: CategoryId, entryId: TimeEntryId, change: TimeEntryChange) => void
   onDelete: (id: CategoryId) => void
 }
 
@@ -271,6 +277,7 @@ function Categories({
   onUnbind,
   onLogTime,
   onRemoveTime,
+  onChangeTime,
   onDelete,
 }: CategoriesProps) {
   const headingId = useId()
@@ -409,6 +416,7 @@ function Categories({
                     now={now}
                     onLog={(minutes, comment) => { onLogTime(category.id, minutes, comment) }}
                     onRemove={(entryId) => { onRemoveTime(category.id, entryId) }}
+                    onChange={(entryId, change) => { onChangeTime(category.id, entryId, change) }}
                   />
                 )}
 

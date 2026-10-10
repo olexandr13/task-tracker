@@ -45,8 +45,8 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * A phone's navigation: a bar along the bottom, in reach of a thumb, where the
  * sidebar would be on a wide screen.
  *
- * The tabs run from Settings on the left to the period on the right. Today, Week
- * and Month share that last tab, which shows the one last chosen and goes to it
+ * The tabs run from Settings on the left to the period on the right. Today,
+ * Tomorrow, Week and Month share that last tab, which shows the one last chosen and goes to it
  * on a tap. The lists and the trash have no tab — they are reached from
  * Tasks, so Tasks stays marked while either is open, or one list or the Inbox.
  * **Rewards** has a tab of its own, which stays marked while any of its five
@@ -57,7 +57,7 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * sidebar has no More: it lists each of those pages itself (UI-30).
  *
  * The period tab, Tasks and Rewards each have a menu of what the sidebar has in
- * their place: the three periods; Lists with the Inbox and every list indented
+ * their place: the four periods; Lists with the Inbox and every list indented
  * under it, then the trash; and Rewards with the history, the prizes, the
  * wishlist and the rules indented under it. Holding the tab opens it, and so
  * does tapping it again once its page is on screen, a tap there having nowhere
@@ -262,7 +262,7 @@ export function BottomNav({ view, lists, keyWaiting = false, dimmed = false, onC
               label={VIEW_LABELS[period]}
               icon={VIEW_ICONS[period]}
               active={isPeriodView(view) || menu?.of === 'period'}
-              description="Hold, or tap again, to switch between Today, Week and Month"
+              description="Hold, or tap again, to switch between Today, Tomorrow, Week and Month"
               {...noticingMenu(periodPress)}
             />
           </li>

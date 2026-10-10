@@ -168,6 +168,19 @@ changes shape.
   cannot read is ignored with a warning and left as it is (STORE-7). It is readable and writable by the account alone (STORE-17), and opens offline and waits
   for a connection like the tasks (STORE-18).
 
+## The journal
+
+- **STORE-60** The journal (JRN-1) is kept in the account as **one record per day**, holding a field
+  for each line written about that day, keyed by the line's id — as the activity log keeps its days
+  (STORE-51), so reading the journal costs a record a day. A day is only ever changed **line by
+  line**: writing or changing one writes its field, deleting one deletes it, and nothing else on the
+  day is touched, so two devices writing about one day keep both. A line holds its section, what was
+  written and when; a day whose last line was deleted is read as a day with nothing written. A day
+  the journal no longer keeps (JRN-8) is **deleted whole**, so the account never holds more than a
+  week or so of them. It has **its own version**; a day the app cannot read is ignored with a warning
+  and left as it is (STORE-7), until it too is older than a week. It is readable and writable by the
+  account alone (STORE-17), and opens offline and waits for a connection like the tasks (STORE-18).
+
 ## The check-in
 
 - **STORE-52** The **check-in's setting** (CHECKIN-9) is kept in the account as **one record**,
@@ -241,7 +254,8 @@ changes shape.
 ## Guest — this device only
 
 - **STORE-37** As guest (AUTH-15), tasks, lists, tags, the wishlist, the Balance categories, the
-  activity log — a record at a time — and the check-in's setting (STORE-51, STORE-52), the points ledger — the
+  activity log and the journal — a record at a time — and the check-in's setting (STORE-51, STORE-60,
+  STORE-52), the points ledger — the
   bonuses, what a point is worth, what Cases asks and the reward new tasks start with, with it
   (STORE-41, STORE-42, STORE-43, STORE-48, STORE-58), the warm-up
   (STORE-44), Procrastination mode (STORE-45), the nudge's setting (STORE-46) and the feature
@@ -252,7 +266,7 @@ changes shape.
   quiet (OFF-7).
 - **STORE-38** The first time a Google account is open here online after guest data was kept, that
   data is **moved into the account** — tasks, lists, tags, prizes, Balance categories, the activity
-  log, points earned, redemptions, the bonuses, what a point is worth, the reward new tasks start
+  log, the journal, points earned, redemptions, the bonuses, what a point is worth, the reward new tasks start
   with, the warm-up, the nudge's setting, the check-in's and the feature switches — added alongside
   what the account already has, without overwriting tasks it already holds (STORE-20), or a bonus,
   point value, reward for new tasks, warm-up, nudge, check-in or switches it has already set, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
@@ -412,7 +426,8 @@ and `warmUpSchema.ts` (the warm-up), `nudgeRepository.ts`, `firestoreNudgeReposi
 `localNudgeRepository.ts` and `nudgeSchema.ts` (the nudge's setting), `nudgeDeviceRepository.ts`,
 `nudgeDeviceSchema.ts` and `localStorageNudgeRepository.ts` (what it has said on this device),
 `activityRepository.ts`, `firestoreActivityRepository.ts`, `localActivityRepository.ts` and
-`activitySchema.ts` (the activity log), `checkInRepository.ts`, `firestoreCheckInRepository.ts`,
+`activitySchema.ts` (the activity log), `journalRepository.ts`, `firestoreJournalRepository.ts`,
+`localJournalRepository.ts` and `journalSchema.ts` (the journal), `checkInRepository.ts`, `firestoreCheckInRepository.ts`,
 `localCheckInRepository.ts` and `checkInSchema.ts` (the check-in's setting), `checkInDeviceRepository.ts`,
 `checkInDeviceSchema.ts` and `localStorageCheckInDeviceRepository.ts` (what it keeps on this device),
 `src/app/useActivities.ts`,
@@ -437,7 +452,8 @@ STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/S
 `src/storage/localTaskRepository.test.ts` (the guest's tasks),
 `src/storage/rewardSchema.test.ts`
 (reading the ledger back), `src/storage/activitySchema.test.ts` and `localActivityRepository.test.ts`
-(the activity log, and what a change writes), `src/storage/checkInSchema.test.ts` (the check-in's
+(the activity log, and what a change writes), `src/storage/journalSchema.test.ts` (the journal, what a
+change writes and the guest's), `src/storage/checkInSchema.test.ts` (the check-in's
 setting, and what it keeps on this device), `src/storage/warmUpSchema.test.ts` (reading the warm-up back),
 `src/storage/nudgeSchema.test.ts` and `src/storage/nudgeDeviceSchema.test.ts` (reading the nudge's
 setting back, and what a record from before it synced still answers), `src/storage/prizeSchema.test.ts` and `src/app/usePrizes.test.ts`

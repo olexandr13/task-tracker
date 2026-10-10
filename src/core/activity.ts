@@ -247,6 +247,25 @@ export function withoutSession(entries: readonly ActivityEntry[], entryId: TimeE
 }
 
 /**
+ * The log with a session's records written again for the length it was changed
+ * to (TIME-24, ACT-21): the records it made go, as changed or moved as they may
+ * be, and its time up to the moment it was logged is cut into hours afresh,
+ * under the task's title. A session none of whose records is left — taken out
+ * of the log by hand — stays out of it: the log is left as it is.
+ */
+export function withSessionResized(
+  entries: readonly ActivityEntry[],
+  title: string,
+  taskId: TaskId,
+  session: TimeEntry,
+  now: Date = new Date(),
+  known: readonly string[] = [],
+): ActivityEntry[] {
+  if (!entries.some((entry) => entry.session?.entryId === session.id)) return [...entries]
+  return [...withoutSession(entries, session.id), ...sessionActivityEntries(title, taskId, session, now, known)]
+}
+
+/**
  * When a record began and ended, by its hour and the second of it it began at,
  * or null for one that does not know (ACT-21). It ends its length later, so a
  * record changed or moved keeps beginning as far into its hour as it did.

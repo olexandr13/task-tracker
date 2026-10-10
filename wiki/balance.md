@@ -75,7 +75,7 @@ Time that was never a task — an evening's reading — can be **logged straight
   what it was split with beside when it was logged: `30m split with Rest`. So the list adds up to
   the piece. **Other** lists the sessions on tasks bound to no category. Changing the period lists
   that period's sessions while the piece is still pressed and has time in it. The list is only to
-  read: a session is taken back where it was logged (TIME-4, BAL-15). A long list scrolls inside its
+  read: a session is changed or taken back where it was logged (TIME-4, TIME-24, BAL-15). A long list scrolls inside its
   own box.
 
 ## Categories
@@ -126,9 +126,9 @@ Time that was never a task — an evening's reading — can be **logged straight
   divides (BAL-3 to BAL-5) changes for it.
 - **BAL-15** Under the boxes the panel lists what was logged straight to the category, under
   **Logged here**, the **latest first**: each with when it was logged — its time today, its date and
-  time before that — its comment under that when it has one, and its length. The **×** beside one
-  takes it back (UI-38), for a session logged by mistake; a comment is not changed once logged, the
-  session is taken back and logged again (TIME-23). Sessions are kept as long as a task's history
+  time before that — its comment under that when it has one, and its length. The **pencil** beside
+  one changes its length and comment in place, as a task's session is changed (TIME-24), and the
+  **×** after it takes it back (UI-38), for a session logged by mistake. Sessions are kept as long as a task's history
   is, thirty days and never less than the calendar month (TIME-8), so every period the page shows
   is whole; older ones drop out the next time time is logged to the category. A long list scrolls
   inside the panel.
@@ -150,7 +150,7 @@ Time that was never a task — an evening's reading — can be **logged straight
 ---
 
 **Where it lives:** `src/core/balance.ts` (categories, binding, following a tag renamed or deleted,
-time logged straight to a category, the totals, and the sessions behind a piece), `src/core/timeLog.ts` (how long sessions are
+time logged straight to a category and changing it, the totals, and the sessions behind a piece), `src/core/timeLog.ts` (how long sessions are
 kept, and a session as logged), `src/app/useCategories.ts`, `src/app/components/BalancePage.tsx`,
 `src/app/components/CategoryTimePicker.tsx` (logging straight to a category) and
 `src/app/components/TimeLogFields.tsx` (its boxes and list), `src/app/components/TimeSplitChart.tsx` (the bar and its

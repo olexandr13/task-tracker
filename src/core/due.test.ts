@@ -5,6 +5,7 @@ import {
   dueMoment,
   dueAgainOn,
   dueReminders,
+  isDueTomorrow,
   isInPeriod,
   isOverdue,
   isSkippedToday,
@@ -13,6 +14,7 @@ import {
   skipOccurrence,
   splitOverdue,
   standingReminders,
+  tomorrowDueDay,
   unskipToday,
 } from './due'
 import type { Repeat } from './repeat'
@@ -480,6 +482,52 @@ describe('isInMonth', () => {
 
     expect(isInMonth(on25th, WED_16)).toBe(false)
     expect(isInMonth(on25th, new Date(2026, 8, 25, 9, 0))).toBe(true)
+  })
+})
+
+describe('isDueTomorrow (LIST-22 – LIST-24)', () => {
+  it('holds what is due tomorrow, at an hour or not, and nothing later', () => {
+    expect(isDueTomorrow(dueOn('2026-09-17'), WED_16)).toBe(true)
+    expect(isDueTomorrow(setDueTime(dueOn('2026-09-17'), '09:00'), WED_16_EVENING)).toBe(true)
+    expect(isDueTomorrow(dueOn('2026-09-18'), WED_16)).toBe(false)
+  })
+
+  it('gathers nothing up: not today, not overdue, not a task with no day', () => {
+    expect(isDueTomorrow(dueOn('2026-09-16'), WED_16)).toBe(false)
+    expect(isDueTomorrow(dueOn('2026-09-01'), WED_16)).toBe(false)
+    expect(isDueTomorrow(undated(), WED_16)).toBe(false)
+  })
+
+  it('holds a repeating task only when its occurrence in play falls tomorrow', () => {
+    expect(isDueTomorrow(repeating(DAILY), WED_16)).toBe(false)
+    expect(isDueTomorrow(skipOccurrence(repeating(DAILY), WED_16), WED_16)).toBe(true)
+    expect(isDueTomorrow(startedOnDay(DAILY, '2026-09-17'), WED_16)).toBe(true)
+    // Thursday's occurrence is not in play until Thursday, as in Week (LIST-11).
+    expect(isDueTomorrow(repeating(MONDAYS_AND_THURSDAYS), WED_16)).toBe(false)
+  })
+
+  it('keeps a task due tomorrow that was finished ahead of its day', () => {
+    expect(isDueTomorrow(completeTask(dueOn('2026-09-17'), WED_16), WED_16_EVENING)).toBe(true)
+    expect(isDueTomorrow(completeTask(dueOn('2026-09-16'), WED_16), WED_16_EVENING)).toBe(false)
+  })
+
+  it('leaves out the trash', () => {
+    expect(isDueTomorrow(deleteTask(dueOn('2026-09-17'), TUE_15), WED_16)).toBe(false)
+  })
+
+  it('moves on with the clock: at midnight tomorrow\'s tasks are today\'s', () => {
+    const thursday = dueOn('2026-09-17')
+
+    expect(isDueTomorrow(thursday, new Date(2026, 8, 17, 0, 0))).toBe(false)
+    expect(isInToday(thursday, new Date(2026, 8, 17, 0, 0))).toBe(true)
+  })
+})
+
+describe('tomorrowDueDay', () => {
+  it('is the day after today, across the end of a month and a year', () => {
+    expect(tomorrowDueDay(WED_16_EVENING)).toBe('2026-09-17')
+    expect(tomorrowDueDay(new Date(2026, 8, 30, 23, 59))).toBe('2026-10-01')
+    expect(tomorrowDueDay(new Date(2026, 11, 31, 9, 0))).toBe('2027-01-01')
   })
 })
 

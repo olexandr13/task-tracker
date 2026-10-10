@@ -26,6 +26,7 @@ import {
   slotKey,
   suggestActivities,
   withoutSession,
+  withSessionResized,
   type ActivityEntry,
   type HourSlot,
 } from './activity'
@@ -175,6 +176,28 @@ describe('time logged on a task (ACT-21)', () => {
 
     expect(log).toHaveLength(4)
     expect(withoutSession(log, logged.id)).toEqual(kept)
+  })
+
+  it('is written again for a session’s new length, up to when it was logged (TIME-24)', () => {
+    const logged = session(30 * 60, at(11, 30))
+    const kept = [entry('Work', 15, FRI)]
+    const [made] = sessionActivityEntries('Work', 'task-1', logged)
+    const moved = changeActivityEntry(made, { activity: 'Work', seconds: 1800, hour: 14 })
+
+    const log = withSessionResized([...kept, moved], 'Work', 'task-1', { ...logged, seconds: 50 * 60 }, NOW)
+
+    expect(log.slice(0, 1)).toEqual(kept)
+    expect(log.slice(1).map(({ hour, startSecond, seconds, session: from }) => ({ hour, startSecond, seconds, from }))).toEqual([
+      { hour: 10, startSecond: 40 * 60, seconds: 20 * 60, from: { taskId: 'task-1', entryId: logged.id } },
+      { hour: 11, startSecond: 0, seconds: 30 * 60, from: { taskId: 'task-1', entryId: logged.id } },
+    ])
+  })
+
+  it('stays out once its records were taken out of the log by hand (TIME-24)', () => {
+    const logged = session(30 * 60, at(11, 30))
+    const kept = [entry('Work', 15, FRI)]
+
+    expect(withSessionResized(kept, 'Work', 'task-1', { ...logged, seconds: 50 * 60 }, NOW)).toEqual(kept)
   })
 })
 

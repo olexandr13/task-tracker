@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { recentCategoryTime, type Category, type TimeEntryId } from '../../core'
+import { recentCategoryTime, type Category, type TimeEntryChange, type TimeEntryId } from '../../core'
 import { CATEGORY_TIME_BUTTON, CATEGORY_TIME_COMMENT_HINT, CATEGORY_TIME_LIST, describeCategoryTimeTitle } from '../balanceLabels'
 import { controlOff, rowControlLabel } from '../rowControls'
 import { ClockIcon } from './ClockIcon'
@@ -13,6 +13,8 @@ interface CategoryTimePickerProps {
   /** A session logged straight to the category, with the comment typed for it or null for none. */
   onLog: (minutes: number, comment: string | null) => void
   onRemove: (entryId: TimeEntryId) => void
+  /** A session's length or comment changed in place (BAL-15, TIME-24). */
+  onChange: (entryId: TimeEntryId, change: TimeEntryChange) => void
   /** Which edge of the button the panel lines up with: the one nearer the middle of the screen. */
   align?: 'left' | 'right'
 }
@@ -21,10 +23,18 @@ interface CategoryTimePickerProps {
  * Time logged straight to a Balance category, with no task behind it (BAL-14):
  * a **Log time** button on the category that opens a panel laid out as a
  * task's clock is (TIME-3) — a comment, the quick sessions and a box for any
- * other length — and under it the sessions logged here, each with its **×**
- * (BAL-15). The panel stays open after logging, so the new session is in view.
+ * other length — and under it the sessions logged here, each with a pencil to
+ * change it and an **×** to take it back (BAL-15). The panel stays open after
+ * logging, so the new session is in view.
  */
-export function CategoryTimePicker({ category, now, onLog, onRemove, align = 'right' }: CategoryTimePickerProps) {
+export function CategoryTimePicker({
+  category,
+  now,
+  onLog,
+  onRemove,
+  onChange,
+  align = 'right',
+}: CategoryTimePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   // What the next session logged here went on; spaces alone say nothing.
   const [comment, setComment] = useState('')
@@ -89,7 +99,13 @@ export function CategoryTimePicker({ category, now, onLog, onRemove, align = 'ri
           />
 
           {sessions.length > 0 && (
-            <SessionList sessions={sessions} now={now} onRemove={onRemove} label={CATEGORY_TIME_LIST} />
+            <SessionList
+              sessions={sessions}
+              now={now}
+              onRemove={onRemove}
+              onChange={onChange}
+              label={CATEGORY_TIME_LIST}
+            />
           )}
         </PickerPanel>
       )}

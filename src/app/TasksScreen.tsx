@@ -17,6 +17,7 @@ import {
   summarizeTags,
   trashedTasks,
   type ActivityEntry,
+  type JournalEntry,
   type CategoryId,
   type HourSlot,
   type ListId,
@@ -43,6 +44,7 @@ import { CheckInSettings } from './components/CheckInSettings'
 import { CheckInToast } from './components/CheckInToast'
 import { FolderIcon } from './components/FolderIcon'
 import { HabitList } from './components/HabitList'
+import { JournalPage } from './components/JournalPage'
 import { WarmUpNoticeToast } from './components/WarmUpNoticeToast'
 import { CaseNoticeToast } from './components/CaseNoticeToast'
 import { CasesPage } from './components/CasesPage'
@@ -93,6 +95,7 @@ import { useCheckIn } from './useCheckIn'
 import { useCategories } from './useCategories'
 import { FeaturesContext, modesShown, nearestViewOn } from './features'
 import { useFeatures } from './useFeatures'
+import { useJournal } from './useJournal'
 import { useDeviceSetting } from './useDeviceSetting'
 import { useLists } from './useLists'
 import { usePrizes } from './usePrizes'
@@ -187,6 +190,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // The activity log, hour by hour (ACT-1), ahead of the tasks: time logged on
   // a task is written into it as well (ACT-21), switched off or not (FEAT-5).
   const activities = useActivities(storage.activities, storageProblem.report)
+  // Today's good things, achievements and gratitude, and the week before (JRN-1).
+  const journal = useJournal(storage.journal, storageProblem.report)
   const {
     tasks,
     heldSince,
@@ -212,6 +217,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     logTaskTime,
     logTaskSeconds,
     removeTaskTime,
+    changeTaskTime,
     tag,
     untag,
     removeTagEverywhere,
@@ -236,6 +242,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     rewards.bonuses,
     rewards.entries,
     activities.addSessions,
+    activities.resizeSessions,
   )
   const lists = useLists(storage.lists, storageProblem.report)
   const prizes = usePrizes(storage.prizes, storageProblem.report)
@@ -590,6 +597,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       case 'activity':
         activities.restore(undo.pending.entry)
         break
+      case 'journal':
+        journal.restore(undo.pending.entry)
+        break
     }
     undo.dismiss()
   }
@@ -670,6 +680,12 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     undo.show({ kind: 'activity', entry })
   }
 
+  /** Takes a line out of the journal, with a few seconds to take it back (JRN-5). */
+  function handleRemoveJournalLine(entry: JournalEntry) {
+    journal.remove(entry.id)
+    undo.show({ kind: 'journal', entry })
+  }
+
   /**
    * What a row, a habit card or a task's sheet can do to its task: the rules
    * from useTasks, with completing, deleting and ending a repeat offering their
@@ -706,6 +722,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       removeTaskTime(id, entryId)
       activities.removeSession(entryId)
     },
+    // A length changed rewrites the session's hours in the activity log, as
+    // useTasks tells it (TIME-24, ACT-21).
+    changeTimeEntry: changeTaskTime,
     changeList,
     addTag: (id, name) => { tag(id, name, tags) },
     removeTag: untag,
@@ -1071,6 +1090,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                           onUnbind={categories.unbind}
                           onLogTime={categories.logTime}
                           onRemoveTime={categories.removeTime}
+                          onChangeTime={categories.changeTime}
                           onDelete={handleDeleteCategory}
                         />
                       )}
@@ -1092,6 +1112,20 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                           onChange={activities.change}
                           onRemove={handleRemoveActivity}
                           onOpenCheckIn={() => { setView('modes/check-in') }}
+                        />
+                      )}
+                    </section>
+                  ) : view === 'journal' ? (
+                    <section aria-label="Journal">
+                      {journal.isLoading ? (
+                        <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                      ) : (
+                        <JournalPage
+                          entries={journal.entries}
+                          now={now}
+                          onAdd={(section, text, day) => { journal.add(section, text, day) }}
+                          onChange={journal.change}
+                          onRemove={handleRemoveJournalLine}
                         />
                       )}
                     </section>

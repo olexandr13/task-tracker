@@ -18,6 +18,7 @@ export const NO_TASK_ACTIONS: TaskActions = {
   changeTimeGoal: nothing,
   logTime: nothing,
   removeTimeEntry: nothing,
+  changeTimeEntry: nothing,
   changeList: nothing,
   addTag: nothing,
   removeTag: nothing,

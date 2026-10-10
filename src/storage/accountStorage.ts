@@ -10,6 +10,7 @@ import { createFirestoreBackupRepository } from './firestoreBackupRepository'
 import { createFirestoreCategoryRepository } from './firestoreCategoryRepository'
 import { createFirestoreCheckInRepository } from './firestoreCheckInRepository'
 import { createFirestoreFeatureRepository } from './firestoreFeatureRepository'
+import { createFirestoreJournalRepository } from './firestoreJournalRepository'
 import { createFirestoreListRepository } from './firestoreListRepository'
 import { createFirestoreNudgeRepository } from './firestoreNudgeRepository'
 import { createFirestorePrizeRepository } from './firestorePrizeRepository'
@@ -20,12 +21,14 @@ import { createFirestoreTagRepository } from './firestoreTagRepository'
 import { createFirestoreTaskRepository } from './firestoreTaskRepository'
 import { createFirestoreWarmUpRepository } from './firestoreWarmUpRepository'
 import { importGuestAccount } from './guestImport'
+import type { JournalRepository } from './journalRepository'
 import type { ListRepository } from './listRepository'
 import { createLocalActivityRepository } from './localActivityRepository'
 import { createLocalBackupRepository } from './localBackupRepository'
 import { createLocalCategoryRepository } from './localCategoryRepository'
 import { createLocalCheckInRepository } from './localCheckInRepository'
 import { createLocalFeatureRepository } from './localFeatureRepository'
+import { createLocalJournalRepository } from './localJournalRepository'
 import { createLocalListRepository } from './localListRepository'
 import { createLocalNudgeRepository } from './localNudgeRepository'
 import { createLocalPrizeRepository } from './localPrizeRepository'
@@ -70,6 +73,8 @@ export interface AccountStorage {
   readonly checkIn: CheckInRepository
   /** Which features are switched off on Settings (STORE-56). */
   readonly features: FeatureRepository
+  /** The journal, a day at a time, a week of it (JRN-1). */
+  readonly journal: JournalRepository
   readonly sync: SyncMonitor
   readonly backup: BackupRepository
   /**
@@ -113,6 +118,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
   const activities = createFirestoreActivityRepository(firestore, accountId)
   const checkIn = createFirestoreCheckInRepository(firestore, accountId)
   const features = createFirestoreFeatureRepository(firestore, accountId)
+  const journal = createFirestoreJournalRepository(firestore, accountId)
 
   return {
     tasks,
@@ -126,6 +132,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
     activities,
     checkIn,
     features,
+    journal,
     procrastination: createFirestoreProcrastinationRepository(firestore, accountId),
     sync: createFirestoreSyncMonitor(firestore, accountId),
     backup: createFirestoreBackupRepository(firestore, accountId),
@@ -134,7 +141,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
         importLocalTasks(tasks).catch((error: unknown) => {
           console.warn('Could not move the tasks kept in this browser into the account; will try again next time.', error)
         }),
-        importGuestAccount(tasks, lists, tags, prizes, rewards, warmUp, nudge, categories, activities, checkIn, features).catch((error: unknown) => {
+        importGuestAccount(tasks, lists, tags, prizes, rewards, warmUp, nudge, categories, activities, checkIn, features, journal).catch((error: unknown) => {
           console.warn('Could not move the guest data into the account; will try again next time.', error)
         }),
       ])
@@ -161,6 +168,7 @@ function createGuestAccountStorage(): AccountStorage {
     activities: createLocalActivityRepository(),
     checkIn: createLocalCheckInRepository(),
     features: createLocalFeatureRepository(),
+    journal: createLocalJournalRepository(),
     procrastination: createLocalProcrastinationRepository(),
     sync: createLocalSyncMonitor(),
     backup: createLocalBackupRepository(),

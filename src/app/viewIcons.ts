@@ -10,6 +10,7 @@ import { FolderIcon } from './components/FolderIcon'
 import { GiftIcon } from './components/GiftIcon'
 import { HistoryIcon } from './components/HistoryIcon'
 import { InboxIcon } from './components/InboxIcon'
+import { JournalIcon } from './components/JournalIcon'
 import { ListIcon } from './components/ListIcon'
 import { ModesIcon } from './components/ModesIcon'
 import { MonthIcon } from './components/MonthIcon'
@@ -19,6 +20,7 @@ import { ProcrastinationIcon } from './components/ProcrastinationIcon'
 import { SettingsIcon } from './components/SettingsIcon'
 import { SlidersIcon } from './components/SlidersIcon'
 import { StarIcon } from './components/StarIcon'
+import { SunriseIcon } from './components/SunriseIcon'
 import { TagIcon } from './components/TagIcon'
 import { TrashIcon } from './components/TrashIcon'
 import { TrophyIcon } from './components/TrophyIcon'
@@ -39,6 +41,7 @@ export type ViewIcon = (props: { className?: string }) => ReactElement
  */
 export const VIEW_ICONS: Record<FixedView, ViewIcon> = {
   today: CalendarIcon,
+  tomorrow: SunriseIcon,
   week: WeekIcon,
   month: MonthIcon,
   tasks: ListIcon,
@@ -54,6 +57,7 @@ export const VIEW_ICONS: Record<FixedView, ViewIcon> = {
   tags: TagIcon,
   balance: BalanceIcon,
   activity: ActivityIcon,
+  journal: JournalIcon,
   more: MoreIcon,
   modes: ModesIcon,
   'modes/procrastination': ProcrastinationIcon,

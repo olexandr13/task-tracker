@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createActivityEntry,
   createCategory,
+  createJournalEntry,
   createList,
   createPointValue,
   createPrize,
@@ -38,6 +39,8 @@ const ASKING: CaseSettings = { countUnpaid: false }
 const REST = createCategory('Rest', AT)
 const READING = createActivityEntry('Reading', 900, { day: '2026-09-18', hour: 14 }, AT)
 const CHECKING_IN: CheckInPreference = { on: true, window: { from: '08:00', to: '20:00' } }
+// Written the day before AT, so still kept a week later (JRN-8).
+const SUNNY = createJournalEntry('good', 'Sun came out', '2026-09-18', AT)
 
 const EMPTY: AccountData = {
   tasks: [],
@@ -46,6 +49,7 @@ const EMPTY: AccountData = {
   prizes: [],
   categories: [],
   activities: [],
+  journal: [],
   entries: [],
   redemptions: [],
   bonuses: NO_BONUSES,
@@ -67,6 +71,8 @@ const NOTHING_KNOWN: KnownRecords = {
   categoryIds: new Set(),
   activityIds: new Set(),
   unreadableActivityDays: new Set(),
+  journalIds: new Set(),
+  unreadableJournalDays: new Set(),
   redemptionIds: new Set(),
   bonuses: NO_BONUSES,
   pointValue: null,
@@ -88,6 +94,7 @@ describe('what an import adds', () => {
       prizes: [CHOCOLATE],
       categories: [REST],
       activities: [READING],
+      journal: [SUNNY],
       entries: [{ taskId: WRITE.id, day: '2026-09-19', points: 5 }],
       redemptions: [COFFEE],
       bonuses: { today: 10, week: 40, month: null },
@@ -286,6 +293,26 @@ describe('what an import does with the bonuses and the point value', () => {
   })
 })
 
+describe('importing the journal (BAK-21)', () => {
+  it('adds the lines the account does not hold, and none on a day it cannot read', () => {
+    const THANKS = createJournalEntry('gratitude', 'A friend called', '2026-09-17', AT)
+    const incoming: AccountData = { ...EMPTY, journal: [SUNNY, THANKS] }
+    const known: KnownRecords = { ...NOTHING_KNOWN, journalIds: new Set([SUNNY.id]) }
+
+    expect(newRecords(incoming, known, AT)).toEqual({ fresh: { ...EMPTY, journal: [THANKS] }, alreadyHere: 1 })
+    expect(newRecords(incoming, { ...NOTHING_KNOWN, unreadableJournalDays: new Set(['2026-09-17']) }, AT)).toEqual({
+      fresh: { ...EMPTY, journal: [SUNNY] },
+      alreadyHere: 1,
+    })
+  })
+
+  it('leaves out a line about a day the journal no longer keeps (JRN-8)', () => {
+    const later = new Date('2026-09-28T09:00:00.000Z')
+
+    expect(newRecords({ ...EMPTY, journal: [SUNNY] }, NOTHING_KNOWN, later)).toEqual({ fresh: EMPTY, alreadyHere: 0 })
+  })
+})
+
 describe('counting records', () => {
   it('counts each kind, a completion being one entry of the ledger', () => {
     const data: AccountData = {
@@ -295,6 +322,7 @@ describe('counting records', () => {
       prizes: [CHOCOLATE],
       categories: [REST],
       activities: [READING],
+      journal: [SUNNY],
       entries: [
         { taskId: WRITE.id, day: '2026-09-19', points: 5 },
         { taskId: WRITE.id, day: '2026-09-18', points: 5 },
@@ -318,6 +346,7 @@ describe('counting records', () => {
       prizes: 1,
       categories: 1,
       activities: 1,
+      journal: 1,
       completions: 2,
       redemptions: 0,
     })

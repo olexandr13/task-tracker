@@ -1,4 +1,14 @@
-import type { ListId, LocalDay, LocalTime, Placement, Repeat, SubtaskId, TaskId, TimeEntryId } from '../core'
+import type {
+  ListId,
+  LocalDay,
+  LocalTime,
+  Placement,
+  Repeat,
+  SubtaskId,
+  TaskId,
+  TimeEntryChange,
+  TimeEntryId,
+} from '../core'
 
 /**
  * Everything a task's row, card or sheet can do to it, handed down as one object
@@ -32,6 +42,8 @@ export interface TaskActions {
   /** Logs a session, with what it went on or null for nothing said (TIME-23). */
   readonly logTime: (id: TaskId, minutes: number, comment: string | null) => void
   readonly removeTimeEntry: (id: TaskId, entryId: TimeEntryId) => void
+  /** Changes how long a session was and what it went on (TIME-24). */
+  readonly changeTimeEntry: (id: TaskId, entryId: TimeEntryId, change: TimeEntryChange) => void
   /** Files the task under a list, or in no list — the Inbox — with null. */
   readonly changeList: (id: TaskId, listId: ListId | null) => void
   readonly addTag: (id: TaskId, name: string) => void

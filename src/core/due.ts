@@ -5,8 +5,8 @@
  * as of now? A one-off answers with its date. A repeating task answers with the
  * occurrence in play, so a daily task is due today every day and a weekly one
  * missed on Monday is still due Monday on Tuesday. Everything else — overdue, in
- * Today, Week or Month — is that day read against today and against whether the
- * task is done.
+ * Today, Tomorrow, Week or Month — is that day read against today and against
+ * whether the task is done.
  *
  * Like the rest of ./repeat, nothing is stored or rolled over: the answer is
  * derived from `now`, so a page left open picks up the new day on its own.
@@ -300,6 +300,28 @@ export function isInPeriod(task: Task, period: Period, now: Date = new Date()): 
 
   const finished = task.completedAt === null ? null : toLocalDay(new Date(task.completedAt))
   return finished !== null && finished >= first && finished <= last
+}
+
+/**
+ * Whether the task belongs in Tomorrow's list: due tomorrow, done or not.
+ *
+ * Tomorrow is a look ahead, not a period still running, so it gathers nothing
+ * up. Overdue is not in it — that is still today's to do — and nor is a task
+ * with no day at all, which Today shows already. A task finished ahead of its
+ * day stays on its own day, as anywhere else.
+ *
+ * A repeating task is in when its occurrence in play falls tomorrow: one skipped
+ * today, or one whose picked start day is tomorrow. A daily task is not, its
+ * occurrence in play being today's — ticking it off in Tomorrow would be doing
+ * today's.
+ */
+export function isDueTomorrow(task: Task, now: Date = new Date()): boolean {
+  return !isDeleted(task) && dueDay(task, now) === tomorrowDueDay(now)
+}
+
+/** The day "Tomorrow" sets, and the day a task added to Tomorrow's list starts on. */
+export function tomorrowDueDay(now: Date = new Date()): LocalDay {
+  return offsetDay(toLocalDay(now), 1)
 }
 
 /**

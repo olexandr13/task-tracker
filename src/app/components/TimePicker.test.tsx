@@ -2,6 +2,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { TimeEntry } from '../../core'
 import { TimePicker } from './TimePicker'
 
 afterEach(cleanup)
@@ -19,6 +20,7 @@ describe('TimePicker timer', () => {
         now={new Date(2026, 8, 21, 10, 0)}
         onLog={vi.fn()}
         onRemove={vi.fn()}
+        onChangeSession={vi.fn()}
         onChangeGoal={vi.fn()}
         timer={{
           running: false,
@@ -46,6 +48,7 @@ describe('TimePicker timer', () => {
         now={new Date(2026, 8, 21, 10, 0)}
         onLog={vi.fn()}
         onRemove={vi.fn()}
+        onChangeSession={vi.fn()}
         onChangeGoal={vi.fn()}
         timer={{
           running: true,
@@ -75,6 +78,7 @@ describe('TimePicker timer', () => {
         now={new Date(2026, 8, 21, 10, 0)}
         onLog={vi.fn()}
         onRemove={vi.fn()}
+        onChangeSession={vi.fn()}
         onChangeGoal={vi.fn()}
         timer={{
           running: true,
@@ -106,6 +110,7 @@ describe('TimePicker panel', () => {
         now={NOW}
         onLog={onLog}
         onRemove={vi.fn()}
+        onChangeSession={vi.fn()}
         onChangeGoal={vi.fn()}
       />,
     )
@@ -178,6 +183,7 @@ describe('TimePicker panel', () => {
         now={NOW}
         onLog={vi.fn()}
         onRemove={vi.fn()}
+        onChangeSession={vi.fn()}
         onChangeGoal={vi.fn()}
       />,
     )
@@ -221,5 +227,116 @@ describe('TimePicker panel', () => {
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog', { name: 'Logging time' })).toBeNull()
     expect(screen.getByRole('textbox', { name: 'Time to log' })).toBeDefined()
+  })
+})
+
+describe('TimePicker sessions changed in place (TIME-24)', () => {
+  const NOW = new Date(2026, 8, 21, 10, 0)
+  const AT = new Date(2026, 8, 21, 9, 30)
+  const typed = { id: 'a', seconds: 20 * 60, loggedAt: AT.toISOString(), comment: 'intervals' }
+  const run = { id: 'b', seconds: 25 * 60 + 13, loggedAt: AT.toISOString(), comment: null }
+  const short = { id: 'c', seconds: 40, loggedAt: AT.toISOString(), comment: null }
+
+  async function openPicker(sessions: readonly TimeEntry[] = [typed]) {
+    const onChangeSession = vi.fn()
+    const onChangeGoal = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <TimePicker
+        goal={60}
+        sessions={sessions}
+        now={NOW}
+        onLog={vi.fn()}
+        onRemove={vi.fn()}
+        onChangeSession={onChangeSession}
+        onChangeGoal={onChangeGoal}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /Time:/ }))
+    return { user, onChangeSession, onChangeGoal }
+  }
+
+  const lengthBox = () => screen.getByRole<HTMLInputElement>('textbox', { name: 'Length of this session' })
+  const commentBox = () => screen.getByRole<HTMLInputElement>('textbox', { name: 'Comment on this session' })
+
+  it('opens the session’s length and comment in boxes, the caret on the length', async () => {
+    const { user } = await openPicker()
+
+    await user.click(screen.getByRole('button', { name: 'Change 20m logged at 09:30' }))
+
+    expect(screen.getByRole('group', { name: 'Change 20m logged at 09:30' })).toBeDefined()
+    expect(lengthBox().value).toBe('20m')
+    expect(commentBox().value).toBe('intervals')
+    expect(document.activeElement).toBe(lengthBox())
+  })
+
+  it('saves a new length and comment on Save, and on Enter in either box', async () => {
+    const { user, onChangeSession } = await openPicker()
+
+    await user.click(screen.getByRole('button', { name: 'Change 20m logged at 09:30' }))
+    await user.clear(lengthBox())
+    await user.type(lengthBox(), '1h 5m')
+    await user.clear(commentBox())
+    await user.type(commentBox(), ' hill sprints ')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(onChangeSession).toHaveBeenLastCalledWith('a', { seconds: 65 * 60, comment: 'hill sprints' })
+    expect(screen.queryByRole('textbox', { name: 'Length of this session' })).toBeNull()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Change 20m logged at 09:30' }))
+
+    await user.click(screen.getByRole('button', { name: 'Change 20m logged at 09:30' }))
+    await user.clear(commentBox())
+    await user.type(commentBox(), '{Enter}')
+    expect(onChangeSession).toHaveBeenLastCalledWith('a', { seconds: 20 * 60, comment: null })
+
+    // The old length is picked out, so what is typed takes its place.
+    await user.click(screen.getByRole('button', { name: 'Change 20m logged at 09:30' }))
+    await user.keyboard('45{Enter}')
+    expect(onChangeSession).toHaveBeenLastCalledWith('a', { seconds: 45 * 60, comment: 'intervals' })
+  })
+
+  it('keeps a timer’s seconds while its length is left as shown, and one under a minute left empty (TIME-22)', async () => {
+    const { user, onChangeSession } = await openPicker([run, short])
+
+    await user.click(screen.getByRole('button', { name: 'Change 25m logged at 09:30' }))
+    await user.type(commentBox(), 'focus{Enter}')
+    expect(onChangeSession).toHaveBeenLastCalledWith('b', { seconds: 25 * 60 + 13, comment: 'focus' })
+
+    await user.click(screen.getByRole('button', { name: 'Change <1m logged at 09:30' }))
+    expect(lengthBox().value).toBe('')
+    expect(lengthBox().placeholder).toBe('<1m')
+    await user.type(commentBox(), 'warm-up{Enter}')
+    expect(onChangeSession).toHaveBeenLastCalledWith('c', { seconds: 40, comment: 'warm-up' })
+  })
+
+  it('refuses a length that cannot be read in place, saving nothing (TIME-11)', async () => {
+    const { user, onChangeSession } = await openPicker()
+
+    await user.click(screen.getByRole('button', { name: 'Change 20m logged at 09:30' }))
+    await user.clear(lengthBox())
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(lengthBox().getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getByText(/Try 25m/)).toBeTruthy()
+
+    await user.type(lengthBox(), '25h{Enter}')
+    expect(onChangeSession).not.toHaveBeenCalled()
+    expect(screen.getByText(/Try 25m/)).toBeTruthy()
+  })
+
+  it('leaves the session as it was on Cancel or Escape, the panel still open', async () => {
+    const { user, onChangeSession, onChangeGoal } = await openPicker()
+
+    await user.click(screen.getByRole('button', { name: 'Change 20m logged at 09:30' }))
+    await user.type(lengthBox(), '45')
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('textbox', { name: 'Length of this session' })).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Change 20m logged at 09:30' }))
+    expect(lengthBox().value).toBe('20m')
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('textbox', { name: 'Length of this session' })).toBeNull()
+    expect(screen.getByRole('list', { name: 'Sessions' })).toBeDefined()
+    expect(onChangeSession).not.toHaveBeenCalled()
+    expect(onChangeGoal).not.toHaveBeenCalled()
   })
 })

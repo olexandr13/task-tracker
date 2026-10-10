@@ -3,12 +3,14 @@ import type { ActivityRepository } from './activityRepository'
 import type { CategoryRepository } from './categoryRepository'
 import type { CheckInRepository } from './checkInRepository'
 import type { FeatureRepository } from './featureRepository'
+import type { JournalRepository } from './journalRepository'
 import type { ListRepository } from './listRepository'
 import { loadGuestActivities } from './localActivityRepository'
 import { clearGuestAccount } from './localBackupRepository'
 import { loadGuestCategories } from './localCategoryRepository'
 import { loadGuestCheckIn } from './localCheckInRepository'
 import { loadGuestFeatures } from './localFeatureRepository'
+import { loadGuestJournal } from './localJournalRepository'
 import { loadGuestLists } from './localListRepository'
 import { loadGuestNudge } from './localNudgeRepository'
 import { loadGuestPrizes } from './localPrizeRepository'
@@ -40,6 +42,7 @@ export async function importGuestAccount(
   activities: ActivityRepository,
   checkIn: CheckInRepository,
   features: FeatureRepository,
+  journal: JournalRepository,
 ): Promise<void> {
   const guestTasks = loadGuestTasks()
   const guestLists = loadGuestLists()
@@ -52,6 +55,7 @@ export async function importGuestAccount(
   const guestActivities = loadGuestActivities()
   const guestCheckIn = loadGuestCheckIn()
   const guestFeatures = loadGuestFeatures()
+  const guestJournal = loadGuestJournal()
 
   const empty =
     guestTasks.length === 0 &&
@@ -68,7 +72,8 @@ export async function importGuestAccount(
     guestCategories.length === 0 &&
     guestActivities.length === 0 &&
     guestCheckIn === null &&
-    guestFeatures === null
+    guestFeatures === null &&
+    guestJournal.length === 0
 
   if (empty) {
     clearGuestAccount()
@@ -85,6 +90,7 @@ export async function importGuestAccount(
   if (guestPrizes.length > 0) await prizes.save({ saved: guestPrizes, removed: [] })
   if (guestCategories.length > 0) await categories.save({ saved: guestCategories, removed: [] })
   if (guestActivities.length > 0) await activities.save({ saved: guestActivities, removed: [] })
+  if (guestJournal.length > 0) await journal.save({ saved: guestJournal, removed: [] })
 
   if (ledger.entries.length > 0) {
     await rewards.save({ earned: [...ledger.entries], revoked: [] })

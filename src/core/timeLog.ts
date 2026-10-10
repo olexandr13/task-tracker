@@ -10,6 +10,8 @@
  * A session keeps its length to the second, so short timer runs add up: three
  * runs of 20 seconds make a minute. Time spent is read in whole minutes. A
  * session can carry a comment — what the time went on — given as it is logged.
+ * Its length and its comment can be changed afterwards; when it was logged
+ * cannot, so it stays in the occurrence, and the day, it was logged in.
  *
  * Under a repeating task a session counts for the occurrence it was logged in,
  * the same trick a checklist tick uses (./subtask): a daily hour starts from
@@ -223,6 +225,65 @@ export function removeTimeEntry(task: Task, entryId: TimeEntryId): Task {
   return kept.length === task.timeLog.length ? task : { ...task, timeLog: kept }
 }
 
+/** What a session can be changed to (TIME-24): its length, and what it went on. */
+export interface TimeEntryChange {
+  /** Whole seconds, from 1 to `MAX_SESSION_SECONDS`. */
+  readonly seconds: number
+  /** What the time went on, in the owner's words (`isTimeComment`), or null for nothing said. */
+  readonly comment: string | null
+}
+
+/**
+ * The seconds a session is to be when its length is typed again as `minutes`
+ * (TIME-24): its own, to the second, while the minutes are the whole minutes it
+ * already shows, so a timer's run left as it was keeps its seconds; otherwise
+ * the minutes typed, as a session logged by hand is.
+ */
+export function typedSessionSeconds(entry: TimeEntry, minutes: number): number {
+  if (!isSessionLength(minutes)) {
+    throw new InvalidTimeError(
+      `${String(minutes)} is not a session: a session is a whole number of minutes from 1 to ${String(MAX_SESSION_MINUTES)}.`,
+    )
+  }
+  return minutes === wholeMinutes(entry.seconds) ? entry.seconds : minutes * 60
+}
+
+/**
+ * The session with its length and comment changed (TIME-24). When it was
+ * logged stays as it was, so it counts where it counted before; its id stays,
+ * so what was made from it still knows it. Nothing changed hands back the
+ * session passed in.
+ */
+export function changedEntry(entry: TimeEntry, change: TimeEntryChange): TimeEntry {
+  if (!isSessionSeconds(change.seconds)) {
+    throw new InvalidTimeError(
+      `${String(change.seconds)} is not a session: a session is a whole number of seconds from 1 to ${String(MAX_SESSION_SECONDS)}.`,
+    )
+  }
+  const comment = toTimeComment(change.comment)
+  return change.seconds === entry.seconds && comment === entry.comment
+    ? entry
+    : { ...entry, seconds: change.seconds, comment }
+}
+
+/**
+ * Changes how long a session was and what it went on (TIME-24) — a length
+ * mistyped, a timer left running, a comment forgotten. Like logging, it leaves
+ * whether the task is done alone. A session the task does not have, or nothing
+ * changed, hands back the task passed in.
+ *
+ * Returns a new task; the one passed in is never modified.
+ */
+export function changeTimeEntry(task: Task, entryId: TimeEntryId, change: TimeEntryChange): Task {
+  const was = task.timeLog.find((entry) => entry.id === entryId)
+  if (was === undefined) return task
+
+  const changed = changedEntry(was, change)
+  return changed === was
+    ? task
+    : { ...task, timeLog: task.timeLog.map((entry) => (entry === was ? changed : entry)) }
+}
+
 /** A session as it was logged, with the task it was logged on. */
 export interface LoggedSession {
   readonly task: Task
@@ -242,6 +303,24 @@ export function sessionsLogged(before: readonly Task[], after: readonly Task[]):
     if (was === task) return []
     const had = new Set(was?.timeLog.map((entry) => entry.id))
     return task.timeLog.filter((entry) => !had.has(entry.id)).map((entry) => ({ task, entry }))
+  })
+}
+
+/**
+ * The sessions one change to the tasks made longer or shorter (TIME-24): every
+ * session a task had before and after it, at a length it did not have before.
+ * Its comment changed alone is not one; a task the change did not touch is the
+ * very same object, so it is passed over unread.
+ */
+export function sessionsResized(before: readonly Task[], after: readonly Task[]): LoggedSession[] {
+  const previous = new Map(before.map((task) => [task.id, task]))
+  return after.flatMap((task) => {
+    const was = previous.get(task.id)
+    if (was === undefined || was === task) return []
+    const had = new Map(was.timeLog.map((entry) => [entry.id, entry.seconds]))
+    return task.timeLog
+      .filter((entry) => had.has(entry.id) && had.get(entry.id) !== entry.seconds)
+      .map((entry) => ({ task, entry }))
   })
 }
 

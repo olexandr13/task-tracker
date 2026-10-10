@@ -16,8 +16,8 @@ interface MorePageProps {
 
 /**
  * More's page: the pages a phone's bar has no tab for — Lists, Tags, Modes,
- * which holds the modes (MODE-1), Balance (BAL-1) and the activity log (ACT-1),
- * in the sidebar's order. Lists is here as well as behind the Tasks tab
+ * which holds the modes (MODE-1), Balance (BAL-1), the activity log (ACT-1)
+ * and the journal (JRN-1), in the sidebar's order. Lists is here as well as behind the Tasks tab
  * (UI-34), which takes a hold or a second tap to open, so it is reached the same
  * way as everything else on a phone. The sidebar has an entry for each of them
  * and none for More (UI-30), so this page is reached from the bar. The modes

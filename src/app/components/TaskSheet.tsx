@@ -219,6 +219,7 @@ export function TaskSheet({
                   now={now}
                   onLog={(minutes, comment) => { actions.logTime(task.id, minutes, comment) }}
                   onRemove={(entryId) => { actions.removeTimeEntry(task.id, entryId) }}
+                  onChangeSession={(entryId, change) => { actions.changeTimeEntry(task.id, entryId, change) }}
                   onChangeGoal={(minutes) => { actions.changeTimeGoal(task.id, minutes) }}
                   label={`Time for "${task.title}"`}
                   align="left"

@@ -24,6 +24,7 @@ export const FEATURES = [
   'tags',
   'balance',
   'activity',
+  'journal',
   'modes',
   'progress',
   'quote',

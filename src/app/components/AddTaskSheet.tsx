@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import {
+  changedEntry,
   createSubtask,
   defaultReward,
   isPickable,
@@ -255,6 +256,11 @@ export function AddTaskSheet({
                   }}
                   onRemove={(entryId) => {
                     setSessions((current) => current.filter((entry) => entry.id !== entryId))
+                  }}
+                  onChangeSession={(entryId, change) => {
+                    setSessions((current) =>
+                      current.map((entry) => (entry.id === entryId ? changedEntry(entry, change) : entry)),
+                    )
                   }}
                   onChangeGoal={setTimeGoal}
                   label={`Time for "${namedFor}"`}
