@@ -9,8 +9,8 @@ thing every account keeps.
 
 - **FEAT-1** **Settings** has a **Features** section, under Account (UI-35), with **one switch for each
   part** of the app that can be done without, in this order: **Habits**, **Rewards**, **Cases**,
-  **Lists**, **Tags**, **Balance**, **Activity log**, **Modes**, **Progress bars**, **Daily quote** and
-  **Reminders**. Each carries the glyph its page is navigated by, its name, and a line saying what it
+  **Lists**, **Tags**, **Balance**, **Activity log**, **Journal**, **Modes**, **Progress bars**, **Daily
+  quote** and **Reminders**. Each carries the glyph its page is navigated by, its name, and a line saying what it
   is in plain words — *Points for finished tasks, and prizes and a wishlist to spend them on*. A
   switch turns its part on or off **at once, with no confirm**: nothing is lost either way (FEAT-5).
   The **i** beside the heading (UI-73) says what the section is for in three short lines: what off
@@ -37,7 +37,7 @@ thing every account keeps.
   the strip across the rewards pages (RWD-30); its row on **More** (UI-45) — and More itself, once
   every page on it is off; its pinned tab, which is kept and comes back with it (UI-77); and its letter: **H** with Habits, **R** with Rewards, **C** with Cases (UI-56, UI-57, UI-72), **P** with the modes (UI-58). An **address** naming it — a bookmark,
   a reload, a notification pressed — opens the **nearest page above it** that is on instead (UI-37):
-  Rewards for Cases, Tasks for a list or the Inbox, Modes for a mode, More for Balance — or
+  Rewards for Cases, Tasks for a list or the Inbox, Modes for a mode, More for Balance or the Journal — or
   Today, where nothing above it is on — and the address is put right to match.
 - **FEAT-3** What a part shows **anywhere else** goes with it:
   - **Lists** — the list on a task's sheet, the add sheet and an open row, and the list choices in
@@ -67,7 +67,8 @@ thing every account keeps.
   finds everything as it was. A task finished while Rewards is off still earns its points, and they
   are there when Rewards is back — what is earned stays earned (RWD-13). A task added while it is
   off still starts at the reward set for new tasks (RWD-45). Time logged on a task while the
-  Activity log is off is still written into it (ACT-21). The backup holds everything
+  Activity log is off is still written into it (ACT-21). The journal keeps its last week while it is
+  off, the older days going as ever (JRN-8). The backup holds everything
   whatever is switched off (BAK-2).
 
 ## Parts of another

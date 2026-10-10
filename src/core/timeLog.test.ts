@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { completeTask, createTask, duplicateTask, isComplete, setRepeat, uncompleteTask, type Task } from './task'
 import {
+  changedEntry,
+  changeTimeEntry,
   hasTimeGoal,
   InvalidTimeError,
   isTimeComment,
@@ -15,10 +17,12 @@ import {
   removeTimeEntry,
   secondsSpent,
   sessionsLogged,
+  sessionsResized,
   setTimeGoal,
   TIME_HISTORY_DAYS,
   timeHistoryStart,
   timeSpent,
+  typedSessionSeconds,
   type TimeEntry,
 } from './timeLog'
 
@@ -254,6 +258,87 @@ describe('removeTimeEntry (TIME-4)', () => {
   })
 })
 
+describe('changing a session (TIME-24)', () => {
+  it('changes its length and its comment, and leaves when it was logged and its id', () => {
+    const task = logTime(logTime(sport(), 20, TUE_15, 'intervals'), 25, TUE_15_EVENING)
+    const [first, second] = task.timeLog
+
+    const changed = changeTimeEntry(task, first.id, { seconds: 45 * 60, comment: '  hill sprints ' })
+
+    expect(changed.timeLog).toEqual([
+      { id: first.id, seconds: 45 * 60, loggedAt: first.loggedAt, comment: 'hill sprints' },
+      second,
+    ])
+    expect(timeSpent(changed, TUE_15_EVENING)).toBe(70)
+    // The one passed in is never modified.
+    expect(task.timeLog[0]).toBe(first)
+  })
+
+  it('takes a comment away with spaces or null, and gives one to a session without', () => {
+    const task = logTime(sport(), 20, TUE_15, 'intervals')
+    const [entry] = task.timeLog
+
+    expect(changeTimeEntry(task, entry.id, { seconds: entry.seconds, comment: '   ' }).timeLog[0]?.comment).toBeNull()
+    const without = changeTimeEntry(task, entry.id, { seconds: entry.seconds, comment: null })
+    expect(changeTimeEntry(without, entry.id, { seconds: entry.seconds, comment: 'tempo' }).timeLog[0]?.comment).toBe(
+      'tempo',
+    )
+  })
+
+  it('still counts for the occurrence it was logged in (TIME-7)', () => {
+    const task = logTime(sport(), 20, TUE_15)
+
+    const changed = changeTimeEntry(task, task.timeLog[0].id, { seconds: 50 * 60, comment: null })
+
+    expect(timeSpent(changed, TUE_15_EVENING)).toBe(50)
+    expect(timeSpent(changed, WED_16)).toBe(0)
+  })
+
+  it('leaves whether the task is done alone (TIME-6)', () => {
+    const done = completeTask(logTime(sport(), 20, TUE_15), TUE_15)
+
+    const changed = changeTimeEntry(done, done.timeLog[0].id, { seconds: 60 * 60, comment: null })
+
+    expect(isComplete(changed, TUE_15)).toBe(true)
+
+    const open = logTime(sport(), 20, TUE_15)
+    const reached = changeTimeEntry(open, open.timeLog[0].id, { seconds: 60 * 60, comment: null })
+    expect(isTimeGoalReached(reached, TUE_15)).toBe(true)
+    expect(isComplete(reached, TUE_15)).toBe(false)
+  })
+
+  it('hands back the task itself when nothing changes or there is no such session', () => {
+    const task = logTime(sport(), 20, TUE_15, 'intervals')
+    const [entry] = task.timeLog
+
+    expect(changeTimeEntry(task, entry.id, { seconds: entry.seconds, comment: ' intervals ' })).toBe(task)
+    expect(changeTimeEntry(task, 'nothing', { seconds: 60, comment: null })).toBe(task)
+    expect(changedEntry(entry, { seconds: entry.seconds, comment: 'intervals' })).toBe(entry)
+  })
+
+  it('refuses a length no session can be, and a comment no session can carry', () => {
+    const task = logTime(sport(), 20, TUE_15)
+    const id = task.timeLog[0].id
+
+    expect(() => changeTimeEntry(task, id, { seconds: 0, comment: null })).toThrow(InvalidTimeError)
+    expect(() => changeTimeEntry(task, id, { seconds: MAX_SESSION_SECONDS + 1, comment: null })).toThrow(InvalidTimeError)
+    expect(() => changeTimeEntry(task, id, { seconds: 60, comment: 'two\nlines' })).toThrow(InvalidTimeError)
+  })
+
+  it('keeps a timer’s seconds while the minutes typed are the ones it shows (TIME-22)', () => {
+    const run = logSeconds(sport(), 25 * 60 + 13, TUE_15).timeLog[0]
+    const short = logSeconds(sport(), 40, TUE_15).timeLog[0]
+
+    expect(typedSessionSeconds(run, 25)).toBe(25 * 60 + 13)
+    expect(typedSessionSeconds(run, 30)).toBe(30 * 60)
+    expect(typedSessionSeconds(run, 24)).toBe(24 * 60)
+    // Under a minute it shows no whole minute, so any typed is the length now.
+    expect(typedSessionSeconds(short, 1)).toBe(60)
+    expect(() => typedSessionSeconds(run, 0)).toThrow(InvalidTimeError)
+    expect(() => typedSessionSeconds(run, MAX_SESSION_MINUTES + 1)).toThrow(InvalidTimeError)
+  })
+})
+
 describe('duplicateTask (TIME-9)', () => {
   it('carries the goal and none of the time logged', () => {
     const copy = duplicateTask(logTime(sport(), 30, TUE_15), TUE_15)
@@ -322,5 +407,27 @@ describe('the sessions a change logs (ACT-21)', () => {
     expect(sessionsLogged([], [added])).toEqual([{ task: added, entry: added.timeLog[0] }])
     expect(sessionsLogged([twice], [removeTimeEntry(twice, twice.timeLog[1].id)])).toEqual([])
     expect(sessionsLogged([twice], [{ ...twice, title: 'books' }])).toEqual([])
+  })
+})
+
+describe('the sessions a change resizes (TIME-24, ACT-21)', () => {
+  it('are the ones a task had before and after it at another length', () => {
+    const read = logTime(logTime(createTask('read', null, MON_14), 15, MON_14), 20, TUE_15)
+    const [first, second] = read.timeLog
+    const longer = changeTimeEntry(read, first.id, { seconds: 30 * 60, comment: null })
+
+    expect(sessionsResized([read], [longer])).toEqual([{ task: longer, entry: longer.timeLog[0] }])
+    expect(sessionsResized([read], [changeTimeEntry(read, second.id, { seconds: second.seconds, comment: 'chapter 3' })])).toEqual(
+      [],
+    )
+  })
+
+  it('never include one logged, taken back, or on a task just added', () => {
+    const read = logTime(createTask('read', null, MON_14), 15, MON_14)
+
+    expect(sessionsResized([read], [logTime(read, 5, TUE_15)])).toEqual([])
+    expect(sessionsResized([read], [removeTimeEntry(read, read.timeLog[0].id)])).toEqual([])
+    expect(sessionsResized([], [read])).toEqual([])
+    expect(sessionsResized([read], [read])).toEqual([])
   })
 })

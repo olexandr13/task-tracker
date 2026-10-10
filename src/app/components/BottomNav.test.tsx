@@ -112,7 +112,7 @@ describe('BottomNav', () => {
   })
 
   it('keeps More marked while the tags, a tag\'s list, Balance, the activity log or the modes are open (UI-45, TAG-17, MODE-1, BAL-1, ACT-1)', () => {
-    for (const view of ['tags', 'tag/work', 'balance', 'activity', 'modes', 'modes/warm-up', 'modes/check-in'] as const) {
+    for (const view of ['tags', 'tag/work', 'balance', 'activity', 'journal', 'modes', 'modes/warm-up', 'modes/check-in'] as const) {
       setup(view)
       expect(moreTab().getAttribute('aria-current')).toBe('page')
       expect(tasksTab().getAttribute('aria-current')).toBeNull()
@@ -140,6 +140,7 @@ describe('BottomNav', () => {
 
     expect(within(menu() as HTMLElement).getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
       'Today',
+      'Tomorrow',
       'Week',
       'Month',
     ])
@@ -524,7 +525,7 @@ describe('the More tab', () => {
   })
 
   it('has no More tab once everything on its page is switched off (FEAT-2)', () => {
-    const off: FeaturesOff = ['lists', 'tags', 'activity', 'modes']
+    const off: FeaturesOff = ['lists', 'tags', 'activity', 'journal', 'modes']
     render(
       <FeaturesContext value={off}>
         <BottomNav view="today" lists={[]} onChange={vi.fn()} />

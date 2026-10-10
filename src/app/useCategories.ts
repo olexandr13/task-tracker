@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   bindTag,
+  changeCategoryTime,
   createCategory,
   isCategoryLimitReached,
   isCategoryNameTaken,
@@ -13,6 +14,7 @@ import {
   unbindTag,
   type Category,
   type CategoryId,
+  type TimeEntryChange,
   type TimeEntryId,
 } from '../core'
 import type { CategoryChanges, CategoryRepository } from '../storage/categoryRepository'
@@ -132,6 +134,16 @@ export function useCategories(repository: CategoryRepository, onProblem: ReportP
     [apply],
   )
 
+  /** Changes how long a session logged straight to a category was and what it went on (BAL-15, TIME-24). */
+  const changeTime = useCallback(
+    (id: CategoryId, entryId: TimeEntryId, change: TimeEntryChange) => {
+      apply((current) =>
+        current.map((category) => (category.id === id ? changeCategoryTime(category, entryId, change) : category)),
+      )
+    },
+    [apply],
+  )
+
   /**
    * Deletes a category. The tags and the time logged on tasks stay as they are;
    * the time logged straight to it goes with it (BAL-10).
@@ -167,5 +179,5 @@ export function useCategories(repository: CategoryRepository, onProblem: ReportP
     [apply],
   )
 
-  return { categories, isLoading, add, rename, bind, unbind, logTime, removeTime, remove, restore, renameTag, removeTag }
+  return { categories, isLoading, add, rename, bind, unbind, logTime, removeTime, changeTime, remove, restore, renameTag, removeTag }
 }

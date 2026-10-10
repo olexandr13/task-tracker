@@ -85,6 +85,28 @@ describe('useActivities', () => {
     expect(saved[1]).toEqual({ saved: [], removed: made })
   })
 
+  it('writes a session’s records again once its length is changed, unless they were taken out (TIME-24)', () => {
+    const work = createActivityEntry('Work', 900, SLOT)
+    const { repository, saved } = fakeRepository([work])
+    const { result } = renderHook(() => useActivities(repository))
+    const task = logTime(createTask('work'), 30, new Date(2026, 9, 2, 11, 10))
+    const [session] = task.timeLog
+    act(() => { result.current.addSessions([{ task, entry: session }]) })
+    const made = result.current.entries.slice(1)
+
+    act(() => { result.current.resizeSessions([{ task, entry: { ...session, seconds: 5 * 60 } }]) })
+
+    const remade = result.current.entries.slice(1)
+    expect(remade.map(({ hour, seconds }) => ({ hour, seconds }))).toEqual([{ hour: 11, seconds: 300 }])
+    expect(saved[1]).toEqual({ saved: remade, removed: made })
+
+    act(() => { result.current.remove(remade[0].id) })
+    act(() => { result.current.resizeSessions([{ task, entry: { ...session, seconds: 20 * 60 } }]) })
+
+    expect(result.current.entries).toEqual([work])
+    expect(saved).toHaveLength(3)
+  })
+
   it('puts a record taken out back, for the undo (ACT-11)', () => {
     const work = createActivityEntry('Work', 2700, SLOT)
     const { repository } = fakeRepository([work])

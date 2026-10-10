@@ -16,6 +16,7 @@ export const FEATURE_LABELS: Readonly<Record<Feature, { readonly name: string; r
   tags: { name: 'Tags', description: 'The Tags page, and tags on tasks.' },
   balance: { name: 'Balance', description: 'How the time you log splits between your categories.' },
   activity: { name: 'Activity log', description: 'Your day hour by hour: what you did and for how long.' },
+  journal: { name: 'Journal', description: 'Good things, achievements and gratitude, written down each day.' },
   modes: { name: 'Modes', description: 'Procrastination, Warm-up, Nudge and Check-in.' },
   progress: { name: 'Progress bars', description: 'How today, this week and this month are going, beside your tasks.' },
   quote: { name: 'Daily quote', description: 'A new quote every day, beside your tasks.' },

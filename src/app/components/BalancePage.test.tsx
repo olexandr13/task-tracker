@@ -43,6 +43,7 @@ function setUp(
     onUnbind: vi.fn(),
     onLogTime: vi.fn(),
     onRemoveTime: vi.fn(),
+    onChangeTime: vi.fn(),
     onDelete: vi.fn(),
   }
   render(<BalancePage categories={categories} tasks={tasks} knownTags={knownTags} now={NOW} {...handlers} />)
@@ -417,6 +418,22 @@ describe('time logged straight to a category (BAL-14, BAL-15)', () => {
     await user.click(within(list).getAllByRole('button', { name: /^Remove / })[0])
 
     expect(onRemoveTime).toHaveBeenCalledExactlyOnceWith(REST.id, logged.timeLog[1].id)
+  })
+
+  it('changes what was logged here in place, as a task’s session is (TIME-24)', async () => {
+    const logged = logCategoryTime(REST, 30, NOW, 'long walk')
+    const { user, onChangeTime } = setUp({ categories: [WORK, logged] })
+
+    await user.click(screen.getByRole('button', { name: 'Log time to Rest' }))
+    const list = within(panel()).getByRole('list', { name: 'Logged here' })
+    await user.click(within(list).getByRole('button', { name: /^Change 30m / }))
+    await user.keyboard('1h')
+    await user.type(within(list).getByRole('textbox', { name: 'Comment on this session' }), ' by the river{Enter}')
+
+    expect(onChangeTime).toHaveBeenCalledExactlyOnceWith(REST.id, logged.timeLog[0].id, {
+      seconds: 3600,
+      comment: 'long walk by the river',
+    })
   })
 
   it('counts toward its category in the chart, beside the time on tasks (BAL-14)', () => {

@@ -412,13 +412,24 @@ describe('useTasks, the sessions a change logs (ACT-21)', () => {
   function setUpLogging(saved: Task[]) {
     const tasks = fakeTaskRepository()
     const logged: { title: string; seconds: number }[][] = []
+    const resized: { title: string; seconds: number }[][] = []
     const { result } = renderHook(() =>
-      useTasks(tasks.repository, fakeRewardRepository().repository, undefined, NO_BONUSES, [], (sessions) => {
-        logged.push(sessions.map(({ task, entry }) => ({ title: task.title, seconds: entry.seconds })))
-      }),
+      useTasks(
+        tasks.repository,
+        fakeRewardRepository().repository,
+        undefined,
+        NO_BONUSES,
+        [],
+        (sessions) => {
+          logged.push(sessions.map(({ task, entry }) => ({ title: task.title, seconds: entry.seconds })))
+        },
+        (sessions) => {
+          resized.push(sessions.map(({ task, entry }) => ({ title: task.title, seconds: entry.seconds })))
+        },
+      ),
     )
     tasks.arrive(saved)
-    return { result, arrive: tasks.arrive, logged }
+    return { result, arrive: tasks.arrive, logged, resized }
   }
 
   it('tells of time logged by hand, by the timer, and with a task as it is added', () => {
@@ -445,6 +456,19 @@ describe('useTasks, the sessions a change logs (ACT-21)', () => {
     arrive([logTime(task, 15)])
 
     expect(logged).toEqual([])
+  })
+
+  it('tells of a session made longer or shorter, and not of a comment changed alone (TIME-24)', () => {
+    const task = logTime(createTask('work'), 30)
+    const [session] = task.timeLog
+    const { result, logged, resized } = setUpLogging([task])
+
+    act(() => { result.current.changeTaskTime(task.id, session.id, { seconds: 1800, comment: 'draft' }) })
+    act(() => { result.current.changeTaskTime(task.id, session.id, { seconds: 2700, comment: 'draft' }) })
+
+    expect(resized).toEqual([[{ title: 'work', seconds: 2700 }]])
+    expect(logged).toEqual([])
+    expect(result.current.tasks[0]?.timeLog).toEqual([{ ...session, seconds: 2700, comment: 'draft' }])
   })
 })
 

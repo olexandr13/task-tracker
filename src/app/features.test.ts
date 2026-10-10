@@ -6,7 +6,7 @@ import { oneListView, tagView } from './view'
 
 describe('the pages there are (FEAT-2)', () => {
   it('is every one while nothing is switched off', () => {
-    for (const view of ['habits', 'rewards', 'rewards/cases', 'lists', 'inbox', 'tags', 'balance', 'activity', 'modes', 'more'] as const) {
+    for (const view of ['habits', 'rewards', 'rewards/cases', 'lists', 'inbox', 'tags', 'balance', 'activity', 'journal', 'modes', 'more'] as const) {
       expect(isViewOn(view, [])).toBe(true)
     }
   })
@@ -18,6 +18,7 @@ describe('the pages there are (FEAT-2)', () => {
     expect(isViewOn('inbox', ['lists'])).toBe(false)
     expect(isViewOn(tagView('work'), ['tags'])).toBe(false)
     expect(isViewOn('modes/nudge', ['modes'])).toBe(false)
+    expect(isViewOn('journal', ['journal'])).toBe(false)
   })
 
   it('takes Cases away on its own, and with Rewards (FEAT-4)', () => {
@@ -33,12 +34,12 @@ describe('the pages there are (FEAT-2)', () => {
   })
 
   it('takes More away once everything on it is', () => {
-    expect(isViewOn('more', ['lists', 'tags', 'balance', 'activity'])).toBe(true)
-    expect(isViewOn('more', ['lists', 'tags', 'balance', 'activity', 'modes'])).toBe(false)
+    expect(isViewOn('more', ['lists', 'tags', 'balance', 'activity', 'modes'])).toBe(true)
+    expect(isViewOn('more', ['lists', 'tags', 'balance', 'activity', 'journal', 'modes'])).toBe(false)
   })
 
   it('never takes the tasks, the trash or settings away', () => {
-    const everything = ['habits', 'rewards', 'lists', 'tags', 'balance', 'activity', 'modes', 'progress', 'quote', 'reminders'] as const
+    const everything = ['habits', 'rewards', 'lists', 'tags', 'balance', 'activity', 'journal', 'modes', 'progress', 'quote', 'reminders'] as const
     for (const view of ['today', 'week', 'month', 'tasks', 'trash', 'settings'] as const) {
       expect(isViewOn(view, everything)).toBe(true)
     }
@@ -55,12 +56,13 @@ describe('where the address of a page switched off lands (FEAT-2)', () => {
     expect(nearestViewOn(oneListView('list-1'), ['lists'])).toBe('tasks')
     expect(nearestViewOn('modes/check-in', ['activity'])).toBe('modes')
     expect(nearestViewOn('balance', ['balance'])).toBe('more')
+    expect(nearestViewOn('journal', ['journal'])).toBe('more')
   })
 
   it('lands on Today when nothing above it is on', () => {
     expect(nearestViewOn('habits', ['habits'])).toBe('today')
     expect(nearestViewOn('rewards/history', ['rewards'])).toBe('today')
-    expect(nearestViewOn('modes', ['lists', 'tags', 'balance', 'activity', 'modes'])).toBe('today')
+    expect(nearestViewOn('modes', ['lists', 'tags', 'balance', 'activity', 'journal', 'modes'])).toBe('today')
   })
 })
 
@@ -75,7 +77,7 @@ describe('what the lists of pages hold', () => {
   })
 
   it('leaves out More’s pages that are off, Balance with the tags it divides time by (FEAT-4)', () => {
-    expect(morePagesShown(['activity', 'modes'])).toEqual(['lists', 'tags', 'balance'])
-    expect(morePagesShown(['tags'])).toEqual(['lists', 'modes', 'activity'])
+    expect(morePagesShown(['activity', 'journal', 'modes'])).toEqual(['lists', 'tags', 'balance'])
+    expect(morePagesShown(['tags'])).toEqual(['lists', 'modes', 'activity', 'journal'])
   })
 })

@@ -1,17 +1,28 @@
 import { describe, expect, it } from 'vitest'
 import { createList, createTask, moveToList, setDueDate, toLocalDay } from '../core'
-import { doneSpans, foldedSpans, historyScope, oneListView, parentView, rootView, tagView, viewShowingTask } from './view'
+import {
+  doneSpans,
+  foldedSpans,
+  historyScope,
+  newTaskDueDay,
+  oneListView,
+  parentView,
+  rootView,
+  showsTask,
+  tagView,
+  viewShowingTask,
+} from './view'
 
 /* Which view a task is gone to on, which view is above which, and how each draws its
    done tasks. TIME ids refer to wiki/time-goals.md, UI ids to wiki/interface.md, TASK
-   ids to wiki/tasks.md, STORE ids to wiki/storage.md. */
+   ids to wiki/tasks.md, STORE ids to wiki/storage.md, LIST ids to wiki/views.md. */
 
 const NOW = new Date(2026, 8, 16, 9, 0)
 const TODAY = toLocalDay(NOW)
 
 describe('parentView', () => {
   it('puts the bar\'s tabs at the top (UI-37, UI-32)', () => {
-    for (const view of ['today', 'week', 'month', 'tasks', 'habits', 'rewards', 'more', 'settings'] as const) {
+    for (const view of ['today', 'tomorrow', 'week', 'month', 'tasks', 'habits', 'rewards', 'more', 'settings'] as const) {
       expect(parentView(view)).toBeNull()
       expect(rootView(view)).toBe(view)
     }
@@ -97,11 +108,29 @@ describe('doneSpans and foldedSpans', () => {
     }
   })
 
-  it('keeps one open run of done tasks on Today, Week and Month (TASK-69)', () => {
-    for (const view of ['today', 'week', 'month'] as const) {
+  it('keeps one open run of done tasks on Today, Tomorrow, Week and Month (TASK-69)', () => {
+    for (const view of ['today', 'tomorrow', 'week', 'month'] as const) {
       expect(doneSpans(view)).toBeNull()
       expect(foldedSpans(view)).toEqual([])
     }
+  })
+})
+
+describe('Tomorrow', () => {
+  it('shows what is due tomorrow, and not what Today gathers up (LIST-22)', () => {
+    const tomorrow = setDueDate(createTask('call the bank', null, NOW), '2026-09-17')
+    const today = setDueDate(createTask('report', null, NOW), TODAY)
+    const undated = createTask('someday', null, NOW)
+
+    expect(showsTask('tomorrow', tomorrow, NOW, [])).toBe(true)
+    expect(showsTask('tomorrow', today, NOW, [])).toBe(false)
+    expect(showsTask('tomorrow', undated, NOW, [])).toBe(false)
+    expect(showsTask('today', undated, NOW, [])).toBe(true)
+  })
+
+  it('gives a task added there tomorrow as its day (LIST-25)', () => {
+    expect(newTaskDueDay('tomorrow', NOW)).toBe('2026-09-17')
+    expect(newTaskDueDay('today', NOW)).toBe(TODAY)
   })
 })
 

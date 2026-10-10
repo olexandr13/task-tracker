@@ -2,12 +2,14 @@ import {
   hasTag,
   isHabit,
   isInList,
+  isDueTomorrow,
   isInPeriod,
   isInInbox,
   isTagName,
   lastDayOf,
   ROLLING_SPANS,
   sameTag,
+  tomorrowDueDay,
   type CompletionSpan,
   type CompletionSpans,
   type List,
@@ -21,13 +23,13 @@ import type { TaskScope } from '../storage/taskRepository'
 /**
  * The screens the app has, and where another would be added.
  *
- * Most of them show tasks — the ones for today, this week and this month, every
- * task, the Inbox, one list's and the ones carrying a tag — and share everything
+ * Most of them show tasks — the ones for today, tomorrow, this week and this
+ * month, every task, the Inbox, one list's and the ones carrying a tag — and share everything
  * but which tasks they show, what a task added to them starts with, whether
  * their done tasks are divided by when they were finished and which of those
  * spans are folded away. Habits, the rewards pages, More, the modes, the lists,
- * the tags, the balance of time, the activity log, the trash and settings are
- * screens of their own.
+ * the tags, the balance of time, the activity log, the journal, the trash and
+ * settings are screens of their own.
  *
  * Rewards is six screens rather than one: how the points stand, and under it the
  * cases, the history, the prizes, the wishlist and the rules (RWD-19, RWD-30).
@@ -42,6 +44,7 @@ import type { TaskScope } from '../storage/taskRepository'
  */
 export type FixedView =
   | 'today'
+  | 'tomorrow'
   | 'week'
   | 'month'
   | 'tasks'
@@ -57,6 +60,7 @@ export type FixedView =
   | 'tags'
   | 'balance'
   | 'activity'
+  | 'journal'
   | 'more'
   | 'modes'
   | 'modes/procrastination'
@@ -86,7 +90,17 @@ export type View = FixedView | OneListView | TagView
 /** The views that show tasks: the box to add one, the rows, and the rail beside them. */
 export type TaskView = Exclude<
   View,
-  'habits' | RewardsView | 'lists' | 'tags' | 'balance' | 'activity' | 'more' | ModesView | 'trash' | 'settings'
+  | 'habits'
+  | RewardsView
+  | 'lists'
+  | 'tags'
+  | 'balance'
+  | 'activity'
+  | 'journal'
+  | 'more'
+  | ModesView
+  | 'trash'
+  | 'settings'
 >
 
 /**
@@ -142,11 +156,12 @@ export function isModesView(view: View): view is ModesView {
  * The pages More's own page lists — the ones a phone's bar has no tab for — in
  * the order the sidebar lists them (UI-30, UI-45): Lists (UI-34), Tags, Modes,
  * which holds the switches that were once rows on More itself (MODE-1),
- * Balance, where the time logged divides between work and rest (BAL-1), and the
- * activity log, where each hour of the day is written down (ACT-1). The
- * sidebar has an entry for every one of them, and so none for More.
+ * Balance, where the time logged divides between work and rest (BAL-1), the
+ * activity log, where each hour of the day is written down (ACT-1), and the
+ * journal, where the day's good things are (JRN-1). The sidebar has an entry
+ * for every one of them, and so none for More.
  */
-export const ON_MORE = ['lists', 'tags', 'modes', 'balance', 'activity'] as const satisfies readonly FixedView[]
+export const ON_MORE = ['lists', 'tags', 'modes', 'balance', 'activity', 'journal'] as const satisfies readonly FixedView[]
 
 /**
  * The pages the More tab stands for while one of them is open — the ones on its
@@ -156,19 +171,19 @@ export const ON_MORE = ['lists', 'tags', 'modes', 'balance', 'activity'] as cons
  * deciding both: whether it is listed there, and whether it is reached only
  * from there.
  */
-export const UNDER_MORE = ['tags', 'balance', 'activity', 'modes'] as const satisfies readonly FixedView[]
+export const UNDER_MORE = ['tags', 'balance', 'activity', 'journal', 'modes'] as const satisfies readonly FixedView[]
 
 /** The views named after a period, which a phone keeps behind a single tab. */
-export type PeriodView = 'today' | 'week' | 'month'
+export type PeriodView = 'today' | 'tomorrow' | 'week' | 'month'
 
-export const PERIOD_VIEWS: readonly PeriodView[] = ['today', 'week', 'month']
+export const PERIOD_VIEWS: readonly PeriodView[] = ['today', 'tomorrow', 'week', 'month']
 
 export function isTaskView(view: View): view is TaskView {
   return view === 'tasks' || view === 'inbox' || isPeriodView(view) || isOneListView(view) || isTagView(view)
 }
 
 export function isPeriodView(view: View): view is PeriodView {
-  return view === 'today' || view === 'week' || view === 'month'
+  return view === 'today' || view === 'tomorrow' || view === 'week' || view === 'month'
 }
 
 export function isOneListView(view: View): view is OneListView {
@@ -191,7 +206,7 @@ export function tagView(tag: string): TagView {
  * Whether being on `view` is being somewhere under `menu` in the navigation: on
  * it, or on one of the screens opened from it — a list or the Inbox under Lists,
  * a tag's tasks under Tags, the history, the wishlist and the rules under
- * Rewards, or Tags, Balance, the activity log, Modes and each mode's page under More.
+ * Rewards, or Tags, Balance, the activity log, the journal, Modes and each mode's page under More.
  */
 export function isUnder(view: View, menu: View): boolean {
   if (view === menu) return true
@@ -210,7 +225,7 @@ export function isUnder(view: View, menu: View): boolean {
  * tree whose top is the bar's tabs — the periods, Tasks, Habits, Rewards, More
  * and Settings. Under Tasks are Lists and the Trash, its two buttons (UI-34);
  * under Lists the Inbox and each list; under Rewards its five pages (RWD-19);
- * under More Tags, Balance, the activity log and Modes (UI-45), under Tags each tag's tasks, and under
+ * under More Tags, Balance, the activity log, the journal and Modes (UI-45), under Tags each tag's tasks, and under
  * Modes each mode's page (MODE-7). This is what the back button climbs, so a
  * page is left the way it was reached rather than the way it happened to be
  * arrived at.
@@ -219,7 +234,7 @@ export function parentView(view: View): View | null {
   if (isOneListView(view) || view === 'inbox') return 'lists'
   if (isTagView(view)) return 'tags'
   if (view === 'lists' || view === 'trash') return 'tasks'
-  if (view === 'tags' || view === 'balance' || view === 'activity' || view === 'modes') return 'more'
+  if (view === 'tags' || view === 'balance' || view === 'activity' || view === 'journal' || view === 'modes') return 'more'
   if ((UNDER_REWARDS as readonly View[]).includes(view)) return 'rewards'
   if ((UNDER_MODES as readonly View[]).includes(view)) return 'modes'
   return null
@@ -244,7 +259,8 @@ export function viewTag(view: TagView): string {
 
 /**
  * Whether a live task is one the view shows. Today, Week and Month are named
- * after the periods the progress bars count, and each shows its own; a list's
+ * after the periods the progress bars count, and each shows its own; Tomorrow
+ * shows what is due tomorrow and nothing gathered up from before; a list's
  * view shows what is filed under it, the Inbox what is filed nowhere, and a
  * tag's the tasks carrying it, whatever case it is named in.
  *
@@ -256,6 +272,7 @@ export function showsTask(view: TaskView, task: Task, now: Date, lists: readonly
   if (view === 'inbox') return isInInbox(task, lists)
   if (isOneListView(view)) return isInList(task, viewListId(view))
   if (isTagView(view)) return hasTag(task, viewTag(view))
+  if (view === 'tomorrow') return isDueTomorrow(task, now)
   return isInPeriod(task, view, now)
 }
 
@@ -307,8 +324,8 @@ function isListLike(view: TaskView): boolean {
  * one run of them. Tasks holds every done task there is, however long ago, and
  * one run of them would bury today's work under last month's, so it counts back
  * in rolling windows. The Inbox, a list and a tag keep today's work apart from
- * the week's and the month's. Today, Week and Month keep one run, being one
- * period's work already.
+ * the week's and the month's. Today, Tomorrow, Week and Month keep one run,
+ * being one period's work already.
  */
 export function doneSpans(view: TaskView): CompletionSpans | null {
   if (view === 'tasks') return ROLLING_SPANS
@@ -346,8 +363,9 @@ export function historyScope(view: TaskView, known: readonly string[] = []): Tas
   return null
 }
 
-/** The day a task added to the view starts on: the last day of its period, if it has one. */
+/** The day a task added to the view starts on: tomorrow on Tomorrow, else the last day of its period, if it has one. */
 export function newTaskDueDay(view: TaskView, now: Date): LocalDay | null {
+  if (view === 'tomorrow') return tomorrowDueDay(now)
   return isPeriodView(view) ? lastDayOf(view, now) : null
 }
 
@@ -366,6 +384,7 @@ export function newTaskListId(view: TaskView): ListId | null {
 
 export const VIEW_LABELS: Record<FixedView, string> = {
   today: 'Today',
+  tomorrow: 'Tomorrow',
   week: 'Week',
   month: 'Month',
   tasks: 'Tasks',
@@ -381,6 +400,7 @@ export const VIEW_LABELS: Record<FixedView, string> = {
   tags: 'Tags',
   balance: 'Balance',
   activity: 'Activity log',
+  journal: 'Journal',
   more: 'More',
   modes: 'Modes',
   'modes/procrastination': 'Procrastination',
@@ -454,6 +474,8 @@ export function emptyMessage(view: TaskView, lists: readonly List[] = []): strin
   switch (view) {
     case 'today':
       return 'A fresh day. Add a task above to get going.'
+    case 'tomorrow':
+      return 'Nothing due tomorrow yet. Add a task above to plan it.'
     case 'week':
       return 'Nothing due this week yet. Add a task above to plan it.'
     case 'month':
@@ -474,6 +496,8 @@ export function allDoneMessage(view: TaskView, lists: readonly List[] = []): str
   switch (view) {
     case 'today':
       return 'Everything for today is done. Great work!'
+    case 'tomorrow':
+      return 'Everything for tomorrow is done already. Great work!'
     case 'week':
       return 'Everything for this week is done. Great work!'
     case 'month':

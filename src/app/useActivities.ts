@@ -5,6 +5,7 @@ import {
   knownActivities,
   sessionActivityEntries,
   withoutSession,
+  withSessionResized,
   type ActivityChange,
   type ActivityEntry,
   type ActivityEntryId,
@@ -85,6 +86,24 @@ export function useActivities(repository: ActivityRepository, onProblem: ReportP
     [apply],
   )
 
+  /**
+   * Writes the records sessions made again for the lengths they were changed to
+   * (TIME-24, ACT-21); a session whose records were all deleted here stays out.
+   */
+  const resizeSessions = useCallback(
+    (sessions: readonly LoggedSession[]) => {
+      const now = new Date()
+      const known = knownActivities(latest.current, now)
+      apply((current) =>
+        sessions.reduce(
+          (log, { task, entry }) => withSessionResized(log, task.title, task.id, entry, now, known),
+          current,
+        ),
+      )
+    },
+    [apply],
+  )
+
   /** Takes out the records a session made, as the session is taken back (ACT-21). */
   const removeSession = useCallback(
     (entryId: TimeEntryId) => {
@@ -120,5 +139,5 @@ export function useActivities(repository: ActivityRepository, onProblem: ReportP
     [apply],
   )
 
-  return { entries, isLoading, add, addSessions, removeSession, change, remove, restore }
+  return { entries, isLoading, add, addSessions, resizeSessions, removeSession, change, remove, restore }
 }

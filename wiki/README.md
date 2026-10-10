@@ -17,7 +17,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Due dates](due-dates.md) | The day a task is due, setting it, and overdue |
 | [Tags](tags.md) | Names a task carries, tagging by picker or by typing `#`, the Tags page and each tag's list |
 | [Lists](lists.md) | Somewhere to put a task: one list at a time, the Inbox, and the Lists page |
-| [Views](views.md) | Views of the tasks — Today, Week and Month, and what belongs in them |
+| [Views](views.md) | Views of the tasks — Today, Tomorrow, Week and Month, and what belongs in them |
 | [Modes](modes.md) | The parts of the app that are turned on and off: where they are listed, switched and explained |
 | [Just one](just-one.md) | Procrastination mode on Today: one task, a win, then rest or the next |
 | [Repeating tasks](repeating-tasks.md) | Daily, weekly and monthly rules, and how a repeat reads as done |
@@ -30,6 +30,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Time goals](time-goals.md) | A length of time a task asks for, sessions logged against it, and the hint to tick it off |
 | [Balance](balance.md) | Where the logged time went: categories named by the owner, bound to tags, and the time each took today, this week or this month |
 | [Activity log](activity-log.md) | The day hour by hour: what was done and for how long, the records added and changed, and what they add up to over a day, a week or a month |
+| [Journal](journal.md) | Good things, achievements and gratitude, about five of each a day, and the week before kept to look back on |
 | [Check-ins](check-ins.md) | The top of every hour asking what was done: the hours it keeps to, the notice, and the notification while the app is open |
 | [Reminders](reminders.md) | The hour a task is due at coming round: what is said, when, and how it reaches you |
 | [Nudges](nudges.md) | The app noticing nothing is getting done: the quiet stretch, the task it points at, the hours it may speak in, and the notification |

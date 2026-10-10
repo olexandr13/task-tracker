@@ -26,7 +26,14 @@ import { offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from './day'
 import { periodRange, type Period } from './progress'
 import { distinctTags, normalizeTag, sameTag } from './tag'
 import type { Task } from './task'
-import { historyEntries, minutesEntry, type TimeEntry, type TimeEntryId } from './timeLog'
+import {
+  changedEntry,
+  historyEntries,
+  minutesEntry,
+  type TimeEntry,
+  type TimeEntryChange,
+  type TimeEntryId,
+} from './timeLog'
 
 export type CategoryId = string
 
@@ -197,6 +204,23 @@ export function logCategoryTime(
 export function removeCategoryTime(category: Category, entryId: TimeEntryId): Category {
   const kept = category.timeLog.filter((entry) => entry.id !== entryId)
   return kept.length === category.timeLog.length ? category : { ...category, timeLog: kept }
+}
+
+/**
+ * Changes how long a session logged straight to the category was and what it
+ * went on, as a task's session is changed (BAL-15, TIME-24). One without it, or
+ * nothing changed, hands back the category as it is.
+ *
+ * Returns a new category; the one passed in is never modified.
+ */
+export function changeCategoryTime(category: Category, entryId: TimeEntryId, change: TimeEntryChange): Category {
+  const was = category.timeLog.find((entry) => entry.id === entryId)
+  if (was === undefined) return category
+
+  const changed = changedEntry(was, change)
+  return changed === was
+    ? category
+    : { ...category, timeLog: category.timeLog.map((entry) => (entry === was ? changed : entry)) }
 }
 
 /**

@@ -6,6 +6,7 @@ import {
   type Category,
   type CaseSettings,
   type FeaturesOff,
+  type JournalEntry,
   type List,
   type PeriodBonuses,
   type Prize,
@@ -22,6 +23,7 @@ import { readCategory, toStoredCategory, type StoredCategory } from './categoryS
 import type { CheckInPreference } from './checkInRepository'
 import { readCheckIn, toStoredCheckIn, type StoredCheckIn } from './checkInSchema'
 import { readFeatures, toStoredFeatures, type StoredFeatures } from './featureSchema'
+import { readJournalDay, toStoredJournalDays, type StoredJournalDay } from './journalSchema'
 import { readList, toStoredList, type StoredList } from './listSchema'
 import type { NudgePreference } from './nudgeRepository'
 import { readNudge, toStoredNudge, type StoredNudge } from './nudgeSchema'
@@ -74,12 +76,14 @@ export const BACKUP_FORMAT = 'task-tracker-backup'
  * any is read as holding none. Version 7 held no activity log and no check-in
  * (ACT-1, CHECKIN-2): a file made before them is read as holding no records and
  * asking for no check-in. Version 8 held no feature switches (FEAT-1): a file
- * made before there were any is read as switching nothing off.
+ * made before there were any is read as switching nothing off. Version 9 held
+ * no journal (JRN-1): a file made before there was one is read as holding no
+ * lines.
  */
-export const BACKUP_VERSION = 9
+export const BACKUP_VERSION = 10
 
 /** The versions of the wrapper this app can still read, oldest first. */
-const READABLE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, BACKUP_VERSION]
+const READABLE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, BACKUP_VERSION]
 
 interface BackupFile {
   format: typeof BACKUP_FORMAT
@@ -116,6 +120,8 @@ interface BackupFile {
   checkIn: StoredCheckIn[]
   /** The features switched off on Settings, as their one record, or nothing at all with every one on (FEAT-1). */
   features: StoredFeatures[]
+  /** The journal, a day at a time, as the account keeps it (JRN-1). */
+  journalDays: StoredJournalDay[]
 }
 
 /** Why a file was not read at all. */
@@ -178,6 +184,7 @@ export function writeBackupFile(data: AccountData, now: Date): string {
     activityDays: toStoredActivityDays(data.activities),
     checkIn: checkInRecord(data.checkIn),
     features: featuresRecord(data.features),
+    journalDays: toStoredJournalDays(data.journal),
   }
   return `${JSON.stringify(file, null, 2)}\n`
 }
@@ -211,6 +218,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
   const activityDays = file.version < 8 ? [] : file.activityDays
   const checkIn = file.version < 8 ? [] : file.checkIn
   const features = file.version < 9 ? [] : file.features
+  const journalDays = file.version < 10 ? [] : file.journalDays
   if (
     !Array.isArray(tasks) ||
     !Array.isArray(lists) ||
@@ -225,7 +233,8 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     !Array.isArray(categories) ||
     !Array.isArray(activityDays) ||
     !Array.isArray(checkIn) ||
-    !Array.isArray(features)
+    !Array.isArray(features) ||
+    !Array.isArray(journalDays)
   ) {
     return 'not-a-backup'
   }
@@ -265,6 +274,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     prizes: readEach<Prize>(prizes, readPrize),
     categories: readEach<Category>(categories, readCategory),
     activities: readEach<ActivityEntry[]>(activityDays, readActivityDay).flat(),
+    journal: readEach<JournalEntry[]>(journalDays, readJournalDay).flat(),
     entries: readEach<RewardEntry[]>(rewardDays, readRewardDay).flat(),
     redemptions: readEach<Redemption>(redemptions, readRedemption),
     bonuses: bonuses as PeriodBonuses,

@@ -25,9 +25,10 @@ ticked off. The tick itself stays the owner's.
   written into the [Activity log](activity-log.md) as well, at the time it took up (ACT-21).
 - **TIME-4** The panel lists the sessions that count (TIME-7) under **Sessions**, each with when it
   was logged — its time today, its date and time before that — its comment under that when it has
-  one (TIME-23), and its length in whole minutes, `<1m` for a timer's run under a minute. The **×**
-  beside one takes it back (UI-38), for a session logged by mistake, and its records out of the
-  Activity log with it (ACT-21). A long list scrolls inside the panel.
+  one (TIME-23), and its length in whole minutes, `<1m` for a timer's run under a minute. The
+  **pencil** beside one changes it (TIME-24), and the **×** after that takes it back (UI-38), for a
+  session logged by mistake, and its records out of the Activity log with it (ACT-21). A long list
+  scrolls inside the panel.
 - **TIME-23** A session can carry a **comment** — what the time went on. Its box closes the
   panel's **Log time**, under the box for a length, marked with a speech bubble and
   `Add a comment (optional)`: shaded rather than outlined, so it is not taken for the box a
@@ -37,7 +38,21 @@ ticked off. The tick itself stays the owner's.
   session takes it the box is empty again, and closing the panel lets go of a comment not yet
   used. A comment is one line of at most 200 characters; spaces alone are none. Stop on the chip at
   the foot of the screen (TIME-18), and a timer stopped by starting another (TIME-16), log without
-  one. A comment is not changed once logged: the session is taken back and logged again.
+  one. A comment can be changed, given or taken away once the session is logged (TIME-24).
+- **TIME-24** A session listed (TIME-4) can be **changed** — a length mistyped, a timer left
+  running, a comment forgotten. The **pencil** beside it opens it in place: a box with its length
+  written out (`25m`), the caret in it and the length picked out, so what is typed replaces it, and
+  a box with its comment. **Save**, or Enter in either box, keeps them; **Cancel** or Escape leaves
+  the session as it was and the panel open, and closing the panel leaves it as it was too. One
+  session is changed at a time. The length is typed as when logging (TIME-11), from 1 minute to 24
+  hours, and one that cannot be read is refused in place, its box marked and a line under it saying
+  what would do; the comment is as when logging (TIME-23), and an empty box takes it away. A timer's
+  session **keeps its seconds** while its length is left as shown (TIME-22); a run under a minute
+  starts with an empty box, `<1m` in it faintly, and left empty keeps its seconds. **When it was
+  logged stays**: the session counts for the same occurrence (TIME-7) and on the same day (BAL-3),
+  and a new length runs back from that moment, the Activity log's hours written again to match
+  (ACT-21). Changing a session leaves whether the task is done alone (TIME-6). Sessions logged while
+  a task is being added are changed the same way, before it is added.
 
 ## Ready to tick off
 
@@ -46,8 +61,8 @@ ticked off. The tick itself stays the owner's.
   off" on hover and to a screen reader. The time under the clock (TIME-12) and in the panel turns
   green, and the panel says the goal is reached. A done task's box is simply done. A finished
   checklist invites the same way, with its own words (CHK-32).
-- **TIME-6** **Time never finishes or reopens a task.** Logging, taking a session back and changing
-  the goal leave whether it is done alone, and ticking the task off or back leaves the time alone.
+- **TIME-6** **Time never finishes or reopens a task.** Logging, changing a session (TIME-24),
+  taking one back and changing the goal leave whether it is done alone, and ticking the task off or back leaves the time alone.
   A task can be ticked off before its goal is reached; the goal is a hint, not a gate.
 
 ## Under a repeating task
@@ -134,14 +149,15 @@ ticked off. The tick itself stays the owner's.
 
 ---
 
-**Where it lives:** `src/core/timeLog.ts` (the goal, sessions, which of them count, how long they
-are kept, and whether the goal is reached), `src/core/taskTimer.ts` (elapsed time and whether a run has reached the goal),
+**Where it lives:** `src/core/timeLog.ts` (the goal, sessions, changing one, which of them count,
+how long they are kept, and whether the goal is reached), `src/core/taskTimer.ts` (elapsed time and whether a run has reached the goal),
 `src/core/task.ts` (the fields, and letting go of stale sessions when a rule is
 dropped), `src/app/components/TimePicker.tsx` (the clock and its panel), `src/app/components/TaskItem.tsx`
 (the slot, the detail and the box's hint), `src/app/components/HabitList.tsx` (the habit card's box),
 `src/app/components/RunningTimerChip.tsx`, `src/app/components/GoalNoticeToast.tsx`,
 `src/app/browserNotification.ts` (the browser's notification and its permission, shared with
 [Nudges](nudges.md), [Reminders](reminders.md) and [Check-ins](check-ins.md)),
+`src/app/components/TimeLogFields.tsx` (logging by hand, the sessions listed, and changing one),
 `src/app/components/ClockIcon.tsx`, `src/app/components/CommentIcon.tsx`, `src/app/components/PlayIcon.tsx`,
 `src/app/components/StopIcon.tsx`, `src/app/durationLabels.ts` (wording, and reading typed lengths),
 `src/app/rowControls.ts` (the ready box), `src/app/useTasks.ts`, `src/app/useTaskTimer.ts`,

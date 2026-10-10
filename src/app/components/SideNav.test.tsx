@@ -57,7 +57,7 @@ describe('SideNav', () => {
     expect(screen.getByText('PickMe')).toBeTruthy()
   })
 
-  it('groups the work, what pushes it along and the time spent, with an entry for Tags, none for any one tag and none for More (UI-30, UI-45, TAG-17, RWD-19, LST-13, MODE-7, BAL-1, ACT-1)', () => {
+  it('groups the work, what pushes it along and the time spent, with an entry for Tags, none for any one tag and none for More (UI-30, UI-45, TAG-17, RWD-19, LST-13, MODE-7, BAL-1, ACT-1, JRN-1)', () => {
     setup('today')
 
     const entries = screen
@@ -67,6 +67,7 @@ describe('SideNav', () => {
       )
     expect(entries.map((button) => button.textContent)).toEqual([
       'Today',
+      'Tomorrow',
       'Week',
       'Month',
       'Habits',
@@ -87,6 +88,7 @@ describe('SideNav', () => {
       '⏰Check-in',
       'Balance',
       'Activity log',
+      'Journal',
       'Trash',
       'Settings',
     ])
@@ -410,24 +412,24 @@ describe('SideNav', () => {
     }
 
     expect(rows([])).toEqual([
-      'Today', 'Week', 'Month', '—',
+      'Today', 'Tomorrow', 'Week', 'Month', '—',
       'Habits', 'Tasks', 'Lists', 'Tags', '—',
       'Rewards', 'Modes', '—',
-      'Balance', 'Activity log', '—',
+      'Balance', 'Activity log', 'Journal', '—',
       'Trash', '—',
       'Settings',
     ])
-    expect(rows(['balance', 'activity'])).toEqual([
-      'Today', 'Week', 'Month', '—',
+    expect(rows(['balance', 'activity', 'journal'])).toEqual([
+      'Today', 'Tomorrow', 'Week', 'Month', '—',
       'Habits', 'Tasks', 'Lists', 'Tags', '—',
       'Rewards', 'Modes', '—',
       'Trash', '—',
       'Settings',
     ])
     expect(rows(['rewards', 'modes'])).toEqual([
-      'Today', 'Week', 'Month', '—',
+      'Today', 'Tomorrow', 'Week', 'Month', '—',
       'Habits', 'Tasks', 'Lists', 'Tags', '—',
-      'Balance', 'Activity log', '—',
+      'Balance', 'Activity log', 'Journal', '—',
       'Trash', '—',
       'Settings',
     ])

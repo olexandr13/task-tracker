@@ -7,11 +7,11 @@ in. Both are on **Settings**, under the account in its **Account** section (UI-3
 
 - **BAK-1** **Export** saves a file of the whole account, named for the local day it was made:
   `task-tracker-backup-2026-09-19.json`. Nothing is asked first, and the page then says what went into
-  it — `Exported 12 tasks, 2 lists, 3 tags, 4 prizes, 3 categories, 40 activity records, 30 completions and 1 redemption.` — or that the account had nothing
+  it — `Exported 12 tasks, 2 lists, 3 tags, 4 prizes, 3 categories, 40 activity records, 9 journal lines, 30 completions and 1 redemption.` — or that the account had nothing
   in it yet. Offline it still works, from the copy of the account this device keeps (STORE-18).
 - **BAK-2** The file holds **everything the account keeps**: every task, those in the trash too, the
   lists, the kept tags — those no task carries any more too (TAG-6) — the wishlist (RWD-33), the
-  Balance categories (BAL-12), the activity log (ACT-15), what
+  Balance categories (BAL-12), the activity log (ACT-15), the journal's week (JRN-7), what
   completions earned (a *completion* in the counts is one task's points on one day), the
   redemptions, what clearing each period is worth (RWD-24, RWD-29), what a point is worth
   (RWD-31), the reward a new task starts with (RWD-45), the warm-up under way (WARM-1), how the owner asked to be nudged (NUDGE-9), the
@@ -105,13 +105,20 @@ in. Both are on **Settings**, under the account in its **Account** section (UI-3
   before there were switches holds none either; both are read as switching nothing off (BAK-13). It
   is **no record** the same way (BAK-14), and an import takes the file's switches only where the
   account has **none of its own** — a backup restored does not hide what was switched back on since.
+- **BAK-21** A file holds the **journal** a day at a time, as the account keeps it (STORE-60), each
+  line with its own id. A line is a **record**: counted among what was imported or already here, and
+  one the account holds is left as it is (BAK-6) — added to its day, never replacing the day; a day
+  of the account's journal the app cannot read is left alone. A line about a day the journal **no
+  longer keeps** (JRN-8) is left out of an import, as a task whose time in the trash ran out is: it
+  would only be deleted again as it arrived. A file made before there was a journal holds none, and
+  is read as holding none (BAK-13).
 
 ---
 
 **Where it lives:** `src/storage/backupRepository.ts` (the interface, and what an import adds),
 `firestoreBackupRepository.ts` (reading and adding to the account in Firestore), `localBackupRepository.ts`
 (the guest's), `backupFile.ts` (the file and its version), `taskSchema.ts`, `listSchema.ts`, `tagSchema.ts`,
-`prizeSchema.ts`, `categorySchema.ts`, `activitySchema.ts`, `rewardSchema.ts`, `warmUpSchema.ts`,
+`prizeSchema.ts`, `categorySchema.ts`, `activitySchema.ts`, `journalSchema.ts`, `rewardSchema.ts`, `warmUpSchema.ts`,
 `nudgeSchema.ts`, `checkInSchema.ts`, `featureSchema.ts` (each record's own shape),
 `src/app/useBackup.ts` (running them), `src/app/backupLabels.ts` (what is said),
 `src/app/downloadFile.ts`, `src/app/components/BackupActions.tsx`, `SettingsList.tsx`.

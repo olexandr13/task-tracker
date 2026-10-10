@@ -33,6 +33,7 @@ describe('viewFromHash', () => {
   it('reads back every view it writes', () => {
     const views = [
       'today',
+      'tomorrow',
       'week',
       'month',
       'tasks',

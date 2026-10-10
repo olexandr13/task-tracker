@@ -15,7 +15,7 @@ import { KeyWaitingMark } from './KeyWaitingMark'
  * The views, grouped by what they are for (UI-30): when — the ones named after
  * a period; the work and where it is filed — the habits, every task, the lists
  * and the tags; what pushes it along — the rewards and the modes; looking back
- * at the time spent — the balance of time and the activity log; then the trash,
+ * at the day — the balance of time, the activity log and the journal; then the trash,
  * then settings. A thin line is drawn between groups. Lists opens onto the
  * Inbox and every list under it, so a list is one click away and a task can be
  * dropped on one to file it, and folds them away when they are not wanted.
@@ -26,10 +26,10 @@ import { KeyWaitingMark } from './KeyWaitingMark'
  * feature is switched off on Settings has no entry at all (FEAT-2).
  */
 const VIEW_GROUPS: readonly (readonly FixedView[])[] = [
-  ['today', 'week', 'month'],
+  ['today', 'tomorrow', 'week', 'month'],
   ['habits', 'tasks', 'lists', 'tags'],
   ['rewards', 'modes'],
-  ['balance', 'activity'],
+  ['balance', 'activity', 'journal'],
   ['trash'],
   ['settings'],
 ]

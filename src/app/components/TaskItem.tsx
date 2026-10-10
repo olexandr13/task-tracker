@@ -27,6 +27,7 @@ import {
   type LocalDay,
   type LocalTime,
   type Task,
+  type TimeEntryChange,
   type TimeEntryId,
 } from '../../core'
 import { dateChoices, noDayNote, restsToday } from '../dateChoices'
@@ -354,6 +355,9 @@ export function TaskItem({
     now,
     onLog: (minutes: number, comment: string | null) => { actions.logTime(task.id, minutes, comment) },
     onRemove: (entryId: TimeEntryId) => { actions.removeTimeEntry(task.id, entryId) },
+    onChangeSession: (entryId: TimeEntryId, change: TimeEntryChange) => {
+      actions.changeTimeEntry(task.id, entryId, change)
+    },
     onChangeGoal: (minutes: number | null) => { actions.changeTimeGoal(task.id, minutes) },
     label: `Time for "${task.title}"`,
     timer:

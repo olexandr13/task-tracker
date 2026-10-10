@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import {
   addTag,
   appendTask,
+  changeTimeEntry,
   clearList,
   completeTask,
   createTask,
@@ -34,6 +35,7 @@ import {
   rewardChanges,
   scheduleOn,
   sessionsLogged,
+  sessionsResized,
   setDescription,
   setDoneOnDay,
   setDueTime,
@@ -60,6 +62,7 @@ import {
   type SubtaskId,
   type Task,
   type TaskId,
+  type TimeEntryChange,
   type TimeEntryId,
 } from '../core'
 import type { RewardRepository } from '../storage/rewardRepository'
@@ -101,8 +104,9 @@ function record(rewards: RewardRepository, changes: RewardChanges, onProblem: Re
  * elsewhere is not recorded: the device that made it recorded it.
  *
  * Every session a change here logs is told to `onSessionsLogged`, for the
- * activity log to write down the time it took up (ACT-21) — again only here,
- * not as it arrives from elsewhere.
+ * activity log to write down the time it took up (ACT-21), and every session
+ * made longer or shorter to `onSessionsResized`, for it to be written down
+ * again (TIME-24) — again only here, not as it arrives from elsewhere.
  *
  * A load or a save the repository refuses is told to `onProblem` (STORE-13),
  * which is expected to stay the same function from render to render.
@@ -117,6 +121,8 @@ export function useTasks(
   earned: readonly RewardEntry[] = [],
   /** Told of every session a change logs, however it was logged, for the activity log (ACT-21). */
   onSessionsLogged: (sessions: readonly LoggedSession[]) => void = ignoreSessions,
+  /** Told of every session a change makes longer or shorter, at its new length, for the activity log (TIME-24). */
+  onSessionsResized: (sessions: readonly LoggedSession[]) => void = ignoreSessions,
 ) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [status, setStatus] = useState<'loading' | 'loaded' | 'failed'>('loading')
@@ -136,8 +142,10 @@ export function useTasks(
   // The latest of what the screen passed, so a new one each render does not
   // make every change below a new function.
   const sessionsLoggedTo = useRef(onSessionsLogged)
+  const sessionsResizedTo = useRef(onSessionsResized)
   useLayoutEffect(() => {
     sessionsLoggedTo.current = onSessionsLogged
+    sessionsResizedTo.current = onSessionsResized
   })
 
   useEffect(() => {
@@ -224,6 +232,8 @@ export function useTasks(
       )
       const logged = sessionsLogged(before, next)
       if (logged.length > 0) sessionsLoggedTo.current(logged)
+      const resized = sessionsResized(before, next)
+      if (resized.length > 0) sessionsResizedTo.current(resized)
     },
     [repository, rewards, onProblem, bonuses, earned],
   )
@@ -429,6 +439,14 @@ export function useTasks(
     [apply],
   )
 
+  /** Changes how long a session was and what it went on (TIME-24). Whether the task is done is left to its box. */
+  const changeTaskTime = useCallback(
+    (id: TaskId, entryId: TimeEntryId, change: TimeEntryChange) => {
+      apply((current) => current.map((task) => (task.id === id ? changeTimeEntry(task, entryId, change) : task)))
+    },
+    [apply],
+  )
+
   /**
    * Puts a tag on a task, spelled the way the tag already is — in `known`, every
    * tag there is, or wherever another live task carries it — so one tag is never
@@ -615,6 +633,7 @@ export function useTasks(
     logTaskTime,
     logTaskSeconds,
     removeTaskTime,
+    changeTaskTime,
     tag,
     untag,
     removeTagEverywhere,

@@ -5,6 +5,7 @@ import {
   sessionSeconds,
   wholeMinutes,
   type TimeEntry,
+  type TimeEntryChange,
   type TimeEntryId,
 } from '../../core'
 import { describeDuration, describeElapsedClock, describeTimeSummary, parseDuration } from '../durationLabels'
@@ -25,6 +26,8 @@ interface TimePickerProps {
   /** A session logged by hand, with the comment typed for it or null for none (TIME-23). */
   onLog: (minutes: number, comment: string | null) => void
   onRemove: (entryId: TimeEntryId) => void
+  /** A session's length or comment changed in place (TIME-24). */
+  onChangeSession: (entryId: TimeEntryId, change: TimeEntryChange) => void
   onChangeGoal: (minutes: number | null) => void
   /** What this picker is for, when there is more than one on screen. */
   label?: string
@@ -55,7 +58,8 @@ interface TimePickerProps {
  * as it is clicked, and one typed — `25m`, `1h`, `1:30` — on Enter or Log. The goal is
  * kept on Enter or on leaving the panel, and an empty goal is none; Escape drops
  * a goal half-typed. Start/Stop runs a timer that becomes a session on Stop. A
- * comment typed goes with the next session logged here, by hand or by Stop.
+ * comment typed goes with the next session logged here, by hand or by Stop. A
+ * session listed can be changed in place, its length and its comment.
  */
 export function TimePicker({
   goal,
@@ -63,6 +67,7 @@ export function TimePicker({
   now,
   onLog,
   onRemove,
+  onChangeSession,
   onChangeGoal,
   label = 'Time',
   align = 'right',
@@ -261,7 +266,9 @@ export function TimePicker({
 
           <LogTimeFields comment={comment} onCommentChange={setComment} onLog={log} />
 
-          {sessions.length > 0 && <SessionList sessions={sessions} now={now} onRemove={onRemove} />}
+          {sessions.length > 0 && (
+            <SessionList sessions={sessions} now={now} onRemove={onRemove} onChange={onChangeSession} />
+          )}
 
           <label className={`flex items-center gap-2 px-1 text-sm text-neutral-600 md:text-xs dark:text-neutral-300 ${timeDivider}`}>
             Goal

@@ -17,6 +17,7 @@ import {
   normalizeCategoryName,
   recentCategoryTime,
   removeCategoryTime,
+  changeCategoryTime,
   removeTagFromCategories,
   renameCategory,
   renameTagInCategories,
@@ -276,6 +277,18 @@ describe('time logged straight to a category (BAL-14, BAL-15)', () => {
 
     expect(removeCategoryTime(logged, logged.timeLog[0].id).timeLog).toEqual([logged.timeLog[1]])
     expect(removeCategoryTime(logged, 'nothing')).toBe(logged)
+  })
+
+  it('changes a session’s length and comment, leaving when it was logged (TIME-24)', () => {
+    const logged = logCategoryTime(logCategoryTime(rest, 30, NOW, 'read a chapter'), 15, NOW)
+    const [first, second] = logged.timeLog
+
+    const changed = changeCategoryTime(logged, first.id, { seconds: 45 * 60, comment: ' read two ' })
+
+    expect(changed.timeLog).toEqual([{ ...first, seconds: 45 * 60, comment: 'read two' }, second])
+    expect(changeCategoryTime(logged, first.id, { seconds: first.seconds, comment: 'read a chapter' })).toBe(logged)
+    expect(changeCategoryTime(logged, 'nothing', { seconds: 60, comment: null })).toBe(logged)
+    expect(() => changeCategoryTime(logged, first.id, { seconds: 0, comment: null })).toThrow(InvalidTimeError)
   })
 
   it('lists what the page still shows, the latest first', () => {

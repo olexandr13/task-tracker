@@ -9,6 +9,7 @@ import {
   createPrize,
   createRedemption,
   createTag,
+  createJournalEntry,
   createTask,
   deleteTask,
   NO_BONUSES,
@@ -24,6 +25,7 @@ import { CATEGORY_SCHEMA_VERSION } from './categorySchema'
 import type { CheckInPreference } from './checkInRepository'
 import { CHECK_IN_SCHEMA_VERSION } from './checkInSchema'
 import { FEATURES_SCHEMA_VERSION } from './featureSchema'
+import { JOURNAL_SCHEMA_VERSION } from './journalSchema'
 import { LIST_SCHEMA_VERSION } from './listSchema'
 import type { NudgePreference } from './nudgeRepository'
 import { NUDGE_SCHEMA_VERSION } from './nudgeSchema'
@@ -56,6 +58,8 @@ const REST = bindTag(createCategory('Rest', AT), 'walk')
 const READING = createActivityEntry('Reading', 900, { day: '2026-09-18', hour: 14 }, AT)
 const WORKING = createActivityEntry('Work', 2700, { day: '2026-09-18', hour: 14 }, AT)
 const CHECKING_IN: CheckInPreference = { on: true, window: { from: '08:00', to: '20:00' } }
+const SUNNY = createJournalEntry('good', 'Sun came out', '2026-09-18', AT)
+const THANKS = createJournalEntry('gratitude', 'A friend called', '2026-09-18', AT)
 
 const DATA: AccountData = {
   tasks: [DONE, TRASHED],
@@ -64,6 +68,7 @@ const DATA: AccountData = {
   prizes: [CHOCOLATE],
   categories: [REST],
   activities: [READING, WORKING],
+  journal: [SUNNY, THANKS],
   entries: ENTRIES,
   redemptions: [TREAT],
   bonuses: BONUSES,
@@ -76,8 +81,11 @@ const DATA: AccountData = {
   features: ['rewards', 'quote'],
 }
 
-/** What a file from before the feature switches reads as (BAK-20). */
-const BEFORE_FEATURES = { features: null }
+/** What a file from before the journal reads as (BAK-21). */
+const BEFORE_JOURNAL = { journal: [] }
+
+/** What a file from before the feature switches reads as (BAK-20), and so before the journal too. */
+const BEFORE_FEATURES = { features: null, ...BEFORE_JOURNAL }
 
 /** What a file from before the activity log and the check-in reads as (BAK-18, BAK-19), and so before the switches too. */
 const BEFORE_ACTIVITIES = { activities: [], checkIn: null, ...BEFORE_FEATURES }
@@ -142,6 +150,21 @@ describe('writing a backup', () => {
     ])
   })
 
+  it('keeps the journal a day at a time, as the account does (BAK-21)', () => {
+    const file = JSON.parse(writeBackupFile(DATA, AT)) as { journalDays: unknown }
+
+    expect(file.journalDays).toEqual([
+      {
+        version: JOURNAL_SCHEMA_VERSION,
+        day: '2026-09-18',
+        entries: {
+          [SUNNY.id]: { section: 'good', text: 'Sun came out', writtenAt: AT.toISOString() },
+          [THANKS.id]: { section: 'gratitude', text: 'A friend called', writtenAt: AT.toISOString() },
+        },
+      },
+    ])
+  })
+
   it('holds no check-in record for one at its defaults (BAK-19)', () => {
     const file = JSON.parse(writeBackupFile({ ...DATA, checkIn: { on: false, window: { from: '09:00', to: '22:00' } } }, AT)) as {
       checkIn: unknown
@@ -183,6 +206,7 @@ describe('reading a backup', () => {
     expect(readBackupFile(fileWith({ activityDays: undefined }))).toBe('not-a-backup')
     expect(readBackupFile(fileWith({ checkIn: undefined }))).toBe('not-a-backup')
     expect(readBackupFile(fileWith({ features: undefined }))).toBe('not-a-backup')
+    expect(readBackupFile(fileWith({ journalDays: undefined }))).toBe('not-a-backup')
   })
 
   it('reads a file from before tags were backed up as keeping none (BAK-12)', () => {
@@ -306,9 +330,15 @@ describe('reading a backup', () => {
   })
 
   it('reads a file from before the feature switches as switching nothing off (BAK-20)', () => {
-    const read = readBackupFile(fileWith({ version: 8, features: undefined }))
+    const read = readBackupFile(fileWith({ version: 8, features: undefined, journalDays: undefined }))
 
     expect(read).toEqual({ data: { ...DATA, ...BEFORE_FEATURES }, unreadable: 0 })
+  })
+
+  it('reads a file from before the journal as holding no lines (BAK-21)', () => {
+    const read = readBackupFile(fileWith({ version: 9, journalDays: undefined }))
+
+    expect(read).toEqual({ data: { ...DATA, ...BEFORE_JOURNAL }, unreadable: 0 })
   })
 
   it('says so when a backup was made by a newer version of the app (BAK-9)', () => {
@@ -334,6 +364,7 @@ describe('reading a backup', () => {
         activityDays: [{ version: ACTIVITY_SCHEMA_VERSION, day: '2026-09-18', entries: { x: { activity: '', seconds: 60, hour: 9 } } }],
         checkIn: [{ version: CHECK_IN_SCHEMA_VERSION, name: 'checkIn', checkIn: { on: true, window: { from: '09:30', to: '22:00' } } }],
         features: [{ version: FEATURES_SCHEMA_VERSION + 1, name: 'features', off: ['quote'] }],
+        journalDays: [{ version: JOURNAL_SCHEMA_VERSION, day: '2026-09-18', entries: { x: { section: 'regrets', text: 'No', writtenAt: AT.toISOString() } } }],
       }),
     )
 
@@ -345,6 +376,7 @@ describe('reading a backup', () => {
         prizes: [CHOCOLATE],
         categories: [],
         activities: [],
+        journal: [],
         entries: [],
         redemptions: [TREAT],
         bonuses: BONUSES,
@@ -356,7 +388,7 @@ describe('reading a backup', () => {
         checkIn: null,
         features: null,
       },
-      unreadable: 10,
+      unreadable: 11,
     })
   })
 })

@@ -65,7 +65,11 @@ time logged on a task fills it in by itself (ACT-21).
   end when they were logged, so `+15m` pressed twice is `11:15–11:30` twice. **Taking a session
   back** with its **×** (TIME-4) — logged by mistake — **deletes its records** from the log too, as
   changed or moved as they may be; a session let go of with time (TIME-8), or a task deleted, leaves
-  them, the time having been spent. Time logged straight to a Balance category (BAL-14) is not
+  them, the time having been spent. **Changing a session's length** (TIME-24) writes its records
+  again: those it made go, as changed or moved as they may be, and the new length is cut into hours
+  back from when it was logged, as if logged so then — 30 minutes logged at 11:30 changed to 45 is
+  `10:45–11:00` and `11:00–11:30`. A session whose records were all deleted from the log stays out
+  of it, and changing only its comment leaves the log alone. Time logged straight to a Balance category (BAL-14) is not
   written here. The records are written while the Activity log is switched off too (FEAT-5).
 
 ## The day
@@ -141,8 +145,8 @@ time logged on a task fills it in by itself (ACT-21).
 ---
 
 **Where it lives:** `src/core/activity.ts` (a record, the names, the activities offered, what they
-add up to, the periods, and a task's session as records), `src/core/timeLog.ts` (the sessions a
-change logs), `src/app/useTasks.ts` (telling of them), `src/core/checkIn.ts` (the hours meant to be logged, the other hours of today, how much of a
+add up to, the periods, a task's session as records, and written again for a new length),
+`src/core/timeLog.ts` (the sessions a change logs or resizes), `src/app/useTasks.ts` (telling of them), `src/core/checkIn.ts` (the hours meant to be logged, the other hours of today, how much of a
 day is logged, the hour the form starts on), `src/app/useActivities.ts`,
 `src/app/components/ActivityPage.tsx`, `src/app/components/ActivityForm.tsx` (adding and changing a
 record), `src/app/components/ActivityHours.tsx` (the day, hour by hour),

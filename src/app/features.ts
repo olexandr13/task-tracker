@@ -62,6 +62,7 @@ const MORE_FEATURE: Readonly<Record<(typeof ON_MORE)[number], Feature>> = {
   tags: 'tags',
   balance: 'balance',
   activity: 'activity',
+  journal: 'journal',
   modes: 'modes',
 }
 
@@ -85,6 +86,7 @@ export function isViewOn(view: View, off: FeaturesOff): boolean {
   if (view === 'tags' || isTagView(view)) return on('tags')
   if (view === 'balance') return on('balance')
   if (view === 'activity') return on('activity')
+  if (view === 'journal') return on('journal')
   if (view === 'modes') return on('modes')
   if (isModesView(view)) return isModeViewOn(off, view)
   if (view === 'more') return morePagesShown(off).length > 0

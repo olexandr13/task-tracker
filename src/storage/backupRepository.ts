@@ -3,10 +3,13 @@ import {
   type ActivityEntry,
   type ActivityEntryId,
   isExpired,
+  isJournalEntryKept,
   type Category,
   type CategoryId,
   type CaseSettings,
   type FeaturesOff,
+  type JournalEntry,
+  type JournalEntryId,
   sameTag,
   type List,
   type ListId,
@@ -44,6 +47,8 @@ export interface AccountData {
   readonly categories: readonly Category[]
   /** The activity log's records (./activityRepository). */
   readonly activities: readonly ActivityEntry[]
+  /** The journal's lines, the week it keeps (./journalRepository). */
+  readonly journal: readonly JournalEntry[]
   /** What completions earned (./rewardRepository). */
   readonly entries: readonly RewardEntry[]
   readonly redemptions: readonly Redemption[]
@@ -101,6 +106,7 @@ export interface RecordCounts {
   readonly prizes: number
   readonly categories: number
   readonly activities: number
+  readonly journal: number
   readonly completions: number
   readonly redemptions: number
 }
@@ -150,6 +156,10 @@ export interface KnownRecords {
   readonly activityIds: ReadonlySet<ActivityEntryId>
   /** The days of the activity log it cannot read, which are left as they are, so nothing is added to them. */
   readonly unreadableActivityDays: ReadonlySet<LocalDay>
+  /** Every journal line the account holds, on days it can read. */
+  readonly journalIds: ReadonlySet<JournalEntryId>
+  /** The days of the journal it cannot read, left as they are like the activity log's. */
+  readonly unreadableJournalDays: ReadonlySet<LocalDay>
   readonly redemptionIds: ReadonlySet<RedemptionId>
   /** What the account earns for clearing each period already, null where it has no bonus. */
   readonly bonuses: PeriodBonuses
@@ -182,6 +192,7 @@ export function countRecords(data: AccountData): RecordCounts {
     prizes: data.prizes.length,
     categories: data.categories.length,
     activities: data.activities.length,
+    journal: data.journal.length,
     completions: data.entries.length,
     redemptions: data.redemptions.length,
   }
@@ -196,7 +207,8 @@ export function countRecords(data: AccountData): RecordCounts {
  * `incoming` is taken once.
  *
  * A task whose time in the trash ran out since the file was made is left out:
- * it would only be purged again the moment it arrived (`purgeExpired`). A tag
+ * it would only be purged again the moment it arrived (`purgeExpired`), and so
+ * is a journal line about a day the journal no longer keeps (JRN-8). A tag
  * is the account's already when a tag of its name is kept, whatever the case,
  * so an import never makes a second record of one tag. The bonuses and what a
  * point is worth are the things in here that are no records: the file's are
@@ -241,6 +253,11 @@ export function newRecords(
     if (known.unreadableActivityDays.has(entry.day)) takenActivities.add(entry.id)
   }
 
+  const takenJournal = new Set(known.journalIds)
+  for (const entry of incoming.journal) {
+    if (known.unreadableJournalDays.has(entry.day)) takenJournal.add(entry.id)
+  }
+
   const tagNames = [...known.tagNames]
   const tags = unseen(incoming.tags, (tag) => tag.id, known.tagIds).filter((tag) => {
     if (known.tagNames.some((name) => sameTag(name, tag.name))) {
@@ -264,6 +281,7 @@ export function newRecords(
       prizes: unseen(incoming.prizes, (prize) => prize.id, known.prizeIds),
       categories: unseen(incoming.categories, (category) => category.id, known.categoryIds),
       activities: unseen(incoming.activities, (entry) => entry.id, takenActivities),
+      journal: unseen(incoming.journal, (entry) => entry.id, takenJournal).filter((entry) => isJournalEntryKept(entry, now)),
       entries: unseen(incoming.entries, entryKey, takenEntries),
       redemptions: unseen(incoming.redemptions, (redemption) => redemption.id, known.redemptionIds),
       bonuses,

@@ -20,6 +20,7 @@ const DATA: AccountData = {
   prizes: [],
   categories: [],
   activities: [],
+  journal: [],
   entries: [],
   redemptions: [],
   bonuses: NO_BONUSES,
@@ -33,7 +34,7 @@ const DATA: AccountData = {
 }
 
 const ADDED: ImportSummary = {
-  added: { tasks: 1, lists: 1, tags: 0, prizes: 0, categories: 0, activities: 0, completions: 0, redemptions: 0 },
+  added: { tasks: 1, lists: 1, tags: 0, prizes: 0, categories: 0, activities: 0, journal: 0, completions: 0, redemptions: 0 },
   alreadyHere: 0,
 }
 

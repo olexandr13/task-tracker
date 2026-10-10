@@ -8,9 +8,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   adding a task, then the list — in the middle, and a **rail** down the right of it holding the
   progress bars, with today's quote below them. On a wide screen the work and the rail sit under a
   strip of **pinned tabs** (UI-75), which starts level with the sidebar's mark.
-- **UI-2** The rail belongs to the views that show tasks — Today, Week, Month, Tasks, the Inbox, each
+- **UI-2** The rail belongs to the views that show tasks — Today, Tomorrow, Week, Month, Tasks, the Inbox, each
   list's and each tag's — not to
-  the app: habits, rewards, More, the modes, the lists, the tags, Balance, the Activity log, the trash and settings do without it. The habits page is already a record of progress (HAB-15), and how much of
+  the app: habits, rewards, More, the modes, the lists, the tags, Balance, the Activity log, the Journal, the trash and settings do without it. The habits page is already a record of progress (HAB-15), and how much of
   the week is cleared says nothing about what was thrown away. Nobody needs spurring on to empty a
   bin.
 - **UI-3** There is **no view heading** over the work. The navigation already marks which view you
@@ -158,10 +158,10 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   [Modes](modes.md).
 - **UI-30** In the sidebar the views come in six groups, by what they are for, with a thin line
   between each:
-  - **when** — the period views, **Today**, **Week** and **Month**;
+  - **when** — the period views, **Today**, **Tomorrow**, **Week** and **Month**;
   - **the work and where it is filed** — **Habits**, **Tasks**, **Lists** and **Tags**;
   - **what pushes it along** — **Rewards** and **Modes**;
-  - **looking back at the time spent** — **Balance** and the **Activity log**;
+  - **looking back at the day** — **Balance**, the **Activity log** and the **Journal** (JRN-1);
   - **Trash**;
   - **Settings**.
 
@@ -184,10 +184,10 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   period** (UI-33). The Rewards tab goes to how the points stand and stays marked on any of the
   rewards pages, which are reached from its own menu (UI-67) and from the strip across the top of
   them (RWD-30).
-- **UI-33** Today, Week and Month share the last tab. It shows the one last on screen — Today to
-  begin with — and a tap goes to it. **Holding it down**, or **tapping it again** while Today, Week or
-  Month is on screen — so a double tap from anywhere — opens a menu above it, as a panel on the
-  bar (UI-66), to switch between Today, Week and Month, **each with its icon**; letting go of a hold
+- **UI-33** Today, Tomorrow, Week and Month share the last tab. It shows the one last on screen —
+  Today to begin with — and a tap goes to it. **Holding it down**, or **tapping it again** while one
+  of them is on screen — so a double tap from anywhere — opens a menu above it, as a panel on the
+  bar (UI-66), to switch between Today, Tomorrow, Week and Month, **each with its icon**; letting go of a hold
   does not also go to
   the tab. A right-click, the context-menu key or Shift+F10 open the same menu, and so does Enter
   on the tab while its period is on screen, from the keyboard starting on its first item. It closes
@@ -227,7 +227,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-37** **Back goes one level up**, not to the view before. The views make a tree: at the top
   the bar's tabs — the period views, Tasks, Habits, Rewards, More and Settings; under Tasks the
   Lists page and the Trash (UI-34), and under Lists the Inbox and each list; under Rewards its five
-  pages (RWD-19); under More Tags, Balance, the Activity log and Modes (UI-45), under Tags each tag's
+  pages (RWD-19); under More Tags, Balance, the Activity log, the Journal and Modes (UI-45), under Tags each tag's
   tasks, and under Modes
   each mode's page (MODE-7). So from a mode's page back goes to Modes, then to More; from a list to
   Lists, then to Tasks; and from a tab back **leaves the app**, as it leaves any other. It is the
@@ -278,16 +278,16 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   closes first, leaving the one it came from. Closing the sheet any other way (UI-9, UI-48) drops
   that extra step, so the next back is the same as if the sheet had not been opened. It is the same
   wherever back comes from — a phone's back button, the browser's, or a keyboard's.
-- **UI-45** The bar has no entry for the tags, the modes, the Balance page or the Activity log:
+- **UI-45** The bar has no entry for the tags, the modes, the Balance page, the Activity log or the Journal:
   they are under **More**, a tab marked with three dots. More is **on a phone only** — the sidebar
   lists each of them itself, and so has no More (UI-30, MODE-7).
-  **A tap opens More's page** — five links, **Lists**, **Tags**, **Modes**, **Balance** and **Activity log**, in the sidebar's order, each with its icon, large enough
+  **A tap opens More's page** — six links, **Lists**, **Tags**, **Modes**, **Balance**, **Activity log** and **Journal**, in the sidebar's order, each with its icon, large enough
   for a thumb (UI-49) and a chevron at its end marking it as a page to go to. The Modes row says how many modes are on (MODE-1). Choosing any of them goes there.
   **Lists** is only a way in: it is reached from the
   Tasks tab as well (UI-34, LST-24), so **Tasks** is what stays marked once it is open, and More is
   not, or two tabs would be marked at once. **More** stays marked while its own page, the Tags page, a
-  tag's view, the Modes page, one mode's page, the Balance page or the Activity log is open; in the
-  sidebar those mark **Tags**, **Modes**, **Balance** and **Activity log** (TAG-17, MODE-7). The views
+  tag's view, the Modes page, one mode's page, the Balance page, the Activity log or the Journal is open; in the
+  sidebar those mark **Tags**, **Modes**, **Balance**, **Activity log** and **Journal** (TAG-17, MODE-7). The views
   are one tree on both (UI-37), so on a wide screen back from one of them still climbs to More's
   page, which opens there as it does on a phone, with nothing in the sidebar marked — as back from
   Lists climbs to Tasks. Procrastination and the warm-up were rows
