@@ -2,7 +2,16 @@
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { bindTag, createCategory, createTask, deleteTask, logTime, type Category, type Task } from '../../core'
+import {
+  bindTag,
+  createCategory,
+  createTask,
+  deleteTask,
+  logCategoryTime,
+  logTime,
+  type Category,
+  type Task,
+} from '../../core'
 import { BalancePage } from './BalancePage'
 
 /* The Balance page. BAL ids refer to wiki/balance.md. */
@@ -32,6 +41,8 @@ function setUp(
     onRename: vi.fn(() => true),
     onBind: vi.fn(),
     onUnbind: vi.fn(),
+    onLogTime: vi.fn(),
+    onRemoveTime: vi.fn(),
     onDelete: vi.fn(),
   }
   render(<BalancePage categories={categories} tasks={tasks} knownTags={knownTags} now={NOW} {...handlers} />)
@@ -132,6 +143,63 @@ describe('the chart (BAL-2 to BAL-6)', () => {
 
     expect(legend().map((row) => row.getAttribute('aria-label'))).toEqual(['Other: 1h, 100%'])
     expect(screen.getByText('Add a category below to divide this time.')).toBeDefined()
+  })
+})
+
+describe('the sessions behind a piece (BAL-16)', () => {
+  const sessionList = (name: RegExp) => screen.queryByRole('list', { name })
+  const rows = (name: RegExp) => within(screen.getByRole('list', { name })).getAllByRole('listitem')
+
+  it('lists nothing until a piece is pressed, and puts the list away when it is pressed again', async () => {
+    const { user } = setUp({ tasks: [task('report', ['job'], 60), task('walk the dog', ['walk'], 30)] })
+
+    expect(screen.queryByRole('region', { name: /^Time logged to/ })).toBeNull()
+
+    await user.hover(legendRow('Rest'))
+    expect(sessionList(/^Time logged to Rest/)).toBeNull()
+
+    await user.click(legendRow('Rest'))
+    expect(screen.getByRole('heading', { name: 'Time logged to Rest today' })).toBeDefined()
+    expect(rows(/^Time logged to Rest/).map((row) => row.textContent)).toEqual(['walk the dog10:0030m'])
+
+    await user.click(legendRow('Rest'))
+    expect(sessionList(/^Time logged to Rest/)).toBeNull()
+  })
+
+  it('lists the period’s sessions, the latest first, with their comments and what was logged straight to it', async () => {
+    const walked = logTime({ ...createTask('walk the dog', null, NOW), tags: ['walk'] }, 20, MONDAY, 'round the park')
+    const { user } = setUp({
+      categories: [WORK, logCategoryTime(REST, 45, new Date(2026, 8, 15, 21, 0), 'reading')],
+      tasks: [walked, task('nap', ['chill'], 15)],
+    })
+
+    await user.click(screen.getByRole('radio', { name: 'Week' }))
+    await user.click(legendRow('Rest'))
+
+    expect(rows(/^Time logged to Rest this week/).map((row) => row.textContent)).toEqual([
+      'nap10:0015m',
+      'Logged with "Log time"Sep 15, 21:00reading45m',
+      'walk the dogSep 14, 09:00round the park20m',
+    ])
+  })
+
+  it('counts a session split between categories at its share, saying what it was split with (BAL-4)', async () => {
+    const { user } = setUp({ tasks: [task('walk to the office', ['job', 'walk'], 30)] })
+
+    await user.click(legendRow('Work'))
+
+    expect(rows(/^Time logged to Work/).map((row) => row.textContent)).toEqual([
+      'walk to the office10:00 · 30m split with Rest15m',
+    ])
+  })
+
+  it('lists the sessions on tasks in no category under Other (BAL-5)', async () => {
+    const { user } = setUp({ tasks: [task('report', ['job'], 60), task('post office', ['errand'], 10)] })
+
+    await user.click(legendRow('Other'))
+
+    expect(screen.getByRole('heading', { name: 'Time logged to Other today' })).toBeDefined()
+    expect(rows(/^Time logged to Other/).map((row) => row.textContent)).toEqual(['post office10:0010m'])
   })
 })
 
@@ -292,9 +360,71 @@ describe('the categories (BAL-7 to BAL-10)', () => {
   it('names every box, so the browser can tell them apart (UI-69)', async () => {
     const { user } = setUp()
     await user.click(screen.getByRole('button', { name: 'Rename the category "Rest"' }))
+    await user.click(screen.getByRole('button', { name: 'Log time to Work' }))
 
     for (const box of document.querySelectorAll('input')) {
-      expect(['balance-period', 'category-name']).toContain(box.getAttribute('name'))
+      expect(['balance-period', 'category-name', 'time-comment', 'time-session']).toContain(box.getAttribute('name'))
     }
+  })
+})
+
+describe('time logged straight to a category (BAL-14, BAL-15)', () => {
+  const panel = () => screen.getByRole('dialog', { name: 'Log time to Rest' })
+
+  it('logs a length typed, with the comment typed, from the category’s Log time', async () => {
+    const { user, onLogTime } = setUp()
+
+    await user.click(screen.getByRole('button', { name: 'Log time to Rest' }))
+    await user.type(within(panel()).getByRole('textbox', { name: 'Comment on the time logged' }), 'read a chapter')
+    await user.type(within(panel()).getByRole('textbox', { name: 'Time to log' }), '1h 20m{Enter}')
+
+    expect(onLogTime).toHaveBeenCalledExactlyOnceWith(REST.id, 80, 'read a chapter')
+    expect(within(panel()).getByRole<HTMLInputElement>('textbox', { name: 'Comment on the time logged' }).value).toBe('')
+  })
+
+  it('logs a quick session without a comment, and keeps the panel open', async () => {
+    const { user, onLogTime } = setUp()
+
+    await user.click(screen.getByRole('button', { name: 'Log time to Rest' }))
+    await user.click(within(panel()).getByRole('button', { name: 'Log 15m' }))
+
+    expect(onLogTime).toHaveBeenCalledExactlyOnceWith(REST.id, 15, null)
+    expect(panel()).toBeDefined()
+  })
+
+  it('refuses a length it cannot read in place, logging nothing', async () => {
+    const { user, onLogTime } = setUp()
+
+    await user.click(screen.getByRole('button', { name: 'Log time to Rest' }))
+    await user.type(within(panel()).getByRole('textbox', { name: 'Time to log' }), 'soon{Enter}')
+
+    expect(within(panel()).getByRole('textbox', { name: 'Time to log' }).getAttribute('aria-invalid')).toBe('true')
+    expect(within(panel()).getByText('Try 25m, 1h30 or 1:30, up to 24h.')).toBeDefined()
+    expect(onLogTime).not.toHaveBeenCalled()
+  })
+
+  it('lists what was logged here, the latest first, and takes one back from its ×', async () => {
+    const logged = logCategoryTime(logCategoryTime(REST, 30, MONDAY, 'long walk'), 45, NOW, 'reading')
+    const { user, onRemoveTime } = setUp({ categories: [WORK, logged] })
+
+    await user.click(screen.getByRole('button', { name: 'Log time to Rest' }))
+    const list = within(panel()).getByRole('list', { name: 'Logged here' })
+    expect(within(list).getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      expect.stringContaining('reading'),
+      expect.stringContaining('long walk'),
+    ])
+
+    await user.click(within(list).getAllByRole('button', { name: /^Remove / })[0])
+
+    expect(onRemoveTime).toHaveBeenCalledExactlyOnceWith(REST.id, logged.timeLog[1].id)
+  })
+
+  it('counts toward its category in the chart, beside the time on tasks (BAL-14)', () => {
+    setUp({
+      categories: [WORK, logCategoryTime(REST, 45, NOW, 'reading')],
+      tasks: [task('walk the dog', ['walk'], 15), task('report', ['job'], 60)],
+    })
+
+    expect(legend().map((row) => row.getAttribute('aria-label'))).toEqual(['Work: 1h, 50%', 'Rest: 1h, 50%'])
   })
 })

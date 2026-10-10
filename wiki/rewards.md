@@ -81,8 +81,7 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   **Drop** or **Weekly** rather than for a task, deleted the same way, and counting the same way towards the
   balance and the period tiles (RWD-17, RWD-21). It is earned on the day Cases was opened, and —
   unlike a period's bonus (RWD-26) — is **never taken back** by the day coming unclear again
-  (CHST-5). What Cases asks of a day and what its key plays for are set on **Rules** (RWD-39,
-  CHST-7); the rest of it is on [its own page](cases.md).
+  (CHST-5). The rest of it is on [its own page](cases.md).
 
 ## Clearing a period
 
@@ -237,8 +236,10 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   how you are doing should not be behind it.
 - **RWD-39** **Rules** is what earns points and what they are worth, top to bottom: the reward a
   **new task** starts with (RWD-45), the bonus for clearing **Today**, **this week** and **this
-  month** (RWD-27) — under **Finish everything, earn extra**, the same three tiles of where each
-  stands that how the points stand shows (RWD-20), with the amounts to set below them — what **Cases** asks of a day and what its key plays for (CHST-3, CHST-7), and
+  month** (RWD-27) — under **Finish everything, earn extra**, one row each with its amount to set,
+  and once that period has paid its bonus, a green **Earned today**, **Earned this week** or
+  **Earned this month** beside its name; the tiles of where each stands are on how the points stand
+  alone (RWD-20) — and
   what a point is worth in money (RWD-31). What a task earns once it is made is not here — that is
   set on the task, with its star (RWD-5), being that task's own; everything on Rules is one amount
   for the whole account.

@@ -7,9 +7,7 @@
  *
  * Pure derivation over the records and a moment in time. Nothing here counts
  * down: which hour just ended, and whether it is logged, are asked of the clock
- * and the records each time — on the device, and by the sender that pushes the
- * check-in when the app is closed, which reads the clock in the device's own
- * time zone (`wallClock`).
+ * and the records each time.
  */
 
 import {
@@ -23,7 +21,7 @@ import {
   type ActivityEntry,
   type HourSlot,
 } from './activity'
-import { isLocalDay, toLocalDay, type LocalDay, type LocalTime } from './day'
+import { toLocalDay, type LocalDay, type LocalTime } from './day'
 import { isHoursWindow, isTimeWithinHours, type HoursWindow } from './hours'
 
 /** A working day's hours, asked about from 10:00, the end of the first, to 22:00. */
@@ -199,61 +197,8 @@ export function pendingCheckIn(
   return { slot, others: others.length }
 }
 
-/** The day, hour and minute a clock shows in a time zone. */
-export interface WallClock {
-  readonly day: LocalDay
-  readonly hour: number
-  readonly minute: number
-}
-
 /**
- * What the clock reads at `now` in an IANA time zone — `Europe/Kyiv` — for the
- * sender that pushes a check-in to a device whose clock is not its own. Null for
- * a zone the platform does not know.
+ * How far into the next hour a check-in is still worth a notification: a laptop
+ * woken later than that has the notice alone (CHECKIN-5).
  */
-export function wallClock(now: Date, timeZone: string): WallClock | null {
-  let parts: Intl.DateTimeFormatPart[]
-  try {
-    parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23',
-    }).formatToParts(now)
-  } catch {
-    return null
-  }
-
-  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((each) => each.type === type)?.value ?? ''
-  const day = `${part('year')}-${part('month')}-${part('day')}`
-  const hour = Number(part('hour'))
-  const minute = Number(part('minute'))
-  if (!isLocalDay(day) || !Number.isInteger(hour) || !Number.isInteger(minute)) return null
-  return { day, hour: hour % 24, minute }
-}
-
-/** How far into the next hour a check-in is still worth sending, should the first try be missed. */
-export const CHECK_IN_SEND_MINUTES = 45
-
-/**
- * The hour a check-in is due to be pushed about by the clock given, or null
- * (CHECKIN-10): the check-in is on, the hour that just ended is one kept to, it
- * is still early in the hour after it, and that hour was not pushed about
- * already. Whether anything is logged under it is the sender's to ask next.
- */
-export function checkInSlotToSend(input: {
-  readonly on: boolean
-  readonly window: HoursWindow
-  readonly clock: WallClock
-  readonly lastSentSlot: string | null
-}): HourSlot | null {
-  const { on, window, clock, lastSentSlot } = input
-  if (!on || clock.minute >= CHECK_IN_SEND_MINUTES) return null
-
-  const slot = slotBefore({ day: clock.day, hour: clock.hour })
-  if (!isExpectedSlot(window, slot) || lastSentSlot === slotKey(slot)) return null
-  return slot
-}
+export const CHECK_IN_ANNOUNCE_MINUTES = 45

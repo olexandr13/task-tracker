@@ -11,15 +11,15 @@ import { MorePage } from './MorePage'
 afterEach(cleanup)
 
 describe('MorePage', () => {
-  it('links to Lists, Tags, Balance, the activity log and Modes, in that order (UI-45, LST-24, BAL-1, ACT-1)', () => {
+  it('links to Lists, Tags, Modes, Balance and the activity log, in the sidebar\'s order (UI-30, UI-45, LST-24, BAL-1, ACT-1)', () => {
     render(<MorePage onOpen={vi.fn()} />)
 
     expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual([
       'Lists',
       'Tags',
+      'Modes',
       'Balance',
       'Activity log',
-      'Modes',
     ])
   })
 

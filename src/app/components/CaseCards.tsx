@@ -1,12 +1,10 @@
 import { type CaseOdds, type CaseSlot, type CaseSource } from '../../core'
 import {
-  describeNextCase,
   describeOpenCase,
   describeSourceRule,
   describeTasksLeftUnit,
   OPENED_TAG,
   SOURCE_LABEL,
-  SOURCE_WAITING,
   TIMER_LABEL,
 } from '../caseLabels'
 import { CASE_STRIPE } from '../caseTones'
@@ -38,10 +36,9 @@ interface CaseCardsProps {
  * the Drop and Weekly a countdown (CHST-29, CHST-30).
  * One already opened stays until the day ends, with the lid up, the picture
  * dimmed and *Opened* on the crate where the padlock would be, and it is not
- * a button. Under it, the line says when the next one comes. The opened Drop
- * does not say at what time, and it says that earning more today raises the
- * next reward. Weekly is among them every day: planned until Monday, then
- * ready (CHST-30).
+ * a button. Weekly is among them every day: planned until Monday, then ready
+ * (CHST-30). Only a ready case has a line under its name, saying where its
+ * number comes from; when each case comes is said behind the i (CHST-22).
  *
  * The cards share their rows, so the names stay level (CHST-28). A possible
  * win sits inside a ready case, above the crate. While any case is ready,
@@ -75,7 +72,6 @@ export function CaseCards({ ranges, slots, busy, countUnpaid, onOpen }: CaseCard
         const plateDim = ready || opened ? '' : 'opacity-50'
         const crateLook = ready ? '' : opened ? 'opacity-40' : 'opacity-40 grayscale'
         const textDim = ready ? '' : 'opacity-50'
-        const caption = opened ? emphasizeToday(describeNextCase(slot.source)) : ready ? describeSourceRule(slot.source, countUnpaid) : waitingLine(slot.source)
         const tag = opened ? <OpenedTag /> : whenReady(slot)
         const body = (
           <>
@@ -104,7 +100,11 @@ export function CaseCards({ ranges, slots, busy, countUnpaid, onOpen }: CaseCard
               </span>
             </span>
             <span className={`text-sm font-medium text-neutral-800 dark:text-neutral-100 ${textDim}`}>{SOURCE_LABEL[slot.source]}</span>
-            <span className={`text-xs leading-snug text-neutral-500 dark:text-neutral-400 ${textDim}`}>{caption}</span>
+            {ready && (
+              <span className="text-xs leading-snug text-neutral-500 dark:text-neutral-400">
+                {describeSourceRule(slot.source, countUnpaid)}
+              </span>
+            )}
           </>
         )
 
@@ -167,28 +167,5 @@ function TasksLeft({ tasks }: { tasks: number }) {
       <span className="text-[13px] font-semibold text-amber-300 tabular-nums">{tasks}</span>{' '}
       <span className="text-[11px] text-neutral-300">{describeTasksLeftUnit(tasks)}</span>
     </CaseLock>
-  )
-}
-
-/**
- * The line under a case still on its way. Today names the list to finish,
- * and that name is set apart so it reads as the list. The case itself is
- * called Payday.
- */
-function waitingLine(source: CaseSource) {
-  return emphasizeToday(SOURCE_WAITING[source])
-}
-
-/** Sets the list name apart wherever a line names it. */
-function emphasizeToday(text: string) {
-  const name = 'Today'
-  const at = text.indexOf(name)
-  if (at < 0) return text
-  return (
-    <>
-      {text.slice(0, at)}
-      <strong className="font-semibold text-neutral-800 dark:text-neutral-100">{name}</strong>
-      {text.slice(at + name.length)}
-    </>
   )
 }

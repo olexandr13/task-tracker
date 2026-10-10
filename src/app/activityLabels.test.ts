@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { createActivityEntry } from '../core'
+import { createActivityEntry, secondsEntry, sessionActivityEntries } from '../core'
 import {
   describeDaysInFull,
   describeEntry,
   describeEntryDeleted,
+  describeEntryFully,
+  describeEntryTimes,
   describeLoggedHours,
   describeNothingLogged,
   describePeriodInSentence,
@@ -51,6 +53,19 @@ describe('a record (ACT-7, ACT-11)', () => {
 
     expect(describeEntry(entry)).toBe('Work 1h 20m')
     expect(describeEntryDeleted(entry)).toBe('Deleted “Work 1h 20m” at 09:00')
+  })
+
+  it('says when it was spent, when it knows (ACT-21)', () => {
+    const typed = createActivityEntry('Work', 1800, { day: '2026-10-02', hour: 11 }, NOW)
+    const timed = (seconds: number, at: Date) => sessionActivityEntries('Work', 'task-1', secondsEntry(seconds, at))
+    const [run] = timed(1790, new Date(2026, 9, 2, 11, 33, 10))
+    const [, minute] = timed(80, new Date(2026, 9, 2, 12, 0, 20))
+
+    expect(describeEntryTimes(typed)).toBeNull()
+    expect(describeEntryFully(typed)).toBe('“Work 30m”')
+    expect(describeEntryTimes(run)).toBe('11:03–11:33')
+    expect(describeEntryFully(run)).toBe('“Work 29m”, 11:03–11:33')
+    expect(describeEntryTimes(minute)).toBe('12:00')
   })
 })
 

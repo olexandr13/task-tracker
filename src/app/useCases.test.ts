@@ -89,13 +89,6 @@ describe('where Cases stands', () => {
     expect(setUp({ tasks: [today('pack', true), today('post')] }).result.current.blocked).toBe('unclear')
   })
 
-  it('has none while the day is smaller than the settings ask for (CHST-3)', () => {
-    const { result } = setUp({ tasks: [today('pack', true)], settings: { leastTasks: 3, countUnpaid: true } })
-
-    expect(result.current.blocked).toBe('bonusWaiting')
-    expect(result.current.dayAsked).toBe(1)
-  })
-
   it('says nothing at all until the ledger and the tasks have arrived (CHST-20)', () => {
     const { result } = setUp({ ready: false })
 
@@ -131,7 +124,7 @@ describe('where Cases stands', () => {
     // `water` earned nothing, so it is not the cheapest, at 0: Today still runs from 12, and up to 21 + 1.
     expect(setUp({ tasks: [...tasks, unpaid], entries }).result.current.spans.today).toEqual({ least: 12, most: 22 })
     // Not counted, it adds nothing (CHST-32).
-    const settings = { leastTasks: 1, countUnpaid: false }
+    const settings = { countUnpaid: false }
     expect(setUp({ tasks: [...tasks, unpaid], entries, settings }).result.current.spans.today).toEqual({ least: 12, most: 21 })
   })
 
@@ -479,8 +472,8 @@ describe('the notice and the noise', () => {
   it('writes a changed setting to the account rather than the device (CHST-7)', () => {
     const { result, setCaseSettings } = setUp()
 
-    result.current.setSettings({ leastTasks: 3, countUnpaid: true })
+    result.current.setSettings({ countUnpaid: false })
 
-    expect(setCaseSettings).toHaveBeenCalledExactlyOnceWith({ leastTasks: 3, countUnpaid: true })
+    expect(setCaseSettings).toHaveBeenCalledExactlyOnceWith({ countUnpaid: false })
   })
 })

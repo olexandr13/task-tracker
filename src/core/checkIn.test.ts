@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createActivityEntry, type ActivityEntry, type HourSlot } from './activity'
 import {
-  checkInSlotToSend,
   daysLoggedInFull,
   DEFAULT_CHECK_IN_WINDOW,
   defaultLogSlot,
@@ -13,7 +12,6 @@ import {
   otherHoursSoFar,
   pendingCheckIn,
   slotJustEnded,
-  wallClock,
 } from './checkIn'
 import type { HoursWindow } from './hours'
 
@@ -102,49 +100,6 @@ describe('days logged in full (ACT-18)', () => {
     expect(isDayLoggedInFull(fullDay('2026-10-02'), NINE_TO_TEN, '2026-10-02', now)).toBe(false)
   })
 
-})
-
-describe('the clock somewhere else (CHECKIN-10)', () => {
-  it('reads the day, hour and minute in a time zone', () => {
-    const instant = new Date(Date.UTC(2026, 9, 2, 21, 30))
-
-    expect(wallClock(instant, 'Europe/Kyiv')).toEqual({ day: '2026-10-03', hour: 0, minute: 30 })
-    expect(wallClock(instant, 'Asia/Kolkata')).toEqual({ day: '2026-10-03', hour: 3, minute: 0 })
-    expect(wallClock(instant, 'America/New_York')).toEqual({ day: '2026-10-02', hour: 17, minute: 30 })
-    expect(wallClock(instant, 'Not/AZone')).toBeNull()
-  })
-
-  it('follows summer time', () => {
-    // Kyiv leaves summer time on the last Sunday of October: 25 October 2026.
-    expect(wallClock(new Date(Date.UTC(2026, 9, 24, 12)), 'Europe/Kyiv')?.hour).toBe(15)
-    expect(wallClock(new Date(Date.UTC(2026, 9, 26, 12)), 'Europe/Kyiv')?.hour).toBe(14)
-  })
-})
-
-describe('what the sender pushes (CHECKIN-10)', () => {
-  const clock = { day: '2026-10-02', hour: 15, minute: 0 }
-  const send = { on: true, window: DEFAULT_CHECK_IN_WINDOW, clock, lastSentSlot: null }
-
-  it('is the hour just over, early in the hour after it', () => {
-    expect(checkInSlotToSend(send)).toEqual({ day: '2026-10-02', hour: 14 })
-    expect(checkInSlotToSend({ ...send, clock: { ...clock, minute: 44 } })).toEqual({ day: '2026-10-02', hour: 14 })
-  })
-
-  it('is nothing while off, late in the hour, outside the hours, or already sent', () => {
-    expect(checkInSlotToSend({ ...send, on: false })).toBeNull()
-    expect(checkInSlotToSend({ ...send, clock: { ...clock, minute: 45 } })).toBeNull()
-    expect(checkInSlotToSend({ ...send, clock: { ...clock, hour: 9 } })).toBeNull()
-    expect(checkInSlotToSend({ ...send, lastSentSlot: '2026-10-02T14' })).toBeNull()
-  })
-
-  it('crosses midnight into the day before', () => {
-    const night = { from: '22:00', to: '02:00' }
-
-    expect(checkInSlotToSend({ ...send, window: night, clock: { day: '2026-10-03', hour: 0, minute: 5 } })).toEqual({
-      day: '2026-10-02',
-      hour: 23,
-    })
-  })
 })
 
 describe('the hours the log lists (ACT-7)', () => {

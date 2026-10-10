@@ -10,7 +10,6 @@ import {
   caseSpan,
   nextShareAt,
   openSpan,
-  summarize,
   toLocalDay,
   type CaseSlot,
   type CaseSource,
@@ -32,14 +31,12 @@ export interface Cases {
   /** Whether the ledger and the tasks it is measured against have arrived yet. */
   readonly isLoading: boolean
   readonly settings: CaseSettings
-  /** Everything earned today, which Today’s case takes half of (CHST-7). */
+  /** Everything earned today, bonuses too: what practice plays for to begin with (CHST-7, CHST-21). */
   readonly jackpot: number
   /** What each case can pay, from the tasks and the ledger as they stand (CHST-10). */
   readonly spans: Readonly<Record<CaseSource, CaseSpan>>
   /** Why there is nothing to open, or null while a key is waiting. */
   readonly blocked: CaseBlock | null
-  /** How many tasks Today asked for, which is what `tooSmall` is measured against. */
-  readonly dayAsked: number
   /** What today's case gave, or null while it is still shut. */
   readonly opened: RewardEntry | null
   /** What each case opened today gave, in the order the page shows the cases (CHST-33). */
@@ -138,7 +135,7 @@ export function useCases(
   }, [watching, shareDue])
   const moment = shareClock !== null && shareClock.getTime() > keyTimer.now.getTime() ? shareClock : keyTimer.now
   const today = toLocalDay(moment)
-  const blocked = ready ? caseBlock(tasks, ledger.entries, settings, accountId, moment) : 'unclear'
+  const blocked = ready ? caseBlock(tasks, ledger.entries, accountId, moment) : 'unclear'
   const opened = caseOpened(ledger.entries, moment)
   const openings = caseOpenings(ledger.entries, moment)
   const jackpot = caseJackpot(ledger.entries, moment)
@@ -147,8 +144,7 @@ export function useCases(
     daily: caseSpan('daily', tasks, ledger.entries, settings, moment),
     week: caseSpan('week', tasks, ledger.entries, settings, moment),
   }
-  const dayAsked = summarize(tasks, 'today', moment).total
-  const slots = caseSlots(tasks, ledger.entries, settings, accountId, moment)
+  const slots = caseSlots(tasks, ledger.entries, accountId, moment)
 
   // The last opening and the notice both belong to a day, so a day that has
   // turned leaves them behind rather than glowing over this morning's cases.
@@ -172,7 +168,7 @@ export function useCases(
     const day = toLocalDay(moment)
     const mark = `${day}/${source}`
     if (!ready || openedHere.current.has(mark)) return null
-    const slot = caseSlots(tasks, ledger.entries, settings, accountId, moment).find((item) => item.source === source)
+    const slot = caseSlots(tasks, ledger.entries, accountId, moment).find((item) => item.source === source)
     if (slot?.state !== 'ready') return null
 
     const result = openSpan(caseSpan(source, tasks, ledger.entries, settings, moment))
@@ -206,7 +202,6 @@ export function useCases(
     jackpot,
     spans,
     blocked,
-    dayAsked,
     opened,
     openings,
     lastQuarter,

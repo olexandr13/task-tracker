@@ -68,7 +68,8 @@ it is deleted, whether or not a task carries it.
 
 ## The Tags page
 
-- **TAG-18** **Tags** is reached from **More** (UI-45, UI-30). Its
+- **TAG-18** **Tags** has an entry in the sidebar (UI-30) and is reached from **More** on a phone
+  (UI-45). Its
   page lists **every tag there is**, alphabetically (TAG-6), and clicking one opens its list (TAG-13).
   No single tag has an entry in the navigation.
 - **TAG-19** Beside each tag is how many of its tasks are **still to do**, a repeating one for its
@@ -112,8 +113,9 @@ it is deleted, whether or not a task carries it.
   of icons having no width for them — and that is the same panel (TAG-7), a tap away rather than a
   menu away (UI-44). A resting row shows **no tag mark**: tags are in the sheet, as urgent is
   (TASK-62), not among the tinted icons for what is set (UI-50).
-- **TAG-17** The Tags page is reached from the **More** page's list (UI-45), in the sidebar as on a
-  phone. More stays marked in the navigation while the Tags page or a tag's list is open.
+- **TAG-17** In the sidebar the Tags page has an entry of its own, beside Lists (UI-30), which stays
+  marked while the Tags page or a tag's list is open. On a phone it is reached from the **More**
+  page's list (UI-45), and **More** stays marked instead.
 
 ---
 

@@ -7,14 +7,15 @@ shows the amounts and nothing else: no targets and no ratio to keep to, only the
 
 A category is **bound to tags** the app already has. A task is put in a category the way it is put
 anywhere else, by tagging it: a walk with the dog tagged `walk`, with `walk` bound to Rest, is rest.
+Time that was never a task — an evening's reading — can be **logged straight to a category** as well.
 
 ## The page
 
 - **BAL-1** **Balance** is a page of its own, at `#/balance` (UI-36), with an entry in the sidebar
-  between Rewards and Modes (UI-30) and a row on More's page (UI-45). It opens on the heading
+  above the Activity log, the two of them a group of their own (UI-30), and a row on More's page (UI-45). It opens on the heading
   **Work–rest balance**, an **i** beside it (UI-73) saying what the page is for and how categories
-  work; then the time spent (BAL-2 to BAL-6, BAL-13); then the categories themselves, made and
-  changed in place (BAL-7 to BAL-10). It has no box for adding a task and no Plus: it is not a list
+  work; then the time spent (BAL-2 to BAL-6, BAL-13, BAL-16); then the categories themselves, made and
+  changed in place (BAL-7 to BAL-10), each taking time logged straight to it (BAL-14, BAL-15). It has no box for adding a task and no Plus: it is not a list
   of tasks.
 - **BAL-2** The time spent is shown for **Today**, **Week** or **Month**, chosen with three segments
   at the head of the totals — the same periods as the progress bars (PROG-1): today from local
@@ -40,7 +41,8 @@ anywhere else, by tagging it: a walk with the dog tagged `walk`, with `walk` bou
   up to the total, and every second is counted once.
 - **BAL-5** Time on a task none of whose tags is bound to a category — or with no tags at all — is
   **Other**, the last piece of the chart, shown only when there is time in it. The **total** is
-  every second logged in the period: the categories and Other added up.
+  every second logged in the period: the categories and Other added up — time logged straight to a
+  category (BAL-14) among it.
 
 ## On screen
 
@@ -57,10 +59,24 @@ anywhere else, by tagging it: a walk with the dog tagged `walk`, with `walk` bou
   **Pressing a piece in the legend picks it out**: the other pieces fade, in this chart and the
   day-by-day one (BAL-13), until it is pressed again; pointing at a piece or a legend row, or
   focusing the row, picks it out for as long as it is pointed at. What is picked out stays across a
-  change of period. Time spelled out is in whole minutes, `<1m` for less than one. A screen reader
+  change of period. A piece pressed also lists the sessions behind it (BAL-16). Time spelled out is in whole minutes, `<1m` for less than one. A screen reader
   hears the bar as one sentence: the period, the total, and each piece with its time and share. With
   nothing logged in the period the chart gives way to **No time logged today.** (this week, this
   month). With no categories yet the whole bar is Other, and the page says to add one below.
+
+- **BAL-16** **Pressing a piece in the legend** (BAL-6) lists the **sessions behind it** at the foot
+  of the time spent, under the charts, headed `Time logged to Rest this week` beside its swatch; the
+  page never opens on it, and pointing at a piece lists nothing — only a press does, and pressing
+  the piece again puts the list away. It lists every session that counts toward the piece in the
+  period (BAL-3, BAL-14), the **latest first**: the task it was logged on — a task in the trash among
+  them — or **Logged with "Log time"** for one logged straight to the category; when it was logged,
+  its time today and its date and time before that; its comment under that when it has one; and the
+  time it counts here. A session **divided between categories** (BAL-4) counts its share, and says
+  what it was split with beside when it was logged: `30m split with Rest`. So the list adds up to
+  the piece. **Other** lists the sessions on tasks bound to no category. Changing the period lists
+  that period's sessions while the piece is still pressed and has time in it. The list is only to
+  read: a session is taken back where it was logged (TIME-4, BAL-15). A long list scrolls inside its
+  own box.
 
 ## Categories
 
@@ -82,14 +98,40 @@ anywhere else, by tagging it: a walk with the dog tagged `walk`, with `walk` bou
   this way is kept (TAG-6), so it is there to give a task. A tag is bound once, spelled as it is
   spelled everywhere else (TAG-4), and the chips are in alphabetical order.
 - **BAL-10** The **×** at a category's end deletes it, with the few seconds' **Undo** a deleted
-  task has (UI-38), naming it: `Deleted the category “Rest”`. The tags and the time logged stay as
-  they were; only the division into it goes.
+  task has (UI-38), naming it: `Deleted the category “Rest”`. The tags and the time logged on tasks
+  stay as they were; only the division into it goes. Time logged **straight to it** (BAL-14) was
+  the category's own, and goes with it; **Undo** brings it back with the category.
 - **BAL-11** A tag **renamed** on the Tags page (TAG-24) stays bound to its categories under the new
   name; a tag **deleted** (TAG-22) is unbound from every category. A category bound to both a tag
   and the name it is renamed to is left with it once.
 - **BAL-12** The categories are the **account's**, kept as records of their own (STORE-50): every
   device signed in shows the same ones, a guest's are kept in the browser and moved in on signing in
-  (STORE-38), and they are in the backup (BAK-2, BAK-17).
+  (STORE-38), and they are in the backup (BAK-2, BAK-17) — with the time logged straight to them
+  (BAL-14).
+
+## Logged straight to a category
+
+- **BAL-14** Time that was not spent on a task can be **logged straight to a category**, with no task
+  or tag behind it. Each category has a **Log time** button, with a clock, beside its pencil; it opens
+  a panel named `Log time to Rest`, laid out as a task's clock is (TIME-3, TIME-23): **+5m**,
+  **+15m**, **+30m** and **+1h** log at a click; any other length is typed into the box under them,
+  read as a task's is (TIME-11) — `45`, `1h 20m`, `1:30` — and logged with Enter or **Log**; and the
+  **comment** box under them, `Add a comment (optional)`, says what the time went on, and goes with
+  the next session logged from the panel, after which it is empty again. A length is a whole number
+  of minutes from 1 minute to 24 hours, and one that cannot be read marks its box and says what
+  would do, logging nothing. A comment is one line of at most 200 characters; spaces alone are none.
+  The panel stays open after logging, so the new session is in view. A session counts toward **its
+  category whole** — never divided, never Other — in the period it was logged in, on the chart and
+  day by day, as a task's session does (BAL-3, BAL-13). Nothing about tasks, tags or how their time
+  divides (BAL-3 to BAL-5) changes for it.
+- **BAL-15** Under the boxes the panel lists what was logged straight to the category, under
+  **Logged here**, the **latest first**: each with when it was logged — its time today, its date and
+  time before that — its comment under that when it has one, and its length. The **×** beside one
+  takes it back (UI-38), for a session logged by mistake; a comment is not changed once logged, the
+  session is taken back and logged again (TIME-23). Sessions are kept as long as a task's history
+  is, thirty days and never less than the calendar month (TIME-8), so every period the page shows
+  is whole; older ones drop out the next time time is logged to the category. A long list scrolls
+  inside the panel.
 
 ## Day by day
 
@@ -108,9 +150,11 @@ anywhere else, by tagging it: a walk with the dog tagged `walk`, with `walk` bou
 ---
 
 **Where it lives:** `src/core/balance.ts` (categories, binding, following a tag renamed or deleted,
-and the totals), `src/core/timeLog.ts` (how long sessions are kept), `src/app/useCategories.ts`,
-`src/app/components/BalancePage.tsx`, `src/app/components/TimeSplitChart.tsx` (the bar and its
-legend) and `src/app/components/DayColumnsChart.tsx` (day by day) — both shared with the
+time logged straight to a category, the totals, and the sessions behind a piece), `src/core/timeLog.ts` (how long sessions are
+kept, and a session as logged), `src/app/useCategories.ts`, `src/app/components/BalancePage.tsx`,
+`src/app/components/CategoryTimePicker.tsx` (logging straight to a category) and
+`src/app/components/TimeLogFields.tsx` (its boxes and list), `src/app/components/TimeSplitChart.tsx` (the bar and its
+legend), `src/app/components/BalanceSessionList.tsx` (the sessions behind a piece) and `src/app/components/DayColumnsChart.tsx` (day by day) — both shared with the
 [Activity log](activity-log.md) — `src/app/balancePieces.ts` and `src/app/chartPieces.ts` (what each
 chart is divided into), `src/app/chartColors.ts` (the colours), `src/app/components/BalanceIcon.tsx`,
 `src/app/balanceLabels.ts` and `src/app/chartLabels.ts` (wording), `src/app/TasksScreen.tsx` (the page, and tags followed through), `src/app/view.ts`,

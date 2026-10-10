@@ -117,6 +117,19 @@ describe('the categories on screen (BAL-7 to BAL-10)', () => {
     expect(written.map((changes) => changes.saved.map((category) => category.id))).toEqual([[REST.id], [REST.id]])
   })
 
+  it('logs time straight to a category and takes it back, saving only that category (BAL-14, BAL-15)', () => {
+    const { result, written } = setUp([WORK, REST])
+
+    act(() => { result.current.logTime(REST.id, 25, 'reading') })
+    const [logged] = result.current.categories[1].timeLog
+    expect(logged).toMatchObject({ seconds: 25 * 60, comment: 'reading' })
+    expect(written.at(-1)?.saved.map((category) => category.id)).toEqual([REST.id])
+
+    act(() => { result.current.removeTime(REST.id, logged.id) })
+    expect(result.current.categories[1].timeLog).toEqual([])
+    expect(written.at(-1)?.saved.map((category) => category.id)).toEqual([REST.id])
+  })
+
   it('deletes a category, and puts it back as it was', () => {
     const { result, written } = setUp([WORK, REST])
 

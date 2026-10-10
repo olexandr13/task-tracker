@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   addTag,
   appendTask,
@@ -33,6 +33,7 @@ import {
   restoreTask,
   rewardChanges,
   scheduleOn,
+  sessionsLogged,
   setDescription,
   setDoneOnDay,
   setDueTime,
@@ -50,6 +51,7 @@ import {
   type ListId,
   type LocalDay,
   type LocalTime,
+  type LoggedSession,
   type PeriodBonuses,
   type Placement,
   type Repeat,
@@ -74,6 +76,8 @@ function persist(repository: TaskRepository, changes: TaskChanges, onProblem: Re
   })
 }
 
+function ignoreSessions(): void {}
+
 function record(rewards: RewardRepository, changes: RewardChanges, onProblem: ReportProblem): void {
   if (!hasRewardChanges(changes)) return
 
@@ -96,6 +100,10 @@ function record(rewards: RewardRepository, changes: RewardChanges, onProblem: Re
  * period it was earned, which is what `earned` is for. A change arriving from
  * elsewhere is not recorded: the device that made it recorded it.
  *
+ * Every session a change here logs is told to `onSessionsLogged`, for the
+ * activity log to write down the time it took up (ACT-21) — again only here,
+ * not as it arrives from elsewhere.
+ *
  * A load or a save the repository refuses is told to `onProblem` (STORE-13),
  * which is expected to stay the same function from render to render.
  */
@@ -107,6 +115,8 @@ export function useTasks(
   bonuses: PeriodBonuses = NO_BONUSES,
   /** What the ledger holds already, so a bonus is taken back off the day it was earned on. */
   earned: readonly RewardEntry[] = [],
+  /** Told of every session a change logs, however it was logged, for the activity log (ACT-21). */
+  onSessionsLogged: (sessions: readonly LoggedSession[]) => void = ignoreSessions,
 ) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [status, setStatus] = useState<'loading' | 'loaded' | 'failed'>('loading')
@@ -123,6 +133,12 @@ export function useTasks(
   const subscription = useRef<TaskSubscription | null>(null)
   // What `everywhere` was asked to do once every task is held.
   const waiting = useRef<(() => void)[]>([])
+  // The latest of what the screen passed, so a new one each render does not
+  // make every change below a new function.
+  const sessionsLoggedTo = useRef(onSessionsLogged)
+  useLayoutEffect(() => {
+    sessionsLoggedTo.current = onSessionsLogged
+  })
 
   useEffect(() => {
     const opened = repository.subscribe(
@@ -206,6 +222,8 @@ export function useTasks(
         withPeriodBonuses(rewardChanges(before, next), before, next, bonuses, earned, new Date()),
         onProblem,
       )
+      const logged = sessionsLogged(before, next)
+      if (logged.length > 0) sessionsLoggedTo.current(logged)
     },
     [repository, rewards, onProblem, bonuses, earned],
   )

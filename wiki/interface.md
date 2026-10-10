@@ -6,7 +6,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 - **UI-1** The screen is three areas: **navigation** down the left, **the work** — the box for
   adding a task, then the list — in the middle, and a **rail** down the right of it holding the
-  progress bars, with today's quote below them.
+  progress bars, with today's quote below them. On a wide screen the work and the rail sit under a
+  strip of **pinned tabs** (UI-75), which starts level with the sidebar's mark.
 - **UI-2** The rail belongs to the views that show tasks — Today, Week, Month, Tasks, the Inbox, each
   list's and each tag's — not to
   the app: habits, rewards, More, the modes, the lists, the tags, Balance, the Activity log, the trash and settings do without it. The habits page is already a record of progress (HAB-15), and how much of
@@ -16,7 +17,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   are on (UI-8), so a title would say it twice and cost a strip of the screen to do it; the work
   starts at the top of the page instead. The view's name is still there for a screen reader, as the
   page's heading, unseen. The app's own mark sits in the sidebar on a wide screen (UI-52), not over
-  the list.
+  the list. The pinned tabs above the work (UI-75) are navigation, not a heading: the tab marked is
+  the view's name, said once.
 - **UI-52** On a wide screen the sidebar opens with the app's mark — the progress-ring icon (UI-39)
   beside the name **PickMe**. A phone has none: the home-screen icon already says which app it is,
   and there is no strip for one above the work.
@@ -147,25 +149,35 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   **Procrastination**, **Warm-up**, **Nudge** and **Check-in** under it (MODE-1), **Trash** and **Settings**, and a view for each list, opened from Lists, and one for
   each tag, opened from Tags. Each is named and carries an
   icon — every tag's view the same `#` as Tags, and every list the same folder as Lists, and each
-  mode the glyph it wears everywhere else. **Tags** is reached from **More** (UI-45), and so are
-  **Balance**, the **Activity log** and **Modes** on a phone — the sidebar gives each an entry of its
-  own, Modes with each mode under it (MODE-7); **Rewards** has an entry of its own in
+  mode the glyph it wears everywhere else. On a phone **Tags**, **Balance**, the **Activity log** and
+  **Modes** are reached from **More** (UI-45); the sidebar gives each an entry of its own, Modes
+  with each mode under it (MODE-7), and has no More (UI-30); **Rewards** has an entry of its own in
   the sidebar and a tab of its own on a phone, with its pages under both (UI-30, UI-32, UI-67). See
   [Views](views.md), [Lists](lists.md), [Habits](habits.md),
   [Rewards](rewards.md), [Tags](tags.md), [Balance](balance.md), [Activity log](activity-log.md) and
   [Modes](modes.md).
-- **UI-30** In the sidebar the views come in four groups with a thin line between each: the period
-  views (**Today**, **Week**, **Month**), then **Habits**, **Tasks**, **Lists**, **Rewards**,
-  **Balance**, **Activity log**, **Modes** and **More**, then **Trash**, then **Settings**. **Lists**, **Rewards** and **Modes**
+- **UI-30** In the sidebar the views come in six groups, by what they are for, with a thin line
+  between each:
+  - **when** — the period views, **Today**, **Week** and **Month**;
+  - **the work and where it is filed** — **Habits**, **Tasks**, **Lists** and **Tags**;
+  - **what pushes it along** — **Rewards** and **Modes**;
+  - **looking back at the time spent** — **Balance** and the **Activity log**;
+  - **Trash**;
+  - **Settings**.
+
+  A group whose every page is switched off (FEAT-2) is left out whole, so two lines never meet with
+  nothing between them. There is **no More**: every page on More's page has an entry here, so it
+  would only be a click on the way to one of them (UI-45). **Lists**, **Rewards** and **Modes**
   each keep their pages indented under them — the **Inbox** and every list (LST-13), the **Cases**,
   **History**, **Prizes**, **Wishlist** and **Rules** (RWD-30), and **Procrastination**, **Warm-up**,
   **Nudge** and **Check-in** (MODE-7) — and each has a **chevron at its end that folds them away** and opens them
   again, without leaving the view you are on. Open, the page you are on is marked itself; folded,
   the entry above stands for it. All three start open, and how they are left is kept on this device
-  (STORE-31). A tag's view has no entry of its own: **More** stays marked while Tags or a tag's
-  tasks are open (UI-45). A mode's page has one, under **Modes**, so nothing there needs a strip of
-  its own (MODE-7).
-- **UI-8** The view you are on is marked, in the sidebar and in the bottom bar alike.
+  (STORE-31). **Tags** is a plain entry, with nothing folded under it: a tag's view has no entry
+  of its own, and **Tags** stays marked while one is open (TAG-17). A mode's page has one, under
+  **Modes**, so nothing there needs a strip of its own (MODE-7).
+- **UI-8** The view you are on is marked, in the sidebar, the pinned tabs (UI-75) and the bottom bar
+  alike.
 - **UI-32** The bottom bar has six tabs — fewer where a page is switched off, the rest sharing the
   bar (FEAT-2) — each an icon over its name, from left to right:
   **Settings**, **Rewards** (UI-67), **More** (UI-45), **Tasks** (UI-43), **Habits** and **the
@@ -223,6 +235,10 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   same after a reload or from a link: nothing is kept of the views you went through, so back never
   retraces them, and the history does not pile up as you move around. A sheet over the page sits
   **above** that ladder (UI-71): back closes it first.
+- **UI-80** Every view **opens at its top**. Scroll down a page and go to another — from the bar,
+  the sidebar, a tab, a link on the page or with back (UI-37) — and the new page starts at its first
+  line, not as far down as the last one was. Going to a task or habit on another page (TIME-20) still
+  brings it into view. Reloading starts at the top too.
 - **UI-43** The **Tasks** tab has a menu of its own, opened as the period tab's is (UI-33): held
   down, or tapped again while Tasks is on screen, and closed by a tap on Tasks while open. It holds
   what the sidebar has in its place, laid out as the sidebar lays it out (UI-30) — **Lists**, with
@@ -262,25 +278,63 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   closes first, leaving the one it came from. Closing the sheet any other way (UI-9, UI-48) drops
   that extra step, so the next back is the same as if the sheet had not been opened. It is the same
   wherever back comes from — a phone's back button, the browser's, or a keyboard's.
-- **UI-45** The bar has no entry for the tags, the Balance page, the Activity log or the modes, and
-  the sidebar none for the tags: they are under **More**, marked with three dots; the sidebar lists
-  Balance, the Activity log and the modes itself (UI-30, MODE-7).
-  **A tap opens More's page** — five links, **Lists**, **Tags**, **Balance**, **Activity log** and **Modes**, each with its icon, large enough
-  for a thumb (UI-49) and a chevron at its end marking it as a page to go to. The Modes row says how many modes are on (MODE-1). The page is the same on a wide
-  screen, and choosing any of them goes there. **Lists** is only a way in: it is reached from the
+- **UI-45** The bar has no entry for the tags, the modes, the Balance page or the Activity log:
+  they are under **More**, a tab marked with three dots. More is **on a phone only** — the sidebar
+  lists each of them itself, and so has no More (UI-30, MODE-7).
+  **A tap opens More's page** — five links, **Lists**, **Tags**, **Modes**, **Balance** and **Activity log**, in the sidebar's order, each with its icon, large enough
+  for a thumb (UI-49) and a chevron at its end marking it as a page to go to. The Modes row says how many modes are on (MODE-1). Choosing any of them goes there.
+  **Lists** is only a way in: it is reached from the
   Tasks tab as well (UI-34, LST-24), so **Tasks** is what stays marked once it is open, and More is
-  not, or two tabs would be marked at once. **More** stays marked while its own page, the Tags page or
-  a tag's view is open, and in the bar while the Balance page, the Activity log, the Modes page or one
-  mode's page is; in the sidebar those mark **Balance**, **Activity log** and **Modes** instead (MODE-7). Procrastination and the warm-up were rows
+  not, or two tabs would be marked at once. **More** stays marked while its own page, the Tags page, a
+  tag's view, the Modes page, one mode's page, the Balance page or the Activity log is open; in the
+  sidebar those mark **Tags**, **Modes**, **Balance** and **Activity log** (TAG-17, MODE-7). The views
+  are one tree on both (UI-37), so on a wide screen back from one of them still climbs to More's
+  page, which opens there as it does on a phone, with nothing in the sidebar marked — as back from
+  Lists climbs to Tasks. Procrastination and the warm-up were rows
   here while they were switches with nothing to say; each has a page of its own now (MODE-5), as the
   rewards took a tab of their own once a phone's bar had room (UI-32, RWD-19). Its address is
   `#/more` (UI-36).
+
+## Pinned tabs
+
+- **UI-75** On a wide screen a strip of **tabs** runs across the top of the work, right of the
+  sidebar, with a thin line under it. It keeps the pages used most a click away, as a browser's
+  tabs do; the sidebar still lists everything. The **pinned tabs** come first, in the order they
+  are arranged (UI-78). After them comes **the page you are on**, if it is not pinned: an
+  outlined tab rather than a filled one, there only while you are on it. So the strip always shows
+  where you are, and exactly one tab is marked (UI-8). A tab is **a fixed page**: clicking it
+  always opens the page it was pinned on, and going somewhere from the sidebar never changes the
+  tabs. Each tab carries the page's icon and name, as the sidebar draws them. The tabs share the
+  strip's width: each is as wide as a name needs, up to a limit, and all of them narrow together
+  when there are many, the names shortened and the icons kept. A phone has no strip: its bar is
+  its navigation (UI-4).
+- **UI-76** To pin the page you are on, click the **pin** at the end of its outlined tab. It
+  becomes a pinned tab, last in the strip. To unpin a tab, click the **×** at its end. The × shows
+  on the tab marked, and on any other while the pointer is over it or the keyboard reaches it.
+  Unpinning **is not asked about**: pinning again is one click. Unpinning the page you are on
+  leaves it in the strip as the outlined tab, with the pin where the × was.
+- **UI-77** **Any page can be pinned**: a period, Tasks, Habits, a list, the Inbox, a tag's tasks,
+  Rewards or one of its pages, Modes or one mode's page, Balance, the Activity log, the Trash or
+  Settings. A pinned tab whose page is **switched off** on Settings is not drawn (FEAT-2), nor one
+  whose list has been deleted or whose tag no task carries any more; it is still pinned, and comes
+  back with its page. A **Cases** tab carries the dot for a waiting key, as the sidebar's entry
+  does (CHST-22). While Procrastination mode is on, every tab but a **Today** tab is softened, as
+  the sidebar's entries are (JUST-5).
+- **UI-78** **Drag a pinned tab** left or right to change the order. The others make way, and it
+  lands where it is let go. The page you are on, unpinned, stays at the end. A tab is picked up
+  only once the pointer has moved a few pixels, so a click still opens it. It is picked up by the
+  pointer only: on a tab, **Space** and **Enter** open it.
+- **UI-79** Pressing **1** to **9** opens the first to ninth tab in the strip, counting the
+  outlined tab when there is one. It works from anywhere on a wide screen; typing in a box, or
+  holding a modifier, leaves the number alone, as with the letter shortcuts (UI-55, UI-57). A
+  number with no tab does nothing.
 
 ## Popovers
 
 - **UI-9** Panels that open in place — the schedule (date and repeat), time, tag, list and reward pickers, a task's menu, the menus
   of the bottom bar's tabs (UI-66), the View panel (UI-41), a phone's task sheet (UI-48), and the add
-  sheet (UI-54) — close on a click outside them or on Escape. A sheet also closes on back (UI-71). The tags offered while typing
+  sheet (UI-54) — close on a click outside them or on Escape. A sheet opened from a panel, as an
+  **i**'s (UI-73), is not outside it: closing that sheet leaves the panel as it was. A sheet also closes on back (UI-71). The tags offered while typing
   `#` in a description close on Escape too, but a click outside is leaving the description (TAG-9).
 - **UI-10** Escape inside an open panel closes the panel rather than reaching anything behind it.
 - **UI-40** A panel's buttons are **compact** and the same in every panel — its choices, a
@@ -299,7 +353,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 ## The task row
 
 - **UI-17** A row at rest is the completion box, the title and its tags, the controls holding
-  something (UI-18) and the delete button.
+  something and the clock (UI-18), and the delete button.
   Clicking anywhere on the row **opens what the task holds** — its checklist and its description,
   both at once — and spells its date or repeat rule and its checklist count out under their buttons (UI-27). Clicking a task is asking to see the whole
   of it, not to be handed buttons to press. It all goes again when you click the row again (UI-28),
@@ -309,8 +363,10 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-18** A resting row shows the controls that **hold something**, and no others — the schedule
   (the date, or the rule on a repeating task, DUE-13), the checklist, the time (TIME-10), the reward
   (RWD-5), the description — tinted (UI-26), so the list reads as what its tasks carry rather than as
-  rows of the same empty buttons. A task with nothing set is its title alone. Waking the row brings
-  the empty ones out (UI-17), so the task being worked on has every control one click away, and they
+  rows of the same empty buttons. The **clock** is the one exception, **out on every row** set or
+  not, plain while empty, so logging time is a click on it and one in its panel, without waking the
+  row first (TIME-10). A task with nothing set is its title and its clock. Waking the row brings
+  the other empty ones out (UI-17), so the task being worked on has every control one click away, and they
   go again when it rests. A control's **slot keeps its place and its width while it is empty**
   (UI-27), so an icon means the same thing in the same column on every row, however much the rows
   beside it hold. Deleting is always on show, at the far end of the row, so it keeps its place as the
@@ -325,7 +381,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   icons stand for are not spelled out on the row at all: the words are inside the sheet (UI-42, UI-48).
 - **UI-27** The controls **line up down the list**: each is its icon alone, in a slot of its own
   that sits in the same place on every row, whatever the rows beside it hold — and whether or not
-  the control is there, an unset one leaving its slot empty at rest (UI-18). A slot is **no wider than the button in it** — an icon with no words
+  the control is there, an unset one other than the clock leaving its slot empty at rest (UI-18). A slot is **no wider than the button in it** — an icon with no words
   beside it is padded to a square — and a small gap is between one slot and the next, enough that each icon
   reads as its own button while the controls still sit together and read as one group at the end of the row rather than as buttons scattered along it. The list and the
   tags have no slot at all on the resting row: they are set from the task's menu (LST-14, TAG-7),
@@ -446,8 +502,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   for a screen reader (UI-12), so its autofill and its developer tools can tell one box from another
   and raise no issue about one they cannot. The same kind of box has the same name wherever it
   appears: a task's title in the add box, in the sheet and in the row alike.
-- **UI-73** A page or settings card that has something to explain — what it is for, how it works —
-  carries an **i** beside its heading rather than the explanation sitting on the page itself: a tap
+- **UI-73** A page, a settings card or a part of a panel that has something to explain — what it is
+  for, how it works, what it takes (TIME-11) — carries an **i** beside its heading rather than the explanation sitting on the page itself: a tap
   opens it in a sheet (UI-48), headed with what it explains — or with a heading of its own where
   that says more, as Cases' does (CHST-22) — **centred**, and closing the same ways any sheet does.
   The **i** itself is always named for what it explains: *About Cases*. The page stays to its controls;

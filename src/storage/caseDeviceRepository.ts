@@ -6,7 +6,7 @@ import type { CaseQuarter, LocalDay } from '../core'
  * key is waiting, and whether it has already said here that Monday's Weekly is
  * here.
  *
- * What it asks of a day is the account's (./rewardRepository, CHST-3) — how someone wants to be paid travels with
+ * What it counts is the account's (./rewardRepository, CHST-32) — how someone wants to be paid travels with
  * them. These are the half only the device can answer. Whether to make a
  * noise is the room you are in rather than the account you are in; a notice
  * already given on the laptop is no reason to withhold it on the phone, which

@@ -6,7 +6,7 @@ import {
   slotEnd,
   slotJustEnded,
   slotKey,
-  CHECK_IN_SEND_MINUTES,
+  CHECK_IN_ANNOUNCE_MINUTES,
   type ActivityEntry,
   type HoursWindow,
   type PendingCheckIn,
@@ -41,9 +41,6 @@ export interface CheckInControl {
   readonly notice: PendingCheckIn | null
   /** Puts the notice away on this device, until the next hour asks (CHECKIN-4). */
   readonly dismiss: () => void
-  /** What this device keeps of it: the notice dismissed, and its push registration (STORE-54). */
-  readonly device: CheckInDeviceState
-  readonly updateDevice: (change: (state: CheckInDeviceState) => CheckInDeviceState) => void
 }
 
 interface CheckInOptions {
@@ -56,11 +53,10 @@ interface CheckInOptions {
  * and every half minute besides — and an hour that has just ended, inside the
  * hours kept to and with nothing logged under it, is asked about (CHECKIN-1):
  * a notice at the foot of the app, derived each render from the log, and a
- * browser notification where one is allowed and the sender does not push one.
+ * browser notification where one is allowed.
  *
  * The setting is the account's and arrives as the other modes' do. What stays
- * on the device is what only the device can answer: the notice dismissed here,
- * and whether this device is pushed check-ins.
+ * on the device is what only the device can answer: the notice dismissed here.
  *
  * `entries` is the activity log — null while it is still loading, when an hour
  * with nothing under it is one not read yet rather than one not logged.
@@ -86,11 +82,9 @@ export function useCheckIn(
   const watchedTo = useRef(new Date())
   // The latest of what the clock's effect reads, as of right now rather than as
   // of the render it was set up in.
-  // A device the sender pushes check-ins to posts none of its own, so the same
-  // hour is not announced twice (CHECKIN-10).
-  const live = useRef({ entries, pushed: device.pushOn, onOpen })
+  const live = useRef({ entries, onOpen })
   useLayoutEffect(() => {
-    live.current = { entries, pushed: device.pushOn, onOpen }
+    live.current = { entries, onOpen }
   })
 
   useEffect(() => {
@@ -118,16 +112,6 @@ export function useCheckIn(
     [repository, onProblem],
   )
 
-  const updateDevice = useCallback(
-    (change: (state: CheckInDeviceState) => CheckInDeviceState) => {
-      setDevice((current) => {
-        const next = change(current)
-        deviceRepository.save(next)
-        return next
-      })
-    },
-    [deviceRepository],
-  )
 
   // The top of every hour, to the second, and a tick besides for a clock that
   // jumped — only while it is on, there being nothing to ask otherwise.
@@ -151,10 +135,10 @@ export function useCheckIn(
   }, [preference.on])
 
   // An hour that ended while this device was watching is announced once, by a
-  // notification, where the sender does not push one here. One that ended
-  // before — the app opened afterwards — is left to the notice (CHECKIN-5).
+  // notification. One that ended before — the app opened afterwards — is left
+  // to the notice (CHECKIN-5).
   useEffect(() => {
-    const { entries: log, pushed: isPushed, onOpen: open } = live.current
+    const { entries: log, onOpen: open } = live.current
     // Still loading: the stretch is left unspent, so an hour that ended while
     // the log arrived is still announced once it is here.
     if (isLoading || log === null) return
@@ -163,11 +147,11 @@ export function useCheckIn(
     if (clock.getTime() <= since.getTime()) return
     watchedTo.current = clock
 
-    if (!preference.on || isPushed) return
+    if (!preference.on) return
     const slot = slotJustEnded(clock)
     const ended = slotEnd(slot)
     if (ended.getTime() <= since.getTime()) return
-    if (clock.getTime() - ended.getTime() >= CHECK_IN_SEND_MINUTES * 60 * 1000) return
+    if (clock.getTime() - ended.getTime() >= CHECK_IN_ANNOUNCE_MINUTES * 60 * 1000) return
     if (!isExpectedSlot(preference.window, slot) || isSlotLogged(log, slot)) return
 
     notifyBrowser(describeCheckInQuestion(slot), 'Log it in PickMe’s Activity log.', {
@@ -196,9 +180,10 @@ export function useCheckIn(
 
   const dismiss = useCallback(() => {
     if (notice === null) return
-    const dismissedSlot = slotKey(notice.slot)
-    updateDevice((current) => ({ ...current, dismissedSlot }))
-  }, [notice, updateDevice])
+    const next = { dismissedSlot: slotKey(notice.slot) }
+    deviceRepository.save(next)
+    setDevice(next)
+  }, [notice, deviceRepository])
 
   return {
     preference,
@@ -208,7 +193,5 @@ export function useCheckIn(
     permission,
     notice,
     dismiss,
-    device,
-    updateDevice,
   }
 }

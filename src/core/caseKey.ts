@@ -139,7 +139,6 @@ export function nextKeyTime(
 export function anyKeyAvailable(
   tasks: readonly Task[],
   entries: readonly RewardEntry[],
-  settings: CaseSettings,
   accountId: string,
   now: Date = new Date(),
 ): boolean {
@@ -148,7 +147,7 @@ export function anyKeyAvailable(
 
   // Is the day clear?
   const { total, remaining } = summarize(tasks, 'today', now)
-  const dayCleared = total > 0 && remaining === 0 && total >= settings.leastTasks
+  const dayCleared = total > 0 && remaining === 0
 
   if (dayCleared) return true
   // Weekly is ready from midnight on Monday, with nothing else to wait for.

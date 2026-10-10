@@ -4,7 +4,6 @@ import {
   DEFAULT_CASES,
   isCurrency,
   isEarnedAmount,
-  isLeastTasks,
   isLocalDay,
   isPointAmount,
   isRedemptionAmount,
@@ -138,7 +137,7 @@ export function readRewardGoal(data: unknown): { period: Period; points: number 
 /**
  * A standing setting of the points, kept one record per setting under a name of
  * its own rather than an id — the same reasoning as a bonus above. What one
- * point is worth (RWD-31), what Cases asks of a day (CHST-3) and the reward a
+ * point is worth (RWD-31), what the cases count (CHST-32) and the reward a
  * new task starts with (RWD-45) are the three there are; a new one is a name
  * here and a watcher in the repository.
  */
@@ -181,9 +180,9 @@ export function readPointValue(data: unknown): PointValue | null {
 }
 
 /**
- * What Cases asks of a day (CHST-3), and whether it counts tasks without
- * points (CHST-32). One record, named for itself, so the two devices that set
- * it write the one record and the later write wins.
+ * Whether the cases count tasks without points (CHST-32). One record, named for
+ * itself, so the two devices that set it write the one record and the later
+ * write wins.
  */
 export interface StoredCaseSettings {
   version: number
@@ -201,25 +200,28 @@ export function toStoredCaseSettings(settings: CaseSettings): StoredCaseSettings
  * Settings saved before the jackpot became everything earned today also say
  * which of two ways it was worked out (`jackpot: 'bestTask' | 'typicalDay'`).
  * There is no choice any more, so that is read past rather than refused: the
- * record is otherwise the same shape, and refusing it would throw away the one
- * setting that is left. It is dropped on the next save.
+ * record is otherwise the same shape, and refusing it would throw away the
+ * settings that are left. It is dropped on the next save.
+ *
+ * Settings saved while a day had to ask for so many tasks before it earned
+ * Payday also say how many (`leastTasks`). That is read past in the same way,
+ * and dropped on the next save.
  *
  * Settings saved before tasks without points could be left out of the cases
  * (CHST-32) have no `countUnpaid`, and are read as counting them, which is what
- * every case did then. The field is added rather than the version bumped: the
- * version is the whole ledger's (STORE-24), and a device not yet updated would
- * then refuse every day of it rather than read past one field.
+ * every case did then. Fields are added and dropped rather than the version
+ * bumped: the version is the whole ledger's (STORE-24), and a device not yet
+ * updated would then refuse every day of it rather than read past one field.
  */
 export function readCaseSettings(data: unknown): CaseSettings | null {
   if (!isRecord(data) || data.version !== REWARD_SCHEMA_VERSION || data.name !== CASES_SETTING || !isRecord(data.settings)) {
     return null
   }
 
-  const { leastTasks, countUnpaid = DEFAULT_CASES.countUnpaid } = data.settings
-  if (typeof leastTasks !== 'number' || !isLeastTasks(leastTasks)) return null
+  const { countUnpaid = DEFAULT_CASES.countUnpaid } = data.settings
   if (typeof countUnpaid !== 'boolean') return null
 
-  return { leastTasks, countUnpaid }
+  return { countUnpaid }
 }
 
 /**

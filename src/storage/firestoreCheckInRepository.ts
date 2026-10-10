@@ -5,8 +5,7 @@ import { accountCollection } from './firestoreAccount'
 
 /**
  * An account's check-in setting in Firestore, readable by that account alone
- * (`firestore.rules`) — and by the sender that pushes check-ins, which runs with
- * the project's own rights (`functions/`): one document at
+ * (`firestore.rules`): one document at
  * `users/{accountId}/checkIn/checkIn`, and no document at all is the check-in as
  * the app arrives, off at 09:00–22:00 (STORE-52), as the nudge's is kept.
  */

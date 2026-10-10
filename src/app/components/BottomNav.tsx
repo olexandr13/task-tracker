@@ -54,7 +54,7 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * the top of them being the other way to them (RWD-30). The tags
  * have no tab: they are under More, which goes to its own page on a tap and
  * stays marked while that page, the Tags page or a tag's tasks are open. The
- * sidebar has the same More entry.
+ * sidebar has no More: it lists each of those pages itself (UI-30).
  *
  * The period tab, Tasks and Rewards each have a menu of what the sidebar has in
  * their place: the three periods; Lists with the Inbox and every list indented

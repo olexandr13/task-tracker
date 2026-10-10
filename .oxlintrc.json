@@ -46,38 +46,6 @@
           }
         ]
       }
-    },
-    {
-      "files": [
-        "functions/**"
-      ],
-      "rules": {
-        "no-restricted-imports": [
-          "error",
-          {
-            "patterns": [
-              {
-                "group": [
-                  "**/app/**",
-                  "../app",
-                  "../../src/app/**"
-                ],
-                "message": "The sender reads the account's data; the app's screens are none of its business."
-              },
-              {
-                "group": [
-                  "firebase",
-                  "firebase/*",
-                  "**/storage/firebaseApp",
-                  "**/storage/firestore*",
-                  "**/storage/local*"
-                ],
-                "message": "The sender reads Firestore with firebase-admin. Import the shapes it reads (src/storage/*Schema.ts) and checkInSender.ts, not the app's client SDK or repositories."
-              }
-            ]
-          }
-        ]
-      }
     }
   ]
 }

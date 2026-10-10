@@ -201,6 +201,35 @@ describe('useView', () => {
     expect(window.history.length).toBe(before + 1)
   })
 
+  it('opens each view switched to at its top, back included (UI-80)', async () => {
+    const page = document.documentElement
+    const { result } = renderHook(() => useView())
+    expect(window.history.scrollRestoration).toBe('manual')
+
+    page.scrollTop = 600
+    act(() => { result.current[1]('modes') })
+    expect(page.scrollTop).toBe(0)
+
+    page.scrollTop = 600
+    act(() => { result.current[1]('modes/warm-up') })
+    await historySettles()
+    expect(page.scrollTop).toBe(0)
+
+    page.scrollTop = 600
+    await back()
+    expect(result.current[0]).toBe('modes')
+    expect(page.scrollTop).toBe(0)
+  })
+
+  it('leaves the page where it is when the view does not change (UI-80)', () => {
+    const page = document.documentElement
+    const { result } = renderHook(() => useView())
+    page.scrollTop = 600
+    act(() => { result.current[1](result.current[0]) })
+    expect(page.scrollTop).toBe(600)
+    page.scrollTop = 0
+  })
+
   it('keeps the address right after leaving a page for a tab (UI-36, UI-37)', async () => {
     const { result } = renderHook(() => useView())
     act(() => { result.current[1]('rewards/rules') })

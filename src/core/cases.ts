@@ -4,7 +4,7 @@
  * A task's reward pays a known amount for a known piece of work, and a period
  * bonus (./bonus) pays a known amount for clearing a stretch of it. This pays an
  * **unknown** amount inside a range of its own. Payday pays from the
- * cheapest task finished today up to half of everything earned today. The
+ * cheapest task finished today up to half of what today's tasks earned. The
  * Drop pays from 1 up to everything earned yesterday divided by how
  * many tasks that was. Weekly, ready on Monday and planned until then, pays
  * from the cheapest task finished last week up to everything earned last week
@@ -84,14 +84,11 @@ export function isCaseEarning(taskId: TaskId): boolean {
   return taskId === CASE_TODAY_ID || taskId === CASE_DAILY_ID || taskId === CASE_WEEK_ID
 }
 
-/** What a day has to be before it earns a key, and what the cases count. */
+/**
+ * What the cases count. How big a day has to be is not among them: Payday's own
+ * range already pays a small day little (CHST-10).
+ */
 export interface CaseSettings {
-  /**
-   * How many tasks the day has to have asked for. A day with fewer earns no key
-   * however clear it is, so a single thing remembered at nine in the evening is
-   * not a day's work.
-   */
-  readonly leastTasks: number
   /**
    * Whether a task finished without points adds 1 to the most each case pays
    * (CHST-32). Off, the cases are worked out from tasks with points alone.
@@ -99,19 +96,11 @@ export interface CaseSettings {
   readonly countUnpaid: boolean
 }
 
-export const MIN_LEAST_TASKS = 1
-export const MAX_LEAST_TASKS = 99
-
-/** What an account starts with: any cleared day earns a key, and every task done counts. */
-export const DEFAULT_CASES: CaseSettings = { leastTasks: MIN_LEAST_TASKS, countUnpaid: true }
-
-/** Whether a day can be asked for this many tasks before it earns a key. */
-export function isLeastTasks(tasks: number): boolean {
-  return Number.isInteger(tasks) && tasks >= MIN_LEAST_TASKS && tasks <= MAX_LEAST_TASKS
-}
+/** What an account starts with: every task done counts. */
+export const DEFAULT_CASES: CaseSettings = { countUnpaid: true }
 
 /** Why there is no case to open just now, or null while one is ready. */
-export type CaseBlock = 'opened' | 'unclear' | 'tooSmall' | 'bonusWaiting'
+export type CaseBlock = 'opened' | 'unclear' | 'bonusWaiting'
 
 /** Where a case comes from: clearing Today, the moment that arrives on its own, or the week. */
 export type CaseSource = 'today' | 'daily' | 'week'
@@ -160,21 +149,15 @@ export interface CaseSlot {
 export function caseSlots(
   tasks: readonly Task[],
   entries: readonly RewardEntry[],
-  settings: CaseSettings,
   accountId: string,
   now: Date = new Date(),
 ): CaseSlot[] {
   const slots: CaseSlot[] = []
-  const { total, completed, remaining } = summarize(tasks, 'today', now)
-  const dayCleared = total > 0 && remaining === 0 && total >= settings.leastTasks
+  const { total, remaining } = summarize(tasks, 'today', now)
 
   if (todayCaseOpened(entries, now)) slots.push({ source: 'today', state: 'opened', at: null })
-  else if (dayCleared) slots.push({ source: 'today', state: 'ready', at: null })
-  else if (total > 0 && remaining > 0) {
-    // A day asking for fewer tasks than a case needs (CHST-3) is short of the ones still to add too.
-    const tasksLeft = Math.max(remaining, settings.leastTasks - completed)
-    slots.push({ source: 'today', state: 'waiting', at: null, tasksLeft })
-  }
+  else if (total > 0 && remaining === 0) slots.push({ source: 'today', state: 'ready', at: null })
+  else if (total > 0) slots.push({ source: 'today', state: 'waiting', at: null, tasksLeft: remaining })
 
   if (dailyCaseOpened(entries, now)) slots.push({ source: 'daily', state: 'opened', at: null })
   else {
@@ -247,13 +230,13 @@ export function openSpan(span: CaseSpan, random: () => number = Math.random): Ca
  */
 export type CaseWorking = TodayWorking | DailyWorking | WeekWorking
 
-/** Payday: the cheapest task today, half of everything earned today, and the tasks that earned nothing. */
+/** Payday: the cheapest task today, half of what today's tasks earned, and the tasks that earned nothing. */
 export interface TodayWorking {
   readonly source: 'today'
   /** Points of the cheapest task finished today, or null when today has no task with points. */
   readonly cheapest: number | null
-  /** Everything earned today, cases left out. */
-  readonly earned: number
+  /** What today's tasks with points earned, bonuses and cases left out. */
+  readonly paidPoints: number
   /** Half of that, the remainder dropped. */
   readonly half: number
   /** How many tasks were finished today and earned nothing. */
@@ -295,7 +278,7 @@ export interface WeekWorking {
  * What one case can pay, from the tasks and the ledger as they stand (CHST-10).
  *
  * **Payday** runs from the points of the cheapest task finished today, or 1
- * when no task today has points, up to half of everything earned today, the
+ * when no task today has points, up to half of what today's tasks earned, the
  * remainder dropped, plus how many tasks finished today earned nothing.
  * Where that most falls short of the cheapest task — a day of one
  * task — the case pays exactly those points.
@@ -310,8 +293,8 @@ export interface WeekWorking {
  * plus how many tasks were finished that week (CHST-30). Where that falls short
  * of the cheapest task, the case pays exactly those points.
  *
- * Everything earned on a day is the tasks and any bonus, and never a case
- * (CHST-8); an average task is the tasks alone. A task is one completion: the
+ * Every case is worked out from the tasks alone: a bonus is not a task, and a
+ * case is never one either (CHST-8). A task is one completion: the
  * same task written twice on a day is one, and one finished on two days of a
  * week is two. A task with points is one the ledger holds for that day; one
  * finished with none is in the tasks, not in the ledger, so it is never the
@@ -383,12 +366,12 @@ function todayWorking(
 ): TodayWorking {
   const { paid, unpaid } = finishedOn(tasks, entries, day)
   const cheapest = cheapestOf(paid)
-  const earned = earnedOn(entries, day)
-  const half = Math.floor(earned / 2)
+  const paidPoints = sumOf(paid)
+  const half = Math.floor(paidPoints / 2)
   const least = cheapest === null ? MIN_CASE_POINTS : Math.max(MIN_CASE_POINTS, cheapest)
   const most = half + (countUnpaid ? unpaid : 0)
 
-  return { source: 'today', cheapest, earned, half, unpaid, span: { least, most: Math.max(least, most) } }
+  return { source: 'today', cheapest, paidPoints, half, unpaid, span: { least, most: Math.max(least, most) } }
 }
 
 function dailyWorking(
@@ -462,9 +445,9 @@ function averageOf(points: readonly number[]): number {
 /**
  * Everything earned today (CHST-7): what the tasks earned and any bonus paid
  * today — the same sum the Today tile of what was earned shows (RWD-20) —
- * leaving out Cases' own opening. Never less than 1, so a day that earned
- * nothing yet still has a number to halve from. What each case then pays is
- * `caseSpan`, not this whole sum.
+ * leaving out Cases' own opening. Never less than 1. It is what practice plays
+ * for to begin with (CHST-21); what each case pays is `caseSpan`, worked out
+ * from the tasks alone.
  */
 export function caseJackpot(entries: readonly RewardEntry[], now: Date = new Date()): number {
   return Math.max(MIN_CASE_POINTS, earnedOn(entries, toLocalDay(now)))
@@ -507,18 +490,16 @@ export function caseOpened(entries: readonly RewardEntry[], now: Date = new Date
  * and the bonus time the second — a day that is not clear but whose bonus
  * moment has passed still has a key to give.
  *
- * A clear day has everything it asked for done, so asking for at least so many
- * tasks is asking for at least so many done; and a day with nothing in it is
- * never clear (`isPeriodCleared`), so an empty day earns nothing.
+ * A day with nothing in it is never clear (`isPeriodCleared`), so an empty day
+ * earns nothing.
  */
 export function caseBlock(
   tasks: readonly Task[],
   entries: readonly RewardEntry[],
-  settings: CaseSettings,
   accountId: string,
   now: Date = new Date(),
 ): CaseBlock | null {
-  const slots = caseSlots(tasks, entries, settings, accountId, now)
+  const slots = caseSlots(tasks, entries, accountId, now)
   // Weekly is on the page every day, and only a key on Monday. While it is
   // planned it does not decide whether a key is waiting today (CHST-30).
   const due = slots.filter((slot) => !(slot.source === 'week' && slot.state === 'waiting'))
@@ -527,25 +508,19 @@ export function caseBlock(
   const pending = due.filter((slot) => slot.state !== 'opened')
   if (pending.length === 0) return 'opened'
 
-  // Nothing is ready. Today's case, when it is still planned, says what the day
-  // is short of. Otherwise the only thing left is the daily case, on its clock.
-  const todayWaiting = pending.some((slot) => slot.source === 'today')
-  if (!todayWaiting) return 'bonusWaiting'
-
-  const { total, remaining } = summarize(tasks, 'today', now)
-  if (total === 0 || remaining > 0) return 'unclear'
-  return 'tooSmall'
+  // Nothing is ready. Today's case, when it is still planned, has work left on
+  // the day. Otherwise the only thing left is the daily case, on its clock.
+  return pending.some((slot) => slot.source === 'today') ? 'unclear' : 'bonusWaiting'
 }
 
 /** Whether a key is waiting, which is what the page and the notice ask. */
 export function hasKey(
   tasks: readonly Task[],
   entries: readonly RewardEntry[],
-  settings: CaseSettings,
   accountId: string,
   now: Date = new Date(),
 ): boolean {
-  return caseBlock(tasks, entries, settings, accountId, now) === null
+  return caseBlock(tasks, entries, accountId, now) === null
 }
 
 /** One case opened today, and what it gave (CHST-33). */

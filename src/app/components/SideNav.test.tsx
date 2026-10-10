@@ -57,7 +57,7 @@ describe('SideNav', () => {
     expect(screen.getByText('PickMe')).toBeTruthy()
   })
 
-  it('carries Lists, Rewards, Balance, the activity log, Modes and More beside Habits and Tasks, and no entry for Tags or any one tag (UI-30, UI-45, TAG-18, RWD-19, LST-13, MODE-7, BAL-1, ACT-1)', () => {
+  it('groups the work, what pushes it along and the time spent, with an entry for Tags, none for any one tag and none for More (UI-30, UI-45, TAG-17, RWD-19, LST-13, MODE-7, BAL-1, ACT-1)', () => {
     setup('today')
 
     const entries = screen
@@ -73,20 +73,20 @@ describe('SideNav', () => {
       'Tasks',
       'Lists',
       'Inbox',
+      'Tags',
       'Rewards',
       'Cases',
       'History',
       'Prizes',
       'Wishlist',
       'Rules',
-      'Balance',
-      'Activity log',
       'Modes',
       '🫠Procrastination',
       '🌱Warm-up',
       '🔔Nudge',
       '⏰Check-in',
-      'More',
+      'Balance',
+      'Activity log',
       'Trash',
       'Settings',
     ])
@@ -100,12 +100,12 @@ describe('SideNav', () => {
     expect(onChange).toHaveBeenCalledWith('lists')
   })
 
-  it('goes to More (UI-45)', async () => {
+  it('goes to Tags (TAG-17)', async () => {
     const { user, onChange } = setup('today')
 
-    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Tags' }))
 
-    expect(onChange).toHaveBeenCalledWith('more')
+    expect(onChange).toHaveBeenCalledWith('tags')
   })
 
   it('goes to Rewards from its own entry (RWD-19)', async () => {
@@ -116,26 +116,26 @@ describe('SideNav', () => {
     expect(onChange).toHaveBeenCalledWith('rewards')
   })
 
-  it('keeps More marked while Tags or a tag\'s tasks are open (UI-8, UI-45, TAG-17)', () => {
+  it('marks Tags while the Tags page or a tag\'s tasks are open (UI-8, TAG-17)', () => {
     setup('tags')
-    expect(marked().map((button) => button.textContent)).toEqual(['More'])
+    expect(marked().map((button) => button.textContent)).toEqual(['Tags'])
     cleanup()
 
     setup('tag/work')
-    expect(marked().map((button) => button.textContent)).toEqual(['More'])
+    expect(marked().map((button) => button.textContent)).toEqual(['Tags'])
   })
 
-  it('marks Balance itself, rather than More (UI-8, UI-30, BAL-1)', () => {
+  it('marks Balance itself (UI-8, UI-30, BAL-1)', () => {
     setup('balance')
     expect(marked().map((button) => button.textContent)).toEqual(['Balance'])
   })
 
-  it('marks the activity log itself, rather than More (UI-8, UI-30, ACT-1)', () => {
+  it('marks the activity log itself (UI-8, UI-30, ACT-1)', () => {
     setup('activity')
     expect(marked().map((button) => button.textContent)).toEqual(['Activity log'])
   })
 
-  it('marks Modes, and each mode\'s page itself, rather than More (UI-8, UI-30, MODE-7)', () => {
+  it('marks Modes, and each mode\'s page itself (UI-8, UI-30, MODE-7)', () => {
     setup('modes')
     expect(marked().map((button) => button.textContent)).toEqual(['Modes'])
     cleanup()
@@ -197,7 +197,7 @@ describe('SideNav', () => {
     expect(marked().map((button) => button.textContent)).toEqual(['Modes'])
   })
 
-  it('marks Rewards itself, and not More, while the Rewards page is open (UI-8, UI-30, RWD-19)', () => {
+  it('marks Rewards itself while the Rewards page is open (UI-8, UI-30, RWD-19)', () => {
     setup('rewards')
 
     expect(marked().map((button) => button.textContent)).toEqual(['Rewards'])
@@ -381,5 +381,55 @@ describe('SideNav', () => {
     for (const name of ['Rewards', 'History', 'Modes', 'Procrastination', 'Nudge']) {
       expect(within(nav).getByRole('button', { name })).toBeDefined()
     }
+  })
+
+  it('draws a line between groups, and none for a group whose every page is switched off (UI-30, FEAT-2)', () => {
+    /** The sidebar's top rows, each a line or the entry it holds. */
+    function rows(off: FeaturesOff): string[] {
+      const { unmount } = render(
+        <FeaturesContext value={off}>
+          <SideNav
+            view="today"
+            lists={[]}
+            listsOpen={false}
+            rewardsOpen={false}
+            modesOpen={false}
+            onChange={vi.fn()}
+            onListsOpenChange={vi.fn()}
+            onRewardsOpenChange={vi.fn()}
+            onModesOpenChange={vi.fn()}
+          />
+        </FeaturesContext>,
+      )
+      const list = within(screen.getByRole('navigation', { name: 'Views' })).getAllByRole('list')[0]
+      const found = Array.from(list.children).map((row) =>
+        row.getAttribute('aria-hidden') === 'true' ? '—' : (row.querySelector('button')?.textContent ?? ''),
+      )
+      unmount()
+      return found
+    }
+
+    expect(rows([])).toEqual([
+      'Today', 'Week', 'Month', '—',
+      'Habits', 'Tasks', 'Lists', 'Tags', '—',
+      'Rewards', 'Modes', '—',
+      'Balance', 'Activity log', '—',
+      'Trash', '—',
+      'Settings',
+    ])
+    expect(rows(['balance', 'activity'])).toEqual([
+      'Today', 'Week', 'Month', '—',
+      'Habits', 'Tasks', 'Lists', 'Tags', '—',
+      'Rewards', 'Modes', '—',
+      'Trash', '—',
+      'Settings',
+    ])
+    expect(rows(['rewards', 'modes'])).toEqual([
+      'Today', 'Week', 'Month', '—',
+      'Habits', 'Tasks', 'Lists', 'Tags', '—',
+      'Balance', 'Activity log', '—',
+      'Trash', '—',
+      'Settings',
+    ])
   })
 })

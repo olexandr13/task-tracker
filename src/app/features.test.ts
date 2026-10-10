@@ -76,6 +76,6 @@ describe('what the lists of pages hold', () => {
 
   it('leaves out More’s pages that are off, Balance with the tags it divides time by (FEAT-4)', () => {
     expect(morePagesShown(['activity', 'modes'])).toEqual(['lists', 'tags', 'balance'])
-    expect(morePagesShown(['tags'])).toEqual(['lists', 'activity', 'modes'])
+    expect(morePagesShown(['tags'])).toEqual(['lists', 'modes', 'activity'])
   })
 })

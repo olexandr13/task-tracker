@@ -114,18 +114,6 @@ describe('useCheckIn', () => {
     expect(posted).not.toHaveBeenCalled()
   })
 
-  it('leaves the notification to the sender on a device it pushes to (CHECKIN-10)', () => {
-    vi.useFakeTimers({ now: new Date(2026, 9, 2, 14, 59, 30) })
-    const posted = allowNotifications()
-    const device = here({ dismissedSlot: null, pushDeviceId: 'phone', pushOn: true })
-    const setting = account(ON)
-    const { result } = renderHook(() => useCheckIn(setting, device, NOTHING))
-
-    act(() => { vi.advanceTimersByTime(31 * 1000) })
-    expect(result.current.notice?.slot.hour).toBe(14)
-    expect(posted).not.toHaveBeenCalled()
-  })
-
   it('waits for the log before spending an hour, so one that ended while it loaded is still said (CHECKIN-5)', () => {
     vi.useFakeTimers({ now: new Date(2026, 9, 2, 14, 59, 30) })
     const posted = allowNotifications()

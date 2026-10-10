@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { createActivityEntry, type ActivityEntry } from '../core'
+import { createActivityEntry, createTask, logTime, type ActivityEntry } from '../core'
 import type { ActivityChanges, ActivityRepository } from '../storage/activityRepository'
 import { expectConsole } from '../test/consoleGuard'
 import { useActivities } from './useActivities'
@@ -61,6 +61,28 @@ describe('useActivities', () => {
     })
 
     expect(result.current.entries.map((entry) => entry.activity)).toEqual(['Work', 'Reading'])
+  })
+
+  it('writes the time sessions on tasks took up, and takes it out with the session (ACT-21)', () => {
+    const work = createActivityEntry('Work', 900, SLOT)
+    const { repository, saved } = fakeRepository([work])
+    const { result } = renderHook(() => useActivities(repository))
+    const task = logTime(createTask('work'), 30, new Date(2026, 9, 2, 11, 10))
+    const [session] = task.timeLog
+
+    act(() => { result.current.addSessions([{ task, entry: session }]) })
+
+    const made = result.current.entries.slice(1)
+    expect(made.map(({ activity, hour, seconds }) => ({ activity, hour, seconds }))).toEqual([
+      { activity: 'Work', hour: 10, seconds: 1200 },
+      { activity: 'Work', hour: 11, seconds: 600 },
+    ])
+    expect(saved).toEqual([{ saved: made, removed: [] }])
+
+    act(() => { result.current.removeSession(session.id) })
+
+    expect(result.current.entries).toEqual([work])
+    expect(saved[1]).toEqual({ saved: [], removed: made })
   })
 
   it('puts a record taken out back, for the undo (ACT-11)', () => {

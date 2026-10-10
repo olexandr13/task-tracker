@@ -18,9 +18,7 @@ in. Both are on **Settings**, under the account in its **Account** section (UI-3
   check-in's setting (CHECKIN-9) and the feature switches (FEAT-1) — and all of it whatever is
   switched off (FEAT-5). What is kept on this device alone — the View options (STORE-30),
   the sidebar (STORE-31), the cached quote, what the nudge has already said here (STORE-46) and what
-  the check-in keeps here (STORE-54) — is not the account's, and is not in it. Nor are the devices
-  check-ins are pushed to (STORE-53): a registration belongs to a browser that may be gone by the
-  time the file is read. Neither is
+  the check-in keeps here (STORE-54) — is not the account's, and is not in it. Neither is
   **Procrastination mode** (STORE-45), which the account does keep: it is the state of one
   afternoon, and a mode restored from a file made last month would be off by the time it was read. A record the app cannot
   read (STORE-7) is left out.
@@ -91,6 +89,7 @@ in. Both are on **Settings**, under the account in its **Account** section (UI-3
 - **BAK-17** A file made before there were Balance categories (BAL-12) holds none, and is read as
   holding none rather than turned away (BAK-13). A category is a **record**, like a prize: it is
   counted among what was imported or already here, and one the account has is left as it is (BAK-6).
+  The time logged straight to a category (BAL-14) is part of it, and travels with it.
 - **BAK-18** A file holds the **activity log** a day at a time, as the account keeps it (STORE-51),
   each record with its own id. A record is a **record**: counted among what was imported or already
   here, and one the account holds is left as it is (BAK-6) — added to its day, never replacing the

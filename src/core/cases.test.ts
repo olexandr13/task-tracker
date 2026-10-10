@@ -16,13 +16,12 @@ import {
   DEFAULT_CASES,
   nextShareAt,
   hasKey,
-  isLeastTasks,
   MIN_CASE_POINTS,
   openFairCase,
   openSpan,
   type CaseSettings,
 } from './cases'
-import type { RewardEntry } from './reward'
+import { setReward, type RewardEntry } from './reward'
 import { dailyKeyTime } from './caseKey'
 import { completeTask, createTask, deleteTask, setDueDate, type Task } from './task'
 
@@ -135,15 +134,15 @@ describe('what each case can pay', () => {
       earned(BONUS_IDS.today, '2026-09-17', 5),
     ]
 
-    // 8 + 3 + 25 + 5 = 41, half is 20. The cheapest task is 3; the bonus is not a task.
-    expect(caseSpan('today', [], entries, DEFAULT_CASES, THU_17)).toEqual({ least: 3, most: 20 })
+    // 8 + 3 + 25 = 36, half is 18. The cheapest task is 3; the bonus is not a task, so it adds nothing.
+    expect(caseSpan('today', [], entries, DEFAULT_CASES, THU_17)).toEqual({ least: 3, most: 18 })
     expect(caseWorking('today', [], entries, DEFAULT_CASES, THU_17)).toEqual({
       source: 'today',
       cheapest: 3,
-      earned: 41,
-      half: 20,
+      paidPoints: 36,
+      half: 18,
       unpaid: 0,
-      span: { least: 3, most: 20 },
+      span: { least: 3, most: 18 },
     })
   })
 
@@ -156,7 +155,7 @@ describe('what each case can pay', () => {
     expect(caseWorking('today', tasks, entries, DEFAULT_CASES, THU_17)).toEqual({
       source: 'today',
       cheapest: 10,
-      earned: 30,
+      paidPoints: 30,
       half: 15,
       unpaid: 2,
       span: { least: 10, most: 17 },
@@ -186,8 +185,8 @@ describe('what each case can pay', () => {
   it('counts a task finished twice as one task', () => {
     const entries = [earned('a', '2026-09-17', 4), earned('a', '2026-09-17', 20), earned('b', '2026-09-17', 6)]
 
-    // The first writing of `a` is its points, so the cheapest is 4. Both writings are still earned: 4 + 20 + 6 = 30, half 15.
-    expect(caseSpan('today', [], entries, DEFAULT_CASES, THU_17)).toEqual({ least: 4, most: 15 })
+    // The first writing of `a` is its points, so the cheapest is 4, and only it is counted: 4 + 6 = 10, half 5.
+    expect(caseSpan('today', [], entries, DEFAULT_CASES, THU_17)).toEqual({ least: 4, most: 5 })
   })
 
   it('pays exactly the cheapest task when half of today is less, as a day of one task is', () => {
@@ -198,7 +197,7 @@ describe('what each case can pay', () => {
 
   it('pays 1 when today has no task to take a cheapest from', () => {
     expect(caseSpan('today', [], [], DEFAULT_CASES, THU_17)).toEqual({ least: 1, most: 1 })
-    expect(caseSpan('today', [], [earned(BONUS_IDS.today, '2026-09-17', 5)], DEFAULT_CASES, THU_17)).toEqual({ least: 1, most: 2 })
+    expect(caseSpan('today', [], [earned(BONUS_IDS.today, '2026-09-17', 5)], DEFAULT_CASES, THU_17)).toEqual({ least: 1, most: 1 })
   })
 
   it('does not count a task with points twice, as one with points and one without', () => {
@@ -273,6 +272,57 @@ describe('what each case can pay', () => {
       average: 7,
       tasks: 3,
       span: { least: 4, most: 10 },
+    })
+  })
+
+  it('averages only last week’s tasks with points and counts every task finished in it (CHST-10)', () => {
+    const doneOn = (title: string, day: number, reward: number | null = null) =>
+      setReward(completeTask(createTask(title, null, new Date(2026, 8, 1)), new Date(2026, 8, day, 9, 0)), reward)
+    const pack = doneOn('pack', 8, 4)
+    const call = doneOn('call', 10, 8)
+    const water = doneOn('water', 9)
+    // Given points after it was done: that completion earned nothing, so it is counted, never averaged.
+    const priced = doneOn('priced', 11, 5)
+    const before = doneOn('before', 6)
+    const after = doneOn('after', 14)
+    const entries = [
+      earned(pack.id, '2026-09-08', 4),
+      earned(call.id, '2026-09-10', 8),
+      earned(BONUS_IDS.week, '2026-09-13', 20),
+      earned('older', '2026-09-06', 30),
+      earned('newer', '2026-09-14', 50),
+    ]
+
+    // 4 + 8 across two tasks with points is an average of 6. Four tasks were finished
+    // 7–13 September — `pack` and `call` once each, though they are in the ledger and the
+    // tasks both — so the most is 6 + 4 = 10. The bonus and the days either side stay out.
+    expect(caseWorking('week', [pack, call, water, priced, before, after], entries, DEFAULT_CASES, MON_14)).toEqual({
+      source: 'week',
+      cheapest: 4,
+      paidPoints: 12,
+      paidTasks: 2,
+      average: 6,
+      tasks: 4,
+      span: { least: 4, most: 10 },
+    })
+  })
+
+  it('averages only yesterday’s tasks with points and counts every task finished then (CHST-10)', () => {
+    const doneOn = (title: string, at: Date, reward: number | null = null) =>
+      setReward(completeTask(createTask(title, null, new Date(2026, 8, 1)), at), reward)
+    const pack = doneOn('pack', WED_16, 3)
+    const call = doneOn('call', WED_16, 6)
+    const water = doneOn('water', WED_16)
+    const stretch = doneOn('stretch', WED_16)
+    const todays = doneOn('today', THU_17)
+    const entries = [earned(pack.id, '2026-09-16', 3), earned(call.id, '2026-09-16', 6), earned(todays.id, '2026-09-17', 1)]
+
+    // (3 + 6) ÷ 2 is 4, the remainder dropped; four tasks finished yesterday, so 4 + 4 = 8.
+    expect(caseWorking('daily', [pack, call, water, stretch, todays], entries, DEFAULT_CASES, THU_17)).toMatchObject({
+      paidTasks: 2,
+      average: 4,
+      tasks: 4,
+      span: { least: 0, most: 8 },
     })
   })
 
@@ -403,38 +453,32 @@ describe('what the key plays for', () => {
 
 describe('earning a key', () => {
   it('is earned by a day with everything done (CHST-2)', () => {
-    expect(caseBlock([today('pack', true)], [], settings(), ACCOUNT, THU_17)).toBeNull()
-    expect(hasKey([today('pack', true)], [], settings(), ACCOUNT, THU_17)).toBe(true)
+    expect(caseBlock([today('pack', true)], [], ACCOUNT, THU_17)).toBeNull()
+    expect(hasKey([today('pack', true)], [], ACCOUNT, THU_17)).toBe(true)
   })
 
   it('is not earned while anything is still to do', () => {
-    expect(caseBlock([today('pack', true), today('post')], [], settings(), ACCOUNT, THU_17)).toBe('unclear')
+    expect(caseBlock([today('pack', true), today('post')], [], ACCOUNT, THU_17)).toBe('unclear')
   })
 
   it('is not earned by a day with nothing on it, so only the daily case is still on its way', () => {
-    expect(caseBlock([], [], settings(), ACCOUNT, THU_17)).toBe('bonusWaiting')
-  })
-
-  it('is not earned by a day smaller than the settings ask for (CHST-3)', () => {
-    const tasks = [today('pack', true), today('post', true)]
-    expect(caseBlock(tasks, [], settings({ leastTasks: 3 }), ACCOUNT, THU_17)).toBe('bonusWaiting')
-    expect(caseBlock(tasks, [], settings({ leastTasks: 2 }), ACCOUNT, THU_17)).toBeNull()
+    expect(caseBlock([], [], ACCOUNT, THU_17)).toBe('bonusWaiting')
   })
 
   it('is one a day: an opened cases leaves no key', () => {
     const opened = [earned(CASE_TODAY_ID, '2026-09-17', 12)]
-    expect(caseBlock([today('pack', true)], opened, settings(), ACCOUNT, THU_17)).toBe('bonusWaiting')
+    expect(caseBlock([today('pack', true)], opened, ACCOUNT, THU_17)).toBe('bonusWaiting')
   })
 
   it('still reads as opened once the day comes undone again (CHST-5)', () => {
     const opened = [earned(CASE_TODAY_ID, '2026-09-17', 12)]
-    expect(caseBlock([today('pack', true), today('post')], opened, settings(), ACCOUNT, THU_17)).toBe('bonusWaiting')
+    expect(caseBlock([today('pack', true), today('post')], opened, ACCOUNT, THU_17)).toBe('bonusWaiting')
   })
 
   it('leaves yesterday’s opening out of today', () => {
     const opened = [earned(CASE_TODAY_ID, '2026-09-16', 12)]
     expect(caseOpened(opened, THU_17)).toBeNull()
-    expect(caseBlock([today('pack', true)], opened, settings(), ACCOUNT, THU_17)).toBeNull()
+    expect(caseBlock([today('pack', true)], opened, ACCOUNT, THU_17)).toBeNull()
   })
 
   it('says what today’s case gave', () => {
@@ -468,31 +512,26 @@ describe('the cases a day can receive', () => {
   const NEXT_MONDAY = new Date(2026, 8, 21)
 
   it('keeps today’s case waiting while work is left, and the daily case on its clock', () => {
-    expect(caseSlots([today('pack'), today('post')], [], settings(), ACCOUNT, THU_17)).toEqual([
+    expect(caseSlots([today('pack'), today('post')], [], ACCOUNT, THU_17)).toEqual([
       { source: 'today', state: 'waiting', at: null, tasksLeft: 2 },
       { source: 'daily', state: 'waiting', at: dailyKeyTime('2026-09-17', ACCOUNT) },
       { source: 'week', state: 'waiting', at: NEXT_MONDAY },
     ])
   })
 
-  it('counts the tasks still to finish before today’s case, a day too small included (CHST-31)', () => {
-    const tasks = [today('pack', true), today('post')]
-    const left = (leastTasks: number) =>
-      caseSlots(tasks, [], settings({ leastTasks }), ACCOUNT, THU_17).find((slot) => slot.source === 'today')?.tasksLeft
-
-    expect(left(1)).toBe(1)
-    // Two tasks asked for, one done, three needed: the one left and one more still to add.
-    expect(left(3)).toBe(2)
+  it('counts the tasks still to finish before today’s case (CHST-31)', () => {
+    const slots = caseSlots([today('pack', true), today('post')], [], ACCOUNT, THU_17)
+    expect(slots.find((slot) => slot.source === 'today')?.tasksLeft).toBe(1)
   })
 
   it('offers today’s case once the day is clear', () => {
-    const slots = caseSlots([today('pack', true)], [], settings(), ACCOUNT, THU_17)
+    const slots = caseSlots([today('pack', true)], [], ACCOUNT, THU_17)
     expect(slots.find((slot) => slot.source === 'today')).toEqual({ source: 'today', state: 'ready', at: null })
   })
 
   it('offers the daily case once its time has passed, and plans no Today case for an empty day', () => {
     const at = dailyKeyTime('2026-09-17', ACCOUNT)
-    expect(caseSlots([], [], settings(), ACCOUNT, new Date(at.getTime() + 60_000))).toEqual([
+    expect(caseSlots([], [], ACCOUNT, new Date(at.getTime() + 60_000))).toEqual([
       { source: 'daily', state: 'ready', at: null },
       { source: 'week', state: 'waiting', at: NEXT_MONDAY },
     ])
@@ -500,17 +539,17 @@ describe('the cases a day can receive', () => {
 
   it('keeps an opened case until the day ends, and still has nothing left to open (CHST-28)', () => {
     const entries = [earned(CASE_TODAY_ID, '2026-09-17', 4), earned(CASE_DAILY_ID, '2026-09-17', 1)]
-    expect(caseSlots([today('pack', true)], entries, settings(), ACCOUNT, THU_17)).toEqual([
+    expect(caseSlots([today('pack', true)], entries, ACCOUNT, THU_17)).toEqual([
       { source: 'today', state: 'opened', at: null },
       { source: 'daily', state: 'opened', at: null },
       { source: 'week', state: 'waiting', at: NEXT_MONDAY },
     ])
-    expect(caseBlock([today('pack', true)], entries, settings(), ACCOUNT, THU_17)).toBe('opened')
+    expect(caseBlock([today('pack', true)], entries, ACCOUNT, THU_17)).toBe('opened')
   })
 
   it('keeps today’s case opened after the day comes undone again (CHST-5)', () => {
     const entries = [earned(CASE_TODAY_ID, '2026-09-17', 4)]
-    expect(caseSlots([today('pack', true), today('post')], entries, settings(), ACCOUNT, THU_17)).toEqual([
+    expect(caseSlots([today('pack', true), today('post')], entries, ACCOUNT, THU_17)).toEqual([
       { source: 'today', state: 'opened', at: null },
       { source: 'daily', state: 'waiting', at: dailyKeyTime('2026-09-17', ACCOUNT) },
       { source: 'week', state: 'waiting', at: NEXT_MONDAY },
@@ -518,11 +557,11 @@ describe('the cases a day can receive', () => {
   })
 
   it('offers Weekly on Monday from midnight, and plans it on every other day, until that midnight (CHST-30)', () => {
-    expect(caseSlots([], [], settings(), ACCOUNT, MON_14)).toEqual([
+    expect(caseSlots([], [], ACCOUNT, MON_14)).toEqual([
       { source: 'daily', state: 'waiting', at: dailyKeyTime('2026-09-14', ACCOUNT) },
       { source: 'week', state: 'ready', at: null },
     ])
-    expect(caseSlots([], [], settings(), ACCOUNT, THU_17).find((slot) => slot.source === 'week')).toEqual({
+    expect(caseSlots([], [], ACCOUNT, THU_17).find((slot) => slot.source === 'week')).toEqual({
       source: 'week',
       state: 'waiting',
       at: NEXT_MONDAY,
@@ -531,13 +570,13 @@ describe('the cases a day can receive', () => {
 
   it('keeps an opened Weekly until Monday ends, then plans it again (CHST-30)', () => {
     const entries = [earned(CASE_WEEK_ID, '2026-09-14', 4)]
-    expect(caseSlots([], entries, settings(), ACCOUNT, MON_14).find((slot) => slot.source === 'week')).toEqual({
+    expect(caseSlots([], entries, ACCOUNT, MON_14).find((slot) => slot.source === 'week')).toEqual({
       source: 'week',
       state: 'opened',
       at: null,
     })
     const tuesday = new Date(2026, 8, 15, 9, 0)
-    expect(caseSlots([], entries, settings(), ACCOUNT, tuesday).find((slot) => slot.source === 'week')).toEqual({
+    expect(caseSlots([], entries, ACCOUNT, tuesday).find((slot) => slot.source === 'week')).toEqual({
       source: 'week',
       state: 'waiting',
       at: NEXT_MONDAY,
@@ -552,28 +591,8 @@ describe('the cases a day can receive', () => {
 
   it('forgets an opened case once the day has ended (CHST-28)', () => {
     const entries = [earned(CASE_TODAY_ID, '2026-09-16', 4), earned(CASE_DAILY_ID, '2026-09-16', 1)]
-    const slots = caseSlots([today('pack', true)], entries, settings(), ACCOUNT, THU_17)
+    const slots = caseSlots([today('pack', true)], entries, ACCOUNT, THU_17)
     expect(slots.find((slot) => slot.source === 'today')).toEqual({ source: 'today', state: 'ready', at: null })
     expect(slots.some((slot) => slot.state === 'opened')).toBe(false)
-  })
-
-  it('does not plan today’s case when the day is too small to earn one', () => {
-    const tasks = [today('pack', true)]
-    const slots = caseSlots(tasks, [], settings({ leastTasks: 3 }), ACCOUNT, THU_17)
-    expect(slots.some((slot) => slot.source === 'today')).toBe(false)
-  })
-})
-
-describe('how many tasks a day must ask for', () => {
-  it('takes a whole number from one, there being no day of no tasks to clear', () => {
-    expect(isLeastTasks(1)).toBe(true)
-    expect(isLeastTasks(99)).toBe(true)
-    expect(isLeastTasks(0)).toBe(false)
-    expect(isLeastTasks(100)).toBe(false)
-    expect(isLeastTasks(2.5)).toBe(false)
-  })
-
-  it('starts at one, so any cleared day earns a key until it is asked to be bigger', () => {
-    expect(DEFAULT_CASES.leastTasks).toBe(1)
   })
 })

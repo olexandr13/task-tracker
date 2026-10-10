@@ -885,7 +885,7 @@ export function TaskItem({
             {/* A resting row shows only the controls holding something, so the list reads as
                 what its tasks carry rather than as rows of empty buttons; waking it brings the
                 rest out, the row being worked on having every control one click away (UI-18).
-                The slots stay either way, so an icon keeps its column down the list (UI-27). */}
+                The clock is the exception, out on every row (TIME-10). The slots stay either way, so an icon keeps its column down the list (UI-27). */}
             {/* On every row: the date and the repeat rule are one control, since a rule is
                 what gives a repeating task its days. Its name carries the occurrence in play,
                 and a day picked there is the task's date, or the day its rule starts on. */}
@@ -928,7 +928,11 @@ export function TaskItem({
               )}
             </div>
 
-            <div className={slot}>{(isActive || timed) && <TimePicker {...timePicker} />}</div>
+            {/* The clock is the exception: out on every row, set or not, so logging time is a
+                click on it and one in its panel, without waking the row first (TIME-10). */}
+            <div className={slot}>
+              <TimePicker {...timePicker} />
+            </div>
 
             {/* No slot at all without rewards: a column that is empty on every row is a gap (FEAT-3). */}
             {rewardsOn && (

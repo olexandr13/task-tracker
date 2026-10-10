@@ -69,20 +69,20 @@ changes shape.
   write the one record. No record at all is nothing set, and the points are counted in points alone.
   It is kept under the ledger's version (STORE-24) and ignored, with a warning, when it cannot be
   read.
-- **STORE-48** What **Cases** asks of a day (CHST-3), and whether it counts tasks without points
-  (CHST-32), is kept beside what a point is worth, as
-  **one more record of the settings**, named `chest` — the name it was first saved under — for the
-  same reason (STORE-42). No record at all is what an account starts with — any cleared day earns a
-  key — so there is no shape for "not"
-  set" to be told from. A record saved while the jackpot could be worked out two ways also says
-  which way; there is no choice any more (CHST-7), so that is read past rather than refused, and
-  dropped on the next save. A record saved before tasks without points could be left out says
+- **STORE-48** Whether **Cases** counts tasks without points (CHST-32) is kept beside what a
+  point is worth, as **one more record of the settings**, named `chest` — the name it was first
+  saved under — for the same reason (STORE-42). No record at all is what an account starts with —
+  every task done counts — so there is no shape for "not set" to be told from. A record saved
+  while the jackpot could be worked out two ways also says which way; there is no choice any more
+  (CHST-7), so that is read past rather than refused, and dropped on the next save. So is a record
+  saved while a day had to ask for so many tasks before it earned Payday, which says how many
+  (CHST-2). A record saved before tasks without points could be left out says
   nothing about them, and reads as counting them, which is what every case did then; the field was
   added without a new version because the version is the whole ledger's, and a device not yet
   updated would refuse every day of it rather than read past one field. A value that is not on or
   off is not trusted, and the record with it. It is
   kept under the ledger's version (STORE-24) and ignored, with a warning, when it cannot be read,
-  which leaves Cases asking what it asks by default rather than asking nothing. It is **in the
+  which leaves Cases counting as it does by default. It is **in the
   backup**, taken only by an account that has none of its own, as the bonuses and the point value
   are (BAK-5). What Cases keeps on **this device** is the other half of it (STORE-49).
 - **STORE-58** The reward a new task starts with (RWD-45) is kept beside what a point is worth, as
@@ -146,8 +146,11 @@ changes shape.
   written through to the tasks. Changes are written **category by category** (STORE-28); they are
   readable and writable by the account alone (STORE-17), open offline and wait for a connection like
   the tasks (STORE-18). One the app cannot read — an unknown version, or a tag in it no tag could be
-  called — is ignored with a warning and left as it is (STORE-7). The time the page adds up is not
-  kept here: it is read from the tasks' sessions (TIME-8).
+  called — is ignored with a warning and left as it is (STORE-7). The time the page adds up from tasks
+  is not kept here: it is read from the tasks' sessions (TIME-8). Time logged **straight to a
+  category** (BAL-14) is kept **on the category**, as a task keeps its sessions, and let go of with
+  the same history (BAL-15); a category saved before that could be done (version 1) is read as having
+  none logged.
 
 ## The activity log
 
@@ -157,11 +160,13 @@ changes shape.
   A day is only ever changed **record by record**: adding or changing one writes its field, taking
   one out deletes it, and nothing else on the day is touched, so two devices logging on one day keep
   both. A record moved to another day leaves the day it was under and joins the new one. A day whose
-  last record was taken out is left **holding nothing**, and read as a day with nothing logged. It
-  has **its own version**; a day the app cannot read is ignored with a warning and left as it is
-  (STORE-7). It is readable and writable by the account alone (STORE-17), opens offline and waits for
-  a connection like the tasks (STORE-18) — and the sender reads it too (STORE-53), to know an hour is
-  logged.
+  last record was taken out is left **holding nothing**, and read as a day with nothing logged. A
+  record holds what, how long and its hour, and — made from a task's session (ACT-21) — the second
+  of its hour it began at and the task and session it is from, both empty for one typed. It has
+  **its own version** (version 2 added those two; a record saved before reads as one typed, and so
+  does one of those in a day written since, a day being written a field at a time); a day the app
+  cannot read is ignored with a warning and left as it is (STORE-7). It is readable and writable by the account alone (STORE-17), and opens offline and waits
+  for a connection like the tasks (STORE-18).
 
 ## The check-in
 
@@ -171,15 +176,6 @@ changes shape.
   hours of its own keeps its record, the hours being the log's too (ACT-17). It has **its own
   version**, and one the app cannot read — an unknown version, hours not on the hour — is ignored with
   a warning and read as off (STORE-7). It is **in the backup** (BAK-19).
-- **STORE-53** A device reached **while the app is closed** (CHECKIN-10) is kept in the account as
-  **one record per device**, under an id the device keeps (STORE-54): the browser's push
-  subscription — where to send, and the keys to send with — the device's time zone, and when it last
-  said so, refreshed each time the app opens there with it on. The **sender** is the one reader
-  beside the account itself: it runs with the project's own rights, reads the registrations, the
-  check-in's setting and the day being asked about, and writes beside a registration the hour it last
-  pushed about, which the device's own writes leave alone. A registration is the device's rather
-  than the account's data, so it is **not in the backup** (BAK-2), and a guest has none (CHECKIN-11).
-  It has **its own version**; one the sender cannot read is sent nothing.
 
 ## The feature switches
 
@@ -190,9 +186,7 @@ changes shape.
   record that still says that is read as Cases. A name the app does not know — a
   feature of a newer app — is passed over rather than costing the rest. It has **its own version**,
   and one the app cannot read is ignored with a warning and read as everything on (STORE-7): hiding
-  part of the app on a guess would look like losing it. The **sender** reads it too, so a check-in
-  switched away with the modes or the activity log is not pushed (CHECKIN-10, FEAT-9). It is **in
-  the backup** (BAK-20).
+  part of the app on a guess would look like losing it. It is **in the backup** (BAK-20).
 
 ## Warm-up
 
@@ -285,6 +279,13 @@ changes shape.
   has been folded or unfolded is kept, so a part of Settings added later starts as it should — a
   section open, a feature's settings folded — without a new version; a part Settings no longer has
   is read past. A layout that cannot be read is no layout: everything as it starts.
+- **STORE-59** The **pinned tabs** (UI-75) are kept the same way as the sidebar's layout
+  (STORE-31): in this browser's `localStorage`, not in the account, under a version of their own,
+  read at once when the app opens. A phone has no tabs, and how many a screen has room for is that
+  screen's business. Each tab is kept as **its page's address** (UI-36), in order, so a tab is
+  named the way a bookmark is. An address that no longer names a page is read past. Tabs that
+  cannot be read at all are no tabs: nothing pinned. A tab whose page is gone for now — switched
+  off, or a list or tag not loaded yet — stays kept, so it is not lost while the lists arrive.
 - **STORE-36** How the habits view is shown — whether cards start open, set on Settings (HAB-23) — is
   kept the same way again, under a version of its own, apart from the task View options (STORE-30). A phone and a
   desktop have different room, so each is set its own way. Options the app cannot read fall back to
@@ -302,7 +303,7 @@ changes shape.
   already said here that a key is waiting, and whether it has already said here that Weekly is
   here (CHST-19, CHST-23, CHST-24, CHST-30) — is kept the same way again,
   under a version of its own, apart from
-  what Cases asks of a day, which is the account's (STORE-48). These are what only the
+  what Cases counts, which is the account's (STORE-48). These are what only the
   device can answer: the room you are in is not the account you are in; a notice given on the laptop
   is no reason to withhold it on the phone; and the ledger says what today's case gave without
   saying which colour it gave it in. A case standing exactly as it arrives — a noise, nothing
@@ -310,12 +311,11 @@ changes shape.
   arriving, the worst of it being one noise and one notice more than was wanted. A record from before
   the quarters, which named a tier instead, keeps its noise and its notice and forgets the opening.
   A record from before Weekly has not said that Monday's case is here.
-- **STORE-54** What the **check-in** keeps here — the notice put away on this device (CHECKIN-4),
-  the id this device's registration is kept under, and whether this device is reached while the app
-  is closed (CHECKIN-11) — is kept the same way again, under a version of its own, apart from the
-  setting, which is the account's (STORE-52). A notice put away on the laptop is still worth showing
-  on the phone, and a push reaches a device rather than an account. A device as it arrives keeps no
-  record; one the app cannot read is read as a device arriving.
+- **STORE-54** What the **check-in** keeps here — the notice put away on this device (CHECKIN-4) —
+  is kept the same way again, under a version of its own, apart from the setting, which is the
+  account's (STORE-52). A notice put away on the laptop is still worth showing on the phone. A device
+  as it arrives keeps no record; one the app cannot read is read as a device arriving. A record from
+  when it also kept whether this device was pushed check-ins keeps its notice, and the rest is let go.
 - **STORE-40** The theme (UI-63) is kept the same way again, under a version of its own: a phone
   kept dark and a desktop kept light are each set their own way, and it is the same whoever is
   signed in — or nobody, on the sign-in screen. Following the system, the default, keeps nothing.
@@ -415,8 +415,6 @@ and `warmUpSchema.ts` (the warm-up), `nudgeRepository.ts`, `firestoreNudgeReposi
 `activitySchema.ts` (the activity log), `checkInRepository.ts`, `firestoreCheckInRepository.ts`,
 `localCheckInRepository.ts` and `checkInSchema.ts` (the check-in's setting), `checkInDeviceRepository.ts`,
 `checkInDeviceSchema.ts` and `localStorageCheckInDeviceRepository.ts` (what it keeps on this device),
-`pushRepository.ts`, `firestorePushRepository.ts` and `pushSchema.ts` (the devices reached while the
-app is closed), `checkInSender.ts` and `functions/src/index.ts` (the sender reading them),
 `src/app/useActivities.ts`,
 `localBackupRepository.ts` and `localSyncMonitor.ts` (guest export and the quiet sync notice),
 `src/storage/quoteRepository.ts` and `localStorageQuoteRepository.ts`,
@@ -440,8 +438,7 @@ STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/S
 `src/storage/rewardSchema.test.ts`
 (reading the ledger back), `src/storage/activitySchema.test.ts` and `localActivityRepository.test.ts`
 (the activity log, and what a change writes), `src/storage/checkInSchema.test.ts` (the check-in's
-setting, and what it keeps on this device), `src/storage/checkInSender.test.ts` (what the sender
-reads, sends and lets go of), `src/storage/warmUpSchema.test.ts` (reading the warm-up back),
+setting, and what it keeps on this device), `src/storage/warmUpSchema.test.ts` (reading the warm-up back),
 `src/storage/nudgeSchema.test.ts` and `src/storage/nudgeDeviceSchema.test.ts` (reading the nudge's
 setting back, and what a record from before it synced still answers), `src/storage/prizeSchema.test.ts` and `src/app/usePrizes.test.ts`
 (reading a prize or a wish back, and keeping them), `src/storage/listRepository.test.ts` and `src/storage/listSchema.test.ts`

@@ -53,8 +53,6 @@ export default defineConfig({
         // Firebase's sign-in pages live under `/__/` when served from the app's own
         // domain; they must reach the network rather than get the app instead.
         navigateFallbackDenylist: [/^\/__\//],
-        // Check-ins pushed while the app is closed are received here (CHECKIN-10).
-        importScripts: ['check-in-sw.js'],
       },
     }),
   ],

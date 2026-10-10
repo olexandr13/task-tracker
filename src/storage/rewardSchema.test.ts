@@ -113,41 +113,42 @@ describe('readPointValue (STORE-42, STORE-24)', () => {
 })
 
 describe('readCaseSettings (STORE-48, STORE-24)', () => {
-  it('reads back what Cases asks of a day, and whether it counts tasks without points', () => {
-    const asking: CaseSettings = { leastTasks: 4, countUnpaid: false }
+  it('reads back whether the cases count tasks without points', () => {
+    const asking: CaseSettings = { countUnpaid: false }
 
     expect(readCaseSettings(toStoredCaseSettings(asking))).toEqual(asking)
     expect(readCaseSettings(toStoredCaseSettings(DEFAULT_CASES))).toEqual(DEFAULT_CASES)
   })
 
-  it('reads settings saved with the old choice of jackpot, keeping how big a day must be', () => {
+  it('reads settings saved with the old choice of jackpot, past that choice', () => {
     const saved = { ...toStoredCaseSettings(DEFAULT_CASES), settings: { leastTasks: 4, jackpot: 'typicalDay' } }
 
-    expect(readCaseSettings(saved)).toEqual({ leastTasks: 4, countUnpaid: true })
+    expect(readCaseSettings(saved)).toEqual({ countUnpaid: true })
+  })
+
+  it('reads settings saved while a day had to ask for so many tasks, past that number', () => {
+    const saved = { ...toStoredCaseSettings(DEFAULT_CASES), settings: { leastTasks: 4, countUnpaid: false } }
+
+    expect(readCaseSettings(saved)).toEqual({ countUnpaid: false })
   })
 
   it('reads settings saved before tasks without points could be left out as counting them (CHST-32)', () => {
     const saved = { ...toStoredCaseSettings(DEFAULT_CASES), settings: { leastTasks: 4 } }
 
-    expect(readCaseSettings(saved)).toEqual({ leastTasks: 4, countUnpaid: true })
+    expect(readCaseSettings(saved)).toEqual({ countUnpaid: true })
   })
 
-  it('saves no choice of jackpot, there being none', () => {
-    expect(toStoredCaseSettings({ leastTasks: 4, countUnpaid: false }).settings).toEqual({
-      leastTasks: 4,
-      countUnpaid: false,
-    })
+  it('saves only what is still a setting', () => {
+    expect(toStoredCaseSettings({ countUnpaid: false }).settings).toEqual({ countUnpaid: false })
   })
 
   it('trusts nothing in a version it does not know, or not shaped as settings (STORE-24)', () => {
-    const saved = toStoredCaseSettings({ leastTasks: 4, countUnpaid: true })
+    const saved = toStoredCaseSettings({ countUnpaid: true })
 
     expect(readCaseSettings({ ...saved, version: 99 })).toBeNull()
     expect(readCaseSettings({ ...saved, name: 'pointValue' })).toBeNull()
-    expect(readCaseSettings({ ...saved, settings: { leastTasks: 0 } })).toBeNull()
-    expect(readCaseSettings({ ...saved, settings: { leastTasks: '4' } })).toBeNull()
-    expect(readCaseSettings({ ...saved, settings: { leastTasks: 4, countUnpaid: 'no' } })).toBeNull()
-    expect(readCaseSettings({ ...saved, settings: {} })).toBeNull()
+    expect(readCaseSettings({ ...saved, settings: { countUnpaid: 'no' } })).toBeNull()
+    expect(readCaseSettings({ ...saved, settings: null })).toBeNull()
     expect(readCaseSettings(null)).toBeNull()
   })
 })

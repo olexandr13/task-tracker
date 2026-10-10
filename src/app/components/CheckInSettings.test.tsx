@@ -3,7 +3,6 @@ import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_CHECK_IN_WINDOW } from '../../core'
-import { CheckInDevice } from './CheckInDevice'
 import { CheckInSettings } from './CheckInSettings'
 
 /* The Check-in's settings, on its page. CHECKIN ids refer to wiki/check-ins.md. */
@@ -39,53 +38,5 @@ describe('CheckInSettings (CHECKIN-2)', () => {
     render(<CheckInSettings window={DEFAULT_CHECK_IN_WINDOW} permission="denied" now={NOW} onWindowChange={vi.fn()} />)
 
     expect(screen.getByText(/This browser is blocking notifications, so check-ins only show on screen/)).toBeDefined()
-  })
-})
-
-describe('CheckInDevice (CHECKIN-11, CHECKIN-12)', () => {
-  function setUp(over: Partial<Parameters<typeof CheckInDevice>[0]> = {}) {
-    const handlers = { onTurnOn: vi.fn(), onTurnOff: vi.fn(), onSendTest: vi.fn() }
-    render(<CheckInDevice support="supported" on={false} busy={false} outcome={null} {...handlers} {...over} />)
-    return handlers
-  }
-
-  const toggle = () => screen.getByRole('switch', { name: 'Notify this device when PickMe is closed' })
-
-  it('turns this device on and off', async () => {
-    const { onTurnOn } = setUp()
-    await userEvent.click(toggle())
-    expect(onTurnOn).toHaveBeenCalledOnce()
-    cleanup()
-
-    const { onTurnOff, onSendTest } = setUp({ on: true })
-    expect(toggle().getAttribute('aria-checked')).toBe('true')
-    await userEvent.click(screen.getByRole('button', { name: 'Send a test' }))
-    expect(onSendTest).toHaveBeenCalledOnce()
-    await userEvent.click(toggle())
-    expect(onTurnOff).toHaveBeenCalledOnce()
-  })
-
-  it('says why a browser cannot be reached, and says it again when pressed, rather than turning on', async () => {
-    const { onTurnOn } = setUp({ support: 'install-first' })
-
-    expect(screen.getByText(/add PickMe to the Home Screen first/)).toBeDefined()
-    expect(screen.queryByRole('alert')).toBeNull()
-    await userEvent.click(toggle())
-    expect(screen.getByRole('alert').textContent).toContain('add PickMe to the Home Screen first')
-    expect(onTurnOn).not.toHaveBeenCalled()
-  })
-
-  it('tells a guest to sign in, and the development server that it has no worker', () => {
-    setUp({ support: 'guest' })
-    expect(screen.getByText('Sign in with Google to get check-ins while PickMe is closed.')).toBeDefined()
-    cleanup()
-
-    setUp({ support: 'no-worker' })
-    expect(screen.getByText(/not on the development server/)).toBeDefined()
-  })
-
-  it('says what came of a test', () => {
-    setUp({ on: true, outcome: 'test-sent' })
-    expect(screen.getByRole('status').textContent).toBe('Test sent. It should arrive in a few seconds, even if you close PickMe now.')
   })
 })

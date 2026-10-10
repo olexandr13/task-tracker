@@ -19,45 +19,59 @@ import {
 export const CASES_NAME = 'Cases'
 
 /** What the sheet behind the i on Cases is headed (CHST-22). */
-export const CASES_RULES_HEADING = 'How much each case pays'
+export const CASES_RULES_HEADING = 'How each case works'
 
-/** The labels beside the least and the most a case pays, on that sheet. */
+/** The labels beside when a case comes, and the least and the most it pays, on that sheet. */
+export const CASES_RULE_WHEN = 'When'
 export const CASES_RULE_MIN = 'Min'
 export const CASES_RULE_MAX = 'Max'
 
-/**
- * How each case is worked out, behind the i on Cases (CHST-22, UI-73): the
- * least and the most it pays, in general. How a case is earned is said under a
- * case still on its way, so it is not said again here. Where tasks without
- * points are not counted (CHST-32), the rule says so rather than promising them.
- */
-export function describeCasesRules(countUnpaid: boolean): readonly {
+/** One case on that sheet. */
+export interface CaseRule {
   readonly source: CaseSource
+  readonly when: string
   readonly min: string
   readonly max: string
-}[] {
+}
+
+/** Which tasks a part of a Min or Max takes, said in brackets after it (CHST-10, CHST-32). */
+const WITH_REWARD = '(only tasks with reward count)'
+const WITHOUT_REWARD = '(only tasks without reward)'
+const NO_BONUSES = '(bonuses don’t count)'
+
+/**
+ * How each case works, behind the i on Cases (CHST-22, UI-73): when it comes,
+ * and the least and the most it pays, in general. The cards on the page say
+ * none of it (CHST-28). Each part says which tasks it takes: the cheapest and
+ * an average take only the tasks with points, a count takes all tasks done.
+ * Where tasks without points are not counted (CHST-32), the rule says so
+ * rather than promising them.
+ */
+export function describeCasesRules(countUnpaid: boolean): readonly CaseRule[] {
+  const tasksDone = (when: string) =>
+    countUnpaid ? `number of all tasks done ${when}` : `number of tasks done ${when} ${WITH_REWARD}`
   return [
     {
       source: 'today',
-      min: 'Cheapest task finished today',
-      max: countUnpaid ? 'Half of points earned today + number of unrewarded tasks done' : 'Half of points earned today',
+      when: 'Finish everything in Today to get this case.',
+      min: `Cheapest task finished today ${WITH_REWARD}`,
+      max: countUnpaid
+        ? `Half of today’s task points ${NO_BONUSES} + number of tasks done today ${WITHOUT_REWARD}`
+        : `Half of today’s task points ${NO_BONUSES}`,
     },
     {
       source: 'daily',
+      when: 'Arrives once a day, at a random time.',
       min: '0',
-      max: `Yesterday’s average task value + number of ${countedTasks(countUnpaid)} done`,
+      max: `Yesterday’s average task points ${WITH_REWARD} + ${tasksDone('yesterday')}`,
     },
     {
       source: 'week',
-      min: 'Cheapest task finished last week',
-      max: `Last week’s average task value + number of ${countedTasks(countUnpaid)} done`,
+      when: 'Appears weekly on Monday.',
+      min: `Cheapest task finished last week ${WITH_REWARD}`,
+      max: `Last week’s average task points ${WITH_REWARD} + ${tasksDone('last week')}`,
     },
   ]
-}
-
-/** Which tasks the Drop and Weekly add one for: all of them, or those with points (CHST-32). */
-function countedTasks(countUnpaid: boolean): string {
-  return countUnpaid ? 'tasks' : 'rewarded tasks'
 }
 
 /**
@@ -72,22 +86,15 @@ export function describeOutOf(points: number, jackpot: number): string {
  * Why Cases has nothing to give, said where the crate is pressed. An
  * unfinished Today says nothing. Any other refusal names what would change it.
  */
-export function describeCaseBlock(block: CaseBlock, done: number, needed: number): string {
+export function describeCaseBlock(block: CaseBlock): string {
   switch (block) {
     case 'unclear':
       return ''
-    case 'tooSmall':
-      return `Today asked for ${describeTasks(done)}; a case needs ${String(needed)}.`
     case 'opened':
       return 'Payday and the Drop are open. Come back tomorrow.'
     case 'bonusWaiting':
       return 'The Drop is on its way. The timer shows when it arrives.'
   }
-}
-
-/** `1 task`, `3 tasks`. */
-export function describeTasks(tasks: number): string {
-  return `${String(tasks)} ${tasks === 1 ? 'task' : 'tasks'}`
 }
 
 /** What the page heads the range a case can give with (CHST-26). */
@@ -103,16 +110,6 @@ export const SOURCE_LABEL: Record<CaseSource, string> = {
 /** What a ready case's button is called: pressing it opens that case (CHST-13). */
 export function describeOpenCase(source: CaseSource): string {
   return `Open the ${SOURCE_LABEL[source]} case`
-}
-
-/** What a case still on its way says, in place of a possible win. */
-export const SOURCE_WAITING: Record<CaseSource, string> = {
-  today:
-    'Finish everything in Today to get this case. Reward depends on number of points earned today.',
-  daily:
-    'Arrives once a day, at a random time. Reward depends on number of points earned yesterday.',
-  week:
-    'Appears weekly on Monday. Reward depends on number of points earned last week.',
 }
 
 /**
@@ -136,19 +133,6 @@ export function describeTasksLeftUnit(tasks: number): string {
 export const OPENED_TAG = 'Opened'
 
 /**
- * What an opened case says about the next one of its kind, until the day ends
- * (CHST-28, CHST-30). Payday comes back tomorrow once every planned task is
- * done. The Drop says a new case is given tomorrow, and not when, and that
- * earning more today raises what that next case pays. Weekly says a new
- * one is given next Monday.
- */
-export function describeNextCase(source: CaseSource): string {
-  if (source === 'today') return 'Take the next one tomorrow after completing all planned tasks.'
-  if (source === 'week') return 'A new case will be given next Monday.'
-  return 'A new case will be given tomorrow. Earn more points today to increase reward.'
-}
-
-/**
  * The line under a ready case (CHST-10). For Payday and Weekly the number in
  * front of it is what that rule comes to today; this line says where the number
  * comes from, and names only the tasks that are counted (CHST-32). The Drop
@@ -159,8 +143,8 @@ export function describeSourceRule(source: CaseSource, countUnpaid: boolean): st
   switch (source) {
     case 'today':
       return countUnpaid
-        ? 'From the cheapest task today, up to half of today’s rewards plus today’s tasks without points.'
-        : 'From the cheapest task today, up to half of today’s rewards.'
+        ? 'From the cheapest task today, up to half of today’s task points plus today’s tasks without points.'
+        : 'From the cheapest task today, up to half of today’s task points.'
     case 'daily':
       return 'Earn more points today to get a bigger reward tomorrow.'
     case 'week':
@@ -223,32 +207,6 @@ export const OPENED_TODAY_LABEL = 'Opened today'
 /** `point` or `points`, after the number a case gave, for someone who cannot see that it is points. */
 export function describePointsUnit(points: number): string {
   return points === 1 ? 'point' : 'points'
-}
-
-/** The line above the setting for how big a day has to be. */
-export const LEAST_TASKS_LABEL = 'Tasks a day must ask for'
-
-export const LEAST_TASKS_HINT =
-  'A cleared day earns no case unless it asked for at least this many tasks, so one thing remembered at bedtime is not a day’s work.'
-
-/** What the cases pay, said on Rules (CHST-10). */
-export const JACKPOT_LABEL = 'What the cases pay'
-
-/** How the cases are worked out, said on Rules, naming only the tasks that are counted (CHST-32). */
-export function describeJackpotHint(countUnpaid: boolean): string {
-  const withPoints = countUnpaid ? '' : ' with points'
-  return [
-    countUnpaid
-      ? 'Payday pays from the cheapest task finished today up to half of everything earned today, plus 1 for each task finished today without points.'
-      : 'Payday pays from the cheapest task finished today up to half of everything earned today.',
-    `The Drop pays from 0 points up to the average points of yesterday’s tasks, plus 1 for each task finished yesterday${withPoints}.`,
-    `Weekly pays from the cheapest task finished last week up to the average points of last week’s tasks, plus 1 for each task finished last week${withPoints}.`,
-  ].join(' ')
-}
-
-/** `Earned today: 37 points.` */
-export function describeJackpotToday(points: string): string {
-  return `Earned today: ${points}.`
 }
 
 /** What the notice says the moment the day comes clear (CHST-23). */

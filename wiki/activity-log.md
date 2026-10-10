@@ -3,12 +3,13 @@
 The day as it was spent, hour by hour. Tasks say what was meant to be done and whether it was; the
 **Activity log** says where the hours actually went — "Reading 15m" at two in the afternoon, "Work
 1h 20m" at three — so a day can be looked back on, and a week of them compared, without anything
-having to be a task first. The [Check-in](check-ins.md) asks for it at the top of every hour.
+having to be a task first. The [Check-in](check-ins.md) asks for it at the top of every hour, and
+time logged on a task fills it in by itself (ACT-21).
 
 ## The page
 
 - **ACT-1** **Activity log** is a page of its own, at `#/activity` (UI-36), with an entry in the
-  sidebar between Balance and Modes (UI-30) and a row on More's page (UI-45). It opens on the
+  sidebar under Balance, the two of them a group of their own (UI-30), and a row on More's page (UI-45). It opens on the
   heading **Activity log** with an **i** beside it (UI-73), saying in plain sentences what the page
   is for and how each control is used; then the Check-in's row (ACT-19); then what the period shown
   adds up to (ACT-12 to ACT-18); and, on a day, the day itself — the form to add to it and its hours
@@ -19,7 +20,8 @@ having to be a task first. The [Check-in](check-ins.md) asks for it at the top o
 - **ACT-2** A **record** is what was done, how long it took, and the **hour of a day** it is
   logged under — a local day and an hour of its clock, so two in the afternoon on the 2nd stays that
   wherever it is read (PRIN-1). A record may be longer than its hour: what was logged under the hour
-  is what was logged there, caught up on later or not.
+  is what was logged there, caught up on later or not. A record made from a task's time also knows
+  **when it began** in its hour (ACT-21); one typed does not.
 - **ACT-3** What was done is typed into **What did you do?**: anything on one line of up to 40
   characters, its spaces squeezed. Two records name the **same activity** whatever case they are
   written in, so "Reading" and "reading" are added up together; a name already used, typed again in
@@ -47,6 +49,25 @@ having to be a task first. The [Check-in](check-ins.md) asks for it at the top o
   for what was done, a name too long, nothing typed for how long, something that is no length of
   time, more than a day, or an hour not started. **Add** is never dimmed.
 
+## Time logged on a task
+
+- **ACT-21** Every session logged on a task (TIME-3) is **written into the log too**, under the
+  task's title: by hand from the clock's panel, by the timer (TIME-15), or with a task as it is
+  added. A session is taken to be the time **up to the moment it was logged** — 30 minutes logged
+  at 11:30 is 11:00–11:30 — and a timer's run is from Start to Stop, to the second. It is **cut at
+  every hour it crosses**, a record under each, so each hour is given what was spent in it: an hour
+  logged at 11:10 is `10:10–11:00` under 10:00 and `11:00–11:10` under 11:00, and a run past
+  midnight goes under the day before as well. The name is the title on one line, cut with `…` to
+  the 40 characters a name can be (ACT-3), and spelled as the activity already is.
+  Each record **says when it was spent** (ACT-7), and is otherwise a record like any other: it can
+  be changed, moved or deleted (ACT-10, ACT-11), and keeps beginning as far into its hour as it did,
+  so `11:00–11:30` moved to 14:00 is `14:00–14:30`. Two sessions logged one after the other each
+  end when they were logged, so `+15m` pressed twice is `11:15–11:30` twice. **Taking a session
+  back** with its **×** (TIME-4) — logged by mistake — **deletes its records** from the log too, as
+  changed or moved as they may be; a session let go of with time (TIME-8), or a task deleted, leaves
+  them, the time having been spent. Time logged straight to a Balance category (BAL-14) is not
+  written here. The records are written while the Activity log is switched off too (FEAT-5).
+
 ## The day
 
 - **ACT-7** On **Day** the hours are listed under the form, in clock order: the hours **meant to be
@@ -54,7 +75,8 @@ having to be a task first. The [Check-in](check-ins.md) asks for it at the top o
   logged under it, so a record made at night is never hidden; today, on asking, every other hour so
   far as well (ACT-20). The hour under way is marked **now**, and the hour the form is pointed at is
   picked out. Each hour lists its records in the order they were written down, each as what and how
-  long — `Work 45m` — after a swatch of its activity's colour, and ends with the hour's total. A long day **scrolls inside its own box** rather than pushing the
+  long — `Work 45m` — after a swatch of its activity's colour, with when it was spent after that,
+  fainter, when the record knows (ACT-21) — `Work 30m 11:00–11:30` — and ends with the hour's total. A long day **scrolls inside its own box** rather than pushing the
   page down, and the hour picked is kept in view in it, scrolled within the box alone.
 - **ACT-8** Each hour carries a **bar the hour long**: a full bar is the whole hour, each record a
   piece of it in its activity's colour (ACT-16), so a day read down the list shows at a glance which
@@ -119,7 +141,8 @@ having to be a task first. The [Check-in](check-ins.md) asks for it at the top o
 ---
 
 **Where it lives:** `src/core/activity.ts` (a record, the names, the activities offered, what they
-add up to, the periods), `src/core/checkIn.ts` (the hours meant to be logged, the other hours of today, how much of a
+add up to, the periods, and a task's session as records), `src/core/timeLog.ts` (the sessions a
+change logs), `src/app/useTasks.ts` (telling of them), `src/core/checkIn.ts` (the hours meant to be logged, the other hours of today, how much of a
 day is logged, the hour the form starts on), `src/app/useActivities.ts`,
 `src/app/components/ActivityPage.tsx`, `src/app/components/ActivityForm.tsx` (adding and changing a
 record), `src/app/components/ActivityHours.tsx` (the day, hour by hour),
@@ -129,7 +152,8 @@ pieces and their colours), `src/app/activityLabels.ts` and `src/app/chartLabels.
 `src/app/components/ActivityIcon.tsx`, `src/app/components/ModesPage.tsx` (the Check-in's row),
 `src/app/useUndoToast.ts`, `src/app/TasksScreen.tsx`, `src/app/view.ts`,
 `src/app/components/SideNav.tsx`, `src/app/components/MorePage.tsx`; saving: [Storage](storage.md).
-**Tested in:** `src/core/activity.test.ts`, `src/core/checkIn.test.ts`, `src/app/useActivities.test.ts`,
+**Tested in:** `src/core/activity.test.ts`, `src/core/checkIn.test.ts`, `src/core/timeLog.test.ts`,
+`src/app/useActivities.test.ts`, `src/app/useTasks.test.ts`,
 `src/app/components/ActivityPage.test.tsx`, `src/app/activityLabels.test.ts`,
 `src/app/chartLabels.test.ts`, `src/storage/activitySchema.test.ts`,
 `src/storage/localActivityRepository.test.ts`, `src/app/components/SideNav.test.tsx`,

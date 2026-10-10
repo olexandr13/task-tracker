@@ -45,7 +45,7 @@ task to do, fade the rest, and earn a rest by finishing it. One of the two
   quote (QUOTE-12) and the view navigation are dimmed the same way, so attention stays on the one
   task. In the sidebar **Today is the one entry left at full strength**: it is where the task is,
   so the way back from anywhere else stays readable while the mark, the other entries and the rules
-  between them soften. The phone bar dims whole, its last tab standing for whichever period was
+  between them soften. The pinned tabs soften the same way, a Today tab apart (UI-77). The phone bar dims whole, its last tab standing for whichever period was
   last open rather than for Today alone. After **Rest**, the banner becomes **Resting** (😌) with a
   calm note (**No rush — pick another only if you want to**) and an optional **Choose another
   task**; every row stays dimmed, and so do the navigation, the bars and the quote. Both banners

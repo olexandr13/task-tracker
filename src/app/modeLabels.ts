@@ -46,14 +46,13 @@ export const MODE_POINTS: Record<ModeView, readonly string[]> = {
   'modes/nudge': [
     'Shows a notice at the foot of the app — press it to go straight to that task — and a browser notification too, but only while the app is open.',
   ],
-  // The hours it keeps to and the devices it reaches are the "Settings" below;
-  // this is what it asks, when, and how it arrives.
+  // The hours it keeps to are the "Settings" below; this is what it asks, when,
+  // and how it arrives.
   'modes/check-in': [
     'At 10:00, 11:00, 12:00 and so on, it asks what you did in the hour that just ended.',
     'It only asks about the hours between "From" and "To" below, and skips an hour you have already logged.',
     'It shows a notice at the foot of the app. Press "Log it" to open the Activity log on that hour.',
-    'While PickMe is open, it sends a browser notification too.',
-    'To be asked while PickMe is closed, turn on "Notify this device when PickMe is closed" on each device you want it on.',
+    'While PickMe is open, it sends a browser notification too. Nothing reaches you while PickMe is closed.',
   ],
 }
 

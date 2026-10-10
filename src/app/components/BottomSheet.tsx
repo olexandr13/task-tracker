@@ -82,6 +82,7 @@ export function BottomSheet({ label, onClose, children }: BottomSheetProps) {
 
   return createPortal(
     <div
+      data-sheet=""
       className="fixed inset-0 z-40 flex items-end md:items-center md:justify-center md:p-6"
       // Drawn over the page but held by whatever opened it — a task's row — so
       // a click or a press here goes no further: a press held on the sheet is not

@@ -4,6 +4,8 @@ import {
   createCategory,
   isCategoryLimitReached,
   isCategoryNameTaken,
+  logCategoryTime,
+  removeCategoryTime,
   removeTagFromCategories,
   renameCategory,
   renameTagInCategories,
@@ -11,6 +13,7 @@ import {
   unbindTag,
   type Category,
   type CategoryId,
+  type TimeEntryId,
 } from '../core'
 import type { CategoryChanges, CategoryRepository } from '../storage/categoryRepository'
 import { changesBetween, hasChanges } from '../storage/recordChanges'
@@ -109,7 +112,30 @@ export function useCategories(repository: CategoryRepository, onProblem: ReportP
     [apply],
   )
 
-  /** Deletes a category. The tags and the time logged stay as they are (BAL-10). */
+  /** Logs time straight to a category, with what it went on or null for nothing said (BAL-14). */
+  const logTime = useCallback(
+    (id: CategoryId, minutes: number, comment: string | null) => {
+      apply((current) =>
+        current.map((category) => (category.id === id ? logCategoryTime(category, minutes, new Date(), comment) : category)),
+      )
+    },
+    [apply],
+  )
+
+  /** Takes back a session logged straight to a category (BAL-15). */
+  const removeTime = useCallback(
+    (id: CategoryId, entryId: TimeEntryId) => {
+      apply((current) =>
+        current.map((category) => (category.id === id ? removeCategoryTime(category, entryId) : category)),
+      )
+    },
+    [apply],
+  )
+
+  /**
+   * Deletes a category. The tags and the time logged on tasks stay as they are;
+   * the time logged straight to it goes with it (BAL-10).
+   */
   const remove = useCallback(
     (id: CategoryId) => {
       apply((current) => current.filter((category) => category.id !== id))
@@ -141,5 +167,5 @@ export function useCategories(repository: CategoryRepository, onProblem: ReportP
     [apply],
   )
 
-  return { categories, isLoading, add, rename, bind, unbind, remove, restore, renameTag, removeTag }
+  return { categories, isLoading, add, rename, bind, unbind, logTime, removeTime, remove, restore, renameTag, removeTag }
 }

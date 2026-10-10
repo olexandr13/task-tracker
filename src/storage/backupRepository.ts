@@ -82,8 +82,7 @@ export interface AccountData {
   /**
    * Whether the check-in is on and the hours it keeps to (CHECKIN-2), or null
    * where nothing says. A setting again, taken by an import only where the
-   * account has none of its own. The devices it pushes to are not in here: a
-   * registration is a device's, not the account's data (STORE-53).
+   * account has none of its own.
    */
   readonly checkIn: CheckInPreference | null
   /**

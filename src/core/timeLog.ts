@@ -154,6 +154,43 @@ export function keptEntries(entries: readonly TimeEntry[], repeat: Repeat | null
 }
 
 /**
+ * The sessions recent enough to be history as of `now` (`timeHistoryStart`),
+ * oldest first: all that is kept where nothing but the Balance page reads them,
+ * as for time logged straight to a category (./balance).
+ */
+export function historyEntries(entries: readonly TimeEntry[], now: Date): TimeEntry[] {
+  const since = timeHistoryStart(now)
+  return entries.filter((entry) => new Date(entry.loggedAt) >= since)
+}
+
+/** A session of whole minutes, as typed or clicked, logged at `now` with what it went on when that is said. */
+export function minutesEntry(minutes: number, now: Date = new Date(), comment: string | null = null): TimeEntry {
+  if (!isSessionLength(minutes)) {
+    throw new InvalidTimeError(
+      `${String(minutes)} is not a session: a session is a whole number of minutes from 1 to ${String(MAX_SESSION_MINUTES)}.`,
+    )
+  }
+
+  return secondsEntry(minutes * 60, now, comment)
+}
+
+/** A session to the second, as a timer ran it, logged at `now` with what it went on when that is said. */
+export function secondsEntry(seconds: number, now: Date = new Date(), comment: string | null = null): TimeEntry {
+  if (!isSessionSeconds(seconds)) {
+    throw new InvalidTimeError(
+      `${String(seconds)} is not a session: a session is a whole number of seconds from 1 to ${String(MAX_SESSION_SECONDS)}.`,
+    )
+  }
+
+  return { id: crypto.randomUUID(), seconds, loggedAt: now.toISOString(), comment: toTimeComment(comment) }
+}
+
+/** The task with the session added, and the sessions it no longer keeps let go of. */
+function withEntry(task: Task, entry: TimeEntry, now: Date): Task {
+  return { ...task, timeLog: [...keptEntries(task.timeLog, task.repeat, now), entry] }
+}
+
+/**
  * Logs a session of whole minutes, as typed or clicked, with what it went on
  * when that is said. Whether the task is done is left alone either way: time
  * reaching the goal says the task is ready, not that it was done.
@@ -161,13 +198,7 @@ export function keptEntries(entries: readonly TimeEntry[], repeat: Repeat | null
  * Returns a new task; the one passed in is never modified.
  */
 export function logTime(task: Task, minutes: number, now: Date = new Date(), comment: string | null = null): Task {
-  if (!isSessionLength(minutes)) {
-    throw new InvalidTimeError(
-      `${String(minutes)} is not a session: a session is a whole number of minutes from 1 to ${String(MAX_SESSION_MINUTES)}.`,
-    )
-  }
-
-  return logSeconds(task, minutes * 60, now, comment)
+  return withEntry(task, minutesEntry(minutes, now, comment), now)
 }
 
 /**
@@ -178,19 +209,7 @@ export function logTime(task: Task, minutes: number, now: Date = new Date(), com
  * Returns a new task; the one passed in is never modified.
  */
 export function logSeconds(task: Task, seconds: number, now: Date = new Date(), comment: string | null = null): Task {
-  if (!isSessionSeconds(seconds)) {
-    throw new InvalidTimeError(
-      `${String(seconds)} is not a session: a session is a whole number of seconds from 1 to ${String(MAX_SESSION_SECONDS)}.`,
-    )
-  }
-
-  const entry: TimeEntry = {
-    id: crypto.randomUUID(),
-    seconds,
-    loggedAt: now.toISOString(),
-    comment: toTimeComment(comment),
-  }
-  return { ...task, timeLog: [...keptEntries(task.timeLog, task.repeat, now), entry] }
+  return withEntry(task, secondsEntry(seconds, now, comment), now)
 }
 
 /**
@@ -202,6 +221,28 @@ export function logSeconds(task: Task, seconds: number, now: Date = new Date(), 
 export function removeTimeEntry(task: Task, entryId: TimeEntryId): Task {
   const kept = task.timeLog.filter((entry) => entry.id !== entryId)
   return kept.length === task.timeLog.length ? task : { ...task, timeLog: kept }
+}
+
+/** A session as it was logged, with the task it was logged on. */
+export interface LoggedSession {
+  readonly task: Task
+  readonly entry: TimeEntry
+}
+
+/**
+ * The sessions one change to the tasks logged: every session a task has after
+ * it that it did not have before — logged from the clock, by the timer, or with
+ * the task as it was added. A session gone is not one logged, and a task the
+ * change did not touch is the very same object, so it is passed over unread.
+ */
+export function sessionsLogged(before: readonly Task[], after: readonly Task[]): LoggedSession[] {
+  const previous = new Map(before.map((task) => [task.id, task]))
+  return after.flatMap((task) => {
+    const was = previous.get(task.id)
+    if (was === task) return []
+    const had = new Set(was?.timeLog.map((entry) => entry.id))
+    return task.timeLog.filter((entry) => !had.has(entry.id)).map((entry) => ({ task, entry }))
+  })
 }
 
 /** The seconds the sessions add up to. */
