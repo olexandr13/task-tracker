@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CHECK_IN_OFF } from './checkInRepository'
-import { readCheckInDevice, toStoredCheckInDevice } from './checkInDeviceSchema'
+import { CHECK_IN_DEVICE_SCHEMA_VERSION, readCheckInDevice, toStoredCheckInDevice } from './checkInDeviceSchema'
 import { CHECK_IN_DEVICE_NEW } from './checkInDeviceRepository'
 import { CHECK_IN_SCHEMA_VERSION, readCheckIn, toStoredCheckIn } from './checkInSchema'
 
@@ -28,17 +28,19 @@ describe('the check-in setting (STORE-52)', () => {
 })
 
 describe('what the check-in keeps on this device (STORE-54)', () => {
-  const state = { dismissedSlot: '2026-10-02T14', pushDeviceId: 'device-1', pushOn: true }
+  const state = { dismissedSlot: '2026-10-02T14' }
 
   it('reads back what was saved, and keeps nothing for a device as it arrives', () => {
     expect(readCheckInDevice(toStoredCheckInDevice(state))).toEqual(state)
     expect(toStoredCheckInDevice(CHECK_IN_DEVICE_NEW)).toBeNull()
   })
 
+  it('keeps the hour dismissed from the version that also kept push, and lets push go', () => {
+    expect(readCheckInDevice({ version: 1, dismissedSlot: '2026-10-02T14', pushDeviceId: 'device-1', pushOn: true })).toEqual(state)
+  })
+
   it('reads what it cannot trust as nothing there', () => {
     expect(readCheckInDevice({ version: 99, ...state })).toBeNull()
-    expect(readCheckInDevice({ version: 1, dismissedSlot: 'yesterday', pushDeviceId: '', pushOn: 'yes' })).toEqual(
-      CHECK_IN_DEVICE_NEW,
-    )
+    expect(readCheckInDevice({ version: CHECK_IN_DEVICE_SCHEMA_VERSION, dismissedSlot: 'yesterday' })).toEqual(CHECK_IN_DEVICE_NEW)
   })
 })

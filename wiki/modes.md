@@ -49,12 +49,10 @@ and each mode a page of its own that says what it does, and sets what it has to 
   alone can answer** on the device: whether *it* has already spoken, so one nudge is not paid for
   twice (NUDGE-6, STORE-47). Its notifications are still the browser's to allow, which its page says
   among the things it does (MODE-5, NUDGE-10). The check-in keeps on the device the notice put away
-  here and whether this device is reached while the app is closed, a push reaching a device rather
-  than an account (CHECKIN-11, STORE-54).
+  here (STORE-54).
 - **MODE-12** A mode with **something to set carries it on its own page**, under **Settings**,
   below what the mode does (MODE-5): the nudge's span and the hours it may speak in (NUDGE-9,
-  NUDGE-12), and the check-in's hours and whether this device is reached while the app is closed
-  (CHECKIN-8). It reads **whether the mode is on or off** — what a mode will do is decided before it
+  NUDGE-12), and the check-in's hours (CHECKIN-8). It reads **whether the mode is on or off** — what a mode will do is decided before it
   is turned on, and a section that only appears afterwards is one nobody knows to look for — and a
   mode with nothing to set shows no such section, as Procrastination and the warm-up do not. A
   mode's settings sit with the mode rather than on the Settings page: what a mode does and how it is
@@ -85,8 +83,8 @@ and each mode a page of its own that says what it does, and sets what it has to 
   is open, nothing once it is closed (NUDGE-10). What it watches for and what it names is the line
   it is summed up in, right above (MODE-2), and what there is to set is the **Settings** below
   (MODE-12), so neither is said twice. The check-in: when it asks and about which hour, that an hour
-  already logged is skipped, what **Log it** does, the browser notification while the app is open,
-  and that being asked while it is closed is turned on device by device (CHECKIN-1 to CHECKIN-11). Short enough to read before the switch is touched, and said
+  already logged is skipped, what **Log it** does, and the browser notification while the app is
+  open, nothing once it is closed (CHECKIN-1 to CHECKIN-5). Short enough to read before the switch is touched, and said
   outright rather than hinted at: a mode explained at the length of its own settings is one nobody
   reads.
 - **MODE-10** Wherever a mode **shows itself at work** — the warm-up panel at the head of Habits

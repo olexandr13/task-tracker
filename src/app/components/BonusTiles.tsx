@@ -15,8 +15,8 @@ const card = 'rounded-xl border border-neutral-200 bg-white dark:border-neutral-
 /**
  * Where each period's bonus stands, three at a glance side by side — one row
  * reads as one rule with three amounts: `+5 earned`, `+20 all done = earned`,
- * or `— no bonus` (RWD-20). Shown on how the points stand and on Rules (RWD-39),
- * so the page that sets the amounts says what they have come to as well.
+ * or `— no bonus` (RWD-20). Shown on how the points stand; Rules, which sets the
+ * amounts, marks the earned ones on their own rows instead (RWD-39).
  */
 export function BonusTiles({ bonuses, entries, now }: BonusTilesProps) {
   return (

@@ -593,12 +593,12 @@ describe('a row that will not tick its task off (CHK-11)', () => {
 })
 
 describe('the controls on a task row', () => {
-  it('are the set ones only at rest, a task with nothing set showing none (UI-18)', () => {
+  it('are the set ones only at rest, a task with nothing set showing only its clock (UI-18, TIME-10)', () => {
     setup(null)
 
     expect(screen.queryByRole('button', { name: /^Schedule for/ })).toBeNull()
     expect(screen.queryByRole('button', { name: /^Add a checklist to/ })).toBeNull()
-    expect(screen.queryByRole('button', { name: /^Time for/ })).toBeNull()
+    expect(screen.getByRole('button', { name: `Time for "${TASK}": No time goal` })).toBeDefined()
     expect(screen.queryByRole('button', { name: /^Reward for/ })).toBeNull()
     expect(screen.queryByRole('button', { name: /^Add a description to/ })).toBeNull()
     // Urgent is no control on a resting row, set or not (TASK-62).

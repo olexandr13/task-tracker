@@ -153,17 +153,17 @@ describe('nextKeyTime', () => {
 describe('anyKeyAvailable', () => {
   it('is true when the day is clear', () => {
     const tasks = [today('pack', true)]
-    expect(anyKeyAvailable(tasks, [], DEFAULT_CASES, ACCOUNT, THU_17)).toBe(true)
+    expect(anyKeyAvailable(tasks, [], ACCOUNT, THU_17)).toBe(true)
   })
 
   it('is true when the bonus time has passed', () => {
     const after = new Date(2026, 8, 17, 23, 0)
-    expect(anyKeyAvailable([], [], DEFAULT_CASES, ACCOUNT, after)).toBe(true)
+    expect(anyKeyAvailable([], [], ACCOUNT, after)).toBe(true)
   })
 
   it('is false when neither condition is met', () => {
     const before = new Date(2026, 8, 17, 5, 0)
-    expect(anyKeyAvailable([], [], DEFAULT_CASES, ACCOUNT, before)).toBe(false)
+    expect(anyKeyAvailable([], [], ACCOUNT, before)).toBe(false)
   })
 
   it('is false when both keys have been opened', () => {
@@ -172,15 +172,15 @@ describe('anyKeyAvailable', () => {
       earned(CASE_DAILY_ID, '2026-09-17', 5),
     ]
     const tasks = [today('pack', true)]
-    expect(anyKeyAvailable(tasks, entries, DEFAULT_CASES, ACCOUNT, THU_17)).toBe(false)
+    expect(anyKeyAvailable(tasks, entries, ACCOUNT, THU_17)).toBe(false)
   })
 
   it('is true on Monday morning, Weekly being ready before the Drop (CHST-30)', () => {
-    expect(anyKeyAvailable([], [], DEFAULT_CASES, ACCOUNT, MON_14)).toBe(true)
+    expect(anyKeyAvailable([], [], ACCOUNT, MON_14)).toBe(true)
   })
 
   it('is false on Monday once Weekly is open and nothing else is ready', () => {
     const entries = [earned(CASE_WEEK_ID, '2026-09-14', 4)]
-    expect(anyKeyAvailable([], entries, DEFAULT_CASES, ACCOUNT, MON_14)).toBe(false)
+    expect(anyKeyAvailable([], entries, ACCOUNT, MON_14)).toBe(false)
   })
 })

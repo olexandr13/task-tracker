@@ -3,10 +3,14 @@ import {
   changeActivityEntry,
   createActivityEntry,
   knownActivities,
+  sessionActivityEntries,
+  withoutSession,
   type ActivityChange,
   type ActivityEntry,
   type ActivityEntryId,
   type HourSlot,
+  type LoggedSession,
+  type TimeEntryId,
 } from '../core'
 import { activityChangesBetween, hasActivityChanges, type ActivityRepository } from '../storage/activityRepository'
 import { ignoreProblems, type ReportProblem } from './storageProblem'
@@ -69,6 +73,26 @@ export function useActivities(repository: ActivityRepository, onProblem: ReportP
     [apply],
   )
 
+  /** Writes the time sessions logged on tasks took up, under their tasks' titles (ACT-21). */
+  const addSessions = useCallback(
+    (sessions: readonly LoggedSession[]) => {
+      const now = new Date()
+      const known = knownActivities(latest.current, now)
+      const made = sessions.flatMap(({ task, entry }) => sessionActivityEntries(task.title, task.id, entry, now, known))
+      if (made.length === 0) return
+      apply((current) => [...current, ...made])
+    },
+    [apply],
+  )
+
+  /** Takes out the records a session made, as the session is taken back (ACT-21). */
+  const removeSession = useCallback(
+    (entryId: TimeEntryId) => {
+      apply((current) => withoutSession(current, entryId))
+    },
+    [apply],
+  )
+
   /** Changes what a record says, how long it is, or the hour of its day it is under (ACT-10). */
   const change = useCallback(
     (id: ActivityEntryId, changed: ActivityChange) => {
@@ -96,5 +120,5 @@ export function useActivities(repository: ActivityRepository, onProblem: ReportP
     [apply],
   )
 
-  return { entries, isLoading, add, change, remove, restore }
+  return { entries, isLoading, add, addSessions, removeSession, change, remove, restore }
 }

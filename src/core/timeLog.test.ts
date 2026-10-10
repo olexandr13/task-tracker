@@ -14,6 +14,7 @@ import {
   MAX_TIME_GOAL_MINUTES,
   removeTimeEntry,
   secondsSpent,
+  sessionsLogged,
   setTimeGoal,
   TIME_HISTORY_DAYS,
   timeHistoryStart,
@@ -298,5 +299,28 @@ describe('the history of time (TIME-8, BAL-3)', () => {
 
     expect(timeHistoryStart(now)).toEqual(new Date(2026, 9, 1))
     expect(keptEntries([counting], { kind: 'monthly', day: 31 }, now)).toEqual([counting])
+  })
+})
+
+describe('the sessions a change logs (ACT-21)', () => {
+  it('are the ones a task has after it and did not before, however logged', () => {
+    const read = logTime(createTask('read', null, MON_14), 15, MON_14)
+    const sport = createTask('sport', null, MON_14)
+    const before = [read, sport]
+    const after = [logSeconds(read, 40, TUE_15), logTime(sport, 30, TUE_15, 'run')]
+
+    expect(sessionsLogged(before, after)).toEqual([
+      { task: after[0], entry: after[0].timeLog[1] },
+      { task: after[1], entry: after[1].timeLog[0] },
+    ])
+  })
+
+  it('include those a new task is added with, and never one taken back', () => {
+    const added = logTime(createTask('read', null, MON_14), 15, MON_14)
+    const twice = logTime(added, 5, TUE_15)
+
+    expect(sessionsLogged([], [added])).toEqual([{ task: added, entry: added.timeLog[0] }])
+    expect(sessionsLogged([twice], [removeTimeEntry(twice, twice.timeLog[1].id)])).toEqual([])
+    expect(sessionsLogged([twice], [{ ...twice, title: 'books' }])).toEqual([])
   })
 })

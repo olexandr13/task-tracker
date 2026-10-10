@@ -99,7 +99,7 @@ interface BackupFile {
   rewardGoals: StoredRewardGoal[]
   /**
    * The standing settings of the points, a record each where anything says: what
-   * one point is worth (RWD-31), what Cases asks of a day (CHST-3), and the
+   * one point is worth (RWD-31), what the cases count (CHST-32), and the
    * reward a new task starts with (RWD-45).
    * A new kind of setting joins this array and leaves the wrapper as it is, so
    * `BACKUP_VERSION` does not move for one — a file without Cases' record

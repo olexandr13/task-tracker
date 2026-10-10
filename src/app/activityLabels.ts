@@ -1,8 +1,10 @@
 import {
   MAX_ACTIVITY_NAME_LENGTH,
+  entryTimes,
   offsetDay,
   startOfLocalDay,
   toLocalDay,
+  toLocalTime,
   activityPeriodDays,
   type ActivityEntry,
   type ActivityPeriod,
@@ -11,6 +13,7 @@ import {
   type LoggedHours,
 } from '../core'
 import { describeHour } from './checkInLabels'
+import { describeTimeOfDay } from './dueLabels'
 import { describeSessionLength } from './durationLabels'
 
 /**
@@ -26,6 +29,7 @@ export const ACTIVITY_INTRO = [
   'Press an hour in the list to pick it. Then type what you did and how long it took, and press "Add".',
   'Type the time in minutes, like "15", or with hours, like "1h 20m".',
   'Press a record to change it, or its "×" to delete it. While changing it, press another hour to move it there.',
+  'Time you log on a task, or with its timer, is added here too, under the task’s name and at the times it was spent. Taking that time back on the task deletes it here as well.',
   'To log an hour of today outside the hours set for Check-in, press "Show every hour so far" above the list.',
   'Switch between "Day", "Week" and "Month" to see the totals, and use "‹" and "›" beside the date to look back.',
   'Hours logged count the hours set for Check-in, from "From" to "To".',
@@ -110,6 +114,24 @@ export function describeDaysInFull({ inFull, counted }: DaysInFull): string {
 /** A record as it is listed: `Work 45m`. */
 export function describeEntry(entry: ActivityEntry): string {
   return `${entry.activity} ${describeSessionLength(entry.seconds)}`
+}
+
+/**
+ * When a record was spent, by the clock (ACT-21): `11:00–11:30`, one time for
+ * one under a minute, or null for a record that does not know.
+ */
+export function describeEntryTimes(entry: ActivityEntry): string | null {
+  const times = entryTimes(entry)
+  if (times === null) return null
+  const start = describeTimeOfDay(toLocalTime(times.start))
+  const end = describeTimeOfDay(toLocalTime(times.end))
+  return start === end ? start : `${start}–${end}`
+}
+
+/** A record named for a screen reader, its times after it when it knows them: `“Work 30m”, 11:00–11:30`. */
+export function describeEntryFully(entry: ActivityEntry): string {
+  const times = describeEntryTimes(entry)
+  return times === null ? `“${describeEntry(entry)}”` : `“${describeEntry(entry)}”, ${times}`
 }
 
 /** What the undo toast says of a record taken out (ACT-11): `Deleted “Work 45m” at 10:00`. */

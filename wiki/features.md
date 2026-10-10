@@ -13,9 +13,9 @@ thing every account keeps.
   **Reminders**. Each carries the glyph its page is navigated by, its name, and a line saying what it
   is in plain words — *Points for finished tasks, and prizes and a wishlist to spend them on*. A
   switch turns its part on or off **at once, with no confirm**: nothing is lost either way (FEAT-5).
-  The **i** beside the heading (UI-73) says what the section is for, one thing a sentence: what off
-  means, that nothing is deleted, which parts belong to which (FEAT-4), that a part with settings of
-  its own has an arrow that shows them (FEAT-10), and that the switches are the account's (FEAT-6).
+  The **i** beside the heading (UI-73) says what the section is for in three short lines: what off
+  means, that nothing is deleted, and that the switches are the account's (FEAT-6). Which parts
+  belong to which (FEAT-4) and where a part's own settings are (FEAT-10) the tree shows by itself.
 - **FEAT-10** A part with **settings of its own** keeps them **under its switch**, one step down
   the same tree, rather than on a card of its own: **Habits** holds how the habit cards start out
   (HAB-23), **Cases** whether tasks without points count (CHST-32) and practice (CHST-21). A
@@ -35,7 +35,7 @@ thing every account keeps.
   sidebar, with whatever is folded under it (UI-30); its tab on a phone's bar, the tabs left sharing
   the bar between them (UI-32); its entry in the Tasks and Rewards tabs' menus (UI-43, UI-67) and in
   the strip across the rewards pages (RWD-30); its row on **More** (UI-45) — and More itself, once
-  every page on it is off; and its letter: **H** with Habits, **R** with Rewards, **C** with Cases (UI-56, UI-57, UI-72), **P** with the modes (UI-58). An **address** naming it — a bookmark,
+  every page on it is off; its pinned tab, which is kept and comes back with it (UI-77); and its letter: **H** with Habits, **R** with Rewards, **C** with Cases (UI-56, UI-57, UI-72), **P** with the modes (UI-58). An **address** naming it — a bookmark,
   a reload, a notification pressed — opens the **nearest page above it** that is on instead (UI-37):
   Rewards for Cases, Tasks for a list or the Inbox, Modes for a mode, More for Balance — or
   Today, where nothing above it is on — and the address is put right to match.
@@ -49,7 +49,7 @@ thing every account keeps.
   - **Rewards** — the reward on a task's sheet, the add sheet and a row (its column too, an empty
     one on every row being a gap), the points spelled out on a row, and **Reward +1** on
     Procrastination's win card (JUST-9).
-  - **Cases** — its card on Rewards (RWD-30), its section on Rules (CHST-3), the dot saying a key is
+  - **Cases** — its card on Rewards (RWD-30), the dot saying a key is
     waiting (CHST-22), the notice when Payday is earned (CHST-23), the notice when the Drop
     arrives (CHST-29), the notice when Weekly is here on Monday (CHST-30), and its settings under its
     switch on Settings, counting tasks without points and practice (FEAT-10).
@@ -66,7 +66,8 @@ thing every account keeps.
   prizes, Balance categories and activity log all stay where they are; and a switch turned back on
   finds everything as it was. A task finished while Rewards is off still earns its points, and they
   are there when Rewards is back — what is earned stays earned (RWD-13). A task added while it is
-  off still starts at the reward set for new tasks (RWD-45). The backup holds everything
+  off still starts at the reward set for new tasks (RWD-45). Time logged on a task while the
+  Activity log is off is still written into it (ACT-21). The backup holds everything
   whatever is switched off (BAK-2).
 
 ## Parts of another
@@ -86,8 +87,8 @@ thing every account keeps.
   part**: the **warm-up** with Habits, the habits being what it lets in, and the **check-in** with
   the Activity log, which is where it asks to be written. A mode taken away **does nothing**, whatever
   its own switch says: Procrastination dims nothing and Today has no banner, the warm-up holds no habit
-  back (WARM-4), the nudge says nothing (NUDGE-1), and the check-in asks nothing — not on screen, not
-  by notification, and not pushed while the app is closed (CHECKIN-10). Its own switch and what it is
+  back (WARM-4), the nudge says nothing (NUDGE-1), and the check-in asks nothing — not on screen and
+  not by notification. Its own switch and what it is
   set to are kept, so it carries on as it was when what it needs is back; Procrastination ends with
   the day in any case (JUST-10).
 
@@ -107,7 +108,6 @@ thing every account keeps.
 **Where it lives:** `src/core/feature.ts` (the features, what each is part of, what each mode
 needs, switching one), `src/storage/featureRepository.ts`, `featureSchema.ts`,
 `firestoreFeatureRepository.ts` and `localFeatureRepository.ts` (keeping them),
-`src/storage/checkInSender.ts` (the sender asking nothing while the check-in is switched away),
 `src/app/useFeatures.ts` (loading and switching), `src/app/features.ts` (`FeaturesContext` and
 `useFeatureOn`, for what is drawn inside a row or a sheet; which pages are there, and where an
 address lands), `src/app/featureLabels.ts` (the wording), `src/app/components/FeatureSwitches.tsx` and
@@ -117,7 +117,7 @@ navigation), `TaskItem.tsx`, `TaskSheet.tsx`, `AddTaskSheet.tsx`, `TaskDescripti
 `ProcrastinationMode.tsx`, `RewardsPage.tsx`, `ActivityPage.tsx` (what goes with a part),
 `src/app/useReminders.ts` and `useQuote.ts` (reminders and the quote, off).
 **Tested in:** `src/core/feature.test.ts`, `src/storage/featureSchema.test.ts`,
-`src/storage/checkInSender.test.ts`, `src/storage/backupFile.test.ts`,
+`src/storage/backupFile.test.ts`,
 `src/storage/backupRepository.test.ts`, `src/app/features.test.ts`, `src/app/useFeatures.test.ts`,
 `src/app/useReminders.test.ts`, `src/app/useQuote.test.ts`,
 `src/app/components/SettingsList.test.tsx`, `SideNav.test.tsx`, `BottomNav.test.tsx`,

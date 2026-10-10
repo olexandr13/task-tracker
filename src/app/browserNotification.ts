@@ -8,8 +8,7 @@
  * notification is the second way of hearing it and never the only one.
  *
  * Notifications posted from here reach the owner only while the app is open —
- * a tab, or the installed app running. What arrives while it is closed is a
- * check-in pushed by the sender (./browserPush, CHECKIN-10); nothing else is.
+ * a tab, or the installed app running. Nothing reaches them once it is closed.
  */
 
 /** Whether a notification can be posted, and whether it has been asked for. */
@@ -27,8 +26,7 @@ let asking: Promise<NotifyPermission> | null = null
 /**
  * Asks the browser, once: a permission already given or refused is returned as
  * it stands rather than asking again, which browsers ignore in any case. Two
- * asks at once — a mode turned on, and the device it is turned on from — wait
- * for the one answer.
+ * asks at once — a mode turned on as a timer starts — wait for the one answer.
  */
 export async function askToNotify(): Promise<NotifyPermission> {
   if (typeof Notification === 'undefined') return 'unavailable'

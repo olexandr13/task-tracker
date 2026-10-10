@@ -4,7 +4,7 @@ import { createLocalStorageSetting } from './localStorageSetting'
 
 /**
  * What the check-in keeps on this device, in this browser's `localStorage`:
- * the notice dismissed here, and this device's push registration (STORE-54).
+ * the notice dismissed here (STORE-54).
  * Anything unreadable reads as a device arriving.
  */
 export const localStorageCheckInDeviceRepository: CheckInDeviceRepository = createLocalStorageSetting({

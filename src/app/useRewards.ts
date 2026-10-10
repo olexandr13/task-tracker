@@ -27,7 +27,7 @@ const EMPTY: PointsLedger = {
 /**
  * Holds the points ledger on screen: what completions earned, what was
  * redeemed, what clearing each period is worth (RWD-24, RWD-29), what a point is
- * worth in money (RWD-31), what Cases asks of a day (CHST-3, CHST-7) and the
+ * worth in money (RWD-31), what the cases count (CHST-32) and the
  * reward a new task starts with (RWD-45). What completions earn is written as tasks
  * change (useTasks); this reads it back, redeems, sets the rules, and can take
  * an earning or a redemption off the ledger.

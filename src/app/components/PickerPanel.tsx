@@ -65,7 +65,12 @@ export function PickerPanel({
     if (asSheet) return
 
     function handlePointerDown(event: PointerEvent) {
-      if (!anchor.current?.contains(event.target as Node)) close()
+      const target = event.target as Element
+      if (anchor.current?.contains(target)) return
+      // A sheet opened from the panel, as its i's (UI-73), lies over it: a press there,
+      // on its dimming too, is the sheet's, and leaves the panel open under it.
+      if (target.closest('[data-sheet]') !== null) return
+      close()
     }
 
     document.addEventListener('pointerdown', handlePointerDown)

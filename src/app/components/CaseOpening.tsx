@@ -81,9 +81,6 @@ function easeOut(through: number): number {
 interface CaseOpeningProps {
   /** Why there is nothing to open, or null while a key is waiting. */
   blocked: CaseBlock | null
-  /** How many tasks Today asked for, and how many a key needs, for the refusal to say so. */
-  dayAsked: number
-  leastTasks: number
   /** What today's case gave, where it is already open. */
   openedPoints: number | null
   /** Which quarter of the jackpot it came to, where this device saw it happen. */
@@ -135,8 +132,6 @@ interface CaseOpeningProps {
  */
 export function CaseOpening({
   blocked,
-  dayAsked,
-  leastTasks,
   openedPoints,
   openedQuarter,
   sound,
@@ -483,10 +478,10 @@ export function CaseOpening({
             <p className={`text-2xl font-semibold tabular-nums ${(openedQuarter === null ? CASE_UNKNOWN_TONE : CASE_TONES[openedQuarter]).points}`}>
               {describeOpened(openedPoints)}
             </p>
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{describeCaseBlock('opened', dayAsked, leastTasks)}</p>
+            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{describeCaseBlock('opened')}</p>
           </>
         ) : blocked !== null && blocked !== 'unclear' ? (
-          <p className="max-w-xs text-sm text-neutral-500 dark:text-neutral-400">{describeCaseBlock(blocked, dayAsked, leastTasks)}</p>
+          <p className="max-w-xs text-sm text-neutral-500 dark:text-neutral-400">{describeCaseBlock(blocked)}</p>
         ) : blocked !== null || script != null ? null : (
           <p className={`text-sm font-semibold tracking-[0.16em] text-amber-700 uppercase dark:text-amber-300 ${busy ? 'opacity-0' : 'case-ready'}`}>
             {CASE_READY}

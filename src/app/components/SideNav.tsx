@@ -1,15 +1,9 @@
 import { Fragment, useId, type ReactElement, type ReactNode } from 'react'
 import { sortLists, type List, type ListId } from '../../core'
 import { isViewOn, modesShown, rewardsPagesShown, useFeaturesOff } from '../features'
+import { navItemOff, navItemOn } from '../navTones'
 import { useListDropTarget } from '../useListDropTarget'
-import {
-  isModesView,
-  isUnder,
-  oneListView,
-  VIEW_LABELS,
-  type FixedView,
-  type View,
-} from '../view'
+import { isUnder, oneListView, VIEW_LABELS, type FixedView, type View } from '../view'
 import { VIEW_ICONS } from '../viewIcons'
 import { AppLogo } from './AppLogo'
 import { ChevronIcon } from './ChevronIcon'
@@ -18,42 +12,29 @@ import { InboxIcon } from './InboxIcon'
 import { KeyWaitingMark } from './KeyWaitingMark'
 
 /**
- * The views, grouped: the ones named after a period, then the habits, every
- * task, the lists, the rewards, the balance of time, the activity log, the
- * modes and More, then
- * the trash, then settings. A thin line is drawn between groups. Lists opens onto the Inbox and
- * every list under it, so a list is one click away and a task can be dropped on
- * one to file it, and folds them away when they are not wanted. Rewards keeps
- * its four pages under it in the same way, and Modes a page for each mode
- * (MODE-7); both fold away as Lists does. Tags lives under More, and a tag's
- * tasks have no entry of their own. A page whose feature is switched off on
- * Settings has no entry at all (FEAT-2).
+ * The views, grouped by what they are for (UI-30): when — the ones named after
+ * a period; the work and where it is filed — the habits, every task, the lists
+ * and the tags; what pushes it along — the rewards and the modes; looking back
+ * at the time spent — the balance of time and the activity log; then the trash,
+ * then settings. A thin line is drawn between groups. Lists opens onto the
+ * Inbox and every list under it, so a list is one click away and a task can be
+ * dropped on one to file it, and folds them away when they are not wanted.
+ * Rewards keeps its pages under it in the same way, and Modes a page for each
+ * mode (MODE-7); both fold away as Lists does. Tags is an entry of its own, and
+ * a tag's tasks have none. More is not here: every page on it is, so it would
+ * be a click on the way to somewhere already listed (UI-45). A page whose
+ * feature is switched off on Settings has no entry at all (FEAT-2).
  */
 const VIEW_GROUPS: readonly (readonly FixedView[])[] = [
   ['today', 'week', 'month'],
-  ['habits', 'tasks', 'lists', 'rewards', 'balance', 'activity', 'modes', 'more'],
+  ['habits', 'tasks', 'lists', 'tags'],
+  ['rewards', 'modes'],
+  ['balance', 'activity'],
   ['trash'],
   ['settings'],
 ]
 
-/** Every view listed here, whatever group it is in. */
-const LISTED: ReadonlySet<View> = new Set<View>(VIEW_GROUPS.flat())
-
-/**
- * Whether an entry is the one you are on. More stands for the pages under it
- * (UI-45) — but not for one this sidebar lists itself, nor for a mode's page,
- * which is listed under Modes, or two entries would be marked at once. Lists,
- * Rewards and Modes are their own case, being folded or not (`FoldableEntry`).
- */
-function isOn(view: View, value: FixedView): boolean {
-  if (value === 'more' && view !== 'more' && (LISTED.has(view) || isModesView(view))) return false
-  return isUnder(view, value)
-}
-
 const item = 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors'
-const itemOn = 'bg-neutral-200/70 font-medium text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100'
-const itemOff =
-  'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800/60 dark:hover:text-neutral-100'
 
 /** A page under Lists, Rewards or Modes: indented to start where the word above does, and a little shorter. */
 const subItem = 'flex w-full min-w-0 items-center gap-2 rounded-lg py-1.5 pr-3 pl-[2.375rem] text-left text-sm transition-colors'
@@ -100,7 +81,7 @@ interface SideNavProps {
  * Only where there is room for one — a phone gets the bar along the bottom
  * instead (BottomNav), and no mark above the work. The one you are on is
  * marked, a list under Lists included — or Lists itself while the lists are
- * folded away. More stays marked while Tags or a tag's tasks are open; Rewards
+ * folded away. Tags stays marked while a tag's tasks are open (TAG-17); Rewards
  * has its own entry here, with Cases, the history, the prizes, the wishlist
  * and the rules under it, and each of the five is marked itself (RWD-19) — or Rewards alone while they
  * are folded away, as with Lists. Modes is listed the same way, with each mode's
@@ -130,11 +111,17 @@ export function SideNav({
   // of the sidebar softens: the way back is always readable (JUST-5).
   const soften = (value: FixedView) => (dimmed && value !== 'today' ? dim : undefined)
 
+  // A group whose every page is switched off is left out whole, so no two lines
+  // meet with nothing between them.
+  const groups = VIEW_GROUPS.map((group) => group.filter((value) => isViewOn(value, off))).filter(
+    (group) => group.length > 0,
+  )
+
   return (
     <nav aria-label="Views" className="hidden md:block md:w-44 md:shrink-0">
       <AppLogo className={`mb-3 flex items-center gap-2.5 px-3${dimmed ? ` ${dim}` : ''}`} />
       <ul className="flex flex-col gap-0.5">
-        {VIEW_GROUPS.map((group, index) => (
+        {groups.map((group, index) => (
           <Fragment key={group[0]}>
             {index > 0 && (
               <li
@@ -142,7 +129,7 @@ export function SideNav({
                 className={`mx-3 my-1.5 border-t border-neutral-200 dark:border-neutral-800${dimmed ? ` ${dim}` : ''}`}
               />
             )}
-            {group.filter((value) => isViewOn(value, off)).map((value) =>
+            {group.map((value) =>
               value === 'lists' ? (
                 <FoldableEntry
                   key={value}
@@ -220,7 +207,7 @@ export function SideNav({
                 </FoldableEntry>
               ) : (
                 <li key={value} className={soften(value)}>
-                  <NavButton value={value} active={isOn(view, value)} onSelect={onChange} />
+                  <NavButton value={value} active={isUnder(view, value)} onSelect={onChange} />
                 </li>
               ),
             )}
@@ -284,7 +271,7 @@ function NavButton({ value, active, onSelect }: { value: FixedView; active: bool
       type="button"
       onClick={() => { onSelect(value) }}
       aria-current={active ? 'page' : undefined}
-      className={active ? `${item} ${itemOn}` : `${item} ${itemOff}`}
+      className={active ? `${item} ${navItemOn}` : `${item} ${navItemOff}`}
     >
       <Icon />
       {VIEW_LABELS[value]}
@@ -312,7 +299,7 @@ function SubNavButton({ value, active, marked = false, glyph = subGlyph, onSelec
         type="button"
         onClick={() => { onSelect(value) }}
         aria-current={active ? 'page' : undefined}
-        className={`${subItem} ${active ? itemOn : itemOff}`}
+        className={`${subItem} ${active ? navItemOn : navItemOff}`}
       >
         <Icon className={glyph} />
         <span className="min-w-0 truncate">{VIEW_LABELS[value]}</span>
@@ -334,7 +321,7 @@ interface ListEntryProps {
 /** A list under Lists: goes to its view, and files a task dropped on it. */
 function ListEntry({ listId, name, icon, active, onSelect }: ListEntryProps) {
   const { isOver, setNodeRef } = useListDropTarget(listId, name)
-  const tone = isOver ? subItemOver : active ? itemOn : itemOff
+  const tone = isOver ? subItemOver : active ? navItemOn : navItemOff
 
   return (
     <li ref={setNodeRef}>

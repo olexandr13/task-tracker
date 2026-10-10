@@ -4,7 +4,7 @@ import type { BackupRepository } from './backupRepository'
 import type { CategoryRepository } from './categoryRepository'
 import type { CheckInRepository } from './checkInRepository'
 import type { FeatureRepository } from './featureRepository'
-import { firebaseApp, firestore } from './firebaseApp'
+import { firestore } from './firebaseApp'
 import { createFirestoreActivityRepository } from './firestoreActivityRepository'
 import { createFirestoreBackupRepository } from './firestoreBackupRepository'
 import { createFirestoreCategoryRepository } from './firestoreCategoryRepository'
@@ -14,7 +14,6 @@ import { createFirestoreListRepository } from './firestoreListRepository'
 import { createFirestoreNudgeRepository } from './firestoreNudgeRepository'
 import { createFirestorePrizeRepository } from './firestorePrizeRepository'
 import { createFirestoreProcrastinationRepository } from './firestoreProcrastinationRepository'
-import { createFirestorePushRepository } from './firestorePushRepository'
 import { createFirestoreRewardRepository } from './firestoreRewardRepository'
 import { createFirestoreSyncMonitor } from './firestoreSyncMonitor'
 import { createFirestoreTagRepository } from './firestoreTagRepository'
@@ -41,7 +40,6 @@ import { createLocalWarmUpRepository } from './localWarmUpRepository'
 import type { NudgeRepository } from './nudgeRepository'
 import type { PrizeRepository } from './prizeRepository'
 import type { ProcrastinationRepository } from './procrastinationRepository'
-import { NO_PUSH, type PushRepository } from './pushRepository'
 import type { RewardRepository } from './rewardRepository'
 import type { SyncMonitor } from './syncMonitor'
 import type { TagRepository } from './tagRepository'
@@ -70,8 +68,6 @@ export interface AccountStorage {
   readonly activities: ActivityRepository
   /** Whether the check-in is on, and the hours it keeps to (STORE-52). */
   readonly checkIn: CheckInRepository
-  /** The devices check-ins are pushed to when the app is closed (STORE-53); none as guest. */
-  readonly push: PushRepository
   /** Which features are switched off on Settings (STORE-56). */
   readonly features: FeatureRepository
   readonly sync: SyncMonitor
@@ -130,7 +126,6 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
     activities,
     checkIn,
     features,
-    push: createFirestorePushRepository(firestore, firebaseApp, accountId),
     procrastination: createFirestoreProcrastinationRepository(firestore, accountId),
     sync: createFirestoreSyncMonitor(firestore, accountId),
     backup: createFirestoreBackupRepository(firestore, accountId),
@@ -166,7 +161,6 @@ function createGuestAccountStorage(): AccountStorage {
     activities: createLocalActivityRepository(),
     checkIn: createLocalCheckInRepository(),
     features: createLocalFeatureRepository(),
-    push: NO_PUSH,
     procrastination: createLocalProcrastinationRepository(),
     sync: createLocalSyncMonitor(),
     backup: createLocalBackupRepository(),

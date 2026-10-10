@@ -24,10 +24,7 @@ export const FEATURE_LABELS: Readonly<Record<Feature, { readonly name: string; r
 
 /** What the card is for, in the sheet its **i** opens (UI-73): one thing a sentence. */
 export const FEATURES_HINT = [
-  'Turn off the parts of the app you don’t use.',
-  'A part that is off disappears everywhere: its page, its place in the menu, its buttons on tasks and its notices.',
-  'Nothing is deleted. Turn it back on and everything is where you left it.',
-  'Cases are part of Rewards, and Balance needs Tags, so each is offered only while the other is on. Warm-up needs Habits, and Check-in needs the Activity log.',
-  'A part with settings of its own has an arrow in front of it. Press the arrow to show its settings under it.',
-  'The switches are saved to your account, so they are the same on every device.',
+  'Turn off the parts of the app you don’t use. They disappear everywhere.',
+  'Nothing is deleted: turn a part back on and it is as you left it.',
+  'The switches are the same on every device.',
 ] as const

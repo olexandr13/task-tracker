@@ -1,6 +1,7 @@
 import { useId, useState, type KeyboardEvent } from 'react'
 import {
   balanceByDay,
+  balanceSessions,
   balanceTotals,
   isCategoryLimitReached,
   isCategoryName,
@@ -9,6 +10,7 @@ import {
   type CategoryId,
   type Period,
   type Task,
+  type TimeEntryId,
 } from '../../core'
 import {
   BALANCE_HEADING,
@@ -25,6 +27,8 @@ import {
 } from '../balanceLabels'
 import { balancePieces, type PieceKey } from '../balancePieces'
 import { deleteControl } from '../rowControls'
+import { BalanceSessionList } from './BalanceSessionList'
+import { CategoryTimePicker } from './CategoryTimePicker'
 import { DayColumnsChart } from './DayColumnsChart'
 import { InfoButton } from './InfoButton'
 import { TimeSplitChart } from './TimeSplitChart'
@@ -59,6 +63,10 @@ interface BalancePageProps {
   onRename: (id: CategoryId, name: string) => boolean
   onBind: (id: CategoryId, tag: string) => void
   onUnbind: (id: CategoryId, tag: string) => void
+  /** Logs time straight to a category, with what it went on or null for nothing said (BAL-14). */
+  onLogTime: (id: CategoryId, minutes: number, comment: string | null) => void
+  /** Takes back a session logged straight to a category (BAL-15). */
+  onRemoveTime: (id: CategoryId, entryId: TimeEntryId) => void
   onDelete: (id: CategoryId) => void
 }
 
@@ -66,7 +74,8 @@ interface BalancePageProps {
  * The Balance page (BAL-1): how the time logged in a period divides between the
  * categories the owner names, each bound to tags, so a day of nothing but work
  * shows as one. Above, the totals for Today, this week or this month; below,
- * the categories themselves, made, renamed, bound and deleted in place.
+ * the categories themselves, made, renamed, bound and deleted in place, and
+ * time logged straight to one (BAL-14).
  *
  * The period is not kept: the page opens on Today, which is the one asked about
  * most — whether there has been any rest yet (BAL-2).
@@ -80,6 +89,8 @@ export function BalancePage({
   onRename,
   onBind,
   onUnbind,
+  onLogTime,
+  onRemoveTime,
   onDelete,
 }: BalancePageProps) {
   const [period, setPeriod] = useState<Period>('today')
@@ -103,10 +114,13 @@ export function BalancePage({
       <Categories
         categories={categories}
         knownTags={knownTags}
+        now={now}
         onAdd={onAdd}
         onRename={onRename}
         onBind={onBind}
         onUnbind={onUnbind}
+        onLogTime={onLogTime}
+        onRemoveTime={onRemoveTime}
         onDelete={onDelete}
       />
     </div>
@@ -125,7 +139,8 @@ interface TotalsProps {
  * The time spent in the period (BAL-6): its total and one bar divided between
  * the categories, with the legend under it, and on a week or a month the same
  * day by day (BAL-13). A piece pressed in the legend stays picked out across
- * both charts, and across a change of period.
+ * both charts, and across a change of period, and its sessions are listed under
+ * them (BAL-16) — only then, so the page does not open on a long list.
  */
 function Totals({ categories, tasks, period, now, onPeriodChange }: TotalsProps) {
   const headingId = useId()
@@ -137,6 +152,8 @@ function Totals({ categories, tasks, period, now, onPeriodChange }: TotalsProps)
   // Picking out something the period has no time for would only fade everything.
   const wanted = pointed ?? pinned
   const active = pieces.some((piece) => piece.key === wanted) ? wanted : null
+  // Only a press lists the sessions: pointing would push the page about under the pointer.
+  const listed = pieces.find((piece) => piece.key === pinned) ?? null
 
   return (
     <section aria-labelledby={headingId} className={`${card} flex flex-col gap-3 px-4 py-3.5`}>
@@ -192,6 +209,15 @@ function Totals({ categories, tasks, period, now, onPeriodChange }: TotalsProps)
               active={active}
             />
           )}
+
+          {listed !== null && (
+            <BalanceSessionList
+              piece={listed}
+              sessions={balanceSessions(categories, tasks, listed.key === 'other' ? null : listed.key, period, now)}
+              when={PERIOD_IN_A_SENTENCE[period]}
+              now={now}
+            />
+          )}
         </>
       )}
 
@@ -203,10 +229,13 @@ function Totals({ categories, tasks, period, now, onPeriodChange }: TotalsProps)
 interface CategoriesProps {
   categories: readonly Category[]
   knownTags: readonly string[]
+  now: Date
   onAdd: (name: string) => boolean
   onRename: (id: CategoryId, name: string) => boolean
   onBind: (id: CategoryId, tag: string) => void
   onUnbind: (id: CategoryId, tag: string) => void
+  onLogTime: (id: CategoryId, minutes: number, comment: string | null) => void
+  onRemoveTime: (id: CategoryId, entryId: TimeEntryId) => void
   onDelete: (id: CategoryId) => void
 }
 
@@ -228,10 +257,22 @@ function checkName(name: string): Refusal | null {
 /**
  * The categories, edited where they are listed (BAL-7 to BAL-10): a box on top
  * makes one, and each row renames itself in place, binds and unbinds its tags,
- * and deletes itself. A refused name is said under its box rather than the
- * button being dimmed, so the reason is there when the click is.
+ * takes time logged straight to it (BAL-14), and deletes itself. A refused name
+ * is said under its box rather than the button being dimmed, so the reason is
+ * there when the click is.
  */
-function Categories({ categories, knownTags, onAdd, onRename, onBind, onUnbind, onDelete }: CategoriesProps) {
+function Categories({
+  categories,
+  knownTags,
+  now,
+  onAdd,
+  onRename,
+  onBind,
+  onUnbind,
+  onLogTime,
+  onRemoveTime,
+  onDelete,
+}: CategoriesProps) {
   const headingId = useId()
   const [typed, setTyped] = useState('')
   const [refused, setRefused] = useState<Refusal | null>(null)
@@ -360,6 +401,15 @@ function Categories({ categories, knownTags, onAdd, onRename, onBind, onUnbind, 
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-neutral-900 dark:text-neutral-100">
                     {category.name}
                   </span>
+                )}
+
+                {editing?.id !== category.id && (
+                  <CategoryTimePicker
+                    category={category}
+                    now={now}
+                    onLog={(minutes, comment) => { onLogTime(category.id, minutes, comment) }}
+                    onRemove={(entryId) => { onRemoveTime(category.id, entryId) }}
+                  />
                 )}
 
                 {editing?.id !== category.id && (

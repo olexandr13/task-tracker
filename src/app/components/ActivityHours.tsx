@@ -9,7 +9,7 @@ import {
   type HoursWindow,
   type LocalDay,
 } from '../../core'
-import { describeEntry, NOT_LOGGED } from '../activityLabels'
+import { describeEntry, describeEntryFully, describeEntryTimes, NOT_LOGGED } from '../activityLabels'
 import type { ChartColor } from '../chartColors'
 import { describeChartTime } from '../chartLabels'
 import { describeHour, describeSlot } from '../checkInLabels'
@@ -140,32 +140,38 @@ export function ActivityHours({
                 </div>
               ) : (
                 <ul aria-label={`Logged ${describeSlot(slot)}`} className="flex flex-wrap gap-1">
-                  {logged.map((entry) => (
-                    <li key={entry.id} className={`${chip}${entry.id === editingId ? ` ${chipEditing}` : ''}`}>
-                      <span
-                        aria-hidden="true"
-                        className={`ml-2 size-2 shrink-0 rounded-[2px] ${colors.get(activityKey(entry.activity))?.fill ?? ''}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => { onEdit(entry) }}
-                        aria-label={`Change “${describeEntry(entry)}”`}
-                        title="Change it"
-                        className={chipText}
-                      >
-                        {describeEntry(entry)}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { onRemove(entry) }}
-                        aria-label={`Delete “${describeEntry(entry)}”`}
-                        title="Delete it"
-                        className={`mr-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-base leading-none md:size-5 ${deleteControl}`}
-                      >
-                        ×
-                      </button>
-                    </li>
-                  ))}
+                  {logged.map((entry) => {
+                    const times = describeEntryTimes(entry)
+                    return (
+                      <li key={entry.id} className={`${chip}${entry.id === editingId ? ` ${chipEditing}` : ''}`}>
+                        <span
+                          aria-hidden="true"
+                          className={`ml-2 size-2 shrink-0 rounded-[2px] ${colors.get(activityKey(entry.activity))?.fill ?? ''}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => { onEdit(entry) }}
+                          aria-label={`Change ${describeEntryFully(entry)}`}
+                          title="Change it"
+                          className={chipText}
+                        >
+                          {describeEntry(entry)}
+                          {times !== null && (
+                            <span className="ml-1.5 text-xs tabular-nums text-neutral-500 dark:text-neutral-400">{times}</span>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { onRemove(entry) }}
+                          aria-label={`Delete ${describeEntryFully(entry)}`}
+                          title="Delete it"
+                          className={`mr-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-base leading-none md:size-5 ${deleteControl}`}
+                        >
+                          ×
+                        </button>
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
             </div>

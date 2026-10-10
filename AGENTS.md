@@ -29,10 +29,9 @@ Dependencies point inwards only.
 | `src/core/` | The rules. Pure functions over plain data. | nothing else in `src/` |
 | `src/storage/` | Saving, loading, signing in. | `src/core` |
 | `src/app/` | React components and screen state. | `src/core`, `src/storage` |
-| `functions/` | The one server-side part: the check-in sender, a scheduled Firebase function. | `src/core`, `src/storage/*Schema.ts`, `src/storage/checkInSender.ts` |
 
-`src/core/` has no React, browser APIs or saving; `functions/` never imports the app or the Firebase
-client SDK. `npm run lint` enforces both boundaries (`.oxlintrc.json`).
+Everything runs in the browser; there is no server-side code. `src/core/` has no React, browser APIs
+or saving. `npm run lint` enforces the boundaries (`.oxlintrc.json`).
 
 ## Conventions
 
@@ -79,18 +78,14 @@ client SDK. `npm run lint` enforces both boundaries (`.oxlintrc.json`).
 
 - Firebase settings come from `VITE_*` variables (`.env.local`, Vercel env). **No keys or secrets in
   committed files**; only `.env.example`, with empty values.
-- The service worker exists only in the built app: test offline, and push, with
-  `npm run build && npm run preview`. Push handlers are `public/check-in-sw.js`, imported into the
-  generated worker (`vite.config.ts`).
-- Check-ins pushed while the app is closed need the Firebase project on Blaze. The VAPID key pair is
-  made by `npm run setup:push`: both halves go to Secret Manager, the public one also to
-  `.env.local` and Vercel as `VITE_VAPID_PUBLIC_KEY`. The private one is never written to a file.
-  Deploy the sender with `npm run deploy:functions` (ask first: it changes the live project).
+- The service worker exists only in the built app: test offline with
+  `npm run build && npm run preview`.
+- Notifications are the browser's own, posted while the app is open (`src/app/browserNotification.ts`).
+  Nothing is pushed while it is closed.
 
 ### Testing
 
-- Rules: `src/core/*.test.ts` (Node). The sender's decisions are `src/storage/checkInSender.ts`, tested
-  with fakes; `functions/` only joins them to Firestore and web-push. Interaction a person could break (keys, focus, caret):
+- Rules: `src/core/*.test.ts` (Node). Interaction a person could break (keys, focus, caret):
   `*.test.tsx` beside the component, Testing Library + `user-event`, starting with
   `// @vitest-environment jsdom`.
 - Any console output fails a test (`src/test/consoleGuard.ts`). Declare intended output with

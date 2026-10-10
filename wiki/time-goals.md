@@ -21,14 +21,17 @@ ticked off. The tick itself stays the owner's.
   and any other length is typed into the box under them and logged with Enter or **Log** beside it.
   A session logged by hand is a whole number of minutes from 1 minute to 24 hours; one the timer
   logs keeps its seconds (TIME-22). The panel stays open after logging, so the new total is in view.
-  Time can be logged on a task without a goal too; it is then just time spent.
+  Time can be logged on a task without a goal too; it is then just time spent. Every session is
+  written into the [Activity log](activity-log.md) as well, at the time it took up (ACT-21).
 - **TIME-4** The panel lists the sessions that count (TIME-7) under **Sessions**, each with when it
   was logged — its time today, its date and time before that — its comment under that when it has
   one (TIME-23), and its length in whole minutes, `<1m` for a timer's run under a minute. The **×**
-  beside one takes it back (UI-38), for a session logged by mistake. A long list scrolls inside the
-  panel.
-- **TIME-23** A session can carry a **comment** — what the time went on. The box for it heads the
-  panel's **Log time**, marked `Comment (optional)`, and what is typed there goes with the **next
+  beside one takes it back (UI-38), for a session logged by mistake, and its records out of the
+  Activity log with it (ACT-21). A long list scrolls inside the panel.
+- **TIME-23** A session can carry a **comment** — what the time went on. Its box closes the
+  panel's **Log time**, under the box for a length, marked with a speech bubble and
+  `Add a comment (optional)`: shaded rather than outlined, so it is not taken for the box a
+  length is typed into. What is typed there goes with the **next
   session logged from that panel**: a quick one, one typed, or the timer's run on the panel's
   **Stop** (TIME-15). Enter in it logs the length typed beside **Log**, when there is one. Once a
   session takes it the box is empty again, and closing the panel lets go of a comment not yet
@@ -67,8 +70,9 @@ ticked off. The tick itself stays the owner's.
 ## On screen
 
 - **TIME-10** The **clock** sits in a slot of its own after the checklist button (UI-27). It is
-  tinted while the task has a goal or time counting (UI-26), and with neither it waits for the row
-  to be woken (UI-18). A screen reader hears how the time
+  tinted while the task has a goal or time counting (UI-26), and plain with neither — but **out on
+  every row** either way, unlike the other controls, which wait for the row to be woken when they
+  hold nothing (UI-18): logging time is a click on the clock and one in its panel. A screen reader hears how the time
   stands: `Time for "sport": 20m of 1h`. On a phone the line has no room for the *control*, so the
   sheet a tap opens (UI-48) has it, in its row of icons (UI-63) — the time spelled out as `20m/1h`
   under the clock itself; a resting row still shows the clock as a mark when time is set (UI-50).
@@ -78,8 +82,11 @@ ticked off. The tick itself stays the owner's.
   it, added to the time logged to the second (TIME-22). Opened near the foot of a sheet or the window, the panel scrolls into view
   whole, so its goal is not left cut off.
 - **TIME-11** A length is typed the ways it is written: a bare number is minutes (`45`), and `25m`,
-  `1h`, `1.5h`, `1h30`, `1h 30m` and `1:30` all read as expected. A session that cannot be read is
-  not logged: its box is marked, and a line under it says what would do, until it is changed.
+  `1h`, `1.5h`, `1h30`, `1h 30m` and `1:30` all read as expected. The session box holds no example
+  of its own; an **i** beside **Log time** (UI-73), *About Log time*, opens **Logging time**: the
+  quick sessions, then each way a length can be typed with what it means, and that a session runs
+  from 1 minute to 24 hours. The panel stays open under it. A session that cannot be read is not
+  logged: its box is marked, and a line under it says what would do, until it is changed.
 - **TIME-12** A woken row spells the time out under the clock, closed up to fit: `20m/1h`, `1h05/1h30`,
   or just `20m` without a goal. Nothing is spelled out while there is neither.
 - **TIME-13** On the **Habits** page a habit's card has **no clock**, so its title has the room: the
@@ -135,7 +142,7 @@ dropped), `src/app/components/TimePicker.tsx` (the clock and its panel), `src/ap
 `src/app/components/RunningTimerChip.tsx`, `src/app/components/GoalNoticeToast.tsx`,
 `src/app/browserNotification.ts` (the browser's notification and its permission, shared with
 [Nudges](nudges.md), [Reminders](reminders.md) and [Check-ins](check-ins.md)),
-`src/app/components/ClockIcon.tsx`, `src/app/components/PlayIcon.tsx`,
+`src/app/components/ClockIcon.tsx`, `src/app/components/CommentIcon.tsx`, `src/app/components/PlayIcon.tsx`,
 `src/app/components/StopIcon.tsx`, `src/app/durationLabels.ts` (wording, and reading typed lengths),
 `src/app/rowControls.ts` (the ready box), `src/app/useTasks.ts`, `src/app/useTaskTimer.ts`,
 `src/app/view.ts` (which page goes to the task), `src/app/TasksScreen.tsx` (going there),

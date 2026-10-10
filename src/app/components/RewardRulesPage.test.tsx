@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import type { ReactNode } from 'react'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -15,7 +14,6 @@ const NOW = new Date(2026, 9, 7, 12)
 function setup(
   bonuses: PeriodBonuses = NO_BONUSES,
   pointValue: PointValue | null = null,
-  cases?: ReactNode,
   newTaskReward: number | null = null,
   entries: readonly RewardEntry[] = [],
 ) {
@@ -32,7 +30,6 @@ function setup(
       onChangeBonus={onChangeBonus}
       onChangePointValue={onChangePointValue}
       onChangeNewTaskReward={onChangeNewTaskReward}
-      cases={cases}
     />,
   )
   return { user: userEvent.setup(), onChangeBonus, onChangePointValue, onChangeNewTaskReward }
@@ -48,7 +45,7 @@ describe('the reward for a new task (RWD-45)', () => {
   })
 
   it('says what is set, steps it, and takes it away in one tap', async () => {
-    const { user, onChangeNewTaskReward } = setup(NO_BONUSES, null, undefined, 3)
+    const { user, onChangeNewTaskReward } = setup(NO_BONUSES, null, 3)
 
     await user.click(screen.getByRole('button', { name: 'Reward for a new task: 3 points' }))
     await user.click(screen.getByRole('button', { name: 'More points' }))
@@ -60,17 +57,22 @@ describe('the reward for a new task (RWD-45)', () => {
 })
 
 describe('the bonuses (RWD-27, RWD-29)', () => {
-  it('shows where each stands, as Rewards does (RWD-20, RWD-39)', () => {
-    const earned: RewardEntry[] = [{ taskId: BONUS_IDS.today, day: '2026-10-07', points: 5 }]
-    setup({ today: 5, week: 40, month: null }, null, undefined, null, earned)
+  it('is one row per period, marked on its own row once that period has paid it (RWD-39)', () => {
+    const earned: RewardEntry[] = [
+      { taskId: BONUS_IDS.today, day: '2026-10-07', points: 5 },
+      { taskId: BONUS_IDS.month, day: '2026-10-02', points: 50 },
+    ]
+    setup({ today: 5, week: 40, month: null }, null, null, earned)
 
-    const tiles = screen.getByRole('region', { name: 'Bonuses' }).querySelector('dl') as HTMLElement
-    expect(tiles.className).toContain('grid-cols-3')
-    expect(within(tiles).getByText('+5')).toBeTruthy()
-    expect(within(tiles).getByText('earned')).toBeTruthy()
-    expect(within(tiles).getByText('+40')).toBeTruthy()
-    expect(within(tiles).getByText('all done = earned')).toBeTruthy()
-    expect(within(tiles).getByText('no bonus')).toBeTruthy()
+    const bonuses = screen.getByRole('region', { name: 'Bonuses' })
+    expect(bonuses.querySelector('dl')).toBeNull()
+    const rows = within(bonuses).getAllByRole('listitem')
+    expect(rows).toHaveLength(3)
+    expect(within(rows[0]).getByText('Earned today')).toBeTruthy()
+    // Not yet cleared this week: nothing beside its name.
+    expect(within(rows[1]).queryByText('Earned this week')).toBeNull()
+    // Paid earlier this month, but with no bonus set now there is nothing to mark.
+    expect(within(rows[2]).queryByText('Earned this month')).toBeNull()
   })
 
   it('has one for Today, this week and this month, each saying what it earns', () => {
@@ -160,20 +162,5 @@ describe('what a point is worth (RWD-31)', () => {
     await user.tab()
 
     expect(amount.value).toBe('2.5')
-  })
-})
-
-describe('Cases', () => {
-  it('carries what Cases asks of a day, beside the other rules (CHST-7)', () => {
-    setup(NO_BONUSES, null, <p>Tasks a day must ask for</p>)
-
-    expect(screen.getByRole('region', { name: 'Cases' })).toBeTruthy()
-    expect(screen.getByText('Tasks a day must ask for')).toBeTruthy()
-  })
-
-  it('shows no such section where there is nothing to put in it', () => {
-    setup()
-
-    expect(screen.queryByRole('region', { name: 'Cases' })).toBeNull()
   })
 })

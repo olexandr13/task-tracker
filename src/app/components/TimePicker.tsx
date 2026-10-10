@@ -1,46 +1,19 @@
-import { useEffect, useEffectEvent, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type KeyboardEvent } from 'react'
 import {
   elapsedSeconds,
-  isSessionLength,
-  MAX_TIME_COMMENT_LENGTH,
   isTimeGoal,
   sessionSeconds,
   wholeMinutes,
   type TimeEntry,
   type TimeEntryId,
 } from '../../core'
-import {
-  describeDuration,
-  describeElapsedClock,
-  describeLoggedAt,
-  describeSessionLength,
-  describeTimeSummary,
-  parseDuration,
-} from '../durationLabels'
-import { controlOff, controlOn, controlRunning, deleteControl, detailReached, rowControlIcon } from '../rowControls'
+import { describeDuration, describeElapsedClock, describeTimeSummary, parseDuration } from '../durationLabels'
+import { controlOff, controlOn, controlRunning, detailReached, rowControlIcon } from '../rowControls'
 import { ClockIcon } from './ClockIcon'
 import { PickerPanel } from './PickerPanel'
 import { PlayIcon } from './PlayIcon'
 import { StopIcon } from './StopIcon'
-
-/** The sessions offered at a click, being the lengths most often logged. */
-const QUICK_SESSIONS: readonly number[] = [5, 15, 30, 60]
-
-/**
- * A quick session, and Log beside the box. Filled rather than bare, so on a
- * phone, where nothing hovers, it still reads as a button and not as a label.
- */
-const chip =
-  'grid h-10 min-w-0 place-items-center rounded-xl bg-neutral-100 px-3 text-sm font-medium text-neutral-700 tabular-nums transition-colors hover:bg-neutral-200 hover:text-neutral-900 active:bg-neutral-200 disabled:pointer-events-none disabled:opacity-40 md:h-7 md:rounded-lg md:px-2 md:text-xs dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:text-neutral-100 dark:active:bg-neutral-700'
-
-/** The name over a part of the panel, for the eye; the part carries it for a screen reader. */
-const heading = 'px-1 text-xs font-medium text-neutral-400 md:text-[11px] dark:text-neutral-500'
-
-/** The line between one part of the panel and the next. */
-const divider = 'border-t border-neutral-200 pt-3 md:pt-2 dark:border-neutral-800'
-
-const field =
-  'min-w-0 rounded-xl border border-neutral-300 bg-transparent px-3 py-2 text-base text-neutral-900 tabular-nums placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none aria-invalid:border-red-500 md:rounded-lg md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-500'
+import { LogTimeFields, SessionList, timeDivider, timeField } from './TimeLogFields'
 
 interface TimePickerProps {
   /** The minutes the task asks for, or null for none. */
@@ -97,18 +70,12 @@ export function TimePicker({
   startOpen = false,
 }: TimePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
-  // What is typed into each box. The goal's starts as the goal, and is only
-  // kept once it is left or Enter is pressed: `1h30` passes through `1` on the way.
-  const [session, setSession] = useState('')
   // What the next session logged here went on (TIME-23); spaces alone say nothing.
   const [comment, setComment] = useState('')
+  // What is typed as the goal starts as the goal, and is only kept once it is
+  // left or Enter is pressed: `1h30` passes through `1` on the way.
   const [goalText, setGoalText] = useState('')
-  const [isSessionInvalid, setIsSessionInvalid] = useState(false)
   const root = useRef<HTMLDivElement>(null)
-  const ids = useId()
-  const logHeading = `${ids}-log`
-  const sessionsHeading = `${ids}-sessions`
-  const sessionHint = `${ids}-hint`
   const said = comment.trim() === '' ? null : comment.trim()
 
   const spentSeconds = sessionSeconds(sessions)
@@ -150,9 +117,7 @@ export function TimePicker({
       close()
       return
     }
-    setSession('')
     setComment('')
-    setIsSessionInvalid(false)
     setGoalText(goal === null ? '' : describeDuration(goal))
     setIsOpen(true)
   }
@@ -173,32 +138,6 @@ export function TimePicker({
     // oxlint-disable-next-line react/set-state-in-effect -- the clock has to be on the page before its panel opens
     if (startOpen) openAtStart()
   }, [startOpen])
-
-  /** Logs the length typed, when it is one; anything else marks the box and says what would do. */
-  function logTyped() {
-    if (session.trim() === '') return
-
-    const minutes = parseDuration(session)
-    if (minutes === null || !isSessionLength(minutes)) {
-      setIsSessionInvalid(true)
-      return
-    }
-    log(minutes)
-    setSession('')
-  }
-
-  function handleSessionKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key !== 'Enter') return
-    event.preventDefault()
-    logTyped()
-  }
-
-  function handleCommentKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key !== 'Enter') return
-    // Enter logs the length typed, when there is one; a comment alone is nothing to log.
-    event.preventDefault()
-    logTyped()
-  }
 
   function handleGoalKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== 'Enter') return
@@ -320,107 +259,11 @@ export function TimePicker({
               </div>
             ))}
 
-          <div role="group" aria-labelledby={logHeading} className="flex flex-col gap-1.5 md:gap-1">
-            <p id={logHeading} className={heading}>
-              Log time
-            </p>
-            <input
-              type="text"
-              name="time-comment"
-              value={comment}
-              onChange={(event) => { setComment(event.target.value) }}
-              onKeyDown={handleCommentKeyDown}
-              maxLength={MAX_TIME_COMMENT_LENGTH}
-              placeholder="Comment (optional)"
-              aria-label="Comment on the time logged"
-              title="Saved with the next time you log, or with Stop."
-              autoComplete="off"
-              enterKeyHint="done"
-              className={`${field} w-full`}
-            />
-            <div className="grid grid-cols-4 gap-1.5 md:gap-1">
-              {QUICK_SESSIONS.map((minutes) => (
-                <button
-                  key={minutes}
-                  type="button"
-                  onClick={() => { log(minutes) }}
-                  aria-label={`Log ${describeDuration(minutes)}`}
-                  className={chip}
-                >
-                  +{describeDuration(minutes)}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-1.5 md:gap-1">
-              <input
-                type="text"
-                name="time-session"
-                value={session}
-                onChange={(event) => {
-                  setSession(event.target.value)
-                  setIsSessionInvalid(false)
-                }}
-                onKeyDown={handleSessionKeyDown}
-                placeholder="e.g. '13' or '13m'"
-                aria-label="Time to log"
-                aria-invalid={isSessionInvalid}
-                aria-describedby={isSessionInvalid ? sessionHint : undefined}
-                title="Minutes, or 1h, 1h30, 1:30. Enter logs it."
-                autoComplete="off"
-                enterKeyHint="done"
-                className={`${field} w-full flex-1`}
-              />
-              <button
-                type="button"
-                onClick={logTyped}
-                disabled={session.trim() === ''}
-                className={chip}
-              >
-                Log
-              </button>
-            </div>
-            {isSessionInvalid && (
-              <p id={sessionHint} className="px-1 text-xs text-red-600 dark:text-red-400">
-                Try 25m, 1h30 or 1:30, up to 24h.
-              </p>
-            )}
-          </div>
+          <LogTimeFields comment={comment} onCommentChange={setComment} onLog={log} />
 
-          {sessions.length > 0 && (
-            <div className={`flex flex-col gap-1 ${divider}`}>
-              <p id={sessionsHeading} className={heading}>
-                Sessions
-              </p>
-              <ul aria-labelledby={sessionsHeading} className="flex max-h-40 flex-col overflow-y-auto overscroll-contain md:max-h-32">
-                {sessions.map((entry) => {
-                  const at = describeLoggedAt(entry.loggedAt, now)
-                  return (
-                    <li key={entry.id} className="flex items-center gap-2 pl-1 text-sm md:text-xs">
-                      <span className="flex min-w-0 flex-col">
-                        <span className="text-neutral-500 tabular-nums dark:text-neutral-400">{at}</span>
-                        {entry.comment !== null && (
-                          <span className="break-words text-neutral-800 dark:text-neutral-200">{entry.comment}</span>
-                        )}
-                      </span>
-                      <span className="ml-auto font-medium text-neutral-900 tabular-nums dark:text-neutral-100">
-                        {describeSessionLength(entry.seconds)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => { onRemove(entry.id) }}
-                        aria-label={`Remove ${describeSessionLength(entry.seconds)} logged at ${at}`}
-                        className={`grid size-8 shrink-0 place-items-center rounded-lg text-base leading-none md:size-5 md:rounded-md md:text-sm ${deleteControl}`}
-                      >
-                        ×
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          )}
+          {sessions.length > 0 && <SessionList sessions={sessions} now={now} onRemove={onRemove} />}
 
-          <label className={`flex items-center gap-2 px-1 text-sm text-neutral-600 md:text-xs dark:text-neutral-300 ${divider}`}>
+          <label className={`flex items-center gap-2 px-1 text-sm text-neutral-600 md:text-xs dark:text-neutral-300 ${timeDivider}`}>
             Goal
             <input
               type="text"
@@ -433,7 +276,7 @@ export function TimePicker({
               title="How long it takes, such as 1h. Empty for none."
               autoComplete="off"
               enterKeyHint="done"
-              className={`${field} ml-auto w-24 text-right md:w-20`}
+              className={`${timeField} ml-auto w-24 text-right md:w-20`}
             />
           </label>
         </PickerPanel>

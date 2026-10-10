@@ -36,11 +36,6 @@ rules_version = '2';
 // - The check-in's setting: the one document it is ever kept as, stored as
 //   { version, name, checkIn } (src/storage/firestoreCheckInRepository.ts), filed
 //   under that name, and no document at all is the check-in off at its defaults.
-// - Push registrations: one document per device, stored as
-//   { version, deviceId, subscription, timeZone, updatedAt }
-//   (src/storage/firestorePushRepository.ts), always filed under the device's id.
-//   The sender in functions/ adds lastSentSlot; it runs with the project's own
-//   rights, which these rules do not hold back.
 // - The switches on Settings: the one document they are ever kept as, stored as
 //   { version, name, off } (src/storage/firestoreFeatureRepository.ts), filed
 //   under that name, and no document at all is every feature on.
@@ -118,11 +113,6 @@ service cloud.firestore {
     match /users/{accountId}/checkIn/{name} {
       allow read, delete: if isOwner(accountId);
       allow create, update: if isOwner(accountId) && request.resource.data.name == name;
-    }
-
-    match /users/{accountId}/pushSubscriptions/{deviceId} {
-      allow read, delete: if isOwner(accountId);
-      allow create, update: if isOwner(accountId) && request.resource.data.deviceId == deviceId;
     }
 
     match /users/{accountId}/features/{name} {

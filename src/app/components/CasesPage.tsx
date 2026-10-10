@@ -228,8 +228,6 @@ export function CasesPage({ cases, practising, onPractisingChange }: CasesPagePr
               script={performance.opening}
               caseKind={CASE_FOR_SOURCE[performance.source]}
               blocked={null}
-              dayAsked={cases.dayAsked}
-              leastTasks={cases.settings.leastTasks}
               openedPoints={null}
               openedQuarter={null}
               sound={cases.sound}

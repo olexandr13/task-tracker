@@ -64,9 +64,6 @@ These are enforced rather than merely intended, and `CLAUDE.md` is the authority
   the UI.
 - **PRIN-15** Anything time-dependent in that layer takes an injectable `now`, so tests are
   deterministic and future time-based rules have a seam.
-- **PRIN-16** Everything runs in the browser but **one part**: the **sender** that pushes a
-  check-in to a device while the app is closed (CHECKIN-10), a scheduled function in the app's
-  Firebase project, since nothing on a device can wake a closed web app at the top of the hour. It
-  reads only what it needs — the devices registered, the check-in's setting, the day being asked
-  about — decides by the same rules the app does, and writes nothing but the hour it last asked
-  about. Without it the app works as before; only that reach is lost.
+- **PRIN-16** Everything runs in the browser: there is **no server-side part**. What the app has
+  to say reaches the owner while it is open — a tab, or the installed app running — on screen and
+  by the browser's own notification; nothing is pushed to a device while the app is closed.

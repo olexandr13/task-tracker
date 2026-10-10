@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import {
+  bonusEarned,
   BONUS_PERIODS,
   createPointValue,
   defaultReward,
@@ -15,15 +16,22 @@ import {
   type PointValue,
   type RewardEntry,
 } from '../../core'
-import { BONUS_HINTS, BONUS_LABELS, describeMoney, NEW_TASK_REWARD_HINT, PERIOD_NAMES } from '../rewardLabels'
+import {
+  BONUS_EARNED_TAGS,
+  BONUS_HINTS,
+  BONUS_LABELS,
+  describeMoney,
+  NEW_TASK_REWARD_HINT,
+  PERIOD_NAMES,
+} from '../rewardLabels'
 import { deleteControl } from '../rowControls'
-import { BonusTiles } from './BonusTiles'
 import { RewardPicker } from './RewardPicker'
+import { TickIcon } from './TickIcon'
 
 interface RewardRulesPageProps {
   /** What clearing each period earns (RWD-24, RWD-29). */
   bonuses: PeriodBonuses
-  /** What the ledger holds, for whether each bonus has been earned yet (RWD-20). */
+  /** What the ledger holds, for whether each bonus has been earned yet (RWD-39). */
   entries: readonly RewardEntry[]
   /** Which day, week and month it is. */
   now: Date
@@ -37,8 +45,6 @@ interface RewardRulesPageProps {
   onChangeNewTaskReward: (points: number | null) => void
   /** Sets what one point is worth, or forgets it with null. */
   onChangePointValue: (value: PointValue | null) => void
-  /** What Cases asks of a day and what its key plays for (CHST-7). */
-  cases?: ReactNode
 }
 
 const heading = 'text-sm font-medium text-neutral-700 dark:text-neutral-300'
@@ -49,8 +55,7 @@ const field =
 /**
  * What earns points and what they are worth: the reward a new task starts with
  * (RWD-45), the bonus for clearing Today, this week and this month (RWD-27,
- * RWD-29) under the same tiles of where each stands that Rewards shows (RWD-20),
- * what Cases asks of a day and what its key plays for (CHST-7), and
+ * RWD-29), each row marked once its period has paid it (RWD-39), and
  * the rate points are counted in money at (RWD-31).
  *
  * What a task earns once it is made is not here — it is set on the task, with
@@ -70,7 +75,6 @@ export function RewardRulesPage({
   onChangeBonus,
   onChangePointValue,
   onChangeNewTaskReward,
-  cases,
 }: RewardRulesPageProps) {
   return (
     <div className="flex flex-col gap-6">
@@ -98,12 +102,19 @@ export function RewardRulesPage({
 
       <section aria-label="Bonuses" className="flex flex-col gap-2">
         <h2 className={heading}>Finish everything, earn extra</h2>
-        <BonusTiles bonuses={bonuses} entries={entries} now={now} />
         <ul className="flex flex-col gap-1">
           {BONUS_PERIODS.map((period) => (
             <li key={period} className={`${card} flex items-center justify-between gap-3 px-4 py-3`}>
               <div className="flex min-w-0 flex-col gap-0.5">
-                <span className="text-sm text-neutral-900 dark:text-neutral-100">{BONUS_LABELS[period]}</span>
+                <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                  <span className="text-sm text-neutral-900 dark:text-neutral-100">{BONUS_LABELS[period]}</span>
+                  {bonuses[period] !== null && bonusEarned(entries, period, now) !== null && (
+                    <span className="flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                      <TickIcon className="size-3 shrink-0" />
+                      {BONUS_EARNED_TAGS[period]}
+                    </span>
+                  )}
+                </span>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400">{BONUS_HINTS[period]}</span>
               </div>
               <div className="w-32 shrink-0">
@@ -123,13 +134,6 @@ export function RewardRulesPage({
           ))}
         </ul>
       </section>
-
-      {cases !== undefined && (
-        <section aria-label="Cases" className="flex flex-col gap-2">
-          <h2 className={heading}>Cases</h2>
-          {cases}
-        </section>
-      )}
 
       <section aria-label="What a point is worth" className="flex flex-col gap-2">
         <h2 className={heading}>What a point is worth</h2>

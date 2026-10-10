@@ -35,9 +35,7 @@ function asksFor(lessMotion: boolean) {
 }
 
 function setup({
-  blocked = null as 'opened' | 'unclear' | 'tooSmall' | null,
-  dayAsked = 2,
-  leastTasks = 1,
+  blocked = null as 'opened' | 'unclear' | null,
   openedPoints = null as number | null,
   openedQuarter = null as CaseQuarter | null,
   sound = true,
@@ -51,8 +49,6 @@ function setup({
   render(
     <CaseOpening
       blocked={blocked}
-      dayAsked={dayAsked}
-      leastTasks={leastTasks}
       openedPoints={openedPoints}
       openedQuarter={openedQuarter}
       sound={sound}
@@ -85,13 +81,6 @@ describe('a case with no key behind it', () => {
     await userEvent.setup().click(lid())
 
     expect(onOpen).toHaveBeenCalledTimes(1)
-  })
-
-  it('says how big the day has to be when that is what is wanting (CHST-3)', () => {
-    asksFor(false)
-    setup({ blocked: 'tooSmall', dayAsked: 2, leastTasks: 3, opening: null })
-
-    expect(screen.getByText('Today asked for 2 tasks; a case needs 3.')).toBeTruthy()
   })
 
   it('says today’s is open, and what it gave, once it has been (CHST-4)', () => {

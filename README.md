@@ -26,12 +26,6 @@ The backend is Firebase project `task-tracker-a6e9e`
 - **Firestore** — the `(default)` database, Standard edition, in `eur3`, with delete protection on.
   Tasks live at `users/{uid}/tasks/{taskId}`, readable only by that account. `firebase.json` points
   at `firestore.rules` and `firestore.indexes.json`. The rules deploy themselves: see below.
-- **Functions** — the check-in sender (`functions/`): a scheduled function that pushes the hourly
-  check-in to devices while the app is closed, and a callable one that pushes a test. Functions need
-  the project on the **Blaze** plan; at this volume they stay inside the free quotas. The push keys
-  are made by `npm run setup:push`, which keeps both halves in Secret Manager and writes the public
-  one to `.env.local` as `VITE_VAPID_PUBLIC_KEY` (set it in Vercel too). Deploy with
-  `npm run deploy:functions`.
 - **Web app** "Task Tracker Web". Its settings are the `VITE_FIREBASE_*` variables in `.env.local`,
   which git ignores, so no key is kept in the repository. Print them with
   `npx -y firebase-tools@latest apps:sdkconfig WEB --project task-tracker-a6e9e`, and restart
@@ -67,11 +61,9 @@ npm run test           # the rules, storage and the UI's interactions
 npm run lint           # lint, including the layer boundary check
 npm run build          # type-check + production build
 npm run deploy:rules   # firestore.rules, if it changed since the last deploy
-npm run setup:push     # the push keys for check-ins: Secret Manager, .env.local
-npm run deploy:functions  # the check-in sender (functions/)
 ```
 
-Pull requests into `main` run `npm run lint`, `npm test`, `npm run build` and the functions' build via GitHub Actions
+Pull requests into `main` run `npm run lint`, `npm test` and `npm run build` via GitHub Actions
 (`.github/workflows/ci.yml`).
 
 A **pre-commit hook** (`.githooks/pre-commit`) runs the lint and the tests before every commit, so
@@ -104,8 +96,6 @@ so the hosted app does not see tasks saved on `localhost`.
   guest), chosen in one place (`accountStorage.ts`); what stays on the device in `localStorage`
   (`deviceStorage.ts`); and Firebase Auth.
 - `src/app/` — the React UI.
-- `functions/` — the check-in sender, the app's one server-side part: a scheduled Firebase function
-  built from the rules in `src/core` and `src/storage/checkInSender.ts`.
 
 Dependencies point inwards only, and `npm run lint` enforces it. See `CLAUDE.md` for the details.
 

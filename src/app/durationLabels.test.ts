@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { describeDuration, describeElapsedClock, describeLoggedAt, describeSessionLength, describeTimeProgress, describeTimeSummary, describeTimerRunning, parseDuration } from './durationLabels'
+import { isSessionLength } from '../core'
+import { describeDuration, describeElapsedClock, describeLoggedAt, describeSessionLength, describeTimeProgress, describeTimeSummary, describeTimerRunning, LENGTH_EXAMPLES, parseDuration } from './durationLabels'
 
 /* TIME ids refer to wiki/time-goals.md. */
 
@@ -27,6 +28,14 @@ describe('parseDuration (TIME-11)', () => {
   it('reads nothing from what is not a length of time', () => {
     for (const text of ['', ' ', 'soon', 'h', '1:75', '-5', '1h30x', '1d']) {
       expect(parseDuration(text)).toBeNull()
+    }
+  })
+
+  it('reads every example its i shows as a session', () => {
+    for (const typed of LENGTH_EXAMPLES.flatMap((example) => example.typed)) {
+      const minutes = parseDuration(typed)
+      expect(minutes, typed).not.toBeNull()
+      expect(isSessionLength(minutes ?? 0), typed).toBe(true)
     }
   })
 })

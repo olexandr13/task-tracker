@@ -6,8 +6,7 @@ import type { FeaturesOff } from '../core'
  *
  * Kept in the account rather than on the device, as the modes are (MODE-9,
  * STORE-56): what someone uses the app for is theirs, not the machine's, so a
- * feature turned off at the laptop is off at the phone — and the sender that
- * pushes check-ins reads it there too (CHECKIN-10).
+ * feature turned off at the laptop is off at the phone.
  *
  * Every call site talks to this interface rather than to the service behind it,
  * as with the tasks (./taskRepository).

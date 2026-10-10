@@ -79,6 +79,19 @@ const HOURS_AND_MINUTES = new RegExp(String.raw`^(\d+(?:[.,]\d+)?)\s*${HOURS}\s*
 const CLOCK = /^(\d+):([0-5]\d)$/
 
 /**
+ * What a length box understands, as its **i** shows it (TIME-11): what to type,
+ * and what it means. Each one parses to a session (durationLabels.test.ts).
+ */
+export const LENGTH_EXAMPLES: ReadonlyArray<{ typed: readonly string[]; means: string }> = [
+  { typed: ['25'], means: 'A number on its own is minutes.' },
+  { typed: ['25m', '25 min'], means: 'Minutes.' },
+  { typed: ['2h', '2 hours'], means: 'Hours.' },
+  { typed: ['1.5h'], means: 'Part of an hour: this is 1 hour 30 minutes.' },
+  { typed: ['1h30', '1h 30m'], means: 'Hours and minutes.' },
+  { typed: ['1:30'], means: 'Hours and minutes, written as on a clock.' },
+]
+
+/**
  * Minutes from what was typed, the ways a person writes a length of time: a
  * bare number is minutes. Null for anything else. Whether the length is one a
  * goal or a session can be is the caller's to ask of ../core.

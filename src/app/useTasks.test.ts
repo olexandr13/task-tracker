@@ -408,6 +408,46 @@ describe('useTasks, changes made in one go', () => {
   })
 })
 
+describe('useTasks, the sessions a change logs (ACT-21)', () => {
+  function setUpLogging(saved: Task[]) {
+    const tasks = fakeTaskRepository()
+    const logged: { title: string; seconds: number }[][] = []
+    const { result } = renderHook(() =>
+      useTasks(tasks.repository, fakeRewardRepository().repository, undefined, NO_BONUSES, [], (sessions) => {
+        logged.push(sessions.map(({ task, entry }) => ({ title: task.title, seconds: entry.seconds })))
+      }),
+    )
+    tasks.arrive(saved)
+    return { result, arrive: tasks.arrive, logged }
+  }
+
+  it('tells of time logged by hand, by the timer, and with a task as it is added', () => {
+    const task = createTask('work')
+    const { result, logged } = setUpLogging([task])
+
+    act(() => { result.current.logTaskTime(task.id, 30, null) })
+    act(() => { result.current.logTaskSeconds(task.id, 95, 'draft') })
+    act(() => { result.current.addTask('read', null, null, null, [], null, { timeLog: [{ minutes: 15, comment: null }] }) })
+
+    expect(logged).toEqual([
+      [{ title: 'work', seconds: 1800 }],
+      [{ title: 'work', seconds: 95 }],
+      [{ title: 'read', seconds: 900 }],
+    ])
+  })
+
+  it('tells of nothing taken back, changed otherwise, or arriving from elsewhere', () => {
+    const task = logTime(createTask('work'), 30)
+    const { result, arrive, logged } = setUpLogging([task])
+
+    act(() => { result.current.removeTaskTime(task.id, task.timeLog[0].id) })
+    act(() => { result.current.rename(task.id, 'office') })
+    arrive([logTime(task, 15)])
+
+    expect(logged).toEqual([])
+  })
+})
+
 describe('useTasks, when the repository refuses', () => {
   it('says a load it refused is not an empty list, and reports it (STORE-13)', () => {
     expectConsole('Could not load tasks.')

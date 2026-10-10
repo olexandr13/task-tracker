@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   balanceByDay,
+  balanceSessions,
   balanceShares,
   balanceTotals,
   bindTag,
@@ -10,9 +11,12 @@ import {
   isCategoryName,
   isCategoryLimitReached,
   isCategoryNameTaken,
+  logCategoryTime,
   MAX_CATEGORIES,
   MAX_CATEGORY_NAME_LENGTH,
   normalizeCategoryName,
+  recentCategoryTime,
+  removeCategoryTime,
   removeTagFromCategories,
   renameCategory,
   renameTagInCategories,
@@ -22,7 +26,7 @@ import {
 } from './balance'
 import { InvalidTagError } from './tag'
 import { createTask, deleteTask, type Task } from './task'
-import { logSeconds, logTime } from './timeLog'
+import { InvalidTimeError, logSeconds, logTime } from './timeLog'
 
 /* BAL ids refer to wiki/balance.md. */
 
@@ -233,6 +237,136 @@ describe('balanceTotals (BAL-2 to BAL-5)', () => {
       ['Work', 0],
     ])
     expect(totals.total).toBe(0)
+  })
+})
+
+describe('time logged straight to a category (BAL-14, BAL-15)', () => {
+  const rest = category('Rest', ['walk'])
+
+  it('starts with none, and logs whole minutes with what they went on, the latest last', () => {
+    expect(rest.timeLog).toEqual([])
+
+    const logged = logCategoryTime(logCategoryTime(rest, 30, NOW, '  read a chapter '), 15, NOW, '   ')
+
+    expect(logged.timeLog.map(({ seconds, loggedAt, comment }) => [seconds, loggedAt, comment])).toEqual([
+      [30 * 60, NOW.toISOString(), 'read a chapter'],
+      [15 * 60, NOW.toISOString(), null],
+    ])
+    expect(rest.timeLog).toEqual([])
+  })
+
+  it('refuses a length that is not whole minutes from one to a day, or a comment on two lines', () => {
+    expect(() => logCategoryTime(rest, 0, NOW)).toThrow(InvalidTimeError)
+    expect(() => logCategoryTime(rest, 24 * 60 + 1, NOW)).toThrow(InvalidTimeError)
+    expect(() => logCategoryTime(rest, 1.5, NOW)).toThrow(InvalidTimeError)
+    expect(() => logCategoryTime(rest, 10, NOW, 'two\nlines')).toThrow(InvalidTimeError)
+  })
+
+  it('lets go of sessions older than any period shows as it logs, keeping the month whole', () => {
+    const july = logCategoryTime(rest, 10, new Date(2026, 6, 20, 9, 0))
+    const firstOfMonth = logCategoryTime(july, 20, new Date(2026, 8, 1, 9, 0))
+
+    const logged = logCategoryTime(firstOfMonth, 5, NOW)
+
+    expect(logged.timeLog.map(({ seconds }) => seconds)).toEqual([20 * 60, 5 * 60])
+  })
+
+  it('takes a session back, handing back a category without it as it is', () => {
+    const logged = logCategoryTime(logCategoryTime(rest, 30, NOW), 15, NOW)
+
+    expect(removeCategoryTime(logged, logged.timeLog[0].id).timeLog).toEqual([logged.timeLog[1]])
+    expect(removeCategoryTime(logged, 'nothing')).toBe(logged)
+  })
+
+  it('lists what the page still shows, the latest first', () => {
+    const logged = [new Date(2026, 6, 20, 9, 0), new Date(2026, 8, 15, 18, 0), NOW].reduce(
+      // Logged one after another as they came, so the July one is still kept until the next.
+      (made, at) => ({ ...made, timeLog: [...made.timeLog, ...logCategoryTime(rest, 10, at).timeLog] }),
+      rest,
+    )
+
+    expect(recentCategoryTime(logged, NOW).map(({ loggedAt }) => loggedAt)).toEqual([
+      NOW.toISOString(),
+      new Date(2026, 8, 15, 18, 0).toISOString(),
+    ])
+  })
+
+  it('counts toward its category whole, beside the time on tasks, in the period it was logged', () => {
+    const work = category('Work', ['job'])
+    const logged = logCategoryTime(logCategoryTime(rest, 40, NOW, 'reading'), 20, new Date(2026, 8, 14, 20, 0))
+    const tasks = [logTime(task('walk the dog', ['walk']), 30, NOW), logTime(task('post office', []), 10, NOW)]
+
+    const today = balanceTotals([work, logged], tasks, 'today', NOW)
+    expect(today.categories.map(({ seconds }) => seconds)).toEqual([0, 70 * 60])
+    expect(today.other).toBe(10 * 60)
+    expect(today.total).toBe(80 * 60)
+
+    expect(balanceTotals([work, logged], tasks, 'week', NOW).categories[1].seconds).toBe(90 * 60)
+  })
+
+  it('counts on the day it was logged, day by day', () => {
+    const logged = logCategoryTime(rest, 20, new Date(2026, 8, 14, 20, 0))
+
+    const week = balanceByDay([logged], [], 'week', NOW)
+
+    expect(week.map(({ total }) => total)).toEqual([20 * 60, 0, 0, 0, 0, 0, 0])
+    expect(week[0].categories[0].seconds).toBe(20 * 60)
+  })
+})
+
+describe('balanceSessions (BAL-16)', () => {
+  const work = category('Work', ['job'])
+  const rest = category('Rest', ['chill', 'walk'])
+  const YESTERDAY = new Date(2026, 8, 15, 18, 0)
+
+  it('lists the sessions behind a category in the period, the latest first, adding up to its piece', () => {
+    const report = logTime(logTime(task('report', ['job']), 60, YESTERDAY), 30, new Date(2026, 8, 16, 9, 0))
+    const walk = logTime(task('walk', ['walk']), 20, NOW)
+    const logged = logCategoryTime(rest, 15, new Date(2026, 8, 16, 8, 0), 'reading')
+
+    const sessions = balanceSessions([work, logged], [report, walk], logged.id, 'today', NOW)
+
+    expect(sessions.map(({ task: made, seconds, entry }) => [made?.title ?? entry.comment, seconds])).toEqual([
+      ['walk', 20 * 60],
+      ['reading', 15 * 60],
+    ])
+    expect(balanceSessions([work, logged], [report, walk], work.id, 'week', NOW).map(({ seconds }) => seconds)).toEqual([
+      30 * 60,
+      60 * 60,
+    ])
+    expect(sessions.reduce((sum, { seconds }) => sum + seconds, 0)).toBe(
+      balanceTotals([work, logged], [report, walk], 'today', NOW).categories[1].seconds,
+    )
+  })
+
+  it('counts a session divided between categories at its share, naming the others (BAL-4)', () => {
+    const commute = logTime(task('walk to the office', ['job', 'walk']), 30, NOW)
+
+    const [session] = balanceSessions([work, rest], [commute], rest.id, 'today', NOW)
+
+    expect(session.seconds).toBe(15 * 60)
+    expect(session.entry.seconds).toBe(30 * 60)
+    expect(session.sharedWith.map(({ name }) => name)).toEqual(['Work'])
+  })
+
+  it('lists the sessions on tasks bound to no category for Other (BAL-5)', () => {
+    const tasks = [
+      logTime(task('post office', ['errand']), 15, NOW),
+      logTime(task('dishes', []), 10, NOW),
+      logTime(task('report', ['job']), 60, NOW),
+    ]
+
+    expect(balanceSessions([work, rest], tasks, null, 'today', NOW).map(({ task: made }) => made?.title)).toEqual([
+      'post office',
+      'dishes',
+    ])
+  })
+
+  it('has none for a category with nothing logged in the period, or one there is not', () => {
+    const report = logTime(task('report', ['job']), 60, YESTERDAY)
+
+    expect(balanceSessions([work], [report], work.id, 'today', NOW)).toEqual([])
+    expect(balanceSessions([work], [report], 'gone', 'week', NOW)).toEqual([])
   })
 })
 

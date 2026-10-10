@@ -5,8 +5,7 @@ import { accountCollection } from './firestoreAccount'
 
 /**
  * An account's switches on Settings in Firestore, readable by that account
- * alone (`firestore.rules`) — and by the sender that pushes check-ins, which
- * runs with the project's own rights (`functions/`): one document at
+ * alone (`firestore.rules`): one document at
  * `users/{accountId}/features/features`, and no document at all is everything
  * on (STORE-56), as the nudge's setting is kept.
  */

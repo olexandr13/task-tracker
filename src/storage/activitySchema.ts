@@ -1,18 +1,38 @@
-import { isActivityName, isHourOfDay, isLocalDay, isSessionSeconds, type ActivityEntry, type LocalDay } from '../core'
+import {
+  isActivityName,
+  isHourOfDay,
+  isLocalDay,
+  isSessionSeconds,
+  isStartSecond,
+  type ActivityEntry,
+  type LocalDay,
+  type SessionRef,
+} from '../core'
 import { isRecord } from './plainData'
 
 /**
  * The saved shape of the activity log (ACT-1). Its own version, apart from
  * everything else's; bump it whenever a shape below changes, and upgrade on
  * reading (STORE-5).
+ *
+ * - 1: what, how long, and the hour.
+ * - 2: and when it began in its hour, and the task session it was made from
+ *   (ACT-21) — null for a record typed, as every record of version 1 is read.
+ *   A day is written field by field, so a day of version 2 may still hold
+ *   records written before: those fields missing are read as null too.
  */
-export const ACTIVITY_SCHEMA_VERSION = 1
+export const ACTIVITY_SCHEMA_VERSION = 2
+
+/** The versions read back: every one there has been. */
+const READABLE_VERSIONS: readonly unknown[] = [1, ACTIVITY_SCHEMA_VERSION]
 
 /** One record as a day holds it: the day is the day's own. */
 export interface StoredActivityFields {
   activity: string
   seconds: number
   hour: number
+  startSecond: number | null
+  session: { taskId: string; entryId: string } | null
   loggedAt: string
 }
 
@@ -36,7 +56,14 @@ export interface StoredActivityEntry {
 }
 
 export function toStoredActivityFields(entry: ActivityEntry): StoredActivityFields {
-  return { activity: entry.activity, seconds: entry.seconds, hour: entry.hour, loggedAt: entry.loggedAt }
+  return {
+    activity: entry.activity,
+    seconds: entry.seconds,
+    hour: entry.hour,
+    startSecond: entry.startSecond,
+    session: entry.session === null ? null : { taskId: entry.session.taskId, entryId: entry.session.entryId },
+    loggedAt: entry.loggedAt,
+  }
 }
 
 /** The records as the days that hold them, earliest day first. */
@@ -54,23 +81,36 @@ export function toStoredActivityEntry(entry: ActivityEntry): StoredActivityEntry
   return { version: ACTIVITY_SCHEMA_VERSION, entry }
 }
 
+/** The session a record names, null for none — missing, as before version 2 — or undefined when it is not one. */
+function readSession(data: unknown): SessionRef | null | undefined {
+  if (data === undefined || data === null) return null
+  if (!isRecord(data)) return undefined
+  const { taskId, entryId } = data
+  if (typeof taskId !== 'string' || taskId === '' || typeof entryId !== 'string' || entryId === '') return undefined
+  return { taskId, entryId }
+}
+
 /** A record's fields read back, or null when anything in them is not what it should be. */
 function readFields(id: string, day: LocalDay, data: unknown): ActivityEntry | null {
   if (!isRecord(data) || id === '') return null
 
   const { activity, seconds, hour, loggedAt } = data
+  const startSecond = data.startSecond ?? null
+  const session = readSession(data.session)
   if (
     typeof activity !== 'string' ||
     !isActivityName(activity) ||
     typeof seconds !== 'number' ||
     !isSessionSeconds(seconds) ||
     !isHourOfDay(hour) ||
+    (startSecond !== null && !isStartSecond(startSecond)) ||
+    session === undefined ||
     typeof loggedAt !== 'string' ||
     Number.isNaN(Date.parse(loggedAt))
   ) {
     return null
   }
-  return { id, activity, seconds, day, hour, loggedAt }
+  return { id, activity, seconds, day, hour, startSecond, session, loggedAt }
 }
 
 /**
@@ -81,7 +121,7 @@ function readFields(id: string, day: LocalDay, data: unknown): ActivityEntry | n
  * drops an empty map rather than keeping it.
  */
 export function readActivityDay(data: unknown): ActivityEntry[] | null {
-  if (!isRecord(data) || data.version !== ACTIVITY_SCHEMA_VERSION) return null
+  if (!isRecord(data) || !READABLE_VERSIONS.includes(data.version)) return null
 
   const { day, entries } = data
   if (typeof day !== 'string' || !isLocalDay(day)) return null
@@ -99,7 +139,7 @@ export function readActivityDay(data: unknown): ActivityEntry[] | null {
 
 /** One record the guest's browser kept, or null when it can't be trusted. */
 export function readActivityEntry(data: unknown): ActivityEntry | null {
-  if (!isRecord(data) || data.version !== ACTIVITY_SCHEMA_VERSION || !isRecord(data.entry)) return null
+  if (!isRecord(data) || !READABLE_VERSIONS.includes(data.version) || !isRecord(data.entry)) return null
 
   const { id, day } = data.entry
   if (typeof id !== 'string' || typeof day !== 'string' || !isLocalDay(day)) return null

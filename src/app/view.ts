@@ -139,22 +139,22 @@ export function isModesView(view: View): view is ModesView {
 }
 
 /**
- * The pages More's own page lists, in the order it lists them: Lists, which a
- * phone's bar has no tab for (UI-34), Tags, now that Rewards has a place of its
- * own everywhere (RWD-19), Balance, where the time logged divides between work
- * and rest (BAL-1), the activity log, where each hour of the day is written
- * down (ACT-1), and Modes, which holds the switches that were once rows on More
- * itself (MODE-1).
+ * The pages More's own page lists — the ones a phone's bar has no tab for — in
+ * the order the sidebar lists them (UI-30, UI-45): Lists (UI-34), Tags, Modes,
+ * which holds the switches that were once rows on More itself (MODE-1),
+ * Balance, where the time logged divides between work and rest (BAL-1), and the
+ * activity log, where each hour of the day is written down (ACT-1). The
+ * sidebar has an entry for every one of them, and so none for More.
  */
-export const ON_MORE = ['lists', 'tags', 'balance', 'activity', 'modes'] as const satisfies readonly FixedView[]
+export const ON_MORE = ['lists', 'tags', 'modes', 'balance', 'activity'] as const satisfies readonly FixedView[]
 
 /**
- * The pages More stands for while one of them is open — the ones on its page
- * (`ON_MORE`) that are reached from nowhere else. Lists is listed on More but
- * left out here: Tasks is the tab marked while it is open (UI-34) and the
- * sidebar has an entry for it, so More standing for it too would mark two at
- * once. Adding a page to More's page is deciding both: whether it is listed
- * there, and whether it is reached only from there.
+ * The pages the More tab stands for while one of them is open — the ones on its
+ * page (`ON_MORE`) the bar reaches from nowhere else. Lists is listed on More
+ * but left out here: Tasks is the tab marked while it is open (UI-34), so More
+ * standing for it too would mark two at once. Adding a page to More's page is
+ * deciding both: whether it is listed there, and whether it is reached only
+ * from there.
  */
 export const UNDER_MORE = ['tags', 'balance', 'activity', 'modes'] as const satisfies readonly FixedView[]
 

@@ -13,13 +13,25 @@
  * An activity is a name and nothing else: typed, and remembered from the
  * records that carry it. Two records name the same activity whatever case they
  * are written in, so "Reading" and "reading" are added up together.
+ *
+ * Time logged on a task is written here too (ACT-21): the time up to the moment
+ * it was logged, under the task's title, cut at the hours it crosses. Those
+ * records know when they began, and which session they are from, so taking the
+ * session back takes them out with it.
  */
 
 import { offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from './day'
 import { periodRange } from './progress'
-import { isSessionSeconds } from './timeLog'
+import type { TaskId } from './task'
+import { isSessionSeconds, type TimeEntry, type TimeEntryId } from './timeLog'
 
 export type ActivityEntryId = string
+
+/** The task session a record was made from (ACT-21). */
+export interface SessionRef {
+  readonly taskId: TaskId
+  readonly entryId: TimeEntryId
+}
 
 export interface ActivityEntry {
   readonly id: ActivityEntryId
@@ -31,6 +43,13 @@ export interface ActivityEntry {
   readonly day: LocalDay
   /** The hour of that day's clock it is logged under, 0 to 23. */
   readonly hour: number
+  /**
+   * The second of its hour it began at, 0 to 3599 (`isStartSecond`), when that
+   * is known — a session's records know it (ACT-21) — or null for one typed.
+   */
+  readonly startSecond: number | null
+  /** The task session it was made from, or null for one typed. */
+  readonly session: SessionRef | null
   /** ISO 8601: when it was written down or last changed. */
   readonly loggedAt: string
 }
@@ -44,6 +63,8 @@ export interface HourSlot {
 /** As long a name as an activity is given room for on screen. */
 export const MAX_ACTIVITY_NAME_LENGTH = 40
 
+const HOUR_SECONDS = 3600
+
 export class InvalidActivityError extends Error {
   constructor(message: string) {
     super(message)
@@ -54,6 +75,11 @@ export class InvalidActivityError extends Error {
 /** Whether a value is an hour of the day's clock: a whole number from 0 to 23. */
 export function isHourOfDay(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 23
+}
+
+/** Whether a value is a second of an hour a record can begin at: a whole number from 0 to 3599. */
+export function isStartSecond(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < HOUR_SECONDS
 }
 
 function squeezed(name: string): string {
@@ -153,8 +179,82 @@ export function createActivityEntry(
     seconds,
     day: slot.day,
     hour: slot.hour,
+    startSecond: null,
+    session: null,
     loggedAt: now.toISOString(),
   }
+}
+
+/**
+ * The activity a task's time is logged as (ACT-21): its title on one line,
+ * cut to the length a name can be, with an ellipsis where it was cut.
+ */
+export function activityNameOf(title: string): string {
+  const name = squeezed(title)
+  if (name.length <= MAX_ACTIVITY_NAME_LENGTH) return name
+  // Never half of a character written in two.
+  const cut = name.slice(0, MAX_ACTIVITY_NAME_LENGTH - 1).replace(/[\uD800-\uDBFF]$/u, '')
+  return `${cut.trimEnd()}…`
+}
+
+/**
+ * The records a session logged on a task makes in the log (ACT-21): the time
+ * up to the moment it was logged — its length back from then, as a timer's run
+ * is from its start to its stop — under the task's title, spelled as the
+ * activity is known. It is cut at every hour it crosses, so each hour is given
+ * what was spent in it, and each record knows when it began and the session it
+ * is from. The moment is taken to the whole second, so the pieces add up to
+ * the session exactly.
+ */
+export function sessionActivityEntries(
+  title: string,
+  taskId: TaskId,
+  session: TimeEntry,
+  now: Date = new Date(),
+  known: readonly string[] = [],
+): ActivityEntry[] {
+  const activity = spelled(activityNameOf(title), known)
+  const end = Math.round(Date.parse(session.loggedAt) / 1000) * 1000
+  const entries: ActivityEntry[] = []
+
+  for (let start = end - session.seconds * 1000; start < end; ) {
+    const slot = slotAt(new Date(start))
+    const hourEnd = slotEnd(slot).getTime()
+    // An hour a clock change has bent out of shape still ends somewhere ahead.
+    const until = hourEnd > start ? Math.min(hourEnd, end) : end
+    const seconds = Math.round((until - start) / 1000)
+    const startSecond = Math.floor((start - slotStart(slot).getTime()) / 1000)
+    if (isSessionSeconds(seconds)) {
+      entries.push({
+        id: crypto.randomUUID(),
+        activity,
+        seconds,
+        day: slot.day,
+        hour: slot.hour,
+        startSecond: isStartSecond(startSecond) ? startSecond : null,
+        session: { taskId, entryId: session.id },
+        loggedAt: now.toISOString(),
+      })
+    }
+    start = until
+  }
+  return entries
+}
+
+/** The log without the records made from a session, for when the session is taken back (ACT-21). */
+export function withoutSession(entries: readonly ActivityEntry[], entryId: TimeEntryId): ActivityEntry[] {
+  return entries.filter((entry) => entry.session?.entryId !== entryId)
+}
+
+/**
+ * When a record began and ended, by its hour and the second of it it began at,
+ * or null for one that does not know (ACT-21). It ends its length later, so a
+ * record changed or moved keeps beginning as far into its hour as it did.
+ */
+export function entryTimes(entry: ActivityEntry): { readonly start: Date; readonly end: Date } | null {
+  if (entry.startSecond === null) return null
+  const start = new Date(slotStart(slotOf(entry)).getTime() + entry.startSecond * 1000)
+  return { start, end: new Date(start.getTime() + entry.seconds * 1000) }
 }
 
 /** What a record can be changed to: what, how long, and the hour of its day. */

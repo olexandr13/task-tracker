@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   activityByDay,
   activityKinds,
+  activityNameOf,
   activityPeriodDays,
   activityTotals,
   changeActivityEntry,
   createActivityEntry,
   entriesInSlot,
+  entryTimes,
   hasSlotEnded,
   hasSlotStarted,
   InvalidActivityError,
@@ -17,14 +19,17 @@ import {
   MAX_ACTIVITY_NAME_LENGTH,
   normalizeActivityName,
   sameActivity,
+  sessionActivityEntries,
   shiftActivityPeriod,
   slotAt,
   slotBefore,
   slotKey,
   suggestActivities,
+  withoutSession,
   type ActivityEntry,
   type HourSlot,
 } from './activity'
+import { secondsEntry } from './timeLog'
 
 /* ACT ids refer to wiki/activity-log.md. */
 
@@ -85,6 +90,91 @@ describe('a record (ACT-2, ACT-6)', () => {
     const made = entry('work', 45, FRI)
 
     expect(changeActivityEntry(made, { activity: 'Work', seconds: 2700, hour: 14 }, NOW, ['work']).activity).toBe('Work')
+  })
+})
+
+describe('time logged on a task (ACT-21)', () => {
+  const at = (hour: number, minute: number, second = 0) => new Date(2026, 9, 2, hour, minute, second)
+  const session = (seconds: number, loggedAt: Date) => secondsEntry(seconds, loggedAt)
+  const times = (made: ActivityEntry) => {
+    const range = entryTimes(made)
+    return range === null ? null : [range.start.getTime(), range.end.getTime()]
+  }
+
+  it('is the time up to the moment it was logged, under the task’s title', () => {
+    const logged = session(30 * 60, at(11, 30))
+    const [made, ...rest] = sessionActivityEntries('Work', 'task-1', logged, at(11, 30))
+
+    expect(rest).toEqual([])
+    expect(made).toMatchObject({
+      activity: 'Work',
+      seconds: 1800,
+      day: '2026-10-02',
+      hour: 11,
+      startSecond: 0,
+      session: { taskId: 'task-1', entryId: logged.id },
+      loggedAt: at(11, 30).toISOString(),
+    })
+    expect(times(made)).toEqual([at(11, 0).getTime(), at(11, 30).getTime()])
+  })
+
+  it('is cut at every hour it crosses, each hour given what was spent in it', () => {
+    const made = sessionActivityEntries('Work', 'task-1', session(2 * 3600 + 600, at(12, 10, 5)), at(12, 10, 5))
+
+    expect(made.map(({ day, hour, startSecond, seconds }) => ({ day, hour, startSecond, seconds }))).toEqual([
+      { day: '2026-10-02', hour: 10, startSecond: 5, seconds: 3595 },
+      { day: '2026-10-02', hour: 11, startSecond: 0, seconds: 3600 },
+      { day: '2026-10-02', hour: 12, startSecond: 0, seconds: 605 },
+    ])
+    expect(made.reduce((sum, piece) => sum + piece.seconds, 0)).toBe(2 * 3600 + 600)
+    expect(new Set(made.map((piece) => piece.id)).size).toBe(3)
+  })
+
+  it('crosses midnight into the day before', () => {
+    const made = sessionActivityEntries('Read', 'task-1', session(1800, new Date(2026, 9, 3, 0, 10)))
+
+    expect(made.map(({ day, hour, seconds }) => ({ day, hour, seconds }))).toEqual([
+      { day: '2026-10-02', hour: 23, seconds: 1200 },
+      { day: '2026-10-03', hour: 0, seconds: 600 },
+    ])
+  })
+
+  it('takes a timer’s run to the whole second, so its pieces add up to it', () => {
+    const made = sessionActivityEntries('Work', 'task-1', session(90, new Date(at(11, 0, 30).getTime() + 400)))
+
+    expect(made.map(({ hour, startSecond, seconds }) => ({ hour, startSecond, seconds }))).toEqual([
+      { hour: 10, startSecond: 3600 - 60, seconds: 60 },
+      { hour: 11, startSecond: 0, seconds: 30 },
+    ])
+  })
+
+  it('spells the activity as it is known, and cuts a long title to a name', () => {
+    expect(sessionActivityEntries('work', 'task-1', session(60, at(11, 0)), NOW, ['Work'])[0].activity).toBe('Work')
+
+    const long = activityNameOf(`  Write   the ${'very '.repeat(10)}long report `)
+    expect(long).toHaveLength(MAX_ACTIVITY_NAME_LENGTH)
+    expect(long.startsWith('Write the very very')).toBe(true)
+    expect(long.endsWith('…')).toBe(true)
+    expect(isActivityName(long)).toBe(true)
+    expect(activityNameOf(`${'a'.repeat(38)}😀😀`)).toBe(`${'a'.repeat(38)}…`)
+  })
+
+  it('keeps beginning as far into its hour once changed or moved', () => {
+    const [made] = sessionActivityEntries('Work', 'task-1', session(600, at(11, 30)))
+    const changed = changeActivityEntry(made, { activity: 'Work', seconds: 1800, hour: 14 })
+
+    expect(changed.session).toEqual(made.session)
+    expect(times(changed)).toEqual([at(14, 20).getTime(), at(14, 50).getTime()])
+    expect(entryTimes(entry('Work', 30, FRI))).toBeNull()
+  })
+
+  it('is taken out with its session, leaving every other record', () => {
+    const logged = session(2 * 3600, at(12, 0))
+    const kept = [entry('Work', 15, FRI), ...sessionActivityEntries('Work', 'task-1', session(600, at(11, 0)))]
+    const log = [...kept, ...sessionActivityEntries('Work', 'task-1', logged)]
+
+    expect(log).toHaveLength(4)
+    expect(withoutSession(log, logged.id)).toEqual(kept)
   })
 })
 

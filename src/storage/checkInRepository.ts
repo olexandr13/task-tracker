@@ -5,10 +5,9 @@ import { DEFAULT_CHECK_IN_WINDOW, type HoursWindow } from '../core'
  * the day it asks about (CHECKIN-2).
  *
  * Kept in the account rather than on the device, as every mode is (MODE-9):
- * the hours are the owner's, so they are the same at the laptop and the phone —
- * and the sender that pushes a check-in when the app is closed reads them there
- * (CHECKIN-10). What each device keeps to itself is only what it alone can
- * answer (./checkInDeviceRepository).
+ * the hours are the owner's, so they are the same at the laptop and the phone.
+ * What each device keeps to itself is only what it alone can answer
+ * (./checkInDeviceRepository).
  */
 export interface CheckInPreference {
   readonly on: boolean

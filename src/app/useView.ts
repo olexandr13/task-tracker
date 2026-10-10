@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { DEFAULT_VIEW, parentView, rootView, viewFromHash, viewHash, type View } from './view'
 
 function viewInAddress(): View {
@@ -68,9 +68,22 @@ export function useView(): [View, (view: View) => void] {
   }
 
   // An entry the app was opened on, rather than reloaded on, has to be laid out.
+  // The entries are rewritten in place, so a place the browser kept for one
+  // belongs to some other view: where the page is scrolled is the app's to say.
   useEffect(() => {
     if (levelOf(window.history.state) === null) settleEntries(shown.current)
+    window.history.scrollRestoration = 'manual'
   }, [])
+
+  // Another view opens at its top (UI-80), not where the last one was left.
+  // Before the page's own effects, so a row gone to is still brought into view.
+  const scrolledFor = useRef(view)
+  useLayoutEffect(() => {
+    if (scrolledFor.current === view) return
+    scrolledFor.current = view
+    const page = document.scrollingElement ?? document.documentElement
+    page.scrollTop = 0
+  }, [view])
 
   // Back, forward, or an address typed or pasted in.
   useEffect(() => {

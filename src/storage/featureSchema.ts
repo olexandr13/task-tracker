@@ -4,8 +4,7 @@ import { isRecord } from './plainData'
 /**
  * The saved shape of the switches on Settings (FEAT-1). Its own version, apart
  * from everything else's; bump it whenever the shape below changes and migrate
- * on load (STORE-5). The sender that pushes check-ins reads it too
- * (`functions/`), so a change of shape is a change there as well.
+ * on load (STORE-5).
  */
 export const FEATURES_SCHEMA_VERSION = 1
 

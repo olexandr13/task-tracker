@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TimePicker } from './TimePicker'
@@ -200,5 +200,26 @@ describe('TimePicker panel', () => {
 
     await user.type(box, 'x')
     expect(screen.queryByText(/Try 25m/)).toBeNull()
+  })
+
+  it('keeps what the box understands behind the i, and the panel open under its sheet (TIME-11)', async () => {
+    const user = renderPicker(null)
+    await user.click(screen.getByRole('button', { name: /Time:/ }))
+
+    const box = screen.getByRole('textbox', { name: 'Time to log' })
+    expect(box.getAttribute('placeholder')).toBeNull()
+    expect(box.getAttribute('title')).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'About Log time' }))
+    const sheet = screen.getByRole('dialog', { name: 'Logging time' })
+    expect(within(sheet).getByText('1h30')).toBeDefined()
+    expect(within(sheet).getByText(/Press "\+5m", "\+15m", "\+30m" or "\+1h"/)).toBeDefined()
+
+    await user.click(within(sheet).getByText('Hours and minutes, written as on a clock.'))
+    expect(screen.getByRole('dialog', { name: 'Logging time' })).toBeDefined()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: 'Logging time' })).toBeNull()
+    expect(screen.getByRole('textbox', { name: 'Time to log' })).toBeDefined()
   })
 })

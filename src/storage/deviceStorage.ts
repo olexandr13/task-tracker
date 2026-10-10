@@ -5,6 +5,7 @@ import { localStorageCheckInDeviceRepository } from './localStorageCheckInDevice
 import { localStorageCaseDeviceRepository } from './localStorageCaseDeviceRepository'
 import { localStorageHabitViewOptionsRepository } from './localStorageHabitViewOptionsRepository'
 import { localStorageNudgeRepository } from './localStorageNudgeRepository'
+import { localStoragePinnedTabsRepository } from './localStoragePinnedTabsRepository'
 import { localStorageQuoteRepository } from './localStorageQuoteRepository'
 import { localStorageSettingsLayoutRepository } from './localStorageSettingsLayoutRepository'
 import { localStorageSideNavRepository } from './localStorageSideNavRepository'
@@ -12,6 +13,7 @@ import { localStorageTaskTimerRepository } from './localStorageTaskTimerReposito
 import { localStorageThemeRepository } from './localStorageThemeRepository'
 import { localStorageViewOptionsRepository } from './localStorageViewOptionsRepository'
 import type { NudgeDeviceRepository } from './nudgeDeviceRepository'
+import type { PinnedTabsRepository } from './pinnedTabsRepository'
 import type { QuoteRepository } from './quoteRepository'
 import type { SettingsLayoutRepository } from './settingsLayoutRepository'
 import type { SideNavRepository } from './sideNavRepository'
@@ -21,15 +23,17 @@ import type { ViewOptionsRepository } from './viewOptionsRepository'
 
 /**
  * What is kept on this device rather than in the account: how things are shown
- * here — Settings' folds among them — what is running here, what the nudge has already said here, what the
+ * here — Settings' folds and the pinned tabs among them — what is running here, what the nudge has already said here, what the
  * cases keeps here, what the check-in keeps here, and today's quote (STORE-30,
- * STORE-31, STORE-36, STORE-40, STORE-46, STORE-49, STORE-54, STORE-57).
+ * STORE-31, STORE-36, STORE-40, STORE-46, STORE-49, STORE-54, STORE-57, STORE-59).
  * The same whoever is signed in, and never synced.
  */
 export interface DeviceStorage {
   readonly viewOptions: ViewOptionsRepository
   readonly habitViewOptions: HabitViewOptionsRepository
   readonly sideNav: SideNavRepository
+  /** Which pages are pinned as tabs on a wide screen (STORE-59). */
+  readonly pinnedTabs: PinnedTabsRepository
   /** Which parts of Settings are folded (STORE-57). */
   readonly settingsLayout: SettingsLayoutRepository
   readonly taskTimer: TaskTimerRepository
@@ -37,7 +41,7 @@ export interface DeviceStorage {
   readonly nudge: NudgeDeviceRepository
   /** What Cases keeps here: the noise, the last opening, the notice already given (CHST-24). */
   readonly cases: CaseDeviceRepository
-  /** What the check-in keeps here: the notice dismissed, and this device's push registration (STORE-54). */
+  /** What the check-in keeps here: the notice dismissed (STORE-54). */
   readonly checkIn: CheckInDeviceRepository
   readonly quote: QuoteRepository
   readonly theme: ThemeRepository
@@ -47,6 +51,7 @@ export const deviceStorage: DeviceStorage = {
   viewOptions: localStorageViewOptionsRepository,
   habitViewOptions: localStorageHabitViewOptionsRepository,
   sideNav: localStorageSideNavRepository,
+  pinnedTabs: localStoragePinnedTabsRepository,
   settingsLayout: localStorageSettingsLayoutRepository,
   taskTimer: localStorageTaskTimerRepository,
   nudge: localStorageNudgeRepository,

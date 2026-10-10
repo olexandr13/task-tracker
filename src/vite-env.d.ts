@@ -9,6 +9,4 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_AUTH_DOMAIN?: string
   readonly VITE_FIREBASE_PROJECT_ID?: string
   readonly VITE_FIREBASE_APP_ID?: string
-  /** The public half of the key check-ins are pushed with (`scripts/setupPushKeys.js`). */
-  readonly VITE_VAPID_PUBLIC_KEY?: string
 }

@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import type { HoursWindow } from '../../core'
 import type { NotifyPermission } from '../browserNotification'
 import { describeCheckInPermission, describeCheckInSilence } from '../checkInLabels'
@@ -13,8 +12,6 @@ interface CheckInSettingsProps {
   /** The moment the clock faces open against. */
   now: Date
   onWindowChange: (window: HoursWindow) => void
-  /** What this device is to be reached with when the app is closed (CHECKIN-11), under the hours. */
-  device?: ReactNode
 }
 
 /**
@@ -24,7 +21,7 @@ interface CheckInSettingsProps {
  * out — the half of the hours worth checking is the half they shut out — and
  * what this browser allows.
  */
-export function CheckInSettings({ window, permission, now, onWindowChange, device }: CheckInSettingsProps) {
+export function CheckInSettings({ window, permission, now, onWindowChange }: CheckInSettingsProps) {
   const browser = describeCheckInPermission(permission)
 
   return (
@@ -51,8 +48,6 @@ export function CheckInSettings({ window, permission, now, onWindowChange, devic
         </div>
         <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-300">{describeCheckInSilence(window)}</p>
       </div>
-
-      {device}
 
       {browser !== null && <p className="text-xs text-amber-700 dark:text-amber-400">{browser}</p>}
     </div>

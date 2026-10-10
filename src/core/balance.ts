@@ -15,12 +15,18 @@
  * The totals come from every session a task keeps, not only those counting for
  * its occurrence: a daily walk logged on Monday is still Monday's rest on
  * Wednesday. How long sessions are kept is ./timeLog's (`TIME_HISTORY_DAYS`).
+ *
+ * Time can also be logged **straight to a category**, with no task behind it
+ * (BAL-14): an evening's reading logged to Rest. Such sessions are the
+ * category's own, kept on it the way a task keeps its sessions, for as long as
+ * the page can show them, and they count toward it whole.
  */
 
 import { offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from './day'
 import { periodRange, type Period } from './progress'
 import { distinctTags, normalizeTag, sameTag } from './tag'
 import type { Task } from './task'
+import { historyEntries, minutesEntry, type TimeEntry, type TimeEntryId } from './timeLog'
 
 export type CategoryId = string
 
@@ -30,6 +36,11 @@ export interface Category {
   readonly name: string
   /** The tags whose tasks' time counts toward it, each once, alphabetically. */
   readonly tags: readonly string[]
+  /**
+   * Sessions logged straight to it, with no task behind them (BAL-14), oldest
+   * first: only those recent enough for the page to show (`historyEntries`).
+   */
+  readonly timeLog: readonly TimeEntry[]
   /** ISO 8601 timestamp. */
   readonly createdAt: string
 }
@@ -74,9 +85,9 @@ export function isCategoryLimitReached(categories: readonly Category[]): boolean
   return categories.length >= MAX_CATEGORIES
 }
 
-/** A category of the given name, bound to no tag yet. */
+/** A category of the given name, bound to no tag yet and with no time logged to it. */
 export function createCategory(name: string, now: Date = new Date()): Category {
-  return { id: crypto.randomUUID(), name: normalizeCategoryName(name), tags: [], createdAt: now.toISOString() }
+  return { id: crypto.randomUUID(), name: normalizeCategoryName(name), tags: [], timeLog: [], createdAt: now.toISOString() }
 }
 
 /** Whether any category is called this already, whatever its case — `except` aside, which is its own. */
@@ -160,6 +171,42 @@ export function findCategory(categories: readonly Category[], id: CategoryId): C
   return categories.find((category) => category.id === id) ?? null
 }
 
+/**
+ * Logs a session of whole minutes straight to the category, with what it went
+ * on when that is said (BAL-14). Sessions too old for any period the page shows
+ * are let go of as it is logged, as a task lets go of its history (TIME-8).
+ *
+ * Returns a new category; the one passed in is never modified.
+ */
+export function logCategoryTime(
+  category: Category,
+  minutes: number,
+  now: Date = new Date(),
+  comment: string | null = null,
+): Category {
+  const entry = minutesEntry(minutes, now, comment)
+  return { ...category, timeLog: [...historyEntries(category.timeLog, now), entry] }
+}
+
+/**
+ * Takes back a session logged straight to the category (BAL-15). One without
+ * it is handed back as it is.
+ *
+ * Returns a new category; the one passed in is never modified.
+ */
+export function removeCategoryTime(category: Category, entryId: TimeEntryId): Category {
+  const kept = category.timeLog.filter((entry) => entry.id !== entryId)
+  return kept.length === category.timeLog.length ? category : { ...category, timeLog: kept }
+}
+
+/**
+ * The sessions logged straight to the category that the page still shows as of
+ * `now`, the latest first (BAL-15): an older one counts in no period any more.
+ */
+export function recentCategoryTime(category: Category, now: Date = new Date()): TimeEntry[] {
+  return historyEntries(category.timeLog, now).reverse()
+}
+
 export interface CategoryTotal {
   readonly category: Category
   readonly seconds: number
@@ -223,11 +270,12 @@ function count(tally: Tally, bound: readonly Category[], seconds: number): void 
 
 /**
  * How the time logged in the period divides between the categories (BAL-3,
- * BAL-4, BAL-5). Every session every task keeps counts — tasks in the trash
- * too, and sessions from a repeating task's occurrences gone by — where it was
- * logged within the period. A task bound to more than one category has its
- * time divided evenly between them, so the categories and other add up to the
- * total; time on a task bound to none counts as other.
+ * BAL-4, BAL-5, BAL-14). Every session every task keeps counts — tasks in the
+ * trash too, and sessions from a repeating task's occurrences gone by — where
+ * it was logged within the period. A task bound to more than one category has
+ * its time divided evenly between them, so the categories and other add up to
+ * the total; time on a task bound to none counts as other. A session logged
+ * straight to a category counts toward it whole.
  */
 export function balanceTotals(
   categories: readonly Category[],
@@ -246,12 +294,20 @@ export function balanceTotals(
     }
   }
 
+  for (const category of categories) {
+    for (const entry of category.timeLog) {
+      const at = new Date(entry.loggedAt)
+      if (at >= start && at < end) count(tally, [category], entry.seconds)
+    }
+  }
+
   return totalsOf(categories, tally)
 }
 
 /**
  * The period day by day (BAL-13): every local day in it, in order, those with
- * nothing logged too, each divided between the categories as the period is.
+ * nothing logged too, each divided between the categories as the period is —
+ * time logged straight to a category among it (BAL-14).
  */
 export function balanceByDay(
   categories: readonly Category[],
@@ -272,7 +328,65 @@ export function balanceByDay(
     }
   }
 
+  for (const category of categories) {
+    for (const entry of category.timeLog) {
+      const tally = tallies.get(toLocalDay(new Date(entry.loggedAt)))
+      if (tally !== undefined) count(tally, [category], entry.seconds)
+    }
+  }
+
   return days.map((day) => ({ day, ...totalsOf(categories, tallies.get(day) ?? emptyTally(categories)) }))
+}
+
+/** One session behind a piece of the chart, as `balanceSessions` lists them (BAL-16). */
+export interface BalanceSession {
+  readonly entry: TimeEntry
+  /** The task it was logged on, or null for time logged straight to the category (BAL-14). */
+  readonly task: Task | null
+  /** What it counts toward the piece: the whole session, or its even share of it (BAL-4). */
+  readonly seconds: number
+  /** The other categories the session is divided with, in the order given; none when it counts whole. */
+  readonly sharedWith: readonly Category[]
+}
+
+/**
+ * The sessions behind one piece of the period's chart (BAL-16), the latest
+ * first: those on tasks bound to the category — or, for null, those on tasks
+ * bound to none, which are Other (BAL-5) — each with the part of it counted
+ * there, and those logged straight to the category (BAL-14). They add up to
+ * the piece, as the pieces add up to the total.
+ */
+export function balanceSessions(
+  categories: readonly Category[],
+  tasks: readonly Task[],
+  categoryId: CategoryId | null,
+  period: Period,
+  now: Date = new Date(),
+): BalanceSession[] {
+  const { start, end } = periodRange(period, now)
+  const inPeriod = (entry: TimeEntry) => {
+    const at = new Date(entry.loggedAt)
+    return at >= start && at < end
+  }
+  const sessions: BalanceSession[] = []
+
+  for (const task of tasks) {
+    const bound = boundCategories(categories, task)
+    const counted = categoryId === null ? bound.length === 0 : bound.some((category) => category.id === categoryId)
+    if (!counted) continue
+
+    const sharedWith = bound.filter((category) => category.id !== categoryId)
+    for (const entry of task.timeLog.filter(inPeriod)) {
+      sessions.push({ entry, task, seconds: entry.seconds / Math.max(1, bound.length), sharedWith })
+    }
+  }
+
+  const category = categoryId === null ? null : findCategory(categories, categoryId)
+  for (const entry of category?.timeLog.filter(inPeriod) ?? []) {
+    sessions.push({ entry, task: null, seconds: entry.seconds, sharedWith: [] })
+  }
+
+  return sessions.sort((a, b) => new Date(b.entry.loggedAt).getTime() - new Date(a.entry.loggedAt).getTime())
 }
 
 /**

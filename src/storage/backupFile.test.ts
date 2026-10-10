@@ -51,7 +51,7 @@ const BONUSES: PeriodBonuses = { today: 10, week: 40, month: null }
 const UAH = createPointValue(2.5)
 const WARMING_UP = startWarmUp(AT)
 const NUDGING: NudgePreference = { on: true, quietHours: 3, window: { from: '09:00', to: '22:00' } }
-const ASKING: CaseSettings = { leastTasks: 4, countUnpaid: false }
+const ASKING: CaseSettings = { countUnpaid: false }
 const REST = bindTag(createCategory('Rest', AT), 'walk')
 const READING = createActivityEntry('Reading', 900, { day: '2026-09-18', hour: 14 }, AT)
 const WORKING = createActivityEntry('Work', 2700, { day: '2026-09-18', hour: 14 }, AT)
@@ -135,8 +135,8 @@ describe('writing a backup', () => {
         version: ACTIVITY_SCHEMA_VERSION,
         day: '2026-09-18',
         entries: {
-          [READING.id]: { activity: 'Reading', seconds: 900, hour: 14, loggedAt: AT.toISOString() },
-          [WORKING.id]: { activity: 'Work', seconds: 2700, hour: 14, loggedAt: AT.toISOString() },
+          [READING.id]: { activity: 'Reading', seconds: 900, hour: 14, startSecond: null, session: null, loggedAt: AT.toISOString() },
+          [WORKING.id]: { activity: 'Work', seconds: 2700, hour: 14, startSecond: null, session: null, loggedAt: AT.toISOString() },
         },
       },
     ])
