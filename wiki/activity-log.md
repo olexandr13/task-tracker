@@ -9,7 +9,7 @@ time logged on a task fills it in by itself (ACT-21).
 ## The page
 
 - **ACT-1** **Activity log** is a page of its own, at `#/activity` (UI-36), with an entry in the
-  sidebar under Balance, the two of them a group of their own (UI-30), and a row on More's page (UI-45). It opens on the
+  sidebar under **Reflect**, between Balance and the Journal (UI-30, UI-83), and a row on Reflect's page (UI-83). It opens on the
   heading **Activity log** with an **i** beside it (UI-73), saying in plain sentences what the page
   is for and how each control is used; then the Check-in's row (ACT-19); then what the period shown
   adds up to (ACT-12 to ACT-18); and, on a day, the day itself — the form to add to it and its hours
@@ -155,11 +155,11 @@ shared with [Balance](balance.md)), `src/app/activityPieces.ts` and `src/app/cha
 pieces and their colours), `src/app/activityLabels.ts` and `src/app/chartLabels.ts` (wording),
 `src/app/components/ActivityIcon.tsx`, `src/app/components/ModesPage.tsx` (the Check-in's row),
 `src/app/useUndoToast.ts`, `src/app/TasksScreen.tsx`, `src/app/view.ts`,
-`src/app/components/SideNav.tsx`, `src/app/components/MorePage.tsx`; saving: [Storage](storage.md).
+`src/app/components/SideNav.tsx`, `src/app/components/ReflectPage.tsx`; saving: [Storage](storage.md).
 **Tested in:** `src/core/activity.test.ts`, `src/core/checkIn.test.ts`, `src/core/timeLog.test.ts`,
 `src/app/useActivities.test.ts`, `src/app/useTasks.test.ts`,
 `src/app/components/ActivityPage.test.tsx`, `src/app/activityLabels.test.ts`,
 `src/app/chartLabels.test.ts`, `src/storage/activitySchema.test.ts`,
 `src/storage/localActivityRepository.test.ts`, `src/app/components/SideNav.test.tsx`,
-`src/app/components/MorePage.test.tsx`, `src/app/components/BottomNav.test.tsx`, `src/app/view.test.ts`,
+`src/app/components/ReflectPage.test.tsx`, `src/app/components/BottomNav.test.tsx`, `src/app/view.test.ts`,
 `src/app/useView.test.ts`.

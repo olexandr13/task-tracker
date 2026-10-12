@@ -11,15 +11,13 @@ import { MorePage } from './MorePage'
 afterEach(cleanup)
 
 describe('MorePage', () => {
-  it('links to Lists, Organize, Balance, the activity log, the journal and Notifications, in the sidebar\'s order (UI-30, UI-45, UI-81, LST-24, BAL-1, ACT-1, JRN-1, NOTIF-1)', () => {
+  it('links to Lists, Organize, Reflect and Notifications, in the sidebar\'s order (UI-30, UI-45, UI-81, UI-83, LST-24, NOTIF-1)', () => {
     render(<MorePage onOpen={vi.fn()} />)
 
     expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual([
       'Lists',
       'Organize',
-      'Balance',
-      'Activity log',
-      'Journal',
+      'Reflect',
       'Notifications',
     ])
   })
@@ -47,28 +45,13 @@ describe('MorePage', () => {
     for (const name of ['Tags', 'Notes', 'Modes']) expect(screen.queryByRole('button', { name })).toBeNull()
   })
 
-  it('opens the journal (JRN-1)', async () => {
+  it('opens Reflect, where Balance, the activity log and the journal are (UI-83)', async () => {
     const onOpen = vi.fn()
     render(<MorePage onOpen={onOpen} />)
 
-    await userEvent.click(screen.getByRole('button', { name: 'Journal' }))
-    expect(onOpen).toHaveBeenCalledExactlyOnceWith('journal')
-  })
-
-  it('opens the activity log (ACT-1)', async () => {
-    const onOpen = vi.fn()
-    render(<MorePage onOpen={onOpen} />)
-
-    await userEvent.click(screen.getByRole('button', { name: 'Activity log' }))
-    expect(onOpen).toHaveBeenCalledExactlyOnceWith('activity')
-  })
-
-  it('opens the Balance page (BAL-1)', async () => {
-    const onOpen = vi.fn()
-    render(<MorePage onOpen={onOpen} />)
-
-    await userEvent.click(screen.getByRole('button', { name: 'Balance' }))
-    expect(onOpen).toHaveBeenCalledExactlyOnceWith('balance')
+    await userEvent.click(screen.getByRole('button', { name: 'Reflect' }))
+    expect(onOpen).toHaveBeenCalledExactlyOnceWith('reflect')
+    for (const name of ['Balance', 'Activity log', 'Journal']) expect(screen.queryByRole('button', { name })).toBeNull()
   })
 
   it('opens the lists, which a phone reaches nowhere else without a hold (LST-24)', async () => {
@@ -96,16 +79,16 @@ describe('MorePage', () => {
     expect(screen.queryByRole('button', { name: 'Rewards' })).toBeNull()
   })
 
-  it('lists no page switched off, nor Organize once all it holds is (FEAT-2, UI-81)', () => {
-    const off: FeaturesOff = ['tags', 'notes', 'modes', 'journal', 'notifications']
+  it('lists no page switched off, nor Organize or Reflect once all it holds is (FEAT-2, UI-81, UI-83)', () => {
+    // Balance goes with the tags it divides time by (FEAT-4).
+    const off: FeaturesOff = ['tags', 'notes', 'modes', 'activity', 'journal', 'notifications']
     render(
       <FeaturesContext value={off}>
         <MorePage onOpen={vi.fn()} />
       </FeaturesContext>,
     )
 
-    // Balance goes with the tags it divides time by (FEAT-4).
-    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Lists', 'Activity log'])
+    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Lists'])
   })
 
   it('keeps Organize while any of what it holds is on (FEAT-2, UI-81)', () => {
@@ -116,5 +99,15 @@ describe('MorePage', () => {
     )
 
     expect(screen.getByRole('button', { name: 'Organize' })).toBeDefined()
+  })
+
+  it('keeps Reflect while any of what it holds is on (FEAT-2, UI-83)', () => {
+    render(
+      <FeaturesContext value={['balance', 'activity']}>
+        <MorePage onOpen={vi.fn()} />
+      </FeaturesContext>,
+    )
+
+    expect(screen.getByRole('button', { name: 'Reflect' })).toBeDefined()
   })
 })

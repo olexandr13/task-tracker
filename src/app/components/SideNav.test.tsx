@@ -23,12 +23,14 @@ function setup(
   rewardsOpen = true,
   modesOpen = true,
   organizeOpen = true,
+  reflectOpen = true,
 ) {
   const onChange = vi.fn()
   const onListsOpenChange = vi.fn()
   const onRewardsOpenChange = vi.fn()
   const onModesOpenChange = vi.fn()
   const onOrganizeOpenChange = vi.fn()
+  const onReflectOpenChange = vi.fn()
   render(
     <SideNav
       view={view}
@@ -37,12 +39,14 @@ function setup(
       rewardsOpen={rewardsOpen}
       modesOpen={modesOpen}
       organizeOpen={organizeOpen}
+      reflectOpen={reflectOpen}
       dimmed={dimmed}
       onChange={onChange}
       onListsOpenChange={onListsOpenChange}
       onRewardsOpenChange={onRewardsOpenChange}
       onModesOpenChange={onModesOpenChange}
       onOrganizeOpenChange={onOrganizeOpenChange}
+      onReflectOpenChange={onReflectOpenChange}
     />,
   )
   return {
@@ -52,6 +56,7 @@ function setup(
     onRewardsOpenChange,
     onModesOpenChange,
     onOrganizeOpenChange,
+    onReflectOpenChange,
   }
 }
 
@@ -59,6 +64,7 @@ const foldButton = () => screen.getByRole('button', { name: 'Show lists' })
 const rewardsFoldButton = () => screen.getByRole('button', { name: 'Show rewards pages' })
 const modesFoldButton = () => screen.getByRole('button', { name: 'Show modes' })
 const organizeFoldButton = () => screen.getByRole('button', { name: 'Show Organize pages' })
+const reflectFoldButton = () => screen.getByRole('button', { name: 'Show Reflect pages' })
 
 const marked = () => screen.getAllByRole('button').filter((button) => button.getAttribute('aria-current') === 'page')
 
@@ -69,10 +75,10 @@ describe('SideNav', () => {
     expect(screen.getByText('PickMe')).toBeTruthy()
   })
 
-  it('groups the work, what pushes it along, Organize and the time spent, with Tags, the notes and Modes under Organize, none for any one tag and none for More (UI-30, UI-45, UI-81, TAG-17, RWD-19, LST-13, MODE-7, NOTE-1, BAL-1, ACT-1, JRN-1)', () => {
+  it('groups the work, what pushes it along, Organize and Reflect, with Tags, the notes and Modes under Organize, Balance, the activity log and the journal under Reflect, none for any one tag and none for More (UI-30, UI-45, UI-81, UI-83, TAG-17, RWD-19, LST-13, MODE-7, NOTE-1, BAL-1, ACT-1, JRN-1)', () => {
     setup('today')
 
-    const folds = [foldButton(), rewardsFoldButton(), organizeFoldButton(), modesFoldButton()]
+    const folds = [foldButton(), rewardsFoldButton(), organizeFoldButton(), modesFoldButton(), reflectFoldButton()]
     const entries = screen.getAllByRole('button').filter((button) => !folds.includes(button))
     expect(entries.map((button) => button.textContent)).toEqual([
       'Today',
@@ -97,6 +103,7 @@ describe('SideNav', () => {
       '🌱Warm-up',
       '🔔Nudge',
       '⏰Check-in',
+      'Reflect',
       'Balance',
       'Activity log',
       'Journal',
@@ -115,12 +122,14 @@ describe('SideNav', () => {
         rewardsOpen
         modesOpen
         organizeOpen
+        reflectOpen
         notices={2}
         onChange={vi.fn()}
         onListsOpenChange={vi.fn()}
         onRewardsOpenChange={vi.fn()}
         onModesOpenChange={vi.fn()}
         onOrganizeOpenChange={vi.fn()}
+        onReflectOpenChange={vi.fn()}
       />,
     )
     expect(screen.getByRole('button', { name: 'Notifications, 2 waiting' }).textContent).toBe('Notifications2')
@@ -207,6 +216,64 @@ describe('SideNav', () => {
     expect(indent('Nudge')).toBe('pl-[3.75rem]')
   })
 
+  it('goes to Reflect, and to Balance, the activity log and the journal under it (UI-83)', async () => {
+    const { user, onChange } = setup('today')
+
+    await user.click(screen.getByRole('button', { name: 'Reflect' }))
+    const under = within(screen.getByRole('list', { name: 'Reflect' }))
+    await user.click(under.getByRole('button', { name: 'Balance' }))
+    await user.click(under.getByRole('button', { name: 'Activity log' }))
+    await user.click(under.getByRole('button', { name: 'Journal' }))
+
+    expect(onChange.mock.calls).toEqual([['reflect'], ['balance'], ['activity'], ['journal']])
+  })
+
+  it('marks Reflect itself while its page is open, and each page under it on its own (UI-8, UI-83)', () => {
+    setup('reflect')
+    expect(marked().map((button) => button.textContent)).toEqual(['Reflect'])
+    cleanup()
+
+    setup('journal')
+    expect(marked().map((button) => button.textContent)).toEqual(['Journal'])
+  })
+
+  it('folds Balance, the activity log and the journal away and opens them again, without leaving the view (UI-83)', async () => {
+    const { user, onChange, onReflectOpenChange } = setup('today')
+
+    expect(reflectFoldButton().getAttribute('aria-expanded')).toBe('true')
+    expect(reflectFoldButton().getAttribute('aria-controls')).toBe(screen.getByRole('list', { name: 'Reflect' }).id)
+
+    await user.click(reflectFoldButton())
+
+    expect(onReflectOpenChange).toHaveBeenCalledWith(false)
+    expect(onChange).not.toHaveBeenCalled()
+
+    cleanup()
+    const folded = setup('today', [], true, false, true, true, true, false)
+    await folded.user.click(reflectFoldButton())
+
+    expect(folded.onReflectOpenChange).toHaveBeenCalledWith(true)
+  })
+
+  it('leaves everything under Reflect out while folded, and marks Reflect for the page you are on (UI-8, UI-83)', () => {
+    for (const view of ['balance', 'activity', 'journal'] as const) {
+      setup(view, [], true, false, true, true, true, false)
+
+      expect(screen.queryByRole('list', { name: 'Reflect' })).toBeNull()
+      expect(screen.queryByRole('button', { name: 'Balance' })).toBeNull()
+      expect(marked().map((button) => button.textContent)).toEqual(['Reflect'])
+      cleanup()
+    }
+  })
+
+  it('indents the pages under Reflect as those under Organize are (UI-83)', () => {
+    setup('today')
+
+    const indent = (name: string) => screen.getByRole('button', { name }).className.match(/pl-\[[^\]]+\]|px-\d+/)?.[0]
+    expect(indent('Reflect')).toBe('px-3')
+    expect(indent('Journal')).toBe('pl-[2.375rem]')
+  })
+
   it('goes to Rewards from its own entry (RWD-19)', async () => {
     const { user, onChange } = setup('today')
 
@@ -224,12 +291,12 @@ describe('SideNav', () => {
     expect(marked().map((button) => button.textContent)).toEqual(['Tags'])
   })
 
-  it('marks Balance itself (UI-8, UI-30, BAL-1)', () => {
+  it('marks Balance itself (UI-8, UI-83, BAL-1)', () => {
     setup('balance')
     expect(marked().map((button) => button.textContent)).toEqual(['Balance'])
   })
 
-  it('marks the activity log itself (UI-8, UI-30, ACT-1)', () => {
+  it('marks the activity log itself (UI-8, UI-83, ACT-1)', () => {
     setup('activity')
     expect(marked().map((button) => button.textContent)).toEqual(['Activity log'])
   })
@@ -447,6 +514,7 @@ describe('SideNav', () => {
     // Softened once, with Organize: not again under it, which would leave Modes fainter than the rest.
     expect(entry('Organize')?.className).toMatch(/opacity-25/)
     expect(entry('Modes')?.className ?? '').not.toMatch(/opacity-25/)
+    expect(entry('Reflect')?.className).toMatch(/opacity-25/)
     expect(screen.getByText('PickMe').closest('div')?.className).toMatch(/opacity-25/)
   })
 
@@ -469,11 +537,13 @@ describe('SideNav', () => {
           rewardsOpen
           modesOpen
           organizeOpen
+          reflectOpen
           onChange={vi.fn()}
           onListsOpenChange={vi.fn()}
           onRewardsOpenChange={vi.fn()}
           onModesOpenChange={vi.fn()}
           onOrganizeOpenChange={vi.fn()}
+          onReflectOpenChange={vi.fn()}
         />
       </FeaturesContext>,
     )
@@ -499,11 +569,13 @@ describe('SideNav', () => {
             rewardsOpen={false}
             modesOpen={false}
             organizeOpen={false}
+            reflectOpen={false}
             onChange={vi.fn()}
             onListsOpenChange={vi.fn()}
             onRewardsOpenChange={vi.fn()}
             onModesOpenChange={vi.fn()}
             onOrganizeOpenChange={vi.fn()}
+            onReflectOpenChange={vi.fn()}
           />
         </FeaturesContext>,
       )
@@ -520,7 +592,7 @@ describe('SideNav', () => {
       'Habits', 'Tasks', 'Lists', '—',
       'Rewards', '—',
       'Organize', '—',
-      'Balance', 'Activity log', 'Journal', '—',
+      'Reflect', '—',
       'Notifications', '—',
       'Trash', '—',
       'Settings',
@@ -538,7 +610,7 @@ describe('SideNav', () => {
       'Today', 'Tomorrow', 'Week', 'Month', '—',
       'Habits', 'Tasks', 'Lists', '—',
       'Organize', '—',
-      'Balance', 'Activity log', 'Journal', '—',
+      'Reflect', '—',
       'Notifications', '—',
       'Trash', '—',
       'Settings',
@@ -549,16 +621,17 @@ describe('SideNav', () => {
       'Habits', 'Tasks', 'Lists', '—',
       'Rewards', '—',
       'Organize', '—',
-      'Balance', 'Activity log', 'Journal', '—',
+      'Reflect', '—',
       'Trash', '—',
       'Settings',
     ])
-    // Organize goes once all it holds is off (UI-81); Balance goes with the tags (FEAT-4).
+    // Organize goes once all it holds is off (UI-81); Reflect stays for the activity log and the
+    // journal, Balance going with the tags (FEAT-4).
     expect(rows(['tags', 'notes', 'modes'])).toEqual([
       'Today', 'Tomorrow', 'Week', 'Month', '—',
       'Habits', 'Tasks', 'Lists', '—',
       'Rewards', '—',
-      'Activity log', 'Journal', '—',
+      'Reflect', '—',
       'Notifications', '—',
       'Trash', '—',
       'Settings',

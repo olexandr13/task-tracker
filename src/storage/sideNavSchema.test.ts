@@ -5,8 +5,8 @@ import { readSideNavState, SIDE_NAV_SCHEMA_VERSION, toStoredSideNavState } from 
 
 describe('readSideNavState', () => {
   it('reads back what was saved', () => {
-    const folded = { listsOpen: false, rewardsOpen: false, modesOpen: false, organizeOpen: false }
-    const open = { listsOpen: true, rewardsOpen: true, modesOpen: true, organizeOpen: true }
+    const folded = { listsOpen: false, rewardsOpen: false, modesOpen: false, organizeOpen: false, reflectOpen: false }
+    const open = { listsOpen: true, rewardsOpen: true, modesOpen: true, organizeOpen: true, reflectOpen: true }
 
     expect(readSideNavState(toStoredSideNavState(folded))).toEqual(folded)
     expect(readSideNavState(toStoredSideNavState(open))).toEqual(open)
@@ -18,6 +18,7 @@ describe('readSideNavState', () => {
       rewardsOpen: true,
       modesOpen: true,
       organizeOpen: true,
+      reflectOpen: true,
     })
   })
 
@@ -27,13 +28,23 @@ describe('readSideNavState', () => {
       rewardsOpen: false,
       modesOpen: true,
       organizeOpen: true,
+      reflectOpen: true,
     })
   })
 
   it('reads a layout saved before Organize as leaving it open (STORE-31, UI-81)', () => {
     expect(
       readSideNavState({ version: 3, state: { listsOpen: false, rewardsOpen: false, modesOpen: false } }),
-    ).toEqual({ listsOpen: false, rewardsOpen: false, modesOpen: false, organizeOpen: true })
+    ).toEqual({ listsOpen: false, rewardsOpen: false, modesOpen: false, organizeOpen: true, reflectOpen: true })
+  })
+
+  it('reads a layout saved before Reflect as leaving it open (STORE-31, UI-83)', () => {
+    expect(
+      readSideNavState({
+        version: 4,
+        state: { listsOpen: false, rewardsOpen: false, modesOpen: false, organizeOpen: false },
+      }),
+    ).toEqual({ listsOpen: false, rewardsOpen: false, modesOpen: false, organizeOpen: false, reflectOpen: true })
   })
 
   it('does not trust a version it does not know', () => {
@@ -54,6 +65,12 @@ describe('readSideNavState', () => {
       readSideNavState({
         version: SIDE_NAV_SCHEMA_VERSION,
         state: { listsOpen: true, rewardsOpen: true, modesOpen: true },
+      }),
+    ).toBeNull()
+    expect(
+      readSideNavState({
+        version: SIDE_NAV_SCHEMA_VERSION,
+        state: { listsOpen: true, rewardsOpen: true, modesOpen: true, organizeOpen: true },
       }),
     ).toBeNull()
   })

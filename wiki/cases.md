@@ -292,7 +292,7 @@ slowing to a crawl — are as much the feature as the points are.
   practice mode is on, how the practice run is going (CHST-21); whether tasks without
   points count (CHST-32) is switched on Settings, as is practice mode where a build offers it. While a key is
   waiting, Cases is **marked wherever it is reached from** —
-  its entry in the sidebar, its pill in the phone's strip, the Rewards tab and its entry in that
+  its entry in the sidebar, its pill in the strip across the rewards pages (RWD-30), the Rewards tab and its entry in that
   tab's menu (UI-67) — with a dot and the
   words behind it, a mark that is only a colour saying nothing to someone who cannot see it.
 - **CHST-33** Under the cases, the page says **what each case opened today gave**, in a list

@@ -1,12 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { isViewOn, modesShown, morePagesShown, nearestViewOn, organizePagesShown, rewardsPagesShown } from './features'
+import {
+  isViewOn,
+  modesShown,
+  morePagesShown,
+  nearestViewOn,
+  organizePagesShown,
+  reflectPagesShown,
+  rewardsPagesShown,
+} from './features'
 import { oneListView, tagView } from './view'
 
 /* Which pages a feature switched off takes away. FEAT ids refer to wiki/features.md. */
 
 describe('the pages there are (FEAT-2)', () => {
   it('is every one while nothing is switched off', () => {
-    for (const view of ['habits', 'rewards', 'rewards/cases', 'lists', 'inbox', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'organize', 'more'] as const) {
+    for (const view of ['habits', 'rewards', 'rewards/cases', 'lists', 'inbox', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'organize', 'reflect', 'more'] as const) {
       expect(isViewOn(view, [])).toBe(true)
     }
   })
@@ -40,6 +48,12 @@ describe('the pages there are (FEAT-2)', () => {
     expect(isViewOn('organize', ['tags', 'notes', 'modes'])).toBe(false)
   })
 
+  it('takes Reflect away once everything under it is (UI-83)', () => {
+    expect(isViewOn('reflect', ['balance', 'activity'])).toBe(true)
+    expect(isViewOn('reflect', ['tags', 'activity'])).toBe(true)
+    expect(isViewOn('reflect', ['balance', 'activity', 'journal'])).toBe(false)
+  })
+
   it('takes More away once everything on it is', () => {
     expect(isViewOn('more', ['lists', 'tags', 'balance', 'activity', 'journal', 'modes'])).toBe(true)
     expect(isViewOn('more', ['lists', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes'])).toBe(true)
@@ -70,8 +84,9 @@ describe('where the address of a page switched off lands (FEAT-2)', () => {
     expect(nearestViewOn('rewards/cases', ['cases'])).toBe('rewards')
     expect(nearestViewOn(oneListView('list-1'), ['lists'])).toBe('tasks')
     expect(nearestViewOn('modes/check-in', ['activity'])).toBe('modes')
-    expect(nearestViewOn('balance', ['balance'])).toBe('more')
-    expect(nearestViewOn('journal', ['journal'])).toBe('more')
+    expect(nearestViewOn('balance', ['balance'])).toBe('reflect')
+    expect(nearestViewOn('journal', ['journal'])).toBe('reflect')
+    expect(nearestViewOn('journal', ['balance', 'activity', 'journal'])).toBe('more')
     expect(nearestViewOn('notes', ['notes'])).toBe('organize')
     expect(nearestViewOn('tags', ['tags'])).toBe('organize')
     expect(nearestViewOn('notes', ['tags', 'notes', 'modes'])).toBe('more')
@@ -100,15 +115,21 @@ describe('what the lists of pages hold', () => {
     expect(modesShown(['modes'])).toEqual([])
   })
 
-  it('leaves out More’s pages that are off, Balance with the tags it divides time by (FEAT-4)', () => {
-    expect(morePagesShown(['notes', 'activity', 'journal', 'modes'])).toEqual(['lists', 'organize', 'balance', 'notifications'])
-    expect(morePagesShown(['tags'])).toEqual(['lists', 'organize', 'activity', 'journal', 'notifications'])
-    expect(morePagesShown(['tags', 'notes', 'modes', 'notifications'])).toEqual(['lists', 'activity', 'journal'])
+  it('leaves out More’s pages that are off, Reflect once Balance goes with the tags it divides time by (FEAT-4)', () => {
+    expect(morePagesShown(['notes', 'activity', 'journal', 'modes'])).toEqual(['lists', 'organize', 'reflect', 'notifications'])
+    expect(morePagesShown(['tags', 'notes', 'modes', 'notifications'])).toEqual(['lists', 'reflect'])
+    expect(morePagesShown(['tags', 'activity', 'journal'])).toEqual(['lists', 'organize', 'notifications'])
   })
 
   it('leaves out Organize’s pages that are off (UI-81)', () => {
     expect(organizePagesShown([])).toEqual(['tags', 'notes', 'modes'])
     expect(organizePagesShown(['notes'])).toEqual(['tags', 'modes'])
     expect(organizePagesShown(['tags', 'notes', 'modes'])).toEqual([])
+  })
+
+  it('leaves out Reflect’s pages that are off, Balance with the tags (UI-83, FEAT-4)', () => {
+    expect(reflectPagesShown([])).toEqual(['balance', 'activity', 'journal'])
+    expect(reflectPagesShown(['tags'])).toEqual(['activity', 'journal'])
+    expect(reflectPagesShown(['balance', 'activity', 'journal'])).toEqual([])
   })
 })

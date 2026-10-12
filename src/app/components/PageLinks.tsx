@@ -16,9 +16,9 @@ interface PageLinksProps<Page extends FixedView> {
 }
 
 /**
- * A page that is a list of pages to go to, as More's (UI-45) and Organize's
- * (UI-81) are: each a row with its icon, large enough for a thumb (UI-49), and
- * a chevron at its end marking it as somewhere to go.
+ * A page that is a list of pages to go to, as More's (UI-45), Organize's
+ * (UI-81) and Reflect's (UI-83) are: each a row with its icon, large enough for
+ * a thumb (UI-49), and a chevron at its end marking it as somewhere to go.
  */
 export function PageLinks<Page extends FixedView>({ pages, notes = {}, onOpen }: PageLinksProps<Page>) {
   return (

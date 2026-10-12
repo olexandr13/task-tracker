@@ -1,6 +1,6 @@
 import { Fragment, useId, type ReactElement, type ReactNode } from 'react'
 import { sortLists, type List, type ListId } from '../../core'
-import { isViewOn, modesShown, organizePagesShown, rewardsPagesShown, useFeaturesOff } from '../features'
+import { isViewOn, modesShown, organizePagesShown, reflectPagesShown, rewardsPagesShown, useFeaturesOff } from '../features'
 import { navItemOff, navItemOn } from '../navTones'
 import { describeNoticeCount } from '../notificationLabels'
 import { useListDropTarget } from '../useListDropTarget'
@@ -16,14 +16,16 @@ import { KeyWaitingMark } from './KeyWaitingMark'
  * The views, grouped by what they are for (UI-30): when — the ones named after
  * a period; the work and where it is filed — the habits, every task and the
  * lists; what pushes it along — the rewards; Organize, with the tags, the notes
- * and the modes (UI-81); looking back at the day — the balance of time, the
- * activity log and the journal; the notices waiting, on Notifications (NOTIF-1);
+ * and the modes (UI-81); Reflect, looking back at the day, with the balance of
+ * time, the activity log and the journal (UI-83); the notices waiting, on
+ * Notifications (NOTIF-1);
  * then the trash, then settings. A thin line is
  * drawn between groups. Lists opens onto the Inbox and every list under it, so
  * a list is one click away and a task can be dropped on one to file it, and
  * folds them away when they are not wanted. Rewards keeps its pages under it in
- * the same way, and Organize Tags, the notes and Modes, with a page for each
- * mode a step further in under Modes (MODE-7); each folds away as Lists does.
+ * the same way, Organize Tags, the notes and Modes, with a page for each
+ * mode a step further in under Modes (MODE-7), and Reflect Balance, the
+ * activity log and the journal; each folds away as Lists does.
  * A tag's tasks have no entry. More is not here: every page on it is, so it
  * would be a click on the way to somewhere already listed (UI-45). A page whose
  * feature is switched off on Settings has no entry at all (FEAT-2).
@@ -33,7 +35,7 @@ const VIEW_GROUPS: readonly (readonly FixedView[])[] = [
   ['habits', 'tasks', 'lists'],
   ['rewards'],
   ['organize'],
-  ['balance', 'activity', 'journal'],
+  ['reflect'],
   ['notifications'],
   ['trash'],
   ['settings'],
@@ -42,7 +44,7 @@ const VIEW_GROUPS: readonly (readonly FixedView[])[] = [
 const item = 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors'
 
 const subItemBase = 'flex w-full min-w-0 items-center gap-2 rounded-lg py-1.5 pr-3 text-left text-sm transition-colors'
-/** A page under Lists, Rewards or Organize: indented to start where the word above does, and a little shorter. */
+/** A page under Lists, Rewards, Organize or Reflect: indented to start where the word above does, and a little shorter. */
 const subItem = `${subItemBase} pl-[2.375rem]`
 /** A mode, under Modes under Organize: a step further in, to start where the word Modes does. */
 const nestedItem = `${subItemBase} pl-[3.75rem]`
@@ -60,7 +62,7 @@ const subEmoji = 'inline-flex size-3.5 shrink-0 items-center justify-center text
  */
 const dim = 'opacity-25'
 
-/** The chevron at the end of Lists, Rewards, Organize or Modes that folds what is under it: quiet until pointed at. */
+/** The chevron at the end of Lists, Rewards, Organize, Modes or Reflect that folds what is under it: quiet until pointed at. */
 const foldButton =
   'absolute inset-y-0 right-1.5 my-auto grid size-6 place-items-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-200/70 hover:text-neutral-900 dark:text-neutral-500 dark:hover:bg-neutral-700/60 dark:hover:text-neutral-100'
 
@@ -76,6 +78,8 @@ interface SideNavProps {
   modesOpen: boolean
   /** Whether Tags, the notes and Modes are shown under Organize, or folded away. */
   organizeOpen: boolean
+  /** Whether Balance, the activity log and the journal are shown under Reflect, or folded away. */
+  reflectOpen: boolean
   /** Whether a key is waiting, which marks Cases under Rewards (CHST-22). */
   keyWaiting?: boolean
   /** How many notices are standing, counted beside Notifications (NOTIF-6). */
@@ -87,6 +91,7 @@ interface SideNavProps {
   onRewardsOpenChange: (open: boolean) => void
   onModesOpenChange: (open: boolean) => void
   onOrganizeOpenChange: (open: boolean) => void
+  onReflectOpenChange: (open: boolean) => void
 }
 
 /**
@@ -100,7 +105,8 @@ interface SideNavProps {
  * are folded away, as with Lists. Organize is listed the same way, with Tags,
  * the notes and Modes under it (UI-81), and Modes again with each mode's page
  * under it, so going from one mode to the other is a step down the sidebar
- * rather than a strip across the top of them (MODE-7).
+ * rather than a strip across the top of them (MODE-7). Reflect is listed as
+ * Organize is, with Balance, the activity log and the journal under it (UI-83).
  */
 export function SideNav({
   view,
@@ -109,6 +115,7 @@ export function SideNav({
   rewardsOpen,
   modesOpen,
   organizeOpen,
+  reflectOpen,
   keyWaiting = false,
   notices = 0,
   dimmed = false,
@@ -117,11 +124,13 @@ export function SideNav({
   onRewardsOpenChange,
   onModesOpenChange,
   onOrganizeOpenChange,
+  onReflectOpenChange,
 }: SideNavProps) {
   const listsId = useId()
   const rewardsId = useId()
   const modesId = useId()
   const organizeId = useId()
+  const reflectId = useId()
   // What is switched off on Settings has no entry here (FEAT-2).
   const off = useFeaturesOff()
 
@@ -244,6 +253,22 @@ export function SideNav({
                     ),
                   )}
                 </FoldableEntry>
+              ) : value === 'reflect' ? (
+                <FoldableEntry
+                  key={value}
+                  value={value}
+                  active={reflectOpen ? view === 'reflect' : isUnder(view, 'reflect')}
+                  open={reflectOpen}
+                  id={reflectId}
+                  dimmed={dimmed}
+                  foldLabel="Show Reflect pages"
+                  onSelect={onChange}
+                  onOpenChange={onReflectOpenChange}
+                >
+                  {reflectPagesShown(off).map((page) => (
+                    <SubNavButton key={page} value={page} active={view === page} onSelect={onChange} />
+                  ))}
+                </FoldableEntry>
               ) : (
                 <li key={value} className={soften(value)}>
                   <NavButton
@@ -280,9 +305,9 @@ interface FoldableEntryProps {
 }
 
 /**
- * An entry with pages under it — Lists, Rewards, Organize, Modes — each a click
- * away, and a chevron that folds them away when they are not wanted (LST-26,
- * RWD-19, UI-81, MODE-7). The entry itself still goes to its own page.
+ * An entry with pages under it — Lists, Rewards, Organize, Modes, Reflect — each
+ * a click away, and a chevron that folds them away when they are not wanted
+ * (LST-26, RWD-19, UI-81, MODE-7, UI-83). The entry itself still goes to its own page.
  */
 function FoldableEntry({
   value,
@@ -363,7 +388,7 @@ interface SubNavButtonProps {
   onSelect: (view: View) => void
 }
 
-/** A page under Rewards, Organize or Modes: the same indent as a list under Lists, and nothing to drop on it. */
+/** A page under Rewards, Organize, Modes or Reflect: the same indent as a list under Lists, and nothing to drop on it. */
 function SubNavButton(props: SubNavButtonProps) {
   return (
     <li>

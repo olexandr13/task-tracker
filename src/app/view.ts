@@ -27,9 +27,10 @@ import type { TaskScope } from '../storage/taskRepository'
  * month, every task, the Inbox, one list's and the ones carrying a tag — and share everything
  * but which tasks they show, what a task added to them starts with, whether
  * their done tasks are divided by when they were finished and which of those
- * spans are folded away. Habits, the rewards pages, More, Organize, the modes,
- * the lists, the tags, the notes, the balance of time, the activity log, the
- * journal, the notifications, the trash and settings are screens of their own.
+ * spans are folded away. Habits, the rewards pages, More, Organize, Reflect,
+ * the modes, the lists, the tags, the notes, the balance of time, the activity
+ * log, the journal, the notifications, the trash and settings are screens of
+ * their own.
  *
  * Rewards is six screens rather than one: how the points stand, and under it the
  * cases, the history, the prizes, the wishlist and the rules (RWD-19, RWD-30).
@@ -37,7 +38,8 @@ import type { TaskScope } from '../storage/taskRepository'
  * is what their addresses read as and what marks them as belonging under Rewards.
  * Modes is five in the same way (MODE-1): the list of them, and a page for each
  * mode explaining what it does, named `modes/…`. Organize holds Tags, the notes
- * and Modes (UI-81); they keep their own names, being addressed long before it.
+ * and Modes (UI-81), and Reflect the balance, the activity log and the journal
+ * (UI-83); they keep their own names, being addressed long before either.
  *
  * "View" is this file's word for a screen. What the owner calls a **list** is
  * somewhere tasks are filed (`../core/list`), which is a different thing: Today
@@ -65,6 +67,7 @@ export type FixedView =
   | 'journal'
   | 'more'
   | 'organize'
+  | 'reflect'
   | 'modes'
   | 'modes/procrastination'
   | 'modes/warm-up'
@@ -104,6 +107,7 @@ export type TaskView = Exclude<
   | 'journal'
   | 'more'
   | 'organize'
+  | 'reflect'
   | ModesView
   | 'notifications'
   | 'trash'
@@ -168,32 +172,33 @@ export function isModesView(view: View): view is ModesView {
 export const UNDER_ORGANIZE = ['tags', 'notes', 'modes'] as const satisfies readonly FixedView[]
 
 /**
+ * The pages under Reflect, in the order it lists them (UI-83): Balance, where
+ * the time logged divides between work and rest (BAL-1), the activity log,
+ * where each hour of the day is written down (ACT-1), and the journal, where
+ * the day's good things are (JRN-1). Looking back at the day, kept apart from
+ * the work itself.
+ */
+export const UNDER_REFLECT = ['balance', 'activity', 'journal'] as const satisfies readonly FixedView[]
+
+/**
  * The pages More's own page lists — the ones a phone's bar has no tab for — in
  * the order the sidebar lists them (UI-30, UI-45): Lists (UI-34), Organize,
- * with Tags, the notes and Modes under it (UI-81), Balance, where the time
- * logged divides between work and rest (BAL-1), the activity log, where each
- * hour of the day is written down (ACT-1), the journal, where the day's good
- * things are (JRN-1), and Notifications, with the notices waiting (NOTIF-1).
- * The sidebar has an entry for every one of them, and so none for More.
+ * with Tags, the notes and Modes under it (UI-81), Reflect, with Balance, the
+ * activity log and the journal under it (UI-83), and Notifications, with the
+ * notices waiting (NOTIF-1). The sidebar has an entry for every one of them,
+ * and so none for More.
  */
-export const ON_MORE = [
-  'lists',
-  'organize',
-  'balance',
-  'activity',
-  'journal',
-  'notifications',
-] as const satisfies readonly FixedView[]
+export const ON_MORE = ['lists', 'organize', 'reflect', 'notifications'] as const satisfies readonly FixedView[]
 
 /**
  * The pages the More tab stands for while one of them is open — the ones on its
  * page (`ON_MORE`) the bar reaches from nowhere else, and so everything under
- * Organize too. Lists is listed on More but left out here: Tasks is the tab
+ * Organize and Reflect too. Lists is listed on More but left out here: Tasks is the tab
  * marked while it is open (UI-34), so More standing for it too would mark two at
  * once. Adding a page to More's page is deciding both: whether it is listed
  * there, and whether it is reached only from there.
  */
-export const UNDER_MORE = ['organize', 'balance', 'activity', 'journal', 'notifications'] as const satisfies readonly FixedView[]
+export const UNDER_MORE = ['organize', 'reflect', 'notifications'] as const satisfies readonly FixedView[]
 
 /** The views named after a period, which a phone keeps behind a single tab. */
 export type PeriodView = 'today' | 'tomorrow' | 'week' | 'month'
@@ -229,7 +234,8 @@ export function tagView(tag: string): TagView {
  * it, or on one of the screens opened from it — a list or the Inbox under Lists,
  * a tag's tasks under Tags, the history, the wishlist and the rules under
  * Rewards, Tags, the notes, Modes and whatever is under them under Organize,
- * and Organize, Balance, the activity log, the journal and Notifications under More.
+ * Balance, the activity log and the journal under Reflect, and Organize,
+ * Reflect, whatever is under them and Notifications under More.
  */
 export function isUnder(view: View, menu: View): boolean {
   if (view === menu) return true
@@ -240,7 +246,10 @@ export function isUnder(view: View, menu: View): boolean {
   if (menu === 'organize') {
     return (UNDER_ORGANIZE as readonly View[]).includes(view) || isTagView(view) || isModesView(view)
   }
-  if (menu === 'more') return (UNDER_MORE as readonly View[]).includes(view) || isUnder(view, 'organize')
+  if (menu === 'reflect') return (UNDER_REFLECT as readonly View[]).includes(view)
+  if (menu === 'more') {
+    return (UNDER_MORE as readonly View[]).includes(view) || isUnder(view, 'organize') || isUnder(view, 'reflect')
+  }
   return false
 }
 
@@ -249,8 +258,9 @@ export function isUnder(view: View, menu: View): boolean {
  * tree whose top is the bar's tabs — the periods, Tasks, Habits, Rewards, More
  * and Settings. Under Tasks are Lists and the Trash, its two buttons (UI-34);
  * under Lists the Inbox and each list; under Rewards its five pages (RWD-19);
- * under More Organize, Balance, the activity log, the journal and Notifications (UI-45); under
- * Organize Tags, the notes and Modes (UI-81); under Tags each tag's tasks, and
+ * under More Organize, Reflect and Notifications (UI-45); under Organize Tags,
+ * the notes and Modes (UI-81); under Reflect Balance, the activity log and the
+ * journal (UI-83); under Tags each tag's tasks, and
  * under Modes each mode's page (MODE-7). This is what the back button climbs,
  * so a page is left the way it was reached rather than the way it happened to
  * be arrived at.
@@ -261,6 +271,7 @@ export function parentView(view: View): View | null {
   if (view === 'lists' || view === 'trash') return 'tasks'
   if ((UNDER_MORE as readonly View[]).includes(view)) return 'more'
   if ((UNDER_ORGANIZE as readonly View[]).includes(view)) return 'organize'
+  if ((UNDER_REFLECT as readonly View[]).includes(view)) return 'reflect'
   if ((UNDER_REWARDS as readonly View[]).includes(view)) return 'rewards'
   if ((UNDER_MODES as readonly View[]).includes(view)) return 'modes'
   return null
@@ -430,6 +441,7 @@ export const VIEW_LABELS: Record<FixedView, string> = {
   journal: 'Journal',
   more: 'More',
   organize: 'Organize',
+  reflect: 'Reflect',
   modes: 'Modes',
   'modes/procrastination': 'Procrastination',
   'modes/warm-up': 'Warm-up',

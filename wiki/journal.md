@@ -8,8 +8,8 @@ went right rather than on what is left.
 ## The page
 
 - **JRN-1** **Journal** is a page of its own, at `#/journal` (UI-36), with an entry in the sidebar
-  under the Activity log, in the group that looks back at the day (UI-30), and a row on More's page
-  (UI-45). It opens on the heading **Journal** with an **i** beside it (UI-73), saying in plain
+  under **Reflect**, after Balance and the Activity log (UI-30, UI-83), and a row on Reflect's page
+  (UI-83). It opens on the heading **Journal** with an **i** beside it (UI-73), saying in plain
   sentences what the page is for and how it is used, and under the heading the day it is writing
   about — `Saturday, October 10`. Then come three cards, one for each **section**, in this order:
   ☀️ **Good things today**, 🏆 **Achievements** and 🙏 **Gratitude**; then the button to the week
@@ -63,7 +63,8 @@ went right rather than on what is left.
   next render, and the day before is in the history (JRN-6). Anything half typed on a line not yet
   left is let go of with the old day.
 - **JRN-10** **Journal** can be switched off on Settings (FEAT-1). Off, the page goes from the
-  sidebar and from More (FEAT-2), and an address naming it opens More (UI-37); what was written
+  sidebar and from Reflect (FEAT-2), and an address naming it opens Reflect — or More, once Balance
+  and the Activity log are off too (UI-37); what was written
   stays, the week kept as ever (JRN-8).
 
 ---
@@ -74,9 +75,9 @@ history), `src/app/useJournal.ts` (holding it, and letting the old days go),
 `src/app/components/JournalSection.tsx` (a section's lines, the waiting line, the dots),
 `src/app/journalLabels.ts` (wording), `src/app/components/JournalIcon.tsx`, `src/app/useUndoToast.ts`,
 `src/app/TasksScreen.tsx`, `src/app/view.ts`, `src/app/components/SideNav.tsx`,
-`src/app/components/MorePage.tsx`; saving: [Storage](storage.md).
+`src/app/components/ReflectPage.tsx`; saving: [Storage](storage.md).
 **Tested in:** `src/core/journal.test.ts`, `src/app/useJournal.test.ts`,
 `src/app/components/JournalPage.test.tsx`, `src/storage/journalSchema.test.ts`,
 `src/storage/backupFile.test.ts`, `src/storage/backupRepository.test.ts`, `src/app/features.test.ts`,
-`src/app/components/SideNav.test.tsx`, `src/app/components/MorePage.test.tsx`,
+`src/app/components/SideNav.test.tsx`, `src/app/components/ReflectPage.test.tsx`,
 `src/app/components/BottomNav.test.tsx`.

@@ -311,13 +311,13 @@ changes shape.
   like a cached quote (STORE-8) there is nothing in them worth carrying forward. A browser that
   refuses storage keeps them for as long as the page is open.
 - **STORE-31** How the sidebar is laid out — whether the lists under Lists (LST-26), the pages
-  under Rewards (RWD-19), Tags, Notes and Modes under Organize (UI-81) and the modes under Modes
-  (MODE-7) are folded — is kept the same way, and
+  under Rewards (RWD-19), Tags, Notes and Modes under Organize (UI-81), the modes under Modes
+  (MODE-7) and Balance, the Activity log and the Journal under Reflect (UI-83) are folded — is kept the same way, and
   for the same reasons: in this
   browser's `localStorage`, not in the account, under a version of its own, read at once when the
   app opens, and back to the default — unfolded — when it cannot be read. A layout saved before
-  there were pages under Rewards, before the modes were listed, or before Organize, is read as
-  leaving those open.
+  there were pages under Rewards, before the modes were listed, before Organize, or before Reflect,
+  is read as leaving those open.
 - **STORE-57** What is **folded on Settings** — its sections, and a feature's own settings under
   its switch (UI-35, FEAT-10) — is kept the same way as the sidebar's layout (STORE-31): in this
   browser's `localStorage`, under a version of its own, read at once when the app opens. Only what

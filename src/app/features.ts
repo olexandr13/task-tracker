@@ -10,6 +10,7 @@ import {
   parentView,
   UNDER_MODES,
   UNDER_ORGANIZE,
+  UNDER_REFLECT,
   UNDER_REWARDS,
   type FixedView,
   type ModeView,
@@ -57,7 +58,7 @@ export function rewardsPagesShown(off: FeaturesOff): (typeof UNDER_REWARDS)[numb
   return UNDER_REWARDS.filter((page) => page !== 'rewards/cases' || isFeatureOn(off, 'cases'))
 }
 
-/** The pages More lists (UI-45), less those switched off: Organize once all it holds is. */
+/** The pages More lists (UI-45), less those switched off: Organize or Reflect once all it holds is. */
 export function morePagesShown(off: FeaturesOff): (typeof ON_MORE)[number][] {
   return ON_MORE.filter((page) => isViewOn(page, off))
 }
@@ -67,9 +68,14 @@ export function organizePagesShown(off: FeaturesOff): (typeof UNDER_ORGANIZE)[nu
   return UNDER_ORGANIZE.filter((page) => isViewOn(page, off))
 }
 
+/** The pages Reflect lists (UI-83), less those switched off. */
+export function reflectPagesShown(off: FeaturesOff): (typeof UNDER_REFLECT)[number][] {
+  return UNDER_REFLECT.filter((page) => isViewOn(page, off))
+}
+
 /**
  * Whether a view is there to go to (FEAT-2): a page of a feature switched off
- * is not, nor More or Organize once everything on it is, nor a mode whose
+ * is not, nor More, Organize or Reflect once everything on it is, nor a mode whose
  * feature is off. The tasks, the trash and settings always are.
  */
 export function isViewOn(view: View, off: FeaturesOff): boolean {
@@ -88,6 +94,7 @@ export function isViewOn(view: View, off: FeaturesOff): boolean {
   if (view === 'modes') return on('modes')
   if (isModesView(view)) return isModeViewOn(off, view)
   if (view === 'organize') return organizePagesShown(off).length > 0
+  if (view === 'reflect') return reflectPagesShown(off).length > 0
   if (view === 'more') return morePagesShown(off).length > 0
   return true
 }

@@ -43,11 +43,13 @@ describe('parentView', () => {
     }
   })
 
-  it('puts Organize, Balance, the activity log and the journal under More, Tags, the notes and Modes under Organize, a tag\'s tasks under Tags and a mode\'s page under Modes (UI-45, UI-81, MODE-7, NOTE-1, BAL-1)', () => {
+  it('puts Organize and Reflect under More, Tags, the notes and Modes under Organize, Balance, the activity log and the journal under Reflect, a tag\'s tasks under Tags and a mode\'s page under Modes (UI-45, UI-81, UI-83, MODE-7, NOTE-1, BAL-1)', () => {
     expect(parentView('organize')).toBe('more')
-    expect(parentView('journal')).toBe('more')
-    expect(parentView('balance')).toBe('more')
-    expect(parentView('activity')).toBe('more')
+    expect(parentView('reflect')).toBe('more')
+    expect(parentView('journal')).toBe('reflect')
+    expect(parentView('balance')).toBe('reflect')
+    expect(parentView('activity')).toBe('reflect')
+    expect(rootView('journal')).toBe('more')
     expect(parentView('tags')).toBe('organize')
     expect(parentView('notes')).toBe('organize')
     expect(parentView('modes')).toBe('organize')
@@ -71,8 +73,17 @@ describe('isUnder', () => {
     }
   })
 
-  it('holds Organize and everything under it under More, and not Lists (UI-45, UI-34)', () => {
-    for (const view of ['more', 'organize', 'tags', tagView('work'), 'notes', 'modes', 'modes/warm-up', 'balance', 'activity', 'journal'] as const) {
+  it('holds Balance, the activity log and the journal under Reflect (UI-83)', () => {
+    for (const view of ['reflect', 'balance', 'activity', 'journal'] as const) {
+      expect(isUnder(view, 'reflect')).toBe(true)
+    }
+    for (const view of ['organize', 'notes', 'more', 'notifications'] as const) {
+      expect(isUnder(view, 'reflect')).toBe(false)
+    }
+  })
+
+  it('holds Organize, Reflect and everything under them under More, and not Lists (UI-45, UI-34)', () => {
+    for (const view of ['more', 'organize', 'tags', tagView('work'), 'notes', 'modes', 'modes/warm-up', 'reflect', 'balance', 'activity', 'journal'] as const) {
       expect(isUnder(view, 'more')).toBe(true)
     }
     expect(isUnder('lists', 'more')).toBe(false)

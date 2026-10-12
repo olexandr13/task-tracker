@@ -158,6 +158,19 @@ describe('useView', () => {
     expect(window.location.hash).toBe('#/more')
   })
 
+  it('climbs from the journal to Reflect and from Reflect to More (UI-37, UI-83)', async () => {
+    const { result } = renderHook(() => useView())
+    act(() => { result.current[1]('journal') })
+    await historySettles()
+
+    await back()
+    expect(result.current[0]).toBe('reflect')
+    expect(window.location.hash).toBe('#/reflect')
+
+    await back()
+    expect(result.current[0]).toBe('more')
+  })
+
   it('climbs from a list to Lists and from Lists to Tasks (UI-37, UI-34)', async () => {
     const id = '6f1b2c3d-0f3a-4a1b-9c2e-8d7f6a5b4c3d'
     const { result } = renderHook(() => useView())

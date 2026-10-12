@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { RewardsView } from '../view'
 import { RewardsNav } from './RewardsNav'
 
-/* The strip across the rewards pages on a phone. RWD ids refer to wiki/rewards.md. */
+/* The strip across the rewards pages. RWD ids refer to wiki/rewards.md. */
 
 afterEach(cleanup)
 
@@ -39,9 +39,11 @@ describe('RewardsNav (RWD-30)', () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith('rewards/history')
   })
 
-  it('is a phone’s alone: a wide screen has them in the sidebar (UI-30)', () => {
+  it('stays on a wide screen, beside the sidebar (UI-30)', () => {
     setup('rewards')
 
-    expect(screen.getByRole('navigation', { name: 'Rewards' }).className).toContain('md:hidden')
+    const classes = screen.getByRole('navigation', { name: 'Rewards' }).className.split(' ')
+    expect(classes).not.toContain('hidden')
+    expect(classes).not.toContain('md:hidden')
   })
 })

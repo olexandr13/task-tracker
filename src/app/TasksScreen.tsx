@@ -62,6 +62,7 @@ import { ModesPage } from './components/ModesPage'
 import { MorePage } from './components/MorePage'
 import { NotificationsPage } from './components/NotificationsPage'
 import { OrganizePage } from './components/OrganizePage'
+import { ReflectPage } from './components/ReflectPage'
 import { PinnedTabs } from './components/PinnedTabs'
 import { ProgressPanel } from './components/ProgressPanel'
 import { QuoteCard } from './components/QuoteCard'
@@ -922,6 +923,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
               rewardsOpen={sideNav.rewardsOpen}
               modesOpen={sideNav.modesOpen}
               organizeOpen={sideNav.organizeOpen}
+              reflectOpen={sideNav.reflectOpen}
               keyWaiting={keyWaiting}
               notices={notices.length}
               dimmed={dimChrome}
@@ -930,6 +932,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
               onRewardsOpenChange={(rewardsOpen) => { setSideNav({ ...sideNav, rewardsOpen }) }}
               onModesOpenChange={(modesOpen) => { setSideNav({ ...sideNav, modesOpen }) }}
               onOrganizeOpenChange={(organizeOpen) => { setSideNav({ ...sideNav, organizeOpen }) }}
+              onReflectOpenChange={(reflectOpen) => { setSideNav({ ...sideNav, reflectOpen }) }}
             />
 
             {/* The work and its rail under the pinned tabs, which only a wide screen has (UI-75). */}
@@ -982,6 +985,10 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     <section aria-label="Organize">
                       <OrganizePage onOpen={setView} modesOn={modesOn} />
                     </section>
+                  ) : view === 'reflect' ? (
+                    <section aria-label="Reflect">
+                      <ReflectPage onOpen={setView} />
+                    </section>
                   ) : view === 'modes' ? (
                     <section aria-label="Modes">
                       <ModesPage modes={modes} onOpen={setView} />
@@ -1024,7 +1031,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     </section>
                   ) : isRewardsView(view) ? (
                     <section aria-label={viewLabel(view)} className="flex flex-col gap-5">
-                      {/* A phone has no sidebar to list the pages under Rewards, so they are here (RWD-30). */}
+                      {/* The pages under Rewards, to step between them without the sidebar (RWD-30). */}
                       <RewardsNav view={view} keyWaiting={keyWaiting} onChange={setView} />
                       {rewards.isLoading ? (
                         <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
@@ -1465,7 +1472,11 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
             />
           )}
           {undo.pending !== null && (
-            <UndoToast pending={undo.pending} onUndo={handleUndo} onDismiss={undo.dismiss} />
+            // In the middle of the screen, not of the room beside the Plus: it gives back on the
+            // right what the Plus takes, and keeps as clear of the left edge as of the Plus.
+            <div className={hasPlus ? '-mr-16 max-w-[calc(100%-4rem)] md:mr-0 md:max-w-full' : 'max-w-full'}>
+              <UndoToast pending={undo.pending} onUndo={handleUndo} onDismiss={undo.dismiss} />
+            </div>
           )}
         </div>
       </main>

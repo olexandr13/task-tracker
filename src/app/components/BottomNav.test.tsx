@@ -111,8 +111,8 @@ describe('BottomNav', () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith('rewards')
   })
 
-  it('keeps More marked while Organize, the tags, a tag\'s list, the notes, Balance, the activity log or the modes are open (UI-45, UI-81, TAG-17, MODE-1, NOTE-1, BAL-1, ACT-1)', () => {
-    for (const view of ['organize', 'tags', 'tag/work', 'notes', 'balance', 'activity', 'journal', 'modes', 'modes/warm-up', 'modes/check-in'] as const) {
+  it('keeps More marked while Organize, the tags, a tag\'s list, the notes, the modes, Reflect, Balance, the activity log or the journal are open (UI-45, UI-81, UI-83, TAG-17, MODE-1, NOTE-1, BAL-1, ACT-1, JRN-1)', () => {
+    for (const view of ['organize', 'tags', 'tag/work', 'notes', 'reflect', 'balance', 'activity', 'journal', 'modes', 'modes/warm-up', 'modes/check-in'] as const) {
       setup(view)
       expect(moreTab().getAttribute('aria-current')).toBe('page')
       expect(tasksTab().getAttribute('aria-current')).toBeNull()

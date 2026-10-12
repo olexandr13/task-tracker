@@ -9,7 +9,7 @@ be put right.
 ## The page
 
 - **NOTIF-1** **Notifications** is a page of its own, at `#/notifications` (UI-36), marked with a
-  bell. In the sidebar it is a group of its own, after the Journal and before Trash (UI-30); on a
+  bell. In the sidebar it is a group of its own, after Reflect and before Trash (UI-30); on a
   phone it is a row on More's page (UI-45). It has two parts, **This browser** and **Waiting**.
 
 ## This browser

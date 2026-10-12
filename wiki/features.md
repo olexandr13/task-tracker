@@ -36,11 +36,13 @@ thing every account keeps.
 - **FEAT-2** A page switched off is **gone from everywhere it is reached from**: its entry in the
   sidebar, with whatever is folded under it (UI-30); its tab on a phone's bar, the tabs left sharing
   the bar between them (UI-32); its entry in the Tasks and Rewards tabs' menus (UI-43, UI-67) and in
-  the strip across the rewards pages (RWD-30); its row on **More** (UI-45) or **Organize** (UI-81)
-  — and Organize itself, once Tags, Notes and Modes are all off, and More, once every page on it is; its pinned tab, which is kept and comes back with it (UI-77); and its letter: **H** with Habits, **R** with Rewards, **C** with Cases (UI-56, UI-57, UI-72), **P** with the modes (UI-58). An **address** naming it — a bookmark,
+  the strip across the rewards pages (RWD-30); its row on **More** (UI-45), **Organize** (UI-81) or
+  **Reflect** (UI-83) — and Organize itself, once Tags, Notes and Modes are all off, Reflect, once
+  Balance, the Activity log and the Journal are, and More, once every page on it is; its pinned tab, which is kept and comes back with it (UI-77); and its letter: **H** with Habits, **R** with Rewards, **C** with Cases (UI-56, UI-57, UI-72), **P** with the modes (UI-58). An **address** naming it — a bookmark,
   a reload, a notification pressed — opens the **nearest page above it** that is on instead (UI-37):
   Rewards for Cases, Tasks for a list or the Inbox, Modes for a mode, Organize for Tags, Notes or
-  Modes, More for Organize, Balance, the Journal or Notifications — or Today, where nothing above it is on — and
+  Modes, Reflect for Balance, the Activity log or the Journal, More for Organize, Reflect or
+  Notifications — or Today, where nothing above it is on — and
   the address is put right to match.
 - **FEAT-3** What a part shows **anywhere else** goes with it:
   - **Lists** — the list on a task's sheet, the add sheet and an open row, and the list choices in
@@ -120,7 +122,7 @@ needs, switching one), `src/storage/featureRepository.ts`, `featureSchema.ts`,
 `useFeatureOn`, for what is drawn inside a row or a sheet; which pages are there, and where an
 address lands), `src/app/featureLabels.ts` (the wording), `src/app/components/FeatureSwitches.tsx` and
 `SettingsList.tsx` (the switches, and a part's own settings under its switch), `src/app/TasksScreen.tsx` (the shortcuts, the notices, the modes, the
-rail), `SideNav.tsx`, `BottomNav.tsx`, `MorePage.tsx`, `OrganizePage.tsx`, `RewardsNav.tsx`, `ModesPage.tsx` (the
+rail), `SideNav.tsx`, `BottomNav.tsx`, `MorePage.tsx`, `OrganizePage.tsx`, `ReflectPage.tsx`, `RewardsNav.tsx`, `ModesPage.tsx` (the
 navigation), `TaskItem.tsx`, `TaskSheet.tsx`, `AddTaskSheet.tsx`, `TaskDescription.tsx`,
 `ProcrastinationMode.tsx`, `RewardsPage.tsx`, `ActivityPage.tsx` (what goes with a part),
 `src/app/useReminders.ts` and `useQuote.ts` (reminders and the quote, off), `TasksScreen.tsx` (the
@@ -130,4 +132,4 @@ limit on rests going with Habits).
 `src/storage/backupRepository.test.ts`, `src/app/features.test.ts`, `src/app/useFeatures.test.ts`,
 `src/app/useReminders.test.ts`, `src/app/useQuote.test.ts`,
 `src/app/components/SettingsList.test.tsx`, `SideNav.test.tsx`, `BottomNav.test.tsx`,
-`MorePage.test.tsx`, `OrganizePage.test.tsx`, `ModesPage.test.tsx`, `TaskItem.test.tsx`.
+`MorePage.test.tsx`, `OrganizePage.test.tsx`, `ReflectPage.test.tsx`, `ModesPage.test.tsx`, `TaskItem.test.tsx`.

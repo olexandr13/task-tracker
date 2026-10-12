@@ -10,7 +10,7 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   strip of **pinned tabs** (UI-75), which starts level with the sidebar's mark.
 - **UI-2** The rail belongs to the views that show tasks — Today, Tomorrow, Week, Month, Tasks, the Inbox, each
   list's and each tag's — not to
-  the app: habits, rewards, More, Organize, the modes, the lists, the tags, the notes, Balance, the Activity log, the Journal, the trash and settings do without it. The habits page is already a record of progress (HAB-15), and how much of
+  the app: habits, rewards, More, Organize, Reflect, the modes, the lists, the tags, the notes, Balance, the Activity log, the Journal, the trash and settings do without it. The habits page is already a record of progress (HAB-15), and how much of
   the week is cleared says nothing about what was thrown away. Nobody needs spurring on to empty a
   bin.
 - **UI-3** There is **no view heading** over the work. The navigation already marks which view you
@@ -18,7 +18,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   starts at the top of the page instead. The view's name is still there for a screen reader, as the
   page's heading, unseen. The app's own mark sits in the sidebar on a wide screen (UI-52), not over
   the list. The pinned tabs above the work (UI-75) are navigation, not a heading: the tab marked is
-  the view's name, said once.
+  the view's name, said once. Nor is the strip across the top of the rewards pages (RWD-30): it is
+  the way between them, the one you are on marked.
 - **UI-52** On a wide screen the sidebar opens with the app's mark — the progress-ring icon (UI-39)
   beside the name **PickMe**. A phone has none: the home-screen icon already says which app it is,
   and there is no strip for one above the work.
@@ -29,8 +30,9 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   moves to a **bar along the bottom of the screen**, in reach of a thumb (UI-32). A sidebar is a poor
   use of a phone. The end of the page, and the undo toast (TRASH-3), stay clear of the bar — and of
   the Plus (UI-54) where there is one: the page ends with room to scroll its last row above the Plus,
-  and what the screen has to say (the undo toast, the sync notice, a running timer) sits beside the
-  Plus rather than under it.
+  and what the screen has to say (the sync notice, a running timer) sits beside the Plus rather than
+  under it. The undo toast stays in the **middle** of the screen, as clear of the left edge as of the
+  Plus.
 - **UI-5** Stacked, the rail comes **after** the work — the bars, then the quote at the very bottom
   of the page.
 - **UI-6** Nothing is reachable only on a wide screen. On a phone a tap on a task opens a sheet
@@ -142,18 +144,20 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 
 ## Navigation
 
-- **UI-7** Twenty-nine views: **Today**, **Tomorrow**, **Week**, **Month**, **Tasks**, **Inbox**, **Habits**,
+- **UI-7** Thirty views: **Today**, **Tomorrow**, **Week**, **Month**, **Tasks**, **Inbox**, **Habits**,
   **Rewards** with **Cases**, **History**, **Prizes**, **Wishlist** and **Rules** under it (RWD-30),
   **Lists**, **Organize** with **Tags**, **Notes** (NOTE-1) and **Modes** under it (UI-81) — Modes
   with a page for each of **Procrastination**, **Warm-up**, **Nudge** and **Check-in** under it
-  (MODE-1) —, **Balance** (BAL-1), **Activity log** (ACT-1), **Journal** (JRN-1), **More**,
+  (MODE-1) —, **Reflect** with **Balance** (BAL-1), **Activity log** (ACT-1) and **Journal** (JRN-1)
+  under it (UI-83), **More**,
   **Notifications** (NOTIF-1), **Trash** and **Settings**, and a view for each list, opened from Lists, and one for
   each tag, opened from Tags. Each is named and carries an
   icon — every tag's view the same `#` as Tags, and every list the same folder as Lists, and each
-  mode the glyph it wears everywhere else. On a phone **Organize**, **Balance**, the **Activity
-  log**, the **Journal** and **Notifications** are reached from **More** (UI-45); the sidebar gives each an entry of
+  mode the glyph it wears everywhere else. On a phone **Organize**, **Reflect** and **Notifications**
+  are reached from **More** (UI-45); the sidebar gives each an entry of
   its own, Organize with Tags, Notes and Modes under it and Modes with each mode under that (UI-81,
-  MODE-7), and has no More (UI-30); **Rewards** has an entry of its own in
+  MODE-7), Reflect with Balance, the Activity log and the Journal under it (UI-83), and has no More
+  (UI-30); **Rewards** has an entry of its own in
   the sidebar and a tab of its own on a phone, with its pages under both (UI-30, UI-32, UI-67). See
   [Views](views.md), [Lists](lists.md), [Habits](habits.md),
   [Rewards](rewards.md), [Tags](tags.md), [Notes](notes.md), [Balance](balance.md),
@@ -165,20 +169,22 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   - **the work and where it is filed** — **Habits**, **Tasks** and **Lists**;
   - **what pushes it along** — **Rewards**;
   - **Organize**, with **Tags**, **Notes** (NOTE-1) and **Modes** under it (UI-81);
-  - **looking back at the day** — **Balance**, the **Activity log** and the **Journal** (JRN-1);
+  - **Reflect**, looking back at the day, with **Balance**, the **Activity log** and the **Journal**
+    under it (UI-83);
   - **Notifications** (NOTIF-1), with how many notices are waiting (UI-82);
   - **Trash**;
   - **Settings**.
 
   A group whose every page is switched off (FEAT-2) is left out whole, so two lines never meet with
   nothing between them. There is **no More**: every page on More's page has an entry here, so it
-  would only be a click on the way to one of them (UI-45). **Lists**, **Rewards** and **Organize**
-  each keep their pages indented under them — the **Inbox** and every list (LST-13), the **Cases**,
-  **History**, **Prizes**, **Wishlist** and **Rules** (RWD-30), and **Tags**, **Notes** and
-  **Modes** (UI-81) — and **Modes**, under Organize, keeps **Procrastination**, **Warm-up**,
-  **Nudge** and **Check-in** a step further in (MODE-7). Each of the four has a **chevron at its
-  end that folds them away** and opens them again, without leaving the view you are on. Open, the
-  page you are on is marked itself; folded, the entry above stands for it. All four start open,
+  would only be a click on the way to one of them (UI-45). **Lists**, **Rewards**, **Organize** and
+  **Reflect** each keep their pages indented under them — the **Inbox** and every list (LST-13), the
+  **Cases**, **History**, **Prizes**, **Wishlist** and **Rules** (RWD-30), **Tags**, **Notes** and
+  **Modes** (UI-81), and **Balance**, the **Activity log** and the **Journal** (UI-83) — and
+  **Modes**, under Organize, keeps **Procrastination**, **Warm-up**, **Nudge** and **Check-in** a
+  step further in (MODE-7). Each of the five has a **chevron at its end that folds them away** and
+  opens them again, without leaving the view you are on. Open, the page you are on is marked
+  itself; folded, the entry above stands for it. All five start open,
   and how they are left is kept on this device (STORE-31). **Tags** has nothing folded under it: a
   tag's view has no entry of its own, and **Tags** stays marked while one is open (TAG-17). A
   mode's page has one, under **Modes**, so nothing there needs a strip of its own (MODE-7).
@@ -233,9 +239,10 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
 - **UI-37** **Back goes one level up**, not to the view before. The views make a tree: at the top
   the bar's tabs — the period views, Tasks, Habits, Rewards, More and Settings; under Tasks the
   Lists page and the Trash (UI-34), and under Lists the Inbox and each list; under Rewards its five
-  pages (RWD-19); under More Organize, Balance, the Activity log and the Journal (UI-45); under
-  Organize Tags, Notes and Modes (UI-81); under Tags each tag's tasks, and under Modes each mode's
-  page (MODE-7). So from a mode's page back goes to Modes, then to Organize, then to More; from a list to
+  pages (RWD-19); under More Organize, Reflect and Notifications (UI-45); under Organize Tags, Notes
+  and Modes (UI-81); under Reflect Balance, the Activity log and the Journal (UI-83); under Tags each
+  tag's tasks, and under Modes each mode's page (MODE-7). So from a mode's page back goes to Modes,
+  then to Organize, then to More; from the Journal to Reflect, then to More; from a list to
   Lists, then to Tasks; and from a tab back **leaves the app**, as it leaves any other. It is the
   same wherever you came from — a phone's back button, the browser's, or a keyboard's — and the
   same after a reload or from a link: nothing is kept of the views you went through, so back never
@@ -284,17 +291,17 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   closes first, leaving the one it came from. Closing the sheet any other way (UI-9, UI-48) drops
   that extra step, so the next back is the same as if the sheet had not been opened. It is the same
   wherever back comes from — a phone's back button, the browser's, or a keyboard's.
-- **UI-45** The bar has no entry for Organize — the tags, the notes and the modes — the Balance page, the Activity log, the Journal or Notifications:
+- **UI-45** The bar has no entry for Organize — the tags, the notes and the modes — Reflect — the Balance page, the Activity log and the Journal — or Notifications:
   they are under **More**, a tab marked with three dots. More is **on a phone only** — the sidebar
   lists each of them itself, and so has no More (UI-30, UI-81).
-  **A tap opens More's page** — six links, **Lists**, **Organize**, **Balance**, **Activity log**, **Journal** and **Notifications**, in the sidebar's order, each with its icon, large enough
+  **A tap opens More's page** — four links, **Lists**, **Organize**, **Reflect** and **Notifications**, in the sidebar's order, each with its icon, large enough
   for a thumb (UI-49) and a chevron at its end marking it as a page to go to. Choosing any of them goes there.
   **Lists** is only a way in: it is reached from the
   Tasks tab as well (UI-34, LST-24), so **Tasks** is what stays marked once it is open, and More is
   not, or two tabs would be marked at once. **More** stays marked while its own page, Organize or
   anything under it — the Tags page, a tag's view, the Notes page, the Modes page, one mode's page —
-  the Balance page, the Activity log, the Journal or Notifications is open; in the sidebar those mark themselves
-  (TAG-17, UI-81, MODE-7). The views
+  Reflect or anything under it — the Balance page, the Activity log, the Journal — or Notifications
+  is open; in the sidebar those mark themselves (TAG-17, UI-81, UI-83, MODE-7). The views
   are one tree on both (UI-37), so on a wide screen back from one of them still climbs to More's
   page, which opens there as it does on a phone, with nothing in the sidebar marked — as back from
   Lists climbs to Tasks. Procrastination and the warm-up were rows
@@ -316,6 +323,16 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   before the chevron. A screen reader hears the entry as *Notifications, 3 waiting*. With nothing
   waiting there is no number at all, not a `0`. The count follows the notices as they are, so one
   answered anywhere takes it down at once.
+- **UI-83** **Reflect** gathers **Balance** (BAL-1), the **Activity log** (ACT-1) and the
+  **Journal** (JRN-1) — looking back at the day, at where the time went and what was good in it,
+  kept apart from the work itself. It is marked with a crescent moon and a star, the evening the day
+  is looked back on from. In the sidebar it is a group of its own, after Organize, with the three
+  **indented under it** and a chevron that folds them away (UI-30). Clicking **Reflect** itself opens
+  **its page**, at `#/reflect` (UI-36): three links, **Balance**, **Activity log** and **Journal**,
+  in the sidebar's order, drawn as More's are (UI-45). On a phone it is a row on More's page, so the
+  Journal is two taps from More, and **More** stays marked on Reflect and everything under it. A
+  page under it switched off on Settings is not listed, and Reflect goes from the sidebar and from
+  More once all three are off (FEAT-2) — Balance going with Tags too (FEAT-4).
 
 ## Pinned tabs
 
@@ -601,8 +618,8 @@ notch and the home indicator), `src/app/components/TaskList.tsx` (the room betwe
 `src/app/components/BottomNav.tsx` (the phone's bar), `src/app/components/AddTaskForm.tsx` (the one-line
 add box, the View button beside it and the Plus), `src/app/components/AddTaskSheet.tsx` (the detailed add sheet), `src/app/letterShortcut.ts`
 and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet, `R` opens Rewards, `P` toggles
-Procrastination mode), `src/app/components/MorePage.tsx` and `OrganizePage.tsx` (More's and
-Organize's lists of links, drawn by `PageLinks.tsx`), `src/app/components/ModesPage.tsx` and `ModePage.tsx` (the modes), `src/app/components/ViewMenu.tsx` (the View
+Procrastination mode), `src/app/components/MorePage.tsx`, `OrganizePage.tsx` and `ReflectPage.tsx` (More's,
+Organize's and Reflect's lists of links, drawn by `PageLinks.tsx`), `src/app/components/ModesPage.tsx` and `ModePage.tsx` (the modes), `src/app/components/ViewMenu.tsx` (the View
 button and its panel), `src/app/components/ViewOptionsMenu.tsx` (the
 task views' options), `src/app/useDeviceSetting.ts` (keeping them on this device), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/components/PickerPanel.tsx` (what all of them open: the aside beside a row, the sheet inside a sheet, UI-64), `src/app/usePanelPlacement.ts` (an aside kept inside the window, brought into view, and kept in its place on the screen as its row moves), `src/app/useLongPress.ts` (a press told from a
 long press), `src/app/useRowSwipe.ts` and `src/app/rowSwipe.ts` (a phone's swipe to complete or
@@ -623,7 +640,7 @@ line standing for a group of choices, and the way back out of the ones it opens)
 `public/favicon.svg` (the app's icon; the PNGs beside it are the same icon for installing),
 `src/app/components/AppLogo.tsx` (the mark in the sidebar).
 **Tested in:** `src/app/components/SheetActions.test.tsx` (the row of icons and its **i**), `src/app/components/InfoButton.test.tsx` (the **i** beside a heading and the sheet it opens), `src/app/components/PickerPanel.test.tsx` (the aside and the sheet), `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
-items are large enough for a finger), `src/app/components/MorePage.test.tsx` and `OrganizePage.test.tsx` (More's and Organize's links), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
+items are large enough for a finger), `src/app/components/MorePage.test.tsx`, `OrganizePage.test.tsx` and `ReflectPage.test.tsx` (More's, Organize's and Reflect's links), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
 view in the address, and back going a level up), `src/app/overlayHistory.test.ts` (back closing a sheet, and a sheet over a sheet first), `src/app/view.test.ts` (which view is above which), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel),
 `src/app/components/SettingsList.test.tsx` (the sections and their folding, the version, and the settings under Habits and Cases),
 `src/storage/settingsLayoutSchema.test.ts` (what is folded, read back), `src/app/useDeviceSetting.test.ts`,

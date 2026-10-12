@@ -12,6 +12,8 @@ export interface SideNavState {
   readonly modesOpen: boolean
   /** Tags, the notes and Modes are shown, indented under Organize (UI-81). */
   readonly organizeOpen: boolean
+  /** Balance, the activity log and the journal are shown, indented under Reflect (UI-83). */
+  readonly reflectOpen: boolean
 }
 
 /** How the sidebar is laid out until the owner folds anything away: everything open. */
@@ -20,6 +22,7 @@ export const DEFAULT_SIDE_NAV_STATE: SideNavState = {
   rewardsOpen: true,
   modesOpen: true,
   organizeOpen: true,
+  reflectOpen: true,
 }
 
 /**

@@ -222,10 +222,12 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   earns a key to ([Cases](cases.md), CHST-22), **History** (RWD-38),
   **Prizes** and **Wishlist** (RWD-40) and **Rules** (RWD-39). Their addresses are `#/rewards`,
   `#/rewards/cases`,
-  `#/rewards/history`, `#/rewards/prizes`, `#/rewards/wishlist` and `#/rewards/rules` (UI-36). Cases comes **first of the five under Rewards**: it is the only one with something waiting on it. On a wide screen they are
-  reached from the sidebar (RWD-19); on a phone, which has no sidebar, a **strip of them runs
-  across the top of whichever is open**, the one you are on marked, and the **Rewards tab's menu**
-  holds them too, so one is two taps away from anywhere in the app (UI-67). Each page answers one question:
+  `#/rewards/history`, `#/rewards/prizes`, `#/rewards/wishlist` and `#/rewards/rules` (UI-36). Cases comes **first of the five under Rewards**: it is the only one with something waiting on it. A **strip of
+  all six runs across the top of whichever is open**, the one you are on marked, so the next one is
+  a click or a tap away without going back to the sidebar or the bar — its pills a thumb's height on
+  a phone and compact on a wide screen (UI-49). A wide screen also has them in the sidebar
+  (RWD-19); a phone, which has no sidebar, in the **Rewards tab's menu**, so one is two taps away
+  from anywhere in the app (UI-67). Each page answers one question:
   where am I, what is today worth, where did it all go, what can I have now, what am I saving for,
   and what earns it.
 - **RWD-38** **History** is everything that happened to the points in **one run**, most recent
@@ -276,7 +278,7 @@ row), `src/app/components/AddTaskSheet.tsx` and `src/app/TasksScreen.tsx` (a new
 reward), `src/app/components/RewardsPage.tsx` (how the points stand), `RewardsHistoryPage.tsx`,
 `LedgerList.tsx` (the one run of rows), `PrizeListPage.tsx` (both lists), `RewardRulesPage.tsx`,
 `BonusTiles.tsx` (where each bonus stands, on both pages),
-`RewardsNav.tsx` (the strip on a phone), `RedeemForm.tsx`, `RewardTotals.tsx`, `StarIcon.tsx`,
+`RewardsNav.tsx` (the strip across the rewards pages), `RedeemForm.tsx`, `RewardTotals.tsx`, `StarIcon.tsx`,
 `GiftIcon.tsx`, `TrophyIcon.tsx`, `HistoryIcon.tsx`, `src/app/rewardLabels.ts` and
 `src/app/prizeLabels.ts` (wording; how an amount is written — `describeAmount`), `src/app/useUndoToast.ts` (what a toast says), `src/app/useTasks.ts`
 (recording what a change earns), `src/app/useRewards.ts`, `src/app/usePrizes.ts`,

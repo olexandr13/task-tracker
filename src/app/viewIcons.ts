@@ -20,6 +20,7 @@ import { NotesIcon } from './components/NotesIcon'
 import { NudgeIcon } from './components/NudgeIcon'
 import { OrganizeIcon } from './components/OrganizeIcon'
 import { ProcrastinationIcon } from './components/ProcrastinationIcon'
+import { ReflectIcon } from './components/ReflectIcon'
 import { SettingsIcon } from './components/SettingsIcon'
 import { SlidersIcon } from './components/SlidersIcon'
 import { StarIcon } from './components/StarIcon'
@@ -64,6 +65,7 @@ export const VIEW_ICONS: Record<FixedView, ViewIcon> = {
   journal: JournalIcon,
   more: MoreIcon,
   organize: OrganizeIcon,
+  reflect: ReflectIcon,
   modes: ModesIcon,
   'modes/procrastination': ProcrastinationIcon,
   'modes/warm-up': WarmUpIcon,

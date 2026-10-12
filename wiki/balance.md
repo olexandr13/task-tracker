@@ -12,7 +12,7 @@ Time that was never a task — an evening's reading — can be **logged straight
 ## The page
 
 - **BAL-1** **Balance** is a page of its own, at `#/balance` (UI-36), with an entry in the sidebar
-  above the Activity log, the two of them a group of their own (UI-30), and a row on More's page (UI-45). It opens on the heading
+  under **Reflect**, above the Activity log and the Journal (UI-30, UI-83), and a row on Reflect's page (UI-83). It opens on the heading
   **Work–rest balance**, an **i** beside it (UI-73) saying what the page is for and how categories
   work; then the time spent (BAL-2 to BAL-6, BAL-13, BAL-16); then the categories themselves, made and
   changed in place (BAL-7 to BAL-10), each taking time logged straight to it (BAL-14, BAL-15). It has no box for adding a task and no Plus: it is not a list
@@ -158,11 +158,11 @@ legend), `src/app/components/BalanceSessionList.tsx` (the sessions behind a piec
 [Activity log](activity-log.md) — `src/app/balancePieces.ts` and `src/app/chartPieces.ts` (what each
 chart is divided into), `src/app/chartColors.ts` (the colours), `src/app/components/BalanceIcon.tsx`,
 `src/app/balanceLabels.ts` and `src/app/chartLabels.ts` (wording), `src/app/TasksScreen.tsx` (the page, and tags followed through), `src/app/view.ts`,
-`src/app/components/SideNav.tsx`, `src/app/components/MorePage.tsx`, `src/app/useUndoToast.ts`;
+`src/app/components/SideNav.tsx`, `src/app/components/ReflectPage.tsx`, `src/app/useUndoToast.ts`;
 saving: [Storage](storage.md).
 **Tested in:** `src/core/balance.test.ts`, `src/core/timeLog.test.ts` (the history kept),
 `src/app/useCategories.test.ts`, `src/app/components/BalancePage.test.tsx`, `src/app/chartLabels.test.ts`,
 `src/app/components/UndoToast.test.tsx`, `src/storage/categorySchema.test.ts`,
-`src/storage/localCategoryRepository.test.ts`, `src/app/components/MorePage.test.tsx`,
+`src/storage/localCategoryRepository.test.ts`, `src/app/components/ReflectPage.test.tsx`,
 `src/app/components/SideNav.test.tsx`, `src/app/components/BottomNav.test.tsx`, `src/app/view.test.ts`,
 `src/app/useView.test.ts`.
