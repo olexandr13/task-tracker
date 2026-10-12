@@ -4,6 +4,7 @@ import {
   doneSpans,
   foldedSpans,
   historyScope,
+  isUnder,
   newTaskDueDay,
   oneListView,
   parentView,
@@ -42,17 +43,39 @@ describe('parentView', () => {
     }
   })
 
-  it('puts Tags, Balance and Modes under More, a tag\'s tasks under Tags and a mode\'s page under Modes (UI-45, MODE-7, BAL-1)', () => {
-    expect(parentView('tags')).toBe('more')
+  it('puts Organize, Balance, the activity log and the journal under More, Tags, the notes and Modes under Organize, a tag\'s tasks under Tags and a mode\'s page under Modes (UI-45, UI-81, MODE-7, NOTE-1, BAL-1)', () => {
+    expect(parentView('organize')).toBe('more')
+    expect(parentView('journal')).toBe('more')
     expect(parentView('balance')).toBe('more')
     expect(parentView('activity')).toBe('more')
-    expect(parentView('modes')).toBe('more')
+    expect(parentView('tags')).toBe('organize')
+    expect(parentView('notes')).toBe('organize')
+    expect(parentView('modes')).toBe('organize')
     expect(parentView('modes/check-in')).toBe('modes')
     expect(parentView(tagView('work'))).toBe('tags')
     expect(parentView('modes/procrastination')).toBe('modes')
     expect(parentView('modes/warm-up')).toBe('modes')
     expect(rootView(tagView('work'))).toBe('more')
     expect(rootView('modes/warm-up')).toBe('more')
+    expect(rootView('notes')).toBe('more')
+  })
+})
+
+describe('isUnder', () => {
+  it('holds Tags, a tag\'s tasks, the notes, Modes and each mode under Organize (UI-81)', () => {
+    for (const view of ['organize', 'tags', tagView('work'), 'notes', 'modes', 'modes/nudge'] as const) {
+      expect(isUnder(view, 'organize')).toBe(true)
+    }
+    for (const view of ['balance', 'journal', 'more', 'lists', 'rewards'] as const) {
+      expect(isUnder(view, 'organize')).toBe(false)
+    }
+  })
+
+  it('holds Organize and everything under it under More, and not Lists (UI-45, UI-34)', () => {
+    for (const view of ['more', 'organize', 'tags', tagView('work'), 'notes', 'modes', 'modes/warm-up', 'balance', 'activity', 'journal'] as const) {
+      expect(isUnder(view, 'more')).toBe(true)
+    }
+    expect(isUnder('lists', 'more')).toBe(false)
   })
 })
 

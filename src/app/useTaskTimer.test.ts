@@ -121,7 +121,7 @@ describe('useTaskTimer', () => {
     expect(result.current.goalNotice).toBeNull()
 
     act(() => { vi.advanceTimersByTime(120_000) })
-    expect(result.current.goalNotice).toEqual({ title: 'sport' })
+    expect(result.current.goalNotice).toEqual({ taskId: 'a', title: 'sport' })
     expect(NotificationMock).toHaveBeenCalledTimes(1)
 
     act(() => { vi.advanceTimersByTime(60_000) })
@@ -141,7 +141,7 @@ describe('useTaskTimer', () => {
     expect(result.current.goalNotice).toBeNull()
 
     act(() => { vi.advanceTimersByTime(1_000) })
-    expect(result.current.goalNotice).toEqual({ title: 'sport' })
+    expect(result.current.goalNotice).toEqual({ taskId: 'a', title: 'sport' })
   })
 
   it('restores a running timer from the repository', () => {

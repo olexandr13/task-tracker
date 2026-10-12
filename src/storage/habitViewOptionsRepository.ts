@@ -22,4 +22,6 @@ export const DEFAULT_HABIT_VIEW_OPTIONS: HabitViewOptions = { showDetails: false
 export interface HabitViewOptionsRepository {
   load(): HabitViewOptions
   save(options: HabitViewOptions): void
+  /** Calls `listener` when another window on this device saves it (STORE-61); returns how to stop. */
+  subscribe(listener: () => void): () => void
 }

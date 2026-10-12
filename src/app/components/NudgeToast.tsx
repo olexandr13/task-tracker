@@ -1,4 +1,5 @@
 import type { QuietHours } from '../../core'
+import { describeNudgeNotice } from '../nudgeLabels'
 
 interface NudgeToastProps {
   title: string
@@ -14,8 +15,6 @@ interface NudgeToastProps {
  * that the next step takes one move, not a decision.
  */
 export function NudgeToast({ title, quietHours, onOpen, onDismiss }: NudgeToastProps) {
-  const span = quietHours === 1 ? 'an hour' : `${quietHours} hours`
-
   return (
     <div
       role="status"
@@ -28,7 +27,7 @@ export function NudgeToast({ title, quietHours, onOpen, onDismiss }: NudgeToastP
         title="Go to the task"
         className="min-w-0 flex-1 truncate rounded-lg py-2 pr-1 pl-3 text-left transition-colors hover:bg-white/10 active:bg-white/10 dark:hover:bg-black/5 dark:active:bg-black/5"
       >
-        Nothing done in {span} · Next up: “{title}”
+        {describeNudgeNotice(title, quietHours)}
       </button>
       <button
         type="button"

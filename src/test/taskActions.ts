@@ -10,7 +10,7 @@ export const NO_TASK_ACTIONS: TaskActions = {
   changeDescription: nothing,
   changeDay: nothing,
   changeTime: nothing,
-  skip: nothing,
+  skip: () => 'skipped',
   unskip: nothing,
   changeRepeat: nothing,
   changeReward: nothing,

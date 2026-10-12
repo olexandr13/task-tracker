@@ -42,8 +42,53 @@ export async function askToNotify(): Promise<NotifyPermission> {
     return notifyPermission()
   })().finally(() => {
     asking = null
+    announcePermission()
   })
   return asking
+}
+
+/** Whoever is showing the permission, to be told when it may have changed. */
+const permissionListeners = new Set<() => void>()
+
+/** The browser's own word on the permission, held so its `change` keeps arriving. */
+let permissionStatus: PermissionStatus | null = null
+
+function announcePermission(): void {
+  for (const listener of permissionListeners) listener()
+}
+
+/**
+ * Hears whenever the permission may have changed: an answer to `askToNotify`,
+ * anywhere in the app, or a change made in the site's settings while the app is
+ * open, where the browser reports one. What it changed to is read again with
+ * `notifyPermission`, so nothing here keeps a copy that could fall behind.
+ */
+export function subscribeNotifyPermission(listener: () => void): () => void {
+  permissionListeners.add(listener)
+  watchSiteSettings()
+  return () => { permissionListeners.delete(listener) }
+}
+
+let watchingSiteSettings = false
+
+function watchSiteSettings(): void {
+  if (watchingSiteSettings) return
+  watchingSiteSettings = true
+  if (typeof navigator === 'undefined' || !('permissions' in navigator)) return
+
+  try {
+    void navigator.permissions.query({ name: 'notifications' }).then(
+      (status) => {
+        permissionStatus = status
+        permissionStatus.addEventListener('change', announcePermission)
+      },
+      () => {
+        // A browser that will not say; the answers to `askToNotify` still arrive.
+      },
+    )
+  } catch {
+    // A browser whose `query` refuses the name outright, the same.
+  }
 }
 
 export interface NotifyOptions {

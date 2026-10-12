@@ -1,5 +1,11 @@
-import type { LedgerRow, RedemptionId, RewardKey, TaskId } from '../../core'
-import { describeAmount, describeEarnedOn, describeEarningTitle, describePoints } from '../rewardLabels'
+import { isSkipPenalty, type LedgerRow, type RedemptionId, type RewardKey, type TaskId } from '../../core'
+import {
+  describeAmount,
+  describeEarnedOn,
+  describeEarningTitle,
+  describePoints,
+  describeRedemptionTitle,
+} from '../rewardLabels'
 import { deleteControl } from '../rowControls'
 
 interface LedgerListProps {
@@ -24,7 +30,8 @@ interface LedgerListProps {
  * they belong to one story, and a list striped in two colours would read as two
  * lists again. A period's bonus is named for what it cleared rather than for a
  * task (RWD-28), and a purged task still shows — earned stays earned — as a
- * deleted one.
+ * deleted one. Points a habit's skip took (HAB-34) are a row of the spent side,
+ * named for the skip: `Skipped “stretch”`.
  *
  * The **×** on a row deletes it at once, whichever side it is; for a few seconds
  * the screen offers to undo.
@@ -42,8 +49,10 @@ export function LedgerList({ rows, taskTitles, now, onRemoveEarning, onRemoveRed
     <ul className="flex flex-col gap-1">
       {rows.map((row) => {
         const earned = row.kind === 'earned'
-        const title = earned ? describeEarningTitle(row.entry.taskId, taskTitles) : row.redemption.note
+        const lost = row.kind === 'redeemed' && isSkipPenalty(row.redemption)
+        const title = earned ? describeEarningTitle(row.entry.taskId, taskTitles) : describeRedemptionTitle(row.redemption)
         const points = earned ? row.entry.points : row.redemption.points
+        const kind = earned ? 'earning' : lost ? 'penalty' : 'redemption'
         return (
           <li
             key={earned ? `earned/${row.entry.day}/${row.entry.taskId}` : `redeemed/${row.redemption.id}`}
@@ -54,7 +63,7 @@ export function LedgerList({ rows, taskTitles, now, onRemoveEarning, onRemoveRed
             </span>
             <span className="min-w-0 flex-1 break-words text-neutral-900 dark:text-neutral-100">{title}</span>
             <span
-              aria-label={`${describePoints(points)} ${earned ? 'earned' : 'redeemed'}`}
+              aria-label={`${describePoints(points)} ${earned ? 'earned' : lost ? 'lost' : 'redeemed'}`}
               className={`shrink-0 tabular-nums ${
                 earned ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
               }`}
@@ -68,8 +77,8 @@ export function LedgerList({ rows, taskTitles, now, onRemoveEarning, onRemoveRed
                 if (row.kind === 'earned') onRemoveEarning({ taskId: row.entry.taskId, day: row.entry.day })
                 else onRemoveRedemption(row.redemption.id)
               }}
-              aria-label={`Delete the ${earned ? 'earning' : 'redemption'} "${title}"`}
-              title={earned ? 'Delete earning' : 'Delete redemption'}
+              aria-label={`Delete the ${kind} "${title}"`}
+              title={`Delete ${kind}`}
               className={`flex h-6 shrink-0 items-center rounded-lg px-1.5 text-base leading-none ${deleteControl}`}
             >
               ×

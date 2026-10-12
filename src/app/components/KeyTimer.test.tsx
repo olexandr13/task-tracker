@@ -3,7 +3,7 @@ import { act, cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { KeyTimer } from './KeyTimer'
 
-/* The countdown on a case on its way: the Drop, and Weekly. CHST ids refer to wiki/cases.md. */
+/* The countdown on a case on its way: the Drop, and the Haul. CHST ids refer to wiki/cases.md. */
 
 const DROP = 'Time until the Drop'
 
@@ -65,13 +65,13 @@ describe('KeyTimer', () => {
     expect(timerText()).toContain('1m')
   })
 
-  it('counts down in days and hours while a day or more is left, as Weekly does (CHST-30)', async () => {
+  it('counts down in days and hours while a day or more is left, as the Haul does (CHST-30)', async () => {
     vi.useFakeTimers()
-    // Tuesday morning, and Weekly arrives at midnight on Monday.
+    // Tuesday morning, and the Haul arrives at midnight on Monday.
     vi.setSystemTime(new Date(2026, 9, 6, 7, 50, 0))
-    render(<KeyTimer at={new Date(2026, 9, 12)} label="Time until Weekly" />)
+    render(<KeyTimer at={new Date(2026, 9, 12)} label="Time until the Haul" />)
 
-    expect(timerText('Time until Weekly')).toContain('5d 16h')
+    expect(timerText('Time until the Haul')).toContain('5d 16h')
 
     // Sunday evening, under a day away: hours and minutes, as the Drop's.
     vi.setSystemTime(new Date(2026, 9, 11, 20, 30, 0))
@@ -79,7 +79,7 @@ describe('KeyTimer', () => {
       await vi.advanceTimersByTimeAsync(1000)
     })
 
-    expect(timerText('Time until Weekly')).toContain('3h 30m')
+    expect(timerText('Time until the Haul')).toContain('3h 30m')
   })
 
   it('shows nothing when there is no arrival to wait for', () => {

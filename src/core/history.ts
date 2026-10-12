@@ -20,7 +20,7 @@ import type { Task } from './task'
 /**
  * The first day of last week or of this month, whichever comes first: done
  * work finished before it can be history. Last week, not this one, because
- * Weekly and the Drop count the tasks finished then, with points or without
+ * the Haul and the Drop count the tasks finished then, with points or without
  * (CHST-10), and a task without points is only in the tasks.
  */
 export function historyStart(now: Date = new Date()): LocalDay {

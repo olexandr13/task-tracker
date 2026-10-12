@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   allTags,
+  canSkipOccurrence,
   countInboxOpen,
   featuresOn,
   isModeAvailable,
@@ -12,12 +13,14 @@ import {
   pinFocusedFirst,
   sameTag,
   secondsSpent,
+  skipPenalty,
   sortForDisplay,
   summarizeLists,
   summarizeTags,
   trashedTasks,
   type ActivityEntry,
   type JournalEntry,
+  type Note,
   type CategoryId,
   type HourSlot,
   type ListId,
@@ -45,6 +48,7 @@ import { CheckInToast } from './components/CheckInToast'
 import { FolderIcon } from './components/FolderIcon'
 import { HabitList } from './components/HabitList'
 import { JournalPage } from './components/JournalPage'
+import { NotesPage } from './components/NotesPage'
 import { WarmUpNoticeToast } from './components/WarmUpNoticeToast'
 import { CaseNoticeToast } from './components/CaseNoticeToast'
 import { CasesPage } from './components/CasesPage'
@@ -56,6 +60,8 @@ import { ModePage } from './components/ModePage'
 import { ModesBackLink } from './components/ModesBackLink'
 import { ModesPage } from './components/ModesPage'
 import { MorePage } from './components/MorePage'
+import { NotificationsPage } from './components/NotificationsPage'
+import { OrganizePage } from './components/OrganizePage'
 import { PinnedTabs } from './components/PinnedTabs'
 import { ProgressPanel } from './components/ProgressPanel'
 import { QuoteCard } from './components/QuoteCard'
@@ -83,10 +89,11 @@ import { UndoToast } from './components/UndoToast'
 import { ViewOptionsMenu } from './components/ViewOptionsMenu'
 import { footLink } from './footControls'
 import { CASE_DAILY_NOTICE, CASE_SHARE_NOTICE } from './caseLabels'
+import { DEV_FLAGS } from './devFlags'
 import { describeEarningTitle } from './rewardLabels'
 import { POINTS_NOT_LOADED, TASKS_NOT_LOADED } from './storageProblem'
-import { moveTab, pinnedAddresses, pinnedViews, pinTab, unpinTab } from './pinnedTabs'
-import type { TaskActions } from './taskActions'
+import { changePinned, moveTab, pinnedViews, pinTab, unpinTab } from './pinnedTabs'
+import type { SkipOutcome, TaskActions } from './taskActions'
 import { useLetterShortcut } from './useLetterShortcut'
 import { ABOVE_PHONE_BAR, usePhoneLayout } from './usePhoneLayout'
 import { useActivities } from './useActivities'
@@ -94,8 +101,11 @@ import { useBackup } from './useBackup'
 import { useCheckIn } from './useCheckIn'
 import { useCategories } from './useCategories'
 import { FeaturesContext, modesShown, nearestViewOn } from './features'
+import { HabitRestsContext } from './habitRests'
 import { useFeatures } from './useFeatures'
+import { useHabitRests } from './useHabitRests'
 import { useJournal } from './useJournal'
+import { useNotes } from './useNotes'
 import { useDeviceSetting } from './useDeviceSetting'
 import { useLists } from './useLists'
 import { usePrizes } from './usePrizes'
@@ -111,6 +121,9 @@ import { useNudge } from './useNudge'
 import { useReminders } from './useReminders'
 import { useTaskTimer } from './useTaskTimer'
 import { useUndoToast } from './useUndoToast'
+import { askToNotify } from './browserNotification'
+import { standingNotices, type StandingNotice } from './standingNotices'
+import { useNotifyPermission } from './useNotifyPermission'
 import { modeStates } from './modes'
 import { useView } from './useView'
 import { useUnheldHistory } from './useUnheldHistory'
@@ -192,6 +205,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const activities = useActivities(storage.activities, storageProblem.report)
   // Today's good things, achievements and gratitude, and the week before (JRN-1).
   const journal = useJournal(storage.journal, storageProblem.report)
+  // Anything written down to keep (NOTE-1).
+  const notes = useNotes(storage.notes, storageProblem.report)
   const {
     tasks,
     heldSince,
@@ -255,6 +270,11 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const features = useFeatures(storage.features, storageProblem.report)
   const featuresOff = features.off
   const on = featuresOn(featuresOff)
+  // The limit on habits' rests (HAB-36), the account's. It goes with Habits, as
+  // the warm-up does (FEAT-9): switched off, nothing says what a rest is, so
+  // nothing is held back for want of one.
+  const habitRests = useHabitRests(storage.habitSettings, storageProblem.report)
+  const restLimit = on.habits ? habitRests.rests : null
   // The view the address names, and the one shown: a page switched off is not
   // there to show, so its address lands on the nearest page above it that is
   // (FEAT-2), and the address is put right to match below.
@@ -303,11 +323,11 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const [sideNav, setSideNav] = useDeviceSetting(deviceStorage.sideNav)
   // The pages pinned as tabs across the top of a wide screen (UI-75), kept on
   // this device as their addresses (STORE-59). Each change is made to the
-  // latest tabs (STORE-39).
+  // latest tabs (STORE-39), those another window pinned among them (STORE-61).
   const [pinnedTabs, setPinnedTabs] = useDeviceSetting(deviceStorage.pinnedTabs)
   const pinned = pinnedViews(pinnedTabs.pinned)
   function changeTabs(change: (latest: View[]) => View[]) {
-    setPinnedTabs((latest) => ({ pinned: pinnedAddresses(change(pinnedViews(latest.pinned))) }))
+    setPinnedTabs((latest) => ({ pinned: changePinned(latest.pinned, change) }))
   }
   const [settingsLayout, setSettingsLayout] = useDeviceSetting(deviceStorage.settingsLayout)
   // A phone has no add box and no task View settings (UI-54, UI-41): both are a
@@ -368,8 +388,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     watching: on.cases,
     onOpen: () => { setView('rewards/cases') },
   })
-  // Cases practice, switched on Settings and played on Cases' page
-  // (CHST-21). Kept nowhere, so it is off whenever the app is opened.
+  // Cases practice, switched on Settings where the build offers it, and played
+  // on Cases' page (CHST-21). Kept nowhere, so it is off whenever the app is opened.
   const [casesPractice, setCasesPractice] = useState(false)
   // A key nobody notices earns nothing, so wherever Cases is navigated from
   // says one is waiting (CHST-22) — while there is a case to open (FEAT-3).
@@ -379,6 +399,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // an hour is due at its moment wherever the task is filed — and null while
   // they load.
   const reminders = useReminders(isLoading ? null : live, on.reminders)
+  // Whether this browser posts notifications, for the Notifications page (NOTIF-2).
+  const notifyPermission = useNotifyPermission()
   // Warm-up mode: the account's, so every device agrees which day it is on, and
   // measured against every habit there is — null while those are still loading
   // (WARM-1, WARM-4).
@@ -425,6 +447,72 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   function revealTask(task: Task, part: RevealPart = 'task') {
     setView(viewShowingTask(task, view, now, lists.lists))
     setReveal({ taskId: task.id, part })
+  }
+
+  // Every notice standing, for the Notifications page and the count beside its
+  // entry (NOTIF-3, NOTIF-6). Read from the notices themselves, so nothing is
+  // kept for it, and one answered anywhere leaves the page too.
+  const notices = standingNotices({
+    tasks: live,
+    drop: cases.dailyNotice,
+    haul: cases.shareNotice,
+    goal: taskTimer.goalNotice,
+    reminders: reminders.notices,
+    checkIn: checkIn.notice,
+    nudge: nudgeNotice,
+    on: { cases: on.cases, checkIn: checkInOn, nudge: nudgeOn },
+  })
+  // On the Notifications page they are listed, so they are not said over it as
+  // well — as the check-in is not over the Activity log (NOTIF-5, CHECKIN-4).
+  const noticesOnPage = view === 'notifications'
+
+  /** A notice's row on Notifications does what its own notice's button does (NOTIF-4). */
+  function openNotice(notice: StandingNotice) {
+    switch (notice.kind) {
+      case 'drop':
+        cases.dismissDailyNotice()
+        setView('rewards/cases')
+        return
+      case 'haul':
+        cases.announceShare()
+        setView('rewards/cases')
+        return
+      case 'check-in':
+        openActivityLog(notice.slot)
+        return
+      case 'goal':
+      case 'reminder':
+      case 'nudge': {
+        const task = live.find((candidate) => candidate.id === notice.taskId)
+        dismissNotice(notice)
+        if (task !== undefined) revealTask(task, notice.kind === 'goal' ? 'time' : 'task')
+        return
+      }
+    }
+  }
+
+  /** A notice's × on Notifications, the same as its × on the notice (NOTIF-4): one reminder at a time. */
+  function dismissNotice(notice: StandingNotice) {
+    switch (notice.kind) {
+      case 'drop':
+        cases.dismissDailyNotice()
+        return
+      case 'haul':
+        cases.announceShare()
+        return
+      case 'goal':
+        taskTimer.dismissGoalNotice()
+        return
+      case 'reminder':
+        reminders.dismissOne(notice.taskId)
+        return
+      case 'check-in':
+        checkIn.dismiss()
+        return
+      case 'nudge':
+        nudge.dismiss()
+        return
+    }
   }
   // Every tag there is: the kept ones, whether or not a task carries them, and
   // any a live task carries that is not kept yet.
@@ -515,6 +603,24 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     }
   }
 
+  /**
+   * A habit skipped costs twice its reward (HAB-34), and the toast says how much,
+   * with the way back: undoing takes the skip back and the points with it. A skip
+   * that costs nothing — no reward, or not a habit — says nothing, and neither
+   * does one while Rewards is switched off, which still costs (FEAT-5) but shows
+   * no points anywhere (FEAT-3). A skip turned down for want of a rest (HAB-38)
+   * changed nothing, so there is nothing to undo: the control pressed says why.
+   */
+  function handleSkip(id: TaskId): SkipOutcome {
+    const task = tasks.find((candidate) => candidate.id === id)
+    const cost = task !== undefined && canSkipOccurrence(task, now) ? skipPenalty(task) : 0
+    const outcome = skip(id, restLimit)
+    if (outcome === 'skipped' && task !== undefined && cost > 0 && on.rewards) {
+      undo.show({ kind: 'skip', taskId: id, title: task.title, points: cost })
+    }
+    return outcome
+  }
+
   // The same `now` once more: which quote is today's is derived from the day it
   // falls in, so the quote and the bars can't disagree about which day it is.
   const quote = useQuote(quotableQuoteSource, deviceStorage.quote, now, on.quote)
@@ -591,6 +697,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       case 'completion':
         uncomplete(undo.pending.taskId)
         break
+      case 'skip':
+        unskip(undo.pending.taskId)
+        break
       case 'category':
         categories.restore(undo.pending.category)
         break
@@ -599,6 +708,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
         break
       case 'journal':
         journal.restore(undo.pending.entry)
+        break
+      case 'note':
+        notes.restore(undo.pending.note)
         break
     }
     undo.dismiss()
@@ -686,6 +798,12 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     undo.show({ kind: 'journal', entry })
   }
 
+  /** Deletes a note, with a few seconds to take it back (NOTE-6). */
+  function handleRemoveNote(note: Note) {
+    notes.remove(note.id)
+    undo.show({ kind: 'note', note })
+  }
+
   /**
    * What a row, a habit card or a task's sheet can do to its task: the rules
    * from useTasks, with completing, deleting and ending a repeat offering their
@@ -703,7 +821,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
       if (time !== null && on.reminders) reminders.ask()
       changeTime(id, time)
     },
-    skip,
+    skip: handleSkip,
     unskip,
     // A rule that would make one habit more is held to the warm-up's allowance,
     // the same as adding one; turning a habit's own rule over is no new habit.
@@ -779,8 +897,10 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const hasPlus = isTaskView(view) || view === 'habits'
 
   return (
-    // What is switched off on Settings, for whatever is drawn below to ask (FEAT-3).
+    // What is switched off on Settings, for whatever is drawn below to ask (FEAT-3),
+    // and the limit on habits' rests, for every card, row and sheet that reads it (HAB-36).
     <FeaturesContext value={featuresOff}>
+    <HabitRestsContext value={restLimit}>
       {/* On a phone the page keeps clear of the notch and the rounded corners (UI-61), and its
           end scrolls clear of the bar — and of the Plus, where there is one — so nothing is left
           under them (UI-4). */}
@@ -801,12 +921,15 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
               listsOpen={sideNav.listsOpen}
               rewardsOpen={sideNav.rewardsOpen}
               modesOpen={sideNav.modesOpen}
+              organizeOpen={sideNav.organizeOpen}
               keyWaiting={keyWaiting}
+              notices={notices.length}
               dimmed={dimChrome}
               onChange={setView}
               onListsOpenChange={(listsOpen) => { setSideNav({ ...sideNav, listsOpen }) }}
               onRewardsOpenChange={(rewardsOpen) => { setSideNav({ ...sideNav, rewardsOpen }) }}
               onModesOpenChange={(modesOpen) => { setSideNav({ ...sideNav, modesOpen }) }}
+              onOrganizeOpenChange={(organizeOpen) => { setSideNav({ ...sideNav, organizeOpen }) }}
             />
 
             {/* The work and its rail under the pinned tabs, which only a wide screen has (UI-75). */}
@@ -838,10 +961,13 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                         onThemeChange={onThemeChange}
                         habitView={habitViewOptions}
                         onHabitViewChange={setHabitViewOptions}
+                        habitRests={{ on: habitRests.rests !== null, loading: habitRests.isLoading }}
+                        onHabitRestsChange={habitRests.turn}
                         casesCounting={{ countUnpaid: cases.settings.countUnpaid, loading: rewards.isLoading }}
                         onCasesCountUnpaidChange={(countUnpaid) => { cases.setSettings({ ...cases.settings, countUnpaid }) }}
-                        casesPractice={casesPractice}
-                        onCasesPracticeChange={setCasesPractice}
+                        casesPractice={
+                          DEV_FLAGS.casesPractice ? { practising: casesPractice, onChange: setCasesPractice } : undefined
+                        }
                         features={{ off: featuresOff, loading: features.isLoading }}
                         onFeatureChange={features.turn}
                         layout={settingsLayout}
@@ -850,7 +976,11 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     </section>
                   ) : view === 'more' ? (
                     <section aria-label="More">
-                      <MorePage onOpen={setView} modesOn={modesOn} />
+                      <MorePage onOpen={setView} notices={notices.length} />
+                    </section>
+                  ) : view === 'organize' ? (
+                    <section aria-label="Organize">
+                      <OrganizePage onOpen={setView} modesOn={modesOn} />
                     </section>
                   ) : view === 'modes' ? (
                     <section aria-label="Modes">
@@ -1115,6 +1245,20 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                         />
                       )}
                     </section>
+                  ) : view === 'notes' ? (
+                    <section aria-label="Notes">
+                      {notes.isLoading ? (
+                        <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                      ) : (
+                        <NotesPage
+                          notes={notes.notes}
+                          now={now}
+                          onAdd={(text) => { notes.add(text) }}
+                          onChange={notes.change}
+                          onRemove={handleRemoveNote}
+                        />
+                      )}
+                    </section>
                   ) : view === 'journal' ? (
                     <section aria-label="Journal">
                       {journal.isLoading ? (
@@ -1128,6 +1272,16 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                           onRemove={handleRemoveJournalLine}
                         />
                       )}
+                    </section>
+                  ) : view === 'notifications' ? (
+                    <section aria-label="Notifications">
+                      <NotificationsPage
+                        permission={notifyPermission}
+                        onAllow={() => { void askToNotify() }}
+                        notices={notices}
+                        onOpen={openNotice}
+                        onDismiss={dismissNotice}
+                      />
                     </section>
                   ) : view === 'habits' ? (
                     <>
@@ -1229,21 +1383,12 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
           </div>
         )}
 
-        {/* Today came clear (CHST-23), the daily case's timer ran out (CHST-29),
-            or Monday brought Weekly (CHST-30). At the top like the warm-up's
+        {/* The daily case's timer ran out (CHST-29), or Monday brought the Haul
+            (CHST-30). At the top like the warm-up's
             notice rather than in the stack below: each is an offer to go
             somewhere, and the moment it happens is the moment it is worth most. */}
-        {on.cases && (cases.unannounced || cases.dailyNotice || cases.shareNotice) && (
+        {!noticesOnPage && on.cases && (cases.dailyNotice || cases.shareNotice) && (
           <div className="pointer-events-none fixed inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-50 flex flex-col items-center gap-2 px-4">
-            {cases.unannounced && (
-              <CaseNoticeToast
-                onOpen={() => {
-                  cases.announce()
-                  setView('rewards/cases')
-                }}
-                onDismiss={cases.announce}
-              />
-            )}
             {cases.dailyNotice && (
               <CaseNoticeToast
                 message={CASE_DAILY_NOTICE}
@@ -1287,13 +1432,13 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
               onStop={() => { taskTimer.stop(null) }}
             />
           )}
-          {taskTimer.goalNotice !== null && (
+          {!noticesOnPage && taskTimer.goalNotice !== null && (
             <GoalNoticeToast
               title={taskTimer.goalNotice.title}
               onDismiss={taskTimer.dismissGoalNotice}
             />
           )}
-          {reminderTask !== null && reminderNotice !== null && (
+          {!noticesOnPage && reminderTask !== null && reminderNotice !== null && (
             <ReminderToast
               title={reminderNotice.title}
               more={reminders.notices.length - 1}
@@ -1301,7 +1446,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
               onDismiss={reminders.dismiss}
             />
           )}
-          {checkInOn && checkIn.notice !== null && view !== 'activity' && (
+          {!noticesOnPage && checkInOn && checkIn.notice !== null && view !== 'activity' && (
             <CheckInToast
               checkIn={checkIn.notice}
               onLog={() => {
@@ -1311,7 +1456,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
               onDismiss={checkIn.dismiss}
             />
           )}
-          {nudgeOn && nudgeTask !== null && nudgeNotice !== null && (
+          {!noticesOnPage && nudgeOn && nudgeTask !== null && nudgeNotice !== null && (
             <NudgeToast
               title={nudgeNotice.title}
               quietHours={nudgeNotice.quietHours}
@@ -1324,6 +1469,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
           )}
         </div>
       </main>
+    </HabitRestsContext>
     </FeaturesContext>
   )
 }

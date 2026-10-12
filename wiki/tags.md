@@ -68,8 +68,8 @@ it is deleted, whether or not a task carries it.
 
 ## The Tags page
 
-- **TAG-18** **Tags** has an entry in the sidebar (UI-30) and is reached from **More** on a phone
-  (UI-45). Its
+- **TAG-18** **Tags** has an entry in the sidebar, under **Organize** (UI-30, UI-81), and is
+  reached on a phone from **Organize**, on More's page (UI-45). Its
   page lists **every tag there is**, alphabetically (TAG-6), and clicking one opens its list (TAG-13).
   No single tag has an entry in the navigation.
 - **TAG-19** Beside each tag is how many of its tasks are **still to do**, a repeating one for its
@@ -113,9 +113,10 @@ it is deleted, whether or not a task carries it.
   of icons having no width for them — and that is the same panel (TAG-7), a tap away rather than a
   menu away (UI-44). A resting row shows **no tag mark**: tags are in the sheet, as urgent is
   (TASK-62), not among the tinted icons for what is set (UI-50).
-- **TAG-17** In the sidebar the Tags page has an entry of its own, beside Lists (UI-30), which stays
-  marked while the Tags page or a tag's list is open. On a phone it is reached from the **More**
-  page's list (UI-45), and **More** stays marked instead.
+- **TAG-17** In the sidebar the Tags page has an entry of its own, under Organize (UI-30, UI-81),
+  which stays marked while the Tags page or a tag's list is open — or Organize does, while what is
+  under it is folded away. On a phone it is reached from **Organize** on More's page (UI-45,
+  UI-81), and **More** stays marked instead.
 
 ---
 
@@ -127,7 +128,8 @@ deleting, every tag there is, matching and suggesting, the tag being typed), `sr
 and the phone's button), `src/app/components/TaskDescription.tsx` and `src/app/descriptionBox.ts` (typing `#`),
 `src/app/components/TaskItem.tsx` (labels on the line of details, the menu's Tags, the woken strip and the phone's sheet), `src/app/components/TaskSheet.tsx`, `src/app/components/TagList.tsx`
 (the Tags page, its box, renaming and deleting), `src/app/view.ts` (the Tags page and a tag's list, their addresses and what they say), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx`,
-`src/app/components/SideNav.tsx`, `src/app/components/BottomNav.tsx`, `src/app/components/TagIcon.tsx`.
+`src/app/components/SideNav.tsx`, `src/app/components/BottomNav.tsx`, `src/app/components/OrganizePage.tsx`,
+`src/app/components/TagIcon.tsx`.
 **Tested in:** `src/core/tag.test.ts`, `src/app/useTags.test.ts` (keeping tags), `src/app/components/TagPicker.test.tsx`,
 `src/app/components/TaskDescription.test.tsx` (typing `#`), `src/app/components/TaskItem.test.tsx`
 (labels on the line of details, tagging from the menu), `src/app/components/TagList.test.tsx` (the Tags page, its box, renaming and deleting), `src/app/useTasks.test.ts` (renaming a tag on the tasks), `src/app/components/SideNav.test.tsx`,

@@ -21,6 +21,7 @@ const DATA: AccountData = {
   categories: [],
   activities: [],
   journal: [],
+  notes: [],
   entries: [],
   redemptions: [],
   bonuses: NO_BONUSES,
@@ -31,10 +32,11 @@ const DATA: AccountData = {
   nudge: null,
   checkIn: null,
   features: null,
+  habitRests: null,
 }
 
 const ADDED: ImportSummary = {
-  added: { tasks: 1, lists: 1, tags: 0, prizes: 0, categories: 0, activities: 0, journal: 0, completions: 0, redemptions: 0 },
+  added: { tasks: 1, lists: 1, tags: 0, prizes: 0, categories: 0, activities: 0, journal: 0, notes: 0, completions: 0, redemptions: 0 },
   alreadyHere: 0,
 }
 

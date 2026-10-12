@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { dueReminders, standingReminders, type Reminder, type Task } from '../core'
-import { askToNotify, notifyBrowser, notifyPermission, type NotifyPermission } from './browserNotification'
+import { dueReminders, standingReminders, type Reminder, type Task, type TaskId } from '../core'
+import { askToNotify, notifyBrowser, type NotifyPermission } from './browserNotification'
+import { useNotifyPermission } from './useNotifyPermission'
 
 /**
  * How often the clock is read for an hour that has come round. Half a minute,
@@ -20,7 +21,10 @@ export interface ReminderControl {
    * task is implicitly asking for.
    */
   readonly ask: () => void
+  /** Puts every standing reminder away, as the notice's × does. */
   readonly dismiss: () => void
+  /** Puts one standing reminder away, as its row on the Notifications page does (NOTIF-4). */
+  readonly dismissOne: (taskId: TaskId) => void
 }
 
 /**
@@ -49,7 +53,7 @@ export function useReminders(tasks: readonly Task[] | null, on = true): Reminder
   if (!on && standing.length > 0) {
     setStanding([])
   }
-  const [permission, setPermission] = useState<NotifyPermission>(() => notifyPermission())
+  const permission = useNotifyPermission()
   const [clock, setClock] = useState(() => new Date())
 
   // The end of the stretch already watched. Everything up to here has been
@@ -94,12 +98,15 @@ export function useReminders(tasks: readonly Task[] | null, on = true): Reminder
     )
   }, [clock])
 
-  const ask = useCallback(() => { void askToNotify().then(setPermission) }, [])
+  const ask = useCallback(() => { void askToNotify() }, [])
   const dismiss = useCallback(() => { setStanding([]) }, [])
+  const dismissOne = useCallback((taskId: TaskId) => {
+    setStanding((current) => current.filter((reminder) => reminder.taskId !== taskId))
+  }, [])
 
   // What the standing notices still have to say, as the tasks are now: a task
   // finished, deleted or renamed anywhere is read as it is rather than as it was.
   const notices = standingReminders(standing, tasks ?? [], clock)
 
-  return { notices, permission, ask, dismiss }
+  return { notices, permission, ask, dismiss, dismissOne }
 }

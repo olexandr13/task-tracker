@@ -12,22 +12,23 @@ import { isRecord } from './plainData'
  * rather than by its tier, the tiers having gone. A version 1 record keeps its
  * sound and its notice and forgets the opening — an old tier says nothing about
  * a quarter, and the worst of forgetting is today's card shown in plain bone.
- * 3: the day this device already said Weekly was here. A record from before
+ * 3: the day this device already said the Haul was here. A record from before
  * that has not said it.
+ * 4: no day this device said a key was waiting, Payday's notice having gone.
+ * An older record's is dropped.
  */
-export const CASE_DEVICE_SCHEMA_VERSION = 3
+export const CASE_DEVICE_SCHEMA_VERSION = 4
 
 export interface StoredCaseDevice {
   version: number
   sound: boolean
   lastOpen: { day: string; quarter: number } | null
-  noticedDay: string | null
   noticedWeek: string | null
 }
 
 /** Whether this device has nothing to remember, and so nothing worth saving. */
 function isAtRest(state: CaseDeviceState): boolean {
-  return state.sound && state.lastOpen === null && state.noticedDay === null && state.noticedWeek === null
+  return state.sound && state.lastOpen === null && state.noticedWeek === null
 }
 
 /** What to save: nothing while Cases stands exactly as it arrives. */
@@ -38,7 +39,6 @@ export function toStoredCaseDevice(state: CaseDeviceState): StoredCaseDevice | n
     version: CASE_DEVICE_SCHEMA_VERSION,
     sound: state.sound,
     lastOpen: state.lastOpen === null ? null : { day: state.lastOpen.day, quarter: state.lastOpen.quarter },
-    noticedDay: state.noticedDay,
     noticedWeek: state.noticedWeek,
   }
 }
@@ -65,13 +65,12 @@ function readLastOpen(data: unknown): { day: string; quarter: CaseQuarter } | nu
  * notice said once more than it had to be.
  */
 export function readCaseDevice(data: unknown): CaseDeviceState | null {
-  if (!isRecord(data) || (data.version !== 1 && data.version !== 2 && data.version !== CASE_DEVICE_SCHEMA_VERSION)) return null
+  if (!isRecord(data) || ![1, 2, 3, CASE_DEVICE_SCHEMA_VERSION].includes(data.version as number)) return null
   if (typeof data.sound !== 'boolean') return CASES_AT_REST
 
   return {
     sound: data.sound,
     lastOpen: data.version === 1 ? null : readLastOpen(data.lastOpen),
-    noticedDay: readDay(data.noticedDay),
-    noticedWeek: data.version === CASE_DEVICE_SCHEMA_VERSION ? readDay(data.noticedWeek) : null,
+    noticedWeek: data.version === 1 || data.version === 2 ? null : readDay(data.noticedWeek),
   }
 }

@@ -4,6 +4,7 @@ import {
   dueDay,
   dueMoment,
   dueAgainOn,
+  dueFirstOn,
   dueReminders,
   isDueTomorrow,
   isInPeriod,
@@ -39,9 +40,14 @@ const TUE_15 = new Date(2026, 8, 15, 9, 0)
 const WED_16 = new Date(2026, 8, 16, 9, 0)
 const WED_16_EVENING = new Date(2026, 8, 16, 21, 0)
 
+const FRI_11 = new Date(2026, 8, 11, 9, 0)
+const AUG_25 = new Date(2026, 7, 25, 9, 0)
+
 const DAILY: Repeat = { kind: 'daily' }
 const MONDAYS: Repeat = { kind: 'weekly', weekdays: [1] }
 const MONDAYS_AND_THURSDAYS: Repeat = { kind: 'weekly', weekdays: [1, 4] }
+const FRIDAYS: Repeat = { kind: 'weekly', weekdays: [5] }
+const ON_25TH: Repeat = { kind: 'monthly', day: 25 }
 
 /** A one-off written on the Monday, due on `day`. */
 function dueOn(day: string | null): Task {
@@ -148,6 +154,33 @@ describe('dueAgainOn', () => {
   it('is nothing for a task still to do, or a one-off', () => {
     expect(dueAgainOn(repeating(MONDAYS), WED_16)).toBeNull()
     expect(dueAgainOn(completeTask(dueOn('2026-09-16'), WED_16), WED_16)).toBeNull()
+  })
+})
+
+describe('dueFirstOn', () => {
+  it('is the rule\'s first day after the one the task was written past (DUE-11)', () => {
+    expect(dueFirstOn(repeating(MONDAYS, TUE_15), WED_16)).toBe('2026-09-21')
+    expect(dueFirstOn(repeating({ kind: 'monthly', day: 31 }, WED_16), WED_16_EVENING)).toBe('2026-09-30')
+  })
+
+  it('goes on past a day already passed over', () => {
+    const skippedAhead = { ...repeating(MONDAYS, TUE_15), skippedDays: ['2026-09-21'] }
+
+    expect(dueFirstOn(skippedAhead, WED_16)).toBe('2026-09-28')
+  })
+
+  it('is nothing once the rule has a day in play, the task is done, or for a one-off', () => {
+    expect(dueFirstOn(repeating(MONDAYS), WED_16)).toBeNull()
+    expect(dueFirstOn(setStartDay(repeating(MONDAYS, TUE_15), '2026-09-18'), WED_16)).toBeNull()
+    expect(dueFirstOn(completeTask(repeating(MONDAYS, TUE_15), WED_16), WED_16)).toBeNull()
+    expect(dueFirstOn(dueOn('2026-09-18'), WED_16)).toBeNull()
+  })
+
+  it('leaves the task neither overdue nor with an occurrence to skip', () => {
+    const writtenTuesday = repeating(MONDAYS, TUE_15)
+
+    expect(isOverdue(writtenTuesday, WED_16)).toBe(false)
+    expect(canSkipOccurrence(writtenTuesday, WED_16)).toBe(false)
   })
 })
 
@@ -417,12 +450,20 @@ describe('isInWeek, to do', () => {
   })
 
   it('holds a repeating task on its occurrence in play, not on one still to come', () => {
-    const fridays = repeating({ kind: 'weekly', weekdays: [5] })
+    // Written the Friday before, and done then: this Friday's is still to come.
+    const fridays = completeTask(repeating(FRIDAYS, FRI_11), FRI_11)
 
     expect(isInWeek(repeating(DAILY), WED_16)).toBe(true)
     expect(isInWeek(repeating(MONDAYS), WED_16)).toBe(true)
     expect(isInWeek(fridays, WED_16)).toBe(false)
     expect(isInWeek(fridays, new Date(2026, 8, 18, 9, 0))).toBe(true)
+  })
+
+  it('holds a repeating task written since its rule last came round, from the start (DUE-11)', () => {
+    // Written on the Monday, after the Friday before: first due this Friday.
+    expect(isInWeek(repeating(FRIDAYS), WED_16)).toBe(true)
+    // Written on the Tuesday, after the Monday: first due next Monday.
+    expect(isInWeek(repeating(MONDAYS, TUE_15), WED_16)).toBe(false)
   })
 
   it('leaves out the trash', () => {
@@ -478,10 +519,21 @@ describe('isInMonth', () => {
   })
 
   it('holds a monthly task on its occurrence in play, not on one still to come', () => {
-    const on25th = repeating({ kind: 'monthly', day: 25 }, new Date(2026, 8, 1, 9, 0))
+    // Written in August and done on the 25th: September's is still to come.
+    const on25th = completeTask(repeating(ON_25TH, AUG_25), AUG_25)
 
     expect(isInMonth(on25th, WED_16)).toBe(false)
     expect(isInMonth(on25th, new Date(2026, 8, 25, 9, 0))).toBe(true)
+  })
+
+  it('holds a monthly task written since its day went by, due later this month (DUE-11)', () => {
+    expect(isInMonth(repeating(ON_25TH, new Date(2026, 8, 1, 9, 0)), WED_16)).toBe(true)
+    // The 31st of a 30-day month falls on the 30th (RPT-7).
+    expect(isInMonth(repeating({ kind: 'monthly', day: 31 }, WED_16), WED_16_EVENING)).toBe(true)
+  })
+
+  it('leaves out a monthly task written since its day went by, first due next month', () => {
+    expect(isInMonth(repeating({ kind: 'monthly', day: 10 }, WED_16), WED_16_EVENING)).toBe(false)
   })
 })
 
@@ -504,6 +556,11 @@ describe('isDueTomorrow (LIST-22 – LIST-24)', () => {
     expect(isDueTomorrow(startedOnDay(DAILY, '2026-09-17'), WED_16)).toBe(true)
     // Thursday's occurrence is not in play until Thursday, as in Week (LIST-11).
     expect(isDueTomorrow(repeating(MONDAYS_AND_THURSDAYS), WED_16)).toBe(false)
+  })
+
+  it('holds a repeating task written since its rule last came round, first due tomorrow (DUE-11)', () => {
+    expect(isDueTomorrow(repeating({ kind: 'weekly', weekdays: [4] }, TUE_15), WED_16)).toBe(true)
+    expect(isDueTomorrow(repeating(FRIDAYS, TUE_15), WED_16)).toBe(false)
   })
 
   it('keeps a task due tomorrow that was finished ahead of its day', () => {

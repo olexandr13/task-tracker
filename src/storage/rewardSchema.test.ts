@@ -67,6 +67,19 @@ describe('readRedemption (STORE-23, STORE-24)', () => {
     expect(readRedemption(toStoredRedemption(REDEMPTION))).toEqual(REDEMPTION)
   })
 
+  it('keeps the habit and the day points were taken for skipping (HAB-34)', () => {
+    const penalty: Redemption = { ...REDEMPTION, skip: { taskId: 'stretch', day: '2026-09-15' } }
+
+    expect(readRedemption(toStoredRedemption(penalty))).toEqual(penalty)
+    expect(readRedemption(toStoredRedemption(REDEMPTION))).not.toHaveProperty('skip')
+  })
+
+  it('trusts no skip that is not a habit and a day (HAB-34)', () => {
+    for (const skip of [null, 'stretch', { taskId: '', day: '2026-09-15' }, { taskId: 'stretch', day: 'Tuesday' }, { day: '2026-09-15' }]) {
+      expect(readRedemption({ version: REWARD_SCHEMA_VERSION, redemption: { ...REDEMPTION, skip } })).toBeNull()
+    }
+  })
+
   it('trusts nothing in a version it does not know, or not shaped as a redemption (STORE-24)', () => {
     expect(readRedemption({ version: 99, redemption: REDEMPTION })).toBeNull()
     expect(readRedemption({ version: REWARD_SCHEMA_VERSION, redemption: { ...REDEMPTION, points: -1 } })).toBeNull()

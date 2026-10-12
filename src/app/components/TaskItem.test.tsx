@@ -27,6 +27,7 @@ import {
 } from '../../core'
 import { NO_TASK_ACTIONS } from '../../test/taskActions'
 import { FeaturesContext } from '../features'
+import { HabitRestsContext } from '../habitRests'
 import { describeShortDate } from '../dueLabels'
 import type { TaskActions } from '../taskActions'
 import { PHONE_QUERY } from '../usePhoneLayout'
@@ -65,7 +66,7 @@ function setup(
   render(
     <ul>
       <TaskItem
-        actions={{ ...NO_TASK_ACTIONS, complete: nothing, uncomplete: nothing, rename: nothing, changeDescription: nothing, changeDay: nothing, skip: nothing, changeRepeat: nothing, changeReward: nothing, changeUrgent: nothing, changeTimeGoal: nothing, logTime: nothing, removeTimeEntry: nothing, changeList: filing.onChangeList ?? nothing, addTag: nothing, removeTag: nothing, remove: nothing, duplicate: onDuplicate, addSubtask: nothing, setSubtaskDone: nothing, renameSubtask: nothing, removeSubtask: nothing }}
+        actions={{ ...NO_TASK_ACTIONS, complete: nothing, uncomplete: nothing, rename: nothing, changeDescription: nothing, changeDay: nothing, changeRepeat: nothing, changeReward: nothing, changeUrgent: nothing, changeTimeGoal: nothing, logTime: nothing, removeTimeEntry: nothing, changeList: filing.onChangeList ?? nothing, addTag: nothing, removeTag: nothing, remove: nothing, duplicate: onDuplicate, addSubtask: nothing, setSubtaskDone: nothing, renameSubtask: nothing, removeSubtask: nothing }}
         task={task}
         now={NOW}
         knownTags={[]}
@@ -1930,5 +1931,36 @@ describe('the features switched off on Settings (FEAT-3)', () => {
     expect(screen.queryByRole('menuitem', { name: 'Tags' })).toBeNull()
     expect(screen.queryByRole('menuitemradio', { name: 'Work' })).toBeNull()
     expect(screen.getByRole('menuitem', { name: 'Duplicate' })).toBeDefined()
+  })
+})
+
+describe('a skip from the row\u2019s menu while rests are limited (HAB-38)', () => {
+  const WED_16 = new Date(2026, 8, 16, 9, 0)
+
+  it('answers on the row when the habit has no rest left, the menu having closed', async () => {
+    // Started Mon 14; Tue 15 skipped, spending the one rest it starts with.
+    const habit = {
+      ...createTask(TASK, { kind: 'daily' }, new Date(2026, 8, 14, 8, 0)),
+      doneDays: ['2026-09-14'],
+      skippedDays: ['2026-09-15'],
+    }
+    const skip = vi.fn(() => 'noRest' as const)
+    const user = userEvent.setup()
+    render(
+      <HabitRestsContext value={{ since: '2026-09-01' }}>
+        <ul>
+          <TaskItem actions={{ ...NO_TASK_ACTIONS, skip }} task={habit} now={WED_16} knownTags={[]} lists={[]} />
+        </ul>
+      </HabitRestsContext>,
+    )
+
+    await user.pointer({ keys: '[MouseRight]', target: screen.getByRole('listitem') })
+    await user.click(screen.getByRole('menuitem', { name: 'Skip occurrence' }))
+
+    expect(skip).toHaveBeenCalledWith(habit.id)
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(screen.getByRole('alert').textContent).toBe(
+      'No rests left. This habit earns one for every 7 days in a row — 6 more to go.',
+    )
   })
 })

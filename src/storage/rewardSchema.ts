@@ -81,11 +81,21 @@ export function readRewardDay(data: unknown): RewardEntry[] | null {
   return read
 }
 
-/** A saved redemption, or null when it can't be trusted. */
+/**
+ * A saved redemption, or null when it can't be trusted.
+ *
+ * Points taken for skipping a habit (HAB-34) are a redemption with `skip` — the
+ * habit and the day — beside the rest. The field was added rather than the
+ * version bumped, as with the cases settings below: a device not yet updated
+ * reads past it and still takes the points off its balance, under the note that
+ * says what they were taken for, where a new version would have it refuse every
+ * redemption there is. A `skip` that is there but not what it should be can't
+ * be trusted either.
+ */
 export function readRedemption(data: unknown): Redemption | null {
   if (!isRecord(data) || data.version !== REWARD_SCHEMA_VERSION || !isRecord(data.redemption)) return null
 
-  const { id, points, note, redeemedAt } = data.redemption
+  const { id, points, note, redeemedAt, skip } = data.redemption
   if (
     typeof id !== 'string' ||
     id === '' ||
@@ -98,7 +108,18 @@ export function readRedemption(data: unknown): Redemption | null {
     return null
   }
 
-  return { id, points, note, redeemedAt }
+  if (skip === undefined) return { id, points, note, redeemedAt }
+  if (
+    !isRecord(skip) ||
+    typeof skip.taskId !== 'string' ||
+    skip.taskId === '' ||
+    typeof skip.day !== 'string' ||
+    !isLocalDay(skip.day)
+  ) {
+    return null
+  }
+
+  return { id, points, note, redeemedAt, skip: { taskId: skip.taskId, day: skip.day } }
 }
 
 /**

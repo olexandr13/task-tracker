@@ -113,6 +113,50 @@ describe('a skipped day (HAB-31)', () => {
   })
 })
 
+describe('a skipped day while rests are limited (HAB-40)', () => {
+  /** Limited from the habit's first day, the first of June. */
+  const LIMITED = { since: '2026-06-01' }
+
+  it('runs the streak on across a skip a rest paid for', () => {
+    // The one rest a habit starts with pays for Tue 15.
+    const task = { ...habit(['2026-09-14', '2026-09-16'], DAILY, new Date(2026, 8, 14, 8, 0)), skippedDays: ['2026-09-15'] }
+
+    expect(habitStats(task, WED_16, LIMITED)).toEqual({ currentStreak: 2, bestStreak: 2 })
+    expect(habitLastDays(task, 3, WED_16, LIMITED).map((day) => day.state)).toEqual(['done', 'skipped', 'done'])
+    expect(habitRate(task, 7, WED_16, LIMITED)).toEqual({ done: 2, days: 2, percent: 100 })
+  })
+
+  it('breaks it at a skip with no rest left, which reads as missed', () => {
+    // Started Sat 12: Sun 13 spends the one rest, Tue 15 has none to spend.
+    const task = {
+      ...habit(['2026-09-12', '2026-09-14', '2026-09-16'], DAILY, SAT_12),
+      skippedDays: ['2026-09-13', '2026-09-15'],
+    }
+
+    expect(habitStats(task, WED_16, LIMITED)).toEqual({ currentStreak: 1, bestStreak: 2 })
+    expect(habitLastDays(task, 5, WED_16, LIMITED).map((day) => day.state)).toEqual([
+      'done',
+      'skipped',
+      'done',
+      'missed',
+      'done',
+    ])
+    expect(habitWeeks(task, 1, WED_16, LIMITED)[0][1]).toEqual({ day: '2026-09-15', state: 'missed' })
+    // Four days tracked since Sun 13 is a rest: three done of four.
+    expect(habitRate(task, 7, WED_16, LIMITED)).toEqual({ done: 3, days: 4, percent: 75 })
+  })
+
+  it('reads every skip as a rest while the limit is off', () => {
+    const task = {
+      ...habit(['2026-09-12', '2026-09-14', '2026-09-16'], DAILY, SAT_12),
+      skippedDays: ['2026-09-13', '2026-09-15'],
+    }
+
+    expect(habitStats(task, WED_16)).toEqual({ currentStreak: 3, bestStreak: 3 })
+    expect(habitStats(task, WED_16, null)).toEqual({ currentStreak: 3, bestStreak: 3 })
+  })
+})
+
 describe('moveToEndOfHabits (HAB-30)', () => {
   /** A one-off, two habits and a one-off, in that order, each with a number of its own. */
   function list(): Task[] {

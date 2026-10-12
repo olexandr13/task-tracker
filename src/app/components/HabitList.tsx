@@ -9,15 +9,18 @@ import {
   isComplete,
   isSkippedToday,
   isTimeGoalReached,
+  restsOf,
   type HabitDayState,
   type HabitRate,
+  type HabitRests,
   type List,
   type LocalDay,
   type LocalTime,
   type Task,
   type TaskId,
 } from '../../core'
-import { describeDays, describeRate, HABIT_DAY_LABELS } from '../habitLabels'
+import { describeDays, describeNextRest, describeRate, describeRests, HABIT_DAY_LABELS } from '../habitLabels'
+import { useRestLimit } from '../habitRests'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { dragGrip } from '../rowControls'
 import { HABIT_DAY_TONES } from '../habitTones'
@@ -243,7 +246,10 @@ function HabitCard({
   const ready = timeReady ? 'time' : subtasksReady ? 'subtasks' : undefined
   const { refused, refuse } = useRefusal()
   const blocked = !done && hasOpenSubtasks(habit, now)
-  const { currentStreak, bestStreak } = habitStats(habit, now)
+  // While rests are limited, a skip no rest paid for is a miss (HAB-40), and the card says how many it has (HAB-39).
+  const rests = useRestLimit()
+  const standing = rests === null ? null : restsOf(habit, rests, now)
+  const { currentStreak, bestStreak } = habitStats(habit, now, rests)
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(() => toDraft(habit.repeat, now))
   const [editedTitle, setEditedTitle] = useState<string | null>(null)
@@ -422,7 +428,7 @@ function HabitCard({
           <h2 className="text-base font-medium break-words md:text-sm">{habit.title}</h2>
           {/* In the title's own column, under the words, where the card's glance sits. */}
           {refused && <CompletionRefusal />}
-          {!isOpen && <Glance habit={habit} streak={currentStreak} now={now} />}
+          {!isOpen && <Glance habit={habit} streak={currentStreak} rests={rests} left={standing?.left ?? null} now={now} />}
         </div>
 
         {/*
@@ -462,7 +468,9 @@ function HabitCard({
         id={recordId}
         className={`${isOpen ? 'flex' : 'hidden'} @container flex-col gap-4 px-4 pt-0.5 pb-3.5`}
       >
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 @xs:grid-cols-3 @lg:grid-cols-5">
+        <dl
+          className={`grid grid-cols-2 gap-x-4 gap-y-3 @xs:grid-cols-3 ${standing === null ? '@lg:grid-cols-5' : '@lg:grid-cols-6'}`}
+        >
           <Stat label="Current streak">
             <span className="flex items-center gap-1">
               <Flame streak={currentStreak} />
@@ -470,9 +478,17 @@ function HabitCard({
             </span>
           </Stat>
           <Stat label="Best streak">{describeDays(bestStreak)}</Stat>
+          {standing !== null && (
+            <Stat label="Rests">
+              {String(standing.left)}
+              <span className="ml-1.5 text-xs font-normal text-neutral-500 dark:text-neutral-400">
+                {describeNextRest(standing)}
+              </span>
+            </Stat>
+          )}
           {RATE_WINDOWS.map(([days, label]) => (
             <Stat key={days} label={label}>
-              <Rate rate={habitRate(habit, days, now)} />
+              <Rate rate={habitRate(habit, days, now, rests)} />
             </Stat>
           ))}
         </dl>
@@ -509,14 +525,29 @@ function HabitCard({
 
 /**
  * What a folded card says under its title (HAB-21): the streak, and how the
- * last week went, a square a day with today on the right, in the grid's shades.
+ * last week went, a square a day with today on the right, in the grid's shades
+ * — and while rests are limited, how many the habit has (HAB-39), after the
+ * week where there is room for it and under the streak where there is not.
  */
-function Glance({ habit, streak, now }: { habit: Task; streak: number; now: Date }) {
-  const days = habitLastDays(habit, GLANCE_DAYS, now)
+function Glance({
+  habit,
+  streak,
+  rests,
+  left,
+  now,
+}: {
+  habit: Task
+  streak: number
+  rests: HabitRests
+  /** The rests it has to spend, or null while every skip is a rest. */
+  left: number | null
+  now: Date
+}) {
+  const days = habitLastDays(habit, GLANCE_DAYS, now, rests)
   const kept = days.filter((day) => day.state === 'done').length
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
       <span
         className={`flex items-center gap-1 text-sm font-medium whitespace-nowrap tabular-nums text-neutral-700 dark:text-neutral-300 ${GLANCE_STREAK_WIDTH}`}
       >
@@ -536,6 +567,9 @@ function Glance({ habit, streak, now }: { habit: Task; streak: number; now: Date
           />
         ))}
       </span>
+      {left !== null && (
+        <span className="text-xs whitespace-nowrap text-neutral-500 dark:text-neutral-400">{describeRests(left)}</span>
+      )}
     </div>
   )
 }

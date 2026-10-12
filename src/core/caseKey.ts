@@ -5,7 +5,7 @@
  * everything in Today. The second is a bonus that becomes available at a
  * random moment during the day — the account's own moment, so it is derived
  * from the day and the account rather than chosen per device. Monday has a
- * third, Weekly, ready from midnight and only planned again on Tuesday (CHST-30).
+ * third, the Haul, ready from midnight and only planned again on Tuesday (CHST-30).
  *
  * The random moment is deterministic: a hash of the day's date and the
  * account's id picks an hour and minute, so every device of the account agrees
@@ -22,7 +22,7 @@ import type { Task } from './task'
 import type { CaseSettings } from './cases'
 
 /**
- * How many cases a day can open before Monday. Monday can also open Weekly, so
+ * How many cases a day can open before Monday. Monday can also open the Haul, so
  * that day holds one more (CHST-30).
  */
 export const KEYS_PER_DAY = 2
@@ -55,7 +55,7 @@ export function dailyCaseOpened(entries: readonly RewardEntry[], now: Date = new
   return entries.some((entry) => entry.taskId === CASE_DAILY_ID && entry.day === today)
 }
 
-/** Whether Monday's Weekly has already been opened. */
+/** Whether Monday's Haul has already been opened. */
 export function weekCaseOpened(entries: readonly RewardEntry[], now: Date = new Date()): boolean {
   const today = toLocalDay(now)
   return entries.some((entry) => entry.taskId === CASE_WEEK_ID && entry.day === today)
@@ -150,7 +150,7 @@ export function anyKeyAvailable(
   const dayCleared = total > 0 && remaining === 0
 
   if (dayCleared) return true
-  // Weekly is ready from midnight on Monday, with nothing else to wait for.
+  // The Haul is ready from midnight on Monday, with nothing else to wait for.
   if (now.getDay() === 1 && !weekCaseOpened(entries, now)) return true
 
   // Has the bonus time passed?

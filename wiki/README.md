@@ -26,14 +26,16 @@ lets this be read as a description of the app rather than a wish list.
 | [Habits](habits.md) | Daily tasks as habits: streaks, rates and the grid of days |
 | [Warm-up](warm-up.md) | The month that lets the habits in one at a time: one on day one, two on day two. Pausing holds the allowance where it is |
 | [Rewards](rewards.md) | Points a task earns on every completion, the bonus for clearing a period, the prizes and the wishlist they are spent on, and the Rewards pages |
-| [Cases](cases.md) | Finishing Today earns Payday, the Drop arrives at a random time, and Weekly is ready on Monday |
+| [Cases](cases.md) | Finishing Today earns Payday, the Drop arrives at a random time, and the Haul is ready on Monday |
 | [Time goals](time-goals.md) | A length of time a task asks for, sessions logged against it, and the hint to tick it off |
 | [Balance](balance.md) | Where the logged time went: categories named by the owner, bound to tags, and the time each took today, this week or this month |
 | [Activity log](activity-log.md) | The day hour by hour: what was done and for how long, the records added and changed, and what they add up to over a day, a week or a month |
 | [Journal](journal.md) | Good things, achievements and gratitude, about five of each a day, and the week before kept to look back on |
+| [Notes](notes.md) | Anything written down to keep: newest first, changed in place, bold, italic and lists from buttons over the box |
 | [Check-ins](check-ins.md) | The top of every hour asking what was done: the hours it keeps to, the notice, and the notification while the app is open |
 | [Reminders](reminders.md) | The hour a task is due at coming round: what is said, when, and how it reaches you |
 | [Nudges](nudges.md) | The app noticing nothing is getting done: the quiet stretch, the task it points at, the hours it may speak in, and the notification |
+| [Notifications](notifications.md) | Whether this browser shows the app's notifications, and every notice still waiting, in one place |
 | [Daily quote](daily-quote.md) | One quote a day, from the quote service, cached for the day |
 | [Features](features.md) | Switching parts of the app off on Settings, and everything that goes with each |
 | [Interface](interface.md) | Layout, navigation, popovers, phone behaviour, accessibility |

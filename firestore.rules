@@ -41,6 +41,12 @@ rules_version = '2';
 //   under that name, and no document at all is every feature on.
 // - The journal: one document per day, stored as { version, day, entries }
 //   (src/storage/firestoreJournalRepository.ts), always filed under its day.
+// - Notes: one document per note, stored as { version, note }
+//   (src/storage/firestoreNoteRepository.ts), always filed under the note's id.
+// - The habits' settings: one document per setting, stored as { version, name, ... }
+//   (src/storage/firestoreHabitSettingsRepository.ts) — the limit on rests, { since },
+//   is the only one so far — always filed under the name it carries, and no
+//   document at all is the setting off.
 service cloud.firestore {
   match /databases/{database}/documents {
     function isOwner(accountId) {
@@ -125,6 +131,16 @@ service cloud.firestore {
     match /users/{accountId}/journalDays/{day} {
       allow read, delete: if isOwner(accountId);
       allow create, update: if isOwner(accountId) && request.resource.data.day == day;
+    }
+
+    match /users/{accountId}/notes/{noteId} {
+      allow read, delete: if isOwner(accountId);
+      allow create, update: if isOwner(accountId) && request.resource.data.note.id == noteId;
+    }
+
+    match /users/{accountId}/habitSettings/{name} {
+      allow read, delete: if isOwner(accountId);
+      allow create, update: if isOwner(accountId) && request.resource.data.name == name;
     }
   }
 }

@@ -2,9 +2,8 @@ import type { CaseQuarter, LocalDay } from '../core'
 
 /**
  * What Cases keeps on this device: whether it makes a noise here, which
- * opening it is still glowing from, whether it has already said here that a
- * key is waiting, and whether it has already said here that Monday's Weekly is
- * here.
+ * opening it is still glowing from, and whether it has already said here that
+ * Monday's Haul is here.
  *
  * What it counts is the account's (./rewardRepository, CHST-32) — how someone wants to be paid travels with
  * them. These are the half only the device can answer. Whether to make a
@@ -21,9 +20,7 @@ export interface CaseDeviceState {
    * to, and so which colour it was — or null for none it saw.
    */
   readonly lastOpen: { readonly day: LocalDay; readonly quarter: CaseQuarter } | null
-  /** The day this device said a key was waiting, or null for none. */
-  readonly noticedDay: LocalDay | null
-  /** The Monday this device said Weekly was here, or null for none (CHST-30). */
+  /** The Monday this device said the Haul was here, or null for none (CHST-30). */
   readonly noticedWeek: LocalDay | null
 }
 
@@ -32,10 +29,12 @@ export interface CaseDeviceState {
  * control gets, and a bandit in silence is half a bandit — so this is the one
  * setting in the app that starts at on and is turned off rather than on.
  */
-export const CASES_AT_REST: CaseDeviceState = { sound: true, lastOpen: null, noticedDay: null, noticedWeek: null }
+export const CASES_AT_REST: CaseDeviceState = { sound: true, lastOpen: null, noticedWeek: null }
 
 /** Where this device's half of Cases is kept between visits. */
 export interface CaseDeviceRepository {
   load(): CaseDeviceState
   save(state: CaseDeviceState): void
+  /** Calls `listener` when another window on this device saves it (STORE-61); returns how to stop. */
+  subscribe(listener: () => void): () => void
 }

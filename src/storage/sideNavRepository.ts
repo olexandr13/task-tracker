@@ -10,10 +10,17 @@ export interface SideNavState {
   readonly rewardsOpen: boolean
   /** The modes are shown, indented under Modes. */
   readonly modesOpen: boolean
+  /** Tags, the notes and Modes are shown, indented under Organize (UI-81). */
+  readonly organizeOpen: boolean
 }
 
 /** How the sidebar is laid out until the owner folds anything away: everything open. */
-export const DEFAULT_SIDE_NAV_STATE: SideNavState = { listsOpen: true, rewardsOpen: true, modesOpen: true }
+export const DEFAULT_SIDE_NAV_STATE: SideNavState = {
+  listsOpen: true,
+  rewardsOpen: true,
+  modesOpen: true,
+  organizeOpen: true,
+}
 
 /**
  * Where the sidebar's layout is kept between visits.
@@ -26,4 +33,6 @@ export const DEFAULT_SIDE_NAV_STATE: SideNavState = { listsOpen: true, rewardsOp
 export interface SideNavRepository {
   load(): SideNavState
   save(state: SideNavState): void
+  /** Calls `listener` when another window on this device saves it (STORE-61); returns how to stop. */
+  subscribe(listener: () => void): () => void
 }

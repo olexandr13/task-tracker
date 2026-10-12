@@ -7,7 +7,6 @@ import { CASE_DEVICE_SCHEMA_VERSION, readCaseDevice, toStoredCaseDevice } from '
 const GLOWING: CaseDeviceState = {
   sound: false,
   lastOpen: { day: '2026-09-17', quarter: 3 },
-  noticedDay: '2026-09-17',
   noticedWeek: '2026-09-14',
 }
 
@@ -21,7 +20,6 @@ describe('toStoredCaseDevice (STORE-49)', () => {
       version: CASE_DEVICE_SCHEMA_VERSION,
       sound: false,
       lastOpen: { day: '2026-09-17', quarter: 3 },
-      noticedDay: '2026-09-17',
       noticedWeek: '2026-09-14',
     })
   })
@@ -44,13 +42,13 @@ describe('readCaseDevice (STORE-49, STORE-24)', () => {
     expect(readCaseDevice('cases')).toBeNull()
   })
 
-  it('upgrades a version 1 record: the noise and the notice kept, the old tier forgotten', () => {
+  it('upgrades a version 1 record: the noise kept, the old tier forgotten', () => {
     const old = { version: 1, sound: false, lastOpen: { day: '2026-09-17', tier: 'haul' }, noticedDay: '2026-09-17' }
 
-    expect(readCaseDevice(old)).toEqual({ sound: false, lastOpen: null, noticedDay: '2026-09-17', noticedWeek: null })
+    expect(readCaseDevice(old)).toEqual({ sound: false, lastOpen: null, noticedWeek: null })
   })
 
-  it('upgrades a version 2 record: Weekly has not been announced yet', () => {
+  it('upgrades a version 2 record: the Haul has not been announced yet', () => {
     const old = {
       version: 2,
       sound: false,
@@ -59,6 +57,18 @@ describe('readCaseDevice (STORE-49, STORE-24)', () => {
     }
 
     expect(readCaseDevice(old)).toEqual({ ...GLOWING, noticedWeek: null })
+  })
+
+  it('upgrades a version 3 record: the day a key was said to be waiting dropped', () => {
+    const old = {
+      version: 3,
+      sound: false,
+      lastOpen: { day: '2026-09-17', quarter: 3 },
+      noticedDay: '2026-09-17',
+      noticedWeek: '2026-09-14',
+    }
+
+    expect(readCaseDevice(old)).toEqual(GLOWING)
   })
 
   it('reads a record with no noise in it as a device arriving', () => {
@@ -71,25 +81,16 @@ describe('readCaseDevice (STORE-49, STORE-24)', () => {
     expect(readCaseDevice({ ...saved, lastOpen: { day: 'yesterday', quarter: 3 } })).toEqual({
       sound: false,
       lastOpen: null,
-      noticedDay: null,
       noticedWeek: null,
     })
     expect(readCaseDevice({ ...saved, lastOpen: { day: '2026-09-17', quarter: 5 } })).toEqual({
       sound: false,
       lastOpen: null,
-      noticedDay: null,
-      noticedWeek: null,
-    })
-    expect(readCaseDevice({ ...saved, noticedDay: 42 })).toEqual({
-      sound: false,
-      lastOpen: null,
-      noticedDay: null,
       noticedWeek: null,
     })
     expect(readCaseDevice({ ...saved, noticedWeek: 42 })).toEqual({
       sound: false,
       lastOpen: null,
-      noticedDay: null,
       noticedWeek: null,
     })
   })

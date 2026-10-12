@@ -2,8 +2,21 @@
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { completeTask, createSubtask, createTask, logTime, setTimeGoal, type Task } from '../../core'
+import { useState } from 'react'
+import {
+  canRest,
+  completeTask,
+  createSubtask,
+  createTask,
+  logTime,
+  setTimeGoal,
+  skipOccurrence,
+  type HabitRests,
+  type Task,
+} from '../../core'
 import { NO_TASK_ACTIONS } from '../../test/taskActions'
+import { HabitRestsContext } from '../habitRests'
+import type { SkipOutcome } from '../taskActions'
 import { HabitList } from './HabitList'
 
 /* What the habits page shows and does. HAB ids refer to wiki/habits.md. */
@@ -132,6 +145,22 @@ describe('skipping today (HAB-31)', () => {
     expect(onSkip).toHaveBeenCalledWith(habit.id)
   })
 
+  it('says what the skip costs before it is pressed, on the button and in the schedule (HAB-34)', async () => {
+    const habit = { ...stretch(), reward: 3 }
+    const { user, onSkip } = setup([habit])
+
+    await user.click(screen.getByRole('button', { name: 'Edit "stretch"' }))
+    const skip = screen.getByRole('button', { name: 'Skip "stretch". It costs 6 points' })
+    expect(skip.textContent).toBe('Skip−6')
+    expect(skip.title).toBe('Skip to Sep 17 · It costs 6 points')
+
+    await user.click(screen.getByRole('button', { name: /^Schedule for/ }))
+    expect(screen.getByRole('button', { name: 'Skip occurrence' }).title).toBe('Skip to Sep 17 · It costs 6 points')
+
+    await user.click(screen.getByRole('button', { name: 'Skip occurrence' }))
+    expect(onSkip).toHaveBeenCalledWith(habit.id)
+  })
+
   it('reads today as skipped, the sheet’s button pressed and taking the skip back', async () => {
     const habit = { ...stretch(), skippedDays: ['2026-09-16'] }
     const { user, onUnskip } = setup([habit], true)
@@ -166,6 +195,128 @@ describe('skipping today (HAB-31)', () => {
     await user.click(screen.getByRole('button', { name: 'Edit "stretch"' }))
 
     expect(screen.queryByRole('button', { name: /^Skip/ })).toBeNull()
+  })
+})
+
+describe('limited rests (HAB-36 to HAB-40)', () => {
+  const LIMITED: HabitRests = { since: '2026-09-01' }
+
+  /** Started Mon 14, done that day, and Tue 15 skipped: the one rest it starts with is spent. */
+  function spent(): Task {
+    return {
+      ...createTask('stretch', { kind: 'daily' }, new Date(2026, 8, 14, 8, 0)),
+      doneDays: ['2026-09-14'],
+      skippedDays: ['2026-09-15'],
+    }
+  }
+
+  /**
+   * The page as the screen draws it: the limit provided above it, and the
+   * habits held in state, a skip changing them only where the rule lets it —
+   * the same question useTasks asks (HAB-38).
+   */
+  function Page({ initial, rests, onSkip }: { initial: Task[]; rests: HabitRests; onSkip: (id: string) => void }) {
+    const [habits, setHabits] = useState(initial)
+    function skip(id: string): SkipOutcome {
+      onSkip(id)
+      const habit = habits.find((candidate) => candidate.id === id)
+      if (habit !== undefined && !canRest(habit, rests, WED_16)) return 'noRest'
+      setHabits((latest) => latest.map((candidate) => (candidate.id === id ? skipOccurrence(candidate, WED_16) : candidate)))
+      return 'skipped'
+    }
+    return (
+      <HabitRestsContext value={rests}>
+        <HabitList
+          actions={{ ...NO_TASK_ACTIONS, skip }}
+          habits={habits}
+          now={WED_16}
+          showDetails={false}
+          knownTags={[]}
+          lists={[]}
+          onSetDay={vi.fn()}
+        />
+      </HabitRestsContext>
+    )
+  }
+
+  function setUpPage(initial: Task[], rests: HabitRests = LIMITED) {
+    const onSkip = vi.fn()
+    render(<Page initial={initial} rests={rests} onSkip={onSkip} />)
+    return { user: userEvent.setup(), onSkip }
+  }
+
+  const NO_REST = 'No rests left. This habit earns one for every 7 days in a row — 6 more to go.'
+
+  it('turns the sheet\u2019s Skip down with no rest left, saying why and changing nothing (HAB-38)', async () => {
+    const { user, onSkip } = setUpPage([spent()])
+
+    await user.click(screen.getByRole('button', { name: 'Edit "stretch"' }))
+    await user.click(screen.getByRole('button', { name: 'Skip "stretch"' }))
+
+    expect(onSkip).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('alert').textContent).toBe(NO_REST)
+    // Today is still to do: the button still offers the skip, and the box no rest.
+    expect(screen.getByRole('button', { name: 'Skip "stretch"' }).getAttribute('aria-pressed')).toBe('false')
+    expect(screen.queryByRole('button', { name: 'Skipped "stretch" today' })).toBeNull()
+  })
+
+  it('turns the schedule\u2019s Skip occurrence down in place, the panel staying open (HAB-38)', async () => {
+    const { user } = setUpPage([spent()])
+
+    await user.click(screen.getByRole('button', { name: 'Edit "stretch"' }))
+    await user.click(screen.getByRole('button', { name: /^Schedule for/ }))
+    await user.click(screen.getByRole('button', { name: 'Skip occurrence' }))
+
+    expect(screen.getByRole('alert').textContent).toBe(NO_REST)
+    expect(screen.getByRole('button', { name: 'Skip occurrence' })).toBeTruthy()
+  })
+
+  it('skips a habit that has a rest to spend', async () => {
+    const habit = { ...spent(), skippedDays: [] }
+    const { user } = setUpPage([habit])
+
+    await user.click(screen.getByRole('button', { name: 'Edit "stretch"' }))
+    await user.click(screen.getByRole('button', { name: 'Skip "stretch"' }))
+
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Skipped "stretch" today' })).toBeTruthy()
+  })
+
+  it('says how many rests a folded card has, and the way to the next on an open one (HAB-39)', async () => {
+    const { user } = setUpPage([spent()])
+
+    expect(screen.getByText('No rests')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Record of "stretch"' }))
+    const rests = screen.getByText('Rests').parentElement as HTMLElement
+    expect(within(rests).getByRole('definition').textContent).toBe('0next in 6 days')
+  })
+
+  it('reads a skip no rest paid for as missed (HAB-40)', async () => {
+    // Started Sat 12: Sun 13 spends the one rest, Tue 15 has none to spend.
+    const habit = {
+      ...createTask('stretch', { kind: 'daily' }, new Date(2026, 8, 12, 8, 0)),
+      doneDays: ['2026-09-12', '2026-09-14'],
+      skippedDays: ['2026-09-13', '2026-09-15'],
+    }
+    const { user } = setUpPage([habit])
+
+    await user.click(screen.getByRole('button', { name: 'Record of "stretch"' }))
+
+    // By title: the grid is a year of buttons, which a search by role would read one by one.
+    expect(screen.getByTitle('Sun, Sep 13 · Skipped')).toBeTruthy()
+    expect(screen.getByTitle('Tue, Sep 15 · Missed')).toBeTruthy()
+  })
+
+  it('says nothing of rests while the limit is off, every skip a rest as before', async () => {
+    const { user } = setUpPage([spent()], null)
+
+    expect(screen.queryByText('No rests')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Edit "stretch"' }))
+    await user.click(screen.getByRole('button', { name: 'Skip "stretch"' }))
+
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Skipped "stretch" today' })).toBeTruthy()
   })
 })
 

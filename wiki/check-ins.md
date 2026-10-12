@@ -32,7 +32,9 @@ open** — a tab, or the installed app running: nothing is pushed while it is cl
   caret ready for what was done (ACT-5). It **stands for the hour after**, until the next hour is
   asked about; it goes by itself the moment the hour is logged, anywhere, and the **×** puts it away
   on this device until the next hour asks, a refresh keeping it put away. On the Activity log itself
-  there is no notice: the hour is in front of you there already.
+  there is no notice: the hour is in front of you there already. While it stands it is also listed
+  on **Notifications**, with its **Log it** (NOTIF-3, NOTIF-4), and is not shown over that page
+  either (NOTIF-5).
 - **CHECKIN-5** While the app is open, where the browser allows it, a **browser notification** says
   the same at the top of the hour — pressed, it brings the app forward on the Activity log at that
   hour. An hour that ended while the app was **closed** is on the notice when the app opens, but is

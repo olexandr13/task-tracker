@@ -10,8 +10,10 @@ import { createFirestoreBackupRepository } from './firestoreBackupRepository'
 import { createFirestoreCategoryRepository } from './firestoreCategoryRepository'
 import { createFirestoreCheckInRepository } from './firestoreCheckInRepository'
 import { createFirestoreFeatureRepository } from './firestoreFeatureRepository'
+import { createFirestoreHabitSettingsRepository } from './firestoreHabitSettingsRepository'
 import { createFirestoreJournalRepository } from './firestoreJournalRepository'
 import { createFirestoreListRepository } from './firestoreListRepository'
+import { createFirestoreNoteRepository } from './firestoreNoteRepository'
 import { createFirestoreNudgeRepository } from './firestoreNudgeRepository'
 import { createFirestorePrizeRepository } from './firestorePrizeRepository'
 import { createFirestoreProcrastinationRepository } from './firestoreProcrastinationRepository'
@@ -21,6 +23,7 @@ import { createFirestoreTagRepository } from './firestoreTagRepository'
 import { createFirestoreTaskRepository } from './firestoreTaskRepository'
 import { createFirestoreWarmUpRepository } from './firestoreWarmUpRepository'
 import { importGuestAccount } from './guestImport'
+import type { HabitSettingsRepository } from './habitSettingsRepository'
 import type { JournalRepository } from './journalRepository'
 import type { ListRepository } from './listRepository'
 import { createLocalActivityRepository } from './localActivityRepository'
@@ -28,8 +31,10 @@ import { createLocalBackupRepository } from './localBackupRepository'
 import { createLocalCategoryRepository } from './localCategoryRepository'
 import { createLocalCheckInRepository } from './localCheckInRepository'
 import { createLocalFeatureRepository } from './localFeatureRepository'
+import { createLocalHabitSettingsRepository } from './localHabitSettingsRepository'
 import { createLocalJournalRepository } from './localJournalRepository'
 import { createLocalListRepository } from './localListRepository'
+import { createLocalNoteRepository } from './localNoteRepository'
 import { createLocalNudgeRepository } from './localNudgeRepository'
 import { createLocalPrizeRepository } from './localPrizeRepository'
 import { createLocalProcrastinationRepository } from './localProcrastinationRepository'
@@ -40,6 +45,7 @@ import { importLocalTasks } from './localTaskImport'
 import { createLocalTaskRepository } from './localTaskRepository'
 import { forgetLegacyNudge, loadLegacyNudge } from './localStorageNudgeRepository'
 import { createLocalWarmUpRepository } from './localWarmUpRepository'
+import type { NoteRepository } from './noteRepository'
 import type { NudgeRepository } from './nudgeRepository'
 import type { PrizeRepository } from './prizeRepository'
 import type { ProcrastinationRepository } from './procrastinationRepository'
@@ -73,8 +79,12 @@ export interface AccountStorage {
   readonly checkIn: CheckInRepository
   /** Which features are switched off on Settings (STORE-56). */
   readonly features: FeatureRepository
+  /** The habits' settings the account keeps: the limit on rests (STORE-63). */
+  readonly habitSettings: HabitSettingsRepository
   /** The journal, a day at a time, a week of it (JRN-1). */
   readonly journal: JournalRepository
+  /** The notes, one record each (NOTE-1). */
+  readonly notes: NoteRepository
   readonly sync: SyncMonitor
   readonly backup: BackupRepository
   /**
@@ -118,7 +128,9 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
   const activities = createFirestoreActivityRepository(firestore, accountId)
   const checkIn = createFirestoreCheckInRepository(firestore, accountId)
   const features = createFirestoreFeatureRepository(firestore, accountId)
+  const habitSettings = createFirestoreHabitSettingsRepository(firestore, accountId)
   const journal = createFirestoreJournalRepository(firestore, accountId)
+  const notes = createFirestoreNoteRepository(firestore, accountId)
 
   return {
     tasks,
@@ -132,7 +144,9 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
     activities,
     checkIn,
     features,
+    habitSettings,
     journal,
+    notes,
     procrastination: createFirestoreProcrastinationRepository(firestore, accountId),
     sync: createFirestoreSyncMonitor(firestore, accountId),
     backup: createFirestoreBackupRepository(firestore, accountId),
@@ -141,7 +155,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
         importLocalTasks(tasks).catch((error: unknown) => {
           console.warn('Could not move the tasks kept in this browser into the account; will try again next time.', error)
         }),
-        importGuestAccount(tasks, lists, tags, prizes, rewards, warmUp, nudge, categories, activities, checkIn, features, journal).catch((error: unknown) => {
+        importGuestAccount(tasks, lists, tags, prizes, rewards, warmUp, nudge, categories, activities, checkIn, features, habitSettings, journal, notes).catch((error: unknown) => {
           console.warn('Could not move the guest data into the account; will try again next time.', error)
         }),
       ])
@@ -168,7 +182,9 @@ function createGuestAccountStorage(): AccountStorage {
     activities: createLocalActivityRepository(),
     checkIn: createLocalCheckInRepository(),
     features: createLocalFeatureRepository(),
+    habitSettings: createLocalHabitSettingsRepository(),
     journal: createLocalJournalRepository(),
+    notes: createLocalNoteRepository(),
     procrastination: createLocalProcrastinationRepository(),
     sync: createLocalSyncMonitor(),
     backup: createLocalBackupRepository(),

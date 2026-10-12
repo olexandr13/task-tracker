@@ -54,7 +54,15 @@ changes shape.
   different tasks on the same day keep both. The same completion recorded twice is recorded once. A
   day whose last earning was taken back is left **holding nothing**, and is read as a day that
   earned nothing rather than as a record that cannot be read (STORE-7).
-- **STORE-23** Each redemption is saved as **its own record**, and deleting one removes it.
+- **STORE-23** Each redemption is saved as **its own record**, and deleting one removes it. What a
+  habit's skip took (HAB-34) is a redemption too, carrying the habit and the day it was taken for,
+  and the habit's title as its note. Its id is named for the two (`skip-{task}-{day}`) rather than
+  random, so the same skip recorded by two devices is one record, and taking the skip back deletes
+  it without looking for it. The habit and the day were added **without a new version** (STORE-24),
+  as fields of the cases settings were: a device not yet updated reads such a record as a plain
+  redemption, still takes its points off the balance, and names its row for the habit alone, where
+  a new version would have it ignore every redemption there is. One whose habit and day are not
+  shaped as they should be is ignored like any other (STORE-24).
 - **STORE-24** The ledger has **its own version**, apart from the tasks'. A day or a redemption in a
   version the app does not recognise, or not shaped as it should be, is ignored with a warning and
   left as it is (STORE-7).
@@ -99,8 +107,8 @@ changes shape.
   never rewrites one. A record saved before the two kinds were told apart is read as a **prize**,
   never bought — the kind it was written as. One the app cannot read is ignored with a warning and
   left as it is (STORE-7).
-- **STORE-25** What a change earns is recorded by the device that made the change. A change arriving
-  from another device is not recorded again. The ledger is readable and writable by the account
+- **STORE-25** What a change earns — and what a skip costs (HAB-34) — is recorded by the device that
+  made the change. A change arriving from another device is not recorded again. The ledger is readable and writable by the account
   alone (STORE-17), opens offline and waits for a connection like the tasks (STORE-18).
 
 ## Lists
@@ -181,6 +189,17 @@ changes shape.
   and left as it is (STORE-7), until it too is older than a week. It is readable and writable by the
   account alone (STORE-17), and opens offline and waits for a connection like the tasks (STORE-18).
 
+## Notes
+
+- **STORE-62** The notes (NOTE-1) are kept in the account as **one record per note**, as the lists
+  and the wishlist are, so writing one writes that note alone and two devices writing different
+  notes keep both; when two change the same note, the later change wins. A note holds what is
+  written — its bold, italic and lists as Markdown, as a description holds them (TASK-34, TASK-49) —
+  when it was first written and when it last changed. Deleting one deletes its record; the undo puts
+  it back (NOTE-6). It has **its own version**; a note the app cannot read is ignored with a warning
+  and left as it is (STORE-7). It is readable and writable by the account alone (STORE-17), opens
+  offline and waits for a connection like the tasks (STORE-18), and is **in the backup** (BAK-22).
+
 ## The check-in
 
 - **STORE-52** The **check-in's setting** (CHECKIN-9) is kept in the account as **one record**,
@@ -200,6 +219,16 @@ changes shape.
   feature of a newer app — is passed over rather than costing the rest. It has **its own version**,
   and one the app cannot read is ignored with a warning and read as everything on (STORE-7): hiding
   part of the app on a guess would look like losing it. It is **in the backup** (BAK-20).
+- **STORE-63** The **habits' settings** the account keeps are a record each in a collection of
+  their own, `habitSettings`, named for the setting as the points' settings are (STORE-42). The
+  **limit on rests** (HAB-36) is the only one so far: a record named `rests` holding the day it was
+  switched on. **No record at all is the limit off**, and switching it off deletes the record. It is
+  the account's rather than the device's, as the feature switches are (STORE-56): it changes what
+  every streak says, and a streak should say the same at the laptop and the phone. It has **its own
+  version**, and one the app cannot read — or a day that is not a day — is ignored with a warning and
+  read as the limit off (STORE-7), every skip a rest as before, rather than streaks broken on a
+  guess. Until it has arrived the limit reads as off, and Settings says `Loading…` in place of its
+  switch. It is **in the backup** (BAK-23).
 
 ## Warm-up
 
@@ -254,12 +283,12 @@ changes shape.
 ## Guest — this device only
 
 - **STORE-37** As guest (AUTH-15), tasks, lists, tags, the wishlist, the Balance categories, the
-  activity log and the journal — a record at a time — and the check-in's setting (STORE-51, STORE-60,
-  STORE-52), the points ledger — the
+  activity log, the journal and the notes — a record at a time — and the check-in's setting (STORE-51,
+  STORE-60, STORE-62, STORE-52), the points ledger — the
   bonuses, what a point is worth, what Cases asks and the reward new tasks start with, with it
   (STORE-41, STORE-42, STORE-43, STORE-48, STORE-58), the warm-up
-  (STORE-44), Procrastination mode (STORE-45), the nudge's setting (STORE-46) and the feature
-  switches (STORE-56) are kept in this browser's `localStorage`, under the same versioned shapes as the account's (STORE-4, STORE-24,
+  (STORE-44), Procrastination mode (STORE-45), the nudge's setting (STORE-46), the feature
+  switches (STORE-56) and the limit on rests (STORE-63) are kept in this browser's `localStorage`, under the same versioned shapes as the account's (STORE-4, STORE-24,
   STORE-27, STORE-34). A ledger kept before there were bonuses, or before a point had a value, holds
   none of them, rather than being unreadable for the lack of one. Nothing is sent to the account or any other device. A refresh or another tab
   on the same address sees the same records. There is nothing to sync, so the sync notice stays
@@ -267,9 +296,9 @@ changes shape.
 - **STORE-38** The first time a Google account is open here online after guest data was kept, that
   data is **moved into the account** — tasks, lists, tags, prizes, Balance categories, the activity
   log, the journal, points earned, redemptions, the bonuses, what a point is worth, the reward new tasks start
-  with, the warm-up, the nudge's setting, the check-in's and the feature switches — added alongside
+  with, the warm-up, the nudge's setting, the check-in's, the feature switches and the limit on rests — added alongside
   what the account already has, without overwriting tasks it already holds (STORE-20), or a bonus,
-  point value, reward for new tasks, warm-up, nudge, check-in or switches it has already set, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
+  point value, reward for new tasks, warm-up, nudge, check-in, switches or limit on rests it has already set, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
   signing in does not start its month again (WARM-10). A move that fails, offline say, is tried again next time.
 
 ## Kept on this device
@@ -282,11 +311,13 @@ changes shape.
   like a cached quote (STORE-8) there is nothing in them worth carrying forward. A browser that
   refuses storage keeps them for as long as the page is open.
 - **STORE-31** How the sidebar is laid out — whether the lists under Lists (LST-26), the pages
-  under Rewards (RWD-19) and the modes under Modes (MODE-7) are folded — is kept the same way, and
+  under Rewards (RWD-19), Tags, Notes and Modes under Organize (UI-81) and the modes under Modes
+  (MODE-7) are folded — is kept the same way, and
   for the same reasons: in this
   browser's `localStorage`, not in the account, under a version of its own, read at once when the
   app opens, and back to the default — unfolded — when it cannot be read. A layout saved before
-  there were pages under Rewards, or before the modes were listed, is read as leaving those open.
+  there were pages under Rewards, before the modes were listed, or before Organize, is read as
+  leaving those open.
 - **STORE-57** What is **folded on Settings** — its sections, and a feature's own settings under
   its switch (UI-35, FEAT-10) — is kept the same way as the sidebar's layout (STORE-31): in this
   browser's `localStorage`, under a version of its own, read at once when the app opens. Only what
@@ -297,7 +328,9 @@ changes shape.
   (STORE-31): in this browser's `localStorage`, not in the account, under a version of their own,
   read at once when the app opens. A phone has no tabs, and how many a screen has room for is that
   screen's business. Each tab is kept as **its page's address** (UI-36), in order, so a tab is
-  named the way a bookmark is. An address that no longer names a page is read past. Tabs that
+  named the way a bookmark is. An address that names no page the app knows is not drawn, but it
+  is **kept** when the tabs change: it may be a page a newer version added, pinned in another
+  window, so pinning a tab in a window still running the old version does not unpin it. Tabs that
   cannot be read at all are no tabs: nothing pinned. A tab whose page is gone for now — switched
   off, or a list or tag not loaded yet — stays kept, so it is not lost while the lists arrive.
 - **STORE-36** How the habits view is shown — whether cards start open, set on Settings (HAB-23) — is
@@ -314,8 +347,7 @@ changes shape.
   on here stays on.
 - **STORE-49** What **Cases** keeps here — whether it makes a noise on this device, which
   opening it is still glowing from (by which quarter of the jackpot it came to), and whether it has
-  already said here that a key is waiting, and whether it has already said here that Weekly is
-  here (CHST-19, CHST-23, CHST-24, CHST-30) — is kept the same way again,
+  already said here that the Haul is here (CHST-19, CHST-24, CHST-30) — is kept the same way again,
   under a version of its own, apart from
   what Cases counts, which is the account's (STORE-48). These are what only the
   device can answer: the room you are in is not the account you are in; a notice given on the laptop
@@ -323,8 +355,9 @@ changes shape.
   saying which colour it gave it in. A case standing exactly as it arrives — a noise, nothing
   opened, nothing said — keeps **no record at all**, and one the app cannot read is read as a case
   arriving, the worst of it being one noise and one notice more than was wanted. A record from before
-  the quarters, which named a tier instead, keeps its noise and its notice and forgets the opening.
-  A record from before Weekly has not said that Monday's case is here.
+  the quarters, which named a tier instead, keeps its noise and forgets the opening. A record from
+  before the Haul has not said that Monday's case is here. One from before Payday's notice went
+  forgets the day it said a key was waiting.
 - **STORE-54** What the **check-in** keeps here — the notice put away on this device (CHECKIN-4) —
   is kept the same way again, under a version of its own, apart from the setting, which is the
   account's (STORE-52). A notice put away on the laptop is still worth showing on the phone. A device
@@ -335,6 +368,13 @@ changes shape.
   signed in — or nobody, on the sign-in screen. Following the system, the default, keeps nothing.
   It is read **before the page is first drawn**, so the app never opens in the other theme first. A
   theme the app cannot read is ignored, and the system followed until one is picked again.
+- **STORE-61** How the app is shown on this device — the View options, how the habits view is
+  shown, the sidebar's folds, the pinned tabs, Settings' folds and the theme — and what Cases keeps
+  here (STORE-30, STORE-31, STORE-36, STORE-59, STORE-57, STORE-40, STORE-49) are **the same in every
+  window** of the app on it: two browser tabs, or a window opened before the app was updated and one
+  opened after. A change made in one reaches the others at once, and a change made in another builds
+  on it rather than putting back what that window opened with. So a tab pinned in the new version is
+  still there after the old window unpins one of its own.
 
 ## A copy outside the account
 
@@ -427,8 +467,11 @@ and `warmUpSchema.ts` (the warm-up), `nudgeRepository.ts`, `firestoreNudgeReposi
 `nudgeDeviceSchema.ts` and `localStorageNudgeRepository.ts` (what it has said on this device),
 `activityRepository.ts`, `firestoreActivityRepository.ts`, `localActivityRepository.ts` and
 `activitySchema.ts` (the activity log), `journalRepository.ts`, `firestoreJournalRepository.ts`,
-`localJournalRepository.ts` and `journalSchema.ts` (the journal), `checkInRepository.ts`, `firestoreCheckInRepository.ts`,
-`localCheckInRepository.ts` and `checkInSchema.ts` (the check-in's setting), `checkInDeviceRepository.ts`,
+`localJournalRepository.ts` and `journalSchema.ts` (the journal), `noteRepository.ts`, `firestoreNoteRepository.ts`,
+`localNoteRepository.ts` and `noteSchema.ts` (the notes), `checkInRepository.ts`, `firestoreCheckInRepository.ts`,
+`localCheckInRepository.ts` and `checkInSchema.ts` (the check-in's setting), `habitSettingsRepository.ts`,
+`firestoreHabitSettingsRepository.ts`, `localHabitSettingsRepository.ts` and `habitSettingsSchema.ts` (the
+limit on rests), `src/app/useHabitRests.ts`, `checkInDeviceRepository.ts`,
 `checkInDeviceSchema.ts` and `localStorageCheckInDeviceRepository.ts` (what it keeps on this device),
 `src/app/useActivities.ts`,
 `localBackupRepository.ts` and `localSyncMonitor.ts` (guest export and the quiet sync notice),
@@ -450,10 +493,12 @@ STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/S
 `src/app/components/StorageProblemNotice.test.tsx` (what is said when the service refuses),
 `src/storage/localTaskImport.test.ts` (the move, and upgrading older data),
 `src/storage/localTaskRepository.test.ts` (the guest's tasks),
+`src/storage/habitSettingsSchema.test.ts` (the limit on rests),
 `src/storage/rewardSchema.test.ts`
 (reading the ledger back), `src/storage/activitySchema.test.ts` and `localActivityRepository.test.ts`
 (the activity log, and what a change writes), `src/storage/journalSchema.test.ts` (the journal, what a
-change writes and the guest's), `src/storage/checkInSchema.test.ts` (the check-in's
+change writes and the guest's), `src/storage/noteSchema.test.ts` (the notes and the guest's),
+`src/storage/checkInSchema.test.ts` (the check-in's
 setting, and what it keeps on this device), `src/storage/warmUpSchema.test.ts` (reading the warm-up back),
 `src/storage/nudgeSchema.test.ts` and `src/storage/nudgeDeviceSchema.test.ts` (reading the nudge's
 setting back, and what a record from before it synced still answers), `src/storage/prizeSchema.test.ts` and `src/app/usePrizes.test.ts`

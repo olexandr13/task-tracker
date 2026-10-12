@@ -70,7 +70,8 @@ every mode is (MODE-9); what it has already said is each device's own.
   **anything at all is finished** after it fired — nothing done being the whole of what it said. All
   three are read from the tasks as they are, so finishing the task on another device takes the
   notice away here too, and a task renamed meanwhile is named as it is now. Dismissed, it stays
-  dismissed; the next notice comes with the next span (NUDGE-6).
+  dismissed; the next notice comes with the next span (NUDGE-6). While it stands it is also listed
+  on **Notifications** (NOTIF-3), and is not shown over that page (NOTIF-5).
 - **NUDGE-10** Where the browser allows notifications there is also a **browser notification**, so
   the nudge lands while the app is in another tab. It reaches the owner **only while the app is
   open** — a tab, or the installed app running — since nothing wakes it once it is closed; that is

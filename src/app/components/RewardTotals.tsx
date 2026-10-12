@@ -14,12 +14,16 @@ const PERIODS: readonly { readonly period: RewardPeriod; readonly label: string 
   { period: 'all', label: 'All time' },
 ]
 
-/** Points earned in each period, one tile each, with what was redeemed in it underneath when anything was. */
+/**
+ * Points earned in each period, one tile each, with what was redeemed in it
+ * underneath when anything was, and under that what skipping habits lost
+ * (HAB-34) — off the balance, but not spent on anything, so said apart.
+ */
 export function RewardTotals({ totals }: RewardTotalsProps) {
   return (
     <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
       {PERIODS.map(({ period, label }) => {
-        const { earned, redeemed } = totals[period]
+        const { earned, redeemed, lost } = totals[period]
         return (
           <div
             key={period}
@@ -35,6 +39,9 @@ export function RewardTotals({ totals }: RewardTotalsProps) {
               </span>
               {redeemed > 0 && (
                 <span className="text-xs text-neutral-500 tabular-nums dark:text-neutral-400">−{describeAmount(redeemed)} redeemed</span>
+              )}
+              {lost > 0 && (
+                <span className="text-xs text-rose-700/80 tabular-nums dark:text-rose-400/80">−{describeAmount(lost)} for skips</span>
               )}
             </dd>
           </div>

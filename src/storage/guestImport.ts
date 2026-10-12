@@ -3,6 +3,7 @@ import type { ActivityRepository } from './activityRepository'
 import type { CategoryRepository } from './categoryRepository'
 import type { CheckInRepository } from './checkInRepository'
 import type { FeatureRepository } from './featureRepository'
+import type { HabitSettingsRepository } from './habitSettingsRepository'
 import type { JournalRepository } from './journalRepository'
 import type { ListRepository } from './listRepository'
 import { loadGuestActivities } from './localActivityRepository'
@@ -10,14 +11,17 @@ import { clearGuestAccount } from './localBackupRepository'
 import { loadGuestCategories } from './localCategoryRepository'
 import { loadGuestCheckIn } from './localCheckInRepository'
 import { loadGuestFeatures } from './localFeatureRepository'
+import { loadGuestHabitRests } from './localHabitSettingsRepository'
 import { loadGuestJournal } from './localJournalRepository'
 import { loadGuestLists } from './localListRepository'
+import { loadGuestNotes } from './localNoteRepository'
 import { loadGuestNudge } from './localNudgeRepository'
 import { loadGuestPrizes } from './localPrizeRepository'
 import { loadGuestLedger } from './localRewardRepository'
 import { loadGuestTags } from './localTagRepository'
 import { loadGuestTasks } from './localTaskRepository'
 import { loadGuestWarmUp } from './localWarmUpRepository'
+import type { NoteRepository } from './noteRepository'
 import type { NudgeRepository } from './nudgeRepository'
 import type { PrizeRepository } from './prizeRepository'
 import type { RewardRepository } from './rewardRepository'
@@ -42,7 +46,9 @@ export async function importGuestAccount(
   activities: ActivityRepository,
   checkIn: CheckInRepository,
   features: FeatureRepository,
+  habitSettings: HabitSettingsRepository,
   journal: JournalRepository,
+  notes: NoteRepository,
 ): Promise<void> {
   const guestTasks = loadGuestTasks()
   const guestLists = loadGuestLists()
@@ -55,7 +61,9 @@ export async function importGuestAccount(
   const guestActivities = loadGuestActivities()
   const guestCheckIn = loadGuestCheckIn()
   const guestFeatures = loadGuestFeatures()
+  const guestRests = loadGuestHabitRests()
   const guestJournal = loadGuestJournal()
+  const guestNotes = loadGuestNotes()
 
   const empty =
     guestTasks.length === 0 &&
@@ -73,7 +81,9 @@ export async function importGuestAccount(
     guestActivities.length === 0 &&
     guestCheckIn === null &&
     guestFeatures === null &&
-    guestJournal.length === 0
+    guestRests === null &&
+    guestJournal.length === 0 &&
+    guestNotes.length === 0
 
   if (empty) {
     clearGuestAccount()
@@ -91,6 +101,7 @@ export async function importGuestAccount(
   if (guestCategories.length > 0) await categories.save({ saved: guestCategories, removed: [] })
   if (guestActivities.length > 0) await activities.save({ saved: guestActivities, removed: [] })
   if (guestJournal.length > 0) await journal.save({ saved: guestJournal, removed: [] })
+  if (guestNotes.length > 0) await notes.save({ saved: guestNotes, removed: [] })
 
   if (ledger.entries.length > 0) {
     await rewards.save({ earned: [...ledger.entries], revoked: [] })
@@ -112,6 +123,7 @@ export async function importGuestAccount(
   if (guestNudge !== null) await nudge.importNudge(guestNudge)
   if (guestCheckIn !== null) await checkIn.importCheckIn(guestCheckIn)
   if (guestFeatures !== null) await features.importFeatures(guestFeatures)
+  if (guestRests !== null) await habitSettings.importRests(guestRests)
 
   clearGuestAccount()
 }

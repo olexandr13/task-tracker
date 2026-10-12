@@ -24,14 +24,15 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 - **HAB-5** **Current streak**: the days in a row it was done, counting back from today. While
   today is still to do, the count starts from yesterday instead: today is still in play until it
   is over, so it breaks nothing yet. A day that went by without it ends the streak; a day
-  **skipped** (HAB-31) neither adds to it nor ends it — the streak runs on across a rest. The flame
-  beside the count is lit while there is a streak.
+  **skipped** (HAB-31) neither adds to it nor ends it — the streak runs on across a rest. While rests
+  are limited, a skip no rest paid for ends it like a miss (HAB-40). The flame beside the count is
+  lit while there is a streak.
 - **HAB-6** **Best streak**: the longest run of days in a row it was ever done, skipped days
-  bridged the same way (HAB-31).
+  bridged the same way (HAB-31, HAB-40).
 - **HAB-8** **Last 7 days**, **last 30 days** and **last year** (the last 365 days): a percentage,
   with the days behind it (`25/30`). The days that count are every day since the habit started,
   and any day it was done on before that (HAB-12), less any day skipped (HAB-31), which asked
-  nothing of it. Today counts only once it is done. The percentage is rounded down, so 100% only ever means every day was kept. A
+  nothing of it — a skip no rest paid for counts as a day missed (HAB-40). Today counts only once it is done. The percentage is rounded down, so 100% only ever means every day was kept. A
   habit with no record yet shows a dash.
 - **HAB-9** Below the numbers is a grid of days: a column per week, Monday to Sunday, with this
   week on the right. Every other row names its weekday, and a month's name sits over the week that
@@ -96,11 +97,12 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   card's width to itself and **wraps rather than being cut off**. Under it a second line gives the
   **current streak** as a flame and days (`6 days`) and the **last 7 days** as a small square each,
   today on the right, in the grid's shades (HAB-10); a screen reader hears them as `Last 7 days: done
-  on 5 days`. The streak keeps the **same width whatever it says**, so every card's week starts in
+  on 5 days`. While rests are limited, the same line ends with how many the habit has, `2 rests`
+  (HAB-39). The streak keeps the **same width whatever it says**, so every card's week starts in
   the same place down the page rather than after its own `1 day` or `12 days`; a streak past a
   year's days pushes its own week along instead of being cut off. **Tapping the card** — anywhere
   on it but the box and the ⋮ — unfolds the numbers
-  (HAB-5 to HAB-8) and the grid (HAB-9) beneath it, and tapping it again folds them away. The
+  (HAB-5 to HAB-8, and the rests while they are limited, HAB-39) and the grid (HAB-9) beneath it, and tapping it again folds them away. The
   chevron points down while folded and up while open. The ⋮ and the chevron sit **level with the
   title**, so they stay put when the card unfolds. Open, the second line goes, as
   the numbers and the grid below already give it. A list of year-long grids is a long way
@@ -111,8 +113,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   named for its habit (`Record of "stretch"`), reporting whether it is open.
 - **HAB-23** How the cards start is set on **Settings**, under the **Habits** switch in Features,
   folded there until its arrow is pressed (FEAT-10):
-  one switch, **Show habit details by default**, its name alone with no picture beside it and no line
-  under it saying what it does. On, each card starts open, showing its numbers and grid (HAB-21); off, every card starts
+  the switch **Show habit details by default**, its name alone with no picture beside it and no line
+  under it saying what it does. Under it is **Limit rests** (HAB-36). On, each card starts open, showing its numbers and grid (HAB-21); off, every card starts
   folded, which is how it begins. The choice is kept on this device (STORE-36), and Habits is drawn
   to it when next opened, every card in the default again; a card opened or folded by hand does not
   outlive a change of the switch. Habits itself has no View button, on a wide screen or a phone:
@@ -174,10 +176,12 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   runs on across it (HAB-5, HAB-6) and it is left out of the days the rates count (HAB-8). For the
   rest of the day the button reads **Skipped**, pressed, and pressing it again takes the skip back,
   so today is in play once more; ticking the box while today is skipped does it after all, done
-  winning (RPT-36). Once today is done the sheet offers no skip. The same skip is on the sheet's
+  winning (RPT-36). Once today is done the sheet offers no skip. While rests are limited (HAB-36),
+  pressing **Skip** spends one of the habit's rests, and taking the skip back gives it back; with none
+  left the skip is turned down and nothing changes (HAB-38). The same skip is on the sheet's
   schedule (DUE-9), and a day skipped there — or on the task's row elsewhere — reads the same way.
-  A screen reader hears the button as `Skip "stretch"`, and as pressed, `Skipped "stretch" today`,
-  while today is skipped. Every task's sheet has the button while its occurrence can be skipped
+  A screen reader hears the button as `Skip "stretch"` — `Skip "stretch". It costs 6 points` where
+  the skip costs points (HAB-35) — and as pressed, `Skipped "stretch" today`, while today is skipped. Every task's sheet has the button while its occurrence can be skipped
   (RPT-34), a habit's being the one whose page reads the rest. A habit's schedule panel and menu
   have the same skip in their Date row, and the same pressed **Skipped** while today is a rest —
   which is all that row holds once the habit has begun (DUE-27).
@@ -203,22 +207,102 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   every skip, since its rule has further occurrences to pass over (RPT-35). "Today" means this
   device's today (PRIN-1).
 
+## What a skip costs
+
+- **HAB-34** **Skipping a habit costs twice its reward.** Passing today over (HAB-31) takes **2 × the
+  habit's reward** off the balance: a habit worth 3 points costs 6 to skip. A rest is allowed, but it
+  is not free. Free, skipping would be the cheap way to clear Today (RWD-25); at only the day's worth
+  it would lose nothing next to a miss. A habit with no reward costs nothing to skip, and neither
+  does skipping a task that is not a habit (RPT-34).
+  - It is taken at the reward the habit has when it is skipped, **whatever the balance**, which can
+    go below zero (RWD-17). Changing the reward, renaming, deleting or purging the habit leaves what
+    was taken as it is (RWD-13), and a change of rule takes and gives back nothing (RWD-12).
+  - **Taking the skip back gives the points back** — the pressed **Skipped** (HAB-31), or Undo on
+    the toast (HAB-35) — and so does **doing the day after all** (RPT-36), which earns the reward as
+    well. Taking that tick back makes the day a rest again, and it costs again. A day gone by works
+    the same way on the grid (HAB-16): marked done, a skipped day gives back what it cost; unmarked,
+    it costs again, counted on that day. What is given back is what was taken, whatever the reward
+    is now (RWD-11).
+  - As with a completion, the device that makes the skip records what it cost (STORE-25); a skip
+    arriving from another device was charged there. Rewards switched off, a skip still costs, as a
+    completion still earns (FEAT-5), but nothing on screen says so (FEAT-3). A skip made before
+    skipping had a cost cost nothing, and is left so.
+- **HAB-35** **The cost is said before and after.** Before: the sheet's **Skip** (HAB-31) has the
+  cost beside its name, in red — `Skip −6` — and its tooltip says where it moves the habit and what
+  it costs: `Skip to Sep 17 · It costs 6 points`. The **Skip occurrence** in the schedule panel and
+  the row's menu says the same in its tooltip. After: a toast says `Skipped “stretch” and lost
+  6 points`, with **Undo**, which takes the skip back and the points with it. On the rewards pages
+  the points are a row of **History** on the spent side, `Skipped “stretch”` and `−6` (RWD-38), and
+  the period tiles show them under what was redeemed, as `−6 for skips` (RWD-21). A skip that costs
+  nothing says nothing.
+
+## Limited rests
+
+- **HAB-36** **Rests can be limited.** Under the **Habits** switch on Settings (FEAT-10), below
+  Show habit details by default (HAB-23), is **Limit rests**, with one sentence under it saying what
+  it does. It is **off** to begin with, and off every skip is a rest, as before. On, a habit's skip
+  (HAB-31) keeps the streak only while the habit has a **rest** to spend on it: each skip **spends
+  one**, and taking the skip back — the pressed **Skipped**, or Undo on the toast (HAB-35) — gives it
+  back. Only skips from the day the limit was switched on count against it; the rests taken before
+  stay rests. Switching it off and on again starts counting from that day. It is the account's, so
+  it is the same on every device (STORE-63), and it is in the backup (BAK-23). It goes with Habits:
+  while Habits is switched off, nothing is held back for want of a rest (FEAT-3). A task that is not
+  a habit skips as often as it likes (RPT-34). What a skip costs (HAB-34) is charged as ever, rest or
+  no rest.
+- **HAB-37** **Rests are earned by keeping the habit.** Each habit starts with **1** rest, on the
+  day the limit was switched on or the day it started (HAB-12), whichever is later. It earns **1
+  more for every 7 days done in a row**, and holds **2 at most**; one earned past that is not kept. A
+  skip a rest paid for leaves the count towards the next where it was, as it leaves the streak
+  (HAB-5). A day missed, or a skip with no rest to pay for it (HAB-40), starts the count again from
+  nothing, but the rests already earned are kept. Today counts once it is done or skipped; while it
+  is still to do it ends nothing. Nothing is stored for the rests: they are counted from the habit's
+  days each time, like the streak (HAB-14).
+- **HAB-38** **A skip with no rest left is turned down where it was pressed.** The sheet's **Skip**
+  (HAB-31), **Skip occurrence** in the schedule panel (DUE-9) and in the row's menu (DUE-14) all stay
+  offered — a dimmed button cannot say why — and pressing one shakes it and says in amber: `No rests
+  left. This habit earns one for every 7 days in a row — 3 more to go.`, the number being the days
+  still to be done in a row. The sheet says it over its foot row, the schedule panel under its row
+  of choices and stays open, and the row's menu, which closes as a choice is made, says it on the
+  row under the title. A screen reader hears it as it appears. Nothing about the habit changes, so
+  there is nothing to undo, nothing is charged (HAB-34) and no toast comes up. The words go after a
+  few seconds.
+- **HAB-39** **The card says how many rests a habit has.** While rests are limited, a folded card's
+  line under the title (HAB-21) ends with `No rests`, `1 rest` or `2 rests`, after the last week
+  where there is room and on a line under the streak where there is not, as on a phone. An open
+  card has **Rests** among its numbers, after Best streak: the count, and beside it in a quieter voice
+  the way to the next, `next in 3 days` — the days still to be done in a row — or `as many as it
+  holds` at 2. With the limit off the card shows neither.
+- **HAB-40** **A skip no rest paid for reads as missed.** A skip made by a device that did not know
+  about the limit — an older version, or one offline while the account's limit changed — finds its
+  place among the days like any other: covered while a rest was left for it, and otherwise read as
+  **missed** in the grid and on the card's week (HAB-10), ending the streak (HAB-5) and counting
+  against the rates (HAB-8). The skip itself is kept, so switching the limit off reads it as a rest
+  again.
+
 ---
 
 **Where it lives:** `src/core/habit.ts` (what a habit is, streaks, rates, the weeks, the last days, `setDoneOnDay`,
 `moveToEndOfHabits`),
+`src/core/habitRest.ts` (limited rests: how many a habit has, which skips they covered, `canRest`, HAB-36 to HAB-40),
 `src/core/task.ts` (`doneDays`, kept in step by `settleHistory`; `forgetRestsAhead`, HAB-33), `src/app/components/HabitList.tsx`
 (the page and its cards, and a timed habit's clock — see [Time goals](time-goals.md)), `src/app/components/HabitGrid.tsx`, `src/app/components/ChevronIcon.tsx`, `src/app/components/MoreVerticalIcon.tsx`, `src/app/components/TaskSheet.tsx` (editing a habit), `src/app/habitLabels.ts` (wording),
 `src/app/habitTones.ts` (the shades), `src/app/components/FlameIcon.tsx`, `src/app/components/SkipIcon.tsx`,
-`src/core/due.ts` (`isSkippedToday`, `unskipToday`), `src/app/useTasks.ts`
-(`setHabitDay`, `unskip`, `changeRepeat` putting a task taken on at the end, and rests ahead dropped as the tasks arrive), `src/app/components/AddTaskForm.tsx` (the add box), `src/app/components/AddTaskSheet.tsx` (the detailed
+`src/core/due.ts` (`isSkippedToday`, `unskipToday`), `src/core/penalty.ts` (what a skip costs and
+gives back, HAB-34), `src/app/useTasks.ts`
+(`setHabitDay`, `unskip`, `changeRepeat` putting a task taken on at the end, rests ahead dropped as the tasks arrive, and what
+a skip costs recorded), `src/app/TasksScreen.tsx` and `src/app/useUndoToast.ts` (the toast saying what a skip cost),
+`src/app/rewardLabels.ts` (how the cost reads), `src/app/useHabitRests.ts` (the limit on rests, loaded and switched),
+`src/app/habitRests.ts` (`HabitRestsContext`, for the cards, rows and sheets that read it), `src/app/components/RestRefusal.tsx`
+and `src/app/dateChoices.tsx` (a skip turned down, HAB-38), `src/app/components/DueChoices.tsx` and `TaskItem.tsx` (saying so in a panel and on a row),
+`src/storage/habitSettingsRepository.ts` and its schema (keeping the limit, STORE-63), `src/app/components/AddTaskForm.tsx` (the add box), `src/app/components/AddTaskSheet.tsx` (the detailed
 sheet, starting daily), `src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`H` opens it),
 `src/app/components/SettingsList.tsx` and `src/app/useDeviceSetting.ts`
 (the switch under Habits on Settings, and keeping whether cards start folded on this device), `src/core/order.ts` (`moveTask`, the order itself),
 `src/app/useSortableTask.ts`, `src/app/components/SortableTasks.tsx` and
 `src/app/components/TaskDragAndDrop.tsx` (picking a card up and dropping it, shared with the rows),
 `src/app/components/GripIcon.tsx` and `src/app/rowControls.ts` (`dragGrip`).
-**Tested in:** `src/core/habit.test.ts`, `src/core/due.test.ts` (a skip taken back), `src/core/task.test.ts`, `src/app/useTasks.test.ts`,
+**Tested in:** `src/core/habit.test.ts`, `src/core/habitRest.test.ts` (limited rests), `src/core/due.test.ts` (a skip taken back), `src/core/penalty.test.ts`
+(what a skip costs), `src/app/useHabitRests.test.ts`, `src/app/components/TaskItem.test.tsx` (a skip from the row's menu turned down), `src/core/task.test.ts`, `src/app/useTasks.test.ts`, `src/app/components/UndoToast.test.tsx`,
 `src/app/components/HabitList.test.tsx`, `src/app/components/SettingsList.test.tsx`,
 `src/app/components/AddTaskForm.test.tsx`, `src/app/letterShortcut.test.ts` and
 `src/app/useLetterShortcut.test.ts` (`H` opens the sheet).

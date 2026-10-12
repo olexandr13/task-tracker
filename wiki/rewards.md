@@ -78,7 +78,7 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   it once.
 
 - **RWD-44** What **Cases** gave is a row of the ledger like any other (RWD-23), named **Payday**,
-  **Drop** or **Weekly** rather than for a task, deleted the same way, and counting the same way towards the
+  **Drop** or **Haul** rather than for a task, deleted the same way, and counting the same way towards the
   balance and the period tiles (RWD-17, RWD-21). It is earned on the day Cases was opened, and —
   unlike a period's bonus (RWD-26) — is **never taken back** by the day coming unclear again
   (CHST-5). The rest of it is on [its own page](cases.md).
@@ -125,8 +125,9 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
 - **RWD-16** **Nothing is spent that has not been earned.** Redeem stays off while the points asked
   for are more than the balance, with a line saying how many points there are. With no points at
   all, the form says there is nothing to redeem yet.
-- **RWD-17** The **balance** is everything earned less everything redeemed. Taking back a
-  completion whose points were already spent can take it **below zero**, and it is shown as it is.
+- **RWD-17** The **balance** is everything earned less everything redeemed, and less what skipping
+  habits took (HAB-34). Taking back a completion whose points were already spent can take it
+  **below zero**, and so can a skip, which is taken whatever the balance; it is shown as it is.
   What was spent is not rewritten.
 - **RWD-18** Redemptions are listed on **History** among the earnings (RWD-38), **most recent
   first**. Each row shows its day (Today, Yesterday or a short date), what it was for and its points
@@ -213,8 +214,8 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   money where a point has a value (RWD-32); what was **earned** in each period (RWD-21); **Finish
   everything, earn extra** — the three period bonuses **side by side in one row**, each its amount
   and where it stands: `+5 earned`, `+20 all done = earned`, or `— no bonus` (RWD-27, RWD-29); where
-  **Cases** stands — Payday for clearing Today, the Drop, which arrives at a random time, and Weekly, ready on Monday and planned until then, each with what it can pay (CHST-10), and
-  whether one is waiting or already spent (CHST-23, CHST-26, CHST-28); and what the balance reaches on each
+  **Cases** stands — Payday for clearing Today, the Drop, which arrives at a random time, and the Haul, ready on Monday and planned until then, each with what it can pay (CHST-10), and
+  whether one is waiting or already spent (CHST-26, CHST-28); and what the balance reaches on each
   list (RWD-37). Nothing is spent or set here. None of the five pages has a box for adding a task,
   or a rail (UI-2).
 - **RWD-30** Rewards is **six pages**: **Rewards** itself (RWD-20), **Cases**, which a cleared day
@@ -230,7 +231,9 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
 - **RWD-38** **History** is everything that happened to the points in **one run**, most recent
   first: what was earned (RWD-23) and what was spent (RWD-18) together, each row its day, what it
   was, and how many points it moved — **+5** earned, **−3** spent, told apart by the sign and a
-  slight tint and no more, since they are one story. A row that moved nothing, an empty Drop
+  slight tint and no more, since they are one story. What a habit's skip took (HAB-34) is on the
+  spent side, named `Skipped “stretch”` for the habit as it was called then; its **×** gives the
+  points back without taking the skip back, and a screen reader hears the points as lost. A row that moved nothing, an empty Drop
   (CHST-11), reads **0**, with no sign. Within a day what was spent comes first. It is
   a page of its own rather than the foot of how the points stand: a year of days is a long page, and
   how you are doing should not be behind it.
@@ -245,9 +248,11 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   for the whole account.
 - **RWD-21** Points **earned** are shown on how the points stand, for **today**, **this week**
   (Monday to Sunday, PROG-2), **this month**, **this year** and **all time**, one tile each. Underneath is what was redeemed in
-  that period, when anything was. A completion counts on the day it was done for, so an earlier
+  that period, when anything was, and under that, in red, what skipping habits took — `−6 for
+  skips` (HAB-34) — when anything did: off the balance, but not spent on anything, so said apart.
+  A completion counts on the day it was done for, so an earlier
   day marked on the Habits page counts on that day. A redemption counts on the local day it was
-  made. Completions of deleted tasks still count (RWD-13).
+  made, and a skip on the day skipped. Completions of deleted tasks still count (RWD-13).
 - **RWD-22** Until the ledger has loaded, each of the rewards pages says it is loading rather than
   showing zeros; a ledger the account **refused** says **Couldn’t load your points. Reload to try
   again.** in its place, for the same reason a task list that could not be loaded says so rather than looking empty
@@ -263,6 +268,7 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
 
 **Where it lives:** `src/core/reward.ts` (a task's reward, its starting amount, what a change earns
 and takes back), `src/core/bonus.ts` (whether a period is clear, and what clearing it earns),
+`src/core/penalty.ts` (what a habit's skip costs, HAB-34),
 `src/core/prize.ts` (the prizes and the wishlist), `src/core/pointValue.ts` (what a point is worth),
 `src/core/redemption.ts` (redeeming, the balance, the totals and the histories),
 `src/app/components/RewardPicker.tsx` (the panel), `src/app/components/TaskItem.tsx` (the star on the
@@ -283,7 +289,7 @@ and their addresses), `src/app/components/SideNav.tsx` (the entry and its fold),
 `prizeRepository.ts`, `firestorePrizeRepository.ts`, `localPrizeRepository.ts`, `prizeSchema.ts` —
 see [Storage](storage.md).
 **Cases**, which a cleared day earns the key to, has [a page of its own](cases.md).
-**Tested in:** `src/core/reward.test.ts`, `src/core/bonus.test.ts`, `src/core/prize.test.ts`,
+**Tested in:** `src/core/reward.test.ts`, `src/core/bonus.test.ts`, `src/core/penalty.test.ts`, `src/core/prize.test.ts`,
 `src/core/pointValue.test.ts`, `src/core/redemption.test.ts`, `src/core/task.test.ts`,
 `src/storage/rewardSchema.test.ts`, `src/storage/prizeSchema.test.ts`,
 `src/app/useTasks.test.ts` (what a change records), `src/app/useRewards.test.ts`,

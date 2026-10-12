@@ -6,22 +6,45 @@ import type { FeaturesOff } from '../../core'
 import { FeaturesContext } from '../features'
 import { MorePage } from './MorePage'
 
-/* More's page. UI ids refer to wiki/interface.md, MODE ids to wiki/modes.md, FEAT ids to wiki/features.md. */
+/* More's page. UI ids refer to wiki/interface.md, FEAT ids to wiki/features.md. */
 
 afterEach(cleanup)
 
 describe('MorePage', () => {
-  it('links to Lists, Tags, Modes, Balance, the activity log and the journal, in the sidebar\'s order (UI-30, UI-45, LST-24, BAL-1, ACT-1, JRN-1)', () => {
+  it('links to Lists, Organize, Balance, the activity log, the journal and Notifications, in the sidebar\'s order (UI-30, UI-45, UI-81, LST-24, BAL-1, ACT-1, JRN-1, NOTIF-1)', () => {
     render(<MorePage onOpen={vi.fn()} />)
 
     expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual([
       'Lists',
-      'Tags',
-      'Modes',
+      'Organize',
       'Balance',
       'Activity log',
       'Journal',
+      'Notifications',
     ])
+  })
+
+  it('says how many notices are waiting on the Notifications row (NOTIF-6)', async () => {
+    const onOpen = vi.fn()
+    render(<MorePage onOpen={onOpen} notices={3} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Notifications, 3 waiting' }))
+    expect(onOpen).toHaveBeenCalledExactlyOnceWith('notifications')
+  })
+
+  it('says nothing on the Notifications row with nothing waiting (NOTIF-6)', () => {
+    render(<MorePage onOpen={vi.fn()} notices={0} />)
+
+    expect(screen.getByRole('button', { name: 'Notifications' })).toBeTruthy()
+  })
+
+  it('opens Organize, where Tags, the notes and Modes are (UI-81)', async () => {
+    const onOpen = vi.fn()
+    render(<MorePage onOpen={onOpen} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Organize' }))
+    expect(onOpen).toHaveBeenCalledExactlyOnceWith('organize')
+    for (const name of ['Tags', 'Notes', 'Modes']) expect(screen.queryByRole('button', { name })).toBeNull()
   })
 
   it('opens the journal (JRN-1)', async () => {
@@ -59,17 +82,12 @@ describe('MorePage', () => {
     expect(onOpen).toHaveBeenCalledExactlyOnceWith('lists')
   })
 
-  it('lists Tags as a link large enough for a finger (UI-45, UI-49)', async () => {
-    const user = userEvent.setup()
-    const onOpen = vi.fn()
-    render(<MorePage onOpen={onOpen} />)
+  it('lists each page as a link large enough for a finger (UI-45, UI-49)', () => {
+    render(<MorePage onOpen={vi.fn()} />)
 
-    const tags = screen.getByRole('button', { name: 'Tags' })
-    expect(tags.className).toContain('min-h-14')
-    expect(tags.className).toContain('text-lg')
-
-    await user.click(tags)
-    expect(onOpen).toHaveBeenCalledExactlyOnceWith('tags')
+    const organize = screen.getByRole('button', { name: 'Organize' })
+    expect(organize.className).toContain('min-h-14')
+    expect(organize.className).toContain('text-lg')
   })
 
   it('has no entry for the rewards: they have a tab and a sidebar entry of their own (RWD-19)', () => {
@@ -78,33 +96,8 @@ describe('MorePage', () => {
     expect(screen.queryByRole('button', { name: 'Rewards' })).toBeNull()
   })
 
-  it('opens Modes, and says nothing of the modes while none is on (MODE-1)', async () => {
-    const onOpen = vi.fn()
-    render(<MorePage onOpen={onOpen} />)
-
-    const modes = screen.getByRole('button', { name: 'Modes' })
-    expect(modes.textContent).not.toContain('on')
-
-    await userEvent.click(modes)
-    expect(onOpen).toHaveBeenCalledExactlyOnceWith('modes')
-  })
-
-  it('says how many modes are on, without being opened (MODE-1)', () => {
-    render(<MorePage onOpen={vi.fn()} modesOn={2} />)
-
-    expect(screen.getByRole('button', { name: 'Modes, 2 on' }).textContent).toContain('2 on')
-  })
-
-  it('switches no mode itself: the modes are a page now (MODE-1)', () => {
-    render(<MorePage onOpen={vi.fn()} modesOn={1} />)
-
-    expect(screen.queryByRole('switch')).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Procrastination' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Warm-up' })).toBeNull()
-  })
-
-  it('lists no page switched off (FEAT-2)', () => {
-    const off: FeaturesOff = ['tags', 'modes', 'journal']
+  it('lists no page switched off, nor Organize once all it holds is (FEAT-2, UI-81)', () => {
+    const off: FeaturesOff = ['tags', 'notes', 'modes', 'journal', 'notifications']
     render(
       <FeaturesContext value={off}>
         <MorePage onOpen={vi.fn()} />
@@ -113,5 +106,15 @@ describe('MorePage', () => {
 
     // Balance goes with the tags it divides time by (FEAT-4).
     expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Lists', 'Activity log'])
+  })
+
+  it('keeps Organize while any of what it holds is on (FEAT-2, UI-81)', () => {
+    render(
+      <FeaturesContext value={['tags', 'notes']}>
+        <MorePage onOpen={vi.fn()} />
+      </FeaturesContext>,
+    )
+
+    expect(screen.getByRole('button', { name: 'Organize' })).toBeDefined()
   })
 })

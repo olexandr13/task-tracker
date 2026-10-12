@@ -54,13 +54,10 @@ export interface Cases {
    */
   readonly open: (source?: CaseSource) => CaseOpen | null
   readonly setSettings: (settings: CaseSettings) => void
-  /** Whether this device has yet to say today that Today's case is waiting (CHST-23). */
-  readonly unannounced: boolean
-  readonly announce: () => void
   /** The daily case's timer ran out while the app was open (CHST-29). */
   readonly dailyNotice: boolean
   readonly dismissDailyNotice: () => void
-  /** Monday, and Weekly is still to open, and this device has not said so yet (CHST-30). */
+  /** Monday, and the Haul is still to open, and this device has not said so yet (CHST-30). */
   readonly shareNotice: boolean
   readonly announceShare: () => void
   /** When the bonus key arrives, while that is what is being waited for. */
@@ -108,14 +105,14 @@ export function useCases(
 
   const settings = ledger.cases
   // While Cases is off, or the ledger has not arrived, the Drop's arrival is
-  // not watched: it is not said later (CHST-29, FEAT-3). Weekly's midnight
+  // not watched: it is not said later (CHST-29, FEAT-3). The Haul's midnight
   // is not watched either; opening the app on Monday still says it (CHST-30).
   const watching = ready && (watch.watching ?? true)
   const keyTimer = useKeyTimer(tasks, ledger.entries, settings, accountId, now, {
     watching,
     onOpen: watch.onOpen,
   })
-  // Monday midnight, so Weekly becomes ready while the app is still open on
+  // Monday midnight, so the Haul becomes ready while the app is still open on
   // Sunday. Null once Monday has begun: the caller's `now` is already that day.
   const shareDue = nextShareAt(now)?.getTime() ?? null
   const [shareClock, setShareClock] = useState<Date | null>(null)
@@ -146,7 +143,7 @@ export function useCases(
   }
   const slots = caseSlots(tasks, ledger.entries, accountId, moment)
 
-  // The last opening and the notice both belong to a day, so a day that has
+  // The last opening and the Haul's notice both belong to a day, so a day that has
   // turned leaves them behind rather than glowing over this morning's cases.
   const lastQuarter = kept.lastOpen !== null && kept.lastOpen.day === today ? kept.lastOpen.quarter : null
 
@@ -185,15 +182,10 @@ export function useCases(
     [setKept],
   )
 
-  const announce = useCallback(() => {
-    setKept({ ...latest.current, noticedDay: toLocalDay(moment) })
-  }, [setKept, moment])
-
   const announceShare = useCallback(() => {
     setKept({ ...latest.current, noticedWeek: toLocalDay(moment) })
   }, [setKept, moment])
 
-  const todayReady = slots.some((slot) => slot.source === 'today' && slot.state === 'ready')
   const shareReady = slots.some((slot) => slot.source === 'week' && slot.state === 'ready')
 
   return {
@@ -210,9 +202,6 @@ export function useCases(
     slots,
     open,
     setSettings: ledger.setCaseSettings,
-    // Today's case, not the daily one arriving on its clock (CHST-23, CHST-29).
-    unannounced: ready && todayReady && kept.noticedDay !== today,
-    announce,
     dailyNotice: keyTimer.notice,
     dismissDailyNotice: keyTimer.dismissNotice,
     shareNotice: ready && shareReady && kept.noticedWeek !== today,

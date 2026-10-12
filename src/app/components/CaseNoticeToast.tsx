@@ -1,17 +1,17 @@
-import { CASE_NOTICE, CASE_NOTICE_ACTION } from '../caseLabels'
+import { CASE_NOTICE_ACTION } from '../caseLabels'
 import { CasesIcon } from './CasesIcon'
 
 /**
- * A case notice at the top of the window: the day came clear (CHST-23), or
- * the daily case's timer ran out (CHST-29). Said where it happened rather than
+ * A case notice at the top of the window: the daily case's timer ran out
+ * (CHST-29), or Monday brought the Haul (CHST-30). Said where it happened rather than
  * left to be found, and dismissed by going to Cases or by its ×.
  */
 export function CaseNoticeToast({
-  message = CASE_NOTICE,
+  message,
   onOpen,
   onDismiss,
 }: {
-  message?: string
+  message: string
   onOpen: () => void
   onDismiss: () => void
 }) {

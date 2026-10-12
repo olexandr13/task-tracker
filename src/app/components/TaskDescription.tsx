@@ -1,5 +1,4 @@
 import {
-  Fragment,
   useEffect,
   useEffectEvent,
   useId,
@@ -8,11 +7,11 @@ import {
   useState,
   type ClipboardEvent,
   type KeyboardEvent,
-  type ReactNode,
 } from 'react'
-import { parseDescription, suggestTags, type EmphasisSpan, type TagSuggestion } from '../../core'
+import { suggestTags, type TagSuggestion } from '../../core'
 import {
   caretPosition,
+  emphasisCommand,
   fillBox,
   placeCaretAtEnd,
   readBox,
@@ -22,6 +21,7 @@ import {
 } from '../descriptionBox'
 import { useFeatureOn } from '../features'
 import { panelItem } from '../panelControls'
+import { FormattedText, formattedLists } from './FormattedText'
 
 /**
  * A step dimmer than a title, and smaller, so a description reads as what it is:
@@ -30,13 +30,8 @@ import { panelItem } from '../panelControls'
  */
 const descriptionText = 'text-base text-neutral-500 md:text-sm dark:text-neutral-400'
 
-/**
- * Lists read the same on both sides too: the bullet or number sits outside the
- * text, so an item that wraps lines up under its own first word. Set on the
- * container rather than on each list, because in the box the lists are the
- * browser's to make.
- */
-const listText = '[&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5'
+/** Lists read the same on both sides too (./FormattedText). */
+const listText = formattedLists
 
 /** How close to the window's edge the tag suggestions may come, and how far they sit from the caret. */
 const margin = 8
@@ -222,7 +217,7 @@ export function TaskDescription({ description, title, tags, knownTags, onChange,
       return
     }
 
-    const command = emphasisShortcut(event)
+    const command = emphasisCommand(event)
     if (command !== null) {
       // The browser would do this itself in an editable element, but not
       // everywhere and not without Ctrl+B opening a sidebar behind it.
@@ -307,7 +302,7 @@ export function TaskDescription({ description, title, tags, knownTags, onChange,
         {description === '' ? (
           <span className="text-neutral-400 dark:text-neutral-500">Add a description</span>
         ) : (
-          formatted(description)
+          <FormattedText text={description} />
         )}
       </div>
     )
@@ -366,48 +361,4 @@ export function TaskDescription({ description, title, tags, knownTags, onChange,
       )}
     </>
   )
-}
-
-/** Cmd/Ctrl+B and Cmd/Ctrl+I, and nothing else that happens to be held down. */
-function emphasisShortcut(event: KeyboardEvent<HTMLDivElement>): 'bold' | 'italic' | null {
-  if (!(event.metaKey || event.ctrlKey) || event.altKey) return null
-
-  const key = event.key.toLowerCase()
-  if (key === 'b') return 'bold'
-  if (key === 'i') return 'italic'
-
-  return null
-}
-
-/**
- * The resting text, laid out the way the box lays it out: a line to an element,
- * and a list as a list. A line with nothing on it holds a `<br>`, so a blank
- * line keeps its height here as it does there.
- */
-function formatted(description: string): ReactNode[] {
-  return parseDescription(description).map((block, index) => {
-    const lines = block.lines.map((line, at) => {
-      const words = line.length === 0 ? <br /> : emphasised(line)
-      return block.kind === 'lines' ? <div key={at}>{words}</div> : <li key={at}>{words}</li>
-    })
-
-    if (block.kind === 'bullets') return <ul key={index}>{lines}</ul>
-    if (block.kind === 'numbers') return <ol key={index}>{lines}</ol>
-    return <Fragment key={index}>{lines}</Fragment>
-  })
-}
-
-/**
- * One line's words. `<strong>` and `<em>` rather than styled spans: bold here
- * means these words matter more, which is something a screen reader should
- * hear too.
- */
-function emphasised(line: readonly EmphasisSpan[]): ReactNode[] {
-  return line.map((span, index) => {
-    const text = span.italic ? <em className="italic">{span.text}</em> : span.text
-
-    return span.bold
-      ? <strong key={index} className="font-semibold">{text}</strong>
-      : <Fragment key={index}>{text}</Fragment>
-  })
 }

@@ -11,8 +11,9 @@ import {
 } from '../core'
 import { NUDGE_UNSPOKEN, type NudgeDeviceRepository, type NudgeDeviceState } from '../storage/nudgeDeviceRepository'
 import { NUDGE_OFF, type NudgePreference, type NudgeRepository } from '../storage/nudgeRepository'
-import { askToNotify, notifyBrowser, notifyPermission, type NotifyPermission } from './browserNotification'
+import { askToNotify, notifyBrowser, type NotifyPermission } from './browserNotification'
 import { ignoreProblems, type ReportProblem } from './storageProblem'
+import { useNotifyPermission } from './useNotifyPermission'
 
 /** How often the quiet is measured again. A minute is finer than any span offered. */
 const TICK_MS = 60 * 1000
@@ -65,7 +66,7 @@ export function useNudge(
   // Boxed, there being nothing to tell a nudge that is off from one not read yet.
   const [saved, setSaved] = useState<{ of: NudgePreference } | null>(null)
   const [deviceState, setDeviceState] = useState<NudgeDeviceState>(() => device.load())
-  const [permission, setPermission] = useState<NotifyPermission>(() => notifyPermission())
+  const permission = useNotifyPermission()
   const [clock, setClock] = useState(() => new Date())
 
   // When this device started watching. An account with nothing ever finished is
@@ -174,7 +175,7 @@ export function useNudge(
   const turnOn = useCallback(
     (on: boolean) => {
       persist({ ...preference, on })
-      if (on) void askToNotify().then(setPermission)
+      if (on) void askToNotify()
     },
     [persist, preference],
   )

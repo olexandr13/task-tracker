@@ -24,10 +24,10 @@ export type CaseKindId = (typeof CASE_KINDS)[number]
 
 /**
  * How each case spreads the range `caseSpan` gives it. Today, the daily case
- * and Weekly each pay any whole number from their least to their most,
+ * and the Haul each pay any whole number from their least to their most,
  * each as likely as any other. The ends are not this kind's: Today's least is
  * the cheapest task today, the daily case's range is yesterday's and starts at
- * 0, and Weekly's ends are last week's.
+ * 0, and the Haul's ends are last week's.
  */
 export const CASE_FOR_SOURCE = { today: 'fair', daily: 'fair', week: 'fair' } as const satisfies Record<CaseSource, CaseKindId>
 

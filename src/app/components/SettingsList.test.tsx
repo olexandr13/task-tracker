@@ -37,10 +37,10 @@ function Settings({ from, onFoldChange, ...props }: Partial<Props> & { from: Set
       onThemeChange={vi.fn()}
       habitView={{ showDetails: false }}
       onHabitViewChange={vi.fn()}
+      habitRests={{ on: false, loading: false }}
+      onHabitRestsChange={vi.fn()}
       casesCounting={{ countUnpaid: true, loading: false }}
       onCasesCountUnpaidChange={vi.fn()}
-      casesPractice={false}
-      onCasesPracticeChange={vi.fn()}
       features={{ off: [], loading: false }}
       onFeatureChange={vi.fn()}
       {...props}
@@ -172,11 +172,16 @@ describe('the features (FEAT-1)', () => {
   })
 
   it('leaves out the settings of a feature switched off (FEAT-3)', () => {
-    renderSettings({ features: { off: ['habits', 'cases'], loading: false }, from: { habits: true, cases: true } })
+    renderSettings({
+      features: { off: ['habits', 'cases'], loading: false },
+      casesPractice: { practising: false, onChange: vi.fn() },
+      from: { habits: true, cases: true },
+    })
 
     expect(features().queryByRole('button', { name: 'Habits settings' })).toBeNull()
     expect(features().queryByRole('button', { name: 'Cases settings' })).toBeNull()
     expect(screen.queryByRole('switch', { name: 'Show habit details by default' })).toBeNull()
+    expect(screen.queryByRole('switch', { name: 'Limit rests' })).toBeNull()
     expect(screen.queryByRole('switch', { name: 'Practice mode' })).toBeNull()
     expect(screen.queryByRole('switch', { name: 'Count unrewarded tasks' })).toBeNull()
   })
@@ -210,18 +215,56 @@ describe('under Habits (HAB-23)', () => {
   })
 })
 
+describe('under Habits: limiting rests (HAB-36)', () => {
+  const SWITCH = 'Limit rests'
+
+  it('holds the switch as the account has it, saying in a sentence what it does', () => {
+    renderSettings({ habitRests: { on: true, loading: false }, from: { habits: true } })
+
+    const habits = within(features().getByRole('group', { name: 'Habits settings' }))
+    const control = habits.getByRole('switch', { name: SWITCH })
+    expect(control.getAttribute('aria-checked')).toBe('true')
+    expect(control.getAttribute('aria-describedby')).not.toBeNull()
+    expect(control.textContent).toContain('earns 1 more for every 7 days done in a row')
+  })
+
+  it('hands a change straight on', async () => {
+    const onHabitRestsChange = vi.fn()
+    const user = renderSettings({ onHabitRestsChange, from: { habits: true } })
+
+    await user.click(screen.getByRole('switch', { name: SWITCH }))
+
+    expect(onHabitRestsChange).toHaveBeenCalledWith(true)
+  })
+
+  it('offers no switch until the account has said how it stands', () => {
+    renderSettings({ habitRests: { on: false, loading: true }, from: { habits: true } })
+
+    const habits = within(features().getByRole('group', { name: 'Habits settings' }))
+    expect(habits.queryByRole('switch', { name: SWITCH })).toBeNull()
+    expect(habits.getByText('Loading…')).not.toBeNull()
+  })
+})
+
 describe('under Cases (CHST-21, CHST-32)', () => {
   const cases = () => within(features().getByRole('group', { name: 'Cases settings' }))
 
-  it('holds the practice switch, off to begin with', async () => {
-    const onCasesPracticeChange = vi.fn()
-    const user = renderSettings({ onCasesPracticeChange, from: { cases: true } })
+  it('offers no practice switch where the build does not offer practice', () => {
+    renderSettings({ from: { cases: true } })
+
+    expect(cases().getByRole('switch', { name: 'Count unrewarded tasks' })).not.toBeNull()
+    expect(screen.queryByRole('switch', { name: 'Practice mode' })).toBeNull()
+  })
+
+  it('holds the practice switch where the build offers it, off to begin with', async () => {
+    const onChange = vi.fn()
+    const user = renderSettings({ casesPractice: { practising: false, onChange }, from: { cases: true } })
 
     const practice = cases().getByRole('switch', { name: 'Practice mode' })
     expect(practice.getAttribute('aria-checked')).toBe('false')
 
     await user.click(practice)
-    expect(onCasesPracticeChange).toHaveBeenCalledWith(true)
+    expect(onChange).toHaveBeenCalledWith(true)
   })
 
   it('holds the switch for counting tasks without points, as the account has it', async () => {
@@ -236,7 +279,11 @@ describe('under Cases (CHST-21, CHST-32)', () => {
   })
 
   it('offers no counting switch until the account’s Cases settings have arrived', () => {
-    renderSettings({ casesCounting: { countUnpaid: true, loading: true }, from: { cases: true } })
+    renderSettings({
+      casesCounting: { countUnpaid: true, loading: true },
+      casesPractice: { practising: false, onChange: vi.fn() },
+      from: { cases: true },
+    })
 
     expect(cases().queryByRole('switch', { name: 'Count unrewarded tasks' })).toBeNull()
     expect(cases().getByText('Loading…')).not.toBeNull()

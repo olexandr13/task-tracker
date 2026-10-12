@@ -9,6 +9,7 @@ import {
   ON_MORE,
   parentView,
   UNDER_MODES,
+  UNDER_ORGANIZE,
   UNDER_REWARDS,
   type FixedView,
   type ModeView,
@@ -56,25 +57,20 @@ export function rewardsPagesShown(off: FeaturesOff): (typeof UNDER_REWARDS)[numb
   return UNDER_REWARDS.filter((page) => page !== 'rewards/cases' || isFeatureOn(off, 'cases'))
 }
 
-/** The feature each page on More belongs to. */
-const MORE_FEATURE: Readonly<Record<(typeof ON_MORE)[number], Feature>> = {
-  lists: 'lists',
-  tags: 'tags',
-  balance: 'balance',
-  activity: 'activity',
-  journal: 'journal',
-  modes: 'modes',
+/** The pages More lists (UI-45), less those switched off: Organize once all it holds is. */
+export function morePagesShown(off: FeaturesOff): (typeof ON_MORE)[number][] {
+  return ON_MORE.filter((page) => isViewOn(page, off))
 }
 
-/** The pages More lists (UI-45), less those switched off. */
-export function morePagesShown(off: FeaturesOff): (typeof ON_MORE)[number][] {
-  return ON_MORE.filter((page) => isFeatureOn(off, MORE_FEATURE[page]))
+/** The pages Organize lists (UI-81), less those switched off. */
+export function organizePagesShown(off: FeaturesOff): (typeof UNDER_ORGANIZE)[number][] {
+  return UNDER_ORGANIZE.filter((page) => isViewOn(page, off))
 }
 
 /**
  * Whether a view is there to go to (FEAT-2): a page of a feature switched off
- * is not, nor More once everything on it is, nor a mode whose feature is off.
- * The tasks, the trash and settings always are.
+ * is not, nor More or Organize once everything on it is, nor a mode whose
+ * feature is off. The tasks, the trash and settings always are.
  */
 export function isViewOn(view: View, off: FeaturesOff): boolean {
   const on = (feature: Feature) => isFeatureOn(off, feature)
@@ -84,11 +80,14 @@ export function isViewOn(view: View, off: FeaturesOff): boolean {
   if (isRewardsView(view)) return on('rewards')
   if (view === 'lists' || view === 'inbox' || isOneListView(view)) return on('lists')
   if (view === 'tags' || isTagView(view)) return on('tags')
+  if (view === 'notes') return on('notes')
   if (view === 'balance') return on('balance')
   if (view === 'activity') return on('activity')
   if (view === 'journal') return on('journal')
+  if (view === 'notifications') return on('notifications')
   if (view === 'modes') return on('modes')
   if (isModesView(view)) return isModeViewOn(off, view)
+  if (view === 'organize') return organizePagesShown(off).length > 0
   if (view === 'more') return morePagesShown(off).length > 0
   return true
 }

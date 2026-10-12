@@ -22,4 +22,6 @@ export const DEFAULT_VIEW_OPTIONS: ViewOptions = { showDetails: false }
 export interface ViewOptionsRepository {
   load(): ViewOptions
   save(options: ViewOptions): void
+  /** Calls `listener` when another window on this device saves it (STORE-61); returns how to stop. */
+  subscribe(listener: () => void): () => void
 }

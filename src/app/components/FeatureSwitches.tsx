@@ -2,8 +2,8 @@ import { useId, type ReactNode } from 'react'
 import { FEATURE_PARENT, FEATURES, isFeatureOn, type Feature, type FeaturesOff } from '../../core'
 import { FEATURE_LABELS } from '../featureLabels'
 import { VIEW_ICONS, type ViewIcon } from '../viewIcons'
-import { BellIcon } from './BellIcon'
 import { ChevronIcon } from './ChevronIcon'
+import { ClockIcon } from './ClockIcon'
 import { OptionSwitch } from './OptionSwitch'
 import { ProgressIcon } from './ProgressIcon'
 import { QuoteIcon } from './QuoteIcon'
@@ -15,13 +15,16 @@ const FEATURE_ICONS: Readonly<Record<Feature, ViewIcon>> = {
   cases: VIEW_ICONS['rewards/cases'],
   lists: VIEW_ICONS.lists,
   tags: VIEW_ICONS.tags,
+  notes: VIEW_ICONS.notes,
   balance: VIEW_ICONS.balance,
   activity: VIEW_ICONS.activity,
   journal: VIEW_ICONS.journal,
   modes: VIEW_ICONS.modes,
+  notifications: VIEW_ICONS.notifications,
   progress: ProgressIcon,
   quote: QuoteIcon,
-  reminders: BellIcon,
+  // The hour coming round; the bell is the Notifications page's.
+  reminders: ClockIcon,
 }
 
 /** A feature's own settings, folded away under its switch until its chevron is pressed. */

@@ -7,12 +7,15 @@ import {
   hasOpenSubtasks,
   hasSubtasks,
   isComplete,
+  isHabit,
   isOverdue,
   isSkippedToday,
   isTimeGoalReached,
   pickableDays,
+  restsOf,
   sessionSeconds,
   skipOccurrence,
+  skipPenalty,
   wholeMinutes,
   type List,
   type LocalDay,
@@ -26,7 +29,9 @@ import { describeTimeProgress } from '../durationLabels'
 import { describeDueDate, describeShortDate, describeTimeOfDay } from '../dueLabels'
 import { describeRepeatBriefly } from '../repeatLabels'
 import { useFeatureOn } from '../features'
-import { describeReward, describeRewardHint } from '../rewardLabels'
+import { describeNoRest } from '../habitLabels'
+import { useRestLimit } from '../habitRests'
+import { describeReward, describeRewardHint, describeSkipCost, describeSkipCostHint } from '../rewardLabels'
 import {
   controlOff,
   deleteAction,
@@ -37,6 +42,7 @@ import { CompletionBox } from './CompletionBox'
 import { CompletionRefusal } from './CompletionRefusal'
 import { DuplicateIcon } from './DuplicateIcon'
 import { ListPicker } from './ListPicker'
+import { RestRefusal } from './RestRefusal'
 import { RewardPicker } from './RewardPicker'
 import { SchedulePicker } from './SchedulePicker'
 import { SheetActions } from './SheetActions'
@@ -118,8 +124,17 @@ export function TaskSheet({
   // Which days can be picked for it now (DUE-27): none once done, and a habit only before its first day.
   const pickable = pickableDays(task, now)
   const skipTo = canSkipOccurrence(task, now) ? dueDay(skipOccurrence(task, now), now) : null
+  // What skipping a habit costs, said on its Skip before it is pressed (HAB-34) —
+  // nothing while Rewards is off, which shows no points anywhere (FEAT-3).
+  const skipCost = rewardsOn ? skipPenalty(task) : 0
+  // What a skip turned down for want of a rest says (HAB-38): only a habit, and only while rests are limited.
+  const rests = useRestLimit()
+  const noRest =
+    skipTo !== null && rests !== null && isHabit(task) ? describeNoRest(restsOf(task, rests, now).nextIn) : undefined
   const skip: SkipChoice | undefined =
-    skipTo === null ? undefined : { to: skipTo, onSkip: () => { actions.skip(task.id) } }
+    skipTo === null ? undefined : { to: skipTo, cost: skipCost, noRest, onSkip: () => actions.skip(task.id) }
+  // The foot's Skip turned down: it shakes, and the words go over the row it is in.
+  const restRefusal = useRefusal()
   // Today passed over and not done after all: the foot's Skip reads as pressed and takes it back (HAB-31).
   const skippedToday = !done && isSkippedToday(task, now)
   // The sheet holds the checklist itself, so a refused tick and the parts it is
@@ -312,53 +327,65 @@ export function TaskSheet({
           />
         </div>
 
-        <div className="flex items-center justify-between gap-2 border-t border-neutral-200 px-4 py-2 dark:border-neutral-800">
-          <button
-            type="button"
-            onClick={() => { actions.duplicate(task.id) }}
-            className={`${rowControlLabel} min-h-12 md:min-h-11 ${controlOff}`}
-          >
-            <DuplicateIcon />
-            Duplicate
-          </button>
-
-          {/* The occurrence passed over (RPT-34), or today's skip taken back — where a habit
-              rests for the day (HAB-31). Nothing while there is no occurrence to skip. */}
-          {skippedToday ? (
+        <div className="border-t border-neutral-200 dark:border-neutral-800">
+          {/* Over the row rather than under it, so the words stay on screen with the button
+              when the row is at the very bottom of the sheet (HAB-38). */}
+          {restRefusal.refused && noRest !== undefined && <RestRefusal note={noRest} className="px-4 pt-2 text-center" />}
+          <div className="flex items-center justify-between gap-2 px-4 py-2">
             <button
               type="button"
-              onClick={() => { actions.unskip(task.id) }}
-              aria-pressed
-              aria-label={`Skipped "${task.title}" today`}
-              title="Skipped today · press to take it back"
-              className={`${rowControlLabel} min-h-12 md:min-h-11 ${skippedAction}`}
-            >
-              <SkipIcon />
-              Skipped
-            </button>
-          ) : skipTo !== null ? (
-            <button
-              type="button"
-              onClick={() => { actions.skip(task.id) }}
-              aria-pressed={false}
-              aria-label={`Skip "${task.title}"`}
-              title={`Skip to ${describeShortDate(skipTo, now)}`}
+              onClick={() => { actions.duplicate(task.id) }}
               className={`${rowControlLabel} min-h-12 md:min-h-11 ${controlOff}`}
             >
-              <SkipIcon />
-              Skip
+              <DuplicateIcon />
+              Duplicate
             </button>
-          ) : null}
 
-          <button
-            type="button"
-            onClick={() => { actions.remove(task.id) }}
-            aria-label={`Delete "${task.title}"`}
-            className={`${rowControlLabel} min-h-12 md:min-h-11 ${deleteAction}`}
-          >
-            <TrashIcon />
-            Delete
-          </button>
+            {/* The occurrence passed over (RPT-34), or today's skip taken back — where a habit
+                rests for the day (HAB-31). Nothing while there is no occurrence to skip. */}
+            {skippedToday ? (
+              <button
+                type="button"
+                onClick={() => { actions.unskip(task.id) }}
+                aria-pressed
+                aria-label={`Skipped "${task.title}" today`}
+                title="Skipped today · press to take it back"
+                className={`${rowControlLabel} min-h-12 md:min-h-11 ${skippedAction}`}
+              >
+                <SkipIcon />
+                Skipped
+              </button>
+            ) : skipTo !== null ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (actions.skip(task.id) === 'noRest') restRefusal.refuse()
+                }}
+                aria-pressed={false}
+                aria-label={skipCost > 0 ? `Skip "${task.title}". ${describeSkipCostHint(skipCost)}` : `Skip "${task.title}"`}
+                title={`Skip to ${describeShortDate(skipTo, now)}${skipCost > 0 ? ` · ${describeSkipCostHint(skipCost)}` : ''}`}
+                className={`${rowControlLabel} min-h-12 md:min-h-11 ${controlOff}${restRefusal.refused ? ' refusal-shake' : ''}`}
+              >
+                <SkipIcon />
+                Skip
+                {skipCost > 0 && (
+                  <span aria-hidden className="text-rose-600/80 tabular-nums dark:text-rose-400/80">
+                    {describeSkipCost(skipCost)}
+                  </span>
+                )}
+              </button>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={() => { actions.remove(task.id) }}
+              aria-label={`Delete "${task.title}"`}
+              className={`${rowControlLabel} min-h-12 md:min-h-11 ${deleteAction}`}
+            >
+              <TrashIcon />
+              Delete
+            </button>
+          </div>
         </div>
       </div>
     </BottomSheet>

@@ -21,6 +21,8 @@ export type TaskTimerInfo = {
 }
 
 export type GoalNotice = {
+  /** The task whose goal was reached, for the Notifications page to open it (NOTIF-4). */
+  readonly taskId: TaskId
   readonly title: string
 }
 
@@ -102,7 +104,7 @@ export function useTaskTimer(
 
     const next: TaskTimerState = { ...state, goalNotified: true }
     persist(next)
-    setGoalNotice({ title: info.title })
+    setGoalNotice({ taskId: state.taskId, title: info.title })
     notifyBrowser('Time goal reached', `Time goal reached for “${info.title}”`)
   }, [state, clock, persist])
 
@@ -135,7 +137,7 @@ export function useTaskTimer(
       persist(next)
       setClock(now)
       if (alreadyExceeded && info !== null) {
-        setGoalNotice({ title: info.title })
+        setGoalNotice({ taskId, title: info.title })
         notifyBrowser('Time goal reached', `Time goal reached for “${info.title}”`)
       }
     },

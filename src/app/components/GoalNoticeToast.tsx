@@ -1,3 +1,5 @@
+import { describeGoalReached } from '../notificationLabels'
+
 interface GoalNoticeToastProps {
   title: string
   onDismiss: () => void
@@ -14,7 +16,7 @@ export function GoalNoticeToast({ title, onDismiss }: GoalNoticeToastProps) {
       aria-live="polite"
       className="pointer-events-auto flex max-w-full items-center gap-2 rounded-xl bg-green-800 py-2 pr-2 pl-4 text-sm text-white shadow-xl dark:bg-green-200 dark:text-green-950"
     >
-      <span className="min-w-0 truncate">Time goal reached for “{title}”</span>
+      <span className="min-w-0 truncate">{describeGoalReached(title)}</span>
       <button
         type="button"
         onClick={onDismiss}

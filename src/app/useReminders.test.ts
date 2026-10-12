@@ -183,4 +183,18 @@ describe('useReminders', () => {
     act(() => { result.current.dismiss() })
     expect(result.current.notices).toEqual([])
   })
+
+  it('puts away one of several, leaving the rest standing (NOTIF-4)', async () => {
+    vi.useFakeTimers({ now: new Date(2026, 8, 16, 8, 29, 30) })
+    allowNotifications()
+
+    const later = at('09:00', 'later')
+    const tasks = [later, at('08:30', 'earlier')]
+    const { result } = renderHook(() => useReminders(tasks))
+    vi.setSystemTime(new Date(2026, 8, 16, 9, 0, 5))
+    await tick()
+
+    act(() => { result.current.dismissOne(later.id) })
+    expect(result.current.notices.map((one) => one.title)).toEqual(['earlier'])
+  })
 })

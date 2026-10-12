@@ -1,4 +1,4 @@
-/** A bell, for the reminders that ring when a task's hour comes round (REM-1). */
+/** A bell: the Notifications page (NOTIF-1), and a reminder ringing on it when a task's hour comes round (REM-1). */
 export function BellIcon({ className }: { className?: string }) {
   return (
     <svg

@@ -6,7 +6,7 @@
  * **unknown** amount inside a range of its own. Payday pays from the
  * cheapest task finished today up to half of what today's tasks earned. The
  * Drop pays from 1 up to everything earned yesterday divided by how
- * many tasks that was. Weekly, ready on Monday and planned until then, pays
+ * many tasks that was. The Haul, ready on Monday and planned until then, pays
  * from the cheapest task finished last week up to everything earned last week
  * divided by how many tasks that was. Inside a range, every whole number is as likely as any
  * other (`openSpan`). Finishing the day is worth coming back to rather than
@@ -53,7 +53,7 @@ export interface CaseSpan {
 }
 
 /**
- * The least Payday and Weekly can pay (CHST-11) — and so also the least the
+ * The least Payday and the Haul can pay (CHST-11) — and so also the least the
  * jackpot itself can be (CHST-9). The Drop is the one case that can be empty:
  * it runs from `DROP_LEAST`.
  */
@@ -76,7 +76,7 @@ export const CASE_TODAY_ID: TaskId = 'chest-open'
  */
 export const CASE_DAILY_ID: TaskId = 'chest-daily'
 
-/** Weekly, the case Monday brings, recorded apart from the other two. */
+/** The Haul, the case Monday brings, recorded apart from the other two. */
 export const CASE_WEEK_ID: TaskId = 'chest-week'
 
 /** Whether a ledger row is a case opening, rather than a task or a bonus. */
@@ -105,7 +105,7 @@ export type CaseBlock = 'opened' | 'unclear' | 'bonusWaiting'
 /** Where a case comes from: clearing Today, the moment that arrives on its own, or the week. */
 export type CaseSource = 'today' | 'daily' | 'week'
 
-/** The cases in the order the page shows them: Payday, the Drop, then Weekly (CHST-28). */
+/** The cases in the order the page shows them: Payday, the Drop, then the Haul (CHST-28). */
 export const CASE_SOURCES: readonly CaseSource[] = ['today', 'daily', 'week']
 
 const CASE_ID_FOR_SOURCE = {
@@ -128,7 +128,7 @@ export interface CaseSlot {
   /** `ready` can be opened. `waiting` is planned, and not yet. `opened` has had its lid up today. */
   readonly state: 'ready' | 'waiting' | 'opened'
   /**
-   * When a waiting case arrives on its own: the Drop at its moment today, Weekly
+   * When a waiting case arrives on its own: the Drop at its moment today, the Haul
    * at midnight on the coming Monday (CHST-29, CHST-30). Payday has no clock,
    * being earned rather than waited for, and neither has a case ready or opened.
    */
@@ -141,7 +141,7 @@ export interface CaseSlot {
  * The cases in front of someone today (CHST-28, CHST-30). Today's is planned
  * while the day has work left on it, counting the tasks still to finish
  * (CHST-31), and ready once that work is done. The daily case is planned until
- * the account's moment for it (CHST-29), then ready. Weekly is planned until Monday, counting down to its
+ * the account's moment for it (CHST-29), then ready. The Haul is planned until Monday, counting down to its
  * midnight, then ready from the start of that day. Each one stays, opened,
  * until the day ends. An empty day plans no Today case: there was nothing to
  * clear.
@@ -179,7 +179,7 @@ function isMonday(now: Date): boolean {
 }
 
 /**
- * When Weekly next becomes ready: local midnight on the coming Monday, or null
+ * When the Haul next becomes ready: local midnight on the coming Monday, or null
  * when today is already that Monday (CHST-30). It is ready from the start of
  * the day, so there is no hour to wait out once Monday has begun. Until then
  * it stays on the page, planned.
@@ -258,7 +258,7 @@ export interface DailyWorking {
   readonly span: CaseSpan
 }
 
-/** Weekly: the cheapest task last week, that week's average task, and every task finished in it. */
+/** The Haul: the cheapest task last week, that week's average task, and every task finished in it. */
 export interface WeekWorking {
   readonly source: 'week'
   /** Points of the cheapest task finished last week, or null when that week has no task with points. */
@@ -288,7 +288,7 @@ export interface WeekWorking {
  * plus how many tasks were finished yesterday, with points or without. A
  * yesterday with no tasks pays 0.
  *
- * **Weekly** runs from the points of the cheapest task finished in the
+ * The **Haul** runs from the points of the cheapest task finished in the
  * previous week, or 1 when none had points, up to that week's average task
  * plus how many tasks were finished that week (CHST-30). Where that falls short
  * of the cheapest task, the case pays exactly those points.
@@ -500,7 +500,7 @@ export function caseBlock(
   now: Date = new Date(),
 ): CaseBlock | null {
   const slots = caseSlots(tasks, entries, accountId, now)
-  // Weekly is on the page every day, and only a key on Monday. While it is
+  // The Haul is on the page every day, and only a key on Monday. While it is
   // planned it does not decide whether a key is waiting today (CHST-30).
   const due = slots.filter((slot) => !(slot.source === 'week' && slot.state === 'waiting'))
   if (due.some((slot) => slot.state === 'ready')) return null

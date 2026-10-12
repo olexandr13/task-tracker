@@ -94,7 +94,7 @@ describe('keysOpened', () => {
     expect(keysOpened([], THU_17)).toBe(0)
   })
 
-  it('counts Monday’s Weekly among the cases opened that day', () => {
+  it('counts Monday’s Haul among the cases opened that day', () => {
     const entries = [earned(CASE_WEEK_ID, '2026-09-14', 4), earned(CASE_TODAY_ID, '2026-09-14', 1)]
     expect(keysOpened(entries, MON_14)).toBe(2)
   })
@@ -175,11 +175,11 @@ describe('anyKeyAvailable', () => {
     expect(anyKeyAvailable(tasks, entries, ACCOUNT, THU_17)).toBe(false)
   })
 
-  it('is true on Monday morning, Weekly being ready before the Drop (CHST-30)', () => {
+  it('is true on Monday morning, the Haul being ready before the Drop (CHST-30)', () => {
     expect(anyKeyAvailable([], [], ACCOUNT, MON_14)).toBe(true)
   })
 
-  it('is false on Monday once Weekly is open and nothing else is ready', () => {
+  it('is false on Monday once the Haul is open and nothing else is ready', () => {
     const entries = [earned(CASE_WEEK_ID, '2026-09-14', 4)]
     expect(anyKeyAvailable([], entries, ACCOUNT, MON_14)).toBe(false)
   })

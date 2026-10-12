@@ -4,6 +4,7 @@ import {
   createCategory,
   createJournalEntry,
   createList,
+  createNote,
   createPointValue,
   createPrize,
   createRedemption,
@@ -41,6 +42,7 @@ const READING = createActivityEntry('Reading', 900, { day: '2026-09-18', hour: 1
 const CHECKING_IN: CheckInPreference = { on: true, window: { from: '08:00', to: '20:00' } }
 // Written the day before AT, so still kept a week later (JRN-8).
 const SUNNY = createJournalEntry('good', 'Sun came out', '2026-09-18', AT)
+const FILMS = createNote('Films to watch\n- *Heat*', AT)
 
 const EMPTY: AccountData = {
   tasks: [],
@@ -50,6 +52,7 @@ const EMPTY: AccountData = {
   categories: [],
   activities: [],
   journal: [],
+  notes: [],
   entries: [],
   redemptions: [],
   bonuses: NO_BONUSES,
@@ -60,6 +63,7 @@ const EMPTY: AccountData = {
   nudge: null,
   checkIn: null,
   features: null,
+  habitRests: null,
 }
 
 const NOTHING_KNOWN: KnownRecords = {
@@ -73,6 +77,7 @@ const NOTHING_KNOWN: KnownRecords = {
   unreadableActivityDays: new Set(),
   journalIds: new Set(),
   unreadableJournalDays: new Set(),
+  noteIds: new Set(),
   redemptionIds: new Set(),
   bonuses: NO_BONUSES,
   pointValue: null,
@@ -82,6 +87,7 @@ const NOTHING_KNOWN: KnownRecords = {
   nudge: null,
   checkIn: null,
   features: null,
+  habitRests: null,
   days: new Map(),
 }
 
@@ -95,6 +101,7 @@ describe('what an import adds', () => {
       categories: [REST],
       activities: [READING],
       journal: [SUNNY],
+      notes: [FILMS],
       entries: [{ taskId: WRITE.id, day: '2026-09-19', points: 5 }],
       redemptions: [COFFEE],
       bonuses: { today: 10, week: 40, month: null },
@@ -105,6 +112,7 @@ describe('what an import adds', () => {
       nudge: NUDGING,
       checkIn: CHECKING_IN,
       features: ['quote'],
+      habitRests: { since: '2026-09-01' },
     }
 
     expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
@@ -291,6 +299,16 @@ describe('what an import does with the bonuses and the point value', () => {
     expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
     expect(newRecords(incoming, { ...NOTHING_KNOWN, features: ['quote'] }, AT)).toEqual({ fresh: EMPTY, alreadyHere: 0 })
   })
+
+  it('takes the file\u2019s limit on rests only where the account has none (BAK-23)', () => {
+    const incoming: AccountData = { ...EMPTY, habitRests: { since: '2026-09-01' } }
+
+    expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
+    expect(newRecords(incoming, { ...NOTHING_KNOWN, habitRests: { since: '2026-09-15' } }, AT)).toEqual({
+      fresh: EMPTY,
+      alreadyHere: 0,
+    })
+  })
 })
 
 describe('importing the journal (BAK-21)', () => {
@@ -313,6 +331,16 @@ describe('importing the journal (BAK-21)', () => {
   })
 })
 
+describe('importing the notes (BAK-22)', () => {
+  it('adds the notes the account does not hold, and leaves the ones it does as they are', () => {
+    const DENTIST = createNote('**Dentist** in May', AT)
+    const incoming: AccountData = { ...EMPTY, notes: [FILMS, DENTIST] }
+    const known: KnownRecords = { ...NOTHING_KNOWN, noteIds: new Set([FILMS.id]) }
+
+    expect(newRecords(incoming, known, AT)).toEqual({ fresh: { ...EMPTY, notes: [DENTIST] }, alreadyHere: 1 })
+  })
+})
+
 describe('counting records', () => {
   it('counts each kind, a completion being one entry of the ledger', () => {
     const data: AccountData = {
@@ -323,6 +351,7 @@ describe('counting records', () => {
       categories: [REST],
       activities: [READING],
       journal: [SUNNY],
+      notes: [FILMS],
       entries: [
         { taskId: WRITE.id, day: '2026-09-19', points: 5 },
         { taskId: WRITE.id, day: '2026-09-18', points: 5 },
@@ -336,6 +365,7 @@ describe('counting records', () => {
       nudge: NUDGING,
       checkIn: CHECKING_IN,
       features: ['quote'],
+      habitRests: { since: '2026-09-01' },
     }
 
     // The bonuses, the point value and the warm-up are settings rather than records, and are counted as none.
@@ -347,6 +377,7 @@ describe('counting records', () => {
       categories: 1,
       activities: 1,
       journal: 1,
+      notes: 1,
       completions: 2,
       redemptions: 0,
     })

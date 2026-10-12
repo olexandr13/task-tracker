@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react'
 import { ActivityIcon } from './components/ActivityIcon'
 import { BalanceIcon } from './components/BalanceIcon'
+import { BellIcon } from './components/BellIcon'
 import { CalendarIcon } from './components/CalendarIcon'
 import { CalmIcon } from './components/CalmIcon'
 import { CheckInIcon } from './components/CheckInIcon'
@@ -15,7 +16,9 @@ import { ListIcon } from './components/ListIcon'
 import { ModesIcon } from './components/ModesIcon'
 import { MonthIcon } from './components/MonthIcon'
 import { MoreIcon } from './components/MoreIcon'
+import { NotesIcon } from './components/NotesIcon'
 import { NudgeIcon } from './components/NudgeIcon'
+import { OrganizeIcon } from './components/OrganizeIcon'
 import { ProcrastinationIcon } from './components/ProcrastinationIcon'
 import { SettingsIcon } from './components/SettingsIcon'
 import { SlidersIcon } from './components/SlidersIcon'
@@ -55,15 +58,18 @@ export const VIEW_ICONS: Record<FixedView, ViewIcon> = {
   'rewards/rules': SlidersIcon,
   lists: FolderIcon,
   tags: TagIcon,
+  notes: NotesIcon,
   balance: BalanceIcon,
   activity: ActivityIcon,
   journal: JournalIcon,
   more: MoreIcon,
+  organize: OrganizeIcon,
   modes: ModesIcon,
   'modes/procrastination': ProcrastinationIcon,
   'modes/warm-up': WarmUpIcon,
   'modes/nudge': NudgeIcon,
   'modes/check-in': CheckInIcon,
+  notifications: BellIcon,
   trash: TrashIcon,
   settings: SettingsIcon,
 }

@@ -13,9 +13,10 @@ import {
 } from '../core'
 import type { CheckInDeviceRepository, CheckInDeviceState } from '../storage/checkInDeviceRepository'
 import { CHECK_IN_OFF, type CheckInPreference, type CheckInRepository } from '../storage/checkInRepository'
-import { askToNotify, notifyBrowser, notifyPermission, type NotifyPermission } from './browserNotification'
+import { askToNotify, notifyBrowser, type NotifyPermission } from './browserNotification'
 import { describeCheckInQuestion } from './checkInLabels'
 import { ignoreProblems, type ReportProblem } from './storageProblem'
+import { useNotifyPermission } from './useNotifyPermission'
 
 /**
  * How often the clock is read besides the top of the hour itself: often enough
@@ -74,7 +75,7 @@ export function useCheckIn(
   // Boxed, there being nothing to tell a check-in that is off from one not read yet.
   const [saved, setSaved] = useState<{ of: CheckInPreference } | null>(null)
   const [device, setDevice] = useState<CheckInDeviceState>(() => deviceRepository.load())
-  const [permission, setPermission] = useState<NotifyPermission>(() => notifyPermission())
+  const permission = useNotifyPermission()
   const [clock, setClock] = useState(() => new Date())
 
   // The end of the stretch already watched: an hour that ended inside it has
@@ -168,7 +169,7 @@ export function useCheckIn(
   const turnOn = useCallback(
     (on: boolean) => {
       persist({ ...preference, on })
-      if (on) void askToNotify().then(setPermission)
+      if (on) void askToNotify()
     },
     [persist, preference],
   )

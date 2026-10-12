@@ -9,8 +9,10 @@ import { clearGuestActivities, createLocalActivityRepository, loadGuestActivitie
 import { clearGuestCategories, createLocalCategoryRepository, loadGuestCategories } from './localCategoryRepository'
 import { clearGuestCheckIn, createLocalCheckInRepository, loadGuestCheckIn } from './localCheckInRepository'
 import { clearGuestFeatures, createLocalFeatureRepository, loadGuestFeatures } from './localFeatureRepository'
+import { clearGuestHabitRests, createLocalHabitSettingsRepository, loadGuestHabitRests } from './localHabitSettingsRepository'
 import { clearGuestJournal, createLocalJournalRepository, loadGuestJournal } from './localJournalRepository'
 import { clearGuestLists, createLocalListRepository, loadGuestLists } from './localListRepository'
+import { clearGuestNotes, createLocalNoteRepository, loadGuestNotes } from './localNoteRepository'
 import { clearGuestNudge, createLocalNudgeRepository, loadGuestNudge } from './localNudgeRepository'
 import { clearGuestPrizes, createLocalPrizeRepository, loadGuestPrizes } from './localPrizeRepository'
 import {
@@ -39,7 +41,9 @@ export function createLocalBackupRepository(): BackupRepository {
   const warmUp = createLocalWarmUpRepository()
   const nudge = createLocalNudgeRepository()
   const features = createLocalFeatureRepository()
+  const habitSettings = createLocalHabitSettingsRepository()
   const journal = createLocalJournalRepository()
+  const notes = createLocalNoteRepository()
 
   return {
     async exportAll() {
@@ -52,6 +56,7 @@ export function createLocalBackupRepository(): BackupRepository {
         categories: loadGuestCategories(),
         activities: loadGuestActivities(),
         journal: loadGuestJournal(),
+        notes: loadGuestNotes(),
         entries: ledger.entries,
         redemptions: ledger.redemptions,
         bonuses: ledger.bonuses,
@@ -62,6 +67,7 @@ export function createLocalBackupRepository(): BackupRepository {
         nudge: loadGuestNudge(),
         checkIn: loadGuestCheckIn(),
         features: loadGuestFeatures(),
+        habitRests: loadGuestHabitRests(),
       }
     },
 
@@ -79,6 +85,7 @@ export function createLocalBackupRepository(): BackupRepository {
         unreadableActivityDays: new Set(),
         journalIds: new Set(loadGuestJournal().map((entry) => entry.id)),
         unreadableJournalDays: new Set(),
+        noteIds: new Set(loadGuestNotes().map((note) => note.id)),
         redemptionIds: new Set(ledger.redemptions.map((redemption) => redemption.id)),
         bonuses: ledger.bonuses,
         pointValue: ledger.pointValue,
@@ -88,6 +95,7 @@ export function createLocalBackupRepository(): BackupRepository {
         nudge: loadGuestNudge(),
         checkIn: loadGuestCheckIn(),
         features: loadGuestFeatures(),
+        habitRests: loadGuestHabitRests(),
         days: daysKnown(ledger.entries),
       }
 
@@ -100,6 +108,7 @@ export function createLocalBackupRepository(): BackupRepository {
       await categories.save({ saved: fresh.categories, removed: [] })
       await activities.save({ saved: fresh.activities, removed: [] })
       await journal.save({ saved: fresh.journal, removed: [] })
+      await notes.save({ saved: fresh.notes, removed: [] })
       // The file's bonuses, point value, cases settings and new tasks' reward
       // only where there are none here already (`newRecords`).
       const bonuses = Object.fromEntries(
@@ -114,11 +123,12 @@ export function createLocalBackupRepository(): BackupRepository {
         ledger.newTaskReward ?? fresh.newTaskReward,
       )
 
-      // The file's warm-up, nudge, check-in and switches only where there are none here already (`newRecords`).
+      // The file's warm-up, nudge, check-in, switches and limit on rests only where there are none here already (`newRecords`).
       if (fresh.warmUp !== null) await warmUp.importWarmUp(fresh.warmUp)
       if (fresh.nudge !== null) await nudge.importNudge(fresh.nudge)
       if (fresh.checkIn !== null) await checkIn.importCheckIn(fresh.checkIn)
       if (fresh.features !== null) await features.importFeatures(fresh.features)
+      if (fresh.habitRests !== null) await habitSettings.importRests(fresh.habitRests)
 
       return { added: countRecords(fresh), alreadyHere }
     },
@@ -144,8 +154,10 @@ export function clearGuestAccount(): void {
   clearGuestCategories()
   clearGuestActivities()
   clearGuestJournal()
+  clearGuestNotes()
   clearGuestCheckIn()
   clearGuestFeatures()
+  clearGuestHabitRests()
   clearGuestRewards()
   clearGuestWarmUp()
   clearGuestNudge()

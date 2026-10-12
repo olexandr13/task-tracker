@@ -12,6 +12,7 @@ import {
   hasSubtasks,
   hasTags,
   isComplete,
+  isHabit,
   isHabitRepeat,
   sameRepeat,
   isOverdue,
@@ -19,8 +20,10 @@ import {
   isTimeGoalReached,
   listOf,
   pickableDays,
+  restsOf,
   sessionSeconds,
   skipOccurrence,
+  skipPenalty,
   sortLists,
   wholeMinutes,
   type List,
@@ -34,6 +37,8 @@ import { dateChoices, noDayNote, restsToday } from '../dateChoices'
 import { describeDueDate, describeTimeOfDay } from '../dueLabels'
 import { describeTimeProgress, describeTimerRunning } from '../durationLabels'
 import { useFeatureOn } from '../features'
+import { describeNoRest } from '../habitLabels'
+import { useRestLimit } from '../habitRests'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { describeRepeatBriefly } from '../repeatLabels'
 import { describeReward, describeRewardHint } from '../rewardLabels'
@@ -75,6 +80,7 @@ import { InboxIcon } from './InboxIcon'
 import { ListPicker } from './ListPicker'
 import { NoteIcon } from './NoteIcon'
 import { RepeatIcon } from './RepeatIcon'
+import { RestRefusal } from './RestRefusal'
 import { RewardPicker } from './RewardPicker'
 import { SchedulePicker } from './SchedulePicker'
 import { StarIcon } from './StarIcon'
@@ -262,6 +268,8 @@ export function TaskItem({
   // (CHK-11). Every way of ticking the task off goes through it — the box, and
   // the swipe on a phone — so the row answers the same however it was asked.
   const { refused, refuse } = useRefusal()
+  // A skip from the row's menu turned down for want of a rest (HAB-38), answered the same way.
+  const restRefusal = useRefusal()
   const blocked = !done && hasOpenSubtasks(task, now)
   // Every part ticked, task still not: the box offers the same green invitation
   // a reached time goal does (CHK-32), just for a different reason.
@@ -375,7 +383,26 @@ export function TaskItem({
   const filed = listOf(task, lists)
   // Where skipping the occurrence in play would move the task on to, while it has one to skip.
   const skipTo = canSkipOccurrence(task, now) ? dueDay(skipOccurrence(task, now), now) : null
-  const skip = skipTo === null ? undefined : { to: skipTo, onSkip: () => { actions.skip(task.id) } }
+  // What skipping a habit costs, said beside the skip before it is chosen (HAB-34).
+  const skipCost = rewardsOn ? skipPenalty(task) : 0
+  // What a skip turned down for want of a rest says (HAB-38): only a habit, and only while rests are limited.
+  const rests = useRestLimit()
+  const noRest =
+    skipTo !== null && rests !== null && isHabit(task) ? describeNoRest(restsOf(task, rests, now).nextIn) : undefined
+  const skip = skipTo === null ? undefined : { to: skipTo, cost: skipCost, noRest, onSkip: () => actions.skip(task.id) }
+  // The menu closes as a choice is made, so a skip it turned down is answered on the row itself;
+  // the date panels say it under their own row of choices.
+  const menuSkip =
+    skip === undefined
+      ? undefined
+      : {
+          ...skip,
+          onSkip: () => {
+            const outcome = skip.onSkip()
+            if (outcome === 'noRest') restRefusal.refuse()
+            return outcome
+          },
+        }
   // A habit resting today offers the rest back in the skip's place (HAB-31).
   const unskip = restsToday(task, now) ? () => { actions.unskip(task.id) } : undefined
   // Which days can be picked for it now (DUE-27): none once done, and a habit only before its first day.
@@ -389,7 +416,7 @@ export function TaskItem({
     now,
     rule: task.repeat,
     pickable,
-    skip,
+    skip: menuSkip,
     unskip,
     onChange: changeDay,
   }
@@ -727,7 +754,7 @@ export function TaskItem({
           : `group relative touch-manipulation ${surface}${emphasized ? ' my-3' : ''}`,
         // The whole row shakes, box and title together: it is the task that would
         // not be ticked off, not the box that failed to take a click (CHK-11).
-        refused && 'refusal-shake',
+        (refused || restRefusal.refused) && 'refusal-shake',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -1037,6 +1064,7 @@ export function TaskItem({
       {/* Where the title starts, under the box that turned the tick down, so the
           words answer the click that was just made rather than the row at large. */}
       {refused && <CompletionRefusal className={`pb-1.5 ${indent}`} />}
+      {restRefusal.refused && noRest !== undefined && <RestRefusal note={noRest} className={`pb-1.5 ${indent}`} />}
 
       {phone && detailed && (tags !== null || urgentLabel !== null || schedule !== null || count !== null || time !== null || points !== null) && (
         <div className={`${detail} flex min-w-0 flex-wrap items-center gap-x-2 px-3 pb-2 ${indent}`}>

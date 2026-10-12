@@ -151,7 +151,7 @@ describe('Cases', () => {
     expect(screen.getByText('Payday pays 4 to 18 points. The Drop pays 1 to 6 points.')).toBeTruthy()
   })
 
-  it('says what Weekly pays on Monday (CHST-30)', () => {
+  it('says what the Haul pays on Monday (CHST-30)', () => {
     setup({
       cases: {
         today: { least: 4, most: 18 },
@@ -162,7 +162,7 @@ describe('Cases', () => {
       },
     })
 
-    expect(screen.getByText('Payday pays 4 to 18 points. The Drop pays 1 to 6 points. Weekly pays 3 to 8 points.')).toBeTruthy()
+    expect(screen.getByText('Payday pays 4 to 18 points. The Drop pays 1 to 6 points. The Haul pays 3 to 8 points.')).toBeTruthy()
   })
 
   it('says what today’s gave once it is open', () => {

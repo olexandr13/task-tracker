@@ -38,6 +38,22 @@ export function readBox(element: HTMLElement): string {
   return writeEmphasis(spans)
 }
 
+/** The keys that put emphasis on: Cmd/Ctrl+B and Cmd/Ctrl+I, and nothing else that happens to be held down. */
+export function emphasisCommand(event: {
+  readonly key: string
+  readonly metaKey: boolean
+  readonly ctrlKey: boolean
+  readonly altKey: boolean
+}): 'bold' | 'italic' | null {
+  if (!(event.metaKey || event.ctrlKey) || event.altKey) return null
+
+  const key = event.key.toLowerCase()
+  if (key === 'b') return 'bold'
+  if (key === 'i') return 'italic'
+
+  return null
+}
+
 /** Puts the caret at the end, as clicking into a title does. */
 export function placeCaretAtEnd(element: HTMLElement): void {
   const range = document.createRange()

@@ -94,15 +94,27 @@ describe('rewardTotals (RWD-21)', () => {
       THU_17,
     )
 
-    expect(totals.today).toEqual({ earned: 0, redeemed: 4 })
+    expect(totals.today).toEqual({ earned: 0, redeemed: 4, lost: 0 })
     expect(totals.week.redeemed).toBe(4)
     expect(totals.month.redeemed).toBe(10)
     expect(totals.year.redeemed).toBe(10)
     expect(totals.all.redeemed).toBe(11)
   })
 
+  it('counts what skipping a habit took apart from what was redeemed (HAB-34)', () => {
+    const skipped: Redemption = {
+      ...redeemed(new Date(2026, 8, 16, 0, 0), 2, 'stretch'),
+      skip: { taskId: 'stretch', day: '2026-09-16' },
+    }
+    const totals = rewardTotals([], [skipped, redeemed(THU_17, 4)], THU_17)
+
+    expect(totals.today).toEqual({ earned: 0, redeemed: 4, lost: 0 })
+    expect(totals.week).toEqual({ earned: 0, redeemed: 4, lost: 2 })
+    expect(pointsBalance([entry('2026-09-14', 10)], [skipped, redeemed(THU_17, 4)])).toBe(4)
+  })
+
   it('is all zero with nothing earned or redeemed', () => {
-    expect(rewardTotals([], [], THU_17).all).toEqual({ earned: 0, redeemed: 0 })
+    expect(rewardTotals([], [], THU_17).all).toEqual({ earned: 0, redeemed: 0, lost: 0 })
   })
 })
 

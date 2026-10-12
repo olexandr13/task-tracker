@@ -11,6 +11,7 @@
 import { toLocalDay, type LocalDay } from './day'
 import { periodRange } from './progress'
 import type { RewardEntry } from './reward'
+import type { TaskId } from './task'
 
 export type RedemptionId = string
 
@@ -24,6 +25,22 @@ export interface Redemption {
   readonly note: string
   /** ISO 8601 timestamp. */
   readonly redeemedAt: string
+  /**
+   * The habit and the day these points were taken for skipping, where they were
+   * not spent but lost (./penalty, HAB-34). Absent on points redeemed.
+   */
+  readonly skip?: SkippedDay
+}
+
+/** A habit's day passed over: what a skip's penalty is taken for. */
+export interface SkippedDay {
+  readonly taskId: TaskId
+  readonly day: LocalDay
+}
+
+/** Whether these points were taken for skipping a habit rather than spent (HAB-34). */
+export function isSkipPenalty(redemption: Redemption): boolean {
+  return redemption.skip !== undefined
 }
 
 export class InvalidRedemptionError extends Error {
@@ -80,14 +97,18 @@ export type RewardPeriod = 'today' | 'week' | 'month' | 'year' | 'all'
 
 export interface PeriodPoints {
   readonly earned: number
+  /** Points spent on something. */
   readonly redeemed: number
+  /** Points taken for skipping a habit (HAB-34): off the balance, but not spent on anything. */
+  readonly lost: number
 }
 
 /**
- * Points earned and redeemed in each period: today, this week (Monday to
- * Sunday, as ./progress counts it), this month, this year, and all time.
- * An entry counts on the day it was earned for, a redemption on the local day
- * it was made. Entries whose tasks are deleted still count: earned stays earned.
+ * Points earned, redeemed and lost to skips in each period: today, this week
+ * (Monday to Sunday, as ./progress counts it), this month, this year, and all
+ * time. An entry counts on the day it was earned for, a redemption on the local
+ * day it was made — a skip's on the day skipped, which is when it is made out
+ * for. Entries whose tasks are deleted still count: earned stays earned.
  */
 export function rewardTotals(
   entries: readonly RewardEntry[],
@@ -97,11 +118,17 @@ export function rewardTotals(
   const redeemedDays = redemptions.map((redemption) => ({
     day: toLocalDay(new Date(redemption.redeemedAt)),
     points: redemption.points,
+    lost: isSkipPenalty(redemption),
   }))
 
   function within(range: DayRange | null): PeriodPoints {
     const inRange = ({ day }: { day: LocalDay }) => range === null || (day >= range.from && day < range.to)
-    return { earned: sumPoints(entries.filter(inRange)), redeemed: sumPoints(redeemedDays.filter(inRange)) }
+    const taken = redeemedDays.filter(inRange)
+    return {
+      earned: sumPoints(entries.filter(inRange)),
+      redeemed: sumPoints(taken.filter((each) => !each.lost)),
+      lost: sumPoints(taken.filter((each) => each.lost)),
+    }
   }
 
   const year = now.getFullYear()

@@ -20,13 +20,16 @@
  * - **A day skipped is a rest, not a miss.** A day passed over on purpose
  *   (`Task.skippedDays`) asked nothing of the habit: the streak runs on across
  *   it, and it is not among the days a rate counts. Done wins over it, as it
- *   does everywhere (RPT-36).
+ *   does everywhere (RPT-36). While the account limits rests (./habitRest), a
+ *   skip no rest was left to pay for is a miss after all; every reading below
+ *   takes the limit as `rests`, and left out it is off.
  */
 
 import { InvalidDayError, isLocalDay, offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from './day'
 import { moveTask, sortByOrder } from './order'
 import { periodRange } from './progress'
 import { repeatsEveryDay, type Repeat } from './repeat'
+import { restsOf, type HabitRests } from './habitRest'
 import { completeTask, isDeleted, startedOn, uncompleteTask, type Task, type TaskId } from './task'
 
 /**
@@ -79,7 +82,8 @@ export function moveToEndOfHabits(tasks: readonly Task[], id: TaskId): Task[] {
  *
  * - `done` — it was done that day.
  * - `skipped` — passed over on purpose, and not done after all: a rest.
- * - `missed` — a day since the habit started that went by without it.
+ * - `missed` — a day since the habit started that went by without it, or
+ *   skipped with no rest left to pay for it (./habitRest).
  * - `pending` — today, not done yet.
  * - `untracked` — a day before the habit started, and not done.
  * - `future` — not here yet.
@@ -110,11 +114,11 @@ export interface HabitRate {
   readonly percent: number
 }
 
-export function habitStats(task: Task, now: Date = new Date()): HabitStats {
+export function habitStats(task: Task, now: Date = new Date(), rests: HabitRests = null): HabitStats {
   const today = toLocalDay(now)
   const done = recordedDays(task, today)
   const set = new Set(done)
-  const rested = restedDays(task, today, set)
+  const rested = restedDays(task, today, set, rests, now)
 
   return {
     currentStreak: runEndingAt(set, rested, set.has(today) ? today : offsetDay(today, -1)),
@@ -128,7 +132,7 @@ export function habitStats(task: Task, now: Date = new Date()): HabitStats {
  * habit started, and the ones it was done on before that; today only once it
  * is done. A day skipped asked nothing, so it is not among them.
  */
-export function habitRate(task: Task, days: number, now: Date = new Date()): HabitRate {
+export function habitRate(task: Task, days: number, now: Date = new Date(), rests: HabitRests = null): HabitRate {
   const today = toLocalDay(now)
   const done = recordedDays(task, today)
   const windowStart = offsetDay(today, 1 - days)
@@ -138,7 +142,7 @@ export function habitRate(task: Task, days: number, now: Date = new Date()): Hab
   const started = startedOn(task)
   const trackedFrom = started > windowStart ? started : windowStart
   const tracked = Math.max(0, daysBetween(trackedFrom, windowEnd) + 1)
-  const rested = [...restedDays(task, today, new Set(done))].filter((day) => day >= trackedFrom && day <= windowEnd).length
+  const rested = [...restedDays(task, today, new Set(done), rests, now)].filter((day) => day >= trackedFrom && day <= windowEnd).length
   const kept = done.filter(inWindow).length
   const doneBefore = done.filter((day) => inWindow(day) && day < trackedFrom).length
   const counted = tracked - rested + doneBefore
@@ -206,10 +210,10 @@ export function setDoneOnDay(task: Task, day: LocalDay, done: boolean, now: Date
  * today and all. There are always `weeks` full weeks, so every row of a grid
  * drawn from them lines up.
  */
-export function habitWeeks(task: Task, weeks: number, now: Date = new Date()): HabitDay[][] {
+export function habitWeeks(task: Task, weeks: number, now: Date = new Date(), rests: HabitRests = null): HabitDay[][] {
   const today = toLocalDay(now)
   const set = new Set(recordedDays(task, today))
-  const rested = restedDays(task, today, set)
+  const rested = restedDays(task, today, set, rests, now)
   const started = startedOn(task)
   const thisMonday = toLocalDay(periodRange('week', now).start)
 
@@ -226,10 +230,10 @@ export function habitWeeks(task: Task, weeks: number, now: Date = new Date()): H
  * The last `days` days, oldest first and ending with today, each read as in
  * `habitWeeks` — the run a folded card shows beside its streak.
  */
-export function habitLastDays(task: Task, days: number, now: Date = new Date()): HabitDay[] {
+export function habitLastDays(task: Task, days: number, now: Date = new Date(), rests: HabitRests = null): HabitDay[] {
   const today = toLocalDay(now)
   const set = new Set(recordedDays(task, today))
-  const rested = restedDays(task, today, set)
+  const rested = restedDays(task, today, set, rests, now)
   const started = startedOn(task)
 
   return Array.from({ length: days }, (_, at) => {
@@ -253,11 +257,33 @@ function stateOf(
 }
 
 /**
- * The days passed over on purpose, up to today, less any done after all: done
- * wins (RPT-36), and a day still to come is not a rest yet.
+ * The days a habit rests on, oldest first: passed over on purpose, up to today,
+ * and not done after all (HAB-31). What a skip costs is charged for these
+ * (./penalty, HAB-34), whether or not a rest paid for them (HAB-40): the device
+ * that made a skip charged for it. Empty for a task that is not a habit.
  */
-function restedDays(task: Task, today: LocalDay, done: ReadonlySet<LocalDay>): Set<LocalDay> {
-  return new Set(task.skippedDays.filter((day) => day <= today && !done.has(day)))
+export function habitRestDays(task: Task, now: Date = new Date()): LocalDay[] {
+  if (!isHabit(task)) return []
+
+  const today = toLocalDay(now)
+  return [...restedDays(task, today, new Set(recordedDays(task, today)))].sort()
+}
+
+/**
+ * The days passed over on purpose, up to today, less any done after all: done
+ * wins (RPT-36), and a day still to come is not a rest yet. While rests are
+ * limited, a skip no rest paid for is left out too, and so reads as missed
+ * (HAB-40).
+ */
+function restedDays(
+  task: Task,
+  today: LocalDay,
+  done: ReadonlySet<LocalDay>,
+  rests: HabitRests = null,
+  now: Date = new Date(),
+): Set<LocalDay> {
+  const unpaid = rests === null || !isHabit(task) ? null : restsOf(task, rests, now).uncovered
+  return new Set(task.skippedDays.filter((day) => day <= today && !done.has(day) && unpaid?.has(day) !== true))
 }
 
 /**

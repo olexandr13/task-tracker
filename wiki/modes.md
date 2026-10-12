@@ -10,10 +10,10 @@ and each mode a page of its own that says what it does, and sets what it has to 
 
 ## Where they are
 
-- **MODE-1** **More** offers **Modes**, a page like Tags (UI-45). Its row says how many modes are
-  on (`1 on`), or nothing at all while none is. On a phone **More** stays marked while the Modes
-  page or one mode's page is open; a wide screen marks **Modes** itself, having an entry for it
-  (MODE-7). The addresses are `#/modes` and, for a mode, `#/modes/procrastination`,
+- **MODE-1** **Organize** offers **Modes**, a page like Tags (UI-81), and a phone reaches Organize
+  from **More** (UI-45). Its row says how many modes are on (`1 on`), or nothing at all while none
+  is. On a phone **More** stays marked while the Modes page or one mode's page is open; a wide
+  screen marks **Modes** itself, having an entry for it (MODE-7). The addresses are `#/modes` and, for a mode, `#/modes/procrastination`,
   `#/modes/warm-up`, `#/modes/nudge` and `#/modes/check-in` (UI-36).
 - **MODE-2** The page **lists every mode there is** — Procrastination first, then Warm-up, then
   Nudge, then Check-in, less any switched away on Settings with what it needs (FEAT-9) — each with its own glyph (🫠, 🌱, 🔔, ⏰), its name, and the one line it is
@@ -94,14 +94,15 @@ and each mode a page of its own that says what it does, and sets what it has to 
   on. Whether the banner also carries a way out is the mode's own call: Procrastination's does
   (JUST-5), the warm-up's does not (WARM-9). The win card (JUST-9) carries none: a win is not the
   moment to read.
-- **MODE-7** **Modes has an entry of its own in the sidebar**, with a page for each mode indented
-  under it — **Procrastination**, **Warm-up**, **Nudge** and **Check-in**, each wearing its own glyph — and a chevron that
-  **folds them away** as Lists folds its lists (UI-30, LST-26); folded, Modes itself is marked
-  wherever you are under it, and open, each mode's page is marked on its own, so one mode is a
-  click from the other. How it is left is kept on this device (STORE-31). A phone has no sidebar
-  and no tab for the modes, so a mode's page begins with **a single link back to Modes** — a
-  chevron and the word — and the other mode is chosen from the list there. **More** still offers
-  Modes (MODE-1), which is how a phone reaches it at all.
+- **MODE-7** **Modes has an entry of its own in the sidebar**, under **Organize** (UI-81), with a
+  page for each mode indented a step further in under it — **Procrastination**, **Warm-up**,
+  **Nudge** and **Check-in**, each wearing its own glyph — and a chevron that **folds them away**
+  as Lists folds its lists (UI-30, LST-26); folded, Modes itself is marked wherever you are under
+  it, and open, each mode's page is marked on its own, so one mode is a click from the other.
+  Organize folding stands for all of it. How each is left is kept on this device (STORE-31). A
+  phone has no sidebar and no tab for the modes, so a mode's page begins with **a single link back
+  to Modes** — a chevron and the word — and the other mode is chosen from the list there.
+  **Organize**, on More's page, still offers Modes (MODE-1), which is how a phone reaches it at all.
 
 - **MODE-11** At the head of its own page a mode wears **the face it puts you in** rather than only
   the glyph it is known by: Procrastination **melts while it is off** (🫠) and is **calm while it is
@@ -124,14 +125,14 @@ and each mode a page of its own that says what it does, and sets what it has to 
 `src/app/viewIcons.ts` (`MODE_PAGE_ICONS`, the faces a mode's page wears),
 `src/app/components/SideNav.tsx` (the modes in the sidebar),
 `src/app/components/ModesBackLink.tsx` (a phone's way back),
-`src/app/components/ModesIcon.tsx`, `src/app/components/MorePage.tsx` (the way in),
+`src/app/components/ModesIcon.tsx`, `src/app/components/OrganizePage.tsx` (the way in),
 `src/app/components/WarmUpPanel.tsx` and `src/app/components/ProcrastinationMode.tsx`
 (**More info** on a mode's banner),
 `src/app/components/NudgeSettings.tsx` and `CheckInSettings.tsx` (the modes with settings of their own, MODE-12),
 `src/app/TasksScreen.tsx` (the modes built from `useProcrastination`, `useWarmUp`, `useNudge` and
 `useCheckIn`).
 **Tested in:** `src/app/modes.test.ts`, `src/app/components/ModesPage.test.tsx`,
-`src/app/components/ModePage.test.tsx`, `src/app/components/MorePage.test.tsx`,
+`src/app/components/ModePage.test.tsx`, `src/app/components/OrganizePage.test.tsx`,
 `src/app/components/WarmUpPanel.test.tsx` and `src/app/components/ProcrastinationMode.test.tsx`
 (**More info**),
 `src/app/useView.test.ts` (the addresses), `src/app/components/SideNav.test.tsx` and

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createList } from '../core'
-import { moveTab, pinnedAddresses, pinnedViews, pinTab, tabsShown, unpinTab } from './pinnedTabs'
+import { changePinned, moveTab, pinnedAddresses, pinnedViews, pinTab, tabsShown, unpinTab } from './pinnedTabs'
 import { oneListView, tagView, type View } from './view'
 
 /* The tabs pinned across the top of a wide screen: which are drawn, and how
@@ -18,6 +18,23 @@ describe('pinnedViews', () => {
 
   it('reads past an address naming no page, and a page pinned twice (STORE-59)', () => {
     expect(pinnedViews(['#/today', '#/nowhere', '#/today', '#/habits'])).toEqual(['today', 'habits'])
+  })
+})
+
+describe('changePinned', () => {
+  it('makes the change to the pages the saved addresses name (STORE-59)', () => {
+    expect(changePinned(['#/today', '#/habits'], (pinned) => unpinTab(pinned, 'today'))).toEqual(['#/habits'])
+  })
+
+  it('keeps an address naming no page it knows, after the ones it reads, once (STORE-59)', () => {
+    const saved = ['#/today', '#/from-a-newer-version', '#/habits', '#/from-a-newer-version']
+
+    expect(changePinned(saved, (pinned) => pinTab(pinned, 'tasks'))).toEqual([
+      '#/today',
+      '#/habits',
+      '#/tasks',
+      '#/from-a-newer-version',
+    ])
   })
 })
 

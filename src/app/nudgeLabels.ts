@@ -10,6 +10,12 @@ import { describeTimeOfDay } from './dueLabels'
  * other modes' (`modeLabels`).
  */
 
+/** What the notice says (NUDGE-8): `Nothing done in 2 hours · Next up: “write”`. */
+export function describeNudgeNotice(title: string, quietHours: QuietHours): string {
+  const span = quietHours === 1 ? 'an hour' : `${String(quietHours)} hours`
+  return `Nothing done in ${span} · Next up: “${title}”`
+}
+
 /** The span waited for, as its own control writes it: `2h`. */
 export function describeQuietSpan(hours: QuietHours): string {
   return `${String(hours)}h`

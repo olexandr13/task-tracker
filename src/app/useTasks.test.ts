@@ -13,9 +13,12 @@ import {
   setDueDate,
   setReward,
   setStartDay,
+  skipPenaltyId,
   BONUS_IDS,
   NO_BONUSES,
   type PeriodBonuses,
+  type Redemption,
+  type RedemptionId,
   type Repeat,
   type RewardChanges,
   type RewardEntry,
@@ -57,16 +60,21 @@ function fakeTaskRepository() {
   return { repository, arrive: (tasks: Task[]) => { act(() => { onTasks(tasks) }) } }
 }
 
-/** A reward repository that keeps every change it is asked to record. */
+/** A reward repository that keeps every change it is asked to record, and every skip it is asked to charge and give back. */
 function fakeRewardRepository() {
   const recorded: RewardChanges[] = []
+  const charged: Redemption[] = []
+  const refunded: RedemptionId[] = []
   const repository: RewardRepository = {
     subscribe: () => () => {},
     save(changes) {
       recorded.push(changes)
       return Promise.resolve()
     },
-    redeem: () => Promise.resolve(),
+    redeem(redemption) {
+      charged.push(redemption)
+      return Promise.resolve()
+    },
     setBonus: () => Promise.resolve(),
     setPointValue: () => Promise.resolve(),
     setCaseSettings: () => Promise.resolve(),
@@ -75,9 +83,12 @@ function fakeRewardRepository() {
     importPointValue: () => Promise.resolve(),
     importCaseSettings: () => Promise.resolve(),
     importNewTaskReward: () => Promise.resolve(),
-    removeRedemption: () => Promise.resolve(),
+    removeRedemption(id) {
+      refunded.push(id)
+      return Promise.resolve()
+    },
   }
-  return { repository, recorded }
+  return { repository, recorded, charged, refunded }
 }
 
 function setUp(saved: Task[], bonuses: PeriodBonuses = NO_BONUSES, earned: RewardEntry[] = []) {
@@ -85,7 +96,7 @@ function setUp(saved: Task[], bonuses: PeriodBonuses = NO_BONUSES, earned: Rewar
   const rewards = fakeRewardRepository()
   const { result } = renderHook(() => useTasks(tasks.repository, rewards.repository, undefined, bonuses, earned))
   tasks.arrive(saved)
-  return { result, arrive: tasks.arrive, recorded: rewards.recorded }
+  return { result, arrive: tasks.arrive, recorded: rewards.recorded, charged: rewards.charged, refunded: rewards.refunded }
 }
 
 /** A bonus for clearing Today and none for the longer periods. */
@@ -140,6 +151,99 @@ describe('useTasks, recording rewards', () => {
     arrive([completeTask(task)])
 
     expect(recorded).toEqual([])
+  })
+})
+
+describe('useTasks, what a skip costs (HAB-34)', () => {
+  it("takes twice a habit's reward off the balance when it is skipped, and gives it back when the skip is", () => {
+    const task = setReward(createTask('stretch', { kind: 'daily' }), 3)
+    const { result, charged, refunded } = setUp([task])
+    const id = skipPenaltyId({ taskId: task.id, day: '2026-09-17' })
+
+    act(() => { result.current.skip(task.id) })
+
+    expect(charged).toEqual([
+      { id, points: 6, note: 'stretch', redeemedAt: THU_17.toISOString(), skip: { taskId: task.id, day: '2026-09-17' } },
+    ])
+
+    act(() => { result.current.unskip(task.id) })
+
+    expect(refunded).toEqual([id])
+  })
+
+  it('gives it back when the habit is done after all, and records the completion beside it (RPT-36)', () => {
+    const task = setReward(createTask('stretch', { kind: 'daily' }), 3)
+    const { result, recorded, refunded } = setUp([task])
+
+    act(() => { result.current.skip(task.id) })
+    act(() => { result.current.complete(task.id) })
+
+    expect(refunded).toEqual([skipPenaltyId({ taskId: task.id, day: '2026-09-17' })])
+    expect(recorded).toEqual([{ earned: [{ taskId: task.id, day: '2026-09-17', points: 3 }], revoked: [] }])
+  })
+
+  it('costs nothing to skip a habit with no reward, or a task that is not a habit', () => {
+    const plain = createTask('stretch', { kind: 'daily' })
+    const weekly = setReward(createTask('bins', { kind: 'weekly', weekdays: [4] }), 5)
+    const { result, charged } = setUp([plain, weekly])
+
+    act(() => { result.current.skip(plain.id) })
+    act(() => { result.current.skip(weekly.id) })
+
+    expect(charged).toEqual([])
+  })
+
+  it('charges nothing for a skip arriving from another device, which charged it itself', () => {
+    const task = setReward(createTask('stretch', { kind: 'daily' }), 3)
+    const { arrive, charged } = setUp([task])
+
+    arrive([{ ...task, skippedDays: ['2026-09-17'] }])
+
+    expect(charged).toEqual([])
+  })
+})
+
+describe('useTasks, a skip while rests are limited (HAB-38)', () => {
+  /** Started Mon 14; Tue 15 skipped, spending the one rest it starts with. */
+  const spent = (): Task => ({
+    ...createTask('stretch', { kind: 'daily' }, new Date(2026, 8, 14, 8, 0)),
+    doneDays: ['2026-09-14', '2026-09-16'],
+    skippedDays: ['2026-09-15'],
+  })
+  const LIMITED = { since: '2026-09-01' }
+
+  it('turns a habit with no rest left down, changing and charging nothing', () => {
+    const task = setReward(spent(), 3)
+    const { result, charged } = setUp([task])
+
+    let outcome = ''
+    act(() => { outcome = result.current.skip(task.id, LIMITED) })
+
+    expect(outcome).toBe('noRest')
+    expect(result.current.tasks[0].skippedDays).toEqual(['2026-09-15'])
+    expect(charged).toEqual([])
+  })
+
+  it('skips it while the limit is off, as ever', () => {
+    const task = spent()
+    const { result } = setUp([task])
+
+    let outcome = ''
+    act(() => { outcome = result.current.skip(task.id) })
+
+    expect(outcome).toBe('skipped')
+    expect(result.current.tasks[0].skippedDays).toEqual(['2026-09-15', '2026-09-17'])
+  })
+
+  it('skips a habit that has a rest to spend', () => {
+    const task = createTask('stretch', { kind: 'daily' }, new Date(2026, 8, 14, 8, 0))
+    const { result } = setUp([task])
+
+    let outcome = ''
+    act(() => { outcome = result.current.skip(task.id, LIMITED) })
+
+    expect(outcome).toBe('skipped')
+    expect(result.current.tasks[0].skippedDays).toEqual(['2026-09-17'])
   })
 })
 

@@ -31,6 +31,19 @@ describe('UndoToast', () => {
     expect(onDismiss).toHaveBeenCalledOnce()
   })
 
+  it('says what a habit skipped cost, and offers to take the skip back (HAB-34)', async () => {
+    const user = userEvent.setup()
+    const onUndo = vi.fn()
+
+    render(
+      <UndoToast pending={{ kind: 'skip', taskId: 'stretch', title: 'stretch', points: 6 }} onUndo={onUndo} onDismiss={vi.fn()} />,
+    )
+
+    expect(screen.getByText('Skipped “stretch” and lost 6 points')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(onUndo).toHaveBeenCalledOnce()
+  })
+
   it('names a deleted Balance category and offers Undo (BAL-10)', async () => {
     const user = userEvent.setup()
     const onUndo = vi.fn()

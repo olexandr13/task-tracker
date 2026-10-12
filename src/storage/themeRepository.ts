@@ -21,4 +21,6 @@ export const DEFAULT_THEME: Theme = 'system'
 export interface ThemeRepository {
   load(): Theme
   save(theme: Theme): void
+  /** Calls `listener` when another window on this device saves it (STORE-61); returns how to stop. */
+  subscribe(listener: () => void): () => void
 }

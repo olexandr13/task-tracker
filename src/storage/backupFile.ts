@@ -6,8 +6,10 @@ import {
   type Category,
   type CaseSettings,
   type FeaturesOff,
+  type HabitRests,
   type JournalEntry,
   type List,
+  type Note,
   type PeriodBonuses,
   type Prize,
   type PointValue,
@@ -23,8 +25,10 @@ import { readCategory, toStoredCategory, type StoredCategory } from './categoryS
 import type { CheckInPreference } from './checkInRepository'
 import { readCheckIn, toStoredCheckIn, type StoredCheckIn } from './checkInSchema'
 import { readFeatures, toStoredFeatures, type StoredFeatures } from './featureSchema'
+import { readHabitRests, toStoredHabitRests, type StoredHabitRests } from './habitSettingsSchema'
 import { readJournalDay, toStoredJournalDays, type StoredJournalDay } from './journalSchema'
 import { readList, toStoredList, type StoredList } from './listSchema'
+import { readNote, toStoredNote, type StoredNote } from './noteSchema'
 import type { NudgePreference } from './nudgeRepository'
 import { readNudge, toStoredNudge, type StoredNudge } from './nudgeSchema'
 import { isRecord } from './plainData'
@@ -78,12 +82,14 @@ export const BACKUP_FORMAT = 'task-tracker-backup'
  * asking for no check-in. Version 8 held no feature switches (FEAT-1): a file
  * made before there were any is read as switching nothing off. Version 9 held
  * no journal (JRN-1): a file made before there was one is read as holding no
- * lines.
+ * lines. Version 10 held no notes (NOTE-1): a file made before there were any is
+ * read as holding none. Version 11 held no habits' settings (HAB-36): a file
+ * made before there were any is read as leaving rests unlimited.
  */
-export const BACKUP_VERSION = 10
+export const BACKUP_VERSION = 12
 
 /** The versions of the wrapper this app can still read, oldest first. */
-const READABLE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, BACKUP_VERSION]
+const READABLE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, BACKUP_VERSION]
 
 interface BackupFile {
   format: typeof BACKUP_FORMAT
@@ -122,6 +128,14 @@ interface BackupFile {
   features: StoredFeatures[]
   /** The journal, a day at a time, as the account keeps it (JRN-1). */
   journalDays: StoredJournalDay[]
+  /** The notes, one record each (NOTE-1). */
+  notes: StoredNote[]
+  /**
+   * The habits' settings, a record each where anything says: the limit on rests
+   * (HAB-36), and nothing at all while it is off. A new kind of setting joins
+   * this array, as the points' settings do.
+   */
+  habitSettings: StoredHabitRests[]
 }
 
 /** Why a file was not read at all. */
@@ -148,6 +162,12 @@ function checkInRecord(preference: CheckInPreference | null): StoredCheckIn[] {
 /** The feature switches as the file holds them: their one record, or nothing at all with every feature on. */
 function featuresRecord(off: FeaturesOff | null): StoredFeatures[] {
   const stored = off === null ? null : toStoredFeatures(off)
+  return stored === null ? [] : [stored]
+}
+
+/** The habits' settings as the file holds them: the limit on rests as its one record, or nothing at all while it is off. */
+function habitSettingsRecords(rests: HabitRests): StoredHabitRests[] {
+  const stored = toStoredHabitRests(rests)
   return stored === null ? [] : [stored]
 }
 
@@ -185,6 +205,8 @@ export function writeBackupFile(data: AccountData, now: Date): string {
     checkIn: checkInRecord(data.checkIn),
     features: featuresRecord(data.features),
     journalDays: toStoredJournalDays(data.journal),
+    notes: data.notes.map(toStoredNote),
+    habitSettings: habitSettingsRecords(data.habitRests),
   }
   return `${JSON.stringify(file, null, 2)}\n`
 }
@@ -219,6 +241,8 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
   const checkIn = file.version < 8 ? [] : file.checkIn
   const features = file.version < 9 ? [] : file.features
   const journalDays = file.version < 10 ? [] : file.journalDays
+  const notes = file.version < 11 ? [] : file.notes
+  const habitSettings = file.version < 12 ? [] : file.habitSettings
   if (
     !Array.isArray(tasks) ||
     !Array.isArray(lists) ||
@@ -234,7 +258,9 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     !Array.isArray(activityDays) ||
     !Array.isArray(checkIn) ||
     !Array.isArray(features) ||
-    !Array.isArray(journalDays)
+    !Array.isArray(journalDays) ||
+    !Array.isArray(notes) ||
+    !Array.isArray(habitSettings)
   ) {
     return 'not-a-backup'
   }
@@ -275,6 +301,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     categories: readEach<Category>(categories, readCategory),
     activities: readEach<ActivityEntry[]>(activityDays, readActivityDay).flat(),
     journal: readEach<JournalEntry[]>(journalDays, readJournalDay).flat(),
+    notes: readEach<Note>(notes, readNote),
     entries: readEach<RewardEntry[]>(rewardDays, readRewardDay).flat(),
     redemptions: readEach<Redemption>(redemptions, readRedemption),
     bonuses: bonuses as PeriodBonuses,
@@ -285,6 +312,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     nudge: readEach<NudgePreference>(nudge, readNudge)[0] ?? null,
     checkIn: readEach<CheckInPreference>(checkIn, readCheckIn)[0] ?? null,
     features: readEach<FeaturesOff>(features, readFeatures)[0] ?? null,
+    habitRests: readEach(habitSettings, readHabitRests)[0] ?? null,
   }
   return { data, unreadable }
 }

@@ -128,7 +128,8 @@ ticked off. The tick itself stays the owner's.
 - **TIME-19** When logged time plus the live run **reaches the goal**, to the second, the app notices once for
   that run — an on-screen toast, and a browser notification when permission was given — and **does
   not stop the timer**. Starting on a task whose logged time already meets the goal notices at
-  once. A task with no goal never notices this way.
+  once. A task with no goal never notices this way. Until it is dismissed the toast is also listed
+  on **Notifications**, where **Open task** goes to the task's time (NOTIF-3, NOTIF-4).
 - **TIME-20** A tap on the chip's title and clock **goes to the task**. The page open stays when it
   shows the task (Habits does for a habit); otherwise the app goes to Today when Today shows the
   task, or else to Tasks, which shows every task. There the task is scrolled into view and opened

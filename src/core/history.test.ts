@@ -28,7 +28,7 @@ describe('historyStart', () => {
     expect(historyStart(new Date(2026, 5, 10, 9, 0))).toBe('2026-06-01')
   })
 
-  it('holds the whole of last week on a Monday, for Weekly to count (STORE-55, CHST-10)', () => {
+  it('holds the whole of last week on a Monday, for the Haul to count (STORE-55, CHST-10)', () => {
     // Monday 5 October: last week ran from Monday 28 September, before the month began.
     expect(historyStart(new Date(2026, 9, 5, 9, 0))).toBe('2026-09-28')
   })

@@ -5,6 +5,7 @@ import {
   createActivityEntry,
   createCategory,
   createList,
+  createNote,
   createPointValue,
   createPrize,
   createRedemption,
@@ -25,8 +26,10 @@ import { CATEGORY_SCHEMA_VERSION } from './categorySchema'
 import type { CheckInPreference } from './checkInRepository'
 import { CHECK_IN_SCHEMA_VERSION } from './checkInSchema'
 import { FEATURES_SCHEMA_VERSION } from './featureSchema'
+import { HABIT_SETTINGS_SCHEMA_VERSION } from './habitSettingsSchema'
 import { JOURNAL_SCHEMA_VERSION } from './journalSchema'
 import { LIST_SCHEMA_VERSION } from './listSchema'
+import { NOTE_SCHEMA_VERSION } from './noteSchema'
 import type { NudgePreference } from './nudgeRepository'
 import { NUDGE_SCHEMA_VERSION } from './nudgeSchema'
 import { PRIZE_SCHEMA_VERSION } from './prizeSchema'
@@ -60,6 +63,7 @@ const WORKING = createActivityEntry('Work', 2700, { day: '2026-09-18', hour: 14 
 const CHECKING_IN: CheckInPreference = { on: true, window: { from: '08:00', to: '20:00' } }
 const SUNNY = createJournalEntry('good', 'Sun came out', '2026-09-18', AT)
 const THANKS = createJournalEntry('gratitude', 'A friend called', '2026-09-18', AT)
+const FILMS = createNote('Films to watch\n- *Heat*', AT)
 
 const DATA: AccountData = {
   tasks: [DONE, TRASHED],
@@ -69,6 +73,7 @@ const DATA: AccountData = {
   categories: [REST],
   activities: [READING, WORKING],
   journal: [SUNNY, THANKS],
+  notes: [FILMS],
   entries: ENTRIES,
   redemptions: [TREAT],
   bonuses: BONUSES,
@@ -79,10 +84,17 @@ const DATA: AccountData = {
   nudge: NUDGING,
   checkIn: CHECKING_IN,
   features: ['rewards', 'quote'],
+  habitRests: { since: '2026-09-01' },
 }
 
-/** What a file from before the journal reads as (BAK-21). */
-const BEFORE_JOURNAL = { journal: [] }
+/** What a file from before the habits' settings reads as (BAK-23). */
+const BEFORE_HABIT_SETTINGS = { habitRests: null }
+
+/** What a file from before the notes reads as (BAK-22), and so before the habits' settings too. */
+const BEFORE_NOTES = { notes: [], ...BEFORE_HABIT_SETTINGS }
+
+/** What a file from before the journal reads as (BAK-21), and so before the notes too. */
+const BEFORE_JOURNAL = { journal: [], ...BEFORE_NOTES }
 
 /** What a file from before the feature switches reads as (BAK-20), and so before the journal too. */
 const BEFORE_FEATURES = { features: null, ...BEFORE_JOURNAL }
@@ -126,7 +138,15 @@ describe('writing a backup', () => {
       nudge: [{ version: NUDGE_SCHEMA_VERSION, name: 'nudge', nudge: NUDGING }],
       checkIn: [{ version: CHECK_IN_SCHEMA_VERSION, name: 'checkIn', checkIn: CHECKING_IN }],
       features: [{ version: FEATURES_SCHEMA_VERSION, name: 'features', off: ['rewards', 'quote'] }],
+      notes: [{ version: NOTE_SCHEMA_VERSION, note: FILMS }],
+      habitSettings: [{ version: HABIT_SETTINGS_SCHEMA_VERSION, name: 'rests', since: '2026-09-01' }],
     })
+  })
+
+  it('keeps no record of the limit on rests while it is off (BAK-23)', () => {
+    const file = JSON.parse(writeBackupFile({ ...DATA, habitRests: null }, AT)) as { habitSettings: unknown }
+
+    expect(file.habitSettings).toEqual([])
   })
 
   it('keeps no record of the switches while every feature is on (BAK-20)', () => {
@@ -207,6 +227,7 @@ describe('reading a backup', () => {
     expect(readBackupFile(fileWith({ checkIn: undefined }))).toBe('not-a-backup')
     expect(readBackupFile(fileWith({ features: undefined }))).toBe('not-a-backup')
     expect(readBackupFile(fileWith({ journalDays: undefined }))).toBe('not-a-backup')
+    expect(readBackupFile(fileWith({ notes: undefined }))).toBe('not-a-backup')
   })
 
   it('reads a file from before tags were backed up as keeping none (BAK-12)', () => {
@@ -336,9 +357,21 @@ describe('reading a backup', () => {
   })
 
   it('reads a file from before the journal as holding no lines (BAK-21)', () => {
-    const read = readBackupFile(fileWith({ version: 9, journalDays: undefined }))
+    const read = readBackupFile(fileWith({ version: 9, journalDays: undefined, notes: undefined }))
 
     expect(read).toEqual({ data: { ...DATA, ...BEFORE_JOURNAL }, unreadable: 0 })
+  })
+
+  it('reads a file from before the notes as holding none (BAK-22)', () => {
+    const read = readBackupFile(fileWith({ version: 10, notes: undefined, habitSettings: undefined }))
+
+    expect(read).toEqual({ data: { ...DATA, ...BEFORE_NOTES }, unreadable: 0 })
+  })
+
+  it('reads a file from before the habits\u2019 settings as leaving rests unlimited (BAK-23)', () => {
+    const read = readBackupFile(fileWith({ version: 11, habitSettings: undefined }))
+
+    expect(read).toEqual({ data: { ...DATA, ...BEFORE_HABIT_SETTINGS }, unreadable: 0 })
   })
 
   it('says so when a backup was made by a newer version of the app (BAK-9)', () => {
@@ -365,6 +398,8 @@ describe('reading a backup', () => {
         checkIn: [{ version: CHECK_IN_SCHEMA_VERSION, name: 'checkIn', checkIn: { on: true, window: { from: '09:30', to: '22:00' } } }],
         features: [{ version: FEATURES_SCHEMA_VERSION + 1, name: 'features', off: ['quote'] }],
         journalDays: [{ version: JOURNAL_SCHEMA_VERSION, day: '2026-09-18', entries: { x: { section: 'regrets', text: 'No', writtenAt: AT.toISOString() } } }],
+        notes: [{ version: NOTE_SCHEMA_VERSION, note: { ...FILMS, text: '- ' } }],
+        habitSettings: [{ version: HABIT_SETTINGS_SCHEMA_VERSION + 1, name: 'rests', since: '2026-09-01' }],
       }),
     )
 
@@ -377,6 +412,7 @@ describe('reading a backup', () => {
         categories: [],
         activities: [],
         journal: [],
+        notes: [],
         entries: [],
         redemptions: [TREAT],
         bonuses: BONUSES,
@@ -387,8 +423,9 @@ describe('reading a backup', () => {
         nudge: NUDGING,
         checkIn: null,
         features: null,
+        habitRests: null,
       },
-      unreadable: 11,
+      unreadable: 13,
     })
   })
 })

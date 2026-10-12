@@ -5,7 +5,8 @@ import { isOneListView, isTagView, viewFromHash, viewHash, viewListId, viewTag, 
 /**
  * The pinned tabs across the top of a wide screen (UI-75), as views: each saved
  * address (STORE-59) read back as the page it names, in order, once each. An
- * address that names no page — one from a version since changed — is read past.
+ * address that names no page — one from a version since changed, or a newer
+ * one — is read past here, and kept (`changePinned`).
  */
 export function pinnedViews(addresses: readonly string[]): View[] {
   const views: View[] = []
@@ -19,6 +20,17 @@ export function pinnedViews(addresses: readonly string[]): View[] {
 /** The pinned tabs as they are saved: each page's address (UI-36). */
 export function pinnedAddresses(views: readonly View[]): string[] {
   return views.map(viewHash)
+}
+
+/**
+ * The saved tabs with `change` made to the pages they name (STORE-59). An
+ * address naming no page this version knows is kept, after the ones it does:
+ * it may be a page a newer version added, pinned in a window already running
+ * it, and pinning here is no reason to unpin it there.
+ */
+export function changePinned(addresses: readonly string[], change: (pinned: View[]) => View[]): string[] {
+  const unread = new Set(addresses.filter((address) => viewFromHash(address) === null))
+  return [...pinnedAddresses(change(pinnedViews(addresses))), ...unread]
 }
 
 /** The tabs with `view` pinned at the end, where a browser opens a new tab — or as they were, if it is already pinned. */

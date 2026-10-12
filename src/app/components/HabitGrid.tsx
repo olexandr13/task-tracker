@@ -1,6 +1,7 @@
 import { useRef, useState, type KeyboardEvent } from 'react'
 import { habitWeeks, toLocalDay, type LocalDay, type Task } from '../../core'
 import { describeHabitDay, monthStartedBy } from '../habitLabels'
+import { useRestLimit } from '../habitRests'
 import { HABIT_DAY_TONES } from '../habitTones'
 
 /** A year of weeks is drawn; how many of them show depends on the room there is. */
@@ -65,7 +66,8 @@ interface HabitGridProps {
  * no room to show cannot take focus, so walking stops at the oldest week on show.
  */
 export function HabitGrid({ task, now, onSetDay }: HabitGridProps) {
-  const weeks = habitWeeks(task, WEEKS, now)
+  // A skip no rest paid for is a miss here too (HAB-40).
+  const weeks = habitWeeks(task, WEEKS, now, useRestLimit())
   const done = weeks.flat().filter((entry) => entry.state === 'done').length
   const today = toLocalDay(now)
 

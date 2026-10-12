@@ -75,6 +75,32 @@ export function dueAgainOn(task: Task, now: Date = new Date()): LocalDay | null 
 }
 
 /**
+ * The day a repeating task with no occurrence in play yet is first asked for:
+ * the rule's first day after the one it was written past, and on past any
+ * already passed over. A task for the 31st written on the 12th is first due on
+ * the 31st, a Friday task written on a Wednesday that Friday (DUE-11). Null for
+ * a task that has a day in play (`dueDay`), for one done (`dueAgainOn`) and
+ * for a one-off.
+ *
+ * It is what puts such a task in the lists that look ahead — Tomorrow, Week and
+ * Month — the way an occurrence of its rule inside a period already puts it in
+ * that period's count (PROG-4). Nothing else reads it as due: it is not
+ * overdue, has nothing to skip, and its schedule button reads the rule alone
+ * (DUE-12).
+ */
+export function dueFirstOn(task: Task, now: Date = new Date()): LocalDay | null {
+  if (task.repeat === null || isComplete(task, now) || dueDay(task, now) !== null) {
+    return null
+  }
+
+  let first = nextOccurrence(task.repeat, currentOccurrence(task.repeat, now))
+  while (task.skippedDays.includes(toLocalDay(first))) {
+    first = nextOccurrence(task.repeat, first)
+  }
+  return toLocalDay(first)
+}
+
+/**
  * Whether the task has an occurrence to pass over: it repeats, is still to do,
  * and is due on a day. A one-off has no next day to move on to, and a done
  * occurrence was not skipped.
@@ -276,7 +302,9 @@ export function splitOverdue(tasks: readonly Task[], now: Date = new Date()): Ov
  *
  * A repeating task is in on its occurrence in play, so a Friday task joins the
  * week on Friday: ahead of that the only occurrence there is to show is last
- * week's.
+ * week's. One written since its rule last came round has no such occurrence,
+ * and is in from the start on the day it is first due (`dueFirstOn`): a task
+ * for the 31st written on the 12th is in this month's list.
  */
 export function isInPeriod(task: Task, period: Period, now: Date = new Date()): boolean {
   const due = dueDay(task, now)
@@ -288,9 +316,10 @@ export function isInPeriod(task: Task, period: Period, now: Date = new Date()): 
   if (!isComplete(task, now)) {
     // No day and no rule: due by any day the period ends on, this one included.
     // A repeating task whose rule has not come round yet has a day — just not
-    // one in play — so it is left out, as an occurrence still to come is.
+    // one in play — and is in when that first day falls by the period's end.
     if (!hasDueDay(task)) return true
-    return due !== null && due <= last
+    const day = due ?? dueFirstOn(task, now)
+    return day !== null && day <= last
   }
 
   const first = toLocalDay(periodRange(period, now).start)
@@ -311,12 +340,16 @@ export function isInPeriod(task: Task, period: Period, now: Date = new Date()): 
  * day stays on its own day, as anywhere else.
  *
  * A repeating task is in when its occurrence in play falls tomorrow: one skipped
- * today, or one whose picked start day is tomorrow. A daily task is not, its
- * occurrence in play being today's — ticking it off in Tomorrow would be doing
- * today's.
+ * today, or one whose picked start day is tomorrow — and so is one written
+ * since its rule last came round whose first day is tomorrow (`dueFirstOn`). A
+ * daily task is not, its occurrence in play being today's — ticking it off in
+ * Tomorrow would be doing today's.
  */
 export function isDueTomorrow(task: Task, now: Date = new Date()): boolean {
-  return !isDeleted(task) && dueDay(task, now) === tomorrowDueDay(now)
+  if (isDeleted(task)) return false
+
+  const day = dueDay(task, now) ?? dueFirstOn(task, now)
+  return day === tomorrowDueDay(now)
 }
 
 /** The day "Tomorrow" sets, and the day a task added to Tomorrow's list starts on. */

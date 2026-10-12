@@ -22,4 +22,6 @@ export const DEFAULT_PINNED_TABS_STATE: PinnedTabsState = { pinned: [] }
 export interface PinnedTabsRepository {
   load(): PinnedTabsState
   save(state: PinnedTabsState): void
+  /** Calls `listener` when another window on this device saves it (STORE-61); returns how to stop. */
+  subscribe(listener: () => void): () => void
 }

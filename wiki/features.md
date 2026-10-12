@@ -9,8 +9,9 @@ thing every account keeps.
 
 - **FEAT-1** **Settings** has a **Features** section, under Account (UI-35), with **one switch for each
   part** of the app that can be done without, in this order: **Habits**, **Rewards**, **Cases**,
-  **Lists**, **Tags**, **Balance**, **Activity log**, **Journal**, **Modes**, **Progress bars**, **Daily
-  quote** and **Reminders**. Each carries the glyph its page is navigated by, its name, and a line saying what it
+  **Lists**, **Tags**, **Notes**, **Balance**, **Activity log**, **Journal**, **Modes**, **Notifications**
+  (NOTIF-8), **Progress bars**, **Daily quote** and **Reminders**. Each carries the glyph its page is
+  navigated by — Reminders, with no page, the clock of the hour coming round — its name, and a line saying what it
   is in plain words — *Points for finished tasks, and prizes and a wishlist to spend them on*. A
   switch turns its part on or off **at once, with no confirm**: nothing is lost either way (FEAT-5).
   The **i** beside the heading (UI-73) says what the section is for in three short lines: what off
@@ -18,7 +19,8 @@ thing every account keeps.
   belong to which (FEAT-4) and where a part's own settings are (FEAT-10) the tree shows by itself.
 - **FEAT-10** A part with **settings of its own** keeps them **under its switch**, one step down
   the same tree, rather than on a card of its own: **Habits** holds how the habit cards start out
-  (HAB-23), **Cases** whether tasks without points count (CHST-32) and practice (CHST-21). A
+  (HAB-23) and whether rests are limited (HAB-36), **Cases** whether tasks without points count
+  (CHST-32), and practice where a build offers it (CHST-21). A
   **chevron** in front of the part's switch, named *Habits settings* or *Cases settings*, folds them
   away and brings them back; they start folded, and what is folded is kept on this device
   (STORE-57). Unfolded, they sit under the part's name, joined to it by a line down from its icon.
@@ -34,11 +36,12 @@ thing every account keeps.
 - **FEAT-2** A page switched off is **gone from everywhere it is reached from**: its entry in the
   sidebar, with whatever is folded under it (UI-30); its tab on a phone's bar, the tabs left sharing
   the bar between them (UI-32); its entry in the Tasks and Rewards tabs' menus (UI-43, UI-67) and in
-  the strip across the rewards pages (RWD-30); its row on **More** (UI-45) — and More itself, once
-  every page on it is off; its pinned tab, which is kept and comes back with it (UI-77); and its letter: **H** with Habits, **R** with Rewards, **C** with Cases (UI-56, UI-57, UI-72), **P** with the modes (UI-58). An **address** naming it — a bookmark,
+  the strip across the rewards pages (RWD-30); its row on **More** (UI-45) or **Organize** (UI-81)
+  — and Organize itself, once Tags, Notes and Modes are all off, and More, once every page on it is; its pinned tab, which is kept and comes back with it (UI-77); and its letter: **H** with Habits, **R** with Rewards, **C** with Cases (UI-56, UI-57, UI-72), **P** with the modes (UI-58). An **address** naming it — a bookmark,
   a reload, a notification pressed — opens the **nearest page above it** that is on instead (UI-37):
-  Rewards for Cases, Tasks for a list or the Inbox, Modes for a mode, More for Balance or the Journal — or
-  Today, where nothing above it is on — and the address is put right to match.
+  Rewards for Cases, Tasks for a list or the Inbox, Modes for a mode, Organize for Tags, Notes or
+  Modes, More for Organize, Balance, the Journal or Notifications — or Today, where nothing above it is on — and
+  the address is put right to match.
 - **FEAT-3** What a part shows **anywhere else** goes with it:
   - **Lists** — the list on a task's sheet, the add sheet and an open row, and the list choices in
     a task's menu. A task stays filed where it was, and shows in Today, Week, Month and Tasks as
@@ -50,11 +53,12 @@ thing every account keeps.
     one on every row being a gap), the points spelled out on a row, and **Reward +1** on
     Procrastination's win card (JUST-9).
   - **Cases** — its card on Rewards (RWD-30), the dot saying a key is
-    waiting (CHST-22), the notice when Payday is earned (CHST-23), the notice when the Drop
-    arrives (CHST-29), the notice when Weekly is here on Monday (CHST-30), and its settings under its
-    switch on Settings, counting tasks without points and practice (FEAT-10).
-  - **Habits** — its settings under its switch on Settings: how the habit cards start out
-    (HAB-23, FEAT-10).
+    waiting (CHST-22), the notice when the Drop arrives (CHST-29), the notice when the Haul is here on Monday (CHST-30), and its settings under its
+    switch on Settings, counting tasks without points (FEAT-10), and practice where a build offers it (CHST-21).
+  - **Habits** — its settings under its switch on Settings: how the habit cards start out and
+    whether rests are limited (HAB-23, HAB-36, FEAT-10). A limit left on does nothing meanwhile, as
+    the warm-up does nothing (FEAT-9): no skip is turned down for want of a rest, and every skip reads
+    as a rest. It is kept, and holds again once Habits is back.
   - **Progress bars** and **Daily quote** — each from the rail beside the tasks (UI-1); with both
     off there is no rail, and the list takes its width. The quote service is not asked while the
     quote is off.
@@ -62,13 +66,16 @@ thing every account keeps.
     and the browser being asked for permission when an hour is set (REM-7). The hours that strike
     while reminders are off are never said later: turning them on does not bring an afternoon's
     worth at once. An hour can still be set; it orders the list and is said on the row.
+  - **Notifications** — the count of notices waiting beside its entry and on More (UI-82). The
+    notices themselves and the browser's notifications are not part of it, and carry on: they go with
+    Reminders, the modes and Cases, each by its own switch (NOTIF-8).
 - **FEAT-5** **Nothing is deleted.** A task keeps its list, its tags and its reward; the points,
   prizes, Balance categories and activity log all stay where they are; and a switch turned back on
   finds everything as it was. A task finished while Rewards is off still earns its points, and they
   are there when Rewards is back — what is earned stays earned (RWD-13). A task added while it is
   off still starts at the reward set for new tasks (RWD-45). Time logged on a task while the
   Activity log is off is still written into it (ACT-21). The journal keeps its last week while it is
-  off, the older days going as ever (JRN-8). The backup holds everything
+  off, the older days going as ever (JRN-8), and the notes stay as they are (NOTE-10). The backup holds everything
   whatever is switched off (BAK-2).
 
 ## Parts of another
@@ -83,7 +90,7 @@ thing every account keeps.
 ## The modes
 
 - **FEAT-9** **Modes** switched off takes all four away: the Modes page and each mode's own, their
-  place in the sidebar and on More, the banners on Today and Habits (MODE-10), the **P** letter, and
+  place in the sidebar and on Organize (UI-81), the banners on Today and Habits (MODE-10), the **P** letter, and
   the Check-in's row on the Activity log (ACT-19). A mode built on another part goes **with that
   part**: the **warm-up** with Habits, the habits being what it lets in, and the **check-in** with
   the Activity log, which is where it asks to be written. A mode taken away **does nothing**, whatever
@@ -113,13 +120,14 @@ needs, switching one), `src/storage/featureRepository.ts`, `featureSchema.ts`,
 `useFeatureOn`, for what is drawn inside a row or a sheet; which pages are there, and where an
 address lands), `src/app/featureLabels.ts` (the wording), `src/app/components/FeatureSwitches.tsx` and
 `SettingsList.tsx` (the switches, and a part's own settings under its switch), `src/app/TasksScreen.tsx` (the shortcuts, the notices, the modes, the
-rail), `SideNav.tsx`, `BottomNav.tsx`, `MorePage.tsx`, `RewardsNav.tsx`, `ModesPage.tsx` (the
+rail), `SideNav.tsx`, `BottomNav.tsx`, `MorePage.tsx`, `OrganizePage.tsx`, `RewardsNav.tsx`, `ModesPage.tsx` (the
 navigation), `TaskItem.tsx`, `TaskSheet.tsx`, `AddTaskSheet.tsx`, `TaskDescription.tsx`,
 `ProcrastinationMode.tsx`, `RewardsPage.tsx`, `ActivityPage.tsx` (what goes with a part),
-`src/app/useReminders.ts` and `useQuote.ts` (reminders and the quote, off).
+`src/app/useReminders.ts` and `useQuote.ts` (reminders and the quote, off), `TasksScreen.tsx` (the
+limit on rests going with Habits).
 **Tested in:** `src/core/feature.test.ts`, `src/storage/featureSchema.test.ts`,
 `src/storage/backupFile.test.ts`,
 `src/storage/backupRepository.test.ts`, `src/app/features.test.ts`, `src/app/useFeatures.test.ts`,
 `src/app/useReminders.test.ts`, `src/app/useQuote.test.ts`,
 `src/app/components/SettingsList.test.tsx`, `SideNav.test.tsx`, `BottomNav.test.tsx`,
-`MorePage.test.tsx`, `ModesPage.test.tsx`, `TaskItem.test.tsx`.
+`MorePage.test.tsx`, `OrganizePage.test.tsx`, `ModesPage.test.tsx`, `TaskItem.test.tsx`.

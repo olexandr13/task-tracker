@@ -20,6 +20,8 @@ import { SkipIcon } from './components/SkipIcon'
 import { SunIcon } from './components/SunIcon'
 import { SunriseIcon } from './components/SunriseIcon'
 import { describeShortDate } from './dueLabels'
+import { describeSkipCostHint } from './rewardLabels'
+import type { SkipOutcome } from './taskActions'
 
 /** A quick date choice, drawn as an icon: its label is its name, and its tooltip unless it has a hint. */
 export interface DateChoice {
@@ -35,7 +37,20 @@ export interface DateChoice {
 /** Skipping a repeating task's occurrence: the day that moves it on to, and doing it. */
 export interface SkipChoice {
   to: LocalDay
-  onSkip: () => void
+  /**
+   * The points skipping takes, said beside the choice before it is made
+   * (HAB-34). Left out, or 0, where it costs nothing — a task that is not a
+   * habit, one with no reward — or while Rewards is off (FEAT-3).
+   */
+  cost?: number
+  /**
+   * What is said where the skip was pressed if it is turned down for want of a
+   * rest (HAB-38); left out where it cannot be — a task that is not a habit, or
+   * rests not limited.
+   */
+  noRest?: string
+  /** Skips, or says it was turned down: the choice then answers in place rather than closing. */
+  onSkip: () => SkipOutcome
 }
 
 interface DateChoicesOptions {
@@ -139,7 +154,10 @@ export function dateChoices({
             {
               label: 'Skip occurrence',
               icon: <SkipIcon />,
-              hint: `Skip to ${describeShortDate(skip.to, now)}`,
+              hint:
+                skip.cost !== undefined && skip.cost > 0
+                  ? `Skip to ${describeShortDate(skip.to, now)} · ${describeSkipCostHint(skip.cost)}`
+                  : `Skip to ${describeShortDate(skip.to, now)}`,
               onSelect: skip.onSkip,
             },
           ]

@@ -6,6 +6,7 @@ import { useRefusal } from '../useRefusal'
 import { DateCalendar } from './DateCalendar'
 import { InfoIcon } from './InfoIcon'
 import { PanelIconRow } from './PanelIconRow'
+import { RestRefusal } from './RestRefusal'
 
 /** What the i offers: its name, and its tooltip, which is all a pointer needs of it. */
 const EXPLAIN_ICONS = 'What each icon means'
@@ -62,6 +63,9 @@ interface DueChoicesProps {
  * nothing. Where no day can be picked at all there is no calendar, and a line
  * says why instead.
  *
+ * A skip turned down for want of a rest (HAB-38) is answered the same way, under
+ * the row it was pressed in, and the panel stays open: nothing was chosen.
+ *
  * The day marked as chosen, among the quick choices and in the calendar, is the
  * day the task is due — a repeating task's being the one its rule gives it, so
  * the mark moves on with a skip (RPT-34) — and the calendar opens on its month,
@@ -92,6 +96,8 @@ export function DueChoices({
   // A day the calendar turned down, said under it with a shake (DUE-27).
   const [refusedDay, setRefusedDay] = useState<LocalDay | null>(null)
   const { refused, refuse } = useRefusal()
+  // A skip turned down for want of a rest, said under the row with a shake (HAB-38).
+  const restRefusal = useRefusal()
 
   function choose(day: LocalDay | null) {
     onChange(day)
@@ -126,9 +132,13 @@ export function DueChoices({
         ? undefined
         : {
             to: skip.to,
+            cost: skip.cost,
+            noRest: skip.noRest,
             onSkip: () => {
-              skip.onSkip()
-              onDone()
+              const outcome = skip.onSkip()
+              if (outcome === 'noRest') restRefusal.refuse()
+              else onDone()
+              return outcome
             },
           },
     onChange: choose,
@@ -136,7 +146,11 @@ export function DueChoices({
 
   return (
     <>
-      <div role="group" aria-label="Date" className="flex flex-col">
+      <div
+        role="group"
+        aria-label="Date"
+        className={`flex flex-col${restRefusal.refused ? ' refusal-shake' : ''}`}
+      >
         {/* The group's name is its label already; this is the same word for the eye. */}
         <p aria-hidden="true" className={`${panelHeading} pb-0.5`}>
           Date
@@ -169,6 +183,8 @@ export function DueChoices({
             </button>
           </PanelIconRow>
         )}
+
+        {restRefusal.refused && skip?.noRest !== undefined && <RestRefusal note={skip.noRest} className="px-2 pt-1" />}
 
         {/* For the eye alone: each button says the same words to a screen reader already. */}
         {explained && icons.length > 0 && (

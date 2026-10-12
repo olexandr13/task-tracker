@@ -8,12 +8,15 @@ import {
   type CategoryId,
   type CaseSettings,
   type FeaturesOff,
+  type HabitRests,
   type JournalEntry,
   type JournalEntryId,
   sameTag,
   type List,
   type ListId,
   type LocalDay,
+  type Note,
+  type NoteId,
   type PeriodBonuses,
   type PointValue,
   type Prize,
@@ -49,6 +52,8 @@ export interface AccountData {
   readonly activities: readonly ActivityEntry[]
   /** The journal's lines, the week it keeps (./journalRepository). */
   readonly journal: readonly JournalEntry[]
+  /** The notes (./noteRepository). */
+  readonly notes: readonly Note[]
   /** What completions earned (./rewardRepository). */
   readonly entries: readonly RewardEntry[]
   readonly redemptions: readonly Redemption[]
@@ -96,6 +101,12 @@ export interface AccountData {
    * account has none of its own.
    */
   readonly features: FeaturesOff | null
+  /**
+   * The limit on habits' rests (HAB-36), or null where nothing says and it is
+   * off. A setting again, taken by an import only where the account has none
+   * of its own.
+   */
+  readonly habitRests: HabitRests
 }
 
 /** How many of each kind of record there are. A completion is one entry of the ledger. */
@@ -107,6 +118,7 @@ export interface RecordCounts {
   readonly categories: number
   readonly activities: number
   readonly journal: number
+  readonly notes: number
   readonly completions: number
   readonly redemptions: number
 }
@@ -160,6 +172,7 @@ export interface KnownRecords {
   readonly journalIds: ReadonlySet<JournalEntryId>
   /** The days of the journal it cannot read, left as they are like the activity log's. */
   readonly unreadableJournalDays: ReadonlySet<LocalDay>
+  readonly noteIds: ReadonlySet<NoteId>
   readonly redemptionIds: ReadonlySet<RedemptionId>
   /** What the account earns for clearing each period already, null where it has no bonus. */
   readonly bonuses: PeriodBonuses
@@ -177,6 +190,8 @@ export interface KnownRecords {
   readonly checkIn: CheckInPreference | null
   /** The features the account has switched off already, or null when it says nothing. */
   readonly features: FeaturesOff | null
+  /** The limit on rests the account has already, or null when it says nothing. */
+  readonly habitRests: HabitRests
   /**
    * The tasks each saved day holds an entry for, or null for a day the app
    * cannot read — which is left as it is, so nothing is added to it.
@@ -193,6 +208,7 @@ export function countRecords(data: AccountData): RecordCounts {
     categories: data.categories.length,
     activities: data.activities.length,
     journal: data.journal.length,
+    notes: data.notes.length,
     completions: data.entries.length,
     redemptions: data.redemptions.length,
   }
@@ -215,7 +231,7 @@ export function countRecords(data: AccountData): RecordCounts {
  * taken only where the account has none, and count towards neither what was
  * added nor what was already here. So are Cases' settings, the reward new tasks
  * start with, the warm-up and
- * the nudge, the check-in and the feature switches: a
+ * the nudge, the check-in, the feature switches and the limit on rests: a
  * file's is taken only by an account with none of its own, which keeps a restored
  * backup from starting a month that has already been served, or from turning a
  * nudge back on that was turned off since.
@@ -282,6 +298,7 @@ export function newRecords(
       categories: unseen(incoming.categories, (category) => category.id, known.categoryIds),
       activities: unseen(incoming.activities, (entry) => entry.id, takenActivities),
       journal: unseen(incoming.journal, (entry) => entry.id, takenJournal).filter((entry) => isJournalEntryKept(entry, now)),
+      notes: unseen(incoming.notes, (note) => note.id, known.noteIds),
       entries: unseen(incoming.entries, entryKey, takenEntries),
       redemptions: unseen(incoming.redemptions, (redemption) => redemption.id, known.redemptionIds),
       bonuses,
@@ -292,6 +309,7 @@ export function newRecords(
       nudge: known.nudge === null ? incoming.nudge : null,
       checkIn: known.checkIn === null ? incoming.checkIn : null,
       features: known.features === null ? incoming.features : null,
+      habitRests: known.habitRests === null ? incoming.habitRests : null,
     },
     alreadyHere,
   }

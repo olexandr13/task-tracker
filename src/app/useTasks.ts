@@ -2,6 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import {
   addTag,
   appendTask,
+  canRest,
+  canSkipOccurrence,
   changeTimeEntry,
   clearList,
   completeTask,
@@ -10,6 +12,7 @@ import {
   deleteTask,
   duplicateTask,
   forgetRestsAhead,
+  hasPenaltyChanges,
   hasRewardChanges,
   hasDueDay,
   historyStart,
@@ -24,6 +27,7 @@ import {
   moveTask,
   moveToEndOfHabits,
   moveToList,
+  penaltyChanges,
   purgeExpired,
   removeSubtask,
   removeTag,
@@ -50,10 +54,12 @@ import {
   unskipToday,
   withPeriodBonuses,
   NO_BONUSES,
+  type HabitRests,
   type ListId,
   type LocalDay,
   type LocalTime,
   type LoggedSession,
+  type PenaltyChanges,
   type PeriodBonuses,
   type Placement,
   type Repeat,
@@ -69,6 +75,7 @@ import type { RewardRepository } from '../storage/rewardRepository'
 import { changesBetween, hasChanges } from '../storage/recordChanges'
 import type { TaskChanges, TaskRepository, TaskScope, TaskSubscription } from '../storage/taskRepository'
 import { ignoreProblems, type ReportProblem } from './storageProblem'
+import type { SkipOutcome } from './taskActions'
 
 function persist(repository: TaskRepository, changes: TaskChanges, onProblem: ReportProblem): void {
   if (!hasChanges(changes)) return
@@ -90,6 +97,18 @@ function record(rewards: RewardRepository, changes: RewardChanges, onProblem: Re
   })
 }
 
+/** Takes what skips cost off the balance, and gives back what skips taken back cost (HAB-34). */
+function charge(rewards: RewardRepository, changes: PenaltyChanges, onProblem: ReportProblem): void {
+  if (!hasPenaltyChanges(changes)) return
+
+  const failed = (error: unknown) => {
+    console.error('Could not save what a skip cost.', error)
+    onProblem('save')
+  }
+  for (const penalty of changes.charged) rewards.redeem(penalty).catch(failed)
+  for (const id of changes.refunded) rewards.removeRedemption(id).catch(failed)
+}
+
 /**
  * Holds the task list on screen and keeps it and the repository in step both
  * ways: a change made here is saved, and one saved elsewhere — another tab,
@@ -100,8 +119,9 @@ function record(rewards: RewardRepository, changes: RewardChanges, onProblem: Re
  * the period bonuses included: a change that leaves Today, this week or this
  * month clear earns that period's bonus, and one that leaves it unclear again
  * takes it back (RWD-24, RWD-29). Taking one back needs to know where in the
- * period it was earned, which is what `earned` is for. A change arriving from
- * elsewhere is not recorded: the device that made it recorded it.
+ * period it was earned, which is what `earned` is for. So is what a habit's skip
+ * costs, and what taking the skip back gives back (HAB-34). A change arriving
+ * from elsewhere is not recorded: the device that made it recorded it.
  *
  * Every session a change here logs is told to `onSessionsLogged`, for the
  * activity log to write down the time it took up (ACT-21), and every session
@@ -225,11 +245,9 @@ export function useTasks(
       setTasks(next)
       persist(repository, changesBetween(before, next), onProblem)
       // The moment of the change, which says whose day the bonus is for.
-      record(
-        rewards,
-        withPeriodBonuses(rewardChanges(before, next), before, next, bonuses, earned, new Date()),
-        onProblem,
-      )
+      const now = new Date()
+      record(rewards, withPeriodBonuses(rewardChanges(before, next), before, next, bonuses, earned, now), onProblem)
+      charge(rewards, penaltyChanges(before, next, now), onProblem)
       const logged = sessionsLogged(before, next)
       if (logged.length > 0) sessionsLoggedTo.current(logged)
       const resized = sessionsResized(before, next)
@@ -358,15 +376,28 @@ export function useTasks(
     [apply],
   )
 
-  /** Passes over a repeating task's occurrence, so it is due on the rule's next day. It earns nothing. */
+  /**
+   * Passes over a repeating task's occurrence, so it is due on the rule's next
+   * day. It earns nothing, and on a habit costs twice its reward (HAB-34).
+   *
+   * While `rests` limits them, a habit with no rest left is not skipped at all
+   * (HAB-38): nothing changes, and the outcome says why, for the control that
+   * was pressed to say so. Asked of the list as the last change left it, so a
+   * skip right after another, or after the day was taken back, is weighed
+   * against what is true now.
+   */
   const skip = useCallback(
-    (id: TaskId) => {
-      apply((current) => current.map((task) => (task.id === id ? skipOccurrence(task) : task)))
+    (id: TaskId, rests: HabitRests = null): SkipOutcome => {
+      const now = new Date()
+      const task = latest.current.find((candidate) => candidate.id === id)
+      if (task !== undefined && canSkipOccurrence(task, now) && !canRest(task, rests, now)) return 'noRest'
+      apply((current) => current.map((candidate) => (candidate.id === id ? skipOccurrence(candidate, now) : candidate)))
+      return 'skipped'
     },
     [apply],
   )
 
-  /** Takes a skip of today back, so the task is due today again (HAB-31). */
+  /** Takes a skip of today back, so the task is due today again (HAB-31), and gives back what it cost (HAB-34). */
   const unskip = useCallback(
     (id: TaskId) => {
       apply((current) => current.map((task) => (task.id === id ? unskipToday(task) : task)))

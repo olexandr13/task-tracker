@@ -4,10 +4,11 @@ import type { HabitViewOptions } from '../../storage/habitViewOptionsRepository'
 import { isSettingsFoldOpen, type SettingsFold, type SettingsLayout } from '../../storage/settingsLayoutRepository'
 import type { Theme } from '../../storage/themeRepository'
 import { FEATURES_HINT } from '../featureLabels'
+import { LIMIT_RESTS_DESCRIPTION, LIMIT_RESTS_LABEL } from '../habitLabels'
 import type { BackupStatus } from '../useBackup'
 import { AccountSummary } from './AccountSummary'
 import { BackupActions } from './BackupActions'
-import { CasesSettings } from './CasesSettings'
+import { CasesSettings, type CasesPractice } from './CasesSettings'
 import { FeatureSwitches, type FeatureSettings } from './FeatureSwitches'
 import { OptionSwitch } from './OptionSwitch'
 import { SettingsSection } from './SettingsSection'
@@ -23,11 +24,14 @@ interface SettingsListProps {
   onThemeChange: (theme: Theme) => void
   habitView: HabitViewOptions
   onHabitViewChange: (options: HabitViewOptions) => void
+  /** Whether habits' rests are limited (HAB-36), and whether the account has said yet. */
+  habitRests: { readonly on: boolean; readonly loading: boolean }
+  onHabitRestsChange: (on: boolean) => void
   /** Whether Cases counts tasks without points (CHST-32), and whether the account has said yet. */
   casesCounting: { readonly countUnpaid: boolean; readonly loading: boolean }
   onCasesCountUnpaidChange: (countUnpaid: boolean) => void
-  casesPractice: boolean
-  onCasesPracticeChange: (practising: boolean) => void
+  /** Cases practice (CHST-21), only where the build offers it (`DEV_FLAGS`). */
+  casesPractice?: CasesPractice
   /** The features switched off (FEAT-1), and whether the account has said yet (FEAT-8). */
   features: { readonly off: FeaturesOff; readonly loading: boolean }
   onFeatureChange: (feature: Feature, on: boolean) => void
@@ -43,8 +47,9 @@ interface SettingsListProps {
  * (FEAT-1), then **Appearance**, the theme. Under them, which build of the app
  * this is. Anything else there is to set goes in the section it belongs to,
  * and a setting of one feature goes under that feature's switch (FEAT-10):
- * how the habit cards start out under Habits (HAB-23), counting tasks without
- * points and practice under Cases (CHST-32, CHST-21).
+ * how the habit cards start out and whether rests are limited under Habits
+ * (HAB-23, HAB-36), counting tasks without points under Cases (CHST-32), and
+ * practice beside it where the build offers it (CHST-21).
  *
  * A feature's settings go with it while it is switched off (FEAT-3), as its
  * pages do.
@@ -62,10 +67,11 @@ export function SettingsList({
   onThemeChange,
   habitView,
   onHabitViewChange,
+  habitRests,
+  onHabitRestsChange,
   casesCounting,
   onCasesCountUnpaidChange,
   casesPractice,
-  onCasesPracticeChange,
   features,
   onFeatureChange,
   layout,
@@ -82,11 +88,24 @@ export function SettingsList({
     habits: {
       ...fold('habits'),
       children: (
-        <OptionSwitch
-          label="Show habit details by default"
-          checked={habitView.showDetails}
-          onChange={(showDetails) => { onHabitViewChange({ ...habitView, showDetails }) }}
-        />
+        <>
+          <OptionSwitch
+            label="Show habit details by default"
+            checked={habitView.showDetails}
+            onChange={(showDetails) => { onHabitViewChange({ ...habitView, showDetails }) }}
+          />
+          {/* The account's: until it has said, no switch whose press would save a guess over it. */}
+          {habitRests.loading ? (
+            <p className="px-2 py-2 text-sm text-neutral-400 dark:text-neutral-500">Loading…</p>
+          ) : (
+            <OptionSwitch
+              label={LIMIT_RESTS_LABEL}
+              description={LIMIT_RESTS_DESCRIPTION}
+              checked={habitRests.on}
+              onChange={onHabitRestsChange}
+            />
+          )}
+        </>
       ),
     },
     cases: {
@@ -95,8 +114,7 @@ export function SettingsList({
         <CasesSettings
           counting={casesCounting}
           onCountUnpaidChange={onCasesCountUnpaidChange}
-          practising={casesPractice}
-          onPractisingChange={onCasesPracticeChange}
+          practice={casesPractice}
         />
       ),
     },

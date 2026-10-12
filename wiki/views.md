@@ -56,7 +56,8 @@ requirements were written with, so older references to them still mean what they
   overdue, which is still today's to do, and no task with no day at all (LIST-5), which Today shows
   already.
 - **LIST-23** Repeating tasks are in when their occurrence in play falls tomorrow — one skipped
-  today (RPT-34), or one whose picked start day is tomorrow. A daily task is not: its occurrence in
+  today (RPT-34), or one whose picked start day is tomorrow — and when one written since its rule
+  last came round is first due tomorrow (LIST-11). A daily task is not: its occurrence in
   play is today's, and ticking it off in Tomorrow would do today's. As in Week, a repeat does not
   appear ahead of its day (LIST-11).
 - **LIST-24** A task due tomorrow that is ticked off today, ahead of its day, stays in Tomorrow,
@@ -75,7 +76,10 @@ requirements were written with, so older references to them still mean what they
   everything in Today is in Week too.
 - **LIST-11** Repeating tasks are in on their occurrence in play, as in Today (LIST-3): a daily task
   every day, a Friday task from Friday. Ahead of its day the only occurrence there is to show is last
-  week's, so a repeat does not appear early.
+  week's, so a repeat does not appear early. A task written since its rule last came round has no
+  such occurrence (DUE-11), and is in from the start when its first day falls this week: a Friday
+  task written on a Wednesday is in Week that Wednesday, as it is already in the week's count
+  (PROG-4).
 - **LIST-12** A done task stays when it was due this week, whenever it was finished, and an overdue
   one stays when it was finished this week. A task finished ahead of a later week stays in that week.
 - **LIST-13** A task with no day goes as in Today (LIST-5), so what Today shows Week shows too:
@@ -93,7 +97,9 @@ requirements were written with, so older references to them still mean what they
   (PROG-2). A task still to do is in it when it is **due by the month's last day**, overdue included,
   so everything in Week is in Month too — bar the days of a week that run into next month.
 - **LIST-18** Repeating tasks, done tasks and tasks with no day go as in Week (LIST-11 – LIST-13),
-  over the month: a monthly task joins it on its day, a done task stays when it was due this month
+  over the month: a monthly task joins it on its day — or from the day it was written, where that
+  came after its last day and its first falls this month, so a task for the 31st written on the 12th
+  is in from the 12th — a done task stays when it was due this month
   or was overdue and finished this month, and one with no day is in while it is still to do and
   stays once it was done this month.
 - **LIST-19** A task added in Month is **due on the month's last day**, unless another day or a
@@ -104,7 +110,7 @@ requirements were written with, so older references to them still mean what they
 
 ---
 
-**Where it lives:** `src/core/due.ts` (`isInPeriod`, `lastDayOf`, `isDueTomorrow`, `tomorrowDueDay`), `src/app/view.ts` (the
+**Where it lives:** `src/core/due.ts` (`isInPeriod`, `dueFirstOn`, `lastDayOf`, `isDueTomorrow`, `tomorrowDueDay`), `src/app/view.ts` (the
 views, their names, what each says when empty, which tasks it shows and the day it gives new ones),
 `src/app/TasksScreen.tsx`, `src/app/components/SideNav.tsx`, `src/app/components/BottomNav.tsx`.
 Procrastination mode on Today is [Just one](just-one.md).

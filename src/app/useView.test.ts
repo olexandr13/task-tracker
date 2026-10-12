@@ -150,6 +150,10 @@ describe('useView', () => {
     expect(window.location.hash).toBe('#/modes')
 
     await back()
+    expect(result.current[0]).toBe('organize')
+    expect(window.location.hash).toBe('#/organize')
+
+    await back()
     expect(result.current[0]).toBe('more')
     expect(window.location.hash).toBe('#/more')
   })

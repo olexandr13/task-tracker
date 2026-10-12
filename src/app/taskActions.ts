@@ -11,6 +11,13 @@ import type {
 } from '../core'
 
 /**
+ * What a skip came to: the occurrence passed over (or nothing there to pass
+ * over), or turned down because the habit has no rest left to spend on it
+ * (HAB-38) — which the control that was pressed says in place.
+ */
+export type SkipOutcome = 'skipped' | 'noRest'
+
+/**
  * Everything a task's row, card or sheet can do to it, handed down as one object
  * rather than a prop apiece. A new way of changing a task is added here and where
  * the screen puts the object together (TasksScreen); the lists and rows between
@@ -31,8 +38,12 @@ export interface TaskActions {
    * day it already falls on (DUE-19). The day is untouched.
    */
   readonly changeTime: (id: TaskId, time: LocalTime | null) => void
-  /** Passes over a repeating task's occurrence, so it is due on the rule's next day. */
-  readonly skip: (id: TaskId) => void
+  /**
+   * Passes over a repeating task's occurrence, so it is due on the rule's next
+   * day — unless it is a habit with no rest left while rests are limited
+   * (HAB-38), when nothing changes and `'noRest'` says why.
+   */
+  readonly skip: (id: TaskId) => SkipOutcome
   /** Takes back a skip of today, so the task is due today again — a habit card's way back from its skip (HAB-31). */
   readonly unskip: (id: TaskId) => void
   readonly changeRepeat: (id: TaskId, repeat: Repeat | null) => void

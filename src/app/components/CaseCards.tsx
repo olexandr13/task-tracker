@@ -30,20 +30,20 @@ interface CaseCardsProps {
  * The day's cases (CHST-28). A ready case is the button that opens it
  * (CHST-13): one press, and the cabinet appears for that opening. Nothing is
  * chosen first. A case that is planned and not yet — Today still has work
- * left, the daily case has not reached its time, or Weekly is waiting for
+ * left, the daily case has not reached its time, or the Haul is waiting for
  * Monday — is shown half transparent, its crate grey, and a padlock on the
  * crate says when it will be ready: Payday how many tasks are left (CHST-31),
- * the Drop and Weekly a countdown (CHST-29, CHST-30).
+ * the Drop and the Haul a countdown (CHST-29, CHST-30).
  * One already opened stays until the day ends, with the lid up, the picture
  * dimmed and *Opened* on the crate where the padlock would be, and it is not
- * a button. Weekly is among them every day: planned until Monday, then ready
+ * a button. The Haul is among them every day: planned until Monday, then ready
  * (CHST-30). Only a ready case has a line under its name, saying where its
  * number comes from; when each case comes is said behind the i (CHST-22).
  *
  * The cards share their rows, so the names stay level (CHST-28). A possible
  * win sits inside a ready case, above the crate. While any case is ready,
  * every case keeps that band, so the crates stay level. The three sit in a
- * row once there is room; on a narrow screen Weekly wraps under the other two.
+ * row once there is room; on a narrow screen the Haul wraps under the other two.
  */
 export function CaseCards({ ranges, slots, busy, countUnpaid, onOpen }: CaseCardsProps) {
   if (slots.length === 0) return null
@@ -135,7 +135,7 @@ export function CaseCards({ ranges, slots, busy, countUnpaid, onOpen }: CaseCard
 
 /**
  * The padlock on a case still on its way, saying when it will be ready:
- * Payday how many tasks are left (CHST-31), the Drop and Weekly a countdown
+ * Payday how many tasks are left (CHST-31), the Drop and the Haul a countdown
  * (CHST-29, CHST-30). Nothing on a ready case; an opened one has its own tag.
  */
 function whenReady(slot: CaseSlot) {

@@ -7,11 +7,12 @@ import { isRecord } from './plainData'
  * any of it. Bump this whenever the shape below changes, and upgrade on reading.
  *
  * Version 1 folded the lists alone, before there were pages under Rewards
- * (RWD-30), and version 2 before the modes were listed under Modes (MODE-7):
- * one saved then is read as leaving what it never knew open, which is how each
- * starts.
+ * (RWD-30), version 2 before the modes were listed under Modes (MODE-7), and
+ * version 3 before Tags, the notes and Modes were gathered under Organize
+ * (UI-81): one saved then is read as leaving what it never knew open, which is
+ * how each starts.
  */
-export const SIDE_NAV_SCHEMA_VERSION = 3
+export const SIDE_NAV_SCHEMA_VERSION = 4
 
 export interface StoredSideNavState {
   version: number
@@ -29,9 +30,11 @@ export function toStoredSideNavState(state: SideNavState): StoredSideNavState {
  */
 export function readSideNavState(data: unknown): SideNavState | null {
   if (!isRecord(data) || !isRecord(data.state)) return null
-  if (data.version !== SIDE_NAV_SCHEMA_VERSION && data.version !== 2 && data.version !== 1) return null
+  if (data.version !== SIDE_NAV_SCHEMA_VERSION && data.version !== 3 && data.version !== 2 && data.version !== 1) {
+    return null
+  }
 
-  const { listsOpen, rewardsOpen, modesOpen } = data.state
+  const { listsOpen, rewardsOpen, modesOpen, organizeOpen } = data.state
   if (typeof listsOpen !== 'boolean') return null
   // An older version knew nothing of the pages added since; those start open,
   // as they do for a sidebar never folded at all.
@@ -39,6 +42,8 @@ export function readSideNavState(data: unknown): SideNavState | null {
   if (typeof rewardsOpen !== 'boolean') return null
   if (data.version === 2) return { ...DEFAULT_SIDE_NAV_STATE, listsOpen, rewardsOpen }
   if (typeof modesOpen !== 'boolean') return null
+  if (data.version === 3) return { ...DEFAULT_SIDE_NAV_STATE, listsOpen, rewardsOpen, modesOpen }
+  if (typeof organizeOpen !== 'boolean') return null
 
-  return { listsOpen, rewardsOpen, modesOpen }
+  return { listsOpen, rewardsOpen, modesOpen, organizeOpen }
 }

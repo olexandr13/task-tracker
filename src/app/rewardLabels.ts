@@ -3,11 +3,13 @@ import {
   CASE_DAILY_ID,
   CASE_TODAY_ID,
   CASE_WEEK_ID,
+  isSkipPenalty,
   moneyFor,
   toLocalDay,
   type LocalDay,
   type Period,
   type PointValue,
+  type Redemption,
   type Repeat,
   type TaskId,
 } from '../core'
@@ -63,8 +65,8 @@ export const CASE_TODAY_TITLE = 'Payday'
 /** The Drop, where a task's title would be (RWD-44). */
 export const CASE_DAILY_TITLE = 'Drop'
 
-/** Weekly, where a task's title would be (RWD-44). */
-export const CASE_WEEK_TITLE = 'Weekly'
+/** The Haul, where a task's title would be (RWD-44). */
+export const CASE_WEEK_TITLE = 'Haul'
 
 /**
  * The title a ledger row carries: the task's, what the bonus was for (RWD-28),
@@ -118,6 +120,33 @@ export function describeRewardHint(repeat: Repeat | null): string {
 /** What a completion earns, as a row spells it out under its star: `+5`. */
 export function describeReward(points: number): string {
   return `+${String(points)}`
+}
+
+/**
+ * What skipping a habit costs, as the Skip button spells it out beside its name
+ * (HAB-34): `−2`, with a minus sign rather than a hyphen.
+ */
+export function describeSkipCost(points: number): string {
+  return `−${describeAmount(points)}`
+}
+
+/**
+ * What a History row says points were taken for, where they were taken for a
+ * skip (HAB-34): `Skipped “stretch”`, from the title the record keeps. A
+ * redemption reads as its note.
+ */
+export function describeRedemptionTitle(redemption: Redemption): string {
+  return isSkipPenalty(redemption) ? `Skipped “${redemption.note}”` : redemption.note
+}
+
+/** What the toast says once a skip has cost points (HAB-34): `Skipped “stretch” and lost 2 points`. */
+export function describeSkipCharged(title: string, points: number): string {
+  return `Skipped “${title}” and lost ${describePoints(points)}`
+}
+
+/** What a skip button says it will cost, for its tooltip and a screen reader: `It costs 2 points`. */
+export function describeSkipCostHint(points: number): string {
+  return `It costs ${describePoints(points)}`
 }
 
 /** The day something was redeemed: Today, Yesterday, or a short date, as a due date reads. */

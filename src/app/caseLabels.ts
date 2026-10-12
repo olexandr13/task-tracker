@@ -67,7 +67,7 @@ export function describeCasesRules(countUnpaid: boolean): readonly CaseRule[] {
     },
     {
       source: 'week',
-      when: 'Appears weekly on Monday.',
+      when: 'Arrives every Monday, from last week’s work.',
       min: `Cheapest task finished last week ${WITH_REWARD}`,
       max: `Last week’s average task points ${WITH_REWARD} + ${tasksDone('last week')}`,
     },
@@ -104,7 +104,7 @@ export const RANGE_LABEL = 'Possible win'
 export const SOURCE_LABEL: Record<CaseSource, string> = {
   today: 'Payday',
   daily: 'Drop',
-  week: 'Weekly',
+  week: 'Haul',
 }
 
 /** What a ready case's button is called: pressing it opens that case (CHST-13). */
@@ -118,7 +118,7 @@ export function describeOpenCase(source: CaseSource): string {
  */
 export const TIMER_LABEL: Record<Exclude<CaseSource, 'today'>, string> = {
   daily: 'Time until the Drop',
-  week: 'Time until Weekly',
+  week: 'Time until the Haul',
 }
 
 /**
@@ -133,7 +133,7 @@ export function describeTasksLeftUnit(tasks: number): string {
 export const OPENED_TAG = 'Opened'
 
 /**
- * The line under a ready case (CHST-10). For Payday and Weekly the number in
+ * The line under a ready case (CHST-10). For Payday and the Haul the number in
  * front of it is what that rule comes to today; this line says where the number
  * comes from, and names only the tasks that are counted (CHST-32). The Drop
  * says instead that what today earns raises tomorrow's.
@@ -176,7 +176,7 @@ export function describeCaseRange(least: number, most: number): string {
 
 /**
  * How Cases stands on Rewards: what each case can pay, as the ledger stands.
- * Weekly’s range is said only on Monday, when that case is ready or already
+ * The Haul’s range is said only on Monday, when that case is ready or already
  * open. While it is only planned, it has no possible win (CHST-26, CHST-30).
  */
 export function describeCasesOffer(today: CaseSpan, daily: CaseSpan, share: CaseSpan | null = null): string {
@@ -184,7 +184,7 @@ export function describeCasesOffer(today: CaseSpan, daily: CaseSpan, share: Case
     `Payday pays ${describeCaseRange(today.least, today.most)}.`,
     `The Drop pays ${describeCaseRange(daily.least, daily.most)}.`,
   ]
-  if (share !== null) lines.push(`Weekly pays ${describeCaseRange(share.least, share.most)}.`)
+  if (share !== null) lines.push(`The Haul pays ${describeCaseRange(share.least, share.most)}.`)
   return lines.join(' ')
 }
 
@@ -209,14 +209,11 @@ export function describePointsUnit(points: number): string {
   return points === 1 ? 'point' : 'points'
 }
 
-/** What the notice says the moment the day comes clear (CHST-23). */
-export const CASE_NOTICE = 'Today is clear. Payday is waiting.'
-
 /** What the notice says the moment the Drop's timer runs out (CHST-29). */
 export const CASE_DAILY_NOTICE = 'The Drop is here.'
 
-/** What the notice says on Monday, while Weekly is still to open (CHST-30). */
-export const CASE_SHARE_NOTICE = 'Weekly is here.'
+/** What the notice says on Monday, while the Haul is still to open (CHST-30). */
+export const CASE_SHARE_NOTICE = 'The Haul is here.'
 
 /** The line under the Drop's notice, on the browser notification. */
 export const CASE_DAILY_NOTICE_BODY = 'Open it in Cases.'

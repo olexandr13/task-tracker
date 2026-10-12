@@ -70,8 +70,6 @@ function casesFor(over: Partial<CasesState> = {}): CasesState {
     setSound: vi.fn(),
     open: vi.fn(() => ({ points: 2, jackpot: 20 })),
     setSettings: vi.fn(),
-    unannounced: false,
-    announce: vi.fn(),
     dailyNotice: false,
     dismissDailyNotice: vi.fn(),
     shareNotice: false,
@@ -153,15 +151,15 @@ describe('what the page says', () => {
       'Min: 0',
       'Max: Yesterday’s average task points (only tasks with reward count) + number of all tasks done yesterday',
     ])
-    expect(rule(sheet, 'Weekly')).toEqual([
-      'When: Appears weekly on Monday.',
+    expect(rule(sheet, 'Haul')).toEqual([
+      'When: Arrives every Monday, from last week’s work.',
       'Min: Cheapest task finished last week (only tasks with reward count)',
       'Max: Last week’s average task points (only tasks with reward count) + number of all tasks done last week',
     ])
     // Nothing is set under a Max: what it takes is said in the Max itself.
     expect(within(sheet).getAllByRole('definition').every((value) => value.querySelector('dl') === null)).toBe(true)
     // Nothing follows the three cases: which tasks a Max takes is said in that case's own card.
-    expect(within(sheet).getAllByRole('region').map((card) => card.getAttribute('aria-label'))).toEqual(['Payday', 'Drop', 'Weekly'])
+    expect(within(sheet).getAllByRole('region').map((card) => card.getAttribute('aria-label'))).toEqual(['Payday', 'Drop', 'Haul'])
     expect(within(sheet).queryByText(/The average counts/)).toBeNull()
     const payday = within(sheet).getByRole('region', { name: 'Payday' })
     expect(within(payday).getByText('Today', { selector: 'strong' }).className).toContain('font-semibold')
@@ -179,7 +177,7 @@ describe('what the page says', () => {
 
     expect(caseText('Payday')).toContain('From the cheapest task today, up to half of today’s task points.')
     expect(caseText('Drop')).toContain('Earn more points today to get a bigger reward tomorrow.')
-    expect(caseText('Weekly')).toContain(
+    expect(caseText('Haul')).toContain(
       'From the cheapest task last week, up to last week’s average task plus last week’s tasks with points.',
     )
 
@@ -190,7 +188,7 @@ describe('what the page says', () => {
     expect(max('Drop')).toBe(
       'Max: Yesterday’s average task points (only tasks with reward count) + number of tasks done yesterday (only tasks with reward count)',
     )
-    expect(max('Weekly')).toBe(
+    expect(max('Haul')).toBe(
       'Max: Last week’s average task points (only tasks with reward count) + number of tasks done last week (only tasks with reward count)',
     )
   })
@@ -605,7 +603,7 @@ describe('practice', () => {
 
     expect(caseText('Payday')).toContain('1–400')
     expect(caseText('Drop')).toContain('1–400')
-    expect(caseText('Weekly')).toContain('1–400')
+    expect(caseText('Haul')).toContain('1–400')
     expect(caseText('Drop')).toContain('Earn more points today to get a bigger reward tomorrow.')
   })
 
@@ -628,11 +626,11 @@ describe('how the points read', () => {
     setup({ blocked: 'unclear', jackpot: 25 }, { practising: true })
 
     expect(screen.getAllByText('Possible win')).toHaveLength(3)
-    expect(screen.getByRole('button', { name: /Open the Weekly case/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Open the Haul case/ })).toBeTruthy()
     expect(screen.queryByRole('timer')).toBeNull()
   })
 
-  it('shows Weekly planned and dimmed until Monday, counting down to it, with no possible win (CHST-28, CHST-30)', () => {
+  it('shows the Haul planned and dimmed until Monday, counting down to it, with no possible win (CHST-28, CHST-30)', () => {
     // Two days and five hours away, and half a minute, so the count cannot tip over mid-test.
     const monday = new Date(Date.now() + (2 * 24 + 5) * 3_600_000 + 30_000)
     setup({
@@ -643,17 +641,17 @@ describe('how the points read', () => {
       ],
     })
 
-    const weekly = caseCard('Weekly')
-    expect(caseText('Weekly')).not.toContain('Appears weekly')
-    expect(weekly.querySelector('button')).toBeNull()
-    expect(weekly.querySelector('.opacity-50')).toBeTruthy()
-    expect(caseText('Weekly')).not.toContain('Possible win')
-    const timer = within(weekly).getByRole('timer', { name: 'Time until Weekly' })
+    const haul = caseCard('Haul')
+    expect(caseText('Haul')).not.toContain('Arrives every Monday')
+    expect(haul.querySelector('button')).toBeNull()
+    expect(haul.querySelector('.opacity-50')).toBeTruthy()
+    expect(caseText('Haul')).not.toContain('Possible win')
+    const timer = within(haul).getByRole('timer', { name: 'Time until the Haul' })
     expect(timer.textContent).toContain('2d 5h')
     expect(timer.closest('.opacity-50')).toBeNull()
   })
 
-  it('shows Weekly ready on Monday, with last week’s range (CHST-30)', () => {
+  it('shows the Haul ready on Monday, with last week’s range (CHST-30)', () => {
     setup({
       slots: [
         { source: 'today', state: 'waiting', at: null },
@@ -667,10 +665,10 @@ describe('how the points read', () => {
       },
     })
 
-    expect(caseText('Weekly')).toContain('3–8')
-    expect(caseText('Weekly')).toContain('From the cheapest task last week, up to last week’s average task plus last week’s tasks.')
-    expect(screen.getByRole('button', { name: /Open the Weekly case/ })).toBeTruthy()
-    expect(caseCard('Weekly').querySelector('.opacity-50')).toBeNull()
+    expect(caseText('Haul')).toContain('3–8')
+    expect(caseText('Haul')).toContain('From the cheapest task last week, up to last week’s average task plus last week’s tasks.')
+    expect(screen.getByRole('button', { name: /Open the Haul case/ })).toBeTruthy()
+    expect(caseCard('Haul').querySelector('.opacity-50')).toBeNull()
   })
 })
 

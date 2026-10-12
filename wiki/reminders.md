@@ -29,7 +29,9 @@ the right moment — so a task written down at nine in the morning is not rememb
   its task is **done, deleted or gone** — read from the tasks as they are, so finishing the task on
   another device takes the notice away here too, and a task renamed meanwhile is named as it is now.
   It is held on this device only, so a refresh clears it: unlike a nudge, nothing was spent on it —
-  the task is still there, still overdue, and still says so on the list.
+  the task is still there, still overdue, and still says so on the list. While it stands it is
+  also listed on **Notifications**, a row for each task, each put away on its own there (NOTIF-3,
+  NOTIF-4); on that page the notice is not shown over it (NOTIF-5).
 - **REM-6** Where the browser allows notifications there is also a **browser notification**, so the
   reminder lands while the app is in another tab: one task by name, or the count with them where
   several struck together. It reaches the owner **only while the app is open** — a tab, or the

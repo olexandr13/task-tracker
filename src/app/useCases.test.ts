@@ -60,6 +60,7 @@ function fakeDevice(initial: CaseDeviceState = CASES_AT_REST) {
       kept = state
       saved.push(state)
     },
+    subscribe: () => () => {},
   }
   return { device, saved }
 }
@@ -94,7 +95,6 @@ describe('where Cases stands', () => {
 
     expect(result.current.isLoading).toBe(true)
     expect(result.current.blocked).toBe('unclear')
-    expect(result.current.unannounced).toBe(false)
   })
 
   it('plays for everything earned today (CHST-7)', () => {
@@ -136,7 +136,7 @@ describe('where Cases stands', () => {
     expect(setUp({ entries }).result.current.spans.daily).toEqual({ least: 0, most: 11 })
   })
 
-  it('pays Weekly from last week, ready on Monday and planned until then (CHST-30)', () => {
+  it('pays the Haul from last week, ready on Monday and planned until then (CHST-30)', () => {
     const monday = new Date(2026, 8, 14, 9, 0)
     const entries = [
       { taskId: 'a', day: '2026-09-07', points: 4 },
@@ -232,7 +232,7 @@ describe('opening it', () => {
     expect(saveEarning).not.toHaveBeenCalled()
   })
 
-  it('opens Weekly on Monday under its own name, inside last week’s range (CHST-30)', () => {
+  it('opens the Haul on Monday under its own name, inside last week’s range (CHST-30)', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0)
     const monday = new Date(2026, 8, 14, 9, 0)
     const entries = [
@@ -252,7 +252,7 @@ describe('opening it', () => {
     })
   })
 
-  it('refuses Weekly on any day but Monday, writing nothing', () => {
+  it('refuses the Haul on any day but Monday, writing nothing', () => {
     const { result, saveEarning } = setUp()
 
     expect(result.current.open('week')).toBeNull()
@@ -288,31 +288,11 @@ describe('opening it', () => {
 })
 
 describe('the notice and the noise', () => {
-  it('has a notice to give once a key is waiting, and only until it is given (CHST-23)', () => {
-    const { result, device } = setUp()
-
-    expect(result.current.unannounced).toBe(true)
-
-    act(() => {
-      result.current.announce()
-    })
-
-    expect(device.saved.at(-1)?.noticedDay).toBe('2026-09-17')
-    expect(result.current.unannounced).toBe(false)
-  })
-
-  it('has none to give where this device already gave today’s', () => {
-    const { result } = setUp({ device: fakeDevice({ ...CASES_AT_REST, noticedDay: '2026-09-17' }) })
-
-    expect(result.current.unannounced).toBe(false)
-  })
-
-  it('says Weekly is here on Monday, once on this device (CHST-30)', () => {
+  it('says the Haul is here on Monday, once on this device (CHST-30)', () => {
     const monday = new Date(2026, 8, 14, 9, 0)
     const { result, device } = setUp({ tasks: [], now: monday })
 
     expect(result.current.shareNotice).toBe(true)
-    expect(result.current.unannounced).toBe(false)
 
     act(() => {
       result.current.announceShare()
@@ -334,7 +314,7 @@ describe('the notice and the noise', () => {
     expect(result.current.shareNotice).toBe(false)
   })
 
-  it('brings Weekly in at Monday while the app is open (CHST-30)', async () => {
+  it('brings the Haul in at Monday while the app is open (CHST-30)', async () => {
     const sunday = new Date(2026, 8, 13, 23, 50)
     vi.useFakeTimers({ now: sunday })
     const { result } = setUp({ tasks: [], now: sunday })
@@ -350,7 +330,7 @@ describe('the notice and the noise', () => {
     expect(result.current.shareNotice).toBe(true)
   })
 
-  it('does not bring Weekly in while Cases is switched off (CHST-30, FEAT-3)', async () => {
+  it('does not bring the Haul in while Cases is switched off (CHST-30, FEAT-3)', async () => {
     const sunday = new Date(2026, 8, 13, 23, 50)
     vi.useFakeTimers({ now: sunday })
     const { result } = setUp({ tasks: [], now: sunday, watch: { watching: false } })
@@ -361,14 +341,6 @@ describe('the notice and the noise', () => {
 
     expect(result.current.shareNotice).toBe(false)
     expect(result.current.slots.find((slot) => slot.source === 'week')?.state).toBe('waiting')
-  })
-
-  it('does not say the day came clear when only the daily case is ready (CHST-23)', () => {
-    const after = new Date(dailyKeyTime('2026-09-17', ACCOUNT).getTime() + 1000)
-    const { result } = setUp({ tasks: [today('pack')], now: after })
-
-    expect(result.current.blocked).toBeNull()
-    expect(result.current.unannounced).toBe(false)
   })
 
   it('says the daily case is here when its timer runs out, on screen and to the browser (CHST-29)', async () => {

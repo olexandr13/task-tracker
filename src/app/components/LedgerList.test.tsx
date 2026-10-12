@@ -78,6 +78,23 @@ describe('LedgerList (RWD-38)', () => {
     expect(screen.getByText('Deleted task')).toBeTruthy()
   })
 
+  it('names points a skip took for the habit skipped, on the spent side (HAB-34)', async () => {
+    const skipped: Redemption = {
+      id: 'skip-run-2026-09-16',
+      points: 10,
+      note: 'Morning run',
+      redeemedAt: '2026-09-16T09:00:00.000Z',
+      skip: { taskId: 'run', day: '2026-09-16' },
+    }
+    const { user, onRemoveRedemption } = setup([], [skipped])
+
+    expect(screen.getByRole('listitem').textContent).toContain('Skipped “Morning run”')
+    expect(screen.getByLabelText('10 points lost').textContent).toBe('−10')
+
+    await user.click(screen.getByRole('button', { name: 'Delete the penalty "Skipped “Morning run”"' }))
+    expect(onRemoveRedemption).toHaveBeenCalledWith('skip-run-2026-09-16')
+  })
+
   it('says how it starts while nothing has happened', () => {
     setup([], [])
 

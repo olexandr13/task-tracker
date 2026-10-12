@@ -46,4 +46,6 @@ export function isSettingsFoldOpen(layout: SettingsLayout, fold: SettingsFold): 
 export interface SettingsLayoutRepository {
   load(): SettingsLayout
   save(layout: SettingsLayout): void
+  /** Calls `listener` when another window on this device saves it (STORE-61); returns how to stop. */
+  subscribe(listener: () => void): () => void
 }

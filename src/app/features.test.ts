@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { isViewOn, modesShown, morePagesShown, nearestViewOn, rewardsPagesShown } from './features'
+import { isViewOn, modesShown, morePagesShown, nearestViewOn, organizePagesShown, rewardsPagesShown } from './features'
 import { oneListView, tagView } from './view'
 
 /* Which pages a feature switched off takes away. FEAT ids refer to wiki/features.md. */
 
 describe('the pages there are (FEAT-2)', () => {
   it('is every one while nothing is switched off', () => {
-    for (const view of ['habits', 'rewards', 'rewards/cases', 'lists', 'inbox', 'tags', 'balance', 'activity', 'journal', 'modes', 'more'] as const) {
+    for (const view of ['habits', 'rewards', 'rewards/cases', 'lists', 'inbox', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'organize', 'more'] as const) {
       expect(isViewOn(view, [])).toBe(true)
     }
   })
@@ -19,6 +19,7 @@ describe('the pages there are (FEAT-2)', () => {
     expect(isViewOn(tagView('work'), ['tags'])).toBe(false)
     expect(isViewOn('modes/nudge', ['modes'])).toBe(false)
     expect(isViewOn('journal', ['journal'])).toBe(false)
+    expect(isViewOn('notes', ['notes'])).toBe(false)
   })
 
   it('takes Cases away on its own, and with Rewards (FEAT-4)', () => {
@@ -33,13 +34,27 @@ describe('the pages there are (FEAT-2)', () => {
     expect(isViewOn('modes/procrastination', ['habits', 'activity'])).toBe(true)
   })
 
+  it('takes Organize away once everything under it is (UI-81)', () => {
+    expect(isViewOn('organize', ['tags', 'notes'])).toBe(true)
+    expect(isViewOn('organize', ['tags', 'modes'])).toBe(true)
+    expect(isViewOn('organize', ['tags', 'notes', 'modes'])).toBe(false)
+  })
+
   it('takes More away once everything on it is', () => {
-    expect(isViewOn('more', ['lists', 'tags', 'balance', 'activity', 'modes'])).toBe(true)
-    expect(isViewOn('more', ['lists', 'tags', 'balance', 'activity', 'journal', 'modes'])).toBe(false)
+    expect(isViewOn('more', ['lists', 'tags', 'balance', 'activity', 'journal', 'modes'])).toBe(true)
+    expect(isViewOn('more', ['lists', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes'])).toBe(true)
+    expect(
+      isViewOn('more', ['lists', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'notifications']),
+    ).toBe(false)
+  })
+
+  it('takes Notifications away with its switch (NOTIF-8)', () => {
+    expect(isViewOn('notifications', [])).toBe(true)
+    expect(isViewOn('notifications', ['notifications'])).toBe(false)
   })
 
   it('never takes the tasks, the trash or settings away', () => {
-    const everything = ['habits', 'rewards', 'lists', 'tags', 'balance', 'activity', 'journal', 'modes', 'progress', 'quote', 'reminders'] as const
+    const everything = ['habits', 'rewards', 'lists', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'progress', 'quote', 'reminders'] as const
     for (const view of ['today', 'week', 'month', 'tasks', 'trash', 'settings'] as const) {
       expect(isViewOn(view, everything)).toBe(true)
     }
@@ -57,12 +72,21 @@ describe('where the address of a page switched off lands (FEAT-2)', () => {
     expect(nearestViewOn('modes/check-in', ['activity'])).toBe('modes')
     expect(nearestViewOn('balance', ['balance'])).toBe('more')
     expect(nearestViewOn('journal', ['journal'])).toBe('more')
+    expect(nearestViewOn('notes', ['notes'])).toBe('organize')
+    expect(nearestViewOn('tags', ['tags'])).toBe('organize')
+    expect(nearestViewOn('notes', ['tags', 'notes', 'modes'])).toBe('more')
   })
 
   it('lands on Today when nothing above it is on', () => {
     expect(nearestViewOn('habits', ['habits'])).toBe('today')
     expect(nearestViewOn('rewards/history', ['rewards'])).toBe('today')
-    expect(nearestViewOn('modes', ['lists', 'tags', 'balance', 'activity', 'journal', 'modes'])).toBe('today')
+    expect(
+      nearestViewOn('modes', ['lists', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'notifications']),
+    ).toBe('today')
+  })
+
+  it('lands on More for Notifications switched off (NOTIF-8)', () => {
+    expect(nearestViewOn('notifications', ['notifications'])).toBe('more')
   })
 })
 
@@ -77,7 +101,14 @@ describe('what the lists of pages hold', () => {
   })
 
   it('leaves out More’s pages that are off, Balance with the tags it divides time by (FEAT-4)', () => {
-    expect(morePagesShown(['activity', 'journal', 'modes'])).toEqual(['lists', 'tags', 'balance'])
-    expect(morePagesShown(['tags'])).toEqual(['lists', 'modes', 'activity', 'journal'])
+    expect(morePagesShown(['notes', 'activity', 'journal', 'modes'])).toEqual(['lists', 'organize', 'balance', 'notifications'])
+    expect(morePagesShown(['tags'])).toEqual(['lists', 'organize', 'activity', 'journal', 'notifications'])
+    expect(morePagesShown(['tags', 'notes', 'modes', 'notifications'])).toEqual(['lists', 'activity', 'journal'])
+  })
+
+  it('leaves out Organize’s pages that are off (UI-81)', () => {
+    expect(organizePagesShown([])).toEqual(['tags', 'notes', 'modes'])
+    expect(organizePagesShown(['notes'])).toEqual(['tags', 'modes'])
+    expect(organizePagesShown(['tags', 'notes', 'modes'])).toEqual([])
   })
 })

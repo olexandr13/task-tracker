@@ -27,7 +27,7 @@ function describeRemaining(remainingMs: number): string {
 }
 
 /**
- * A countdown on a case still on its way: today's Drop (CHST-29) and Weekly,
+ * A countdown on a case still on its way: today's Drop (CHST-29) and the Haul,
  * to Monday (CHST-30). It checks the clock every second, so the minute turns
  * over on time, and shows nothing once the arrival has passed: by then the
  * case is ready. The arrival is one instant, so a parent handing a fresh Date

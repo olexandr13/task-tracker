@@ -250,7 +250,7 @@ describe('what each case can pay', () => {
     expect(caseSpan('daily', tasks, [], DEFAULT_CASES, THU_17)).toEqual({ least: 0, most: 2 })
   })
 
-  it('pays Weekly from the cheapest task last week up to that week’s average task plus its tasks (CHST-30)', () => {
+  it('pays the Haul from the cheapest task last week up to that week’s average task plus its tasks (CHST-30)', () => {
     const entries = [
       earned('a', '2026-09-07', 4),
       earned('a', '2026-09-08', 6),
@@ -262,7 +262,7 @@ describe('what each case can pay', () => {
 
     // Previous week is 7–13 September. 4 + 6 + 11 = 21 across three tasks, an average of 7;
     // three tasks finished, so the most is 10. The same task on two days counts twice. The
-    // bonus, last Monday's Weekly and this Monday stay out.
+    // bonus, last Monday's Haul and this Monday stay out.
     expect(caseSpan('week', [], entries, DEFAULT_CASES, MON_14)).toEqual({ least: 4, most: 10 })
     expect(caseWorking('week', [], entries, DEFAULT_CASES, MON_14)).toEqual({
       source: 'week',
@@ -343,7 +343,7 @@ describe('what each case can pay', () => {
     expect(caseSpan('week', [], entries, DEFAULT_CASES, MON_14)).toEqual({ least: 4, most: 5 })
   })
 
-  it('pays Weekly from 1 up to the count alone when last week’s tasks had no points', () => {
+  it('pays the Haul from 1 up to the count alone when last week’s tasks had no points', () => {
     let habit = createTask('water', { kind: 'daily' }, new Date(2026, 8, 1))
     habit = completeTask(habit, new Date(2026, 8, 8, 9, 0))
     habit = completeTask(habit, new Date(2026, 8, 9, 9, 0))
@@ -351,12 +351,12 @@ describe('what each case can pay', () => {
     expect(caseSpan('week', [habit], [], DEFAULT_CASES, MON_14)).toEqual({ least: 1, most: 2 })
   })
 
-  it('pays Weekly 1 when last week had no tasks', () => {
+  it('pays the Haul 1 when last week had no tasks', () => {
     expect(caseSpan('week', [], [], DEFAULT_CASES, MON_14)).toEqual({ least: 1, most: 1 })
     expect(caseSpan('week', [], [earned(BONUS_IDS.week, '2026-09-13', 40)], DEFAULT_CASES, MON_14)).toEqual({ least: 1, most: 1 })
   })
 
-  it('leaves a case opened last week out of this Monday’s Weekly (CHST-8)', () => {
+  it('leaves a case opened last week out of this Monday’s Haul (CHST-8)', () => {
     const entries = [earned('a', '2026-09-08', 6), earned(CASE_TODAY_ID, '2026-09-08', 40), earned(CASE_DAILY_ID, '2026-09-09', 40)]
 
     expect(caseSpan('week', [], entries, DEFAULT_CASES, MON_14)).toEqual({ least: 6, most: 7 })
@@ -386,7 +386,7 @@ describe('what each case can pay', () => {
     expect(caseSpan('daily', [unpaid], [], settings({ countUnpaid: false }), THU_17)).toEqual({ least: 0, most: 0 })
   })
 
-  it('counts only last week’s tasks with points towards Weekly while the others are not counted (CHST-32)', () => {
+  it('counts only last week’s tasks with points towards the Haul while the others are not counted (CHST-32)', () => {
     let habit = createTask('water', { kind: 'daily' }, new Date(2026, 8, 1))
     habit = completeTask(habit, new Date(2026, 8, 8, 9, 0))
     habit = completeTask(habit, new Date(2026, 8, 9, 9, 0))
@@ -508,7 +508,7 @@ describe('earning a key', () => {
 })
 
 describe('the cases a day can receive', () => {
-  /** Midnight on Monday 21 September, when Weekly is next ready after the week of the 14th. */
+  /** Midnight on Monday 21 September, when the Haul is next ready after the week of the 14th. */
   const NEXT_MONDAY = new Date(2026, 8, 21)
 
   it('keeps today’s case waiting while work is left, and the daily case on its clock', () => {
@@ -556,7 +556,7 @@ describe('the cases a day can receive', () => {
     ])
   })
 
-  it('offers Weekly on Monday from midnight, and plans it on every other day, until that midnight (CHST-30)', () => {
+  it('offers the Haul on Monday from midnight, and plans it on every other day, until that midnight (CHST-30)', () => {
     expect(caseSlots([], [], ACCOUNT, MON_14)).toEqual([
       { source: 'daily', state: 'waiting', at: dailyKeyTime('2026-09-14', ACCOUNT) },
       { source: 'week', state: 'ready', at: null },
@@ -568,7 +568,7 @@ describe('the cases a day can receive', () => {
     })
   })
 
-  it('keeps an opened Weekly until Monday ends, then plans it again (CHST-30)', () => {
+  it('keeps an opened Haul until Monday ends, then plans it again (CHST-30)', () => {
     const entries = [earned(CASE_WEEK_ID, '2026-09-14', 4)]
     expect(caseSlots([], entries, ACCOUNT, MON_14).find((slot) => slot.source === 'week')).toEqual({
       source: 'week',

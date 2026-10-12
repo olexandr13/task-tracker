@@ -1,8 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { ActivityEntry, Category, JournalEntry, PrizeId, Redemption, RewardEntry, Task, TaskId } from '../core'
+import {
+  isSkipPenalty,
+  type ActivityEntry,
+  type Category,
+  type JournalEntry,
+  type Note,
+  type PrizeId,
+  type Redemption,
+  type RewardEntry,
+  type Task,
+  type TaskId,
+} from '../core'
 import { describeEntryDeleted } from './activityLabels'
 import { describeLineDeleted } from './journalLabels'
-import { describePoints } from './rewardLabels'
+import { describeNoteDeleted } from './notesLabels'
+import { describePoints, describeRedemptionTitle, describeSkipCharged } from './rewardLabels'
 
 /** How long the offer to undo stays on screen. */
 const UNDO_WINDOW_MS = 5000
@@ -15,7 +27,10 @@ const UNDO_WINDOW_MS = 5000
  * of — the row that was redeemed does not change, so without it a click would
  * look like nothing happening. A Balance category deleted (BAL-10) is gone for
  * good once the offer lapses, as an earning is, and so is a record taken out of
- * the activity log (ACT-11) and a line taken out of the journal (JRN-5).
+ * the activity log (ACT-11), a line taken out of the journal (JRN-5) and a
+ * note deleted (NOTE-6). A
+ * habit skipped says what the skip cost (HAB-34), and undoing takes the skip
+ * back, which gives the points back with it.
  */
 export type UndoPending =
   | { kind: 'task'; task: Task }
@@ -23,9 +38,11 @@ export type UndoPending =
   | { kind: 'redemption'; redemption: Redemption }
   | { kind: 'redeem'; redemption: Redemption; wishId: PrizeId | null }
   | { kind: 'completion'; taskId: TaskId }
+  | { kind: 'skip'; taskId: TaskId; title: string; points: number }
   | { kind: 'category'; category: Category }
   | { kind: 'activity'; entry: ActivityEntry }
   | { kind: 'journal'; entry: JournalEntry }
+  | { kind: 'note'; note: Note }
 
 /** What the toast says happened. Completions say nothing: the tick already did. */
 export function undoMessage(pending: Exclude<UndoPending, { kind: 'completion' }>): string {
@@ -35,15 +52,21 @@ export function undoMessage(pending: Exclude<UndoPending, { kind: 'completion' }
     case 'earning':
       return `Deleted “${pending.title}”`
     case 'redemption':
-      return `Deleted “${pending.redemption.note}”`
+      return isSkipPenalty(pending.redemption)
+        ? `Deleted ${describeRedemptionTitle(pending.redemption)}`
+        : `Deleted “${pending.redemption.note}”`
     case 'redeem':
       return `Redeemed “${pending.redemption.note}” for ${describePoints(pending.redemption.points)}`
+    case 'skip':
+      return describeSkipCharged(pending.title, pending.points)
     case 'category':
       return `Deleted the category “${pending.category.name}”`
     case 'activity':
       return describeEntryDeleted(pending.entry)
     case 'journal':
       return describeLineDeleted(pending.entry)
+    case 'note':
+      return describeNoteDeleted(pending.note)
   }
 }
 

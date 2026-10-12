@@ -144,9 +144,9 @@ export function CasesPage({ cases, practising, onPractisingChange }: CasesPagePr
         daily: oddsForSpan(cases.spans.daily),
         week: oddsForSpan(cases.spans.week),
       }
-  // Practice spends nothing, so every case is ready to try, Weekly included,
+  // Practice spends nothing, so every case is ready to try, the Haul included,
   // without waiting for Monday. Otherwise the day shows the cases it holds,
-  // including one already opened and Weekly while it is only planned.
+  // including one already opened and the Haul while it is only planned.
   const slots: readonly CaseSlot[] = practising
     ? [
         { source: 'today', state: 'ready', at: null },

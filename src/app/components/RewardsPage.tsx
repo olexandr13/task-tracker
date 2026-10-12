@@ -40,7 +40,7 @@ interface RewardsPageProps {
   cases: {
     readonly today: { readonly least: number; readonly most: number }
     readonly daily: { readonly least: number; readonly most: number }
-    /** Weekly’s range on Monday, or null while that case is only planned (CHST-30). */
+    /** The Haul’s range on Monday, or null while that case is only planned (CHST-30). */
     readonly share: { readonly least: number; readonly most: number } | null
     readonly waiting: boolean
     readonly gave: number | null
