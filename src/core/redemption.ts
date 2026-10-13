@@ -93,7 +93,7 @@ export function pointsBalance(entries: readonly RewardEntry[], redemptions: read
   return sumPoints(entries) - sumPoints(redemptions)
 }
 
-export type RewardPeriod = 'today' | 'week' | 'month' | 'year' | 'all'
+export type RewardPeriod = 'today' | 'week' | 'month' | 'year'
 
 export interface PeriodPoints {
   readonly earned: number
@@ -105,10 +105,10 @@ export interface PeriodPoints {
 
 /**
  * Points earned, redeemed and lost to skips in each period: today, this week
- * (Monday to Sunday, as ./progress counts it), this month, this year, and all
- * time. An entry counts on the day it was earned for, a redemption on the local
- * day it was made — a skip's on the day skipped, which is when it is made out
- * for. Entries whose tasks are deleted still count: earned stays earned.
+ * (Monday to Sunday, as ./progress counts it), this month and this year. An
+ * entry counts on the day it was earned for, a redemption on the local day it
+ * was made — a skip's on the day skipped, which is when it is made out for.
+ * Entries whose tasks are deleted still count: earned stays earned.
  */
 export function rewardTotals(
   entries: readonly RewardEntry[],
@@ -121,8 +121,8 @@ export function rewardTotals(
     lost: isSkipPenalty(redemption),
   }))
 
-  function within(range: DayRange | null): PeriodPoints {
-    const inRange = ({ day }: { day: LocalDay }) => range === null || (day >= range.from && day < range.to)
+  function within(range: DayRange): PeriodPoints {
+    const inRange = ({ day }: { day: LocalDay }) => day >= range.from && day < range.to
     const taken = redeemedDays.filter(inRange)
     return {
       earned: sumPoints(entries.filter(inRange)),
@@ -138,7 +138,6 @@ export function rewardTotals(
     week: within(daysOf(periodRange('week', now))),
     month: within(daysOf(periodRange('month', now))),
     year: within(daysOf({ start: new Date(year, 0, 1), end: new Date(year + 1, 0, 1) })),
-    all: within(null),
   }
 }
 

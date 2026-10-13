@@ -77,14 +77,13 @@ describe('rewardTotals (RWD-21)', () => {
     entry('2026-09-17', 1, 'read'),
   ]
 
-  it('counts what was earned today, this week from Monday, this month, this year and all time', () => {
+  it('counts what was earned today, this week from Monday, this month and this year', () => {
     const totals = rewardTotals(entries, [], THU_17)
 
     expect(totals.today.earned).toBe(3)
     expect(totals.week.earned).toBe(10)
     expect(totals.month.earned).toBe(30)
     expect(totals.year.earned).toBe(80)
-    expect(totals.all.earned).toBe(180)
   })
 
   it('counts what was redeemed on the local day it was redeemed', () => {
@@ -98,7 +97,6 @@ describe('rewardTotals (RWD-21)', () => {
     expect(totals.week.redeemed).toBe(4)
     expect(totals.month.redeemed).toBe(10)
     expect(totals.year.redeemed).toBe(10)
-    expect(totals.all.redeemed).toBe(11)
   })
 
   it('counts what skipping a habit took apart from what was redeemed (HAB-34)', () => {
@@ -114,7 +112,7 @@ describe('rewardTotals (RWD-21)', () => {
   })
 
   it('is all zero with nothing earned or redeemed', () => {
-    expect(rewardTotals([], [], THU_17).all).toEqual({ earned: 0, redeemed: 0, lost: 0 })
+    expect(rewardTotals([], [], THU_17).year).toEqual({ earned: 0, redeemed: 0, lost: 0 })
   })
 })
 

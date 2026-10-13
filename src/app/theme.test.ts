@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import indexHtml from '../../index.html?raw'
+import viteConfig from '../../vite.config.ts?raw'
 import { localStorageThemeRepository } from '../storage/localStorageThemeRepository'
 import { applyTheme } from './theme'
 
@@ -43,6 +44,18 @@ describe('applyTheme', () => {
 
     expect(document.documentElement.dataset.theme).toBeUndefined()
     expect(barColors()).toEqual(['#fafafa', '#0a0a0a'])
+  })
+})
+
+describe('the installed app', () => {
+  // Chrome on Android turns down the light tag for an installed app's status bar and uses the
+  // manifest's colour instead (OFF-10), so the manifest has to carry the light page's.
+  it('gives its bars and opening screen the light page colour', () => {
+    applyTheme('light')
+    const [light] = barColors()
+
+    expect(viteConfig).toContain(`theme_color: '${light}'`)
+    expect(viteConfig).toContain(`background_color: '${light}'`)
   })
 })
 

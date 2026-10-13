@@ -249,8 +249,8 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   set on the task, with its star (RWD-5), being that task's own; everything on Rules is one amount
   for the whole account.
 - **RWD-21** Points **earned** are shown on how the points stand, for **today**, **this week**
-  (Monday to Sunday, PROG-2), **this month**, **this year** and **all time**, one tile each. Underneath is what was redeemed in
-  that period, when anything was, and under that, in red, what skipping habits took — `−6 for
+  (Monday to Sunday, PROG-2), **this month** and **this year**, one tile each. Underneath is what
+  was redeemed in that period, when anything was, and under that, in red, what skipping habits took — `−6 for
   skips` (HAB-34) — when anything did: off the balance, but not spent on anything, so said apart.
   A completion counts on the day it was done for, so an earlier
   day marked on the Habits page counts on that day. A redemption counts on the local day it was

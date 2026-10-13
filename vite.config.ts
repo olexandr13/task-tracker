@@ -34,9 +34,13 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        // The icon's own background, so the splash screen reads as the icon.
-        background_color: '#171717',
-        theme_color: '#171717',
+        // The page's light background (`body` in styles.css, BAR_COLORS in src/app/theme.ts), so
+        // the installed app's bars and the screen it opens on match the page (OFF-10). Chrome on
+        // Android turns down a near-white theme-color tag for an app's status bar and falls back
+        // to this, so this, not index.html's tags, is what a light page gets there; the dark
+        // tag is dark enough to be taken. A newer Chrome colours the bottom bar with it as well.
+        background_color: '#fafafa',
+        theme_color: '#fafafa',
         icons: [
           { src: 'pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: 'pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

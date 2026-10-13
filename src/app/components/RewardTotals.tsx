@@ -11,7 +11,6 @@ const PERIODS: readonly { readonly period: RewardPeriod; readonly label: string 
   { period: 'week', label: 'This week' },
   { period: 'month', label: 'This month' },
   { period: 'year', label: 'This year' },
-  { period: 'all', label: 'All time' },
 ]
 
 /**
@@ -21,7 +20,7 @@ const PERIODS: readonly { readonly period: RewardPeriod; readonly label: string 
  */
 export function RewardTotals({ totals }: RewardTotalsProps) {
   return (
-    <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+    <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       {PERIODS.map(({ period, label }) => {
         const { earned, redeemed, lost } = totals[period]
         return (
