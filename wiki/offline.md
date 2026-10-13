@@ -51,9 +51,10 @@ reaches the account by itself once there is a connection again.
   Screen on an iPhone, the install prompt or menu item on Android), or installed from a desktop
   browser. Installed, it opens in a window of its own without the browser's address bar, under the
   name **PickMe**, with the progress-ring icon (UI-39) — its dark tile filling whatever shape the
-  phone gives icons. It opens on a light screen with the icon in the middle, and the bar at the top
-  of the screen matches the page, light or dark (UI-11) — on an Android phone too, where the
-  phone's own clock and icons sit on the page's light grey rather than on a black strip.
+  phone gives icons. It opens on a light screen with the icon in the middle. The bar at the top of
+  the screen, with the phone's clock and icons, matches the page, light or dark (UI-11). On an
+  Android phone it follows the phone's own light or dark mode, so it matches when the Theme is
+  left at **System** (UI-63); a newer Chrome follows a Theme picked in the app as well.
 - **OFF-11** On an iPhone, an app added to the home screen keeps its **own** session and offline
   copy, apart from Safari's. It needs signing into once, with a connection, like a new device.
 

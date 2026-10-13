@@ -34,13 +34,16 @@ export default defineConfig({
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        // The page's light background (`body` in styles.css, BAR_COLORS in src/app/theme.ts), so
-        // the installed app's bars and the screen it opens on match the page (OFF-10). Chrome on
-        // Android turns down a near-white theme-color tag for an app's status bar and falls back
-        // to this, so this, not index.html's tags, is what a light page gets there; the dark
-        // tag is dark enough to be taken. A newer Chrome colours the bottom bar with it as well.
+        // The screen the installed app opens on: the page's light background (`body` in
+        // styles.css). It stays light in dark mode too, as Chrome reads no dark one from here.
         background_color: '#fafafa',
-        theme_color: '#fafafa',
+        // None, on purpose (OFF-10). On an Android phone in dark mode Chrome paints an installed
+        // app's status bar in this colour, not in index.html's tags, so any one colour is wrong
+        // in one of the two themes. Without one Chrome uses its own light or dark bar, following
+        // the phone, and a newer Chrome takes index.html's tags. Left `undefined` because the
+        // plugin fills in its own colour otherwise; its warning that the app then cannot be
+        // installed is wrong, as Chrome does not ask for one.
+        theme_color: undefined,
         icons: [
           { src: 'pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: 'pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

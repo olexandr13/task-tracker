@@ -48,13 +48,17 @@ describe('applyTheme', () => {
 })
 
 describe('the installed app', () => {
-  // Chrome on Android turns down the light tag for an installed app's status bar and uses the
-  // manifest's colour instead (OFF-10), so the manifest has to carry the light page's.
-  it('gives its bars and opening screen the light page colour', () => {
+  // Chrome on Android in dark mode paints an installed app's status bar in the manifest's theme
+  // colour whatever the page's tags say (OFF-10), so the manifest names none and Chrome follows
+  // the phone's light or dark mode instead.
+  it('leaves the status bar to the phone rather than one fixed colour', () => {
+    expect(viteConfig).toContain('theme_color: undefined,')
+  })
+
+  it('opens on the light page colour', () => {
     applyTheme('light')
     const [light] = barColors()
 
-    expect(viteConfig).toContain(`theme_color: '${light}'`)
     expect(viteConfig).toContain(`background_color: '${light}'`)
   })
 })
