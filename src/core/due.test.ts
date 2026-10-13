@@ -377,9 +377,9 @@ describe('isInToday, to do', () => {
     expect(isInToday(dueOn('2026-09-17'), WED_16)).toBe(false)
   })
 
-  it('holds a task with no day at all, which today suits as well as any other day', () => {
-    expect(isInToday(undated(), WED_16)).toBe(true)
-    expect(isInToday(undated(new Date(2026, 7, 20, 9, 0)), WED_16)).toBe(true)
+  it('leaves out a task with no day at all, which is the backlog rather than the day\'s work (LIST-5)', () => {
+    expect(isInToday(undated(), WED_16)).toBe(false)
+    expect(isInToday(undated(new Date(2026, 7, 20, 9, 0)), WED_16)).toBe(false)
   })
 
   it('holds a daily task every day, and a weekly one on its days and after them until done', () => {
@@ -422,12 +422,8 @@ describe('isInToday, done', () => {
     expect(isInToday(completeTask(dueOn('2026-09-18'), WED_16), WED_16_EVENING)).toBe(false)
   })
 
-  it('takes in a task with no day ticked today, the only day it has', () => {
-    expect(isInToday(completeTask(undated(), WED_16), WED_16_EVENING)).toBe(true)
-  })
-
-  it('lets go of a task with no day ticked on an earlier day', () => {
-    expect(isInToday(completeTask(undated(), MON_14), WED_16)).toBe(false)
+  it('leaves out a task with no day ticked today, as it did while it was to do (LIST-5)', () => {
+    expect(isInToday(completeTask(undated(), WED_16), WED_16_EVENING)).toBe(false)
   })
 
   it('keeps a repeating task ticked today, and lets go of one ticked for an earlier occurrence', () => {

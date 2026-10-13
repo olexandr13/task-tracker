@@ -27,6 +27,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Warm-up](warm-up.md) | The month that lets the habits in one at a time: one on day one, two on day two. Pausing holds the allowance where it is |
 | [Rewards](rewards.md) | Points a task earns on every completion, the bonus for clearing a period, the prizes and the wishlist they are spent on, and the Rewards pages |
 | [Cases](cases.md) | Finishing Today earns Payday, the Drop arrives at a random time, and the Haul is ready on Monday |
+| [Levels](levels.md) | XP for almost everything done, lost for skips, misses, idle days and overdue tasks, and the level it adds up to |
 | [Time goals](time-goals.md) | A length of time a task asks for, sessions logged against it, and the hint to tick it off |
 | [Balance](balance.md) | Where the logged time went: categories named by the owner, bound to tags, and the time each took today, this week or this month |
 | [Activity log](activity-log.md) | The day hour by hour: what was done and for how long, the records added and changed, and what they add up to over a day, a week or a month |

@@ -42,6 +42,7 @@ import {
 import { readTag, toStoredTag } from './tagSchema'
 import { readStoredTask, toStoredTask } from './taskSchema'
 import { readWarmUp, toStoredWarmUp, WARM_UP } from './warmUpSchema'
+import { readXpProgress, toStoredXpProgress, XP_PROGRESS } from './xpSchema'
 
 /** Every document of each collection, from the server, or `NeedsConnectionError` without one. */
 async function fromServer(collections: readonly CollectionReference[]): Promise<QuerySnapshot[]> {
@@ -79,6 +80,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   const journalDays = accountCollection(firestore, accountId, 'journalDays')
   const notes = accountCollection(firestore, accountId, 'notes')
   const habitSettings = accountCollection(firestore, accountId, 'habitSettings')
+  const levelSettings = accountCollection(firestore, accountId, 'levelSettings')
 
   /** What the account earns for clearing each period, of everything its goals hold. */
   function bonusesIn(snapshot: QuerySnapshot): PeriodBonuses {
@@ -123,6 +125,10 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
   const habitRestsIn = (snapshot: QuerySnapshot) =>
     snapshot.docs.flatMap((saved) => (saved.id === HABIT_RESTS ? (readHabitRests(saved.data()) ?? []) : []))[0] ?? null
 
+  /** Where the account's XP stands, of everything the level's settings hold. */
+  const xpProgressIn = (snapshot: QuerySnapshot) =>
+    snapshot.docs.flatMap((saved) => (saved.id === XP_PROGRESS ? (readXpProgress(saved.data()) ?? []) : []))[0] ?? null
+
   return {
     // The server when there is a connection, the browser's copy when there is not.
     async exportAll() {
@@ -144,6 +150,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         savedJournalDays,
         savedNotes,
         savedHabitSettings,
+        savedLevelSettings,
       ] = await Promise.all(
         [
           tasks,
@@ -163,6 +170,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
           journalDays,
           notes,
           habitSettings,
+          levelSettings,
         ].map((collection) => getDocs(collection)),
       )
       const readAll = <T>(snapshot: QuerySnapshot, read: (data: unknown) => T | null): T[] =>
@@ -188,6 +196,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         checkIn: checkInIn(savedCheckIn),
         features: featuresIn(savedFeatures),
         habitRests: habitRestsIn(savedHabitSettings),
+        xpProgress: xpProgressIn(savedLevelSettings),
       }
     },
 
@@ -211,6 +220,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         savedJournalDays,
         savedNotes,
         savedHabitSettings,
+        savedLevelSettings,
       ] = await fromServer([
         tasks,
         lists,
@@ -229,6 +239,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         journalDays,
         notes,
         habitSettings,
+        levelSettings,
       ])
       const activityDaysRead = savedActivityDays.docs.map((saved) => ({ day: saved.id, entries: readActivityDay(saved.data()) }))
       const journalDaysRead = savedJournalDays.docs.map((saved) => ({ day: saved.id, entries: readJournalDay(saved.data()) }))
@@ -254,6 +265,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         checkIn: checkInIn(savedCheckIn),
         features: featuresIn(savedFeatures),
         habitRests: habitRestsIn(savedHabitSettings),
+        xpProgress: xpProgressIn(savedLevelSettings),
         days: new Map(
           savedDays.docs.map((saved): [LocalDay, ReadonlySet<TaskId> | null] => {
             const entries = readRewardDay(saved.data())
@@ -271,6 +283,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
       const checkIn = fresh.checkIn === null ? null : toStoredCheckIn(fresh.checkIn)
       const features = fresh.features === null ? null : toStoredFeatures(fresh.features)
       const habitRests = toStoredHabitRests(fresh.habitRests)
+      const xpProgress = fresh.xpProgress === null ? null : toStoredXpProgress(fresh.xpProgress)
 
       // A day is merged, never replaced, as when points are earned, time is
       // logged or a journal line written: only the entries it did not hold are added to it.
@@ -296,7 +309,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
           batch.set(doc(redemptions, redemption.id), toStoredRedemption(redemption)),
         ),
         // The file's bonuses, point value, cases settings, new tasks' reward, warm-up, nudge, check-in,
-        // switches and limit on rests are only ever set where the account has none of its own (`newRecords`).
+        // switches, limit on rests and where XP stands are only ever set where the account has none of its own (`newRecords`).
         ...BONUS_PERIODS.flatMap((period) => {
           const points = fresh.bonuses[period]
           return points === null
@@ -319,6 +332,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         ...(checkIn === null ? [] : [(batch: WriteBatch) => batch.set(doc(checkIns, CHECK_IN), checkIn)]),
         ...(features === null ? [] : [(batch: WriteBatch) => batch.set(doc(featureSwitches, FEATURES_RECORD), features)]),
         ...(habitRests === null ? [] : [(batch: WriteBatch) => batch.set(doc(habitSettings, HABIT_RESTS), habitRests)]),
+        ...(xpProgress === null ? [] : [(batch: WriteBatch) => batch.set(doc(levelSettings, XP_PROGRESS), xpProgress)]),
       ])
 
       return { added: countRecords(fresh), alreadyHere }

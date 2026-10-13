@@ -27,7 +27,7 @@ import type { TaskScope } from '../storage/taskRepository'
  * month, every task, the Inbox, one list's and the ones carrying a tag — and share everything
  * but which tasks they show, what a task added to them starts with, whether
  * their done tasks are divided by when they were finished and which of those
- * spans are folded away. Habits, the rewards pages, More, Organize, Reflect,
+ * spans are folded away. Habits, the rewards pages, the level, More, Organize, Reflect,
  * the modes, the lists, the tags, the notes, the balance of time, the activity
  * log, the journal, the notifications, the trash and settings are screens of
  * their own.
@@ -37,8 +37,8 @@ import type { TaskScope } from '../storage/taskRepository'
  * They are named `rewards/…`, which
  * is what their addresses read as and what marks them as belonging under Rewards.
  * Modes is five in the same way (MODE-1): the list of them, and a page for each
- * mode explaining what it does, named `modes/…`. Organize holds Tags, the notes
- * and Modes (UI-81), and Reflect the balance, the activity log and the journal
+ * mode explaining what it does, named `modes/…`. Organize holds Tags and the
+ * notes (UI-81), and Reflect the balance, the activity log and the journal
  * (UI-83); they keep their own names, being addressed long before either.
  *
  * "View" is this file's word for a screen. What the owner calls a **list** is
@@ -59,6 +59,7 @@ export type FixedView =
   | 'rewards/prizes'
   | 'rewards/wishlist'
   | 'rewards/rules'
+  | 'level'
   | 'lists'
   | 'tags'
   | 'notes'
@@ -99,6 +100,7 @@ export type TaskView = Exclude<
   View,
   | 'habits'
   | RewardsView
+  | 'level'
   | 'lists'
   | 'tags'
   | 'notes'
@@ -164,12 +166,12 @@ export function isModesView(view: View): view is ModesView {
 }
 
 /**
- * The pages under Organize, in the order it lists them (UI-81): Tags, the notes
- * (NOTE-1), and Modes, which holds the switches that were once rows on More
- * (MODE-1). What files the work and what changes how it goes, kept apart from
- * the work itself.
+ * The pages under Organize, in the order it lists them (UI-81): Tags and the
+ * notes (NOTE-1). What files the work, kept apart from the work itself. Modes
+ * was once here too, and is a section of its own now (MODE-1): what changes how
+ * the work goes is not a way of filing it.
  */
-export const UNDER_ORGANIZE = ['tags', 'notes', 'modes'] as const satisfies readonly FixedView[]
+export const UNDER_ORGANIZE = ['tags', 'notes'] as const satisfies readonly FixedView[]
 
 /**
  * The pages under Reflect, in the order it lists them (UI-83): Balance, where
@@ -182,23 +184,24 @@ export const UNDER_REFLECT = ['balance', 'activity', 'journal'] as const satisfi
 
 /**
  * The pages More's own page lists — the ones a phone's bar has no tab for — in
- * the order the sidebar lists them (UI-30, UI-45): Lists (UI-34), Organize,
- * with Tags, the notes and Modes under it (UI-81), Reflect, with Balance, the
+ * the order the sidebar lists them (UI-30, UI-45): Lists (UI-34), the Level
+ * (LVL-10), Modes, with each mode's page under it (MODE-1), Organize,
+ * with Tags and the notes under it (UI-81), Reflect, with Balance, the
  * activity log and the journal under it (UI-83), and Notifications, with the
  * notices waiting (NOTIF-1). The sidebar has an entry for every one of them,
  * and so none for More.
  */
-export const ON_MORE = ['lists', 'organize', 'reflect', 'notifications'] as const satisfies readonly FixedView[]
+export const ON_MORE = ['lists', 'level', 'modes', 'organize', 'reflect', 'notifications'] as const satisfies readonly FixedView[]
 
 /**
  * The pages the More tab stands for while one of them is open — the ones on its
  * page (`ON_MORE`) the bar reaches from nowhere else, and so everything under
- * Organize and Reflect too. Lists is listed on More but left out here: Tasks is the tab
+ * Modes, Organize and Reflect too. Lists is listed on More but left out here: Tasks is the tab
  * marked while it is open (UI-34), so More standing for it too would mark two at
  * once. Adding a page to More's page is deciding both: whether it is listed
  * there, and whether it is reached only from there.
  */
-export const UNDER_MORE = ['organize', 'reflect', 'notifications'] as const satisfies readonly FixedView[]
+export const UNDER_MORE = ['level', 'modes', 'organize', 'reflect', 'notifications'] as const satisfies readonly FixedView[]
 
 /** The views named after a period, which a phone keeps behind a single tab. */
 export type PeriodView = 'today' | 'tomorrow' | 'week' | 'month'
@@ -233,9 +236,9 @@ export function tagView(tag: string): TagView {
  * Whether being on `view` is being somewhere under `menu` in the navigation: on
  * it, or on one of the screens opened from it — a list or the Inbox under Lists,
  * a tag's tasks under Tags, the history, the wishlist and the rules under
- * Rewards, Tags, the notes, Modes and whatever is under them under Organize,
- * Balance, the activity log and the journal under Reflect, and Organize,
- * Reflect, whatever is under them and Notifications under More.
+ * Rewards, each mode's page under Modes, Tags, the notes and a tag's tasks
+ * under Organize, Balance, the activity log and the journal under Reflect, and
+ * Modes, Organize, Reflect, whatever is under them and Notifications under More.
  */
 export function isUnder(view: View, menu: View): boolean {
   if (view === menu) return true
@@ -243,14 +246,41 @@ export function isUnder(view: View, menu: View): boolean {
   if (menu === 'tags') return isTagView(view)
   if (menu === 'rewards') return isRewardsView(view)
   if (menu === 'modes') return isModesView(view)
-  if (menu === 'organize') {
-    return (UNDER_ORGANIZE as readonly View[]).includes(view) || isTagView(view) || isModesView(view)
-  }
+  if (menu === 'organize') return (UNDER_ORGANIZE as readonly View[]).includes(view) || isTagView(view)
   if (menu === 'reflect') return (UNDER_REFLECT as readonly View[]).includes(view)
   if (menu === 'more') {
-    return (UNDER_MORE as readonly View[]).includes(view) || isUnder(view, 'organize') || isUnder(view, 'reflect')
+    return (
+      (UNDER_MORE as readonly View[]).includes(view) ||
+      isUnder(view, 'modes') ||
+      isUnder(view, 'organize') ||
+      isUnder(view, 'reflect')
+    )
   }
   return false
+}
+
+/**
+ * The parts of the app that are more than a page: an entry in the sidebar with
+ * pages under it (UI-30), and a strip across the top of each of those pages to
+ * step between them (UI-84).
+ */
+export type SectionView = 'lists' | 'rewards' | 'modes' | 'organize' | 'reflect'
+
+/**
+ * The section whose strip `view` is drawn under (UI-84): the one it heads, or
+ * the one it is a page directly under — the Inbox and each list under Lists,
+ * the rewards pages under Rewards, each mode under Modes, Tags and the notes
+ * under Organize, Balance, the activity log and the journal under Reflect. A
+ * tag's tasks are a step further down, under Tags, and have none; nor has a
+ * page of no section.
+ */
+export function sectionOf(view: View): SectionView | null {
+  if (view === 'lists' || view === 'inbox' || isOneListView(view)) return 'lists'
+  if (isRewardsView(view)) return 'rewards'
+  if (isModesView(view)) return 'modes'
+  if (view === 'organize' || (UNDER_ORGANIZE as readonly View[]).includes(view)) return 'organize'
+  if (view === 'reflect' || (UNDER_REFLECT as readonly View[]).includes(view)) return 'reflect'
+  return null
 }
 
 /**
@@ -258,10 +288,10 @@ export function isUnder(view: View, menu: View): boolean {
  * tree whose top is the bar's tabs — the periods, Tasks, Habits, Rewards, More
  * and Settings. Under Tasks are Lists and the Trash, its two buttons (UI-34);
  * under Lists the Inbox and each list; under Rewards its five pages (RWD-19);
- * under More Organize, Reflect and Notifications (UI-45); under Organize Tags,
- * the notes and Modes (UI-81); under Reflect Balance, the activity log and the
- * journal (UI-83); under Tags each tag's tasks, and
- * under Modes each mode's page (MODE-7). This is what the back button climbs,
+ * under More the Level, Modes, Organize, Reflect and Notifications (UI-45); under
+ * Modes each mode's page (MODE-7); under Organize Tags and the notes (UI-81);
+ * under Reflect Balance, the activity log and the journal (UI-83); and under
+ * Tags each tag's tasks. This is what the back button climbs,
  * so a page is left the way it was reached rather than the way it happened to
  * be arrived at.
  */
@@ -433,6 +463,7 @@ export const VIEW_LABELS: Record<FixedView, string> = {
   'rewards/prizes': 'Prizes',
   'rewards/wishlist': 'Wishlist',
   'rewards/rules': 'Rules',
+  level: 'Level',
   lists: 'Lists',
   tags: 'Tags',
   notes: 'Notes',
@@ -510,25 +541,25 @@ function decoded(part: string): string | null {
   }
 }
 
-/** What each view says when it has nothing in it, pointing at the box above. */
+/** What each view says when it has nothing in it. */
 export function emptyMessage(view: TaskView, lists: readonly List[] = []): string {
   switch (view) {
     case 'today':
-      return 'A fresh day. Add a task above to get going.'
+      return 'A fresh day. Add a task to get going.'
     case 'tomorrow':
-      return 'Nothing due tomorrow yet. Add a task above to plan it.'
+      return 'Nothing due tomorrow yet. Add a task to plan it.'
     case 'week':
-      return 'Nothing due this week yet. Add a task above to plan it.'
+      return 'Nothing due this week yet. Add a task to plan it.'
     case 'month':
-      return 'Nothing due this month yet. Add a task above to plan it.'
+      return 'Nothing due this month yet. Add a task to plan it.'
     case 'tasks':
-      return 'Start small: add your first task above.'
+      return 'Start small: add your first task.'
     case 'inbox':
-      return 'Nothing unfiled. Add a task above, or find one in a list.'
+      return 'Nothing unfiled. Add a task, or find one in a list.'
     default:
       return isOneListView(view)
-        ? `Nothing in ${viewLabel(view, lists)} yet. Add a task above to put it there.`
-        : `Nothing tagged ${viewTag(view)} yet. Add a task above to tag it.`
+        ? `Nothing in ${viewLabel(view, lists)} yet. Add a task to put it there.`
+        : `Nothing tagged ${viewTag(view)} yet. Add a task to tag it.`
   }
 }
 

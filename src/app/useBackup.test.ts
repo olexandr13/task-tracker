@@ -33,6 +33,7 @@ const DATA: AccountData = {
   checkIn: null,
   features: null,
   habitRests: null,
+  xpProgress: null,
 }
 
 const ADDED: ImportSummary = {

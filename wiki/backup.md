@@ -16,7 +16,7 @@ in. Both are on **Settings**, under the account in its **Account** section (UI-3
   completions earned (a *completion* in the counts is one task's points on one day), the
   redemptions, what clearing each period is worth (RWD-24, RWD-29), what a point is worth
   (RWD-31), the reward a new task starts with (RWD-45), the warm-up under way (WARM-1), how the owner asked to be nudged (NUDGE-9), the
-  check-in's setting (CHECKIN-9) and the feature switches (FEAT-1) — and all of it whatever is
+  check-in's setting (CHECKIN-9), the feature switches (FEAT-1) and where XP stands (LVL-1) — and all of it whatever is
   switched off (FEAT-5). What is kept on this device alone — the View options (STORE-30),
   the sidebar (STORE-31), the cached quote, what the nudge has already said here (STORE-46) and what
   the check-in keeps here (STORE-54) — is not the account's, and is not in it. Neither is
@@ -124,14 +124,19 @@ in. Both are on **Settings**, under the account in its **Account** section (UI-3
   unlimited (BAK-13). It is **no record** the same way the switches are (BAK-14), and an import takes
   the file's limit only where the account has **none of its own** — a backup restored neither turns
   the limit back on once it was switched off, nor moves the day it began.
-
+- **BAK-24** A file holds **where XP stands** (STORE-64) as its one record: the XP in all, the day
+  it began, the last day counted and the day's tasks added — no history, there being none kept. It is
+  **no record** (BAK-14): counted among neither what was imported nor what was already here, and taken
+  only by an account where XP has **not begun** — a backup restored never moves the day XP began, nor
+  puts back XP since lost. A file made before there was XP holds none, and is read as XP not begun
+  (BAK-13).
 ---
 
 **Where it lives:** `src/storage/backupRepository.ts` (the interface, and what an import adds),
 `firestoreBackupRepository.ts` (reading and adding to the account in Firestore), `localBackupRepository.ts`
 (the guest's), `backupFile.ts` (the file and its version), `taskSchema.ts`, `listSchema.ts`, `tagSchema.ts`,
 `prizeSchema.ts`, `categorySchema.ts`, `activitySchema.ts`, `journalSchema.ts`, `noteSchema.ts`, `rewardSchema.ts`, `warmUpSchema.ts`,
-`nudgeSchema.ts`, `checkInSchema.ts`, `featureSchema.ts`, `habitSettingsSchema.ts` (each record's own shape),
+`nudgeSchema.ts`, `checkInSchema.ts`, `featureSchema.ts`, `habitSettingsSchema.ts`, `xpSchema.ts` (each record's own shape),
 `src/app/useBackup.ts` (running them), `src/app/backupLabels.ts` (what is said),
 `src/app/downloadFile.ts`, `src/app/components/BackupActions.tsx`, `SettingsList.tsx`.
 **Tested in:** `src/storage/backupFile.test.ts` (the file, and reading one back),

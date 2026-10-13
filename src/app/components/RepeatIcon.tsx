@@ -1,4 +1,7 @@
-/** The looping-arrows glyph that marks anything to do with repeating. */
+/**
+ * The looping-arrows glyph that marks anything to do with repeating, Habits among it:
+ * a habit is a task that repeats every day (HAB-1).
+ */
 export function RepeatIcon({ className }: { className?: string }) {
   return (
     <svg

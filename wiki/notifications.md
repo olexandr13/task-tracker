@@ -23,9 +23,13 @@ be put right.
   - **blocked** — *This browser is blocking notifications*: the page cannot ask again, so it says
     where they are allowed instead — the site's settings, from the icon at the left of the address
     bar;
+  - **on the Home Screen only** — *Notifications need PickMe on the Home Screen*: Safari on an
+    iPhone or iPad, which has none in a tab (NOTIF-10);
   - **none** — *This browser has no notifications*: everything shows on screen only.
 
-  Under each it says that **nothing reaches you while PickMe is closed** (PRIN-16). The permission
+  Under each it says that **nothing reaches you while PickMe is closed** (PRIN-16), and that a
+  phone pauses it soon after you switch to another app, nothing more arriving until you come back.
+  The permission
   is one for the whole app: allowed here, the Nudge and Check-in pages stop asking for it at once,
   and a change made in the site's settings while the app is open is read straight away where the
   browser reports it. It is the browser's to give, so it is per device, not per account.
@@ -62,6 +66,25 @@ be put right.
   notices hold, and a notice that has gone is gone from here too — a reminder, held on this device
   only, by a refresh (REM-5). Each device lists its own, as each has its own notices.
 
+## On a phone
+
+- **NOTIF-9** A phone **shows the same notifications** as a computer: the reminder, the nudge, the
+  check-in, the time goal and the cases. A phone's browser takes them only from the app's service
+  worker, so the built app posts every notification through it, on a computer too; only
+  `npm run dev`, which has no worker, posts them from the page. Each carries PickMe's icon.
+  **Pressing one** brings PickMe forward; the Drop's also opens Cases, and the check-in's the
+  Activity log on the hour, as their buttons do (NOTIF-4) — in the window that posted it, and no
+  other. Pressed after PickMe was closed, it opens the app.
+
+  It still needs PickMe **open** (PRIN-16), and a phone keeps it so only a little while once you
+  switch away: an iPhone pauses it almost at once, Android within minutes. What is due meanwhile is
+  said when you come back, on screen.
+- **NOTIF-10** Safari on an **iPhone or iPad** gives notifications only to PickMe **added to the
+  Home Screen** and opened from there. In a Safari tab, This browser says so and how — press
+  **Share**, then **Add to Home Screen**, open PickMe from there and press **Allow notifications** —
+  with nothing to press itself. The nudge's and the check-in's pages say they only show on screen
+  there, for the same reason. The Home Screen app asks as any browser does (NOTIF-2).
+
 ## Switching it off
 
 - **NOTIF-8** **Notifications** has its own switch on Settings (FEAT-1). Off, the page, its entry,
@@ -74,13 +97,15 @@ be put right.
 **Where it lives:** `src/app/standingNotices.ts` (which notices are standing, and in what order),
 `src/app/notificationLabels.ts` (the wording — each notice, the browser's state, the count),
 `src/app/components/NotificationsPage.tsx` (the page), `src/app/browserNotification.ts` and
-`src/app/useNotifyPermission.ts` (the permission, one for the whole app, and hearing it change),
+`src/app/useNotifyPermission.ts` (the permission, one for the whole app, and hearing it change;
+posting through the service worker, and hearing one pressed), `public/notification-sw.js` (pressing
+one, in the worker) and `vite.config.ts` (the worker loading it),
 `src/app/TasksScreen.tsx` (what each row does, and the notices not shown over the page),
 `src/app/useReminders.ts` (putting one reminder away), `src/app/useTaskTimer.ts` (the task a time
 goal was reached on), `src/app/components/SideNav.tsx` and `MorePage.tsx` (the count),
 `src/app/view.ts`, `features.ts`, `viewIcons.ts`, `src/core/feature.ts` and `featureLabels.ts` (the
 page, its place and its switch).
-**Tested in:** `src/app/standingNotices.test.ts`, `src/app/components/NotificationsPage.test.tsx`,
+**Tested in:** `src/app/browserNotification.test.ts`, `src/app/standingNotices.test.ts`, `src/app/components/NotificationsPage.test.tsx`,
 `src/app/useReminders.test.ts`, `src/app/useTaskTimer.test.ts`, `src/app/features.test.ts`,
 `src/app/components/SideNav.test.tsx`, `src/app/components/MorePage.test.tsx`,
 `src/app/components/BottomNav.test.tsx`.

@@ -230,6 +230,20 @@ changes shape.
   guess. Until it has arrived the limit reads as off, and Settings says `Loading…` in place of its
   switch. It is **in the backup** (BAK-23).
 
+## XP
+
+- **STORE-64** **Where XP stands** (LVL-1) is kept in the account as **one record**, named for
+  itself — `levelSettings/progress` — holding the XP in all, the day it began (LVL-2), the last day
+  gone by that was counted (LVL-14), and the day's tasks added with the day they are of (LVL-4). **No
+  history** of XP is kept. What a change gives is added with the database's own increment, so two
+  devices adding at once both count, offline too; counting the days gone by is done as one step
+  against the record as saved, so two devices counting the same day count it once, and it waits for a
+  connection. What the points gave is not copied here but read off the points ledger (LVL-9), and so
+  is the level (LVL-3). **No record at all is XP not begun.** It has **its own version**, and one the
+  app cannot read is ignored with a warning (STORE-7). Version 1 kept a ledger of every record a day
+  at a time, in `xpDays`, and the day XP began under `start`; beginning moves them in once — the
+  records from the day it began added up — and lets go of both. It is **in the backup** (BAK-24).
+
 ## Warm-up
 
 - **STORE-44** The **warm-up** (WARM-1) is kept in the account as **one record**, named for itself
@@ -288,7 +302,7 @@ changes shape.
   bonuses, what a point is worth, what Cases asks and the reward new tasks start with, with it
   (STORE-41, STORE-42, STORE-43, STORE-48, STORE-58), the warm-up
   (STORE-44), Procrastination mode (STORE-45), the nudge's setting (STORE-46), the feature
-  switches (STORE-56) and the limit on rests (STORE-63) are kept in this browser's `localStorage`, under the same versioned shapes as the account's (STORE-4, STORE-24,
+  switches (STORE-56), the limit on rests (STORE-63) and where XP stands (STORE-64) are kept in this browser's `localStorage`, under the same versioned shapes as the account's (STORE-4, STORE-24,
   STORE-27, STORE-34). A ledger kept before there were bonuses, or before a point had a value, holds
   none of them, rather than being unreadable for the lack of one. Nothing is sent to the account or any other device. A refresh or another tab
   on the same address sees the same records. There is nothing to sync, so the sync notice stays
@@ -296,9 +310,9 @@ changes shape.
 - **STORE-38** The first time a Google account is open here online after guest data was kept, that
   data is **moved into the account** — tasks, lists, tags, prizes, Balance categories, the activity
   log, the journal, points earned, redemptions, the bonuses, what a point is worth, the reward new tasks start
-  with, the warm-up, the nudge's setting, the check-in's, the feature switches and the limit on rests — added alongside
+  with, the warm-up, the nudge's setting, the check-in's, the feature switches, the limit on rests and where XP stands — added alongside
   what the account already has, without overwriting tasks it already holds (STORE-20), or a bonus,
-  point value, reward for new tasks, warm-up, nudge, check-in, switches or limit on rests it has already set, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
+  point value, reward for new tasks, warm-up, nudge, check-in, switches, limit on rests or XP it has already begun, then forgotten by the browser. A warm-up begun as guest keeps the day it began on, so
   signing in does not start its month again (WARM-10). A move that fails, offline say, is tried again next time.
 
 ## Kept on this device
@@ -311,7 +325,7 @@ changes shape.
   like a cached quote (STORE-8) there is nothing in them worth carrying forward. A browser that
   refuses storage keeps them for as long as the page is open.
 - **STORE-31** How the sidebar is laid out — whether the lists under Lists (LST-26), the pages
-  under Rewards (RWD-19), Tags, Notes and Modes under Organize (UI-81), the modes under Modes
+  under Rewards (RWD-19), Tags and Notes under Organize (UI-81), the modes under Modes
   (MODE-7) and Balance, the Activity log and the Journal under Reflect (UI-83) are folded — is kept the same way, and
   for the same reasons: in this
   browser's `localStorage`, not in the account, under a version of its own, read at once when the
@@ -453,7 +467,8 @@ loaded of the tasks, asked in parts and put together),
 `firebaseApp.ts` (the database and its offline
 copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgrades), `localTaskImport.ts` (tasks kept in the browser before accounts),
 `guestImport.ts` (moving guest data into an account), `localCollection.ts` (records in `localStorage`),
-`firestoreBatches.ts` (writing in batches), `firestoreAccount.ts` (every collection an account keeps), `rewardRepository.ts`, `firestoreRewardRepository.ts`, `localRewardRepository.ts` and
+`firestoreBatches.ts` (writing in batches), `firestoreAccount.ts` (every collection an account keeps), `xpRepository.ts`,
+`xpSchema.ts`, `firestoreXpRepository.ts` and `localXpRepository.ts` (XP, STORE-64), `rewardRepository.ts`, `firestoreRewardRepository.ts`, `localRewardRepository.ts` and
 `rewardSchema.ts` (the points ledger, the period bonuses, what a point is worth and the reward new
 tasks start with),
 `categoryRepository.ts`, `firestoreCategoryRepository.ts`, `localCategoryRepository.ts` and
@@ -494,6 +509,7 @@ STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/S
 `src/storage/localTaskImport.test.ts` (the move, and upgrading older data),
 `src/storage/localTaskRepository.test.ts` (the guest's tasks),
 `src/storage/habitSettingsSchema.test.ts` (the limit on rests),
+`src/storage/xpSchema.test.ts` and `localXpRepository.test.ts` (XP, and the guest's),
 `src/storage/rewardSchema.test.ts`
 (reading the ledger back), `src/storage/activitySchema.test.ts` and `localActivityRepository.test.ts`
 (the activity log, and what a change writes), `src/storage/journalSchema.test.ts` (the journal, what a

@@ -1,15 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   changeJournalText,
   createJournalEntry,
   firstKeptJournalDay,
+  journalXp,
   type JournalEntry,
   type JournalEntryId,
   type JournalSection,
   type LocalDay,
+  type XpDelta,
 } from '../core'
 import { hasJournalChanges, journalChangesBetween, type JournalRepository } from '../storage/journalRepository'
 import { ignoreProblems, type ReportProblem } from './storageProblem'
+
+function ignoreXp(): void {}
 
 /**
  * Holds the journal on screen and keeps it and the repository in step both
@@ -21,13 +25,24 @@ import { ignoreProblems, type ReportProblem } from './storageProblem'
  * Once loaded, and again on each new day it stays open, it lets go of the days
  * the journal no longer keeps (JRN-8). A load or a save the repository refuses
  * is told to `onProblem` (STORE-13).
+ *
+ * What a day written in gives and takes in XP is told to `onXp` after every
+ * change to it (LVL-8). Letting go of the days no longer kept takes nothing.
  */
-export function useJournal(repository: JournalRepository, onProblem: ReportProblem = ignoreProblems) {
+export function useJournal(
+  repository: JournalRepository,
+  onProblem: ReportProblem = ignoreProblems,
+  onXp: (delta: XpDelta) => void = ignoreXp,
+) {
   const [entries, setEntries] = useState<JournalEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
   // The journal as the last change left it, so changes made in one go build on
   // each other rather than on the ones last drawn (STORE-39).
   const latest = useRef<JournalEntry[]>([])
+  const xpTo = useRef(onXp)
+  useLayoutEffect(() => {
+    xpTo.current = onXp
+  })
 
   useEffect(() => {
     return repository.subscribe(
@@ -62,6 +77,9 @@ export function useJournal(repository: JournalRepository, onProblem: ReportProbl
 
       const changes = journalChangesBetween(before, next)
       if (!hasJournalChanges(changes)) return
+      const days = [...changes.saved, ...changes.removed].map((entry) => entry.day)
+      const xp = journalXp(before, next, days)
+      if (xp !== 0) xpTo.current({ xp, addedToday: 0 })
       repository.save(changes).catch((error: unknown) => {
         console.error('Could not save the journal.', error)
         onProblem('save')

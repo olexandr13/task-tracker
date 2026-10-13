@@ -61,7 +61,7 @@ bulleted and numbered lists — with buttons for each, so it can be laid out on 
   they are in the backup (BAK-22).
 - **NOTE-10** **Notes** can be switched off on Settings (FEAT-1). Off, the page goes from the
   sidebar and from Organize (FEAT-2), and an address naming it opens Organize — or More, once Tags
-  and Modes are off too (UI-37, UI-81); the notes stay as they are (FEAT-5).
+  is off too (UI-37, UI-81); the notes stay as they are (FEAT-5).
 
 ---
 

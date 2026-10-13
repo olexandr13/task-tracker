@@ -30,7 +30,7 @@ describe('NotificationsPage', () => {
     page({ permission: 'granted' })
 
     expect(screen.getByText('Notifications are on')).toBeTruthy()
-    expect(screen.getByText('Nothing reaches you while PickMe is closed.')).toBeTruthy()
+    expect(screen.getByText(/^Nothing reaches you while PickMe is closed\. A phone pauses it/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Allow notifications' })).toBeNull()
   })
 
@@ -47,6 +47,14 @@ describe('NotificationsPage', () => {
     page({ permission: 'denied' })
 
     expect(screen.getByText('This browser is blocking notifications')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Allow notifications' })).toBeNull()
+  })
+
+  it('says how to get them on an iPhone, with nothing to press (NOTIF-10)', () => {
+    page({ permission: 'home-screen' })
+
+    expect(screen.getByText('Notifications need PickMe on the Home Screen')).toBeTruthy()
+    expect(screen.getByText(/press “Share”, then “Add to Home Screen”/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Allow notifications' })).toBeNull()
   })
 

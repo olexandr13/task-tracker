@@ -525,7 +525,7 @@ describe('the More tab', () => {
   })
 
   it('has no More tab once everything on its page is switched off (FEAT-2)', () => {
-    const off: FeaturesOff = ['lists', 'tags', 'notes', 'activity', 'journal', 'modes', 'notifications']
+    const off: FeaturesOff = ['levels', 'lists', 'tags', 'notes', 'activity', 'journal', 'modes', 'notifications']
     render(
       <FeaturesContext value={off}>
         <BottomNav view="today" lists={[]} onChange={vi.fn()} />

@@ -29,6 +29,7 @@ import {
   type Task,
   type TaskId,
   type WarmUp,
+  type XpProgress,
 } from '../core'
 import type { CheckInPreference } from './checkInRepository'
 import type { NudgePreference } from './nudgeRepository'
@@ -107,6 +108,11 @@ export interface AccountData {
    * of its own.
    */
   readonly habitRests: HabitRests
+  /**
+   * Where XP stands (LVL-1), or null where it has not begun. A setting again,
+   * taken by an import only where the account has not begun its own.
+   */
+  readonly xpProgress: XpProgress | null
 }
 
 /** How many of each kind of record there are. A completion is one entry of the ledger. */
@@ -192,6 +198,8 @@ export interface KnownRecords {
   readonly features: FeaturesOff | null
   /** The limit on rests the account has already, or null when it says nothing. */
   readonly habitRests: HabitRests
+  /** Where the account's XP stands already, or null when it has not begun. */
+  readonly xpProgress: XpProgress | null
   /**
    * The tasks each saved day holds an entry for, or null for a day the app
    * cannot read — which is left as it is, so nothing is added to it.
@@ -231,7 +239,7 @@ export function countRecords(data: AccountData): RecordCounts {
  * taken only where the account has none, and count towards neither what was
  * added nor what was already here. So are Cases' settings, the reward new tasks
  * start with, the warm-up and
- * the nudge, the check-in, the feature switches and the limit on rests: a
+ * the nudge, the check-in, the feature switches, the limit on rests and where XP stands: a
  * file's is taken only by an account with none of its own, which keeps a restored
  * backup from starting a month that has already been served, or from turning a
  * nudge back on that was turned off since.
@@ -310,6 +318,7 @@ export function newRecords(
       checkIn: known.checkIn === null ? incoming.checkIn : null,
       features: known.features === null ? incoming.features : null,
       habitRests: known.habitRests === null ? incoming.habitRests : null,
+      xpProgress: known.xpProgress === null ? incoming.xpProgress : null,
     },
     alreadyHere,
   }

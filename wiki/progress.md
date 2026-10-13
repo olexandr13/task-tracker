@@ -25,11 +25,12 @@ separately, on the [Rewards](rewards.md) pages — where clearing a bar of its o
   past its date and for a repeating task whose occurrence went by undone (DUE-11) alike: a Monday
   task missed on Monday is in Tuesday's count, as it is in Tuesday's list under **Overdue**
   (LIST-2), until it is ticked off or passed over (RPT-34, RPT-38). A one-off with **no due date**
-  belongs to **all three** while it is still to do, being work any of their days would take. So,
-  still to do, a task is counted wherever its list shows it (LIST-2, LIST-5, LIST-13, LIST-18) —
-  which means today's bar, and the bonus and Cases' key that follow it (RWD-25, CHST-2), ask
-  for everything overdue and the undated backlog along with the day's own work. Done, a one-off
-  counts in the period it was completed in.
+  belongs to the **week and the month** while it is still to do, being work any of their days would
+  take, and not to today, whose list leaves it out (LIST-5). So, still to do, a task is counted
+  wherever its list shows it (LIST-2, LIST-5, LIST-13, LIST-18) — which means today's bar, and the
+  bonus and Cases' key that follow it (RWD-25, CHST-2), ask for everything overdue along with the
+  day's own work, but not the undated backlog. Done, a one-off counts in the period it was
+  completed in (PROG-7), so one with no due date ticked today counts in today's bar too.
 - **PROG-6** A task counts as done for a period when its completion time falls inside that period.
   Yesterday's tick is out of today, and still in this week and this month.
 - **PROG-7** A task completed inside a period always counts towards it, even where the occurrence

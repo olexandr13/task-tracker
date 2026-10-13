@@ -43,6 +43,7 @@ const CHECKING_IN: CheckInPreference = { on: true, window: { from: '08:00', to: 
 // Written the day before AT, so still kept a week later (JRN-8).
 const SUNNY = createJournalEntry('good', 'Sun came out', '2026-09-18', AT)
 const FILMS = createNote('Films to watch\n- *Heat*', AT)
+const XP_BEGUN = { xp: 12, startedOn: '2026-09-15', settledThrough: null, addsOn: null, adds: 0 }
 
 const EMPTY: AccountData = {
   tasks: [],
@@ -64,6 +65,7 @@ const EMPTY: AccountData = {
   checkIn: null,
   features: null,
   habitRests: null,
+  xpProgress: null,
 }
 
 const NOTHING_KNOWN: KnownRecords = {
@@ -88,6 +90,7 @@ const NOTHING_KNOWN: KnownRecords = {
   checkIn: null,
   features: null,
   habitRests: null,
+  xpProgress: null,
   days: new Map(),
 }
 
@@ -113,6 +116,7 @@ describe('what an import adds', () => {
       checkIn: CHECKING_IN,
       features: ['quote'],
       habitRests: { since: '2026-09-01' },
+      xpProgress: XP_BEGUN,
     }
 
     expect(newRecords(incoming, NOTHING_KNOWN, AT)).toEqual({ fresh: incoming, alreadyHere: 0 })
@@ -341,6 +345,16 @@ describe('importing the notes (BAK-22)', () => {
   })
 })
 
+describe('importing XP (BAK-24)', () => {
+  it('takes where XP stands only where the account has not begun its own', () => {
+    const incoming: AccountData = { ...EMPTY, xpProgress: XP_BEGUN }
+    const known: KnownRecords = { ...NOTHING_KNOWN, xpProgress: { ...XP_BEGUN, xp: 3 } }
+
+    expect(newRecords(incoming, known, AT)).toEqual({ fresh: EMPTY, alreadyHere: 0 })
+    expect(newRecords(incoming, NOTHING_KNOWN, AT).fresh.xpProgress).toEqual(XP_BEGUN)
+  })
+})
+
 describe('counting records', () => {
   it('counts each kind, a completion being one entry of the ledger', () => {
     const data: AccountData = {
@@ -366,6 +380,7 @@ describe('counting records', () => {
       checkIn: CHECKING_IN,
       features: ['quote'],
       habitRests: { since: '2026-09-01' },
+      xpProgress: XP_BEGUN,
     }
 
     // The bonuses, the point value and the warm-up are settings rather than records, and are counted as none.

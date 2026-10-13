@@ -6,7 +6,6 @@ import { CalendarIcon } from './components/CalendarIcon'
 import { CalmIcon } from './components/CalmIcon'
 import { CheckInIcon } from './components/CheckInIcon'
 import { CasesIcon } from './components/CasesIcon'
-import { FlameIcon } from './components/FlameIcon'
 import { FolderIcon } from './components/FolderIcon'
 import { GiftIcon } from './components/GiftIcon'
 import { HistoryIcon } from './components/HistoryIcon'
@@ -21,12 +20,14 @@ import { NudgeIcon } from './components/NudgeIcon'
 import { OrganizeIcon } from './components/OrganizeIcon'
 import { ProcrastinationIcon } from './components/ProcrastinationIcon'
 import { ReflectIcon } from './components/ReflectIcon'
+import { RepeatIcon } from './components/RepeatIcon'
 import { SettingsIcon } from './components/SettingsIcon'
 import { SlidersIcon } from './components/SlidersIcon'
 import { StarIcon } from './components/StarIcon'
 import { SunriseIcon } from './components/SunriseIcon'
 import { TagIcon } from './components/TagIcon'
 import { TrashIcon } from './components/TrashIcon'
+import { LevelIcon } from './components/LevelIcon'
 import { TrophyIcon } from './components/TrophyIcon'
 import { WarmUpIcon } from './components/WarmUpIcon'
 import { WeekIcon } from './components/WeekIcon'
@@ -36,7 +37,7 @@ export type ViewIcon = (props: { className?: string }) => ReactElement
 
 /**
  * The glyph each view carries, wherever it is navigated to from: the sidebar, a
- * phone's bar, or the strip across the rewards pages. Every tag's view carries
+ * phone's bar, or the strip across a section's pages (UI-84). Every tag's view carries
  * the same glyph as Tags, and every list's the same as Lists. The pages under
  * Rewards each carry their own, so the star stays Rewards itself. Each mode
  * carries the glyph it already wears wherever it speaks — the melting face, the
@@ -50,13 +51,14 @@ export const VIEW_ICONS: Record<FixedView, ViewIcon> = {
   month: MonthIcon,
   tasks: ListIcon,
   inbox: InboxIcon,
-  habits: FlameIcon,
+  habits: RepeatIcon,
   rewards: StarIcon,
   'rewards/cases': CasesIcon,
   'rewards/history': HistoryIcon,
   'rewards/prizes': GiftIcon,
   'rewards/wishlist': TrophyIcon,
   'rewards/rules': SlidersIcon,
+  level: LevelIcon,
   lists: FolderIcon,
   tags: TagIcon,
   notes: NotesIcon,

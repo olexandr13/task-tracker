@@ -56,6 +56,7 @@ import {
 import { readTag, toStoredTag, type StoredTag } from './tagSchema'
 import { readStoredTask, toStoredTask, type StoredTask } from './taskSchema'
 import { readWarmUp, toStoredWarmUp, type StoredWarmUp } from './warmUpSchema'
+import { readXpProgress, toStoredXpProgress, type StoredXpProgress } from './xpSchema'
 
 /** What a backup says it is, so any other JSON file is turned away rather than half read. */
 export const BACKUP_FORMAT = 'task-tracker-backup'
@@ -84,12 +85,13 @@ export const BACKUP_FORMAT = 'task-tracker-backup'
  * no journal (JRN-1): a file made before there was one is read as holding no
  * lines. Version 10 held no notes (NOTE-1): a file made before there were any is
  * read as holding none. Version 11 held no habits' settings (HAB-36): a file
- * made before there were any is read as leaving rests unlimited.
+ * made before there were any is read as leaving rests unlimited. Version 12
+ * held no XP (LVL-1): a file made before there was any is read as XP not begun.
  */
-export const BACKUP_VERSION = 12
+export const BACKUP_VERSION = 13
 
 /** The versions of the wrapper this app can still read, oldest first. */
-const READABLE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, BACKUP_VERSION]
+const READABLE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, BACKUP_VERSION]
 
 interface BackupFile {
   format: typeof BACKUP_FORMAT
@@ -136,6 +138,8 @@ interface BackupFile {
    * this array, as the points' settings do.
    */
   habitSettings: StoredHabitRests[]
+  /** Where XP stands, as its one record, or nothing at all where it has not begun (LVL-1). */
+  xpProgress: StoredXpProgress[]
 }
 
 /** Why a file was not read at all. */
@@ -207,6 +211,7 @@ export function writeBackupFile(data: AccountData, now: Date): string {
     journalDays: toStoredJournalDays(data.journal),
     notes: data.notes.map(toStoredNote),
     habitSettings: habitSettingsRecords(data.habitRests),
+    xpProgress: data.xpProgress === null ? [] : [toStoredXpProgress(data.xpProgress)],
   }
   return `${JSON.stringify(file, null, 2)}\n`
 }
@@ -243,6 +248,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
   const journalDays = file.version < 10 ? [] : file.journalDays
   const notes = file.version < 11 ? [] : file.notes
   const habitSettings = file.version < 12 ? [] : file.habitSettings
+  const xpProgress = file.version < 13 ? [] : file.xpProgress
   if (
     !Array.isArray(tasks) ||
     !Array.isArray(lists) ||
@@ -260,7 +266,8 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     !Array.isArray(features) ||
     !Array.isArray(journalDays) ||
     !Array.isArray(notes) ||
-    !Array.isArray(habitSettings)
+    !Array.isArray(habitSettings) ||
+    !Array.isArray(xpProgress)
   ) {
     return 'not-a-backup'
   }
@@ -313,6 +320,7 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     checkIn: readEach<CheckInPreference>(checkIn, readCheckIn)[0] ?? null,
     features: readEach<FeaturesOff>(features, readFeatures)[0] ?? null,
     habitRests: readEach(habitSettings, readHabitRests)[0] ?? null,
+    xpProgress: readEach(xpProgress, readXpProgress)[0] ?? null,
   }
   return { data, unreadable }
 }

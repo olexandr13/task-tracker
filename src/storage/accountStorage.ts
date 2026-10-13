@@ -22,6 +22,7 @@ import { createFirestoreSyncMonitor } from './firestoreSyncMonitor'
 import { createFirestoreTagRepository } from './firestoreTagRepository'
 import { createFirestoreTaskRepository } from './firestoreTaskRepository'
 import { createFirestoreWarmUpRepository } from './firestoreWarmUpRepository'
+import { createFirestoreXpRepository } from './firestoreXpRepository'
 import { importGuestAccount } from './guestImport'
 import type { HabitSettingsRepository } from './habitSettingsRepository'
 import type { JournalRepository } from './journalRepository'
@@ -45,6 +46,7 @@ import { importLocalTasks } from './localTaskImport'
 import { createLocalTaskRepository } from './localTaskRepository'
 import { forgetLegacyNudge, loadLegacyNudge } from './localStorageNudgeRepository'
 import { createLocalWarmUpRepository } from './localWarmUpRepository'
+import { createLocalXpRepository } from './localXpRepository'
 import type { NoteRepository } from './noteRepository'
 import type { NudgeRepository } from './nudgeRepository'
 import type { PrizeRepository } from './prizeRepository'
@@ -54,6 +56,7 @@ import type { SyncMonitor } from './syncMonitor'
 import type { TagRepository } from './tagRepository'
 import type { TaskRepository } from './taskRepository'
 import type { WarmUpRepository } from './warmUpRepository'
+import type { XpRepository } from './xpRepository'
 
 /**
  * Everything one account's data is kept in. The screen holds one for as long as
@@ -85,6 +88,8 @@ export interface AccountStorage {
   readonly journal: JournalRepository
   /** The notes, one record each (NOTE-1). */
   readonly notes: NoteRepository
+  /** What was gained and lost in XP, a day at a time, and where it stands (LVL-1). */
+  readonly xp: XpRepository
   readonly sync: SyncMonitor
   readonly backup: BackupRepository
   /**
@@ -131,6 +136,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
   const habitSettings = createFirestoreHabitSettingsRepository(firestore, accountId)
   const journal = createFirestoreJournalRepository(firestore, accountId)
   const notes = createFirestoreNoteRepository(firestore, accountId)
+  const xp = createFirestoreXpRepository(firestore, accountId)
 
   return {
     tasks,
@@ -147,6 +153,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
     habitSettings,
     journal,
     notes,
+    xp,
     procrastination: createFirestoreProcrastinationRepository(firestore, accountId),
     sync: createFirestoreSyncMonitor(firestore, accountId),
     backup: createFirestoreBackupRepository(firestore, accountId),
@@ -155,7 +162,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
         importLocalTasks(tasks).catch((error: unknown) => {
           console.warn('Could not move the tasks kept in this browser into the account; will try again next time.', error)
         }),
-        importGuestAccount(tasks, lists, tags, prizes, rewards, warmUp, nudge, categories, activities, checkIn, features, habitSettings, journal, notes).catch((error: unknown) => {
+        importGuestAccount(tasks, lists, tags, prizes, rewards, warmUp, nudge, categories, activities, checkIn, features, habitSettings, journal, notes, xp).catch((error: unknown) => {
           console.warn('Could not move the guest data into the account; will try again next time.', error)
         }),
       ])
@@ -185,6 +192,7 @@ function createGuestAccountStorage(): AccountStorage {
     habitSettings: createLocalHabitSettingsRepository(),
     journal: createLocalJournalRepository(),
     notes: createLocalNoteRepository(),
+    xp: createLocalXpRepository(),
     procrastination: createLocalProcrastinationRepository(),
     sync: createLocalSyncMonitor(),
     backup: createLocalBackupRepository(),

@@ -15,17 +15,17 @@ import { KeyWaitingMark } from './KeyWaitingMark'
 /**
  * The views, grouped by what they are for (UI-30): when — the ones named after
  * a period; the work and where it is filed — the habits, every task and the
- * lists; what pushes it along — the rewards; Organize, with the tags, the notes
- * and the modes (UI-81); Reflect, looking back at the day, with the balance of
- * time, the activity log and the journal (UI-83); the notices waiting, on
- * Notifications (NOTIF-1);
+ * lists; what pushes it along — the level, the rewards and the modes (MODE-1);
+ * Organize, with the tags and the notes (UI-81); Reflect, looking back at the
+ * day, with the balance of time, the activity log and the journal (UI-83); the
+ * notices waiting, on Notifications (NOTIF-1);
  * then the trash, then settings. A thin line is
  * drawn between groups. Lists opens onto the Inbox and every list under it, so
  * a list is one click away and a task can be dropped on one to file it, and
  * folds them away when they are not wanted. Rewards keeps its pages under it in
- * the same way, Organize Tags, the notes and Modes, with a page for each
- * mode a step further in under Modes (MODE-7), and Reflect Balance, the
- * activity log and the journal; each folds away as Lists does.
+ * the same way, Modes a page for each mode (MODE-7), Organize Tags and the
+ * notes, and Reflect Balance, the activity log and the journal; each folds
+ * away as Lists does.
  * A tag's tasks have no entry. More is not here: every page on it is, so it
  * would be a click on the way to somewhere already listed (UI-45). A page whose
  * feature is switched off on Settings has no entry at all (FEAT-2).
@@ -33,7 +33,7 @@ import { KeyWaitingMark } from './KeyWaitingMark'
 const VIEW_GROUPS: readonly (readonly FixedView[])[] = [
   ['today', 'tomorrow', 'week', 'month'],
   ['habits', 'tasks', 'lists'],
-  ['rewards'],
+  ['level', 'rewards', 'modes'],
   ['organize'],
   ['reflect'],
   ['notifications'],
@@ -44,10 +44,8 @@ const VIEW_GROUPS: readonly (readonly FixedView[])[] = [
 const item = 'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors'
 
 const subItemBase = 'flex w-full min-w-0 items-center gap-2 rounded-lg py-1.5 pr-3 text-left text-sm transition-colors'
-/** A page under Lists, Rewards, Organize or Reflect: indented to start where the word above does, and a little shorter. */
+/** A page under Lists, Rewards, Modes, Organize or Reflect: indented to start where the word above does, and a little shorter. */
 const subItem = `${subItemBase} pl-[2.375rem]`
-/** A mode, under Modes under Organize: a step further in, to start where the word Modes does. */
-const nestedItem = `${subItemBase} pl-[3.75rem]`
 /** A task being carried over it, to be dropped there. */
 const subItemOver = 'bg-blue-50 text-blue-700 ring-1 ring-blue-300 ring-inset dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-500/40'
 const subGlyph = 'size-3.5 shrink-0'
@@ -76,7 +74,7 @@ interface SideNavProps {
   rewardsOpen: boolean
   /** Whether each mode's page is shown under Modes, or folded away. */
   modesOpen: boolean
-  /** Whether Tags, the notes and Modes are shown under Organize, or folded away. */
+  /** Whether Tags and the notes are shown under Organize, or folded away. */
   organizeOpen: boolean
   /** Whether Balance, the activity log and the journal are shown under Reflect, or folded away. */
   reflectOpen: boolean
@@ -102,11 +100,11 @@ interface SideNavProps {
  * folded away. Tags stays marked while a tag's tasks are open (TAG-17); Rewards
  * has its own entry here, with Cases, the history, the prizes, the wishlist
  * and the rules under it, and each of the five is marked itself (RWD-19) — or Rewards alone while they
- * are folded away, as with Lists. Organize is listed the same way, with Tags,
- * the notes and Modes under it (UI-81), and Modes again with each mode's page
- * under it, so going from one mode to the other is a step down the sidebar
- * rather than a strip across the top of them (MODE-7). Reflect is listed as
- * Organize is, with Balance, the activity log and the journal under it (UI-83).
+ * are folded away, as with Lists. Modes is listed the same way, with each
+ * mode's page under it (MODE-7), Organize with Tags and the notes under it
+ * (UI-81), and Reflect with Balance, the activity log and the journal under it
+ * (UI-83). Each of their pages has a strip across its top as well (UI-84),
+ * which saves coming back here to step from one to the next.
  */
 export function SideNav({
   view,
@@ -210,6 +208,22 @@ export function SideNav({
                     />
                   ))}
                 </FoldableEntry>
+              ) : value === 'modes' ? (
+                <FoldableEntry
+                  key={value}
+                  value={value}
+                  active={modesOpen ? view === 'modes' : isUnder(view, 'modes')}
+                  open={modesOpen}
+                  id={modesId}
+                  dimmed={dimmed}
+                  foldLabel="Show modes"
+                  onSelect={onChange}
+                  onOpenChange={onModesOpenChange}
+                >
+                  {modesShown(off).map((mode) => (
+                    <SubNavButton key={mode} value={mode} active={view === mode} glyph={subEmoji} onSelect={onChange} />
+                  ))}
+                </FoldableEntry>
               ) : value === 'organize' ? (
                 <FoldableEntry
                   key={value}
@@ -222,36 +236,10 @@ export function SideNav({
                   onSelect={onChange}
                   onOpenChange={onOrganizeOpenChange}
                 >
-                  {organizePagesShown(off).map((page) =>
-                    page === 'modes' ? (
-                      // Not dimmed itself: it is softened with Organize already, and a second fade would leave it fainter.
-                      <FoldableEntry
-                        key={page}
-                        value={page}
-                        nested
-                        active={modesOpen ? view === 'modes' : isUnder(view, 'modes')}
-                        open={modesOpen}
-                        id={modesId}
-                        foldLabel="Show modes"
-                        onSelect={onChange}
-                        onOpenChange={onModesOpenChange}
-                      >
-                        {modesShown(off).map((mode) => (
-                          <SubNavButton
-                            key={mode}
-                            value={mode}
-                            active={view === mode}
-                            nested
-                            glyph={subEmoji}
-                            onSelect={onChange}
-                          />
-                        ))}
-                      </FoldableEntry>
-                    ) : (
-                      // A tag's tasks have no entry, so Tags stands for them (TAG-17).
-                      <SubNavButton key={page} value={page} active={isUnder(view, page)} onSelect={onChange} />
-                    ),
-                  )}
+                  {organizePagesShown(off).map((page) => (
+                    // A tag's tasks have no entry, so Tags stands for them (TAG-17).
+                    <SubNavButton key={page} value={page} active={isUnder(view, page)} onSelect={onChange} />
+                  ))}
                 </FoldableEntry>
               ) : value === 'reflect' ? (
                 <FoldableEntry
@@ -292,8 +280,6 @@ interface FoldableEntryProps {
   active: boolean
   /** Whether what is under it is shown, or folded away. */
   open: boolean
-  /** Itself under another entry, as Modes is under Organize: drawn as a page under it is. */
-  nested?: boolean
   /** Softened with the rest of the sidebar while Procrastination mode is on (JUST-5). */
   dimmed?: boolean
   /** What the chevron controls, for a screen reader. */
@@ -305,15 +291,14 @@ interface FoldableEntryProps {
 }
 
 /**
- * An entry with pages under it — Lists, Rewards, Organize, Modes, Reflect — each
+ * An entry with pages under it — Lists, Rewards, Modes, Organize, Reflect — each
  * a click away, and a chevron that folds them away when they are not wanted
- * (LST-26, RWD-19, UI-81, MODE-7, UI-83). The entry itself still goes to its own page.
+ * (LST-26, RWD-19, MODE-7, UI-81, UI-83). The entry itself still goes to its own page.
  */
 function FoldableEntry({
   value,
   active,
   open,
-  nested = false,
   id,
   dimmed = false,
   foldLabel,
@@ -324,11 +309,7 @@ function FoldableEntry({
   return (
     <li className={dimmed ? dim : undefined}>
       <div className="relative">
-        {nested ? (
-          <SubNavLink value={value} active={active} onSelect={onSelect} />
-        ) : (
-          <NavButton value={value} active={active} onSelect={onSelect} />
-        )}
+        <NavButton value={value} active={active} onSelect={onSelect} />
         <button
           type="button"
           onClick={() => { onOpenChange(!open) }}
@@ -381,36 +362,28 @@ interface SubNavButtonProps {
   active: boolean
   /** Something is waiting on this page: a dot after its name (CHST-22). */
   marked?: boolean
-  /** Under an entry that is itself under another, as a mode is: a step further in. */
-  nested?: boolean
   /** How the page's glyph is drawn: a mode's emoji needs more said than a drawing does. */
   glyph?: string
   onSelect: (view: View) => void
 }
 
-/** A page under Rewards, Organize, Modes or Reflect: the same indent as a list under Lists, and nothing to drop on it. */
-function SubNavButton(props: SubNavButtonProps) {
-  return (
-    <li>
-      <SubNavLink {...props} />
-    </li>
-  )
-}
-
-function SubNavLink({ value, active, marked = false, nested = false, glyph = subGlyph, onSelect }: SubNavButtonProps) {
+/** A page under Rewards, Modes, Organize or Reflect: the same indent as a list under Lists, and nothing to drop on it. */
+function SubNavButton({ value, active, marked = false, glyph = subGlyph, onSelect }: SubNavButtonProps) {
   const Icon = VIEW_ICONS[value]
 
   return (
-    <button
-      type="button"
-      onClick={() => { onSelect(value) }}
-      aria-current={active ? 'page' : undefined}
-      className={`${nested ? nestedItem : subItem} ${active ? navItemOn : navItemOff}`}
-    >
-      <Icon className={glyph} />
-      <span className="min-w-0 truncate">{VIEW_LABELS[value]}</span>
-      {marked && <KeyWaitingMark />}
-    </button>
+    <li>
+      <button
+        type="button"
+        onClick={() => { onSelect(value) }}
+        aria-current={active ? 'page' : undefined}
+        className={`${subItem} ${active ? navItemOn : navItemOff}`}
+      >
+        <Icon className={glyph} />
+        <span className="min-w-0 truncate">{VIEW_LABELS[value]}</span>
+        {marked && <KeyWaitingMark />}
+      </button>
+    </li>
   )
 }
 

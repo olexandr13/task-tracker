@@ -48,6 +48,8 @@ import { CheckInToast } from './components/CheckInToast'
 import { FolderIcon } from './components/FolderIcon'
 import { HabitList } from './components/HabitList'
 import { JournalPage } from './components/JournalPage'
+import { LevelPage } from './components/LevelPage'
+import { LevelToast } from './components/LevelToast'
 import { NotesPage } from './components/NotesPage'
 import { WarmUpNoticeToast } from './components/WarmUpNoticeToast'
 import { CaseNoticeToast } from './components/CaseNoticeToast'
@@ -57,7 +59,6 @@ import { WarmUpPause } from './components/WarmUpPause'
 import { ProcrastinationPanel } from './components/ProcrastinationMode'
 import { ListsPage } from './components/ListsPage'
 import { ModePage } from './components/ModePage'
-import { ModesBackLink } from './components/ModesBackLink'
 import { ModesPage } from './components/ModesPage'
 import { MorePage } from './components/MorePage'
 import { NotificationsPage } from './components/NotificationsPage'
@@ -69,9 +70,9 @@ import { QuoteCard } from './components/QuoteCard'
 import { RewardRulesPage } from './components/RewardRulesPage'
 import { useCases } from './useCases'
 import { RewardsHistoryPage } from './components/RewardsHistoryPage'
-import { RewardsNav } from './components/RewardsNav'
 import { RewardsPage } from './components/RewardsPage'
 import { PrizeListPage } from './components/PrizeListPage'
+import { SectionNav } from './components/SectionNav'
 import { SettingsList } from './components/SettingsList'
 import { SideNav } from './components/SideNav'
 import { StorageProblemNotice } from './components/StorageProblemNotice'
@@ -106,6 +107,7 @@ import { HabitRestsContext } from './habitRests'
 import { useFeatures } from './useFeatures'
 import { useHabitRests } from './useHabitRests'
 import { useJournal } from './useJournal'
+import { useLevelChange } from './useLevelChange'
 import { useNotes } from './useNotes'
 import { useDeviceSetting } from './useDeviceSetting'
 import { useLists } from './useLists'
@@ -122,6 +124,7 @@ import { useNudge } from './useNudge'
 import { useReminders } from './useReminders'
 import { useTaskTimer } from './useTaskTimer'
 import { useUndoToast } from './useUndoToast'
+import { useLevel, useXp } from './useXp'
 import { askToNotify } from './browserNotification'
 import { standingNotices, type StandingNotice } from './standingNotices'
 import { useNotifyPermission } from './useNotifyPermission'
@@ -141,6 +144,7 @@ import {
   newTaskListId,
   newTaskTags,
   oneListView,
+  sectionOf,
   showsTask,
   tagView,
   VIEW_LABELS,
@@ -201,11 +205,14 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // The points come first: what clearing Today is worth is part of what a change
   // to the tasks earns (RWD-24), so the tasks are held knowing it.
   const rewards = useRewards(storage.rewards, storageProblem.report)
+  // XP, ahead of everything that gives it: a change to the tasks, the time or
+  // the journal says what it gave and took (LVL-1), Levels switched off or not.
+  const xp = useXp(storage.xp, storageProblem.report)
   // The activity log, hour by hour (ACT-1), ahead of the tasks: time logged on
   // a task is written into it as well (ACT-21), switched off or not (FEAT-5).
-  const activities = useActivities(storage.activities, storageProblem.report)
+  const activities = useActivities(storage.activities, storageProblem.report, xp.record)
   // Today's good things, achievements and gratitude, and the week before (JRN-1).
-  const journal = useJournal(storage.journal, storageProblem.report)
+  const journal = useJournal(storage.journal, storageProblem.report, xp.record)
   // Anything written down to keep (NOTE-1).
   const notes = useNotes(storage.notes, storageProblem.report)
   const {
@@ -259,12 +266,13 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     rewards.entries,
     activities.addSessions,
     activities.resizeSessions,
+    xp.recordTasks,
   )
   const lists = useLists(storage.lists, storageProblem.report)
   const prizes = usePrizes(storage.prizes, storageProblem.report)
   const savedTags = useTags(storage.tags, isLoading ? null : tasks, storageProblem.report)
   // The Balance page's categories, each bound to tags (BAL-1).
-  const categories = useCategories(storage.categories, storageProblem.report)
+  const categories = useCategories(storage.categories, storageProblem.report, xp.record)
   const backup = useBackup(storage.backup)
   // Which parts of the app are in use, switched on Settings (FEAT-1): the
   // account's, so a feature turned off at the laptop is off at the phone.
@@ -276,6 +284,15 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // nothing is held back for want of one.
   const habitRests = useHabitRests(storage.habitSettings, storageProblem.report)
   const restLimit = on.habits ? habitRests.rests : null
+  // Where XP stands, once the tasks, the points and the limit on rests are in
+  // (LVL-3), and the toast when it moves while the app is open (LVL-11).
+  const level = useLevel(
+    xp,
+    isLoading || tasksNotLoaded ? null : tasks,
+    rewards.isLoading || rewards.loadFailed ? null : rewards.entries,
+    habitRests.isLoading ? undefined : restLimit,
+  )
+  const levelChange = useLevelChange(on.levels && level !== null ? level.level.level : null)
   // The view the address names, and the one shown: a page switched off is not
   // there to show, so its address lands on the nearest page above it that is
   // (FEAT-2), and the address is put right to match below.
@@ -588,6 +605,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   })
   // Only the modes there are count: one hidden with its feature is not on to anyone (FEAT-9).
   const modesOn = modesShown(featuresOff).filter((mode) => modes[mode].on).length
+  // The section whose strip runs across the top of this page, if it is in one (UI-84).
+  const section = sectionOf(view)
 
   // Same as the Procrastination switch on Modes (JUST-1, JUST-8): start when off, end when on.
   useLetterShortcut('p', procrastinationOn && view === 'today' && procrastination.available && !adding, () => {
@@ -952,6 +971,16 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
 
               <div className="flex flex-col gap-5 md:flex-row md:items-start md:gap-6">
                 <div className="flex min-w-0 flex-1 flex-col gap-5">
+                  {/* The pages of the section this one is in, to step between them without the sidebar (UI-84). */}
+                  {section !== null && (
+                    <SectionNav
+                      section={section}
+                      view={view}
+                      lists={lists.lists}
+                      keyWaiting={keyWaiting}
+                      onChange={setView}
+                    />
+                  )}
                   {view === 'settings' ? (
                     <section aria-label="Settings">
                       <SettingsList
@@ -977,13 +1006,22 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                         onFoldChange={(part, open) => { setSettingsLayout((latest) => ({ ...latest, [part]: open })) }}
                       />
                     </section>
+                  ) : view === 'level' ? (
+                    <section aria-label={viewLabel(view)}>
+                      <LevelPage
+                        standing={level}
+                        failed={xp.status === 'failed'}
+                        startedOn={xp.progress?.startedOn ?? null}
+                        now={now}
+                      />
+                    </section>
                   ) : view === 'more' ? (
                     <section aria-label="More">
-                      <MorePage onOpen={setView} notices={notices.length} />
+                      <MorePage onOpen={setView} notices={notices.length} modesOn={modesOn} />
                     </section>
                   ) : view === 'organize' ? (
                     <section aria-label="Organize">
-                      <OrganizePage onOpen={setView} modesOn={modesOn} />
+                      <OrganizePage onOpen={setView} />
                     </section>
                   ) : view === 'reflect' ? (
                     <section aria-label="Reflect">
@@ -995,8 +1033,6 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     </section>
                   ) : isModesView(view) ? (
                     <section aria-label={viewLabel(view)} className="flex flex-col gap-5">
-                      {/* A phone has no sidebar listing the modes, so the way back is here (MODE-7). */}
-                      <ModesBackLink onBack={() => { setView('modes') }} />
                       <ModePage
                         mode={modes[view]}
                         settings={
@@ -1031,8 +1067,6 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     </section>
                   ) : isRewardsView(view) ? (
                     <section aria-label={viewLabel(view)} className="flex flex-col gap-5">
-                      {/* The pages under Rewards, to step between them without the sidebar (RWD-30). */}
-                      <RewardsNav view={view} keyWaiting={keyWaiting} onChange={setView} />
                       {rewards.isLoading ? (
                         <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
                       ) : rewards.loadFailed ? (
@@ -1469,6 +1503,14 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
               quietHours={nudgeNotice.quietHours}
               onOpen={() => { revealTask(nudgeTask); nudge.dismiss() }}
               onDismiss={nudge.dismiss}
+            />
+          )}
+          {!noticesOnPage && levelChange.change !== null && view !== 'level' && (
+            <LevelToast
+              from={levelChange.change.from}
+              to={levelChange.change.to}
+              onOpen={() => { setView('level'); levelChange.dismiss() }}
+              onDismiss={levelChange.dismiss}
             />
           )}
           {undo.pending !== null && (

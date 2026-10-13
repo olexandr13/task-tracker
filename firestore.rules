@@ -47,6 +47,11 @@ rules_version = '2';
 //   (src/storage/firestoreHabitSettingsRepository.ts) — the limit on rests, { since },
 //   is the only one so far — always filed under the name it carries, and no
 //   document at all is the setting off.
+// - Where XP stands: one document, stored as { version, name, xp, startedOn,
+//   settledThrough, addsOn, adds } (src/storage/firestoreXpRepository.ts), filed
+//   under the name it carries, and no document at all is XP not begun yet.
+// - XP as an older version kept it, a ledger a day at a time: read once to move
+//   it into where XP stands, then deleted. Nothing writes to it any more.
 service cloud.firestore {
   match /databases/{database}/documents {
     function isOwner(accountId) {
@@ -139,6 +144,15 @@ service cloud.firestore {
     }
 
     match /users/{accountId}/habitSettings/{name} {
+      allow read, delete: if isOwner(accountId);
+      allow create, update: if isOwner(accountId) && request.resource.data.name == name;
+    }
+
+    match /users/{accountId}/xpDays/{day} {
+      allow read, delete: if isOwner(accountId);
+    }
+
+    match /users/{accountId}/levelSettings/{name} {
       allow read, delete: if isOwner(accountId);
       allow create, update: if isOwner(accountId) && request.resource.data.name == name;
     }

@@ -11,10 +11,10 @@ import { OrganizePage } from './OrganizePage'
 afterEach(cleanup)
 
 describe('OrganizePage', () => {
-  it('links to Tags, the notes and Modes, in the sidebar\'s order (UI-81, TAG-18, NOTE-1, MODE-1)', () => {
+  it('links to Tags and the notes, in the sidebar\'s order, and not to Modes (UI-81, TAG-18, NOTE-1, MODE-1)', () => {
     render(<OrganizePage onOpen={vi.fn()} />)
 
-    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Tags', 'Notes', 'Modes'])
+    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Tags', 'Notes'])
   })
 
   it('opens each page it lists (UI-81)', async () => {
@@ -24,9 +24,8 @@ describe('OrganizePage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Tags' }))
     await user.click(screen.getByRole('button', { name: 'Notes' }))
-    await user.click(screen.getByRole('button', { name: 'Modes' }))
 
-    expect(onOpen.mock.calls).toEqual([['tags'], ['notes'], ['modes']])
+    expect(onOpen.mock.calls).toEqual([['tags'], ['notes']])
   })
 
   it('lists each as a link large enough for a finger (UI-49, UI-81)', () => {
@@ -37,25 +36,6 @@ describe('OrganizePage', () => {
     expect(tags.className).toContain('text-lg')
   })
 
-  it('says nothing of the modes while none is on (MODE-1)', () => {
-    render(<OrganizePage onOpen={vi.fn()} />)
-
-    expect(screen.getByRole('button', { name: 'Modes' }).textContent).not.toContain('on')
-  })
-
-  it('says how many modes are on, without being opened (MODE-1)', () => {
-    render(<OrganizePage onOpen={vi.fn()} modesOn={2} />)
-
-    expect(screen.getByRole('button', { name: 'Modes, 2 on' }).textContent).toContain('2 on')
-  })
-
-  it('switches no mode itself: the modes are a page (MODE-1)', () => {
-    render(<OrganizePage onOpen={vi.fn()} modesOn={1} />)
-
-    expect(screen.queryByRole('switch')).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Procrastination' })).toBeNull()
-  })
-
   it('lists no page switched off (FEAT-2)', () => {
     const off: FeaturesOff = ['notes']
     render(
@@ -64,6 +44,6 @@ describe('OrganizePage', () => {
       </FeaturesContext>,
     )
 
-    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Tags', 'Modes'])
+    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Tags'])
   })
 })

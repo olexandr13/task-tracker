@@ -17,13 +17,11 @@ import { isLetterShortcut } from '../letterShortcut'
 import { navItemOff, navItemOn } from '../navTones'
 import { tabsShown } from '../pinnedTabs'
 import { usePhoneLayout } from '../usePhoneLayout'
-import { isOneListView, isTagView, viewLabel, type View } from '../view'
-import { VIEW_ICONS } from '../viewIcons'
+import { viewLabel, type View } from '../view'
 import { CloseIcon } from './CloseIcon'
-import { FolderIcon } from './FolderIcon'
 import { KeyWaitingMark } from './KeyWaitingMark'
 import { PinIcon } from './PinIcon'
-import { TagIcon } from './TagIcon'
+import { ViewGlyph } from './ViewGlyph'
 
 /**
  * One tab: wide enough for a name, and narrowing with the rest when there are
@@ -31,10 +29,12 @@ import { TagIcon } from './TagIcon'
  * at the end stay.
  */
 const tabSlot = 'group relative min-w-16 shrink basis-48'
-const tab = 'flex w-full min-w-0 items-center gap-2 rounded-lg py-1.5 pr-8 pl-3 text-left text-sm transition-colors'
+/** Every tab has a border, a pinned one's unseen, so the outlined tab is no taller than the rest. */
+const tab = 'flex w-full min-w-0 items-center gap-2 rounded-lg border py-1.5 pr-8 pl-3 text-left text-sm transition-colors'
+const tabPinned = 'border-transparent'
 /** The page open, not pinned: outlined rather than filled, a tab only for as long as you are on it. */
 const tabUnpinned =
-  'border border-dashed border-neutral-300 font-medium text-neutral-900 dark:border-neutral-700 dark:text-neutral-100'
+  'border-dashed border-neutral-300 font-medium text-neutral-900 dark:border-neutral-700 dark:text-neutral-100'
 /** The pin or the cross at a tab's end. */
 const endButton =
   'absolute inset-y-0 right-1.5 my-auto grid size-6 place-items-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-300/60 hover:text-neutral-900 focus-visible:opacity-100 dark:text-neutral-500 dark:hover:bg-neutral-700/60 dark:hover:text-neutral-100'
@@ -190,6 +190,8 @@ export function PinnedTabs({
                 </button>
               </li>
             )}
+            {/* Its room is kept while the page open is pinned, so going between the two moves no tab. */}
+            {current === null && <li aria-hidden="true" className={tabSlot} />}
           </ul>
         </SortableContext>
       </DndContext>
@@ -226,7 +228,7 @@ function PinnedTab({ view, name, marked, keyWaiting, className, onSelect, onUnpi
         name={name}
         marked={marked}
         keyWaiting={keyWaiting}
-        className={`${tab} ${marked ? navItemOn : navItemOff}`}
+        className={`${tab} ${tabPinned} ${marked ? navItemOn : navItemOff}`}
         listeners={listeners}
         onSelect={onSelect}
       />
@@ -264,17 +266,9 @@ function TabButton({ view, name, marked, keyWaiting, className, listeners, onSel
       title={name}
       className={className}
     >
-      <TabGlyph view={view} />
+      <ViewGlyph view={view} />
       <span className="min-w-0 truncate">{name}</span>
       {view === 'rewards/cases' && keyWaiting && <KeyWaitingMark />}
     </button>
   )
-}
-
-/** The glyph a tab's page carries in the sidebar: a list's the folder Lists has, a tag's the mark Tags has. */
-function TabGlyph({ view }: { view: View }) {
-  if (isOneListView(view)) return <FolderIcon />
-  if (isTagView(view)) return <TagIcon />
-  const Icon = VIEW_ICONS[view]
-  return <Icon />
 }

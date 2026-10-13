@@ -53,6 +53,9 @@ export default defineConfig({
         // Firebase's sign-in pages live under `/__/` when served from the app's own
         // domain; they must reach the network rather than get the app instead.
         navigateFallbackDenylist: [/^\/__\//],
+        // Pressing a notification, which the worker hears rather than the page
+        // (src/app/browserNotification.ts).
+        importScripts: ['notification-sw.js'],
       },
     }),
   ],

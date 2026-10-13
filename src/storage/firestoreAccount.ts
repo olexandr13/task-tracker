@@ -26,6 +26,8 @@ export const ACCOUNT_COLLECTIONS = [
   'journalDays',
   'notes',
   'habitSettings',
+  'xpDays',
+  'levelSettings',
 ] as const
 
 export type AccountCollection = (typeof ACCOUNT_COLLECTIONS)[number]

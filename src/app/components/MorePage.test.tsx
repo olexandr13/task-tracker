@@ -11,11 +11,13 @@ import { MorePage } from './MorePage'
 afterEach(cleanup)
 
 describe('MorePage', () => {
-  it('links to Lists, Organize, Reflect and Notifications, in the sidebar\'s order (UI-30, UI-45, UI-81, UI-83, LST-24, NOTIF-1)', () => {
+  it('links to Lists, the Level, Modes, Organize, Reflect and Notifications, in the sidebar\'s order (UI-30, UI-45, UI-81, UI-83, LST-24, LVL-10, MODE-1, NOTIF-1)', () => {
     render(<MorePage onOpen={vi.fn()} />)
 
     expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual([
       'Lists',
+      'Level',
+      'Modes',
       'Organize',
       'Reflect',
       'Notifications',
@@ -36,13 +38,35 @@ describe('MorePage', () => {
     expect(screen.getByRole('button', { name: 'Notifications' })).toBeTruthy()
   })
 
-  it('opens Organize, where Tags, the notes and Modes are (UI-81)', async () => {
+  it('opens Organize, where Tags and the notes are (UI-81)', async () => {
     const onOpen = vi.fn()
     render(<MorePage onOpen={onOpen} />)
 
     await userEvent.click(screen.getByRole('button', { name: 'Organize' }))
     expect(onOpen).toHaveBeenCalledExactlyOnceWith('organize')
-    for (const name of ['Tags', 'Notes', 'Modes']) expect(screen.queryByRole('button', { name })).toBeNull()
+    for (const name of ['Tags', 'Notes']) expect(screen.queryByRole('button', { name })).toBeNull()
+  })
+
+  it('opens Modes, where each mode is (MODE-1)', async () => {
+    const onOpen = vi.fn()
+    render(<MorePage onOpen={onOpen} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Modes' }))
+    expect(onOpen).toHaveBeenCalledExactlyOnceWith('modes')
+    expect(screen.queryByRole('button', { name: 'Procrastination' })).toBeNull()
+  })
+
+  it('says nothing of the modes while none is on (MODE-1)', () => {
+    render(<MorePage onOpen={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: 'Modes' }).textContent).not.toContain('on')
+  })
+
+  it('says how many modes are on, without Modes being opened (MODE-1)', () => {
+    render(<MorePage onOpen={vi.fn()} modesOn={2} notices={1} />)
+
+    expect(screen.getByRole('button', { name: 'Modes, 2 on' }).textContent).toContain('2 on')
+    expect(screen.getByRole('button', { name: /^Notifications, / })).toBeDefined()
   })
 
   it('opens Reflect, where Balance, the activity log and the journal are (UI-83)', async () => {
@@ -81,7 +105,7 @@ describe('MorePage', () => {
 
   it('lists no page switched off, nor Organize or Reflect once all it holds is (FEAT-2, UI-81, UI-83)', () => {
     // Balance goes with the tags it divides time by (FEAT-4).
-    const off: FeaturesOff = ['tags', 'notes', 'modes', 'activity', 'journal', 'notifications']
+    const off: FeaturesOff = ['levels', 'tags', 'notes', 'modes', 'activity', 'journal', 'notifications']
     render(
       <FeaturesContext value={off}>
         <MorePage onOpen={vi.fn()} />
@@ -93,7 +117,7 @@ describe('MorePage', () => {
 
   it('keeps Organize while any of what it holds is on (FEAT-2, UI-81)', () => {
     render(
-      <FeaturesContext value={['tags', 'notes']}>
+      <FeaturesContext value={['tags']}>
         <MorePage onOpen={vi.fn()} />
       </FeaturesContext>,
     )

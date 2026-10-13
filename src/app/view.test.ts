@@ -9,6 +9,7 @@ import {
   oneListView,
   parentView,
   rootView,
+  sectionOf,
   showsTask,
   tagView,
   viewShowingTask,
@@ -43,7 +44,8 @@ describe('parentView', () => {
     }
   })
 
-  it('puts Organize and Reflect under More, Tags, the notes and Modes under Organize, Balance, the activity log and the journal under Reflect, a tag\'s tasks under Tags and a mode\'s page under Modes (UI-45, UI-81, UI-83, MODE-7, NOTE-1, BAL-1)', () => {
+  it('puts Modes, Organize and Reflect under More, Tags and the notes under Organize, Balance, the activity log and the journal under Reflect, a tag\'s tasks under Tags and a mode\'s page under Modes (UI-45, UI-81, UI-83, MODE-1, MODE-7, NOTE-1, BAL-1)', () => {
+    expect(parentView('modes')).toBe('more')
     expect(parentView('organize')).toBe('more')
     expect(parentView('reflect')).toBe('more')
     expect(parentView('journal')).toBe('reflect')
@@ -52,7 +54,6 @@ describe('parentView', () => {
     expect(rootView('journal')).toBe('more')
     expect(parentView('tags')).toBe('organize')
     expect(parentView('notes')).toBe('organize')
-    expect(parentView('modes')).toBe('organize')
     expect(parentView('modes/check-in')).toBe('modes')
     expect(parentView(tagView('work'))).toBe('tags')
     expect(parentView('modes/procrastination')).toBe('modes')
@@ -64,13 +65,20 @@ describe('parentView', () => {
 })
 
 describe('isUnder', () => {
-  it('holds Tags, a tag\'s tasks, the notes, Modes and each mode under Organize (UI-81)', () => {
-    for (const view of ['organize', 'tags', tagView('work'), 'notes', 'modes', 'modes/nudge'] as const) {
+  it('holds Tags, a tag\'s tasks and the notes under Organize, and not Modes (UI-81, MODE-1)', () => {
+    for (const view of ['organize', 'tags', tagView('work'), 'notes'] as const) {
       expect(isUnder(view, 'organize')).toBe(true)
     }
-    for (const view of ['balance', 'journal', 'more', 'lists', 'rewards'] as const) {
+    for (const view of ['modes', 'modes/nudge', 'balance', 'journal', 'more', 'lists', 'rewards'] as const) {
       expect(isUnder(view, 'organize')).toBe(false)
     }
+  })
+
+  it('holds each mode\'s page under Modes (MODE-7)', () => {
+    for (const view of ['modes', 'modes/procrastination', 'modes/check-in'] as const) {
+      expect(isUnder(view, 'modes')).toBe(true)
+    }
+    expect(isUnder('organize', 'modes')).toBe(false)
   })
 
   it('holds Balance, the activity log and the journal under Reflect (UI-83)', () => {
@@ -82,11 +90,33 @@ describe('isUnder', () => {
     }
   })
 
-  it('holds Organize, Reflect and everything under them under More, and not Lists (UI-45, UI-34)', () => {
-    for (const view of ['more', 'organize', 'tags', tagView('work'), 'notes', 'modes', 'modes/warm-up', 'reflect', 'balance', 'activity', 'journal'] as const) {
+  it('holds Modes, Organize, Reflect and everything under them under More, and not Lists (UI-45, UI-34)', () => {
+    for (const view of ['more', 'modes', 'modes/warm-up', 'organize', 'tags', tagView('work'), 'notes', 'reflect', 'balance', 'activity', 'journal'] as const) {
       expect(isUnder(view, 'more')).toBe(true)
     }
     expect(isUnder('lists', 'more')).toBe(false)
+  })
+})
+
+describe('sectionOf (UI-84)', () => {
+  it('puts each section\'s own page and the pages directly under it in that section', () => {
+    const work = createList('Work', NOW)
+
+    for (const view of ['lists', 'inbox', oneListView(work.id)] as const) expect(sectionOf(view)).toBe('lists')
+    for (const view of ['rewards', 'rewards/cases', 'rewards/rules'] as const) expect(sectionOf(view)).toBe('rewards')
+    expect(sectionOf('modes')).toBe('modes')
+    expect(sectionOf('modes/warm-up')).toBe('modes')
+    expect(sectionOf('organize')).toBe('organize')
+    expect(sectionOf('tags')).toBe('organize')
+    expect(sectionOf('notes')).toBe('organize')
+    expect(sectionOf('reflect')).toBe('reflect')
+    expect(sectionOf('journal')).toBe('reflect')
+  })
+
+  it('leaves out a tag\'s tasks, a step further down, and every page of no section', () => {
+    for (const view of [tagView('work'), 'today', 'tasks', 'habits', 'level', 'more', 'notifications', 'trash', 'settings'] as const) {
+      expect(sectionOf(view)).toBeNull()
+    }
   })
 })
 
@@ -120,10 +150,10 @@ describe('viewShowingTask', () => {
     expect(viewShowingTask(later, 'today', NOW, [])).toBe('tasks')
   })
 
-  it('goes to Today for a task with no day, which Today shows (TIME-20, LIST-5)', () => {
+  it('goes to Tasks for a task with no day, which Today leaves out (TIME-20, LIST-5)', () => {
     const undated = createTask('someday', null, NOW)
 
-    expect(viewShowingTask(undated, 'rewards', NOW, [])).toBe('today')
+    expect(viewShowingTask(undated, 'rewards', NOW, [])).toBe('tasks')
   })
 })
 
@@ -151,7 +181,7 @@ describe('doneSpans and foldedSpans', () => {
 })
 
 describe('Tomorrow', () => {
-  it('shows what is due tomorrow, and not what Today gathers up (LIST-22)', () => {
+  it('shows what is due tomorrow, and nothing gathered up from before (LIST-22)', () => {
     const tomorrow = setDueDate(createTask('call the bank', null, NOW), '2026-09-17')
     const today = setDueDate(createTask('report', null, NOW), TODAY)
     const undated = createTask('someday', null, NOW)
@@ -159,7 +189,7 @@ describe('Tomorrow', () => {
     expect(showsTask('tomorrow', tomorrow, NOW, [])).toBe(true)
     expect(showsTask('tomorrow', today, NOW, [])).toBe(false)
     expect(showsTask('tomorrow', undated, NOW, [])).toBe(false)
-    expect(showsTask('today', undated, NOW, [])).toBe(true)
+    expect(showsTask('week', undated, NOW, [])).toBe(true)
   })
 
   it('gives a task added there tomorrow as its day (LIST-25)', () => {

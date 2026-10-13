@@ -286,7 +286,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 `src/core/habitRest.ts` (limited rests: how many a habit has, which skips they covered, `canRest`, HAB-36 to HAB-40),
 `src/core/task.ts` (`doneDays`, kept in step by `settleHistory`; `forgetRestsAhead`, HAB-33), `src/app/components/HabitList.tsx`
 (the page and its cards, and a timed habit's clock — see [Time goals](time-goals.md)), `src/app/components/HabitGrid.tsx`, `src/app/components/ChevronIcon.tsx`, `src/app/components/MoreVerticalIcon.tsx`, `src/app/components/TaskSheet.tsx` (editing a habit), `src/app/habitLabels.ts` (wording),
-`src/app/habitTones.ts` (the shades), `src/app/components/FlameIcon.tsx`, `src/app/components/SkipIcon.tsx`,
+`src/app/habitTones.ts` (the shades), `src/app/components/FlameIcon.tsx` (the streak), `src/app/components/RepeatIcon.tsx` (the page's glyph),
+`src/app/components/SkipIcon.tsx`,
 `src/core/due.ts` (`isSkippedToday`, `unskipToday`), `src/core/penalty.ts` (what a skip costs and
 gives back, HAB-34), `src/app/useTasks.ts`
 (`setHabitDay`, `unskip`, `changeRepeat` putting a task taken on at the end, rests ahead dropped as the tasks arrive, and what

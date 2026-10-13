@@ -10,8 +10,8 @@ requirements were written with, so older references to them still mean what they
 
 - **LIST-1** The navigation carries **Today**, **Tomorrow**, **Week** and **Month**, in that
   order, above **Tasks**. Tasks is every live task; Today, Week and Month are the parts of it due
-  today, this week and this month, and in all three whatever has no day at all (LIST-5); Tomorrow
-  is the part due tomorrow alone (LIST-22). Each tag has a view of
+  today, this week and this month, Week and Month taking in whatever has no day at all as well
+  (LIST-13), Today never (LIST-5); Tomorrow is the part due tomorrow alone (LIST-22). Each tag has a view of
   its own as well — see [Tags](tags.md) — and so does each list and the Inbox, see
   [Lists](lists.md). The app opens on **Today**, unless the address names another view (UI-36). On
   a phone Today, Tomorrow, Week and Month share one tab of the bottom bar (UI-33).
@@ -28,12 +28,9 @@ requirements were written with, so older references to them still mean what they
 - **LIST-4** A done task stays for the day it was due, and an overdue one finished today stays for
   today, so ticking something off does not make it vanish. A task finished ahead of its day stays on
   its own day.
-- **LIST-5** A task with **no day at all** — no date and no repeat rule — is in Today while it is
-  still to do, alongside what is due today: nothing asks for it on a particular day, so today suits
-  it as well as any other, and a task shown on no day is a task that never gets done. It sits among
-  the rest still to do, never under **Overdue** (TASK-68), being late for nothing. Done, the day it
-  was finished is the only day it has: ticked today it stays in Today, ticked on an earlier day it
-  is that day's, and taking the tick back puts it back among the tasks still to do.
+- **LIST-5** A task with **no day at all** — no date and no repeat rule — is **never in Today**,
+  done or not: Today is the day's own work, and the backlog is kept out of it. It is in Week and
+  Month (LIST-13, LIST-18) and Tasks, and giving it a day of today or earlier brings it into Today.
 - **LIST-6** A task added in Today is **due today**, unless another day or a repeat rule is chosen
   for it before Enter.
 - **LIST-7** Otherwise Today shows what Tasks shows: the same rows, overdue floating to the top
@@ -42,7 +39,7 @@ requirements were written with, so older references to them still mean what they
   when they were finished (TASK-56) — dragging the ones still to do to reorder (TASK-71) — which
   moves the task everywhere else too — and the same rail, whose bars count every task rather than
   only today's.
-- **LIST-8** An empty Today greets a fresh day and says to add a task above. Once everything in it
+- **LIST-8** An empty Today greets a fresh day and says to add a task. Once everything in it
   is done, it praises the day's work instead (TASK-50).
 - **LIST-9** Nothing moves at midnight. What is in Today follows from the day it is, so a page left
   open picks up the new day on its next render (PRIN-2).
@@ -53,8 +50,8 @@ requirements were written with, so older references to them still mean what they
 
 - **LIST-22** Tomorrow is a look ahead at **tomorrow alone**, to plan it. A task still to do is in
   it when it is **due tomorrow**. Unlike Today, Week and Month it gathers nothing up: nothing
-  overdue, which is still today's to do, and no task with no day at all (LIST-5), which Today shows
-  already.
+  overdue, which is still today's to do, and no task with no day at all, which Week shows
+  (LIST-13).
 - **LIST-23** Repeating tasks are in when their occurrence in play falls tomorrow — one skipped
   today (RPT-34), or one whose picked start day is tomorrow — and when one written since its rule
   last came round is first due tomorrow (LIST-11). A daily task is not: its occurrence in
@@ -82,8 +79,12 @@ requirements were written with, so older references to them still mean what they
   (PROG-4).
 - **LIST-12** A done task stays when it was due this week, whenever it was finished, and an overdue
   one stays when it was finished this week. A task finished ahead of a later week stays in that week.
-- **LIST-13** A task with no day goes as in Today (LIST-5), so what Today shows Week shows too:
-  still to do it is in Week, and done it stays when it was **done this week**.
+- **LIST-13** A task with **no day at all** is in Week while it is still to do, alongside what is due
+  this week: nothing asks for it on a particular day, so this week suits it as well as any other,
+  and a task shown on no day is a task that never gets done. It sits among the rest still to do,
+  never under **Overdue** (TASK-68), being late for nothing. Done, the day it was finished is the only
+  day it has: it stays when it was **done this week**, and taking the tick back puts it back among
+  the tasks still to do. Today leaves it out (LIST-5), so Week shows everything Today does and more.
 - **LIST-14** A task added in Week is **due this Sunday**, the day the week closes, unless another
   day or a repeat rule is chosen for it before Enter.
 - **LIST-15** Otherwise Week is the same list as Today (LIST-7): the same rows, order and rail. An

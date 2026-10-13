@@ -122,6 +122,18 @@ describe('PinnedTabs', () => {
     expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Add task' }).value).toBe('2')
   })
 
+  it('keeps the outlined tab\'s room while the page open is pinned, so going between them moves no tab (UI-75)', () => {
+    const slots = () => strip().querySelectorAll('li').length
+
+    setup('rewards', ['today', 'habits'])
+    const unpinnedOpen = slots()
+    cleanup()
+    setup('habits', ['today', 'habits'])
+
+    expect(slots()).toBe(unpinnedOpen)
+    expect(tabNames()).toEqual(['Today', 'Habits'])
+  })
+
   it('softens every tab but Today\'s while Procrastination mode is on (UI-77, JUST-5)', () => {
     setup('today', ['habits', 'today', 'tasks'], { dimmed: true })
 

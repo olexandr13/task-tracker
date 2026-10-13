@@ -65,6 +65,11 @@ export function describeBrowserPermission(permission: NotifyPermission): { reado
         heading: 'This browser is blocking notifications',
         text: 'Everything still shows on screen. To hear it in another tab or window, allow notifications in the site’s settings: the icon at the left of the address bar.',
       }
+    case 'home-screen':
+      return {
+        heading: 'Notifications need PickMe on the Home Screen',
+        text: 'Everything still shows on screen. On an iPhone or iPad, Safari gives notifications only to apps opened from the Home Screen: press “Share”, then “Add to Home Screen”, open PickMe from there and press “Allow notifications”.',
+      }
     case 'unavailable':
       return {
         heading: 'This browser has no notifications',
@@ -75,8 +80,12 @@ export function describeBrowserPermission(permission: NotifyPermission): { reado
 
 export const ALLOW_NOTIFICATIONS = 'Allow notifications'
 
-/** Said under the browser's state whatever it is (PRIN-16): a notification needs the app open to be posted. */
-export const NOTIFICATIONS_NEED_APP_OPEN = 'Nothing reaches you while PickMe is closed.'
+/**
+ * Said under the browser's state whatever it is (PRIN-16): a notification needs
+ * the app open to be posted, and a phone does not keep it open for long.
+ */
+export const NOTIFICATIONS_NEED_APP_OPEN =
+  'Nothing reaches you while PickMe is closed. A phone pauses it soon after you switch to another app, and nothing more arrives until you come back.'
 
 /** The page with nothing standing (NOTIF-3). */
 export const NOTHING_STANDING =

@@ -1,4 +1,4 @@
-/** The flame glyph that marks habits, and the streak that keeps one alight. */
+/** The flame that marks a habit's streak, lit while one keeps it alight (HAB-5). */
 export function FlameIcon({ className }: { className?: string }) {
   return (
     <svg

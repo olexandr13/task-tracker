@@ -61,6 +61,8 @@ export function describeCheckInPermission(permission: NotifyPermission): string 
   switch (permission) {
     case 'denied':
       return 'This browser is blocking notifications, so check-ins only show on screen. Allow them in the site’s settings to have them reach you elsewhere.'
+    case 'home-screen':
+      return 'Safari has notifications only in PickMe opened from the Home Screen, so here check-ins only show on screen.'
     case 'unavailable':
       return 'This browser has no notifications, so check-ins only show on screen.'
     case 'default':

@@ -292,7 +292,7 @@ slowing to a crawl — are as much the feature as the points are.
   practice mode is on, how the practice run is going (CHST-21); whether tasks without
   points count (CHST-32) is switched on Settings, as is practice mode where a build offers it. While a key is
   waiting, Cases is **marked wherever it is reached from** —
-  its entry in the sidebar, its pill in the strip across the rewards pages (RWD-30), the Rewards tab and its entry in that
+  its entry in the sidebar, its pill in the strip across the rewards pages (UI-84), the Rewards tab and its entry in that
   tab's menu (UI-67) — with a dot and the
   words behind it, a mark that is only a colour saying nothing to someone who cannot see it.
 - **CHST-33** Under the cases, the page says **what each case opened today gave**, in a list
@@ -368,7 +368,7 @@ the one way to open it), `src/app/useCaseKey.ts` (watching the Drop arrive), `sr
 `src/app/caseLabels.ts` (wording), `src/styles.css` (the cabinet, the crate's breathing and
 unlocking, the screen, the cards, the starburst, the flash, the rings),
 `src/app/view.ts` (the page and its address), `src/app/viewIcons.ts`,
-`src/app/components/SideNav.tsx`, `BottomNav.tsx`, `RewardsNav.tsx` (the way in, and the mark),
+`src/app/components/SideNav.tsx`, `BottomNav.tsx`, `SectionNav.tsx` (the way in, and the mark),
 `src/app/components/RewardsPage.tsx` (where the points stand),
 `src/app/rewardLabels.ts` (the ledger row), `src/app/TasksScreen.tsx`,
 `src/storage/rewardSchema.ts`, `rewardRepository.ts`, `firestoreRewardRepository.ts`,
@@ -381,5 +381,5 @@ keeps) — see [Storage](storage.md).
 `src/storage/rewardSchema.test.ts`, `src/storage/caseDeviceSchema.test.ts`,
 `src/app/components/RewardsPage.test.tsx` (where the points stand),
 `src/app/components/SideNav.test.tsx`,
-`BottomNav.test.tsx`, `RewardsNav.test.tsx` (the way in), `src/app/useView.test.ts` (the address),
+`BottomNav.test.tsx`, `SectionNav.test.tsx` (the way in), `src/app/useView.test.ts` (the address),
 `src/storage/backupFile.test.ts` and `backupRepository.test.ts` (the settings in a backup).

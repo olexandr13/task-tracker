@@ -75,10 +75,10 @@ describe('SideNav', () => {
     expect(screen.getByText('PickMe')).toBeTruthy()
   })
 
-  it('groups the work, what pushes it along, Organize and Reflect, with Tags, the notes and Modes under Organize, Balance, the activity log and the journal under Reflect, none for any one tag and none for More (UI-30, UI-45, UI-81, UI-83, TAG-17, RWD-19, LST-13, MODE-7, NOTE-1, BAL-1, ACT-1, JRN-1)', () => {
+  it('groups the work, what pushes it along, Organize and Reflect, with each mode under Modes, Tags and the notes under Organize, Balance, the activity log and the journal under Reflect, none for any one tag and none for More (UI-30, UI-45, UI-81, UI-83, TAG-17, RWD-19, LST-13, MODE-1, MODE-7, NOTE-1, BAL-1, ACT-1, JRN-1)', () => {
     setup('today')
 
-    const folds = [foldButton(), rewardsFoldButton(), organizeFoldButton(), modesFoldButton(), reflectFoldButton()]
+    const folds = [foldButton(), rewardsFoldButton(), modesFoldButton(), organizeFoldButton(), reflectFoldButton()]
     const entries = screen.getAllByRole('button').filter((button) => !folds.includes(button))
     expect(entries.map((button) => button.textContent)).toEqual([
       'Today',
@@ -89,20 +89,21 @@ describe('SideNav', () => {
       'Tasks',
       'Lists',
       'Inbox',
+      'Level',
       'Rewards',
       'Cases',
       'History',
       'Prizes',
       'Wishlist',
       'Rules',
-      'Organize',
-      'Tags',
-      'Notes',
       'Modes',
       '🫠Procrastination',
       '🌱Warm-up',
       '🔔Nudge',
       '⏰Check-in',
+      'Organize',
+      'Tags',
+      'Notes',
       'Reflect',
       'Balance',
       'Activity log',
@@ -155,16 +156,16 @@ describe('SideNav', () => {
     expect(onChange).toHaveBeenCalledWith('tags')
   })
 
-  it('goes to Organize, and to Tags, the notes and Modes under it (UI-81)', async () => {
+  it('goes to Organize, and to Tags and the notes under it (UI-81)', async () => {
     const { user, onChange } = setup('today')
 
     await user.click(screen.getByRole('button', { name: 'Organize' }))
     const under = within(screen.getByRole('list', { name: 'Organize' }))
     await user.click(under.getByRole('button', { name: 'Tags' }))
     await user.click(under.getByRole('button', { name: 'Notes' }))
-    await user.click(under.getByRole('button', { name: 'Modes' }))
 
-    expect(onChange.mock.calls).toEqual([['organize'], ['tags'], ['notes'], ['modes']])
+    expect(onChange.mock.calls).toEqual([['organize'], ['tags'], ['notes']])
+    expect(under.queryByRole('button', { name: 'Modes' })).toBeNull()
   })
 
   it('marks Organize itself while its page is open, and each page under it on its own (UI-8, UI-81)', () => {
@@ -176,7 +177,7 @@ describe('SideNav', () => {
     expect(marked().map((button) => button.textContent)).toEqual(['Notes'])
   })
 
-  it('folds Tags, the notes and Modes away and opens them again, without leaving the view (UI-81)', async () => {
+  it('folds Tags and the notes away and opens them again, without leaving the view (UI-81)', async () => {
     const { user, onChange, onOrganizeOpenChange } = setup('today')
 
     expect(organizeFoldButton().getAttribute('aria-expanded')).toBe('true')
@@ -195,25 +196,24 @@ describe('SideNav', () => {
   })
 
   it('leaves everything under Organize out while folded, and marks Organize for the page you are on (UI-8, UI-81)', () => {
-    for (const view of ['tags', 'tag/work', 'notes', 'modes', 'modes/nudge'] as const) {
+    for (const view of ['tags', 'tag/work', 'notes'] as const) {
       setup(view, [], true, false, true, true, false)
 
       expect(screen.queryByRole('list', { name: 'Organize' })).toBeNull()
       expect(screen.queryByRole('button', { name: 'Tags' })).toBeNull()
-      expect(screen.queryByRole('button', { name: 'Modes' })).toBeNull()
       expect(marked().map((button) => button.textContent)).toEqual(['Organize'])
       cleanup()
     }
   })
 
-  it('draws the modes a step further in than Modes, which is a step in from Organize (UI-81, MODE-7)', () => {
+  it('draws Modes as an entry of its own, with the modes a step in from it as Tags is from Organize (UI-81, MODE-7)', () => {
     setup('today')
 
     const indent = (name: string) => screen.getByRole('button', { name }).className.match(/pl-\[[^\]]+\]|px-\d+/)?.[0]
     expect(indent('Organize')).toBe('px-3')
-    expect(indent('Modes')).toBe('pl-[2.375rem]')
+    expect(indent('Modes')).toBe('px-3')
     expect(indent('Tags')).toBe('pl-[2.375rem]')
-    expect(indent('Nudge')).toBe('pl-[3.75rem]')
+    expect(indent('Nudge')).toBe('pl-[2.375rem]')
   })
 
   it('goes to Reflect, and to Balance, the activity log and the journal under it (UI-83)', async () => {
@@ -511,9 +511,8 @@ describe('SideNav', () => {
     expect(entry('Today')?.className ?? '').not.toMatch(/opacity-25/)
     expect(entry('Week')?.className).toMatch(/opacity-25/)
     expect(entry('Lists')?.className).toMatch(/opacity-25/)
-    // Softened once, with Organize: not again under it, which would leave Modes fainter than the rest.
+    expect(entry('Modes')?.className).toMatch(/opacity-25/)
     expect(entry('Organize')?.className).toMatch(/opacity-25/)
-    expect(entry('Modes')?.className ?? '').not.toMatch(/opacity-25/)
     expect(entry('Reflect')?.className).toMatch(/opacity-25/)
     expect(screen.getByText('PickMe').closest('div')?.className).toMatch(/opacity-25/)
   })
@@ -590,7 +589,7 @@ describe('SideNav', () => {
     expect(rows([])).toEqual([
       'Today', 'Tomorrow', 'Week', 'Month', '—',
       'Habits', 'Tasks', 'Lists', '—',
-      'Rewards', '—',
+      'Level', 'Rewards', 'Modes', '—',
       'Organize', '—',
       'Reflect', '—',
       'Notifications', '—',
@@ -600,13 +599,13 @@ describe('SideNav', () => {
     expect(rows(['balance', 'activity', 'journal'])).toEqual([
       'Today', 'Tomorrow', 'Week', 'Month', '—',
       'Habits', 'Tasks', 'Lists', '—',
-      'Rewards', '—',
+      'Level', 'Rewards', 'Modes', '—',
       'Organize', '—',
       'Notifications', '—',
       'Trash', '—',
       'Settings',
     ])
-    expect(rows(['rewards', 'modes'])).toEqual([
+    expect(rows(['levels', 'rewards', 'modes'])).toEqual([
       'Today', 'Tomorrow', 'Week', 'Month', '—',
       'Habits', 'Tasks', 'Lists', '—',
       'Organize', '—',
@@ -619,18 +618,18 @@ describe('SideNav', () => {
     expect(rows(['notifications'])).toEqual([
       'Today', 'Tomorrow', 'Week', 'Month', '—',
       'Habits', 'Tasks', 'Lists', '—',
-      'Rewards', '—',
+      'Level', 'Rewards', 'Modes', '—',
       'Organize', '—',
       'Reflect', '—',
       'Trash', '—',
       'Settings',
     ])
-    // Organize goes once all it holds is off (UI-81); Reflect stays for the activity log and the
-    // journal, Balance going with the tags (FEAT-4).
-    expect(rows(['tags', 'notes', 'modes'])).toEqual([
+    // Organize goes once all it holds is off (UI-81), Modes or no Modes; Reflect stays for the
+    // activity log and the journal, Balance going with the tags (FEAT-4).
+    expect(rows(['tags', 'notes'])).toEqual([
       'Today', 'Tomorrow', 'Week', 'Month', '—',
       'Habits', 'Tasks', 'Lists', '—',
-      'Rewards', '—',
+      'Level', 'Rewards', 'Modes', '—',
       'Reflect', '—',
       'Notifications', '—',
       'Trash', '—',

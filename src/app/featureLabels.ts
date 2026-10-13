@@ -12,6 +12,7 @@ export const FEATURE_LABELS: Readonly<Record<Feature, { readonly name: string; r
   habits: { name: 'Habits', description: 'The Habits page, where daily tasks are kept as habits with streaks.' },
   rewards: { name: 'Rewards', description: 'Points for finished tasks, and prizes and a wishlist to spend them on.' },
   cases: { name: 'Cases', description: 'A case for every cleared day, and another that arrives once a day.' },
+  levels: { name: 'Levels', description: 'XP for what you get done, and the level it adds up to.' },
   lists: { name: 'Lists', description: 'The Lists page and the Inbox, and putting a task in a list.' },
   tags: { name: 'Tags', description: 'The Tags page, and tags on tasks.' },
   notes: { name: 'Notes', description: 'The Notes page, for anything you want to write down and keep.' },

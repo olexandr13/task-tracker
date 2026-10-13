@@ -20,6 +20,7 @@ export const FEATURES = [
   'habits',
   'rewards',
   'cases',
+  'levels',
   'lists',
   'tags',
   'notes',

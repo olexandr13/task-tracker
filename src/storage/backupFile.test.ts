@@ -36,6 +36,7 @@ import { PRIZE_SCHEMA_VERSION } from './prizeSchema'
 import { REWARD_SCHEMA_VERSION } from './rewardSchema'
 import { TAG_SCHEMA_VERSION } from './tagSchema'
 import { SCHEMA_VERSION } from './taskSchema'
+import { XP_SCHEMA_VERSION } from './xpSchema'
 
 /* The backup file: what it holds, and reading one back. BAK ids refer to wiki/backup.md. */
 
@@ -85,10 +86,14 @@ const DATA: AccountData = {
   checkIn: CHECKING_IN,
   features: ['rewards', 'quote'],
   habitRests: { since: '2026-09-01' },
+  xpProgress: { xp: 42, startedOn: '2026-09-15', settledThrough: '2026-09-18', addsOn: '2026-09-19', adds: 2 },
 }
 
-/** What a file from before the habits' settings reads as (BAK-23). */
-const BEFORE_HABIT_SETTINGS = { habitRests: null }
+/** What a file from before XP reads as (BAK-24). */
+const BEFORE_XP = { xpProgress: null }
+
+/** What a file from before the habits' settings reads as (BAK-23), and so before XP too. */
+const BEFORE_HABIT_SETTINGS = { habitRests: null, ...BEFORE_XP }
 
 /** What a file from before the notes reads as (BAK-22), and so before the habits' settings too. */
 const BEFORE_NOTES = { notes: [], ...BEFORE_HABIT_SETTINGS }
@@ -140,6 +145,9 @@ describe('writing a backup', () => {
       features: [{ version: FEATURES_SCHEMA_VERSION, name: 'features', off: ['rewards', 'quote'] }],
       notes: [{ version: NOTE_SCHEMA_VERSION, note: FILMS }],
       habitSettings: [{ version: HABIT_SETTINGS_SCHEMA_VERSION, name: 'rests', since: '2026-09-01' }],
+      xpProgress: [
+        { version: XP_SCHEMA_VERSION, name: 'progress', xp: 42, startedOn: '2026-09-15', settledThrough: '2026-09-18', addsOn: '2026-09-19', adds: 2 },
+      ],
     })
   })
 
@@ -369,9 +377,15 @@ describe('reading a backup', () => {
   })
 
   it('reads a file from before the habits\u2019 settings as leaving rests unlimited (BAK-23)', () => {
-    const read = readBackupFile(fileWith({ version: 11, habitSettings: undefined }))
+    const read = readBackupFile(fileWith({ version: 11, habitSettings: undefined, xpProgress: undefined }))
 
     expect(read).toEqual({ data: { ...DATA, ...BEFORE_HABIT_SETTINGS }, unreadable: 0 })
+  })
+
+  it('reads a file from before XP as holding none, and XP not begun (BAK-24)', () => {
+    const read = readBackupFile(fileWith({ version: 12, xpProgress: undefined }))
+
+    expect(read).toEqual({ data: { ...DATA, ...BEFORE_XP }, unreadable: 0 })
   })
 
   it('says so when a backup was made by a newer version of the app (BAK-9)', () => {
@@ -400,6 +414,7 @@ describe('reading a backup', () => {
         journalDays: [{ version: JOURNAL_SCHEMA_VERSION, day: '2026-09-18', entries: { x: { section: 'regrets', text: 'No', writtenAt: AT.toISOString() } } }],
         notes: [{ version: NOTE_SCHEMA_VERSION, note: { ...FILMS, text: '- ' } }],
         habitSettings: [{ version: HABIT_SETTINGS_SCHEMA_VERSION + 1, name: 'rests', since: '2026-09-01' }],
+        xpProgress: [{ version: XP_SCHEMA_VERSION, name: 'progress', xp: 1, startedOn: 'someday' }],
       }),
     )
 
@@ -424,8 +439,9 @@ describe('reading a backup', () => {
         checkIn: null,
         features: null,
         habitRests: null,
+        xpProgress: null,
       },
-      unreadable: 13,
+      unreadable: 14,
     })
   })
 })

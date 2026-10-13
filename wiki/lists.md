@@ -40,7 +40,7 @@ reasons; requirements here are `LST-`.
   and **Lists** stays marked in the sidebar while it is open. It is in
   the address as `#/list/{id}` (UI-36), by the list's id, so a rename does not break a bookmark.
 - **LST-9** A task added in a list's view **goes into that list**, and has no day, as in Tasks.
-- **LST-10** An empty list says nothing is in it yet and to add a task above; once everything in it
+- **LST-10** An empty list says nothing is in it yet and to add a task; once everything in it
   is done, it praises the work (TASK-50).
 
 ## The Inbox
@@ -86,7 +86,10 @@ reasons; requirements here are `LST-`.
   own view (LST-8). In the sidebar, Lists opens onto the Inbox and then every list, in the
   same order, indented under it, each going straight to its view and marked while it is open
   (UI-8). A long name is cut rather than widening the sidebar. Each is also somewhere to drop a
-  task (LST-25). The lists can be folded away (LST-26).
+  task (LST-25). The lists can be folded away (LST-26). The Lists page, the Inbox and each list's
+  view begin with a strip of the same entries — **Lists**, **Inbox**, then every list — the one
+  open filled in, so the next list is a tap away on a phone too (UI-84). It is not somewhere to
+  drop a task: the sidebar is.
 - **LST-26** A **chevron** at the end of Lists in the sidebar **folds** the Inbox and the lists
   away, and unfolds them again; it points down while they are shown and right while they are
   folded. Folding goes nowhere — Lists itself still opens its page. Lists starts **unfolded**, and

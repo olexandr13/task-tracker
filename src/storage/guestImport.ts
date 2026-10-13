@@ -21,6 +21,7 @@ import { loadGuestLedger } from './localRewardRepository'
 import { loadGuestTags } from './localTagRepository'
 import { loadGuestTasks } from './localTaskRepository'
 import { loadGuestWarmUp } from './localWarmUpRepository'
+import { loadGuestXpProgress } from './localXpRepository'
 import type { NoteRepository } from './noteRepository'
 import type { NudgeRepository } from './nudgeRepository'
 import type { PrizeRepository } from './prizeRepository'
@@ -28,6 +29,7 @@ import type { RewardRepository } from './rewardRepository'
 import type { TagRepository } from './tagRepository'
 import type { TaskRepository } from './taskRepository'
 import type { WarmUpRepository } from './warmUpRepository'
+import type { XpRepository } from './xpRepository'
 
 /**
  * Moves the guest's records into a signed-in account, then forgets them here.
@@ -49,6 +51,7 @@ export async function importGuestAccount(
   habitSettings: HabitSettingsRepository,
   journal: JournalRepository,
   notes: NoteRepository,
+  xp: XpRepository,
 ): Promise<void> {
   const guestTasks = loadGuestTasks()
   const guestLists = loadGuestLists()
@@ -64,6 +67,7 @@ export async function importGuestAccount(
   const guestRests = loadGuestHabitRests()
   const guestJournal = loadGuestJournal()
   const guestNotes = loadGuestNotes()
+  const guestXp = loadGuestXpProgress()
 
   const empty =
     guestTasks.length === 0 &&
@@ -83,7 +87,8 @@ export async function importGuestAccount(
     guestFeatures === null &&
     guestRests === null &&
     guestJournal.length === 0 &&
-    guestNotes.length === 0
+    guestNotes.length === 0 &&
+    guestXp === null
 
   if (empty) {
     clearGuestAccount()
@@ -124,6 +129,8 @@ export async function importGuestAccount(
   if (guestCheckIn !== null) await checkIn.importCheckIn(guestCheckIn)
   if (guestFeatures !== null) await features.importFeatures(guestFeatures)
   if (guestRests !== null) await habitSettings.importRests(guestRests)
+  // XP begun as guest keeps the day it began on, where the account has not begun its own.
+  if (guestXp !== null) await xp.importProgress(guestXp)
 
   clearGuestAccount()
 }

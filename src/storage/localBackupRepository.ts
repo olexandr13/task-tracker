@@ -25,6 +25,7 @@ import { clearGuestTags, createLocalTagRepository, loadGuestTags } from './local
 import { clearGuestTasks, createLocalTaskRepository, loadGuestTasks } from './localTaskRepository'
 import { clearGuestProcrastination } from './localProcrastinationRepository'
 import { clearGuestWarmUp, createLocalWarmUpRepository, loadGuestWarmUp } from './localWarmUpRepository'
+import { clearGuestXp, createLocalXpRepository, loadGuestXpProgress } from './localXpRepository'
 
 /**
  * The guest's data as a whole file — export and import stay on this device.
@@ -44,6 +45,7 @@ export function createLocalBackupRepository(): BackupRepository {
   const habitSettings = createLocalHabitSettingsRepository()
   const journal = createLocalJournalRepository()
   const notes = createLocalNoteRepository()
+  const xp = createLocalXpRepository()
 
   return {
     async exportAll() {
@@ -68,6 +70,7 @@ export function createLocalBackupRepository(): BackupRepository {
         checkIn: loadGuestCheckIn(),
         features: loadGuestFeatures(),
         habitRests: loadGuestHabitRests(),
+        xpProgress: loadGuestXpProgress(),
       }
     },
 
@@ -96,6 +99,7 @@ export function createLocalBackupRepository(): BackupRepository {
         checkIn: loadGuestCheckIn(),
         features: loadGuestFeatures(),
         habitRests: loadGuestHabitRests(),
+        xpProgress: loadGuestXpProgress(),
         days: daysKnown(ledger.entries),
       }
 
@@ -123,12 +127,13 @@ export function createLocalBackupRepository(): BackupRepository {
         ledger.newTaskReward ?? fresh.newTaskReward,
       )
 
-      // The file's warm-up, nudge, check-in, switches and limit on rests only where there are none here already (`newRecords`).
+      // The file's warm-up, nudge, check-in, switches, limit on rests and where XP stands only where there are none here already (`newRecords`).
       if (fresh.warmUp !== null) await warmUp.importWarmUp(fresh.warmUp)
       if (fresh.nudge !== null) await nudge.importNudge(fresh.nudge)
       if (fresh.checkIn !== null) await checkIn.importCheckIn(fresh.checkIn)
       if (fresh.features !== null) await features.importFeatures(fresh.features)
       if (fresh.habitRests !== null) await habitSettings.importRests(fresh.habitRests)
+      if (fresh.xpProgress !== null) await xp.importProgress(fresh.xpProgress)
 
       return { added: countRecords(fresh), alreadyHere }
     },
@@ -158,6 +163,7 @@ export function clearGuestAccount(): void {
   clearGuestCheckIn()
   clearGuestFeatures()
   clearGuestHabitRests()
+  clearGuestXp()
   clearGuestRewards()
   clearGuestWarmUp()
   clearGuestNudge()

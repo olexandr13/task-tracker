@@ -88,6 +88,8 @@ function persist(repository: TaskRepository, changes: TaskChanges, onProblem: Re
 
 function ignoreSessions(): void {}
 
+function ignoreChange(): void {}
+
 function record(rewards: RewardRepository, changes: RewardChanges, onProblem: ReportProblem): void {
   if (!hasRewardChanges(changes)) return
 
@@ -128,6 +130,9 @@ function charge(rewards: RewardRepository, changes: PenaltyChanges, onProblem: R
  * made longer or shorter to `onSessionsResized`, for it to be written down
  * again (TIME-24) — again only here, not as it arrives from elsewhere.
  *
+ * Every change made here is told to `onChange`, the list before and after it,
+ * for what it gave and took in XP (LVL-4 to LVL-7, LVL-12) — again only here.
+ *
  * A load or a save the repository refuses is told to `onProblem` (STORE-13),
  * which is expected to stay the same function from render to render.
  */
@@ -143,6 +148,8 @@ export function useTasks(
   onSessionsLogged: (sessions: readonly LoggedSession[]) => void = ignoreSessions,
   /** Told of every session a change makes longer or shorter, at its new length, for the activity log (TIME-24). */
   onSessionsResized: (sessions: readonly LoggedSession[]) => void = ignoreSessions,
+  /** Told of every change made here, the list before and after it, for XP (LVL-1). */
+  onChange: (before: readonly Task[], after: readonly Task[], now: Date) => void = ignoreChange,
 ) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [status, setStatus] = useState<'loading' | 'loaded' | 'failed'>('loading')
@@ -163,9 +170,11 @@ export function useTasks(
   // make every change below a new function.
   const sessionsLoggedTo = useRef(onSessionsLogged)
   const sessionsResizedTo = useRef(onSessionsResized)
+  const changeTo = useRef(onChange)
   useLayoutEffect(() => {
     sessionsLoggedTo.current = onSessionsLogged
     sessionsResizedTo.current = onSessionsResized
+    changeTo.current = onChange
   })
 
   useEffect(() => {
@@ -248,6 +257,7 @@ export function useTasks(
       const now = new Date()
       record(rewards, withPeriodBonuses(rewardChanges(before, next), before, next, bonuses, earned, now), onProblem)
       charge(rewards, penaltyChanges(before, next, now), onProblem)
+      changeTo.current(before, next, now)
       const logged = sessionsLogged(before, next)
       if (logged.length > 0) sessionsLoggedTo.current(logged)
       const resized = sessionsResized(before, next)

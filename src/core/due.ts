@@ -289,16 +289,17 @@ export function splitOverdue(tasks: readonly Task[], now: Date = new Date()): Ov
  * To do, it belongs when it is due by the period's last day, overdue included —
  * a day missed does not let a task drop out of sight, and whatever is in Today
  * is in Week and Month too. A task with **no day at all** — no date and no rule —
- * is in every one of them: nothing asks for it on a particular day, which leaves
- * every day as good as the next, and a task nobody is ever shown is a task
- * nobody ever does.
+ * is in Week and Month: nothing asks for it on a particular day, which leaves
+ * every day of them as good as the next, and a task nobody is ever shown is a
+ * task nobody ever does. It is never in Today, done or not, which holds only
+ * what has a day: Today is the day's own work, not the backlog.
  *
  * Done, it stays when it was due inside the period, whenever it was finished,
  * and otherwise when it was finished inside the period, so ticking something
  * off does not make it vanish — that is what keeps an overdue task finished
- * today in today's list, and what puts a task with no day there, the day it was
- * finished being the only day it has. A task finished ahead of a later period
- * stays in that period.
+ * today in today's list, and what puts a task with no day in this week's, the
+ * day it was finished being the only day it has. A task finished ahead of a
+ * later period stays in that period.
  *
  * A repeating task is in on its occurrence in play, so a Friday task joins the
  * week on Friday: ahead of that the only occurrence there is to show is last
@@ -311,10 +312,13 @@ export function isInPeriod(task: Task, period: Period, now: Date = new Date()): 
   if (isDeleted(task)) {
     return false
   }
+  if (period === 'today' && !hasDueDay(task)) {
+    return false
+  }
 
   const last = lastDayOf(period, now)
   if (!isComplete(task, now)) {
-    // No day and no rule: due by any day the period ends on, this one included.
+    // No day and no rule: due by any day the period ends on.
     // A repeating task whose rule has not come round yet has a day — just not
     // one in play — and is in when that first day falls by the period's end.
     if (!hasDueDay(task)) return true
@@ -336,7 +340,7 @@ export function isInPeriod(task: Task, period: Period, now: Date = new Date()): 
  *
  * Tomorrow is a look ahead, not a period still running, so it gathers nothing
  * up. Overdue is not in it — that is still today's to do — and nor is a task
- * with no day at all, which Today shows already. A task finished ahead of its
+ * with no day at all, which Week shows. A task finished ahead of its
  * day stays on its own day, as anywhere else.
  *
  * A repeating task is in when its occurrence in play falls tomorrow: one skipped

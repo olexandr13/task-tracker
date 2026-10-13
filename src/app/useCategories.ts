@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   bindTag,
+  categoryXp,
   changeCategoryTime,
   createCategory,
   isCategoryLimitReached,
@@ -16,6 +17,7 @@ import {
   type CategoryId,
   type TimeEntryChange,
   type TimeEntryId,
+  type XpDelta,
 } from '../core'
 import type { CategoryChanges, CategoryRepository } from '../storage/categoryRepository'
 import { changesBetween, hasChanges } from '../storage/recordChanges'
@@ -30,6 +32,8 @@ function persist(repository: CategoryRepository, changes: CategoryChanges, onPro
   })
 }
 
+function ignoreXp(): void {}
+
 /**
  * Holds the Balance page's categories on screen and keeps them and the
  * repository in step both ways, as usePrizes does for the wishlist: a change
@@ -37,14 +41,25 @@ function persist(repository: CategoryRepository, changes: CategoryChanges, onPro
  * comes back through the subscription. The rules themselves live in
  * ../core/balance; this only wires them to React.
  *
+ * What time logged straight to a category gives and takes in XP is told to
+ * `onXp` (LVL-7).
+ *
  * A load or a save the repository refuses is told to `onProblem` (STORE-13).
  */
-export function useCategories(repository: CategoryRepository, onProblem: ReportProblem = ignoreProblems) {
+export function useCategories(
+  repository: CategoryRepository,
+  onProblem: ReportProblem = ignoreProblems,
+  onXp: (delta: XpDelta) => void = ignoreXp,
+) {
   const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(true)
   // The categories as the last change left them, so changes made in one go
   // build on each other rather than on the ones last drawn (STORE-39).
   const latest = useRef<Category[]>([])
+  const xpTo = useRef(onXp)
+  useLayoutEffect(() => {
+    xpTo.current = onXp
+  })
 
   useEffect(() => {
     return repository.subscribe(
@@ -68,6 +83,8 @@ export function useCategories(repository: CategoryRepository, onProblem: ReportP
       latest.current = next
       setCategories(next)
       persist(repository, changesBetween(before, next), onProblem)
+      const xp = categoryXp(before, next, new Date())
+      if (xp !== 0) xpTo.current({ xp, addedToday: 0 })
     },
     [repository, onProblem],
   )

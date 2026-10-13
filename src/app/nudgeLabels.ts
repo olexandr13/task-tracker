@@ -47,6 +47,8 @@ export function describeNotifyPermission(permission: NotifyPermission): string |
   switch (permission) {
     case 'denied':
       return 'This browser is blocking notifications, so the nudge will only show on screen. Allow them in the site’s settings to have it reach you elsewhere.'
+    case 'home-screen':
+      return 'Safari has notifications only in PickMe opened from the Home Screen, so here the nudge will only show on screen.'
     case 'unavailable':
       return 'This browser has no notifications, so the nudge will only show on screen.'
     case 'default':

@@ -1,5 +1,14 @@
 import { createContext, useContext } from 'react'
-import { ALL_FEATURES_ON, isFeatureOn, isModeAvailable, type Feature, type FeatureMode, type FeaturesOff } from '../core'
+import {
+  ALL_FEATURES_ON,
+  isFeatureOn,
+  isModeAvailable,
+  sortLists,
+  type Feature,
+  type FeatureMode,
+  type FeaturesOff,
+  type List,
+} from '../core'
 import {
   DEFAULT_VIEW,
   isModesView,
@@ -7,6 +16,7 @@ import {
   isRewardsView,
   isTagView,
   ON_MORE,
+  oneListView,
   parentView,
   UNDER_MODES,
   UNDER_ORGANIZE,
@@ -14,6 +24,7 @@ import {
   UNDER_REWARDS,
   type FixedView,
   type ModeView,
+  type SectionView,
   type View,
 } from './view'
 
@@ -74,6 +85,26 @@ export function reflectPagesShown(off: FeaturesOff): (typeof UNDER_REFLECT)[numb
 }
 
 /**
+ * The pages of a section's strip (UI-84), in the sidebar's order (UI-30): the
+ * section itself first, then what is under it there, less what is switched
+ * off — for Lists the Inbox and every list, which only `lists` can say.
+ */
+export function sectionPagesShown(section: SectionView, off: FeaturesOff, lists: readonly List[] = []): View[] {
+  switch (section) {
+    case 'lists':
+      return ['lists', 'inbox', ...sortLists(lists).map((list) => oneListView(list.id))]
+    case 'rewards':
+      return ['rewards', ...rewardsPagesShown(off)]
+    case 'modes':
+      return ['modes', ...modesShown(off)]
+    case 'organize':
+      return ['organize', ...organizePagesShown(off)]
+    case 'reflect':
+      return ['reflect', ...reflectPagesShown(off)]
+  }
+}
+
+/**
  * Whether a view is there to go to (FEAT-2): a page of a feature switched off
  * is not, nor More, Organize or Reflect once everything on it is, nor a mode whose
  * feature is off. The tasks, the trash and settings always are.
@@ -84,6 +115,7 @@ export function isViewOn(view: View, off: FeaturesOff): boolean {
   if (view === 'habits') return on('habits')
   if (view === 'rewards/cases') return on('cases')
   if (isRewardsView(view)) return on('rewards')
+  if (view === 'level') return on('levels')
   if (view === 'lists' || view === 'inbox' || isOneListView(view)) return on('lists')
   if (view === 'tags' || isTagView(view)) return on('tags')
   if (view === 'notes') return on('notes')

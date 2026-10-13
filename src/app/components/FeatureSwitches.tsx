@@ -13,6 +13,7 @@ const FEATURE_ICONS: Readonly<Record<Feature, ViewIcon>> = {
   habits: VIEW_ICONS.habits,
   rewards: VIEW_ICONS.rewards,
   cases: VIEW_ICONS['rewards/cases'],
+  levels: VIEW_ICONS.level,
   lists: VIEW_ICONS.lists,
   tags: VIEW_ICONS.tags,
   notes: VIEW_ICONS.notes,

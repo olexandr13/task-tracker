@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
+  activityXp,
   changeActivityEntry,
   createActivityEntry,
   knownActivities,
@@ -12,9 +13,12 @@ import {
   type HourSlot,
   type LoggedSession,
   type TimeEntryId,
+  type XpDelta,
 } from '../core'
 import { activityChangesBetween, hasActivityChanges, type ActivityRepository } from '../storage/activityRepository'
 import { ignoreProblems, type ReportProblem } from './storageProblem'
+
+function ignoreXp(): void {}
 
 /**
  * Holds the activity log on screen and keeps it and the repository in step
@@ -23,14 +27,25 @@ import { ignoreProblems, type ReportProblem } from './storageProblem'
  * back through the subscription. The rules themselves live in ../core/activity;
  * this only wires them to React.
  *
+ * What a record typed here gives and takes in XP is told to `onXp` (LVL-7);
+ * one made from a task's session is that session's, counted there.
+ *
  * A load or a save the repository refuses is told to `onProblem` (STORE-13).
  */
-export function useActivities(repository: ActivityRepository, onProblem: ReportProblem = ignoreProblems) {
+export function useActivities(
+  repository: ActivityRepository,
+  onProblem: ReportProblem = ignoreProblems,
+  onXp: (delta: XpDelta) => void = ignoreXp,
+) {
   const [entries, setEntries] = useState<ActivityEntry[]>([])
   const [isLoading, setIsLoading] = useState(true)
   // The log as the last change left it, so changes made in one go build on
   // each other rather than on the ones last drawn (STORE-39).
   const latest = useRef<ActivityEntry[]>([])
+  const xpTo = useRef(onXp)
+  useLayoutEffect(() => {
+    xpTo.current = onXp
+  })
 
   useEffect(() => {
     return repository.subscribe(
@@ -53,6 +68,9 @@ export function useActivities(repository: ActivityRepository, onProblem: ReportP
       const next = change(before)
       latest.current = next
       setEntries(next)
+
+      const xp = activityXp(before, next)
+      if (xp !== 0) xpTo.current({ xp, addedToday: 0 })
 
       const changes = activityChangesBetween(before, next)
       if (!hasActivityChanges(changes)) return

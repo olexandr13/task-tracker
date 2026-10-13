@@ -9,7 +9,7 @@ thing every account keeps.
 
 - **FEAT-1** **Settings** has a **Features** section, under Account (UI-35), with **one switch for each
   part** of the app that can be done without, in this order: **Habits**, **Rewards**, **Cases**,
-  **Lists**, **Tags**, **Notes**, **Balance**, **Activity log**, **Journal**, **Modes**, **Notifications**
+  **Levels** (LVL-16), **Lists**, **Tags**, **Notes**, **Balance**, **Activity log**, **Journal**, **Modes**, **Notifications**
   (NOTIF-8), **Progress bars**, **Daily quote** and **Reminders**. Each carries the glyph its page is
   navigated by — Reminders, with no page, the clock of the hour coming round — its name, and a line saying what it
   is in plain words — *Points for finished tasks, and prizes and a wishlist to spend them on*. A
@@ -36,12 +36,12 @@ thing every account keeps.
 - **FEAT-2** A page switched off is **gone from everywhere it is reached from**: its entry in the
   sidebar, with whatever is folded under it (UI-30); its tab on a phone's bar, the tabs left sharing
   the bar between them (UI-32); its entry in the Tasks and Rewards tabs' menus (UI-43, UI-67) and in
-  the strip across the rewards pages (RWD-30); its row on **More** (UI-45), **Organize** (UI-81) or
-  **Reflect** (UI-83) — and Organize itself, once Tags, Notes and Modes are all off, Reflect, once
+  the strip across its section's pages (UI-84); its row on **More** (UI-45), **Organize** (UI-81) or
+  **Reflect** (UI-83) — and Organize itself, once Tags and Notes are both off, Reflect, once
   Balance, the Activity log and the Journal are, and More, once every page on it is; its pinned tab, which is kept and comes back with it (UI-77); and its letter: **H** with Habits, **R** with Rewards, **C** with Cases (UI-56, UI-57, UI-72), **P** with the modes (UI-58). An **address** naming it — a bookmark,
   a reload, a notification pressed — opens the **nearest page above it** that is on instead (UI-37):
-  Rewards for Cases, Tasks for a list or the Inbox, Modes for a mode, Organize for Tags, Notes or
-  Modes, Reflect for Balance, the Activity log or the Journal, More for Organize, Reflect or
+  Rewards for Cases, Tasks for a list or the Inbox, Modes for a mode, Organize for Tags or Notes,
+  Reflect for Balance, the Activity log or the Journal, More for Modes, Organize, Reflect or
   Notifications — or Today, where nothing above it is on — and
   the address is put right to match.
 - **FEAT-3** What a part shows **anywhere else** goes with it:
@@ -57,6 +57,7 @@ thing every account keeps.
   - **Cases** — its card on Rewards (RWD-30), the dot saying a key is
     waiting (CHST-22), the notice when the Drop arrives (CHST-29), the notice when the Haul is here on Monday (CHST-30), and its settings under its
     switch on Settings, counting tasks without points (FEAT-10), and practice where a build offers it (CHST-21).
+  - **Levels** — the toast when the level changes (LVL-11).
   - **Habits** — its settings under its switch on Settings: how the habit cards start out and
     whether rests are limited (HAB-23, HAB-36, FEAT-10). A limit left on does nothing meanwhile, as
     the warm-up does nothing (FEAT-9): no skip is turned down for want of a rest, and every skip reads
@@ -74,7 +75,8 @@ thing every account keeps.
 - **FEAT-5** **Nothing is deleted.** A task keeps its list, its tags and its reward; the points,
   prizes, Balance categories and activity log all stay where they are; and a switch turned back on
   finds everything as it was. A task finished while Rewards is off still earns its points, and they
-  are there when Rewards is back — what is earned stays earned (RWD-13). A task added while it is
+  are there when Rewards is back — what is earned stays earned (RWD-13). XP is counted while Levels
+  is off, and the level is where it stands when Levels is back (LVL-16). A task added while it is
   off still starts at the reward set for new tasks (RWD-45). Time logged on a task while the
   Activity log is off is still written into it (ACT-21). The journal keeps its last week while it is
   off, the older days going as ever (JRN-8), and the notes stay as they are (NOTE-10). The backup holds everything
@@ -92,7 +94,7 @@ thing every account keeps.
 ## The modes
 
 - **FEAT-9** **Modes** switched off takes all four away: the Modes page and each mode's own, their
-  place in the sidebar and on Organize (UI-81), the banners on Today and Habits (MODE-10), the **P** letter, and
+  place in the sidebar and on More (UI-30, UI-45), the banners on Today and Habits (MODE-10), the **P** letter, and
   the Check-in's row on the Activity log (ACT-19). A mode built on another part goes **with that
   part**: the **warm-up** with Habits, the habits being what it lets in, and the **check-in** with
   the Activity log, which is where it asks to be written. A mode taken away **does nothing**, whatever
@@ -122,7 +124,7 @@ needs, switching one), `src/storage/featureRepository.ts`, `featureSchema.ts`,
 `useFeatureOn`, for what is drawn inside a row or a sheet; which pages are there, and where an
 address lands), `src/app/featureLabels.ts` (the wording), `src/app/components/FeatureSwitches.tsx` and
 `SettingsList.tsx` (the switches, and a part's own settings under its switch), `src/app/TasksScreen.tsx` (the shortcuts, the notices, the modes, the
-rail), `SideNav.tsx`, `BottomNav.tsx`, `MorePage.tsx`, `OrganizePage.tsx`, `ReflectPage.tsx`, `RewardsNav.tsx`, `ModesPage.tsx` (the
+rail), `SideNav.tsx`, `BottomNav.tsx`, `MorePage.tsx`, `OrganizePage.tsx`, `ReflectPage.tsx`, `SectionNav.tsx`, `ModesPage.tsx` (the
 navigation), `TaskItem.tsx`, `TaskSheet.tsx`, `AddTaskSheet.tsx`, `TaskDescription.tsx`,
 `ProcrastinationMode.tsx`, `RewardsPage.tsx`, `ActivityPage.tsx` (what goes with a part),
 `src/app/useReminders.ts` and `useQuote.ts` (reminders and the quote, off), `TasksScreen.tsx` (the
