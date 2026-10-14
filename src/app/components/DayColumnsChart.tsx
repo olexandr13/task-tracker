@@ -1,15 +1,6 @@
 import { useId, useState } from 'react'
 import type { LocalDay } from '../../core'
-import {
-  BY_DAY_HEADING,
-  chartCeiling,
-  DAY_READOUT_HINT,
-  dayAxisLabel,
-  describeChartTime,
-  describeDay,
-  describeDayColumn,
-  describeGridline,
-} from '../chartLabels'
+import { BY_DAY_HEADING, dayAxisLabel, describeDay, describeDayColumn, type ChartMeasure } from '../chartLabels'
 import type { DayColumn } from '../chartPieces'
 
 const gridline = 'absolute inset-x-0 border-t border-neutral-200 dark:border-neutral-800'
@@ -17,6 +8,8 @@ const tick = 'absolute right-0 -translate-y-1/2 text-[10px] leading-none tabular
 
 interface DayColumnsChartProps {
   columns: readonly DayColumn[]
+  /** What the chart counts — time, or tasks completed — and how it reads. */
+  measure: ChartMeasure
   period: 'week' | 'month'
   /** Today, whose label is marked. */
   today: LocalDay
@@ -27,23 +20,24 @@ interface DayColumnsChartProps {
    * press keeps the day's readout said until pressed again (BAL-13).
    */
   onOpenDay?: (day: LocalDay) => void
-  /** What the readout says before a day is pointed at. */
+  /** What the readout says before a day is pointed at, where it is not the measure's own. */
   hint?: string
 }
 
 /**
- * A week or a month day by day (BAL-13, ACT-14): a column for each day, divided
- * between the pieces as the bar above is, against two gridlines in round hours,
- * so a day with no rest in it — or nothing logged — shows as one. Pointing at a
+ * A week or a month day by day (BAL-13, BAL-18, ACT-14): a column for each day,
+ * divided between the pieces as the bar above is, against two gridlines in
+ * round hours or counts, so a day with no rest in it — or nothing logged —
+ * shows as one. Pointing at a
  * day, or focusing it, says how its time divided in the line above the columns;
  * pressing it keeps that said, or opens the day where there is one to open.
  */
-export function DayColumnsChart({ columns, period, today, active, onOpenDay, hint = DAY_READOUT_HINT }: DayColumnsChartProps) {
+export function DayColumnsChart({ columns, measure, period, today, active, onOpenDay, hint = measure.hint }: DayColumnsChartProps) {
   const headingId = useId()
   const [pressed, setPressed] = useState<LocalDay | null>(null)
   const [pointed, setPointed] = useState<LocalDay | null>(null)
 
-  const ceiling = chartCeiling(Math.max(...columns.map((column) => column.total)))
+  const ceiling = measure.ceiling(Math.max(...columns.map((column) => column.total)))
   const grid = { gridTemplateColumns: `repeat(${String(columns.length)}, minmax(0, 1fr))` }
   const shown = columns.find((column) => column.day === (pointed ?? pressed)) ?? null
 
@@ -57,16 +51,16 @@ export function DayColumnsChart({ columns, period, today, active, onOpenDay, hin
         {shown === null ? (
           hint
         ) : shown.total === 0 ? (
-          describeDayColumn(shown)
+          describeDayColumn(shown, measure)
         ) : (
           <>
             <span className="font-medium text-neutral-800 dark:text-neutral-200">
-              {describeDay(shown.day)} · {describeChartTime(shown.total)}
+              {describeDay(shown.day)} · {measure.describeTotal(shown.total)}
             </span>
             {shown.pieces.map((piece) => (
               <span key={piece.key} className="flex items-center gap-1.5">
                 <span aria-hidden="true" className={`size-2 shrink-0 rounded-[2px] ${piece.color.fill}`} />
-                {piece.label} {describeChartTime(piece.seconds)}
+                {piece.label} {measure.describe(piece.amount)}
               </span>
             ))}
           </>
@@ -88,7 +82,7 @@ export function DayColumnsChart({ columns, period, today, active, onOpenDay, hin
                   key={column.day}
                   type="button"
                   aria-pressed={onOpenDay === undefined ? pressed === column.day : undefined}
-                  aria-label={describeDayColumn(column)}
+                  aria-label={describeDayColumn(column, measure)}
                   onClick={() => {
                     if (onOpenDay !== undefined) onOpenDay(column.day)
                     else setPressed(pressed === column.day ? null : column.day)
@@ -110,7 +104,7 @@ export function DayColumnsChart({ columns, period, today, active, onOpenDay, hin
                         <span
                           key={piece.key}
                           className={`min-h-px transition-opacity ${piece.color.fill}${active !== null && piece.key !== active ? ' opacity-25' : ''}`}
-                          style={{ flexGrow: piece.seconds, flexBasis: 0 }}
+                          style={{ flexGrow: piece.amount, flexBasis: 0 }}
                           data-piece={piece.key}
                         />
                       ))}
@@ -123,8 +117,8 @@ export function DayColumnsChart({ columns, period, today, active, onOpenDay, hin
         </div>
 
         <div aria-hidden="true" className="relative h-32 w-8 shrink-0">
-          <span className={`${tick} top-0`}>{describeGridline(ceiling)}</span>
-          <span className={`${tick} top-1/2`}>{describeGridline(ceiling / 2)}</span>
+          <span className={`${tick} top-0`}>{measure.describeGridline(ceiling)}</span>
+          <span className={`${tick} top-1/2`}>{measure.describeGridline(ceiling / 2)}</span>
         </div>
       </div>
 

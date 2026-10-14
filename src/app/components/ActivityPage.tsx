@@ -32,6 +32,7 @@ import {
   PERIOD_CHOICES,
 } from '../activityLabels'
 import { activityColors, activityPieces } from '../activityPieces'
+import { TIME_MEASURE } from '../chartLabels'
 import type { ModeState } from '../modes'
 import { ActivityForm } from './ActivityForm'
 import { ActivityHours } from './ActivityHours'
@@ -39,7 +40,7 @@ import { ChevronIcon } from './ChevronIcon'
 import { DayColumnsChart } from './DayColumnsChart'
 import { InfoButton } from './InfoButton'
 import { ModeRow } from './ModesPage'
-import { TimeSplitChart } from './TimeSplitChart'
+import { SplitChart } from './SplitChart'
 
 const card = 'rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
 const reveal =
@@ -231,9 +232,10 @@ export function ActivityPage({
           <p className="py-2 text-sm text-neutral-500 dark:text-neutral-400">{describeNothingLogged(period, anchor, now)}</p>
         ) : (
           <>
-            <TimeSplitChart
+            <SplitChart
               pieces={pieces}
               total={totals.total}
+              measure={TIME_MEASURE}
               when={describePeriodInSentence(period, anchor, now)}
               active={active}
               pinned={pinned}
@@ -250,6 +252,7 @@ export function ActivityPage({
                   total: day.total,
                   pieces: activityPieces(day, colors),
                 }))}
+                measure={TIME_MEASURE}
                 period={period}
                 today={today}
                 active={active}

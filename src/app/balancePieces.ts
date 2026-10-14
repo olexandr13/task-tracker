@@ -10,8 +10,9 @@ export type PieceKey = CategoryId | 'other'
 export type BalancePiece = ChartPiece
 
 /**
- * The pieces of a period or a day that have time in them: each category in the
- * order given — the order they were made — then Other. A category keeps the
+ * The pieces of a period or a day that have anything in them — time, or tasks
+ * completed (BAL-17): each category in the order given — the order they were
+ * made — then Other. A category keeps the
  * colour of its place among all of them, so one with no time leaves the
  * others' colours as they were; there are never more categories than colours
  * (MAX_CATEGORIES), so none is ever reused.
@@ -19,13 +20,13 @@ export type BalancePiece = ChartPiece
 export function balancePieces(totals: BalanceTotals): BalancePiece[] {
   return chartPieces(
     [
-      ...totals.categories.map(({ category, seconds }, index) => ({
+      ...totals.categories.map(({ category, amount }, index) => ({
         key: category.id,
         label: category.name,
-        seconds,
+        amount,
         color: index < MAX_CATEGORIES ? chartColor(index) : OTHER_COLOR,
       })),
-      { key: 'other', label: OTHER_LABEL, seconds: totals.other, color: OTHER_COLOR },
+      { key: 'other', label: OTHER_LABEL, amount: totals.other, color: OTHER_COLOR },
     ],
     totals.total,
   )

@@ -291,15 +291,15 @@ export function splitOverdue(tasks: readonly Task[], now: Date = new Date()): Ov
  * is in Week and Month too. A task with **no day at all** — no date and no rule —
  * is in Week and Month: nothing asks for it on a particular day, which leaves
  * every day of them as good as the next, and a task nobody is ever shown is a
- * task nobody ever does. It is never in Today, done or not, which holds only
- * what has a day: Today is the day's own work, not the backlog.
+ * task nobody ever does. Still to do, it is not in Today, which holds only what
+ * has a day: Today is the day's own work, not the backlog.
  *
- * Done, it stays when it was due inside the period, whenever it was finished,
- * and otherwise when it was finished inside the period, so ticking something
- * off does not make it vanish — that is what keeps an overdue task finished
- * today in today's list, and what puts a task with no day in this week's, the
- * day it was finished being the only day it has. A task finished ahead of a
- * later period stays in that period.
+ * Done, it is in when it was due inside the period, whenever it was finished,
+ * and when it was finished inside the period, whenever it was due — the day it
+ * was finished is a day of the period's work too, as its bar counts it. So
+ * ticking something off does not make it vanish: an overdue task finished today
+ * stays in today's list, and one finished ahead of a later day, or with no day
+ * at all, joins it. One finished ahead is on its own day as well.
  *
  * A repeating task is in on its occurrence in play, so a Friday task joins the
  * week on Friday: ahead of that the only occurrence there is to show is last
@@ -308,27 +308,24 @@ export function splitOverdue(tasks: readonly Task[], now: Date = new Date()): Ov
  * for the 31st written on the 12th is in this month's list.
  */
 export function isInPeriod(task: Task, period: Period, now: Date = new Date()): boolean {
-  const due = dueDay(task, now)
   if (isDeleted(task)) {
     return false
   }
-  if (period === 'today' && !hasDueDay(task)) {
-    return false
-  }
 
+  const due = dueDay(task, now)
+  const first = toLocalDay(periodRange(period, now).start)
   const last = lastDayOf(period, now)
   if (!isComplete(task, now)) {
-    // No day and no rule: due by any day the period ends on.
+    // No day and no rule: due by any day the period ends on, bar today.
     // A repeating task whose rule has not come round yet has a day — just not
     // one in play — and is in when that first day falls by the period's end.
-    if (!hasDueDay(task)) return true
+    if (!hasDueDay(task)) return period !== 'today'
     const day = due ?? dueFirstOn(task, now)
     return day !== null && day <= last
   }
 
-  const first = toLocalDay(periodRange(period, now).start)
-  if (due !== null && due >= first) {
-    return due <= last
+  if (due !== null && due >= first && due <= last) {
+    return true
   }
 
   const finished = task.completedAt === null ? null : toLocalDay(new Date(task.completedAt))

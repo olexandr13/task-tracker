@@ -20,6 +20,10 @@
  * (BAL-14): an evening's reading logged to Rest. Such sessions are the
  * category's own, kept on it the way a task keeps its sessions, for as long as
  * the page can show them, and they count toward it whole.
+ *
+ * The tasks **completed** divide between the categories the same way (BAL-17):
+ * a completion counts as one, where time counts its seconds, so the two charts
+ * are worked out by the same tally.
  */
 
 import { offsetDay, startOfLocalDay, toLocalDay, type LocalDay } from './day'
@@ -233,15 +237,20 @@ export function recentCategoryTime(category: Category, now: Date = new Date()): 
 
 export interface CategoryTotal {
   readonly category: Category
-  readonly seconds: number
+  /** The seconds logged toward it (`balanceTotals`), or the tasks completed (`completionTotals`). */
+  readonly amount: number
 }
 
+/**
+ * How a period or a day divides between the categories: in seconds logged
+ * (BAL-3 to BAL-5), or in tasks completed (BAL-17).
+ */
 export interface BalanceTotals {
-  /** Each category, in the order given, with the seconds logged toward it. */
+  /** Each category, in the order given, with the amount counted toward it. */
   readonly categories: readonly CategoryTotal[]
-  /** Seconds logged on tasks none of whose tags is bound to any category (BAL-5). */
+  /** The amount on tasks none of whose tags is bound to any category (BAL-5). */
   readonly other: number
-  /** Every second logged, the categories and other added up (BAL-5). */
+  /** Everything counted, the categories and other added up (BAL-5). */
   readonly total: number
 }
 
@@ -250,20 +259,20 @@ export interface DayBalance extends BalanceTotals {
   readonly day: LocalDay
 }
 
-/** Seconds counted so far: per category, other, and the total. */
+/** What has been counted so far — seconds or completions: per category, other, and the total. */
 interface Tally {
-  readonly seconds: Map<CategoryId, number>
+  readonly amounts: Map<CategoryId, number>
   other: number
   total: number
 }
 
 function emptyTally(categories: readonly Category[]): Tally {
-  return { seconds: new Map(categories.map((category) => [category.id, 0])), other: 0, total: 0 }
+  return { amounts: new Map(categories.map((category) => [category.id, 0])), other: 0, total: 0 }
 }
 
 function totalsOf(categories: readonly Category[], tally: Tally): BalanceTotals {
   return {
-    categories: categories.map((category) => ({ category, seconds: tally.seconds.get(category.id) ?? 0 })),
+    categories: categories.map((category) => ({ category, amount: tally.amounts.get(category.id) ?? 0 })),
     other: tally.other,
     total: tally.total,
   }
@@ -277,19 +286,28 @@ function boundCategories(categories: readonly Category[], task: Task): Category[
 }
 
 /**
- * Counts a session: divided evenly between the categories its task is bound to
- * (BAL-4), or as other when it is bound to none (BAL-5). The pieces always add
- * up to the session, so the total is every second once.
+ * Counts a session's seconds, or a completion as one: divided evenly between
+ * the categories its task is bound to (BAL-4, BAL-17), or as other when it is
+ * bound to none (BAL-5). The pieces always add up to what was counted, so the
+ * total is everything once.
  */
-function count(tally: Tally, bound: readonly Category[], seconds: number): void {
-  tally.total += seconds
+function count(tally: Tally, bound: readonly Category[], amount: number): void {
+  tally.total += amount
   if (bound.length === 0) {
-    tally.other += seconds
+    tally.other += amount
     return
   }
 
-  const share = seconds / bound.length
-  for (const category of bound) tally.seconds.set(category.id, (tally.seconds.get(category.id) ?? 0) + share)
+  const share = amount / bound.length
+  for (const category of bound) tally.amounts.set(category.id, (tally.amounts.get(category.id) ?? 0) + share)
+}
+
+/** Every local day of the period, in order. */
+function periodDays(period: Period, now: Date): LocalDay[] {
+  const { start, end } = periodRange(period, now)
+  const days: LocalDay[] = []
+  for (let day = toLocalDay(start); startOfLocalDay(day) < end; day = offsetDay(day, 1)) days.push(day)
+  return days
 }
 
 /**
@@ -339,10 +357,7 @@ export function balanceByDay(
   period: Period,
   now: Date = new Date(),
 ): DayBalance[] {
-  const { start, end } = periodRange(period, now)
-  const days: LocalDay[] = []
-  for (let day = toLocalDay(start); startOfLocalDay(day) < end; day = offsetDay(day, 1)) days.push(day)
-
+  const days = periodDays(period, now)
   const tallies = new Map(days.map((day) => [day, emptyTally(categories)]))
   for (const task of tasks) {
     const bound = boundCategories(categories, task)
@@ -414,15 +429,115 @@ export function balanceSessions(
 }
 
 /**
- * The share of the total each amount is, in whole percent, adding up to exactly
- * 100 when anything was logged (BAL-6): each is rounded down, and the points
- * left over go to the largest remainders, the earlier first on a tie. All 0
- * when nothing was logged.
+ * The local days a task was completed on (BAL-17): a repeating task's are the
+ * days it was done on (RPT-27), one each; a task that happens once was
+ * completed once, on the day it was ticked off, or not at all while it is
+ * still to do.
  */
-export function balanceShares(seconds: readonly number[], total: number): number[] {
-  if (total <= 0) return seconds.map(() => 0)
+function completionDays(task: Task): readonly LocalDay[] {
+  if (task.repeat !== null) return task.doneDays
+  return task.completedAt === null ? [] : [toLocalDay(new Date(task.completedAt))]
+}
 
-  const exact = seconds.map((amount) => (amount / total) * 100)
+/**
+ * How many tasks were completed in the period, divided between the categories
+ * as their time is (BAL-17): each completion counts one, split evenly between
+ * the categories its task is bound to (BAL-4), or other when it is bound to
+ * none (BAL-5). A repeating task counts once for every day it was done on in
+ * the period; a task in the trash still counts, until it is purged, as its time
+ * does (BAL-3).
+ */
+export function completionTotals(
+  categories: readonly Category[],
+  tasks: readonly Task[],
+  period: Period,
+  now: Date = new Date(),
+): BalanceTotals {
+  const days = new Set(periodDays(period, now))
+  const tally = emptyTally(categories)
+
+  for (const task of tasks) {
+    const bound = boundCategories(categories, task)
+    for (const day of completionDays(task)) if (days.has(day)) count(tally, bound, 1)
+  }
+
+  return totalsOf(categories, tally)
+}
+
+/** The tasks completed in the period day by day (BAL-18): every local day in it, in order, those with none too. */
+export function completionsByDay(
+  categories: readonly Category[],
+  tasks: readonly Task[],
+  period: Period,
+  now: Date = new Date(),
+): DayBalance[] {
+  const days = periodDays(period, now)
+  const tallies = new Map(days.map((day) => [day, emptyTally(categories)]))
+
+  for (const task of tasks) {
+    const bound = boundCategories(categories, task)
+    for (const day of completionDays(task)) {
+      const tally = tallies.get(day)
+      if (tally !== undefined) count(tally, bound, 1)
+    }
+  }
+
+  return days.map((day) => ({ day, ...totalsOf(categories, tallies.get(day) ?? emptyTally(categories)) }))
+}
+
+/** One completion behind a piece of the tasks chart, as `balanceCompletions` lists them (BAL-19). */
+export interface BalanceCompletion {
+  readonly task: Task
+  /** The local day it was completed on. */
+  readonly day: LocalDay
+  /** What it counts toward the piece: one, or its even share of one (BAL-17). */
+  readonly amount: number
+  /** The other categories it is divided with, in the order given; none when it counts whole. */
+  readonly sharedWith: readonly Category[]
+}
+
+/**
+ * The completions behind one piece of the period's tasks chart (BAL-19), the
+ * latest day first: those of tasks bound to the category — or, for null, of
+ * tasks bound to none, which are Other — each with the part of it counted
+ * there. On one day, the tasks are in the order given. They add up to the
+ * piece, as the pieces add up to the total.
+ */
+export function balanceCompletions(
+  categories: readonly Category[],
+  tasks: readonly Task[],
+  categoryId: CategoryId | null,
+  period: Period,
+  now: Date = new Date(),
+): BalanceCompletion[] {
+  const days = new Set(periodDays(period, now))
+  const completions: BalanceCompletion[] = []
+
+  for (const task of tasks) {
+    const bound = boundCategories(categories, task)
+    const counted = categoryId === null ? bound.length === 0 : bound.some((category) => category.id === categoryId)
+    if (!counted) continue
+
+    const sharedWith = bound.filter((category) => category.id !== categoryId)
+    for (const day of completionDays(task)) {
+      if (days.has(day)) completions.push({ task, day, amount: 1 / Math.max(1, bound.length), sharedWith })
+    }
+  }
+
+  // Sorted by day alone, and stably, so one day's tasks keep the order given.
+  return completions.sort((a, b) => (a.day === b.day ? 0 : a.day < b.day ? 1 : -1))
+}
+
+/**
+ * The share of the total each amount is, in whole percent, adding up to exactly
+ * 100 when anything was counted (BAL-6): each is rounded down, and the points
+ * left over go to the largest remainders, the earlier first on a tie. All 0
+ * when nothing was counted.
+ */
+export function balanceShares(amounts: readonly number[], total: number): number[] {
+  if (total <= 0) return amounts.map(() => 0)
+
+  const exact = amounts.map((amount) => (amount / total) * 100)
   const shares = exact.map((share) => Math.floor(share))
   const left = 100 - shares.reduce((sum, share) => sum + share, 0)
   const byRemainder = exact

@@ -150,7 +150,7 @@ add up to, the periods, a task's session as records, and written again for a new
 day is logged, the hour the form starts on), `src/app/useActivities.ts`,
 `src/app/components/ActivityPage.tsx`, `src/app/components/ActivityForm.tsx` (adding and changing a
 record), `src/app/components/ActivityHours.tsx` (the day, hour by hour),
-`src/app/components/TimeSplitChart.tsx` and `src/app/components/DayColumnsChart.tsx` (the charts,
+`src/app/components/SplitChart.tsx` and `src/app/components/DayColumnsChart.tsx` (the charts,
 shared with [Balance](balance.md)), `src/app/activityPieces.ts` and `src/app/chartColors.ts` (the
 pieces and their colours), `src/app/activityLabels.ts` and `src/app/chartLabels.ts` (wording),
 `src/app/components/ActivityIcon.tsx`, `src/app/components/ModesPage.tsx` (the Check-in's row),

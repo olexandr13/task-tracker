@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
   balanceByDay,
+  balanceCompletions,
   balanceSessions,
   balanceShares,
   balanceTotals,
   bindTag,
+  completionsByDay,
+  completionTotals,
   createCategory,
   findCategory,
   InvalidCategoryError,
@@ -26,7 +29,7 @@ import {
   type Category,
 } from './balance'
 import { InvalidTagError } from './tag'
-import { createTask, deleteTask, type Task } from './task'
+import { completeTask, createTask, deleteTask, type Task } from './task'
 import { InvalidTimeError, logSeconds, logTime } from './timeLog'
 
 /* BAL ids refer to wiki/balance.md. */
@@ -161,7 +164,7 @@ describe('balanceTotals (BAL-2 to BAL-5)', () => {
 
     const totals = balanceTotals([work, rest], tasks, 'today', NOW)
 
-    expect(totals.categories.map(({ category: made, seconds }) => [made.name, seconds])).toEqual([
+    expect(totals.categories.map(({ category: made, amount }) => [made.name, amount])).toEqual([
       ['Work', 90 * 60],
       ['Rest', 50 * 60],
     ])
@@ -174,14 +177,14 @@ describe('balanceTotals (BAL-2 to BAL-5)', () => {
 
     const totals = balanceTotals([work, rest], tasks, 'today', NOW)
 
-    expect(totals.categories.map(({ seconds }) => seconds)).toEqual([15 * 60, 15 * 60])
+    expect(totals.categories.map(({ amount }) => amount)).toEqual([15 * 60, 15 * 60])
     expect(totals.total).toBe(30 * 60)
   })
 
   it('counts a task once in a category it is bound to through two tags (BAL-4)', () => {
     const tasks = [logTime(task('nap in the park', ['chill', 'walk']), 20, NOW)]
 
-    expect(balanceTotals([work, rest], tasks, 'today', NOW).categories[1].seconds).toBe(20 * 60)
+    expect(balanceTotals([work, rest], tasks, 'today', NOW).categories[1].amount).toBe(20 * 60)
   })
 
   it('puts time on tasks bound to no category, or with no tags, under other (BAL-5)', () => {
@@ -210,7 +213,7 @@ describe('balanceTotals (BAL-2 to BAL-5)', () => {
     ].reduce((logged, at) => logSeconds(logged, 100, at), task('report', ['job']))
 
     const seconds = (period: 'today' | 'week' | 'month') =>
-      balanceTotals([work], [report], period, NOW).categories[0].seconds
+      balanceTotals([work], [report], period, NOW).categories[0].amount
 
     expect(seconds('today')).toBe(200)
     expect(seconds('week')).toBe(400)
@@ -220,8 +223,8 @@ describe('balanceTotals (BAL-2 to BAL-5)', () => {
   it('counts sessions from a repeating task’s occurrences gone by (BAL-3)', () => {
     const daily = logTime(logTime(task('walk', ['walk'], { kind: 'daily' }), 30, new Date(2026, 8, 14, 8, 0)), 20, NOW)
 
-    expect(balanceTotals([rest], [daily], 'week', NOW).categories[0].seconds).toBe(50 * 60)
-    expect(balanceTotals([rest], [daily], 'today', NOW).categories[0].seconds).toBe(20 * 60)
+    expect(balanceTotals([rest], [daily], 'week', NOW).categories[0].amount).toBe(50 * 60)
+    expect(balanceTotals([rest], [daily], 'today', NOW).categories[0].amount).toBe(20 * 60)
   })
 
   it('counts a task in the trash (BAL-3)', () => {
@@ -233,7 +236,7 @@ describe('balanceTotals (BAL-2 to BAL-5)', () => {
   it('lists every category, in the order given, with nothing logged as nothing', () => {
     const totals = balanceTotals([rest, work], [], 'month', NOW)
 
-    expect(totals.categories.map(({ category: made, seconds }) => [made.name, seconds])).toEqual([
+    expect(totals.categories.map(({ category: made, amount }) => [made.name, amount])).toEqual([
       ['Rest', 0],
       ['Work', 0],
     ])
@@ -310,11 +313,11 @@ describe('time logged straight to a category (BAL-14, BAL-15)', () => {
     const tasks = [logTime(task('walk the dog', ['walk']), 30, NOW), logTime(task('post office', []), 10, NOW)]
 
     const today = balanceTotals([work, logged], tasks, 'today', NOW)
-    expect(today.categories.map(({ seconds }) => seconds)).toEqual([0, 70 * 60])
+    expect(today.categories.map(({ amount }) => amount)).toEqual([0, 70 * 60])
     expect(today.other).toBe(10 * 60)
     expect(today.total).toBe(80 * 60)
 
-    expect(balanceTotals([work, logged], tasks, 'week', NOW).categories[1].seconds).toBe(90 * 60)
+    expect(balanceTotals([work, logged], tasks, 'week', NOW).categories[1].amount).toBe(90 * 60)
   })
 
   it('counts on the day it was logged, day by day', () => {
@@ -323,7 +326,7 @@ describe('time logged straight to a category (BAL-14, BAL-15)', () => {
     const week = balanceByDay([logged], [], 'week', NOW)
 
     expect(week.map(({ total }) => total)).toEqual([20 * 60, 0, 0, 0, 0, 0, 0])
-    expect(week[0].categories[0].seconds).toBe(20 * 60)
+    expect(week[0].categories[0].amount).toBe(20 * 60)
   })
 })
 
@@ -348,7 +351,7 @@ describe('balanceSessions (BAL-16)', () => {
       60 * 60,
     ])
     expect(sessions.reduce((sum, { seconds }) => sum + seconds, 0)).toBe(
-      balanceTotals([work, logged], [report, walk], 'today', NOW).categories[1].seconds,
+      balanceTotals([work, logged], [report, walk], 'today', NOW).categories[1].amount,
     )
   })
 
@@ -418,9 +421,9 @@ describe('balanceByDay (BAL-13)', () => {
 
     const [monday, tuesday, wednesday] = balanceByDay([work, rest], [report, walk], 'week', NOW)
 
-    expect(monday.categories.map(({ seconds }) => seconds)).toEqual([30 * 60, 0])
-    expect(tuesday.categories.map(({ seconds }) => seconds)).toEqual([30 * 60, 0])
-    expect(wednesday.categories.map(({ seconds }) => seconds)).toEqual([10 * 60, 10 * 60])
+    expect(monday.categories.map(({ amount }) => amount)).toEqual([30 * 60, 0])
+    expect(tuesday.categories.map(({ amount }) => amount)).toEqual([30 * 60, 0])
+    expect(wednesday.categories.map(({ amount }) => amount)).toEqual([10 * 60, 10 * 60])
     expect(wednesday.total).toBe(20 * 60)
   })
 
@@ -428,7 +431,7 @@ describe('balanceByDay (BAL-13)', () => {
     const report = logTime(logTime(task('report', ['job']), 30, new Date(2026, 7, 31, 12, 0)), 10, NOW)
 
     expect(balanceByDay([work], [report], 'today', NOW)).toEqual([
-      { day: '2026-09-16', categories: [{ category: work, seconds: 10 * 60 }], other: 0, total: 10 * 60 },
+      { day: '2026-09-16', categories: [{ category: work, amount: 10 * 60 }], other: 0, total: 10 * 60 },
     ])
   })
 })
@@ -443,5 +446,93 @@ describe('balanceShares (BAL-6)', () => {
 
   it('is nothing of nothing', () => {
     expect(balanceShares([0, 0], 0)).toEqual([0, 0])
+  })
+})
+
+describe('completionTotals (BAL-17)', () => {
+  const work = category('Work', ['job'])
+  const rest = category('Rest', ['chill', 'walk'])
+  const YESTERDAY = new Date(2026, 8, 15, 18, 0)
+  const AUGUST = new Date(2026, 7, 31, 23, 59)
+
+  function done(title: string, tags: readonly string[], at: Date = NOW): Task {
+    return completeTask(task(title, tags), at)
+  }
+
+  it('counts each task completed, divided between its categories as its time is, then Other', () => {
+    const totals = completionTotals(
+      [work, rest],
+      [done('report', ['job']), done('walk to the office', ['job', 'walk']), done('post office', []), task('still to do', ['job'])],
+      'today',
+      NOW,
+    )
+
+    expect(totals.categories.map(({ category: made, amount }) => [made.name, amount])).toEqual([
+      ['Work', 1.5],
+      ['Rest', 0.5],
+    ])
+    expect([totals.other, totals.total]).toEqual([1, 3])
+  })
+
+  it('counts a task in the period it was completed in', () => {
+    const tasks = [done('report', ['job']), done('invoice', ['job'], YESTERDAY), done('taxes', ['job'], AUGUST)]
+    const total = (period: 'today' | 'week' | 'month') => completionTotals([work], tasks, period, NOW).total
+
+    expect([total('today'), total('week'), total('month')]).toEqual([1, 2, 2])
+  })
+
+  it('counts a repeating task once for every day it was done on', () => {
+    const daily = { ...task('walk', ['walk'], { kind: 'daily' }), doneDays: ['2026-08-31', '2026-09-14', '2026-09-15', '2026-09-16'] }
+    const total = (period: 'today' | 'week' | 'month') => completionTotals([rest], [daily], period, NOW).total
+
+    expect([total('today'), total('week'), total('month')]).toEqual([1, 3, 3])
+  })
+
+  it('counts a task in the trash (BAL-3)', () => {
+    expect(completionTotals([work], [deleteTask(done('report', ['job']), NOW)], 'today', NOW).total).toBe(1)
+  })
+})
+
+describe('completionsByDay (BAL-18)', () => {
+  const work = category('Work', ['job'])
+  const rest = category('Rest', ['walk'])
+
+  it('puts each completion on the local day it was made, split as the period is', () => {
+    const report = completeTask(task('report', ['job']), new Date(2026, 8, 14, 23, 59))
+    const walk = { ...task('walk to the office', ['job', 'walk'], { kind: 'daily' }), doneDays: ['2026-09-15', '2026-09-16'] }
+
+    const [monday, tuesday, wednesday, thursday] = completionsByDay([work, rest], [report, walk], 'week', NOW)
+
+    expect(monday.categories.map(({ amount }) => amount)).toEqual([1, 0])
+    expect(tuesday.categories.map(({ amount }) => amount)).toEqual([0.5, 0.5])
+    expect(wednesday.total).toBe(1)
+    expect(thursday.total).toBe(0)
+  })
+})
+
+describe('balanceCompletions (BAL-19)', () => {
+  const work = category('Work', ['job'])
+  const rest = category('Rest', ['walk'])
+
+  it('lists the completions behind a category, the latest day first, each with its share', () => {
+    const report = completeTask(task('report', ['job']), new Date(2026, 8, 14, 9, 0))
+    const walk = { ...task('walk to the office', ['job', 'walk'], { kind: 'daily' }), doneDays: ['2026-09-15', '2026-09-16'] }
+    const nap = completeTask(task('nap', ['walk']), NOW)
+
+    const listed = balanceCompletions([work, rest], [report, walk, nap], work.id, 'week', NOW)
+
+    expect(listed.map(({ task: made, day, amount, sharedWith }) => [made.title, day, amount, sharedWith.map(({ name }) => name)])).toEqual([
+      ['walk to the office', '2026-09-16', 0.5, ['Rest']],
+      ['walk to the office', '2026-09-15', 0.5, ['Rest']],
+      ['report', '2026-09-14', 1, []],
+    ])
+  })
+
+  it('lists the completions of tasks bound to no category under Other', () => {
+    const errand = completeTask(task('post office', ['errand']), NOW)
+
+    expect(balanceCompletions([work], [errand, completeTask(task('report', ['job']), NOW)], null, 'today', NOW).map(({ task: made }) => made.title)).toEqual([
+      'post office',
+    ])
   })
 })

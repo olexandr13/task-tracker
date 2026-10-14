@@ -17,7 +17,7 @@ export function activityPieces(totals: ActivityTotals, colors: ReadonlyMap<strin
     totals.activities.map(({ kind, seconds }) => ({
       key: kind.key,
       label: kind.name,
-      seconds,
+      amount: seconds,
       color: colors.get(kind.key) ?? chartColor(0),
     })),
     totals.total,

@@ -1,12 +1,14 @@
 # Balance
 
 Ticking tasks off all day and never resting leaves nothing for the evening. **Balance** is a page
-that shows where the logged time went, divided into **categories the owner names** — Work, Chores,
-Rest, any number of them, called anything — so a day spent all on one of them is seen as that. It
-shows the amounts and nothing else: no targets and no ratio to keep to, only the imbalance, plainly.
+that shows where the logged time went, and how many tasks were completed, divided into **categories
+the owner names** — Work, Chores, Rest, any number of them, called anything — so a day spent all on
+one of them is seen as that. It shows the amounts and nothing else: no targets and no ratio to keep
+to, only the imbalance, plainly.
 
 A category is **bound to tags** the app already has. A task is put in a category the way it is put
-anywhere else, by tagging it: a walk with the dog tagged `walk`, with `walk` bound to Rest, is rest.
+anywhere else, by tagging it: a walk with the dog tagged `walk`, with `walk` bound to Rest, is rest —
+its time and its completion both.
 Time that was never a task — an evening's reading — can be **logged straight to a category** as well.
 
 ## The page
@@ -14,14 +16,16 @@ Time that was never a task — an evening's reading — can be **logged straight
 - **BAL-1** **Balance** is a page of its own, at `#/balance` (UI-36), with an entry in the sidebar
   under **Reflect**, above the Activity log and the Journal (UI-30, UI-83), and a row on Reflect's page (UI-83). It opens on the heading
   **Work–rest balance**, an **i** beside it (UI-73) saying what the page is for and how categories
-  work; then the time spent (BAL-2 to BAL-6, BAL-13, BAL-16); then the categories themselves, made and
+  work; then the period (BAL-2); then two cards, **Time spent** (BAL-3 to BAL-6, BAL-13, BAL-16)
+  and **Tasks completed** (BAL-17 to BAL-19), side by side on a wide screen and the tasks under the
+  time on a narrow one; then the categories themselves, made and
   changed in place (BAL-7 to BAL-10), each taking time logged straight to it (BAL-14, BAL-15). It has no box for adding a task and no Plus: it is not a list
   of tasks.
-- **BAL-2** The time spent is shown for **Today**, **Week** or **Month**, chosen with three segments
-  at the head of the totals — the same periods as the progress bars (PROG-1): today from local
-  midnight, the week Monday to Sunday, and the calendar month. The page opens on **Today** every
-  time, since whether there has been any rest yet today is the question it is mostly asked; which
-  one was chosen is not kept.
+- **BAL-2** Both cards are shown for **Today**, **Week** or **Month**, chosen with three segments
+  over them, so the time spent and the tasks completed are always of the same period — the same
+  periods as the progress bars (PROG-1): today from local midnight, the week Monday to Sunday, and
+  the calendar month. The page opens on **Today** every time, since whether there has been any rest
+  yet today is the question it is mostly asked; which one was chosen is not kept.
 
 ## What counts
 
@@ -77,6 +81,36 @@ Time that was never a task — an evening's reading — can be **logged straight
   that period's sessions while the piece is still pressed and has time in it. The list is only to
   read: a session is changed or taken back where it was logged (TIME-4, TIME-24, BAL-15). A long list scrolls inside its
   own box.
+
+## Tasks completed
+
+- **BAL-17** Beside the time spent, a second card, **Tasks completed**, counts the tasks completed in
+  the period and divides them between the categories the way time is (BAL-4, BAL-5): a completion
+  counts **one**, split evenly between the categories its task's tags are bound to — a walk to the
+  office tagged `job` and `walk` counts 0.5 toward Work and 0.5 toward Rest — and Other when bound
+  to none. A task that happens once counts once, on the day it was ticked off; a **repeating task
+  counts once for every day it was done on** in the period (RPT-27), so a daily walk done all week
+  counts seven, where the progress bars count it once (PROG-3). A task still to do counts nothing,
+  however much time it has. A task in the **trash** still counts, until it is purged, as its time
+  does (BAL-3). Time logged straight to a category (BAL-14) is no task and counts nothing here. It
+  is drawn as the time spent is (BAL-6) — the total, large, as `5 tasks`; one bar; a legend naming
+  every piece with its count and share, in the same colours; a piece pressed or pointed at picked
+  out in this card's charts — and a count is written whole, or to a tenth where a split leaves a
+  part: `1.5`, `0.3`. With nothing completed in the period the card says **No tasks completed
+  today.** (this week, this month).
+- **BAL-18** On **Week** and **Month** the tasks are drawn **day by day** under the legend as the
+  time is (BAL-13): a column a day, divided between the categories, against two gridlines in round,
+  even counts — the top one the first of 2, 4, 6, 8, 10, 12, 16, 20, 30, 40, 60, 80 and 100 the
+  busiest day fits under — and pointing at or pressing a day says how its tasks divided:
+  `Tue, Sep 15 · 3 tasks`, then each piece with its count, or that nothing was completed.
+- **BAL-19** **Pressing a piece in the tasks legend** lists the **tasks completed** behind it at the
+  foot of the card, headed `Tasks completed in Rest this week` beside its swatch, as the sessions
+  behind a piece of time are (BAL-16): the latest day first, each task with the day it was
+  completed — **Today**, or `Tue, Sep 15` — and the part of it counted here. A task split between
+  categories counts its share and says what it was split with: `Today · split with Work`. A
+  repeating task done on three days is listed three times. Pressing the piece again puts the list
+  away. The list is only to read: a task is ticked off or reopened in its list. A long list scrolls
+  inside its own box.
 
 ## Categories
 
@@ -150,14 +184,16 @@ Time that was never a task — an evening's reading — can be **logged straight
 ---
 
 **Where it lives:** `src/core/balance.ts` (categories, binding, following a tag renamed or deleted,
-time logged straight to a category and changing it, the totals, and the sessions behind a piece), `src/core/timeLog.ts` (how long sessions are
+time logged straight to a category and changing it, the totals of time and of tasks completed, and
+what is behind a piece), `src/core/timeLog.ts` (how long sessions are
 kept, and a session as logged), `src/app/useCategories.ts`, `src/app/components/BalancePage.tsx`,
 `src/app/components/CategoryTimePicker.tsx` (logging straight to a category) and
-`src/app/components/TimeLogFields.tsx` (its boxes and list), `src/app/components/TimeSplitChart.tsx` (the bar and its
-legend), `src/app/components/BalanceSessionList.tsx` (the sessions behind a piece) and `src/app/components/DayColumnsChart.tsx` (day by day) — both shared with the
+`src/app/components/TimeLogFields.tsx` (its boxes and list), `src/app/components/BalanceSessionList.tsx` (the sessions behind a piece),
+`src/app/components/BalanceCompletionList.tsx` (the tasks behind a piece), `src/app/components/SplitChart.tsx` (the bar and its
+legend) and `src/app/components/DayColumnsChart.tsx` (day by day) — both shared with the
 [Activity log](activity-log.md) — `src/app/balancePieces.ts` and `src/app/chartPieces.ts` (what each
 chart is divided into), `src/app/chartColors.ts` (the colours), `src/app/components/BalanceIcon.tsx`,
-`src/app/balanceLabels.ts` and `src/app/chartLabels.ts` (wording), `src/app/TasksScreen.tsx` (the page, and tags followed through), `src/app/view.ts`,
+`src/app/balanceLabels.ts` and `src/app/chartLabels.ts` (wording, and what each chart measures), `src/app/TasksScreen.tsx` (the page, and tags followed through), `src/app/view.ts`,
 `src/app/components/SideNav.tsx`, `src/app/components/ReflectPage.tsx`, `src/app/useUndoToast.ts`;
 saving: [Storage](storage.md).
 **Tested in:** `src/core/balance.test.ts`, `src/core/timeLog.test.ts` (the history kept),

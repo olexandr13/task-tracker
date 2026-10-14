@@ -418,12 +418,14 @@ describe('isInToday, done', () => {
     expect(isInToday(completeTask(dueOn('2026-09-14'), TUE_15), WED_16)).toBe(false)
   })
 
-  it('leaves a task finished ahead of its day on that day', () => {
-    expect(isInToday(completeTask(dueOn('2026-09-18'), WED_16), WED_16_EVENING)).toBe(false)
+  it('holds a task finished today ahead of its day, which is finished today (LIST-4)', () => {
+    expect(isInToday(completeTask(dueOn('2026-09-18'), WED_16), WED_16_EVENING)).toBe(true)
+    expect(isInToday(completeTask(dueOn('2026-09-18'), TUE_15), WED_16)).toBe(false)
   })
 
-  it('leaves out a task with no day ticked today, as it did while it was to do (LIST-5)', () => {
-    expect(isInToday(completeTask(undated(), WED_16), WED_16_EVENING)).toBe(false)
+  it('holds a task with no day ticked today, and lets go of one ticked before (LIST-5)', () => {
+    expect(isInToday(completeTask(undated(), WED_16), WED_16_EVENING)).toBe(true)
+    expect(isInToday(completeTask(undated(), TUE_15), WED_16)).toBe(false)
   })
 
   it('keeps a repeating task ticked today, and lets go of one ticked for an earlier occurrence', () => {
@@ -478,8 +480,11 @@ describe('isInWeek, done', () => {
     expect(isInWeek(completeTask(dueOn('2026-09-10'), new Date(2026, 8, 12, 9, 0)), WED_16)).toBe(false)
   })
 
-  it('leaves a task finished ahead of a later week in that week', () => {
-    expect(isInWeek(completeTask(dueOn('2026-09-22'), WED_16), WED_16_EVENING)).toBe(false)
+  it('holds a task finished this week ahead of a later week, and that week holds it too', () => {
+    const early = completeTask(dueOn('2026-09-22'), WED_16)
+
+    expect(isInWeek(early, WED_16_EVENING)).toBe(true)
+    expect(isInWeek(early, new Date(2026, 8, 22, 9, 0))).toBe(true)
   })
 
   it('keeps a task with no day ticked this week, and lets go of one ticked before it', () => {
@@ -507,6 +512,10 @@ describe('isInMonth', () => {
     expect(isInMonth(completeTask(dueOn('2026-09-02'), new Date(2026, 8, 1, 9, 0)), WED_16)).toBe(true)
     expect(isInMonth(completeTask(dueOn('2026-08-20'), MON_14), WED_16)).toBe(true)
     expect(isInMonth(completeTask(dueOn('2026-08-20'), new Date(2026, 7, 31, 9, 0)), WED_16)).toBe(false)
+  })
+
+  it('holds a task finished this month ahead of a later month', () => {
+    expect(isInMonth(completeTask(dueOn('2026-10-05'), WED_16), WED_16_EVENING)).toBe(true)
   })
 
   it('keeps a task with no day ticked this month, and lets go of one ticked before it', () => {

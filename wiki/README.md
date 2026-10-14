@@ -29,7 +29,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Cases](cases.md) | Finishing Today earns Payday, the Drop arrives at a random time, and the Haul is ready on Monday |
 | [Levels](levels.md) | XP for almost everything done, lost for skips, misses, idle days and overdue tasks, and the level it adds up to |
 | [Time goals](time-goals.md) | A length of time a task asks for, sessions logged against it, and the hint to tick it off |
-| [Balance](balance.md) | Where the logged time went: categories named by the owner, bound to tags, and the time each took today, this week or this month |
+| [Balance](balance.md) | Where the logged time went: categories named by the owner, bound to tags, and the time each took and the tasks completed in each today, this week or this month |
 | [Activity log](activity-log.md) | The day hour by hour: what was done and for how long, the records added and changed, and what they add up to over a day, a week or a month |
 | [Journal](journal.md) | Good things, achievements and gratitude, about five of each a day, and the week before kept to look back on |
 | [Notes](notes.md) | Anything written down to keep: newest first, changed in place, bold, italic and lists from buttons over the box |

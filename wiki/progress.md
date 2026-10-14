@@ -30,7 +30,8 @@ separately, on the [Rewards](rewards.md) pages — where clearing a bar of its o
   wherever its list shows it (LIST-2, LIST-5, LIST-13, LIST-18) — which means today's bar, and the
   bonus and Cases' key that follow it (RWD-25, CHST-2), ask for everything overdue along with the
   day's own work, but not the undated backlog. Done, a one-off counts in the period it was
-  completed in (PROG-7), so one with no due date ticked today counts in today's bar too.
+  completed in (PROG-7), so one with no due date ticked today counts in today's bar too, and is in
+  Today's list under **Done** (LIST-5).
 - **PROG-6** A task counts as done for a period when its completion time falls inside that period.
   Yesterday's tick is out of today, and still in this week and this month.
 - **PROG-7** A task completed inside a period always counts towards it, even where the occurrence

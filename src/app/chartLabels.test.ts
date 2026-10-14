@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { MAX_CATEGORIES } from '../core'
 import { CHART_COLORS, chartColor, OTHER_COLOR } from './chartColors'
-import { chartCeiling, dayAxisLabel, describeDay, describeGridline } from './chartLabels'
+import { chartCeiling, countCeiling, dayAxisLabel, describeCount, describeDay, describeGridline, describeTasks } from './chartLabels'
 import { chartPieces } from './chartPieces'
 
-/* How the charts of time spent read. BAL ids refer to wiki/balance.md, ACT ids to wiki/activity-log.md. */
+/* How the charts of time spent and tasks completed read. BAL ids refer to wiki/balance.md, ACT ids to wiki/activity-log.md. */
 
 describe('the day-by-day chart (BAL-13, ACT-14)', () => {
   it('reaches up to a round number of hours the busiest day fits under', () => {
@@ -43,14 +43,27 @@ describe('the colours (BAL-6, ACT-16)', () => {
   })
 })
 
+describe('the charts of tasks completed (BAL-17, BAL-18)', () => {
+  it('writes a count whole, and a share of a split task to a tenth', () => {
+    expect([describeCount(3), describeCount(1.5), describeCount(1 / 3), describeCount(2 / 3 + 2)]).toEqual(['3', '1.5', '0.3', '2.7'])
+    expect([describeTasks(1), describeTasks(0), describeTasks(5)]).toEqual(['1 task', '0 tasks', '5 tasks'])
+  })
+
+  it('reaches up to a round, even count the busiest day fits under', () => {
+    expect([countCeiling(0), countCeiling(1), countCeiling(2), countCeiling(3), countCeiling(13), countCeiling(101)]).toEqual([
+      2, 2, 2, 4, 16, 120,
+    ])
+  })
+})
+
 describe('the pieces', () => {
   it('keeps those with time, in the order given, their shares adding up to 100', () => {
     const color = CHART_COLORS[0]
     const pieces = chartPieces(
       [
-        { key: 'a', label: 'A', seconds: 1, color },
-        { key: 'b', label: 'B', seconds: 0, color },
-        { key: 'c', label: 'C', seconds: 2, color },
+        { key: 'a', label: 'A', amount: 1, color },
+        { key: 'b', label: 'B', amount: 0, color },
+        { key: 'c', label: 'C', amount: 2, color },
       ],
       3,
     )

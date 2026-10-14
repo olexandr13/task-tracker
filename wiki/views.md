@@ -11,7 +11,8 @@ requirements were written with, so older references to them still mean what they
 - **LIST-1** The navigation carries **Today**, **Tomorrow**, **Week** and **Month**, in that
   order, above **Tasks**. Tasks is every live task; Today, Week and Month are the parts of it due
   today, this week and this month, Week and Month taking in whatever has no day at all as well
-  (LIST-13), Today never (LIST-5); Tomorrow is the part due tomorrow alone (LIST-22). Each tag has a view of
+  (LIST-13), Today only once it is done today (LIST-5), and each taking in whatever was finished in
+  it (LIST-4); Tomorrow is the part due tomorrow alone (LIST-22). Each tag has a view of
   its own as well — see [Tags](tags.md) — and so does each list and the Inbox, see
   [Lists](lists.md). The app opens on **Today**, unless the address names another view (UI-36). On
   a phone Today, Tomorrow, Week and Month share one tab of the bottom bar (UI-33).
@@ -25,12 +26,15 @@ requirements were written with, so older references to them still mean what they
   on its day and, if it went undone, every day after until it is done (DUE-11) — or until it is
   passed over, by skipping (RPT-34) or by taking back a tick made after the day (RPT-38), which
   moves it to its next day.
-- **LIST-4** A done task stays for the day it was due, and an overdue one finished today stays for
-  today, so ticking something off does not make it vanish. A task finished ahead of its day stays on
-  its own day.
-- **LIST-5** A task with **no day at all** — no date and no repeat rule — is **never in Today**,
-  done or not: Today is the day's own work, and the backlog is kept out of it. It is in Week and
-  Month (LIST-13, LIST-18) and Tasks, and giving it a day of today or earlier brings it into Today.
+- **LIST-4** A done task is in Today when it was due today, whenever it was finished, and when it
+  was **finished today**, whenever it was due — the day it was finished being today. So ticking
+  something off does not make it vanish: an overdue task finished today stays, and one finished
+  today ahead of a later day joins Today under **Done**, staying on its own day as well (LIST-24).
+- **LIST-5** A task with **no day at all** — no date and no repeat rule — is **not in Today** while
+  it is still to do: Today is the day's own work, and the backlog is kept out of it. It is in Week
+  and Month (LIST-13, LIST-18) and Tasks, and giving it a day of today or earlier brings it into
+  Today. Ticked off, the day it was finished is the only day it has, so one **done today** is in
+  Today under **Done** (LIST-4) — as it counts in today's bar (PROG-5) — and gone from it tomorrow.
 - **LIST-6** A task added in Today is **due today**, unless another day or a repeat rule is chosen
   for it before Enter.
 - **LIST-7** Otherwise Today shows what Tasks shows: the same rows, overdue floating to the top
@@ -77,14 +81,16 @@ requirements were written with, so older references to them still mean what they
   such occurrence (DUE-11), and is in from the start when its first day falls this week: a Friday
   task written on a Wednesday is in Week that Wednesday, as it is already in the week's count
   (PROG-4).
-- **LIST-12** A done task stays when it was due this week, whenever it was finished, and an overdue
-  one stays when it was finished this week. A task finished ahead of a later week stays in that week.
+- **LIST-12** A done task stays when it was due this week, whenever it was finished, and is in when
+  it was finished this week, whenever it was due: an overdue one finished this week, and one
+  finished ahead of a later week, which is in that week too.
 - **LIST-13** A task with **no day at all** is in Week while it is still to do, alongside what is due
   this week: nothing asks for it on a particular day, so this week suits it as well as any other,
   and a task shown on no day is a task that never gets done. It sits among the rest still to do,
   never under **Overdue** (TASK-68), being late for nothing. Done, the day it was finished is the only
   day it has: it stays when it was **done this week**, and taking the tick back puts it back among
-  the tasks still to do. Today leaves it out (LIST-5), so Week shows everything Today does and more.
+  the tasks still to do. Today leaves it out until it is done (LIST-5), so Week shows everything
+  Today does and more.
 - **LIST-14** A task added in Week is **due this Sunday**, the day the week closes, unless another
   day or a repeat rule is chosen for it before Enter.
 - **LIST-15** Otherwise Week is the same list as Today (LIST-7): the same rows, order and rail. An
@@ -101,7 +107,7 @@ requirements were written with, so older references to them still mean what they
   over the month: a monthly task joins it on its day — or from the day it was written, where that
   came after its last day and its first falls this month, so a task for the 31st written on the 12th
   is in from the 12th — a done task stays when it was due this month
-  or was overdue and finished this month, and one with no day is in while it is still to do and
+  or was finished this month, and one with no day is in while it is still to do and
   stays once it was done this month.
 - **LIST-19** A task added in Month is **due on the month's last day**, unless another day or a
   repeat rule is chosen for it before Enter.

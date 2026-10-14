@@ -122,7 +122,7 @@ function completedWithin(task: Task, range: PeriodRange): boolean {
  * past its date, or a weekly task missed on Monday, which Tuesday's list shows
  * under Overdue (LIST-2). One with no day at all can be done on any of the
  * week's or the month's days, so it belongs to both, and not to today, whose
- * list leaves it out (LIST-5).
+ * list leaves it out until it is done (LIST-5).
  */
 function inPlayDuring(task: Task, period: Period, range: PeriodRange, now: Date): boolean {
   if (task.repeat !== null && occursWithin(task.repeat, task.skippedDays, range, task.startDay)) return true

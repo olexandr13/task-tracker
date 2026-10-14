@@ -1,13 +1,18 @@
-import { useId, useState, type KeyboardEvent } from 'react'
+import { useId, useState, type KeyboardEvent, type ReactNode } from 'react'
 import {
   balanceByDay,
+  balanceCompletions,
   balanceSessions,
   balanceTotals,
+  completionsByDay,
+  completionTotals,
   isCategoryLimitReached,
   isCategoryName,
   toLocalDay,
+  type BalanceTotals,
   type Category,
   type CategoryId,
+  type DayBalance,
   type Period,
   type Task,
   type TimeEntryChange,
@@ -21,19 +26,24 @@ import {
   CATEGORY_NAME_EMPTY,
   CATEGORY_NAME_TAKEN,
   CATEGORY_NAME_TOO_LONG,
+  COMPLETIONS_HEADING,
   NO_CATEGORIES_HINT,
+  NOTHING_COMPLETED,
   NOTHING_LOGGED,
   PERIOD_CHOICES,
   PERIOD_IN_A_SENTENCE,
+  TIME_HEADING,
 } from '../balanceLabels'
-import { balancePieces, type PieceKey } from '../balancePieces'
+import { balancePieces, type BalancePiece, type PieceKey } from '../balancePieces'
+import { TASKS_MEASURE, TIME_MEASURE, type ChartMeasure } from '../chartLabels'
 import { deleteControl } from '../rowControls'
+import { BalanceCompletionList } from './BalanceCompletionList'
 import { BalanceSessionList } from './BalanceSessionList'
 import { CategoryTimePicker } from './CategoryTimePicker'
 import { DayColumnsChart } from './DayColumnsChart'
 import { InfoButton } from './InfoButton'
-import { TimeSplitChart } from './TimeSplitChart'
 import { PencilIcon } from './PencilIcon'
+import { SplitChart } from './SplitChart'
 import { TagPicker } from './TagPicker'
 
 const heading = 'text-sm font-medium text-neutral-700 dark:text-neutral-300'
@@ -74,11 +84,11 @@ interface BalancePageProps {
 }
 
 /**
- * The Balance page (BAL-1): how the time logged in a period divides between the
- * categories the owner names, each bound to tags, so a day of nothing but work
- * shows as one. Above, the totals for Today, this week or this month; below,
- * the categories themselves, made, renamed, bound and deleted in place, and
- * time logged straight to one (BAL-14).
+ * The Balance page (BAL-1): how the time logged in a period, and the tasks
+ * completed in it, divide between the categories the owner names, each bound
+ * to tags, so a day of nothing but work shows as one. Above, the totals for
+ * Today, this week or this month; below, the categories themselves, made,
+ * renamed, bound and deleted in place, and time logged straight to one (BAL-14).
  *
  * The period is not kept: the page opens on Today, which is the one asked about
  * most — whether there has been any rest yet (BAL-2).
@@ -113,7 +123,50 @@ export function BalancePage({
         </InfoButton>
       </div>
 
-      <Totals categories={categories} tasks={tasks} period={period} now={now} onPeriodChange={setPeriod} />
+      <div className="flex flex-col gap-3">
+        <PeriodChoice period={period} onChange={setPeriod} />
+
+        {/* Side by side where there is room for both, so the two divisions read across; stacked on a phone. */}
+        <div className="grid gap-3 lg:grid-cols-2">
+          <ChartCard
+            title={TIME_HEADING}
+            measure={TIME_MEASURE}
+            period={period}
+            now={now}
+            totals={balanceTotals(categories, tasks, period, now)}
+            byDay={() => balanceByDay(categories, tasks, period, now)}
+            nothing={NOTHING_LOGGED[period]}
+            listFor={(piece) => (
+              <BalanceSessionList
+                piece={piece}
+                sessions={balanceSessions(categories, tasks, categoryOf(piece.key), period, now)}
+                when={PERIOD_IN_A_SENTENCE[period]}
+                now={now}
+              />
+            )}
+          >
+            {categories.length === 0 && <p className={note}>{NO_CATEGORIES_HINT}</p>}
+          </ChartCard>
+  
+          <ChartCard
+            title={COMPLETIONS_HEADING}
+            measure={TASKS_MEASURE}
+            period={period}
+            now={now}
+            totals={completionTotals(categories, tasks, period, now)}
+            byDay={() => completionsByDay(categories, tasks, period, now)}
+            nothing={NOTHING_COMPLETED[period]}
+            listFor={(piece) => (
+              <BalanceCompletionList
+                piece={piece}
+                completions={balanceCompletions(categories, tasks, categoryOf(piece.key), period, now)}
+                when={PERIOD_IN_A_SENTENCE[period]}
+                today={toLocalDay(now)}
+              />
+            )}
+          />
+        </div>
+      </div>
 
       <Categories
         categories={categories}
@@ -132,67 +185,90 @@ export function BalancePage({
   )
 }
 
-interface TotalsProps {
-  categories: readonly Category[]
-  tasks: readonly Task[]
-  period: Period
-  now: Date
-  onPeriodChange: (period: Period) => void
+/** The category a piece stands for, or null for Other (BAL-5). */
+function categoryOf(key: PieceKey): CategoryId | null {
+  return key === 'other' ? null : key
 }
 
 /**
- * The time spent in the period (BAL-6): its total and one bar divided between
- * the categories, with the legend under it, and on a week or a month the same
- * day by day (BAL-13). A piece pressed in the legend stays picked out across
- * both charts, and across a change of period, and its sessions are listed under
- * them (BAL-16) — only then, so the page does not open on a long list.
+ * Today, Week or Month, for both charts at once (BAL-2): three segments over
+ * them, so the time spent and the tasks completed are always of one period.
  */
-function Totals({ categories, tasks, period, now, onPeriodChange }: TotalsProps) {
+function PeriodChoice({ period, onChange }: { period: Period; onChange: (period: Period) => void }) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Period"
+      className="grid grid-cols-3 gap-1 rounded-lg bg-neutral-100 p-1 md:max-w-xs dark:bg-neutral-800"
+    >
+      {PERIOD_CHOICES.map((choice) => (
+        <label key={choice.period} className={segment}>
+          <input
+            type="radio"
+            name="balance-period"
+            value={choice.period}
+            checked={period === choice.period}
+            onChange={() => { onChange(choice.period) }}
+            className="sr-only"
+          />
+          {choice.label}
+        </label>
+      ))}
+    </div>
+  )
+}
+
+interface ChartCardProps {
+  title: string
+  /** What the charts count — time spent, or tasks completed — and how they read. */
+  measure: ChartMeasure
+  period: Period
+  now: Date
+  totals: BalanceTotals
+  /** The period day by day, worked out only where it is drawn: a week or a month (BAL-13, BAL-18). */
+  byDay: () => readonly DayBalance[]
+  /** What stands in for the charts when nothing was counted in the period. */
+  nothing: string
+  /** What is listed under the charts for the piece pressed in the legend (BAL-16, BAL-19). */
+  listFor: (piece: BalancePiece) => ReactNode
+  /** Anything said at the foot of the card. */
+  children?: ReactNode
+}
+
+/**
+ * One measure of the period (BAL-6, BAL-17): its total and one bar divided
+ * between the categories, with the legend under it, and on a week or a month
+ * the same day by day (BAL-13, BAL-18). A piece pressed in the legend stays
+ * picked out across both charts of the card, and across a change of period,
+ * and what is behind it is listed under them (BAL-16, BAL-19) — only then, so
+ * the page does not open on a long list.
+ */
+function ChartCard({ title, measure, period, now, totals, byDay, nothing, listFor, children }: ChartCardProps) {
   const headingId = useId()
   const [pinned, setPinned] = useState<PieceKey | null>(null)
   const [pointed, setPointed] = useState<PieceKey | null>(null)
 
-  const totals = balanceTotals(categories, tasks, period, now)
   const pieces = balancePieces(totals)
-  // Picking out something the period has no time for would only fade everything.
+  // Picking out something the period has nothing for would only fade everything.
   const wanted = pointed ?? pinned
   const active = pieces.some((piece) => piece.key === wanted) ? wanted : null
-  // Only a press lists the sessions: pointing would push the page about under the pointer.
+  // Only a press lists what is behind a piece: pointing would push the page about under the pointer.
   const listed = pieces.find((piece) => piece.key === pinned) ?? null
 
   return (
     <section aria-labelledby={headingId} className={`${card} flex flex-col gap-3 px-4 py-3.5`}>
       <h2 id={headingId} className={heading}>
-        Time spent
+        {title}
       </h2>
 
-      <div
-        role="radiogroup"
-        aria-label="Period"
-        className="grid grid-cols-3 gap-1 rounded-lg bg-neutral-100 p-1 md:max-w-xs dark:bg-neutral-800"
-      >
-        {PERIOD_CHOICES.map((choice) => (
-          <label key={choice.period} className={segment}>
-            <input
-              type="radio"
-              name="balance-period"
-              value={choice.period}
-              checked={period === choice.period}
-              onChange={() => { onPeriodChange(choice.period) }}
-              className="sr-only"
-            />
-            {choice.label}
-          </label>
-        ))}
-      </div>
-
       {totals.total === 0 ? (
-        <p className="py-2 text-sm text-neutral-500 dark:text-neutral-400">{NOTHING_LOGGED[period]}</p>
+        <p className="py-2 text-sm text-neutral-500 dark:text-neutral-400">{nothing}</p>
       ) : (
         <>
-          <TimeSplitChart
+          <SplitChart
             pieces={pieces}
             total={totals.total}
+            measure={measure}
             when={PERIOD_IN_A_SENTENCE[period]}
             active={active}
             pinned={pinned}
@@ -204,29 +280,19 @@ function Totals({ categories, tasks, period, now, onPeriodChange }: TotalsProps)
             <DayColumnsChart
               // Keyed by the period, so a day chosen in a week is not looked for in a month.
               key={period}
-              columns={balanceByDay(categories, tasks, period, now).map((day) => ({
-                day: day.day,
-                total: day.total,
-                pieces: balancePieces(day),
-              }))}
+              columns={byDay().map((day) => ({ day: day.day, total: day.total, pieces: balancePieces(day) }))}
+              measure={measure}
               period={period}
               today={toLocalDay(now)}
               active={active}
             />
           )}
 
-          {listed !== null && (
-            <BalanceSessionList
-              piece={listed}
-              sessions={balanceSessions(categories, tasks, listed.key === 'other' ? null : listed.key, period, now)}
-              when={PERIOD_IN_A_SENTENCE[period]}
-              now={now}
-            />
-          )}
+          {listed !== null && listFor(listed)}
         </>
       )}
 
-      {categories.length === 0 && <p className={note}>{NO_CATEGORIES_HINT}</p>}
+      {children}
     </section>
   )
 }

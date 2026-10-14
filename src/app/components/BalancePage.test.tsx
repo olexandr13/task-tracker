@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   bindTag,
+  completeTask,
   createCategory,
   createTask,
   deleteTask,
@@ -256,6 +257,71 @@ describe('the chart by day (BAL-13)', () => {
     await user.unhover(days()[0])
 
     expect(region.textContent).toContain('Point at a day, or press it, to see how its time divided.')
+  })
+})
+
+describe('the tasks completed (BAL-17 to BAL-19)', () => {
+  const card = () => screen.getByRole('region', { name: 'Tasks completed' })
+  const tasksChart = () => within(card()).getByRole('img')
+  const tasksLegend = () => within(within(card()).getByRole('list', { name: 'Legend' })).getAllByRole('button')
+  const tasksLegendRow = (name: string) => within(card()).getByRole('button', { name: new RegExp(`^${name}:`) })
+
+  function done(title: string, tags: readonly string[], at: Date = NOW): Task {
+    return completeTask({ ...createTask(title, null, NOW), tags }, at)
+  }
+
+  it('says so when nothing was completed in the period', () => {
+    setUp({ tasks: [task('report', ['job'], 60)] })
+
+    expect(within(card()).getByText('No tasks completed today.')).toBeDefined()
+  })
+
+  it('draws the tasks completed as a bar divided between the categories, a split one counting half in each (BAL-17)', () => {
+    setUp({
+      tasks: [done('report', ['job']), done('walk to the office', ['job', 'walk']), done('post office', []), task('still to do', ['job'], 5)],
+    })
+
+    expect(within(card()).getByText('3 tasks')).toBeDefined()
+    expect(tasksChart().getAttribute('aria-label')).toBe(
+      'Tasks completed today, 3 tasks: Work 1.5, 50%; Rest 0.5, 17%; Other 1, 33%',
+    )
+    expect(tasksLegend().map((row) => row.textContent)).toEqual(['Work1.550%', 'Rest0.517%', 'Other133%'])
+  })
+
+  it('follows the period chosen over both charts, counting a repeating task once a day (BAL-2)', async () => {
+    const walk = { ...createTask('walk the dog', { kind: 'daily' }, NOW), tags: ['walk'], doneDays: ['2026-09-14', '2026-09-15', '2026-09-16'] }
+    const { user } = setUp({ tasks: [walk, task('report', ['job'], 60, MONDAY)] })
+
+    expect(within(card()).getByText('1 task')).toBeDefined()
+
+    await user.click(screen.getByRole('radio', { name: 'Week' }))
+
+    expect(within(card()).getByText('3 tasks')).toBeDefined()
+    expect(within(within(card()).getByRole('region', { name: 'By day' })).getAllByRole('button').slice(0, 4).map((day) => day.getAttribute('aria-label'))).toEqual([
+      'Mon, Sep 14 · 1 task: Rest 1',
+      'Tue, Sep 15 · 1 task: Rest 1',
+      'Wed, Sep 16 · 1 task: Rest 1',
+      'Thu, Sep 17: nothing completed',
+    ])
+  })
+
+  it('lists the tasks behind a piece when it is pressed, the latest day first, and puts them away when pressed again (BAL-19)', async () => {
+    const { user } = setUp({
+      tasks: [done('report', ['job'], MONDAY), done('walk to the office', ['job', 'walk']), done('nap', ['chill'])],
+    })
+    await user.click(screen.getByRole('radio', { name: 'Week' }))
+
+    await user.click(tasksLegendRow('Work'))
+    await user.unhover(tasksLegendRow('Work'))
+
+    expect(tasksLegendRow('Work').getAttribute('aria-pressed')).toBe('true')
+    expect([...tasksChart().querySelectorAll('[data-piece]')].map((piece) => piece.className.includes('opacity-25'))).toEqual([false, true])
+    const rows = () => within(screen.getByRole('list', { name: 'Tasks completed in Work this week' })).getAllByRole('listitem')
+    expect(rows().map((row) => row.textContent)).toEqual(['walk to the officeToday · split with Rest0.5', 'reportMon, Sep 141'])
+
+    await user.click(tasksLegendRow('Work'))
+
+    expect(screen.queryByRole('list', { name: 'Tasks completed in Work this week' })).toBeNull()
   })
 })
 
