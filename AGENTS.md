@@ -56,6 +56,9 @@ or saving. `npm run lint` enforces the boundaries (`.oxlintrc.json`).
 - A new account collection goes into `ACCOUNT_COLLECTIONS` (`firestoreAccount.ts`), is reached via
   `accountCollection`, and is added to the backup (`AccountData`, `backupFile.ts`,
   `firestoreBackupRepository.ts`, `localBackupRepository.ts`).
+- A shared list and its tasks stay in the owner's account; who it is shared with is `shares/{listId}`,
+  outside any account. Lists and tasks reach other accounts only through `firestoreSharing.ts`, which
+  routes each write to the account it belongs in (`sharing.ts`).
 - Access rules are in `firestore.rules`. Deploying is automatic (`scripts/deployFirestoreRules.js`,
   run by `predev`, `prepreview` and the Claude Code hook); `npm run deploy:rules` does it by hand.
 

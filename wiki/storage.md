@@ -24,8 +24,9 @@ changes shape.
 - **STORE-16** Changes are saved **task by task**: a change writes only the tasks it touched. When
   two devices change the same task, the later write wins; changes to different tasks never undo
   one another.
-- **STORE-17** The account's tasks are readable and writable by that account alone. Another
-  account signed in on the same browser sees its own tasks, not these.
+- **STORE-17** The account's tasks are readable and writable by that account alone — save the
+  tasks in a list it shares, which the people it is shared with read and write too, for as long as
+  it is (STORE-67). Another account signed in on the same browser sees its own tasks, not these.
 - **STORE-18** Offline, the tasks still open from a copy the browser keeps, and changes made
   offline are kept in it — through a refresh or a closed app — and sent once there is a connection.
   Every open tab shares that copy. The app itself is kept for offline too (OFF-1); see
@@ -125,7 +126,28 @@ changes shape.
   offline and wait for a connection like the tasks (STORE-18).
 - **STORE-29** Deleting a list is two changes — its tasks back to the Inbox, then the list itself —
   and the tasks go first. If the second is lost, a task naming a list that is gone reads as being in
-  the Inbox anyway (LST-12), so no task is ever stranded.
+  the Inbox anyway (LST-12), so no task is ever stranded. Whom it was shared with goes in the second
+  change, with the list (STORE-66).
+- **STORE-66** Whom a list is **shared** with (LST-27) is kept **apart from the list**, as one
+  record per shared list in a collection between accounts rather than under one, `shares`, filed
+  under the list's id: `{ version, share: { listId, ownerId, ownerEmail, ownerName, members } }`, the
+  members being email addresses, lowercase. Sharing never rewrites the list's record, so it adds
+  nothing to the lists' version (STORE-27); the shares have **their own**, and one the app cannot
+  read is ignored with a warning and shares nothing (STORE-7). Only the owner writes one, and only
+  for a list of their own, never naming themselves; the owner and the people it names read it, and
+  one of them may take themselves off it (LST-30) and change nothing else. A list shared with no one
+  has no record, and deleting a list deletes its record with it. Who a person is, to a share, is the
+  address Google proved they have, so an address no one signs in with sees nothing. The shares are
+  not in the backup (BAK-26).
+- **STORE-67** A shared list and its tasks **stay in the owner's account**: the people it is shared
+  with read them from there and write them back there, and the access rules let them reach that list
+  and the tasks filed under it — no other list and no other task of the owner's — for as long as the
+  share names them. They read **every** task in it, done ones from long ago included: what STORE-55
+  holds back is the account's own history, and a shared list's is its owner's. A change that files a
+  task under a list someone else shared, or takes one out of it (LST-33), writes the task in the
+  account it now belongs to and deletes it from the other **in one write**, so it is never in
+  neither. Changes to shared tasks made offline wait for a connection like any (STORE-18), though
+  the sync notice (OFF-4) watches the account's own data alone.
 
 ## Goals
 
@@ -476,6 +498,8 @@ on the device alone), `src/storage/taskRepository.ts` (the interface), `recordCh
 change comes to, record by record), `firestoreRecords.ts` (one document per record), `taskQueries.ts` and `heldTasks.ts` (what is
 loaded of the tasks, asked in parts and put together),
 `firestoreTaskRepository.ts` (the account's tasks), `localTaskRepository.ts` (the guest's),
+`shareSchema.ts` (whom a list is shared with), `sharing.ts` (where a change to shared lists and
+tasks is written) and `firestoreSharing.ts` (reading and writing them across accounts),
 `firebaseApp.ts` (the database and its offline
 copy, including how a phone reads that copy), `taskSchema.ts` (versions and upgrades), `localTaskImport.ts` (tasks kept in the browser before accounts),
 `guestImport.ts` (moving guest data into an account), `localCollection.ts` (records in `localStorage`),
@@ -532,7 +556,8 @@ setting, and what it keeps on this device), `src/storage/warmUpSchema.test.ts` (
 `src/storage/nudgeSchema.test.ts` and `src/storage/nudgeDeviceSchema.test.ts` (reading the nudge's
 setting back, and what a record from before it synced still answers), `src/storage/prizeSchema.test.ts` and `src/app/usePrizes.test.ts`
 (reading a prize or a wish back, and keeping them), `src/storage/listRepository.test.ts` and `src/storage/listSchema.test.ts`
-(what a change to the lists writes, and reading one back), `src/storage/goalSchema.test.ts` and
+(what a change to the lists writes, and reading one back), `src/storage/sharing.test.ts` and
+`src/storage/shareSchema.test.ts` (where a shared list's changes go, and reading a share back), `src/storage/goalSchema.test.ts` and
 `src/app/useGoals.test.ts` (reading a goal back, and what a change to the goals writes), `src/storage/tagRepository.test.ts`,
 `src/storage/tagSchema.test.ts` and `src/app/useTags.test.ts` (the same for the tags, and keeping the
 ones tasks carry), `src/storage/categorySchema.test.ts`, `src/storage/localCategoryRepository.test.ts`

@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { appendList, createList, type ListSummary } from '../../core'
+import { appendList, createList, type List, type ListSummary } from '../../core'
 import { WAYS_OUT } from '../../test/confirmSheet'
 import { ListsPage } from './ListsPage'
 
@@ -20,16 +20,29 @@ const SUMMARY: ListSummary[] = [
   { list: HOME, open: 0 },
 ]
 
-function setup(lists: readonly ListSummary[] = SUMMARY, inboxOpen = 1) {
+function setup(lists: readonly ListSummary[] = SUMMARY, inboxOpen = 1, ownEmail: string | null = 'me@example.com') {
   const handlers = {
     onOpenInbox: vi.fn(),
     onOpen: vi.fn(),
     onAdd: vi.fn(() => true),
     onRename: vi.fn(() => true),
     onDelete: vi.fn(),
+    onShare: vi.fn(),
+    onUnshare: vi.fn(),
+    onLeave: vi.fn(),
   }
-  render(<ListsPage lists={lists} inboxOpen={inboxOpen} {...handlers} />)
-  return { user: userEvent.setup(), ...handlers }
+  const view = render(<ListsPage lists={lists} inboxOpen={inboxOpen} ownEmail={ownEmail} {...handlers} />)
+  const show = (next: readonly ListSummary[]) => {
+    view.rerender(<ListsPage lists={next} inboxOpen={inboxOpen} ownEmail={ownEmail} {...handlers} />)
+  }
+  return { user: userEvent.setup(), show, ...handlers }
+}
+
+/** Someone else's list, shared with this account. */
+const THEIRS: List = {
+  ...createList('Groceries', AT),
+  sharedBy: { id: 'them', email: 'anna@example.com', name: 'Anna' },
+  sharedWith: ['me@example.com'],
 }
 
 describe('what the page lists', () => {
@@ -204,5 +217,127 @@ describe('deleting a list', () => {
     setup()
 
     expect(screen.queryByRole('button', { name: /the list "Inbox"/ })).toBeNull()
+  })
+})
+
+describe('sharing a list', () => {
+  it('opens a sheet for it from a button beside each list of the account’s own (LST-28)', async () => {
+    const { user } = setup()
+
+    await user.click(screen.getByRole('button', { name: 'Share the list "Work"' }))
+
+    const sheet = screen.getByRole('dialog', { name: 'Share "Work"' })
+    expect(sheet.textContent).toContain('Only you can see this list.')
+    expect(sheet.textContent).toContain('me@example.com')
+  })
+
+  it('shares it with the address typed, on the button or on Enter, and clears the box (LST-28)', async () => {
+    const { user, onShare } = setup()
+    await user.click(screen.getByRole('button', { name: 'Share the list "Work"' }))
+
+    const box = screen.getByRole('textbox', { name: 'Email address to share the list with' })
+    await user.type(box, 'anna@example.com')
+    await user.click(screen.getByRole('button', { name: 'Share' }))
+    expect(onShare).toHaveBeenLastCalledWith(WORK.id, 'anna@example.com')
+    expect((box as HTMLInputElement).value).toBe('')
+
+    await user.type(box, 'bob@example.com{Enter}')
+    expect(onShare).toHaveBeenLastCalledWith(WORK.id, 'bob@example.com')
+  })
+
+  it.each([
+    ['something that is not an address', 'anna', 'That is not an email address.'],
+    ['the owner’s own address', 'Me@Example.com', 'That is your own address. The list is yours already.'],
+    ['an address it is shared with already', 'anna@example.com', 'The list is shared with them already.'],
+  ])('says why rather than sharing it with %s (LST-28)', async (_, typed, said) => {
+    const { user, onShare } = setup([{ list: { ...WORK, sharedWith: ['anna@example.com'] }, open: 2 }])
+    await user.click(screen.getByRole('button', { name: 'Share the list "Work"' }))
+
+    await user.type(screen.getByRole('textbox', { name: 'Email address to share the list with' }), `${typed}{Enter}`)
+
+    expect(screen.getByRole('alert').textContent).toBe(said)
+    expect(onShare).not.toHaveBeenCalled()
+  })
+
+  it('lists everyone it is shared with, each with a button that stops sharing it with them (LST-29)', async () => {
+    const { user, onUnshare } = setup([{ list: { ...WORK, sharedWith: ['anna@example.com', 'bob@example.com'] }, open: 2 }])
+    await user.click(screen.getByRole('button', { name: 'Share the list "Work"' }))
+
+    await user.click(screen.getByRole('button', { name: 'Stop sharing with anna@example.com' }))
+
+    expect(onUnshare).toHaveBeenCalledExactlyOnceWith(WORK.id, 'anna@example.com')
+    expect(screen.getByRole('button', { name: 'Stop sharing with bob@example.com' })).toBeTruthy()
+  })
+
+  it('says whom a list of the account’s own is shared with, under its name (LST-35)', () => {
+    setup([
+      { list: { ...WORK, sharedWith: ['anna@example.com'] }, open: 2 },
+      { list: { ...HOME, sharedWith: ['anna@example.com', 'bob@example.com'] }, open: 0 },
+    ])
+
+    expect(screen.getByRole('button', { name: 'Work, shared with anna@example.com: 2 to do' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Home, shared with 2 people' })).toBeTruthy()
+  })
+
+  it('warns that deleting a shared list takes it from the people it is shared with too (LST-34)', async () => {
+    const { user } = setup([{ list: { ...WORK, sharedWith: ['anna@example.com'] }, open: 2 }])
+
+    await user.click(screen.getByRole('button', { name: 'Delete the list "Work"' }))
+
+    expect(screen.getByRole('dialog', { name: 'Delete the list "Work"?' }).textContent).toContain(
+      'The people it is shared with lose the list and its tasks.',
+    )
+  })
+
+  it('offers no sharing to a guest, who has no address to share from (LST-36)', () => {
+    setup(SUMMARY, 1, null)
+
+    expect(screen.queryByRole('button', { name: /^Share the list/ })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Rename the list "Work"' })).toBeTruthy()
+  })
+})
+
+describe('a list someone else shared', () => {
+  it('says whose it is, and offers neither renaming, deleting nor sharing it (LST-30)', () => {
+    setup([...SUMMARY, { list: THEIRS, open: 3 }])
+
+    expect(screen.getByRole('button', { name: 'Groceries, shared by Anna: 3 to do' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Rename the list "Groceries"' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Delete the list "Groceries"' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Share the list "Groceries"' })).toBeNull()
+  })
+
+  it('leaves it after asking, rather than deleting it (LST-30)', async () => {
+    const { user, onLeave, onDelete } = setup([...SUMMARY, { list: THEIRS, open: 3 }])
+
+    await user.click(screen.getByRole('button', { name: 'Leave the list "Groceries"' }))
+    const sheet = screen.getByRole('dialog', { name: 'Leave the list "Groceries"?' })
+    expect([...sheet.querySelectorAll('p')].map((line) => line.textContent)).toEqual([
+      'It and its tasks stop showing in your lists.',
+      'Anna can share it with you again.',
+    ])
+
+    await user.click(screen.getByRole('button', { name: 'Leave' }))
+
+    expect(onLeave).toHaveBeenCalledExactlyOnceWith(THEIRS.id)
+    expect(onDelete).not.toHaveBeenCalled()
+  })
+
+  it.each(WAYS_OUT)('leaves nothing when %s closes the sheet (LST-30)', async (_, away) => {
+    const { user, onLeave } = setup([...SUMMARY, { list: THEIRS, open: 3 }])
+
+    await user.click(screen.getByRole('button', { name: 'Leave the list "Groceries"' }))
+    await away(user)
+
+    expect(onLeave).not.toHaveBeenCalled()
+  })
+
+  it('closes the sheet for sharing a list that stops being there (LST-28)', async () => {
+    const { user, show } = setup()
+    await user.click(screen.getByRole('button', { name: 'Share the list "Work"' }))
+
+    show([{ list: HOME, open: 0 }])
+
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 })

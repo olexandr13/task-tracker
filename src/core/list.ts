@@ -20,6 +20,14 @@ import { isComplete, type Task } from './task'
 
 export type ListId = string
 
+/** Whose a list is, as the people it is shared with are told (LST-27). */
+export interface ListOwner {
+  /** The account the list and its tasks are kept in. */
+  readonly id: string
+  readonly email: string
+  readonly name: string | null
+}
+
 export interface List {
   readonly id: ListId
   /**
@@ -36,6 +44,18 @@ export interface List {
    * two devices merge one by one. See ./order.
    */
   readonly order: number
+  /**
+   * Who else sees it, by email address (LST-27): lowercase, in the order they
+   * were added, and none for a list kept to its account. Kept apart from the
+   * list by its owner, and read back onto it, so a list is shared without being
+   * rewritten (./listSharing).
+   */
+  readonly sharedWith: readonly string[]
+  /**
+   * Whose list it is when it is someone else's, shared with this account; null
+   * for the account's own. Only its owner renames, deletes or shares it.
+   */
+  readonly sharedBy: ListOwner | null
 }
 
 /** The gap left between neighbours, as tasks have one (./order). */
@@ -86,6 +106,8 @@ export function createList(name: string, now: Date = new Date()): List {
     name: normalizeListName(name),
     createdAt: now.toISOString(),
     order: 0,
+    sharedWith: [],
+    sharedBy: null,
   }
 }
 
@@ -103,11 +125,13 @@ export function appendList(lists: readonly List[], list: List): List[] {
 }
 
 /**
- * The lists in the order they are shown: their own, then age, then id, so two
+ * The lists in the order they are shown: the account's own before those shared
+ * with it (LST-31), and within each their own order, then age, then id, so two
  * merged devices never leave it to chance. Returns a new array.
  */
 export function sortLists(lists: readonly List[]): List[] {
   return [...lists].sort((a, b) => {
+    if ((a.sharedBy === null) !== (b.sharedBy === null)) return a.sharedBy === null ? -1 : 1
     if (a.order !== b.order) return a.order - b.order
     if (a.createdAt !== b.createdAt) return a.createdAt < b.createdAt ? -1 : 1
     if (a.id === b.id) return 0
@@ -119,10 +143,14 @@ export function findList(lists: readonly List[], id: ListId): List | null {
   return lists.find((list) => list.id === id) ?? null
 }
 
-/** Whether any list is called this already, whatever its case — `except` aside, which is its own. */
+/**
+ * Whether any of the account's own lists is called this already, whatever its
+ * case — `except` aside, which is its own. A list someone else shared is named
+ * by them, and may share a name with one of these (LST-31).
+ */
 export function isNameTaken(lists: readonly List[], name: string, except: ListId | null = null): boolean {
   const trimmed = name.trim().replace(/\s+/gu, ' ')
-  return lists.some((list) => list.id !== except && sameListName(list.name, trimmed))
+  return lists.some((list) => list.id !== except && list.sharedBy === null && sameListName(list.name, trimmed))
 }
 
 /**

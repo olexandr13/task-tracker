@@ -1,5 +1,5 @@
 import { Fragment, useId, type ReactElement, type ReactNode } from 'react'
-import { sortLists, type List, type ListId } from '../../core'
+import { isShared, sortLists, type List, type ListId } from '../../core'
 import { isViewOn, modesShown, organizePagesShown, reflectPagesShown, rewardsPagesShown, useFeaturesOff } from '../features'
 import { navItemOff, navItemOn } from '../navTones'
 import { describeNoticeCount } from '../notificationLabels'
@@ -9,6 +9,7 @@ import { VIEW_ICONS } from '../viewIcons'
 import { AppLogo } from './AppLogo'
 import { ChevronIcon } from './ChevronIcon'
 import { FolderIcon } from './FolderIcon'
+import { PeopleIcon } from './PeopleIcon'
 import { InboxIcon } from './InboxIcon'
 import { KeyWaitingMark } from './KeyWaitingMark'
 
@@ -180,7 +181,8 @@ export function SideNav({
                       key={list.id}
                       listId={list.id}
                       name={list.name}
-                      icon={<FolderIcon className={subGlyph} />}
+                      // A list someone else sees too wears two people rather than a folder (LST-35).
+                      icon={isShared(list) ? <PeopleIcon className={subGlyph} /> : <FolderIcon className={subGlyph} />}
                       active={view === oneListView(list.id)}
                       onSelect={() => { onChange(oneListView(list.id)) }}
                     />

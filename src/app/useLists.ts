@@ -4,7 +4,9 @@ import {
   createList,
   isNameTaken,
   renameList,
+  shareList,
   sortLists,
+  unshareList,
   type List,
   type ListId,
 } from '../core'
@@ -97,6 +99,10 @@ export function useLists(repository: ListRepository, onProblem: ReportProblem = 
    * Deletes the list itself. The tasks filed under it are the caller's to empty
    * first (`clearListEverywhere` in useTasks); a task left naming a list that is
    * gone still reads as being in the Inbox, so neither order loses a task.
+   *
+   * A list someone else shared is not deleted but left (LST-30): it and its
+   * tasks go from this account's lists and stay theirs — so its tasks are not
+   * the caller's to empty.
    */
   const remove = useCallback(
     (id: ListId) => {
@@ -105,5 +111,25 @@ export function useLists(repository: ListRepository, onProblem: ReportProblem = 
     [apply],
   )
 
-  return { lists, isLoading, add, rename, remove }
+  /**
+   * Shares a list of the account's own with one more person, by email address
+   * (LST-28). An address `shareRefusal` would refuse changes nothing; the sheet
+   * that asked says why.
+   */
+  const share = useCallback(
+    (id: ListId, email: string) => {
+      apply((current) => current.map((list) => (list.id === id ? shareList(list, email) : list)))
+    },
+    [apply],
+  )
+
+  /** Stops sharing a list of the account's own with one person (LST-29). */
+  const unshare = useCallback(
+    (id: ListId, email: string) => {
+      apply((current) => current.map((list) => (list.id === id ? unshareList(list, email) : list)))
+    },
+    [apply],
+  )
+
+  return { lists, isLoading, add, rename, remove, share, unshare }
 }

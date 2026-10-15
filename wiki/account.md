@@ -62,8 +62,9 @@ device alone.
 ## Whose tasks
 
 - **AUTH-13** Tasks belong to the Google account. Signing in on any device or address shows the same
-  tasks (STORE-2), and another account signed in on the same browser sees only its own (STORE-17).
-  A guest's tasks belong to this browser address alone (STORE-37).
+  tasks (STORE-2), and another account signed in on the same browser sees only its own (STORE-17)
+  and the lists shared with it (LST-27). Sharing finds an account by the address it signed in to
+  Google with, so it needs one. A guest's tasks belong to this browser address alone (STORE-37).
 
 ---
 

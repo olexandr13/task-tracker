@@ -186,6 +186,39 @@ describe('changing the lists', () => {
     expect(written[0].removed).toEqual([HOME.id])
     expect(written[0].saved).toEqual([])
   })
+
+  it('shares a list by address, and writes that list alone (LST-28)', () => {
+    const { result, arrive, written } = setUp()
+    arrive(LISTS)
+
+    act(() => { result.current.share(WORK.id, ' Anna@Example.com ') })
+
+    expect(result.current.lists.find((list) => list.id === WORK.id)?.sharedWith).toEqual(['anna@example.com'])
+    expect(written).toHaveLength(1)
+    expect(written[0].saved.map((list) => [list.name, list.sharedWith])).toEqual([['Work', ['anna@example.com']]])
+  })
+
+  it('stops sharing it with one person, and writes nothing for an address it was not shared with (LST-29)', () => {
+    const { result, arrive, written } = setUp()
+    arrive([{ ...WORK, sharedWith: ['anna@example.com', 'bob@example.com'] }, HOME])
+
+    act(() => { result.current.unshare(WORK.id, 'carol@example.com') })
+    expect(written).toEqual([])
+
+    act(() => { result.current.unshare(WORK.id, 'anna@example.com') })
+    expect(written[0].saved.map((list) => list.sharedWith)).toEqual([['bob@example.com']])
+  })
+
+  it('leaves a list someone else shared by taking it out of the lists (LST-30)', () => {
+    const { result, arrive, written } = setUp()
+    const theirs = { ...createList('Groceries', AT), sharedBy: { id: 'them', email: 'them@example.com', name: 'Anna' } }
+    arrive([...LISTS, theirs])
+
+    act(() => { result.current.remove(theirs.id) })
+
+    expect(result.current.lists.map((list) => list.name)).toEqual(['Work', 'Home'])
+    expect(written[0].removed).toEqual([theirs.id])
+  })
 })
 
 describe('changes made in one go', () => {

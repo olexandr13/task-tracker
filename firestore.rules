@@ -1,7 +1,16 @@
 rules_version = '2';
 
 // Everything sits under the account's own id, and only the account itself reads
-// or writes it. Anything else in the database is denied.
+// or writes it — with one exception: a list its owner shares (LST-27). Anything
+// else in the database is denied.
+//
+// - Shares: one document per shared list, at shares/{listId}, stored as
+//   { version, share: { listId, ownerId, ownerEmail, ownerName, members } }
+//   (src/storage/shareSchema.ts) — members being email addresses, lowercase.
+//   Its owner writes it, for one of their own lists; they and its members read
+//   it; a member may only take themselves off it. While it names someone, they
+//   read that list and read and write the tasks filed under it, which stay in
+//   the owner's account (STORE-66, STORE-67).
 //
 // - Tasks: one document per task, stored as { version, task }
 //   (src/storage/firestoreTaskRepository.ts), always filed under the task's id.
@@ -60,14 +69,86 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == accountId;
     }
 
+    // The address the signed-in account was proved to have, as shares keep it.
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function hasProvedEmail() {
+      return request.auth != null
+        && request.auth.token.email is string
+        && request.auth.token.email_verified == true;
+    }
+
+    // Whether a share (its stored `share` map) names the signed-in account.
+    function isMemberOf(share) {
+      return hasProvedEmail() && myEmail() in share.members;
+    }
+
+    // Whether the account's list `listId` is shared with the signed-in account.
+    function isSharedWithMe(accountId, listId) {
+      let share = get(/databases/$(database)/documents/shares/$(listId)).data.share;
+      return share.ownerId == accountId && isMemberOf(share);
+    }
+
+    // Whether a stored task is filed under a list of the account's shared with the signed-in account.
+    function isInListSharedWithMe(accountId, stored) {
+      return stored.task.listId is string && isSharedWithMe(accountId, stored.task.listId);
+    }
+
     match /users/{accountId}/tasks/{taskId} {
-      allow read, delete: if isOwner(accountId);
-      allow create, update: if isOwner(accountId) && request.resource.data.task.id == taskId;
+      allow read, delete: if isOwner(accountId) || isInListSharedWithMe(accountId, resource.data);
+      allow create: if request.resource.data.task.id == taskId
+        && (isOwner(accountId) || isInListSharedWithMe(accountId, request.resource.data));
+      // Someone a list is shared with changes its tasks, and moves them between
+      // the owner's lists shared with them, but never files one anywhere else.
+      allow update: if request.resource.data.task.id == taskId
+        && (isOwner(accountId)
+          || (isInListSharedWithMe(accountId, resource.data)
+            && isInListSharedWithMe(accountId, request.resource.data)));
     }
 
     match /users/{accountId}/lists/{listId} {
-      allow read, delete: if isOwner(accountId);
+      allow read: if isOwner(accountId) || isSharedWithMe(accountId, listId);
+      allow delete: if isOwner(accountId);
       allow create, update: if isOwner(accountId) && request.resource.data.list.id == listId;
+    }
+
+    match /shares/{listId} {
+      // The owner's own shares, and those naming the signed-in account: each
+      // asked for on its own (share.ownerId ==, share.members array-contains).
+      allow read: if request.auth != null
+        && (resource.data.share.ownerId == request.auth.uid || isMemberOf(resource.data.share));
+
+      // Written whole by the owner, for a list of their own, never naming them.
+      allow create: if isWrittenByOwner(listId);
+      allow update: if (resource.data.share.ownerId == request.auth.uid && isWrittenByOwner(listId))
+        || leavesOnly();
+      // Deleting one that is not there deletes nothing: the owner's app deletes
+      // the share with the list, whether or not it knew the list was shared.
+      allow delete: if request.auth != null
+        && (resource == null || resource.data.share.ownerId == request.auth.uid);
+
+      function isWrittenByOwner(listId) {
+        let share = request.resource.data.share;
+        return request.auth != null
+          && share.ownerId == request.auth.uid
+          && share.listId == listId
+          && share.members is list
+          && share.members.size() <= 50
+          && !(myEmail() in share.members)
+          && existsAfter(/databases/$(database)/documents/users/$(request.auth.uid)/lists/$(listId));
+      }
+
+      // Someone a list is shared with takes themselves off it, and nothing else.
+      function leavesOnly() {
+        let before = resource.data.share;
+        let after = request.resource.data.share;
+        return isMemberOf(before)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['share'])
+          && after.diff(before).affectedKeys().hasOnly(['members'])
+          && after.members == before.members.removeAll([myEmail()]);
+      }
     }
 
     match /users/{accountId}/goals/{goalId} {

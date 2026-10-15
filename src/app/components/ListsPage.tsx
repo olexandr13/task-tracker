@@ -1,10 +1,13 @@
 import { useState, type KeyboardEvent } from 'react'
-import { isListName, MAX_LIST_NAME_LENGTH, type ListId, type ListSummary } from '../../core'
+import { isListName, isOwnList, isShared, MAX_LIST_NAME_LENGTH, type List, type ListId, type ListSummary } from '../../core'
 import { deleteControl } from '../rowControls'
+import { ownerLabel, sharedNote } from '../shareLabels'
 import { ConfirmSheet, type Confirmation } from './ConfirmSheet'
 import { FolderIcon } from './FolderIcon'
 import { InboxIcon } from './InboxIcon'
 import { PencilIcon } from './PencilIcon'
+import { PeopleIcon } from './PeopleIcon'
+import { ShareSheet } from './ShareSheet'
 
 const row =
   'flex items-center rounded-xl border border-neutral-200 bg-white pr-1.5 transition-colors hover:border-neutral-300 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700'
@@ -16,13 +19,35 @@ const smallControl =
 const field =
   'min-w-0 flex-1 rounded-lg border border-neutral-300 bg-transparent px-2.5 py-2 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-500'
 
-/** Asked before a list is deleted, there being nothing to undo it from (LST-19). */
-function askDelete(name: string): Confirmation {
+/**
+ * Asked before a list is deleted, there being nothing to undo it from (LST-19),
+ * or left, when it is someone else's (LST-30).
+ */
+function askDelete(list: List): Confirmation {
+  if (list.sharedBy !== null) {
+    return {
+      question: `Leave the list "${list.name}"?`,
+      lines: ['It and its tasks stop showing in your lists.', `${ownerLabel(list.sharedBy)} can share it with you again.`],
+      confirm: 'Leave',
+    }
+  }
+
   return {
-    question: `Delete the list "${name}"?`,
-    lines: ['Its tasks go back to the Inbox.', 'The tasks themselves are not deleted.'],
+    question: `Delete the list "${list.name}"?`,
+    lines: [
+      'Its tasks go back to the Inbox.',
+      'The tasks themselves are not deleted.',
+      ...(list.sharedWith.length > 0 ? ['The people it is shared with lose the list and its tasks.'] : []),
+    ],
     confirm: 'Delete',
   }
+}
+
+/** What a list is called to a screen reader: its name, whose it is or whom it is shared with, and what is left to do. */
+function openLabel(list: List, todo: number): string {
+  const note = sharedNote(list)
+  const named = note === null ? list.name : `${list.name}, ${note.charAt(0).toLowerCase()}${note.slice(1)}`
+  return todo === 0 ? named : `${named}: ${String(todo)} to do`
 }
 
 interface ListsPageProps {
@@ -38,7 +63,20 @@ interface ListsPageProps {
   onRename: (id: ListId, name: string) => boolean
   /** Deletes the list; its tasks go back to the Inbox. */
   onDelete: (id: ListId) => void
+  /**
+   * The account's own address when lists can be shared from here (LST-27);
+   * null as guest, when there is no sharing at all.
+   */
+  ownEmail?: string | null
+  /** Shares one of the account's own lists with one more person (LST-28). */
+  onShare?: (id: ListId, email: string) => void
+  /** Stops sharing one of the account's own lists with one person (LST-29). */
+  onUnshare?: (id: ListId, email: string) => void
+  /** Leaves a list someone else shared (LST-30). */
+  onLeave?: (id: ListId) => void
 }
+
+function ignore(): void {}
 
 /**
  * The Lists page: the Inbox, then every list, each opening the tasks filed under
@@ -52,6 +90,10 @@ interface ListsPageProps {
  * The Inbox heads the page and has no buttons of its own. It is not a record —
  * it is what "in no list" looks like — so there is nothing to rename or delete,
  * and it is always there to move a task back to.
+ *
+ * A list can be shared (LST-27): the account's own lists have a button that
+ * opens the sheet for it, and a list someone else shared says whose it is and
+ * has one button, to leave it (LST-30).
  */
 export function ListsPage({
   lists,
@@ -61,17 +103,25 @@ export function ListsPage({
   onAdd,
   onRename,
   onDelete,
+  ownEmail = null,
+  onShare = ignore,
+  onUnshare = ignore,
+  onLeave = ignore,
 }: ListsPageProps) {
   const [typed, setTyped] = useState('')
   // The list being renamed, and what has been typed over its name so far.
   const [editing, setEditing] = useState<{ id: ListId; name: string } | null>(null)
   // What went wrong with the last name tried, under the box or the row it was typed in.
   const [taken, setTaken] = useState<ListId | 'new' | null>(null)
-  // The list asked about before it is deleted.
+  // The list asked about before it is deleted, or left.
   const [asking, setAsking] = useState<ListId | null>(null)
   const asked = lists.find(({ list }) => list.id === asking)?.list
   // Deleted elsewhere — on another device — while asked, there is nothing left to ask about.
   if (asking !== null && asked === undefined) setAsking(null)
+  // The list whose sheet for sharing is open.
+  const [sharing, setSharing] = useState<ListId | null>(null)
+  const shared = lists.find(({ list }) => list.id === sharing)?.list
+  if (sharing !== null && (shared === undefined || !isOwnList(shared))) setSharing(null)
 
   function handleAdd() {
     if (!isListName(typed)) return
@@ -203,11 +253,16 @@ export function ListsPage({
                   <button
                     type="button"
                     onClick={() => { onOpen(list.id) }}
-                    aria-label={todo === 0 ? list.name : `${list.name}: ${String(todo)} to do`}
+                    aria-label={openLabel(list, todo)}
                     className={open}
                   >
-                    <FolderIcon className={glyph} />
-                    <span className="min-w-0 flex-1 truncate">{list.name}</span>
+                    {isShared(list) ? <PeopleIcon className={glyph} /> : <FolderIcon className={glyph} />}
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate">{list.name}</span>
+                      {sharedNote(list) !== null && (
+                        <span className="truncate text-xs text-neutral-400 dark:text-neutral-500">{sharedNote(list)}</span>
+                      )}
+                    </span>
                     {todo > 0 && (
                       <span aria-hidden="true" className={count}>
                         {todo}
@@ -215,26 +270,53 @@ export function ListsPage({
                     )}
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => { startRename(list.id, list.name) }}
-                    aria-label={`Rename the list "${list.name}"`}
-                    title="Rename list"
-                    className={smallControl}
-                  >
-                    <PencilIcon className="size-3.5 shrink-0" />
-                  </button>
+                  {isOwnList(list) ? (
+                    <>
+                      {ownEmail !== null && (
+                        <button
+                          type="button"
+                          onClick={() => { setSharing(list.id) }}
+                          aria-label={`Share the list "${list.name}"`}
+                          title="Share list"
+                          className={smallControl}
+                        >
+                          <PeopleIcon className="size-3.5 shrink-0" />
+                        </button>
+                      )}
 
-                  <button
-                    type="button"
-                    // The list goes for good, with nothing to undo it from, so it asks first.
-                    onClick={() => { setAsking(list.id) }}
-                    aria-label={`Delete the list "${list.name}"`}
-                    title="Delete list"
-                    className={`flex h-6 shrink-0 items-center rounded-lg px-1.5 text-base leading-none ${deleteControl}`}
-                  >
-                    ×
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => { startRename(list.id, list.name) }}
+                        aria-label={`Rename the list "${list.name}"`}
+                        title="Rename list"
+                        className={smallControl}
+                      >
+                        <PencilIcon className="size-3.5 shrink-0" />
+                      </button>
+
+                      <button
+                        type="button"
+                        // The list goes for good, with nothing to undo it from, so it asks first.
+                        onClick={() => { setAsking(list.id) }}
+                        aria-label={`Delete the list "${list.name}"`}
+                        title="Delete list"
+                        className={`flex h-6 shrink-0 items-center rounded-lg px-1.5 text-base leading-none ${deleteControl}`}
+                      >
+                        ×
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      // Only its owner can share it again, so it asks first.
+                      onClick={() => { setAsking(list.id) }}
+                      aria-label={`Leave the list "${list.name}"`}
+                      title="Leave list"
+                      className={`flex h-6 shrink-0 items-center rounded-lg px-1.5 text-base leading-none ${deleteControl}`}
+                    >
+                      ×
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -256,12 +338,23 @@ export function ListsPage({
 
       {asked !== undefined && (
         <ConfirmSheet
-          confirmation={askDelete(asked.name)}
+          confirmation={askDelete(asked)}
           onCancel={() => { setAsking(null) }}
           onConfirm={() => {
             setAsking(null)
-            onDelete(asked.id)
+            if (isOwnList(asked)) onDelete(asked.id)
+            else onLeave(asked.id)
           }}
+        />
+      )}
+
+      {shared !== undefined && ownEmail !== null && (
+        <ShareSheet
+          list={shared}
+          ownEmail={ownEmail}
+          onShare={(email) => { onShare(shared.id, email) }}
+          onUnshare={(email) => { onUnshare(shared.id, email) }}
+          onClose={() => { setSharing(null) }}
         />
       )}
     </div>

@@ -11,6 +11,16 @@ describe('reading a saved list', () => {
     expect(readList(toStoredList(work))).toEqual(work)
   })
 
+  it('keeps who it is shared with out of the list’s own record: that is kept apart', () => {
+    const shared = { ...work, sharedWith: ['anna@example.com'], sharedBy: { id: 'them', email: 'them@example.com', name: null } }
+
+    expect(toStoredList(shared)).toEqual({
+      version: LIST_SCHEMA_VERSION,
+      list: { id: work.id, name: 'Work', createdAt: work.createdAt, order: 1024 },
+    })
+    expect(readList(toStoredList(shared))).toEqual(work)
+  })
+
   it('refuses a version it does not know: a shape it cannot be sure of is left unread', () => {
     expect(readList({ version: LIST_SCHEMA_VERSION + 1, list: work })).toBe(null)
     expect(readList({ list: work })).toBe(null)

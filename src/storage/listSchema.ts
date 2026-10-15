@@ -9,13 +9,20 @@ import { isRecord } from './plainData'
  */
 export const LIST_SCHEMA_VERSION = 1
 
+/**
+ * The list as its record keeps it. Who it is shared with, and whose it is when
+ * someone else shared it, are kept apart from it (./shareSchema) and read back
+ * onto it, so sharing never rewrites the list and never reaches its version.
+ */
+export type ListRecord = Pick<List, 'id' | 'name' | 'createdAt' | 'order'>
+
 export interface StoredList {
   version: number
-  list: List
+  list: ListRecord
 }
 
-export function toStoredList(list: List): StoredList {
-  return { version: LIST_SCHEMA_VERSION, list }
+export function toStoredList({ id, name, createdAt, order }: List): StoredList {
+  return { version: LIST_SCHEMA_VERSION, list: { id, name, createdAt, order } }
 }
 
 /**
@@ -40,5 +47,5 @@ export function readList(data: unknown): List | null {
     return null
   }
 
-  return { id, name, createdAt, order }
+  return { id, name, createdAt, order, sharedWith: [], sharedBy: null }
 }

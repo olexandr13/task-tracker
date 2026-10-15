@@ -19,6 +19,7 @@ import { createFirestoreNudgeRepository } from './firestoreNudgeRepository'
 import { createFirestorePrizeRepository } from './firestorePrizeRepository'
 import { createFirestoreProcrastinationRepository } from './firestoreProcrastinationRepository'
 import { createFirestoreRewardRepository } from './firestoreRewardRepository'
+import { createFirestoreSharing } from './firestoreSharing'
 import { createFirestoreSyncMonitor } from './firestoreSyncMonitor'
 import { createFirestoreTagRepository } from './firestoreTagRepository'
 import { createFirestoreTaskRepository } from './firestoreTaskRepository'
@@ -68,8 +69,15 @@ import type { XpRepository } from './xpRepository'
  * decided in this file and nowhere else.
  */
 export interface AccountStorage {
+  /** The account's tasks, and those in lists others shared with it (LST-27). */
   readonly tasks: TaskRepository
+  /** The account's lists, whom each is shared with, and the lists others shared with it. */
   readonly lists: ListRepository
+  /**
+   * Whether lists can be shared from here (LST-27): a Google account, with an
+   * address to be found by. A guest has none, and nothing is shared with one.
+   */
+  readonly canShare: boolean
   /** The goals tasks are done for (GOAL-1). */
   readonly goals: GoalRepository
   readonly tags: TagRepository
@@ -125,10 +133,22 @@ async function moveDeviceNudgeIn(nudge: NudgeRepository): Promise<void> {
   }
 }
 
-/** A Google account's data, in Firestore under `users/{accountId}` (`firestore.rules`). */
-function createFirestoreAccountStorage(accountId: string): AccountStorage {
-  const tasks = createFirestoreTaskRepository(firestore, accountId)
-  const lists = createFirestoreListRepository(firestore, accountId)
+/**
+ * A Google account's data, in Firestore under `users/{accountId}`, and the lists
+ * it shares and is shared, between accounts (`firestore.rules`).
+ */
+function createFirestoreAccountStorage(account: Account): AccountStorage {
+  const accountId = account.id
+  const own = {
+    tasks: createFirestoreTaskRepository(firestore, accountId),
+    lists: createFirestoreListRepository(firestore, accountId),
+  }
+  // Signed in with Google there is always an address; without one there is no sharing.
+  const canShare = account.email !== null
+  const { tasks, lists } =
+    account.email === null
+      ? own
+      : createFirestoreSharing(firestore, { id: accountId, email: account.email, name: account.name }, own)
   const goals = createFirestoreGoalRepository(firestore, accountId)
   const tags = createFirestoreTagRepository(firestore, accountId)
   const prizes = createFirestorePrizeRepository(firestore, accountId)
@@ -147,6 +167,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
   return {
     tasks,
     lists,
+    canShare,
     goals,
     tags,
     prizes,
@@ -187,6 +208,7 @@ function createGuestAccountStorage(): AccountStorage {
   return {
     tasks: createLocalTaskRepository(),
     lists: createLocalListRepository(),
+    canShare: false,
     goals: createLocalGoalRepository(),
     tags: createLocalTagRepository(),
     prizes: createLocalPrizeRepository(),
@@ -211,5 +233,5 @@ function createGuestAccountStorage(): AccountStorage {
 }
 
 export function createAccountStorage(account: Account): AccountStorage {
-  return account.provider === 'guest' ? createGuestAccountStorage() : createFirestoreAccountStorage(account.id)
+  return account.provider === 'guest' ? createGuestAccountStorage() : createFirestoreAccountStorage(account)
 }

@@ -16,7 +16,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Checklists](checklists.md) | Subtasks: ticking them off, and what that does and does not finish |
 | [Due dates](due-dates.md) | The day a task is due, setting it, and overdue |
 | [Tags](tags.md) | Names a task carries, tagging by picker or by typing `#`, the Tags page and each tag's list |
-| [Lists](lists.md) | Somewhere to put a task: one list at a time, the Inbox, and the Lists page |
+| [Lists](lists.md) | Somewhere to put a task: one list at a time, the Inbox, the Lists page, and sharing a list with other people by email |
 | [Goals](goals.md) | What the work is for: a task serves one goal, and each goal shows the share of its tasks done |
 | [Views](views.md) | Views of the tasks — Today, Tomorrow, Week and Month, and what belongs in them |
 | [Modes](modes.md) | The parts of the app that are turned on and off: where they are listed, switched and explained |

@@ -19,7 +19,8 @@ these, so a feature page only mentions them where the feature bends them.
 
 - **PRIN-4** Nothing is shown until someone is in — signed in with Google, or continuing as guest
   (AUTH-1). Signed in, the tasks are the account's: every device signed into it shows the same ones,
-  kept in step as they change (STORE-2). As guest they are this browser's alone (STORE-37).
+  kept in step as they change (STORE-2), and a list it shares by email is the people it is shared
+  with's to see and change too (LST-27). As guest they are this browser's alone (STORE-37).
 - **PRIN-5** Saved data is versioned and migrated on load. Changing the stored shape never silently
   breaks what is already saved. See [Storage](storage.md).
 - **PRIN-6** Ids are UUIDs and timestamps are ISO 8601, so records written on two devices merge one

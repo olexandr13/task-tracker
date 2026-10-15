@@ -79,6 +79,12 @@ describe('naming a list', () => {
     // Its own name is not taken: renaming a list to what it is called already is no clash.
     expect(isNameTaken(lists, 'Work', lists[0].id)).toBe(false)
   })
+
+  it('lets a name match a list someone else shared: they named theirs', () => {
+    const shared = { ...list('Groceries'), sharedBy: { id: 'them', email: 'them@example.com', name: null } }
+
+    expect(isNameTaken([shared], 'Groceries')).toBe(false)
+  })
 })
 
 describe('the order lists are shown in', () => {
@@ -94,6 +100,13 @@ describe('the order lists are shown in', () => {
     const late = { ...list('Work', new Date('2026-09-10T00:00:00Z')), order: 0 }
 
     expect(sortLists([late, early]).map((each) => each.name)).toEqual(['Home', 'Work'])
+  })
+
+  it('puts the lists shared with the account after its own, whatever their number', () => {
+    const shared = { ...list('Groceries'), order: -1024, sharedBy: { id: 'them', email: 'them@example.com', name: null } }
+    const own = { ...list('Work'), order: 2048 }
+
+    expect(sortLists([shared, own]).map((each) => each.name)).toEqual(['Work', 'Groceries'])
   })
 
   it('never modifies the array it was given', () => {

@@ -133,7 +133,8 @@ describe('writing a backup', () => {
       version: BACKUP_VERSION,
       exportedAt: AT.toISOString(),
       tasks: [{ version: SCHEMA_VERSION, task: DONE }, { version: SCHEMA_VERSION, task: TRASHED }],
-      lists: [{ version: LIST_SCHEMA_VERSION, list: WORK }],
+      // Whom it is shared with is between accounts, not this one's to back up (BAK-26).
+      lists: [{ version: LIST_SCHEMA_VERSION, list: { id: WORK.id, name: 'Work', createdAt: WORK.createdAt, order: WORK.order } }],
       goals: [{ version: GOAL_SCHEMA_VERSION, goal: FIT }],
       tags: [{ version: TAG_SCHEMA_VERSION, tag: ERRANDS }],
       prizes: [{ version: PRIZE_SCHEMA_VERSION, prize: CHOCOLATE }],

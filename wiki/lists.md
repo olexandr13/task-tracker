@@ -23,8 +23,9 @@ reasons; requirements here are `LST-`.
 - **LST-4** A list is made on the Lists page (LST-13), on purpose, rather than in passing from a
   task. A list outlives the task that wanted it, so it is not something to create by accident.
 - **LST-5** **Case does not make another list**: there is no second list called `work` beside
-  `Work`. A name another list has already is refused, when making a list and when renaming one, and
-  the box it was typed in says so and keeps what was typed, to fix rather than type again.
+  `Work`. A name another of the account's own lists has already is refused, when making a list and
+  when renaming one, and the box it was typed in says so and keeps what was typed, to fix rather than
+  type again. A list someone else shared may share a name with one of these (LST-31).
 - **LST-6** A list can be **renamed** at any time. Its tasks are in it by its id, so renaming
   touches the list alone: not one task is rewritten, and no address changes.
 - **LST-7** Giving up a rename with Escape leaves the list named as it was, as dropping a title
@@ -82,8 +83,8 @@ reasons; requirements here are `LST-`.
 ## The Lists page
 
 - **LST-13** **Lists** has an entry of its own in the navigation, between Tasks and Tags (UI-30).
-  Its page is the Inbox (LST-11) and then every list, in the order they were made, each opening its
-  own view (LST-8). In the sidebar, Lists opens onto the Inbox and then every list, in the
+  Its page is the Inbox (LST-11) and then every list, in the order they were made — the lists
+  shared with the account after its own (LST-31) — each opening its own view (LST-8). In the sidebar, Lists opens onto the Inbox and then every list, in the
   same order, indented under it, each going straight to its view and marked while it is open
   (UI-8). A long name is cut rather than widening the sidebar. Each is also somewhere to drop a
   task (LST-25). The lists can be folded away (LST-26). The Lists page, the Inbox and each list's
@@ -113,6 +114,59 @@ reasons; requirements here are `LST-`.
 - **LST-22** The Lists page is not a list of tasks, so it has no box for adding one and no rail
   (UI-2).
 
+## Sharing
+
+- **LST-27** A list can be **shared** with other people, by their **email address**. Everyone it
+  is shared with sees the list and every task in it, and can add tasks to it, change them, tick them
+  off, skip them, time them and delete them, as its owner can. They are the same tasks, not copies:
+  a change made by anyone is on everyone's screen without a refresh (STORE-2). Sharing needs a
+  Google account at both ends — the address is the one someone signs in to PickMe with (AUTH-2) —
+  so a guest neither shares a list nor is shared one (LST-36).
+- **LST-28** A list of the account's own is shared from the **Lists page**: a button with two
+  people on it, beside the rename button, opens a sheet (UI-48) — `Share "Groceries"` — that says
+  in three plain sentences what sharing does, and holds a box for an address and a **Share** button
+  (Enter does the same). Under it, **People with access**: the owner's own address, marked
+  **Owner**, then everyone the list is shared with, in the order added, or `Only you can see this
+  list.` An address that does not read as one, the owner's own, or one the list is shared with
+  already is not added: the line under the box says which, and the box shakes, as a refused tick
+  does (CHK-11). A list is shared with at most 50 people. No one is sent anything: the list is simply
+  there the next time they open the app.
+- **LST-29** Beside each person in the sheet is a button that **stops sharing** the list with
+  them, at once and without asking — sharing it with them again puts it back as it was. The list
+  and its tasks go from their app, and nothing of it stays behind with them.
+- **LST-30** For someone it is shared with, a list someone else shared is among their lists like one
+  of their own — on the Lists page, in the sidebar, in a task's List group and the phone's list panel
+  (LST-14, LST-23) — and the Lists page says whose it is: `Shared by Olek`. They cannot rename,
+  delete or share it. Its one button **leaves** it, after asking in the app's own sheet (UI-74):
+  **Leave the list "Groceries"?**, then `It and its tasks stop showing in your lists.` and
+  `Olek can share it with you again.` **Leave** goes ahead; anything else leaves things as they were.
+  Leaving changes nothing for the owner or anyone else it is shared with, and moves none of its
+  tasks. Leaving the list whose view is open leaves that view for the Lists page.
+- **LST-31** The lists shared with the account come **after its own**, wherever lists are listed,
+  in the order their owners keep them. One may be called the same as a list of the account's own
+  (LST-5): its owner named it, and its mark (LST-35) and its line on the Lists page tell the two
+  apart.
+- **LST-32** What a shared task **earns** goes to whoever did it: points (RWD-13), the bonus for
+  clearing a period and XP (LVL-1) are each account's own, and recorded by the device that made the
+  change (STORE-25), as for any task. A shared task is everyone's in every other way too: due today,
+  it is in each of their Todays, their bars and their Cases, and overdue it counts against each of
+  them.
+- **LST-33** **Filing** a task under a list someone else shared hands it to that list — to its
+  owner's account, where everyone it is shared with sees it — and filing one of its tasks under a
+  list of one's own, or in the Inbox, takes it out of the shared list and out of the others' sight.
+  The owner filing a task elsewhere does the same. A task keeps its tags wherever it goes. A goal
+  (GOAL-2) is one account's own, so a shared task serving the owner's goal serves none for anyone
+  else, and linking it to a goal of one's own unlinks it from the owner's.
+- **LST-34** Deleting a shared list (LST-19) takes it from everyone it was shared with, and the
+  sheet that asks says so: `The people it is shared with lose the list and its tasks.` Its tasks go
+  back to the owner's Inbox.
+- **LST-35** A shared list wears **two people** instead of a folder, on the Lists page and in the
+  sidebar, for its owner and for the people it is shared with alike. Under its name the Lists page
+  says whom it is shared with — `Shared with anna@example.com`, or `Shared with 3 people` — or, to
+  the people it is shared with, whose it is (LST-30). A screen reader hears the same after its name.
+- **LST-36** A **guest** has no Share button: as guest there is no address to share from, or to be
+  shared a list by.
+
 ## On a phone
 
 - **LST-23** On a phone the **sheet** a tap opens (UI-48) carries a list button, in its row of
@@ -138,14 +192,19 @@ counts), `src/app/components/TaskItem.tsx` (the List group in a task's menu),
 place to drop a task), `src/app/components/TaskDragAndDrop.tsx` and `src/app/taskDrop.ts` (carrying a
 task, and what dropping it does),
 `src/app/components/ListPicker.tsx` (the panel on a woken row and a phone's task sheet),
-`src/app/components/ListsPage.tsx` (the Lists page), `src/app/useLists.ts` (the lists on screen), `src/app/useTasks.ts` (filing a
-task, emptying a list), `src/app/view.ts` (the Lists page, a list's view and the Inbox, their
+`src/app/components/ListsPage.tsx` (the Lists page), `src/app/useLists.ts` (the lists on screen,
+sharing one), `src/app/useTasks.ts` (filing a task, emptying a list),
+`src/core/listSharing.ts` (who a list is shared with, and the addresses it can be),
+`src/app/components/ShareSheet.tsx` (the sheet for sharing a list), `src/app/shareLabels.ts` (what
+is said of a shared list), `src/app/components/PeopleIcon.tsx` (the shared mark), `src/app/view.ts` (the Lists page, a list's view and the Inbox, their
 addresses and what they say), `src/app/TasksScreen.tsx`, `src/app/components/SideNav.tsx`,
 `src/app/components/BottomNav.tsx`, `src/app/components/MorePage.tsx` (the Lists link on More),
 `src/app/components/FolderIcon.tsx`,
 `src/app/components/InboxIcon.tsx`, `src/app/components/PencilIcon.tsx`.
 **Saved in:** `src/storage/listSchema.ts` and `src/storage/firestoreListRepository.ts` (one document
-per list), with `listId` on the task itself; whether the sidebar's lists are folded in
+per list), with `listId` on the task itself; whom a list is shared with in
+`src/storage/shareSchema.ts`, read and written across accounts by `src/storage/firestoreSharing.ts`
+and routed by `src/storage/sharing.ts` (STORE-66, STORE-67); whether the sidebar's lists are folded in
 `src/storage/localStorageSideNavRepository.ts` — see [Storage](storage.md).
 **Tested in:** `src/core/list.test.ts`, `src/app/components/TaskItem.test.tsx` (the task's menu),
 `src/app/taskDrop.test.ts` (dropping a task on a list),
@@ -153,5 +212,7 @@ per list), with `listId` on the task itself; whether the sidebar's lists are fol
 `src/app/components/ListsPage.test.tsx`, `src/app/components/SideNav.test.tsx`,
 `src/app/components/MorePage.test.tsx` (the Lists link),
 `src/app/components/BottomNav.test.tsx` (Tasks staying marked, not More),
-`src/app/useView.test.ts` (the address), `src/storage/listRepository.test.ts`,
+`src/app/useView.test.ts` (the address), `src/core/listSharing.test.ts`,
+`src/app/useLists.test.ts`, `src/storage/sharing.test.ts`, `src/storage/shareSchema.test.ts`,
+`src/storage/listRepository.test.ts`,
 `src/storage/listSchema.test.ts`, `src/storage/sideNavSchema.test.ts`.

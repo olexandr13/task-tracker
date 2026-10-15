@@ -773,6 +773,16 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   }
 
   /**
+   * Leaving a list someone else shared (LST-30) takes it out of the lists and
+   * no more: its tasks are its owner's, and stay filed under it, so they go
+   * from here with it rather than back into this account's Inbox.
+   */
+  function handleLeaveList(id: ListId) {
+    lists.remove(id)
+    if (view === oneListView(id)) setView('lists')
+  }
+
+  /**
    * Deleting a goal is two changes, as deleting a list is: its tasks unlinked,
    * then the goal itself (GOAL-17). The tasks go first, and a task left naming a
    * goal that is gone serves none anyway (`goalOf`).
@@ -1282,6 +1292,10 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                           onAdd={handleAddList}
                           onRename={lists.rename}
                           onDelete={handleDeleteList}
+                          ownEmail={storage.canShare ? account.email : null}
+                          onShare={lists.share}
+                          onUnshare={lists.unshare}
+                          onLeave={handleLeaveList}
                         />
                       )}
                     </section>

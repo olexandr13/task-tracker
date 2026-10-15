@@ -134,6 +134,9 @@ in. Both are on **Settings**, under the account in its **Account** section (UI-3
   serves, as it names its list. They import as the lists do: a goal the account has already, by its
   id, is left as it is. A file made before there were goals holds none, and its tasks serve none
   (BAK-13).
+- **BAK-26** **Sharing is not in the file**: it is between accounts, and a file is one account's. A
+  list of the account's own is in it, and comes back from it, shared with no one; a list someone
+  else shared is not in it at all, nor are its tasks, which are its owner's to back up (STORE-67).
 ---
 
 **Where it lives:** `src/storage/backupRepository.ts` (the interface, and what an import adds),
