@@ -5,10 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   addTag,
   completeTask,
+  createGoal,
   createList,
   createSubtask,
   createTask,
   uncompleteTask,
+  linkToGoal,
   logTime,
   moveToList,
   nextWeekDueDay,
@@ -27,6 +29,7 @@ import {
 } from '../../core'
 import { NO_TASK_ACTIONS } from '../../test/taskActions'
 import { FeaturesContext } from '../features'
+import { GoalsContext } from '../goals'
 import { HabitRestsContext } from '../habitRests'
 import { describeShortDate } from '../dueLabels'
 import type { TaskActions } from '../taskActions'
@@ -321,13 +324,13 @@ describe('a task row with Show task details on', () => {
   it('spells the hour out with the day it falls on (DUE-19)', () => {
     const row = renderRow({ ...createTask(TASK, null, NOW), dueDate: '2026-09-16', dueTime: '09:00' })
 
-    expect(row.getByText('Tomorrow at 09:00')).toBeDefined()
+    expect(row.getByText('Tomorrow 09:00')).toBeDefined()
   })
 
   it('spells the hour out with a repeating task\'s rule, which gives it its days (DUE-19)', () => {
     const row = renderRow({ ...createTask(TASK, { kind: 'daily' }, NOW), dueTime: '09:00' })
 
-    expect(row.getByText('Daily at 09:00')).toBeDefined()
+    expect(row.getByText('Daily 09:00')).toBeDefined()
   })
 })
 
@@ -1292,6 +1295,75 @@ describe('the menu a right-click opens on a task row', () => {
       await user.keyboard('{ArrowDown}')
 
       expect(document.activeElement).toBe(screen.getByRole('menuitemradio', { name: 'Today' }))
+    })
+  })
+
+  describe('linking the task to a goal', () => {
+    const FIT = createGoal('Get fit', new Date('2026-09-01T00:00:00.000Z'))
+    const APP = createGoal('Ship the app', new Date('2026-09-02T00:00:00.000Z'))
+
+    function renderLinked(goals: readonly typeof FIT[], goalId: string | null, onChangeGoal = vi.fn(), off: FeaturesOff = []) {
+      const user = userEvent.setup()
+      render(
+        <FeaturesContext value={off}>
+          <GoalsContext value={goals}>
+            <ul>
+              <TaskItem
+                actions={{ ...NO_TASK_ACTIONS, changeGoal: onChangeGoal }}
+                task={linkToGoal(createTask(TASK, null, NOW), goalId)}
+                now={NOW}
+                knownTags={[]}
+                lists={[]}
+              />
+            </ul>
+          </GoalsContext>
+        </FeaturesContext>,
+      )
+      return { user, onChangeGoal }
+    }
+
+    function group() {
+      return within(menu() as HTMLElement).queryByRole('group', { name: 'Goal' })
+    }
+
+    it('offers No goal and then every goal, the task\'s own checked (GOAL-13)', async () => {
+      const { user } = renderLinked([FIT, APP], APP.id)
+
+      await user.pointer({ keys: '[MouseRight]', target: row() })
+
+      const choices = within(group() as HTMLElement).getAllByRole('menuitemradio')
+      expect(choices.map((choice) => choice.textContent)).toEqual(['No goal', 'Get fit', '✓Ship the app'])
+      expect(choices.map((choice) => choice.getAttribute('aria-checked'))).toEqual(['false', 'false', 'true'])
+    })
+
+    it('links the task when a goal is chosen, and closes (GOAL-13)', async () => {
+      const { user, onChangeGoal } = renderLinked([FIT, APP], null)
+
+      await user.pointer({ keys: '[MouseRight]', target: row() })
+      await user.click(screen.getByRole('menuitemradio', { name: 'Get fit' }))
+
+      expect(onChangeGoal).toHaveBeenCalledWith(expect.any(String), FIT.id)
+      expect(menu()).toBeNull()
+    })
+
+    it('is left out while there are no goals, or Goals is switched off (GOAL-13, FEAT-3)', async () => {
+      const { user } = renderLinked([], null)
+      await user.pointer({ keys: '[MouseRight]', target: row() })
+      expect(group()).toBeNull()
+      cleanup()
+
+      const again = renderLinked([FIT], FIT.id, vi.fn(), ['goals'])
+      await again.user.pointer({ keys: '[MouseRight]', target: row() })
+      expect(group()).toBeNull()
+    })
+
+    it('offers a goal button on the woken row once there is a goal to choose (GOAL-13)', async () => {
+      const { user } = renderLinked([FIT], FIT.id)
+
+      expect(screen.queryByRole('button', { name: /^Goal for/ })).toBeNull()
+      await user.click(screen.getByRole('listitem'))
+
+      expect(screen.getByRole('button', { name: `Goal for "${TASK}": Get fit` })).toBeDefined()
     })
   })
 

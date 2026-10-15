@@ -8,6 +8,8 @@ import {
   type CategoryId,
   type CaseSettings,
   type FeaturesOff,
+  type Goal,
+  type GoalId,
   type HabitRests,
   type JournalEntry,
   type JournalEntryId,
@@ -36,13 +38,15 @@ import type { NudgePreference } from './nudgeRepository'
 
 /**
  * Everything an account keeps, in today's shapes: the tasks — the trash too —
- * the lists they are filed under, the kept tags, the wishlist, and the points
+ * the lists they are filed under, the goals they serve, the kept tags, the wishlist, and the points
  * ledger. What is kept on the device alone (the View options, the sidebar, the
  * cached quote) is not the account's, and is not in here.
  */
 export interface AccountData {
   readonly tasks: readonly Task[]
   readonly lists: readonly List[]
+  /** The goals tasks serve (./goalRepository). */
+  readonly goals: readonly Goal[]
   /** The kept tags (./tagRepository), including those no task carries any more. */
   readonly tags: readonly Tag[]
   /** The prizes points are saved up for (./prizeRepository). */
@@ -119,6 +123,7 @@ export interface AccountData {
 export interface RecordCounts {
   readonly tasks: number
   readonly lists: number
+  readonly goals: number
   readonly tags: number
   readonly prizes: number
   readonly categories: number
@@ -165,6 +170,7 @@ export interface BackupRepository {
 export interface KnownRecords {
   readonly taskIds: ReadonlySet<TaskId>
   readonly listIds: ReadonlySet<ListId>
+  readonly goalIds: ReadonlySet<GoalId>
   readonly tagIds: ReadonlySet<TagId>
   /** The names of the tags kept already, readable ones: a tag is found by its name (../core/tag). */
   readonly tagNames: readonly string[]
@@ -211,6 +217,7 @@ export function countRecords(data: AccountData): RecordCounts {
   return {
     tasks: data.tasks.length,
     lists: data.lists.length,
+    goals: data.goals.length,
     tags: data.tags.length,
     prizes: data.prizes.length,
     categories: data.categories.length,
@@ -301,6 +308,7 @@ export function newRecords(
     fresh: {
       tasks: unseen(incoming.tasks, (task) => task.id, known.taskIds).filter((task) => !isExpired(task, now)),
       lists: unseen(incoming.lists, (list) => list.id, known.listIds),
+      goals: unseen(incoming.goals, (goal) => goal.id, known.goalIds),
       tags,
       prizes: unseen(incoming.prizes, (prize) => prize.id, known.prizeIds),
       categories: unseen(incoming.categories, (category) => category.id, known.categoryIds),

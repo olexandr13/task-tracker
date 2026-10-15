@@ -14,6 +14,7 @@ export const FEATURE_LABELS: Readonly<Record<Feature, { readonly name: string; r
   cases: { name: 'Cases', description: 'A case for every cleared day, and another that arrives once a day.' },
   levels: { name: 'Levels', description: 'XP for what you get done, and the level it adds up to.' },
   lists: { name: 'Lists', description: 'The Lists page and the Inbox, and putting a task in a list.' },
+  goals: { name: 'Goals', description: 'The Goals page, linking tasks to a goal, and how far each goal has got.' },
   tags: { name: 'Tags', description: 'The Tags page, and tags on tasks.' },
   notes: { name: 'Notes', description: 'The Notes page, for anything you want to write down and keep.' },
   balance: { name: 'Balance', description: 'How the time you log splits between your categories.' },
@@ -25,6 +26,21 @@ export const FEATURE_LABELS: Readonly<Record<Feature, { readonly name: string; r
   quote: { name: 'Daily quote', description: 'A new quote every day, beside your tasks.' },
   reminders: { name: 'Reminders', description: 'A notice when the hour a task is due at comes round.' },
 }
+
+/**
+ * The switches on Settings in groups, by what each part is for (FEAT-11), in
+ * the order the sidebar groups their pages (UI-30), so a part is looked for
+ * where its page is. A part of another sits right after it (FEAT-4) — Balance
+ * under Tags, as it is drawn — whichever group its page is in. Every feature is
+ * in exactly one.
+ */
+export const FEATURE_GROUPS: readonly { readonly name: string; readonly features: readonly Feature[] }[] = [
+  { name: 'Tasks', features: ['habits', 'lists', 'goals', 'progress', 'quote'] },
+  { name: 'Motivation', features: ['levels', 'rewards', 'cases', 'modes'] },
+  { name: 'Organize', features: ['tags', 'balance', 'notes'] },
+  { name: 'Reflect', features: ['activity', 'journal'] },
+  { name: 'Notices', features: ['notifications', 'reminders'] },
+]
 
 /** What the card is for, in the sheet its **i** opens (UI-73): one thing a sentence. */
 export const FEATURES_HINT = [

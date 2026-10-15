@@ -235,8 +235,8 @@ puts a task in front of you on the right day instead of in a long list of everyt
   wherever the Date row is drawn (DUE-14) and the calendar's own days and dot (DUE-15) — which is where it is
   said, the panel carrying no note of its own above the choices.
   Under the button a repeating task spells out its rule, not its date. An hour (DUE-19) is read with
-  whichever of the two is said — "Daily · Today at 09:00" on the button, "Daily at 09:00" under
-  the row — since the rule gives the days and the hour is the same on each of them.
+  whichever of the two is said — "Daily · Today at 09:00" on the button, "Daily 09:00" under
+  the row, where room is short — since the rule gives the days and the hour is the same on each of them.
 - **DUE-18** A day picked for a repeating task is the day **the occurrence in play** is due on,
   this time only. The rule is untouched — a Monday task moved to Thursday is still a Monday task —
   so the task is due on the Thursday, and the rule takes over again on its first day after it: the

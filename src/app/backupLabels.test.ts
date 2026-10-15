@@ -3,7 +3,7 @@ import { describeExport, describeImport, describeRecordCounts } from './backupLa
 
 /* How a backup reads on screen. BAK ids refer to wiki/backup.md. */
 
-const NONE = { tasks: 0, lists: 0, tags: 0, prizes: 0, categories: 0, activities: 0, journal: 0, notes: 0, completions: 0, redemptions: 0 }
+const NONE = { tasks: 0, lists: 0, goals: 0, tags: 0, prizes: 0, categories: 0, activities: 0, journal: 0, notes: 0, completions: 0, redemptions: 0 }
 
 describe('counting what a file holds', () => {
   it('names each kind there is, and leaves out the ones there are none of', () => {
@@ -11,6 +11,7 @@ describe('counting what a file holds', () => {
       describeRecordCounts({
         tasks: 12,
         lists: 2,
+        goals: 1,
         tags: 3,
         prizes: 4,
         categories: 2,
@@ -20,7 +21,7 @@ describe('counting what a file holds', () => {
         completions: 30,
         redemptions: 1,
       }),
-    ).toBe('12 tasks, 2 lists, 3 tags, 4 prizes, 2 categories, 40 activity records, 9 journal lines, 5 notes, 30 completions and 1 redemption')
+    ).toBe('12 tasks, 2 lists, 1 goal, 3 tags, 4 prizes, 2 categories, 40 activity records, 9 journal lines, 5 notes, 30 completions and 1 redemption')
     expect(describeRecordCounts({ ...NONE, prizes: 1 })).toBe('1 prize')
     expect(describeRecordCounts({ ...NONE, categories: 1 })).toBe('1 category')
     expect(describeRecordCounts({ ...NONE, categories: 3 })).toBe('3 categories')
@@ -30,6 +31,7 @@ describe('counting what a file holds', () => {
     expect(describeRecordCounts({ ...NONE, notes: 1 })).toBe('1 note')
     expect(describeRecordCounts({ ...NONE, tasks: 1, completions: 4 })).toBe('1 task and 4 completions')
     expect(describeRecordCounts({ ...NONE, lists: 3 })).toBe('3 lists')
+    expect(describeRecordCounts({ ...NONE, goals: 2 })).toBe('2 goals')
     expect(describeRecordCounts(NONE)).toBeNull()
   })
 })

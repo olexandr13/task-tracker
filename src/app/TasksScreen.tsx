@@ -4,6 +4,8 @@ import {
   canSkipOccurrence,
   countInboxOpen,
   featuresOn,
+  findGoal,
+  goalProgress,
   isModeAvailable,
   prizesOfKind,
   groupByCompletion,
@@ -15,6 +17,7 @@ import {
   secondsSpent,
   skipPenalty,
   sortForDisplay,
+  summarizeGoals,
   summarizeLists,
   summarizeTags,
   trashedTasks,
@@ -22,6 +25,7 @@ import {
   type JournalEntry,
   type Note,
   type CategoryId,
+  type GoalId,
   type HourSlot,
   type ListId,
   type LocalDay,
@@ -57,6 +61,8 @@ import { CasesPage } from './components/CasesPage'
 import { WarmUpPanel } from './components/WarmUpPanel'
 import { WarmUpPause } from './components/WarmUpPause'
 import { ProcrastinationPanel } from './components/ProcrastinationMode'
+import { GoalHeader } from './components/GoalHeader'
+import { GoalsPage } from './components/GoalsPage'
 import { ListsPage } from './components/ListsPage'
 import { ModePage } from './components/ModePage'
 import { ModesPage } from './components/ModesPage'
@@ -103,6 +109,7 @@ import { useBackup } from './useBackup'
 import { useCheckIn } from './useCheckIn'
 import { useCategories } from './useCategories'
 import { FeaturesContext, modesShown, nearestViewOn } from './features'
+import { GoalsContext } from './goals'
 import { HabitRestsContext } from './habitRests'
 import { useFeatures } from './useFeatures'
 import { useHabitRests } from './useHabitRests'
@@ -110,6 +117,8 @@ import { useJournal } from './useJournal'
 import { useLevelChange } from './useLevelChange'
 import { useNotes } from './useNotes'
 import { useDeviceSetting } from './useDeviceSetting'
+import { useGoalHistory } from './useGoalHistory'
+import { useGoals } from './useGoals'
 import { useLists } from './useLists'
 import { usePrizes } from './usePrizes'
 import { useProcrastination } from './useProcrastination'
@@ -136,11 +145,15 @@ import {
   emptyMessage,
   doneSpans,
   foldedSpans,
+  goalView,
   historyScope,
+  isGoalView,
   isModesView,
+  isPeriodView,
   isRewardsView,
   isTaskView,
   newTaskDueDay,
+  newTaskGoalId,
   newTaskListId,
   newTaskTags,
   oneListView,
@@ -148,6 +161,7 @@ import {
   showsTask,
   tagView,
   VIEW_LABELS,
+  viewGoalId,
   viewLabel,
   viewShowingTask,
   type Reveal,
@@ -247,6 +261,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     renameTagEverywhere,
     changeList,
     clearListEverywhere,
+    changeGoal,
+    clearGoalEverywhere,
     setHabitDay,
     addChecklistItem,
     setChecklistItemDone,
@@ -269,6 +285,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     xp.recordTasks,
   )
   const lists = useLists(storage.lists, storageProblem.report)
+  // What tasks are done for, each with how far it has got (GOAL-1).
+  const goals = useGoals(storage.goals, storageProblem.report)
   const prizes = usePrizes(storage.prizes, storageProblem.report)
   const savedTags = useTags(storage.tags, isLoading ? null : tasks, storageProblem.report)
   // The Balance page's categories, each bound to tags (BAL-1).
@@ -540,6 +558,11 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const unheldHere = useUnheldHistory(isTaskView(view) ? historyScope(view, tags) : null, heldSince, !isLoading, unheld)
   const history: ListHistory | null =
     heldSince === null || unheldHere === 'none' ? null : { heldSince, unheld: unheldHere, onReachBack: reachBack }
+  // The done work long ago that each goal on screen counts too (GOAL-9): every goal on Goals, the one on its own view.
+  const goalsOnScreen = view === 'goals' ? goals.goals.map((goal) => goal.id) : isGoalView(view) ? [viewGoalId(view)] : null
+  const goalHistory = useGoalHistory(goalsOnScreen, heldSince, !isLoading, unheld)
+  // The goal whose view is open, if it is one there is (GOAL-10).
+  const openGoal = isGoalView(view) ? findGoal(goals.goals, viewGoalId(view)) : null
 
   // Overdue float to the top — the run the list heads with Overdue — urgent to
   // the top of their run, and done sink to the bottom; sort is stable, so each
@@ -750,6 +773,27 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   }
 
   /**
+   * Deleting a goal is two changes, as deleting a list is: its tasks unlinked,
+   * then the goal itself (GOAL-17). The tasks go first, and a task left naming a
+   * goal that is gone serves none anyway (`goalOf`).
+   */
+  function handleDeleteGoal(id: GoalId) {
+    clearGoalEverywhere(id)
+    goals.remove(id)
+    // Leaving the view of a goal that has gone: nothing would serve it.
+    if (view === goalView(id)) setView('goals')
+  }
+
+  /** Makes a goal and opens it, so the next thing typed goes into it (GOAL-18). */
+  function handleAddGoal(name: string): boolean {
+    const made = goals.add(name)
+    if (made === null) return false
+
+    setView(goalView(made.id))
+    return true
+  }
+
+  /**
    * Deleting a tag is two changes, as deleting a list is: off every task, then
    * no longer kept. The tasks go first, so a tag no record keeps is never left on
    * a task to be kept all over again — the history too, which is why both wait
@@ -864,6 +908,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     // useTasks tells it (TIME-24, ACT-21).
     changeTimeEntry: changeTaskTime,
     changeList,
+    changeGoal,
     addTag: (id, name) => { tag(id, name, tags) },
     removeTag: untag,
     remove: handleRemove,
@@ -920,6 +965,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     // What is switched off on Settings, for whatever is drawn below to ask (FEAT-3),
     // and the limit on habits' rests, for every card, row and sheet that reads it (HAB-36).
     <FeaturesContext value={featuresOff}>
+    <GoalsContext value={goals.goals}>
     <HabitRestsContext value={restLimit}>
       {/* On a phone the page keeps clear of the notch and the rounded corners (UI-61), and its
           end scrolls clear of the bar — and of the Plus, where there is one — so nothing is left
@@ -930,7 +976,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
         }`}
       >
         {/* Which view this is, for a screen reader only: on screen the navigation marks it. */}
-        <h1 className="sr-only">{viewLabel(view, lists.lists)}</h1>
+        <h1 className="sr-only">{viewLabel(view, lists.lists, goals.goals)}</h1>
 
         {/* Around the navigation as well as the rows: a task can be dropped on a list in the sidebar to file it. */}
         <TaskDragAndDrop tasks={draggable} onMove={move} onFile={changeList}>
@@ -1143,6 +1189,13 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                     <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
                   ) : isTaskView(view) ? (
                     <>
+                      {/* A goal's view is headed with the goal and how far it has got (GOAL-10). */}
+                      {openGoal !== null && (
+                        <GoalHeader
+                          goal={openGoal}
+                          progress={goalProgress(openGoal.id, live, now, goalHistory.get(openGoal.id) ?? 0)}
+                        />
+                      )}
                       {/* The View button beside the box rather than in it: the box's own controls are
                           for the task being added, the button is for how the tasks below are shown.
                           A phone has neither — it adds from the Plus (UI-54), and its details belong
@@ -1155,7 +1208,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                         onOpenSheet={() => { setAdding(true) }}
                         viewButton={phone ? null : <ViewOptionsMenu options={viewOptions} onChange={setViewOptions} />}
                         onAdd={(title, repeat, dueDate, dueTime) => {
-                          handleAddTask(title, repeat, dueDate, dueTime, newTaskTags(view), newTaskListId(view))
+                          handleAddTask(title, repeat, dueDate, dueTime, newTaskTags(view), newTaskListId(view), {
+                            goalId: newTaskGoalId(view),
+                          })
                         }}
                       />
 
@@ -1176,7 +1231,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                         />
                       )}
 
-                      <section aria-label={viewLabel(view, lists.lists)}>
+                      <section aria-label={viewLabel(view, lists.lists, goals.goals)}>
                         <TaskList
                           tasks={listed}
                           now={now}
@@ -1188,8 +1243,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                           doneSpans={spans}
                           foldedSpans={foldedSpans(view)}
                           history={history}
-                          emptyMessage={tasksNotLoaded ? TASKS_NOT_LOADED : emptyMessage(view, lists.lists)}
-                          allDoneMessage={allDoneMessage(view, lists.lists)}
+                          emptyMessage={tasksNotLoaded ? TASKS_NOT_LOADED : emptyMessage(view, lists.lists, goals.goals)}
+                          allDoneMessage={allDoneMessage(view, lists.lists, goals.goals)}
                           actions={taskActions}
                           timer={taskTimer}
                           reveal={reveal}
@@ -1227,6 +1282,20 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                           onAdd={handleAddList}
                           onRename={lists.rename}
                           onDelete={handleDeleteList}
+                        />
+                      )}
+                    </section>
+                  ) : view === 'goals' ? (
+                    <section aria-label="Goals">
+                      {goals.isLoading ? (
+                        <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                      ) : (
+                        <GoalsPage
+                          goals={summarizeGoals(goals.goals, live, now, goalHistory)}
+                          onOpen={(id) => { setView(goalView(id)) }}
+                          onAdd={handleAddGoal}
+                          onRename={goals.rename}
+                          onDelete={handleDeleteGoal}
                         />
                       )}
                     </section>
@@ -1374,9 +1443,10 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   )}
                 </div>
 
-                {/* The bars above the quote everywhere: on a phone the rail follows the work and the quote ends the page.
+                {/* Only beside Today, Tomorrow, Week and Month, the views a period's bars speak to (UI-2).
+                    The bars above the quote everywhere: on a phone the rail follows the work and the quote ends the page.
                     With both switched off on Settings there is no rail, and the work takes its width (FEAT-3). */}
-                {isTaskView(view) && (on.progress || on.quote) && (
+                {isPeriodView(view) && (on.progress || on.quote) && (
                   <div className="flex flex-col gap-5 md:w-64 md:shrink-0">
                     {on.progress && (
                       <aside aria-label="Progress">
@@ -1403,6 +1473,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
             defaultRepeat={view === 'habits' ? { kind: 'daily' } : undefined}
             defaultTags={isTaskView(view) ? newTaskTags(view) : []}
             defaultListId={isTaskView(view) ? newTaskListId(view) : null}
+            defaultGoalId={isTaskView(view) ? newTaskGoalId(view) : null}
             newTaskReward={rewards.newTaskReward}
             knownTags={tags}
             lists={lists.lists}
@@ -1523,6 +1594,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
         </div>
       </main>
     </HabitRestsContext>
+    </GoalsContext>
     </FeaturesContext>
   )
 }

@@ -16,7 +16,8 @@ import {
   type LocalDay,
   type LocalTime,
 } from './day'
-// Type-only: ./list reads the task's rules, so nothing is imported back from it.
+// Type-only: ./list and ./goal read the task's rules, so nothing is imported back from them.
+import type { GoalId } from './goal'
 import type { ListId } from './list'
 import type { Placement } from './placement'
 import {
@@ -123,6 +124,12 @@ export interface Task {
    */
   readonly listId: ListId | null
   /**
+   * The goal the task is done for, or null for one serving none. One at a time,
+   * like a list, so a task counts once towards the one thing it brings closer.
+   * Named by id, so renaming a goal leaves its tasks alone. See ./goal.
+   */
+  readonly goalId: GoalId | null
+  /**
    * The points each completion of the task earns, or null for a task that earns
    * none — which is every task until it is given some. Only the amount for the
    * next completion lives here; what completions already earned is kept apart
@@ -192,6 +199,7 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
     subtasks: [],
     tags: [],
     listId: null,
+    goalId: null,
     reward: null,
     urgent: false,
     timeGoal: null,
@@ -203,7 +211,7 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
 
 /**
  * A new task carrying what this one says — title, description, rule, due date
- * and hour, checklist, tags, reward, urgent, time goal — and none of what has happened
+ * and hour, checklist, tags, list, goal, reward, urgent, time goal — and none of what has happened
  * to it. It is not done, its checklist is unticked, it has no time logged, a
  * repeating one has no history, and it is not in the trash: a copy is another go
  * at the same thing, not a second record of the first.

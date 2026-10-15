@@ -41,8 +41,8 @@ requirements were written with, so older references to them still mean what they
   under their **Overdue** heading (TASK-68), urgent next, and done sinking to the bottom (TASK-17),
   latest finished first (TASK-70) — in one run under **Done** (TASK-69), where Tasks divides them by
   when they were finished (TASK-56) — dragging the ones still to do to reorder (TASK-71) — which
-  moves the task everywhere else too — and the same rail, whose bars count every task rather than
-  only today's.
+  moves the task everywhere else too. Unlike Tasks it has the rail (UI-2), whose bars count every
+  task rather than only today's.
 - **LIST-8** An empty Today greets a fresh day and says to add a task. Once everything in it
   is done, it praises the day's work instead (TASK-50).
 - **LIST-9** Nothing moves at midnight. What is in Today follows from the day it is, so a page left

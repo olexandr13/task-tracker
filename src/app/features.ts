@@ -11,6 +11,7 @@ import {
 } from '../core'
 import {
   DEFAULT_VIEW,
+  isGoalView,
   isModesView,
   isOneListView,
   isRewardsView,
@@ -117,6 +118,7 @@ export function isViewOn(view: View, off: FeaturesOff): boolean {
   if (isRewardsView(view)) return on('rewards')
   if (view === 'level') return on('levels')
   if (view === 'lists' || view === 'inbox' || isOneListView(view)) return on('lists')
+  if (view === 'goals' || isGoalView(view)) return on('goals')
   if (view === 'tags' || isTagView(view)) return on('tags')
   if (view === 'notes') return on('notes')
   if (view === 'balance') return on('balance')

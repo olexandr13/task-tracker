@@ -7,10 +7,10 @@ in. Both are on **Settings**, under the account in its **Account** section (UI-3
 
 - **BAK-1** **Export** saves a file of the whole account, named for the local day it was made:
   `task-tracker-backup-2026-09-19.json`. Nothing is asked first, and the page then says what went into
-  it — `Exported 12 tasks, 2 lists, 3 tags, 4 prizes, 3 categories, 40 activity records, 9 journal lines, 5 notes, 30 completions and 1 redemption.` — or that the account had nothing
+  it — `Exported 12 tasks, 2 lists, 1 goal, 3 tags, 4 prizes, 3 categories, 40 activity records, 9 journal lines, 5 notes, 30 completions and 1 redemption.` — or that the account had nothing
   in it yet. Offline it still works, from the copy of the account this device keeps (STORE-18).
 - **BAK-2** The file holds **everything the account keeps**: every task, those in the trash too, the
-  lists, the kept tags — those no task carries any more too (TAG-6) — the wishlist (RWD-33), the
+  lists, the goals (BAK-25), the kept tags — those no task carries any more too (TAG-6) — the wishlist (RWD-33), the
   Balance categories (BAL-12), the activity log (ACT-15), the journal's week (JRN-7), the notes
   (NOTE-9), what
   completions earned (a *completion* in the counts is one task's points on one day), the
@@ -130,11 +130,15 @@ in. Both are on **Settings**, under the account in its **Account** section (UI-3
   only by an account where XP has **not begun** — a backup restored never moves the day XP began, nor
   puts back XP since lost. A file made before there was XP holds none, and is read as XP not begun
   (BAK-13).
+- **BAK-25** A file holds the **goals** (GOAL-1), one record each, and every task names the goal it
+  serves, as it names its list. They import as the lists do: a goal the account has already, by its
+  id, is left as it is. A file made before there were goals holds none, and its tasks serve none
+  (BAK-13).
 ---
 
 **Where it lives:** `src/storage/backupRepository.ts` (the interface, and what an import adds),
 `firestoreBackupRepository.ts` (reading and adding to the account in Firestore), `localBackupRepository.ts`
-(the guest's), `backupFile.ts` (the file and its version), `taskSchema.ts`, `listSchema.ts`, `tagSchema.ts`,
+(the guest's), `backupFile.ts` (the file and its version), `taskSchema.ts`, `listSchema.ts`, `goalSchema.ts`, `tagSchema.ts`,
 `prizeSchema.ts`, `categorySchema.ts`, `activitySchema.ts`, `journalSchema.ts`, `noteSchema.ts`, `rewardSchema.ts`, `warmUpSchema.ts`,
 `nudgeSchema.ts`, `checkInSchema.ts`, `featureSchema.ts`, `habitSettingsSchema.ts`, `xpSchema.ts` (each record's own shape),
 `src/app/useBackup.ts` (running them), `src/app/backupLabels.ts` (what is said),

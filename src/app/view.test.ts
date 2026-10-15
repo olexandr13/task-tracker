@@ -1,17 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { createList, createTask, moveToList, setDueDate, toLocalDay } from '../core'
+import { createGoal, createList, createTask, linkToGoal, moveToList, setDueDate, toLocalDay } from '../core'
 import {
+  allDoneMessage,
   doneSpans,
+  emptyMessage,
   foldedSpans,
+  goalView,
   historyScope,
+  isTaskView,
   isUnder,
   newTaskDueDay,
+  newTaskGoalId,
   oneListView,
   parentView,
   rootView,
   sectionOf,
   showsTask,
   tagView,
+  viewLabel,
   viewShowingTask,
 } from './view'
 
@@ -214,5 +220,45 @@ describe('historyScope', () => {
 
   it('asks nothing of a period\'s view, which folds no spans (STORE-55)', () => {
     expect(historyScope('today')).toBeNull()
+  })
+})
+
+describe('a goal\'s view', () => {
+  const FIT_ID = '0b9e2f4a-6c1d-4e8b-a7f3-2d5c9e1b4a6f'
+  const fit = { ...createGoal('Get fit', NOW), id: FIT_ID }
+  const view = goalView(FIT_ID)
+
+  it('shows the live tasks serving the goal, and only those (GOAL-10)', () => {
+    expect(isTaskView(view)).toBe(true)
+    expect(showsTask(view, linkToGoal(createTask('Go for a run'), FIT_ID), NOW, [])).toBe(true)
+    expect(showsTask(view, createTask('Buy milk'), NOW, [])).toBe(false)
+  })
+
+  it('sits under Goals, which sits under More on a phone (GOAL-10, GOAL-19)', () => {
+    expect(parentView(view)).toBe('goals')
+    expect(parentView('goals')).toBe('more')
+    expect(isUnder(view, 'goals')).toBe(true)
+    expect(isUnder(view, 'more')).toBe(true)
+    expect(isUnder('goals', 'more')).toBe(true)
+    expect(sectionOf(view)).toBeNull()
+  })
+
+  it('links a task added there to the goal, with no day (GOAL-11)', () => {
+    expect(newTaskGoalId(view)).toBe(FIT_ID)
+    expect(newTaskGoalId('inbox')).toBeNull()
+    expect(newTaskDueDay(view, NOW)).toBeNull()
+  })
+
+  it('divides its done work as a list does, and asks after the goal\'s history (GOAL-10, STORE-55)', () => {
+    expect(foldedSpans(view)).toEqual(foldedSpans(oneListView('work')))
+    expect(doneSpans(view)).toEqual(doneSpans('inbox'))
+    expect(historyScope(view)).toEqual({ kind: 'goal', goalId: FIT_ID })
+  })
+
+  it('is named after the goal, and as Goals for one not there (GOAL-6)', () => {
+    expect(viewLabel(view, [], [fit])).toBe('Get fit')
+    expect(viewLabel(view)).toBe('Goals')
+    expect(emptyMessage(view, [], [fit])).toBe('Nothing serves Get fit yet. Add a task to move it forward.')
+    expect(allDoneMessage(view, [], [fit])).toBe('Every task for Get fit is done. Goal reached!')
   })
 })

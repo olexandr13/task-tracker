@@ -1,4 +1,4 @@
-import type { ListId, LocalDay, Task, TaskId } from '../core'
+import type { GoalId, ListId, LocalDay, Task, TaskId } from '../core'
 import type { RecordChanges } from './recordChanges'
 
 /** What one change to the list comes to, task by task (./recordChanges). */
@@ -7,12 +7,14 @@ export type TaskChanges = RecordChanges<Task, TaskId>
 /**
  * Some of an account's tasks, as the server can count them without loading
  * them: all of them, the ones filed under one list — the Inbox is the ones
- * filed under none — or the ones carrying one tag, spelled as it is kept.
+ * filed under none — the ones carrying one tag, spelled as it is kept, or the
+ * ones serving one goal.
  */
 export type TaskScope =
   | { readonly kind: 'all' }
   | { readonly kind: 'list'; readonly listId: ListId | null }
   | { readonly kind: 'tag'; readonly tag: string }
+  | { readonly kind: 'goal'; readonly goalId: GoalId }
 
 /** Whether a task is in the scope, asked exactly as the server asks it. */
 export function inScope(task: Task, scope: TaskScope): boolean {
@@ -23,6 +25,8 @@ export function inScope(task: Task, scope: TaskScope): boolean {
       return task.listId === scope.listId
     case 'tag':
       return task.tags.includes(scope.tag)
+    case 'goal':
+      return task.goalId === scope.goalId
   }
 }
 

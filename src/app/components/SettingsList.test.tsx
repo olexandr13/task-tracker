@@ -132,6 +132,30 @@ describe('the features (FEAT-1)', () => {
     expect(onFeatureChange).toHaveBeenCalledWith('quote', false)
   })
 
+  it('groups the switches under headings by what the parts are for (FEAT-11)', () => {
+    renderSettings()
+
+    const group = (name: string) => within(features().getByRole('group', { name }))
+    // Each switch is named by its label, the line under it being its description.
+    const names = (name: string) =>
+      group(name)
+        .getAllByRole('switch')
+        .map((option) => document.getElementById(option.getAttribute('aria-labelledby') ?? '')?.textContent)
+
+    expect(features().getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)).toEqual([
+      'Tasks',
+      'Motivation',
+      'Organize',
+      'Reflect',
+      'Notices',
+    ])
+    expect(names('Tasks')).toEqual(['Habits', 'Lists', 'Goals', 'Progress bars', 'Daily quote'])
+    expect(names('Motivation')).toEqual(['Levels', 'Rewards', 'Cases', 'Modes'])
+    expect(names('Organize')).toEqual(['Tags', 'Balance', 'Notes'])
+    expect(names('Reflect')).toEqual(['Activity log', 'Journal'])
+    expect(names('Notices')).toEqual(['Notifications', 'Reminders'])
+  })
+
   it('offers a part only while what it is part of is on (FEAT-4)', () => {
     renderSettings({ features: { off: ['rewards', 'tags'], loading: false } })
 

@@ -1,4 +1,5 @@
 import type {
+  GoalId,
   ListId,
   LocalDay,
   LocalTime,
@@ -57,6 +58,8 @@ export interface TaskActions {
   readonly changeTimeEntry: (id: TaskId, entryId: TimeEntryId, change: TimeEntryChange) => void
   /** Files the task under a list, or in no list — the Inbox — with null. */
   readonly changeList: (id: TaskId, listId: ListId | null) => void
+  /** Links the task to a goal, or to none with null (GOAL-2). */
+  readonly changeGoal: (id: TaskId, goalId: GoalId | null) => void
   readonly addTag: (id: TaskId, name: string) => void
   readonly removeTag: (id: TaskId, name: string) => void
   readonly remove: (id: TaskId) => void

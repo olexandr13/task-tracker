@@ -13,6 +13,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useEffect, useRef } from 'react'
 import type { List } from '../../core'
 import { useFeaturesOff } from '../features'
+import { useKnownGoals } from '../goals'
 import { isLetterShortcut } from '../letterShortcut'
 import { navItemOff, navItemOn } from '../navTones'
 import { tabsShown } from '../pinnedTabs'
@@ -91,7 +92,8 @@ export function PinnedTabs({
   onMove,
 }: PinnedTabsProps) {
   const off = useFeaturesOff()
-  const { tabs, current } = tabsShown({ pinned, view, off, lists, tags })
+  const goals = useKnownGoals()
+  const { tabs, current } = tabsShown({ pinned, view, off, lists, tags, goals })
   const strip = current === null ? tabs : [...tabs, current]
   const phone = usePhoneLayout()
 
@@ -121,7 +123,7 @@ export function PinnedTabs({
     return () => { window.removeEventListener('keydown', handleKeyDown) }
   }, [phone])
 
-  const nameOf = (tabView: View) => viewLabel(tabView, lists)
+  const nameOf = (tabView: View) => viewLabel(tabView, lists, goals)
 
   /** Where a tab is, as a person counts: the defaults would read out its address. */
   const placeOf = (id: string | number) =>

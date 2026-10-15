@@ -59,7 +59,7 @@ it is deleted, whether or not a task carries it.
 
 - **TAG-13** Every tag has **a list of its own**, opened from the Tags page (TAG-18): the live
   tasks carrying it, in any case. It shows what Tasks shows otherwise (LIST-7) — the same rows,
-  urgent floating, overdue next, done sinking, dragging, the rail — its done tasks divided as the
+  urgent floating, overdue next, done sinking, dragging, no rail (UI-2) — its done tasks divided as the
   Inbox's are (TASK-72), headed with the tag's name, and **Tags** stays marked in
   the sidebar while it is open. It is in the address as `#/tag/name` (UI-36), so it survives a
   reload even when no task carries the tag, when it says there is nothing tagged yet.

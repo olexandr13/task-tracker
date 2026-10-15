@@ -8,15 +8,27 @@ thing every account keeps.
 ## The switches
 
 - **FEAT-1** **Settings** has a **Features** section, under Account (UI-35), with **one switch for each
-  part** of the app that can be done without, in this order: **Habits**, **Rewards**, **Cases**,
-  **Levels** (LVL-16), **Lists**, **Tags**, **Notes**, **Balance**, **Activity log**, **Journal**, **Modes**, **Notifications**
-  (NOTIF-8), **Progress bars**, **Daily quote** and **Reminders**. Each carries the glyph its page is
+  part** of the app that can be done without: **Habits**, **Lists**, **Goals** (GOAL-20), **Progress bars**, **Daily
+  quote**, **Levels** (LVL-16), **Rewards**, **Cases**, **Modes**, **Tags**, **Balance**, **Notes**,
+  **Activity log**, **Journal**, **Notifications** (NOTIF-8) and **Reminders**, in groups (FEAT-11). Each carries the glyph its page is
   navigated by — Reminders, with no page, the clock of the hour coming round — its name, and a line saying what it
   is in plain words — *Points for finished tasks, and prizes and a wishlist to spend them on*. A
   switch turns its part on or off **at once, with no confirm**: nothing is lost either way (FEAT-5).
   The **i** beside the heading (UI-73) says what the section is for in three short lines: what off
   means, that nothing is deleted, and that the switches are the account's (FEAT-6). Which parts
   belong to which (FEAT-4) and where a part's own settings are (FEAT-10) the tree shows by itself.
+- **FEAT-11** The switches come in **groups**, each under a small heading of its own, by what the
+  parts are for and in the order the sidebar groups their pages (UI-30), so a part is looked for
+  where its page is:
+  - **Tasks** — Habits, Lists, Goals, Progress bars and Daily quote;
+  - **Motivation** — Levels, Rewards with Cases under it, and Modes;
+  - **Organize** — Tags with Balance under it, and Notes;
+  - **Reflect** — the Activity log and the Journal;
+  - **Notices** — Notifications and Reminders.
+
+  A part of another sits **right under it** in that one's group (FEAT-4), whatever group its page
+  is in: Balance stays under Tags, and is off with it, though its page is under Reflect. The
+  headings only name the groups; they do not fold, the Features section folding as a whole (UI-35).
 - **FEAT-10** A part with **settings of its own** keeps them **under its switch**, one step down
   the same tree, rather than on a card of its own: **Habits** holds how the habit cards start out
   (HAB-23) and whether rests are limited (HAB-36), **Cases** whether tasks without points count
@@ -40,7 +52,7 @@ thing every account keeps.
   **Reflect** (UI-83) — and Organize itself, once Tags and Notes are both off, Reflect, once
   Balance, the Activity log and the Journal are, and More, once every page on it is; its pinned tab, which is kept and comes back with it (UI-77); and its letter: **H** with Habits, **R** with Rewards, **C** with Cases (UI-56, UI-57, UI-72), **P** with the modes (UI-58). An **address** naming it — a bookmark,
   a reload, a notification pressed — opens the **nearest page above it** that is on instead (UI-37):
-  Rewards for Cases, Tasks for a list or the Inbox, Modes for a mode, Organize for Tags or Notes,
+  Rewards for Cases, Tasks for a list or the Inbox, More for Goals or a goal's tasks, Modes for a mode, Organize for Tags or Notes,
   Reflect for Balance, the Activity log or the Journal, More for Modes, Organize, Reflect or
   Notifications — or Today, where nothing above it is on — and
   the address is put right to match.
@@ -48,6 +60,8 @@ thing every account keeps.
   - **Lists** — the list on a task's sheet, the add sheet and an open row, and the list choices in
     a task's menu. A task stays filed where it was, and shows in Today, Week, Month and Tasks as
     ever.
+  - **Goals** — the goal on a task's sheet, the add sheet and an open row, and the goal choices in
+    a task's menu (GOAL-13, GOAL-14). A task keeps the goal it serves, and comes back serving it.
   - **Tags** — the tags on a task's sheet, the add sheet and an open row, **Tags** in a task's menu,
     the tags spelled out under a title (TAG-12), and the suggestions that `#` offers in a
     description (TAG-8), where a `#` is only a character again.
@@ -62,7 +76,7 @@ thing every account keeps.
     whether rests are limited (HAB-23, HAB-36, FEAT-10). A limit left on does nothing meanwhile, as
     the warm-up does nothing (FEAT-9): no skip is turned down for want of a rest, and every skip reads
     as a rest. It is kept, and holds again once Habits is back.
-  - **Progress bars** and **Daily quote** — each from the rail beside the tasks (UI-1); with both
+  - **Progress bars** and **Daily quote** — each from the rail beside Today, Tomorrow, Week and Month (UI-2); with both
     off there is no rail, and the list takes its width. The quote service is not asked while the
     quote is off.
   - **Reminders** — the notice and the browser notification when a task's hour comes round (REM-1),
@@ -72,7 +86,7 @@ thing every account keeps.
   - **Notifications** — the count of notices waiting beside its entry and on More (UI-82). The
     notices themselves and the browser's notifications are not part of it, and carry on: they go with
     Reminders, the modes and Cases, each by its own switch (NOTIF-8).
-- **FEAT-5** **Nothing is deleted.** A task keeps its list, its tags and its reward; the points,
+- **FEAT-5** **Nothing is deleted.** A task keeps its list, its goal, its tags and its reward; the points,
   prizes, Balance categories and activity log all stay where they are; and a switch turned back on
   finds everything as it was. A task finished while Rewards is off still earns its points, and they
   are there when Rewards is back — what is earned stays earned (RWD-13). XP is counted while Levels
@@ -122,14 +136,14 @@ needs, switching one), `src/storage/featureRepository.ts`, `featureSchema.ts`,
 `firestoreFeatureRepository.ts` and `localFeatureRepository.ts` (keeping them),
 `src/app/useFeatures.ts` (loading and switching), `src/app/features.ts` (`FeaturesContext` and
 `useFeatureOn`, for what is drawn inside a row or a sheet; which pages are there, and where an
-address lands), `src/app/featureLabels.ts` (the wording), `src/app/components/FeatureSwitches.tsx` and
+address lands), `src/app/featureLabels.ts` (the wording and the groups), `src/app/components/FeatureSwitches.tsx` and
 `SettingsList.tsx` (the switches, and a part's own settings under its switch), `src/app/TasksScreen.tsx` (the shortcuts, the notices, the modes, the
 rail), `SideNav.tsx`, `BottomNav.tsx`, `MorePage.tsx`, `OrganizePage.tsx`, `ReflectPage.tsx`, `SectionNav.tsx`, `ModesPage.tsx` (the
 navigation), `TaskItem.tsx`, `TaskSheet.tsx`, `AddTaskSheet.tsx`, `TaskDescription.tsx`,
 `ProcrastinationMode.tsx`, `RewardsPage.tsx`, `ActivityPage.tsx` (what goes with a part),
 `src/app/useReminders.ts` and `useQuote.ts` (reminders and the quote, off), `TasksScreen.tsx` (the
 limit on rests going with Habits).
-**Tested in:** `src/core/feature.test.ts`, `src/storage/featureSchema.test.ts`,
+**Tested in:** `src/core/feature.test.ts`, `src/app/featureLabels.test.ts`, `src/storage/featureSchema.test.ts`,
 `src/storage/backupFile.test.ts`,
 `src/storage/backupRepository.test.ts`, `src/app/features.test.ts`, `src/app/useFeatures.test.ts`,
 `src/app/useReminders.test.ts`, `src/app/useQuote.test.ts`,

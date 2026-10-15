@@ -6,14 +6,17 @@ import { isRecord } from './plainData'
  * changes, and add a step below: storing the version means old saved data can be
  * upgraded rather than silently breaking.
  */
-export const SCHEMA_VERSION = 19
+export const SCHEMA_VERSION = 20
+
+/** Version 19 had no goals: a task served nothing beyond itself. */
+type TaskV19 = Omit<Task, 'goalId'>
 
 /**
  * Version 18 had no comment on a session: time logged said how long and when,
  * never what it went on.
  */
 type TimeEntryV18 = Omit<TimeEntry, 'comment'>
-type TaskV18 = Omit<Task, 'timeLog'> & { readonly timeLog: readonly TimeEntryV18[] }
+type TaskV18 = Omit<TaskV19, 'timeLog'> & { readonly timeLog: readonly TimeEntryV18[] }
 
 /**
  * Version 17 had no hour to a task: it was due on a day and no time of day, so
@@ -79,8 +82,12 @@ type TaskV2 = Omit<TaskV3, 'deletedAt'>
 /** Version 1 knew nothing about repeating either: every task happened once. */
 type TaskV1 = Omit<TaskV2, 'repeat'>
 
+function fromV19(task: TaskV19): Task {
+  return { ...task, goalId: null }
+}
+
 function fromV18(task: TaskV18): Task {
-  return { ...task, timeLog: task.timeLog.map((entry) => ({ ...entry, comment: null })) }
+  return fromV19({ ...task, timeLog: task.timeLog.map((entry) => ({ ...entry, comment: null })) })
 }
 
 function fromV17(task: TaskV17): Task {
@@ -212,6 +219,8 @@ export function migrateTasks(version: unknown, tasks: unknown): Task[] | null {
       return (tasks as TaskV17[]).map(fromV17)
     case 18:
       return (tasks as TaskV18[]).map(fromV18)
+    case 19:
+      return (tasks as TaskV19[]).map(fromV19)
     case SCHEMA_VERSION:
       return tasks as Task[]
     default:

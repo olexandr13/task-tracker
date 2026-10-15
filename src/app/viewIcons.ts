@@ -25,6 +25,7 @@ import { SettingsIcon } from './components/SettingsIcon'
 import { SlidersIcon } from './components/SlidersIcon'
 import { StarIcon } from './components/StarIcon'
 import { SunriseIcon } from './components/SunriseIcon'
+import { TargetIcon } from './components/TargetIcon'
 import { TagIcon } from './components/TagIcon'
 import { TrashIcon } from './components/TrashIcon'
 import { LevelIcon } from './components/LevelIcon'
@@ -38,7 +39,7 @@ export type ViewIcon = (props: { className?: string }) => ReactElement
 /**
  * The glyph each view carries, wherever it is navigated to from: the sidebar, a
  * phone's bar, or the strip across a section's pages (UI-84). Every tag's view carries
- * the same glyph as Tags, and every list's the same as Lists. The pages under
+ * the same glyph as Tags, every list's the same as Lists, and every goal's the same as Goals. The pages under
  * Rewards each carry their own, so the star stays Rewards itself. Each mode
  * carries the glyph it already wears wherever it speaks — the melting face, the
  * seedling — so the mode is recognised before its name is read. On a mode's own
@@ -60,6 +61,7 @@ export const VIEW_ICONS: Record<FixedView, ViewIcon> = {
   'rewards/rules': SlidersIcon,
   level: LevelIcon,
   lists: FolderIcon,
+  goals: TargetIcon,
   tags: TagIcon,
   notes: NotesIcon,
   balance: BalanceIcon,

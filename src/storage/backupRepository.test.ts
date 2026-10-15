@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createActivityEntry,
   createCategory,
+  createGoal,
   createJournalEntry,
   createList,
   createNote,
@@ -29,6 +30,7 @@ const WRITE = createTask('Write report', null, AT)
 const CALL = createTask('Call mum', null, AT)
 const WORK = createList('Work', AT)
 const HOME = createList('Home', AT)
+const FIT = createGoal('Get fit', AT)
 const COFFEE = createRedemption(3, 'Coffee', 12, AT)
 const ERRANDS = createTag('errands', AT)
 const GARDEN = createTag('garden', AT)
@@ -48,6 +50,7 @@ const XP_BEGUN = { xp: 12, startedOn: '2026-09-15', settledThrough: null, addsOn
 const EMPTY: AccountData = {
   tasks: [],
   lists: [],
+  goals: [],
   tags: [],
   prizes: [],
   categories: [],
@@ -71,6 +74,7 @@ const EMPTY: AccountData = {
 const NOTHING_KNOWN: KnownRecords = {
   taskIds: new Set(),
   listIds: new Set(),
+  goalIds: new Set(),
   tagIds: new Set(),
   tagNames: [],
   prizeIds: new Set(),
@@ -99,6 +103,7 @@ describe('what an import adds', () => {
     const incoming: AccountData = {
       tasks: [WRITE, CALL],
       lists: [WORK],
+      goals: [FIT],
       tags: [ERRANDS],
       prizes: [CHOCOLATE],
       categories: [REST],
@@ -199,10 +204,15 @@ describe('what an import adds', () => {
   })
 
   it('does the same the second time: importing a file twice adds nothing more (BAK-6)', () => {
-    const incoming: AccountData = { ...EMPTY, tasks: [WRITE], lists: [WORK] }
-    const known: KnownRecords = { ...NOTHING_KNOWN, taskIds: new Set([WRITE.id]), listIds: new Set([WORK.id]) }
+    const incoming: AccountData = { ...EMPTY, tasks: [WRITE], lists: [WORK], goals: [FIT] }
+    const known: KnownRecords = {
+      ...NOTHING_KNOWN,
+      taskIds: new Set([WRITE.id]),
+      listIds: new Set([WORK.id]),
+      goalIds: new Set([FIT.id]),
+    }
 
-    expect(newRecords(incoming, known, AT)).toEqual({ fresh: EMPTY, alreadyHere: 2 })
+    expect(newRecords(incoming, known, AT)).toEqual({ fresh: EMPTY, alreadyHere: 3 })
   })
 })
 
@@ -360,6 +370,7 @@ describe('counting records', () => {
     const data: AccountData = {
       tasks: [WRITE, CALL],
       lists: [WORK],
+      goals: [FIT],
       tags: [ERRANDS],
       prizes: [CHOCOLATE],
       categories: [REST],
@@ -387,6 +398,7 @@ describe('counting records', () => {
     expect(countRecords(data)).toEqual({
       tasks: 2,
       lists: 1,
+      goals: 1,
       tags: 1,
       prizes: 1,
       categories: 1,

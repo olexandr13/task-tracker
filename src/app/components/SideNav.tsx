@@ -14,8 +14,8 @@ import { KeyWaitingMark } from './KeyWaitingMark'
 
 /**
  * The views, grouped by what they are for (UI-30): when — the ones named after
- * a period; the work and where it is filed — the habits, every task and the
- * lists; what pushes it along — the level, the rewards and the modes (MODE-1);
+ * a period; the work and where it is filed — the habits, every task, the
+ * lists and the goals it is done for (GOAL-16); what pushes it along — the level, the rewards and the modes (MODE-1);
  * Organize, with the tags and the notes (UI-81); Reflect, looking back at the
  * day, with the balance of time, the activity log and the journal (UI-83); the
  * notices waiting, on Notifications (NOTIF-1);
@@ -26,13 +26,13 @@ import { KeyWaitingMark } from './KeyWaitingMark'
  * the same way, Modes a page for each mode (MODE-7), Organize Tags and the
  * notes, and Reflect Balance, the activity log and the journal; each folds
  * away as Lists does.
- * A tag's tasks have no entry. More is not here: every page on it is, so it
+ * A tag's tasks have no entry, nor a goal's: Tags and Goals stay marked for them. More is not here: every page on it is, so it
  * would be a click on the way to somewhere already listed (UI-45). A page whose
  * feature is switched off on Settings has no entry at all (FEAT-2).
  */
 const VIEW_GROUPS: readonly (readonly FixedView[])[] = [
   ['today', 'tomorrow', 'week', 'month'],
-  ['habits', 'tasks', 'lists'],
+  ['habits', 'tasks', 'lists', 'goals'],
   ['level', 'rewards', 'modes'],
   ['organize'],
   ['reflect'],

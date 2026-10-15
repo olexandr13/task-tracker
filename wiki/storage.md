@@ -127,6 +127,17 @@ changes shape.
   and the tasks go first. If the second is lost, a task naming a list that is gone reads as being in
   the Inbox anyway (LST-12), so no task is ever stranded.
 
+## Goals
+
+- **STORE-65** Each goal is saved in the account as **its own record**, beside the tasks rather than
+  holding them, under **its own version**, as a list is (STORE-26, STORE-27). A task names the goal it
+  serves by id, so making, renaming or deleting a goal writes no task. Goals are written **goal by
+  goal** (STORE-28), readable and writable by the account alone (STORE-17), and open offline like
+  the tasks (STORE-18). Deleting one unlinks its tasks first, then the goal; a task left naming a goal
+  that is gone serves none (GOAL-6). How far a goal has got is never saved: it is counted from its
+  tasks each time (GOAL-7), the history not loaded counted by the server without loading it
+  (STORE-55, GOAL-9).
+
 ## Tags
 
 - **STORE-33** Each tag is kept in the account as **its own record**, beside the tasks, inside a
@@ -296,7 +307,7 @@ changes shape.
 
 ## Guest — this device only
 
-- **STORE-37** As guest (AUTH-15), tasks, lists, tags, the wishlist, the Balance categories, the
+- **STORE-37** As guest (AUTH-15), tasks, lists, goals, tags, the wishlist, the Balance categories, the
   activity log, the journal and the notes — a record at a time — and the check-in's setting (STORE-51,
   STORE-60, STORE-62, STORE-52), the points ledger — the
   bonuses, what a point is worth, what Cases asks and the reward new tasks start with, with it
@@ -308,7 +319,7 @@ changes shape.
   on the same address sees the same records. There is nothing to sync, so the sync notice stays
   quiet (OFF-7).
 - **STORE-38** The first time a Google account is open here online after guest data was kept, that
-  data is **moved into the account** — tasks, lists, tags, prizes, Balance categories, the activity
+  data is **moved into the account** — tasks, lists, goals, tags, prizes, Balance categories, the activity
   log, the journal, points earned, redemptions, the bonuses, what a point is worth, the reward new tasks start
   with, the warm-up, the nudge's setting, the check-in's, the feature switches, the limit on rests and where XP stands — added alongside
   what the account already has, without overwriting tasks it already holds (STORE-20), or a bonus,
@@ -407,15 +418,16 @@ changes shape.
   had an order of its own, before it could be due on a day, before a repeating task kept the days
   it was done on, before a task could carry tags, before it could carry a reward, before there
   were lists to file it under, before a task could ask for time, before a repeating task's occurrence
-  could be skipped, before a task could carry a priority, and before priority became a single urgent
-  mark. The order step keeps each task where it was: the saved list was already in
+  could be skipped, before a task could carry a priority, before priority became a single urgent
+  mark, before a task had an hour or a picked start day, before a session carried a comment, and
+  before a task could serve a goal. The order step keeps each task where it was: the saved list was already in
   order. Tasks saved before due dates have no day. A repeating task saved before history was kept
   starts its history with the day of its last completion, the one day anything remembers. Tasks
   saved before tags have none, tasks saved before rewards have no reward, so none of what they
   did before earns anything, tasks saved before lists are in none — the Inbox, where a task
   starts anyway (LST-2) — tasks saved before time goals have no goal and no time logged,
   tasks saved before priority have no urgent mark, and a high priority from the ranked shape
-  becomes urgent; low and medium do not.
+  becomes urgent; low and medium do not. Tasks saved before goals serve none.
 - **STORE-7** Data in a version the app does not recognise, or that cannot be parsed at all, is
   **ignored with a warning** rather than crashing, and left as it is: a task the app cannot read is
   not shown, and never overwritten or deleted by it.
@@ -475,7 +487,8 @@ tasks start with),
 `categorySchema.ts` (the Balance categories), `src/app/useCategories.ts`,
 `prizeRepository.ts`, `firestorePrizeRepository.ts`, `localPrizeRepository.ts` and `prizeSchema.ts`
 (the prizes and the wishlist), `listRepository.ts`, `firestoreListRepository.ts`, `localListRepository.ts` and
-`listSchema.ts` (the lists), `tagRepository.ts`, `firestoreTagRepository.ts`, `localTagRepository.ts` and `tagSchema.ts`
+`listSchema.ts` (the lists), `goalRepository.ts`, `firestoreGoalRepository.ts`, `localGoalRepository.ts` and
+`goalSchema.ts` (the goals), `tagRepository.ts`, `firestoreTagRepository.ts`, `localTagRepository.ts` and `tagSchema.ts`
 (the kept tags), `warmUpRepository.ts`, `firestoreWarmUpRepository.ts`, `localWarmUpRepository.ts`
 and `warmUpSchema.ts` (the warm-up), `nudgeRepository.ts`, `firestoreNudgeRepository.ts`,
 `localNudgeRepository.ts` and `nudgeSchema.ts` (the nudge's setting), `nudgeDeviceRepository.ts`,
@@ -519,7 +532,8 @@ setting, and what it keeps on this device), `src/storage/warmUpSchema.test.ts` (
 `src/storage/nudgeSchema.test.ts` and `src/storage/nudgeDeviceSchema.test.ts` (reading the nudge's
 setting back, and what a record from before it synced still answers), `src/storage/prizeSchema.test.ts` and `src/app/usePrizes.test.ts`
 (reading a prize or a wish back, and keeping them), `src/storage/listRepository.test.ts` and `src/storage/listSchema.test.ts`
-(what a change to the lists writes, and reading one back), `src/storage/tagRepository.test.ts`,
+(what a change to the lists writes, and reading one back), `src/storage/goalSchema.test.ts` and
+`src/app/useGoals.test.ts` (reading a goal back, and what a change to the goals writes), `src/storage/tagRepository.test.ts`,
 `src/storage/tagSchema.test.ts` and `src/app/useTags.test.ts` (the same for the tags, and keeping the
 ones tasks carry), `src/storage/categorySchema.test.ts`, `src/storage/localCategoryRepository.test.ts`
 and `src/app/useCategories.test.ts` (the Balance categories), `src/storage/viewOptionsSchema.test.ts` (reading the

@@ -6,6 +6,7 @@ import {
   type Category,
   type CaseSettings,
   type FeaturesOff,
+  type Goal,
   type HabitRests,
   type JournalEntry,
   type List,
@@ -25,6 +26,7 @@ import { readCategory, toStoredCategory, type StoredCategory } from './categoryS
 import type { CheckInPreference } from './checkInRepository'
 import { readCheckIn, toStoredCheckIn, type StoredCheckIn } from './checkInSchema'
 import { readFeatures, toStoredFeatures, type StoredFeatures } from './featureSchema'
+import { readGoal, toStoredGoal, type StoredGoal } from './goalSchema'
 import { readHabitRests, toStoredHabitRests, type StoredHabitRests } from './habitSettingsSchema'
 import { readJournalDay, toStoredJournalDays, type StoredJournalDay } from './journalSchema'
 import { readList, toStoredList, type StoredList } from './listSchema'
@@ -87,11 +89,13 @@ export const BACKUP_FORMAT = 'task-tracker-backup'
  * read as holding none. Version 11 held no habits' settings (HAB-36): a file
  * made before there were any is read as leaving rests unlimited. Version 12
  * held no XP (LVL-1): a file made before there was any is read as XP not begun.
+ * Version 13 held no goals (GOAL-1): a file made before there were any is read
+ * as holding none, its tasks serving none.
  */
-export const BACKUP_VERSION = 13
+export const BACKUP_VERSION = 14
 
 /** The versions of the wrapper this app can still read, oldest first. */
-const READABLE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, BACKUP_VERSION]
+const READABLE_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, BACKUP_VERSION]
 
 interface BackupFile {
   format: typeof BACKUP_FORMAT
@@ -100,6 +104,8 @@ interface BackupFile {
   exportedAt: string
   tasks: StoredTask[]
   lists: StoredList[]
+  /** The goals tasks serve, one record each (GOAL-1). */
+  goals: StoredGoal[]
   tags: StoredTag[]
   /** The wishlist, one record per prize (RWD-33). */
   prizes: StoredPrize[]
@@ -188,6 +194,7 @@ export function writeBackupFile(data: AccountData, now: Date): string {
     exportedAt: now.toISOString(),
     tasks: data.tasks.map(toStoredTask),
     lists: data.lists.map(toStoredList),
+    goals: data.goals.map(toStoredGoal),
     tags: data.tags.map(toStoredTag),
     prizes: data.prizes.map(toStoredPrize),
     categories: data.categories.map(toStoredCategory),
@@ -249,9 +256,11 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
   const notes = file.version < 11 ? [] : file.notes
   const habitSettings = file.version < 12 ? [] : file.habitSettings
   const xpProgress = file.version < 13 ? [] : file.xpProgress
+  const goals = file.version < 14 ? [] : file.goals
   if (
     !Array.isArray(tasks) ||
     !Array.isArray(lists) ||
+    !Array.isArray(goals) ||
     !Array.isArray(tags) ||
     !Array.isArray(prizes) ||
     !Array.isArray(rewardDays) ||
@@ -296,13 +305,14 @@ export function readBackupFile(text: string): BackupRead | BackupFailure {
     else unreadable += 1
   }
 
-  const goals = readEach(rewardGoals, readRewardGoal)
+  const periodGoals = readEach(rewardGoals, readRewardGoal)
   const bonuses = { ...NO_BONUSES } as Record<string, number | null>
-  for (const goal of goals) bonuses[goal.period] = goal.points
+  for (const goal of periodGoals) bonuses[goal.period] = goal.points
 
   const data: AccountData = {
     tasks: readEach<Task>(tasks, readStoredTask),
     lists: readEach<List>(lists, readList),
+    goals: readEach<Goal>(goals, readGoal),
     tags: readEach<Tag>(tags, readTag),
     prizes: readEach<Prize>(prizes, readPrize),
     categories: readEach<Category>(categories, readCategory),

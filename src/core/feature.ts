@@ -15,13 +15,14 @@
  * part comes back as it was left when the whole does.
  */
 
-/** Every feature there is, in the order Settings lists them. */
+/** Every feature there is, in the order the ones switched off are kept in. Settings groups them its own way (FEAT-11). */
 export const FEATURES = [
   'habits',
   'rewards',
   'cases',
   'levels',
   'lists',
+  'goals',
   'tags',
   'notes',
   'balance',

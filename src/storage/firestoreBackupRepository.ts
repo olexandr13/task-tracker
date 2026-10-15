@@ -14,6 +14,7 @@ import { countRecords, NeedsConnectionError, newRecords, type BackupRepository, 
 import { readCategory, toStoredCategory } from './categorySchema'
 import { CHECK_IN, readCheckIn, toStoredCheckIn } from './checkInSchema'
 import { FEATURES_RECORD, readFeatures, toStoredFeatures } from './featureSchema'
+import { readGoal, toStoredGoal } from './goalSchema'
 import { HABIT_RESTS, readHabitRests, toStoredHabitRests } from './habitSettingsSchema'
 import { readJournalDay, toStoredJournalDays } from './journalSchema'
 import { accountCollection } from './firestoreAccount'
@@ -65,11 +66,12 @@ const ids = (snapshot: QuerySnapshot) => new Set(snapshot.docs.map((saved) => sa
 export function createFirestoreBackupRepository(firestore: Firestore, accountId: string): BackupRepository {
   const tasks = accountCollection(firestore, accountId, 'tasks')
   const lists = accountCollection(firestore, accountId, 'lists')
+  const goals = accountCollection(firestore, accountId, 'goals')
   const tags = accountCollection(firestore, accountId, 'tags')
   const prizes = accountCollection(firestore, accountId, 'prizes')
   const days = accountCollection(firestore, accountId, 'rewardDays')
   const redemptions = accountCollection(firestore, accountId, 'redemptions')
-  const goals = accountCollection(firestore, accountId, 'rewardGoals')
+  const rewardGoals = accountCollection(firestore, accountId, 'rewardGoals')
   const settings = accountCollection(firestore, accountId, 'rewardSettings')
   const warmUps = accountCollection(firestore, accountId, 'warmUp')
   const nudges = accountCollection(firestore, accountId, 'nudge')
@@ -135,11 +137,12 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
       const [
         savedTasks,
         savedLists,
+        savedGoals,
         savedTags,
         savedPrizes,
         savedDays,
         savedRedemptions,
-        savedGoals,
+        savedRewardGoals,
         savedSettings,
         savedWarmUp,
         savedNudge,
@@ -155,11 +158,12 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         [
           tasks,
           lists,
+          goals,
           tags,
           prizes,
           days,
           redemptions,
-          goals,
+          rewardGoals,
           settings,
           warmUps,
           nudges,
@@ -179,6 +183,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
       return {
         tasks: readAll(savedTasks, readStoredTask),
         lists: readAll(savedLists, readList),
+        goals: readAll(savedGoals, readGoal),
         tags: readAll(savedTags, readTag),
         prizes: readAll(savedPrizes, readPrize),
         categories: readAll(savedCategories, readCategory),
@@ -187,7 +192,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         notes: readAll(savedNotes, readNote),
         entries: readAll(savedDays, readRewardDay).flat(),
         redemptions: readAll(savedRedemptions, readRedemption),
-        bonuses: bonusesIn(savedGoals),
+        bonuses: bonusesIn(savedRewardGoals),
         pointValue: pointValueIn(savedSettings),
         cases: casesIn(savedSettings),
         newTaskReward: newTaskRewardIn(savedSettings),
@@ -205,11 +210,12 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
       const [
         savedTasks,
         savedLists,
+        savedGoals,
         savedTags,
         savedPrizes,
         savedDays,
         savedRedemptions,
-        savedGoals,
+        savedRewardGoals,
         savedSettings,
         savedWarmUp,
         savedNudge,
@@ -224,11 +230,12 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
       ] = await fromServer([
         tasks,
         lists,
+        goals,
         tags,
         prizes,
         days,
         redemptions,
-        goals,
+        rewardGoals,
         settings,
         warmUps,
         nudges,
@@ -246,6 +253,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
       const known: KnownRecords = {
         taskIds: ids(savedTasks),
         listIds: ids(savedLists),
+        goalIds: ids(savedGoals),
         tagIds: ids(savedTags),
         tagNames: savedTags.docs.flatMap((saved) => readTag(saved.data())?.name ?? []),
         prizeIds: ids(savedPrizes),
@@ -256,7 +264,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
         unreadableJournalDays: new Set(journalDaysRead.filter(({ entries }) => entries === null).map(({ day }) => day)),
         noteIds: ids(savedNotes),
         redemptionIds: ids(savedRedemptions),
-        bonuses: bonusesIn(savedGoals),
+        bonuses: bonusesIn(savedRewardGoals),
         pointValue: pointValueIn(savedSettings),
         cases: casesIn(savedSettings),
         newTaskReward: newTaskRewardIn(savedSettings),
@@ -290,6 +298,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
       await commitInBatches(firestore, [
         ...fresh.tasks.map((task) => (batch: WriteBatch) => batch.set(doc(tasks, task.id), toStoredTask(task))),
         ...fresh.lists.map((list) => (batch: WriteBatch) => batch.set(doc(lists, list.id), toStoredList(list))),
+        ...fresh.goals.map((goal) => (batch: WriteBatch) => batch.set(doc(goals, goal.id), toStoredGoal(goal))),
         ...fresh.tags.map((tag) => (batch: WriteBatch) => batch.set(doc(tags, tag.id), toStoredTag(tag))),
         ...fresh.prizes.map((prize) => (batch: WriteBatch) => batch.set(doc(prizes, prize.id), toStoredPrize(prize))),
         ...fresh.categories.map((category) => (batch: WriteBatch) =>
@@ -314,7 +323,7 @@ export function createFirestoreBackupRepository(firestore: Firestore, accountId:
           const points = fresh.bonuses[period]
           return points === null
             ? []
-            : [(batch: WriteBatch) => batch.set(doc(goals, period), toStoredRewardGoal(period, points))]
+            : [(batch: WriteBatch) => batch.set(doc(rewardGoals, period), toStoredRewardGoal(period, points))]
         }),
         ...(value === null
           ? []

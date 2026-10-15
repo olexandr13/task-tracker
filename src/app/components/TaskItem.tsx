@@ -7,6 +7,7 @@ import {
   defaultReward,
   dueDay,
   elapsedSeconds,
+  goalOf,
   hasDescription,
   hasOpenSubtasks,
   hasSubtasks,
@@ -24,6 +25,7 @@ import {
   sessionSeconds,
   skipOccurrence,
   skipPenalty,
+  sortGoals,
   sortLists,
   wholeMinutes,
   type List,
@@ -37,6 +39,7 @@ import { dateChoices, noDayNote, restsToday } from '../dateChoices'
 import { describeDueDate, describeTimeOfDay } from '../dueLabels'
 import { describeTimeProgress, describeTimerRunning } from '../durationLabels'
 import { useFeatureOn } from '../features'
+import { useKnownGoals } from '../goals'
 import { describeNoRest } from '../habitLabels'
 import { useRestLimit } from '../habitRests'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
@@ -77,6 +80,7 @@ import { FloatingPanel } from './FloatingPanel'
 import { FolderIcon } from './FolderIcon'
 import { GripIcon } from './GripIcon'
 import { InboxIcon } from './InboxIcon'
+import { GoalPicker } from './GoalPicker'
 import { ListPicker } from './ListPicker'
 import { NoteIcon } from './NoteIcon'
 import { RepeatIcon } from './RepeatIcon'
@@ -190,8 +194,11 @@ export function TaskItem({
   // A list, a tag or a reward has no control, no mark and no menu entry while its
   // feature is switched off on Settings; what the task carries is kept (FEAT-3).
   const listsOn = useFeatureOn('lists')
+  const goalsOn = useFeatureOn('goals')
   const tagsOn = useFeatureOn('tags')
   const rewardsOn = useFeatureOn('rewards')
+  // Every goal there is, to link the task to (GOAL-13).
+  const goals = useKnownGoals()
   const done = isComplete(task, now)
   const urgent = !done && task.urgent
   const checklist = countSubtasks(task, now)
@@ -321,10 +328,10 @@ export function TaskItem({
   const scheduleDay =
     task.repeat !== null ? describeRepeatBriefly(task.repeat) : day !== null ? describeDueDate(day, now) : null
   // The hour (DUE-19) rides with whichever of the two is said, being the same hour
-  // on every day the task falls on — "Today at 8:14 PM", "Daily at 9:00 AM".
+  // on every day the task falls on — "Today 20:14", "Daily 09:00". No "at": room is short here.
   const scheduleLabel =
     scheduleDay !== null && task.dueTime !== null
-      ? `${scheduleDay} at ${describeTimeOfDay(task.dueTime)}`
+      ? `${scheduleDay} ${describeTimeOfDay(task.dueTime)}`
       : scheduleDay
   const timeProgress = describeTimeProgress(spent, task.timeGoal)
   const timeLabel = (separator: string) =>
@@ -381,6 +388,8 @@ export function TaskItem({
   }
   // The list the task is filed under, or null in the Inbox.
   const filed = listOf(task, lists)
+  // The goal the task serves, or null for none (GOAL-6).
+  const served = goalOf(task, goals)
   // Where skipping the occurrence in play would move the task on to, while it has one to skip.
   const skipTo = canSkipOccurrence(task, now) ? dueDay(skipOccurrence(task, now), now) : null
   // What skipping a habit costs, said beside the skip before it is chosen (HAB-34).
@@ -454,6 +463,27 @@ export function TaskItem({
                 icon: <FolderIcon />,
                 checked: list.id === filed?.id,
                 onSelect: () => { actions.changeList(task.id, list.id) },
+              })),
+            ],
+          },
+        ]),
+    // Only once there is a goal to choose, as with the lists (GOAL-13).
+    ...(!goalsOn || goals.length === 0
+      ? []
+      : [
+          {
+            group: 'Goal',
+            items: [
+              {
+                label: 'No goal',
+                checked: served === null,
+                onSelect: () => { actions.changeGoal(task.id, null) },
+              },
+              // No glyphs: the heading says what the group is, and No goal has none to match.
+              ...sortGoals(goals).map((goal) => ({
+                label: goal.name,
+                checked: goal.id === served?.id,
+                onSelect: () => { actions.changeGoal(task.id, goal.id) },
               })),
             ],
           },
@@ -1095,6 +1125,15 @@ export function TaskItem({
               lists={lists}
               onChange={(listId) => { actions.changeList(task.id, listId) }}
               label={`List for "${task.title}"`}
+              align="left"
+            />
+          )}
+          {goalsOn && goals.length > 0 && (
+            <GoalPicker
+              goalId={task.goalId}
+              goals={goals}
+              onChange={(goalId) => { actions.changeGoal(task.id, goalId) }}
+              label={`Goal for "${task.title}"`}
               align="left"
             />
           )}

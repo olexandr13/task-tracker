@@ -4,6 +4,7 @@ import {
   completeTask,
   createActivityEntry,
   createCategory,
+  createGoal,
   createList,
   createNote,
   createPointValue,
@@ -26,6 +27,7 @@ import { CATEGORY_SCHEMA_VERSION } from './categorySchema'
 import type { CheckInPreference } from './checkInRepository'
 import { CHECK_IN_SCHEMA_VERSION } from './checkInSchema'
 import { FEATURES_SCHEMA_VERSION } from './featureSchema'
+import { GOAL_SCHEMA_VERSION } from './goalSchema'
 import { HABIT_SETTINGS_SCHEMA_VERSION } from './habitSettingsSchema'
 import { JOURNAL_SCHEMA_VERSION } from './journalSchema'
 import { LIST_SCHEMA_VERSION } from './listSchema'
@@ -45,6 +47,7 @@ const AT = new Date('2026-09-19T09:00:00.000Z')
 const DONE = completeTask(createTask('Write report', null, AT), AT)
 const TRASHED = deleteTask(createTask('Old idea', null, AT), AT)
 const WORK = createList('Work', AT)
+const FIT = createGoal('Get fit', AT)
 const ERRANDS = createTag('errands', AT)
 const ENTRIES: RewardEntry[] = [
   { taskId: DONE.id, day: '2026-09-18', points: 5 },
@@ -69,6 +72,7 @@ const FILMS = createNote('Films to watch\n- *Heat*', AT)
 const DATA: AccountData = {
   tasks: [DONE, TRASHED],
   lists: [WORK],
+  goals: [FIT],
   tags: [ERRANDS],
   prizes: [CHOCOLATE],
   categories: [REST],
@@ -89,8 +93,11 @@ const DATA: AccountData = {
   xpProgress: { xp: 42, startedOn: '2026-09-15', settledThrough: '2026-09-18', addsOn: '2026-09-19', adds: 2 },
 }
 
-/** What a file from before XP reads as (BAK-24). */
-const BEFORE_XP = { xpProgress: null }
+/** What a file from before goals reads as (BAK-25). */
+const BEFORE_GOALS = { goals: [] }
+
+/** What a file from before XP reads as (BAK-24), and so before goals too. */
+const BEFORE_XP = { xpProgress: null, ...BEFORE_GOALS }
 
 /** What a file from before the habits' settings reads as (BAK-23), and so before XP too. */
 const BEFORE_HABIT_SETTINGS = { habitRests: null, ...BEFORE_XP }
@@ -127,6 +134,7 @@ describe('writing a backup', () => {
       exportedAt: AT.toISOString(),
       tasks: [{ version: SCHEMA_VERSION, task: DONE }, { version: SCHEMA_VERSION, task: TRASHED }],
       lists: [{ version: LIST_SCHEMA_VERSION, list: WORK }],
+      goals: [{ version: GOAL_SCHEMA_VERSION, goal: FIT }],
       tags: [{ version: TAG_SCHEMA_VERSION, tag: ERRANDS }],
       prizes: [{ version: PRIZE_SCHEMA_VERSION, prize: CHOCOLATE }],
       categories: [{ version: CATEGORY_SCHEMA_VERSION, category: REST }],
@@ -383,9 +391,15 @@ describe('reading a backup', () => {
   })
 
   it('reads a file from before XP as holding none, and XP not begun (BAK-24)', () => {
-    const read = readBackupFile(fileWith({ version: 12, xpProgress: undefined }))
+    const read = readBackupFile(fileWith({ version: 12, xpProgress: undefined, goals: undefined }))
 
     expect(read).toEqual({ data: { ...DATA, ...BEFORE_XP }, unreadable: 0 })
+  })
+
+  it('reads a file from before goals as holding none (BAK-25)', () => {
+    const read = readBackupFile(fileWith({ version: 13, goals: undefined }))
+
+    expect(read).toEqual({ data: { ...DATA, ...BEFORE_GOALS }, unreadable: 0 })
   })
 
   it('says so when a backup was made by a newer version of the app (BAK-9)', () => {
@@ -404,6 +418,7 @@ describe('reading a backup', () => {
       fileWith({
         tasks: [{ version: SCHEMA_VERSION, task: DONE }, { version: 99, task: TRASHED }, { version: SCHEMA_VERSION, task: {} }],
         lists: [{ version: LIST_SCHEMA_VERSION, list: { ...WORK, name: '' } }],
+        goals: [{ version: GOAL_SCHEMA_VERSION, goal: { ...FIT, name: 'x'.repeat(61) } }],
         tags: [{ version: TAG_SCHEMA_VERSION, tag: { ...ERRANDS, name: 'two words' } }],
         rewardDays: [{ version: REWARD_SCHEMA_VERSION, day: 'someday', entries: {} }],
         redemptions: ['coffee', { version: REWARD_SCHEMA_VERSION, redemption: TREAT }],
@@ -422,6 +437,7 @@ describe('reading a backup', () => {
       data: {
         tasks: [DONE],
         lists: [],
+        goals: [],
         tags: [],
         prizes: [CHOCOLATE],
         categories: [],
@@ -441,7 +457,7 @@ describe('reading a backup', () => {
         habitRests: null,
         xpProgress: null,
       },
-      unreadable: 14,
+      unreadable: 15,
     })
   })
 })

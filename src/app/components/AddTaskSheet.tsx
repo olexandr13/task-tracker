@@ -10,6 +10,7 @@ import {
   sessionSeconds,
   wholeMinutes,
   type List,
+  type GoalId,
   type ListId,
   type LocalDay,
   type LocalTime,
@@ -22,8 +23,10 @@ import { describeDueDate, describeTimeOfDay } from '../dueLabels'
 import { emptyDraft, toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { describeRepeatBriefly } from '../repeatLabels'
 import { useFeatureOn } from '../features'
+import { useKnownGoals } from '../goals'
 import { describeReward, describeRewardHint } from '../rewardLabels'
 import { BottomSheet } from './BottomSheet'
+import { GoalPicker } from './GoalPicker'
 import { ListPicker } from './ListPicker'
 import { RewardPicker } from './RewardPicker'
 import { SchedulePicker } from './SchedulePicker'
@@ -44,6 +47,8 @@ export interface NewTaskDetails {
   readonly timeLog: readonly { minutes: number; comment: string | null }[]
   /** Checklist items in order; `done` is whether each starts ticked. */
   readonly subtasks: readonly { title: string; done: boolean }[]
+  /** The goal it serves, or null for none (GOAL-11). */
+  readonly goalId: GoalId | null
 }
 
 interface AddTaskSheetProps {
@@ -54,6 +59,8 @@ interface AddTaskSheetProps {
   defaultRepeat?: Repeat | null
   defaultTags?: readonly string[]
   defaultListId?: ListId | null
+  /** The goal the task starts serving: the goal whose view it is added on (GOAL-11). */
+  defaultGoalId?: GoalId | null
   /** The reward the task starts with, set on Rules (RWD-45), or null for none. */
   newTaskReward?: number | null
   knownTags: readonly string[]
@@ -87,14 +94,17 @@ export function AddTaskSheet({
   defaultRepeat,
   defaultTags = [],
   defaultListId = null,
+  defaultGoalId = null,
   newTaskReward = null,
   knownTags,
   lists,
   onClose,
   onAdd,
 }: AddTaskSheetProps) {
-  // No row for a list, the tags or a reward while its feature is switched off on Settings (FEAT-3).
+  // No row for a list, a goal, the tags or a reward while its feature is switched off on Settings (FEAT-3).
   const listsOn = useFeatureOn('lists')
+  const goalsOn = useFeatureOn('goals')
+  const goals = useKnownGoals()
   const tagsOn = useFeatureOn('tags')
   const rewardsOn = useFeatureOn('rewards')
   const titleInput = useRef<HTMLInputElement>(null)
@@ -106,6 +116,7 @@ export function AddTaskSheet({
   const [day, setDay] = useState(defaultDueDate)
   const [time, setTime] = useState<LocalTime | null>(null)
   const [listId, setListId] = useState<ListId | null>(defaultListId)
+  const [goalId, setGoalId] = useState<GoalId | null>(defaultGoalId)
   const [tags, setTags] = useState<string[]>(() => [...defaultTags])
   const [reward, setReward] = useState<number | null>(newTaskReward)
   const [urgent, setUrgent] = useState(false)
@@ -145,6 +156,7 @@ export function AddTaskSheet({
         title: subtask.title,
         done: subtask.completedAt !== null,
       })),
+      goalId,
     })
   }
 
@@ -229,6 +241,22 @@ export function AddTaskSheet({
                         lists={lists}
                         onChange={setListId}
                         label={`List for "${namedFor}"`}
+                        align="left"
+                      />
+                    ),
+                  },
+                ]
+              : []),
+            ...(goalsOn
+              ? [
+                  {
+                    name: 'Goal',
+                    control: (
+                      <GoalPicker
+                        goalId={goalId}
+                        goals={goals}
+                        onChange={setGoalId}
+                        label={`Goal for "${namedFor}"`}
                         align="left"
                       />
                     ),

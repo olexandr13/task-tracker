@@ -10,6 +10,7 @@ import { createFirestoreBackupRepository } from './firestoreBackupRepository'
 import { createFirestoreCategoryRepository } from './firestoreCategoryRepository'
 import { createFirestoreCheckInRepository } from './firestoreCheckInRepository'
 import { createFirestoreFeatureRepository } from './firestoreFeatureRepository'
+import { createFirestoreGoalRepository } from './firestoreGoalRepository'
 import { createFirestoreHabitSettingsRepository } from './firestoreHabitSettingsRepository'
 import { createFirestoreJournalRepository } from './firestoreJournalRepository'
 import { createFirestoreListRepository } from './firestoreListRepository'
@@ -23,6 +24,7 @@ import { createFirestoreTagRepository } from './firestoreTagRepository'
 import { createFirestoreTaskRepository } from './firestoreTaskRepository'
 import { createFirestoreWarmUpRepository } from './firestoreWarmUpRepository'
 import { createFirestoreXpRepository } from './firestoreXpRepository'
+import type { GoalRepository } from './goalRepository'
 import { importGuestAccount } from './guestImport'
 import type { HabitSettingsRepository } from './habitSettingsRepository'
 import type { JournalRepository } from './journalRepository'
@@ -32,6 +34,7 @@ import { createLocalBackupRepository } from './localBackupRepository'
 import { createLocalCategoryRepository } from './localCategoryRepository'
 import { createLocalCheckInRepository } from './localCheckInRepository'
 import { createLocalFeatureRepository } from './localFeatureRepository'
+import { createLocalGoalRepository } from './localGoalRepository'
 import { createLocalHabitSettingsRepository } from './localHabitSettingsRepository'
 import { createLocalJournalRepository } from './localJournalRepository'
 import { createLocalListRepository } from './localListRepository'
@@ -67,6 +70,8 @@ import type { XpRepository } from './xpRepository'
 export interface AccountStorage {
   readonly tasks: TaskRepository
   readonly lists: ListRepository
+  /** The goals tasks are done for (GOAL-1). */
+  readonly goals: GoalRepository
   readonly tags: TagRepository
   readonly prizes: PrizeRepository
   readonly rewards: RewardRepository
@@ -124,6 +129,7 @@ async function moveDeviceNudgeIn(nudge: NudgeRepository): Promise<void> {
 function createFirestoreAccountStorage(accountId: string): AccountStorage {
   const tasks = createFirestoreTaskRepository(firestore, accountId)
   const lists = createFirestoreListRepository(firestore, accountId)
+  const goals = createFirestoreGoalRepository(firestore, accountId)
   const tags = createFirestoreTagRepository(firestore, accountId)
   const prizes = createFirestorePrizeRepository(firestore, accountId)
   const rewards = createFirestoreRewardRepository(firestore, accountId)
@@ -141,6 +147,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
   return {
     tasks,
     lists,
+    goals,
     tags,
     prizes,
     rewards,
@@ -162,7 +169,7 @@ function createFirestoreAccountStorage(accountId: string): AccountStorage {
         importLocalTasks(tasks).catch((error: unknown) => {
           console.warn('Could not move the tasks kept in this browser into the account; will try again next time.', error)
         }),
-        importGuestAccount(tasks, lists, tags, prizes, rewards, warmUp, nudge, categories, activities, checkIn, features, habitSettings, journal, notes, xp).catch((error: unknown) => {
+        importGuestAccount(tasks, lists, goals, tags, prizes, rewards, warmUp, nudge, categories, activities, checkIn, features, habitSettings, journal, notes, xp).catch((error: unknown) => {
           console.warn('Could not move the guest data into the account; will try again next time.', error)
         }),
       ])
@@ -180,6 +187,7 @@ function createGuestAccountStorage(): AccountStorage {
   return {
     tasks: createLocalTaskRepository(),
     lists: createLocalListRepository(),
+    goals: createLocalGoalRepository(),
     tags: createLocalTagRepository(),
     prizes: createLocalPrizeRepository(),
     rewards: createLocalRewardRepository(),

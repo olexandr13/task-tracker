@@ -2,7 +2,7 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { useView } from './useView'
-import { oneListView, tagView, viewFromHash, viewHash } from './view'
+import { goalView, oneListView, tagView, viewFromHash, viewHash } from './view'
 
 /* The view kept in the address. LIST ids refer to wiki/views.md, LST ids to wiki/lists.md,
    UI ids to wiki/interface.md. */
@@ -56,6 +56,15 @@ describe('viewFromHash', () => {
     for (const view of views) {
       expect(viewFromHash(viewHash(view))).toBe(view)
     }
+  })
+
+  it('gives Goals and each goal\'s tasks addresses of their own, a goal by its id (GOAL-10, UI-36)', () => {
+    const id = '0b9e2f4a-6c1d-4e8b-a7f3-2d5c9e1b4a6f'
+
+    expect(viewFromHash(viewHash('goals'))).toBe('goals')
+    expect(viewHash(goalView(id))).toBe(`#/goal/${id}`)
+    expect(viewFromHash(`#/goal/${id}`)).toBe(goalView(id))
+    expect(viewFromHash('#/goal/')).toBeNull()
   })
 
   it('gives the Balance page an address of its own (BAL-1, UI-36)', () => {

@@ -9,6 +9,7 @@ import { clearGuestActivities, createLocalActivityRepository, loadGuestActivitie
 import { clearGuestCategories, createLocalCategoryRepository, loadGuestCategories } from './localCategoryRepository'
 import { clearGuestCheckIn, createLocalCheckInRepository, loadGuestCheckIn } from './localCheckInRepository'
 import { clearGuestFeatures, createLocalFeatureRepository, loadGuestFeatures } from './localFeatureRepository'
+import { clearGuestGoals, createLocalGoalRepository, loadGuestGoals } from './localGoalRepository'
 import { clearGuestHabitRests, createLocalHabitSettingsRepository, loadGuestHabitRests } from './localHabitSettingsRepository'
 import { clearGuestJournal, createLocalJournalRepository, loadGuestJournal } from './localJournalRepository'
 import { clearGuestLists, createLocalListRepository, loadGuestLists } from './localListRepository'
@@ -34,6 +35,7 @@ import { clearGuestXp, createLocalXpRepository, loadGuestXpProgress } from './lo
 export function createLocalBackupRepository(): BackupRepository {
   const tasks = createLocalTaskRepository()
   const lists = createLocalListRepository()
+  const goals = createLocalGoalRepository()
   const tags = createLocalTagRepository()
   const prizes = createLocalPrizeRepository()
   const categories = createLocalCategoryRepository()
@@ -53,6 +55,7 @@ export function createLocalBackupRepository(): BackupRepository {
       return {
         tasks: loadGuestTasks(),
         lists: loadGuestLists(),
+        goals: loadGuestGoals(),
         tags: loadGuestTags(),
         prizes: loadGuestPrizes(),
         categories: loadGuestCategories(),
@@ -80,6 +83,7 @@ export function createLocalBackupRepository(): BackupRepository {
       const known: KnownRecords = {
         taskIds: new Set(loadGuestTasks().map((task) => task.id)),
         listIds: new Set(loadGuestLists().map((list) => list.id)),
+        goalIds: new Set(loadGuestGoals().map((goal) => goal.id)),
         tagIds: new Set(guestTags.map((tag) => tag.id)),
         tagNames: guestTags.map((tag) => tag.name),
         prizeIds: new Set(loadGuestPrizes().map((prize) => prize.id)),
@@ -107,6 +111,7 @@ export function createLocalBackupRepository(): BackupRepository {
 
       await tasks.importTasks(fresh.tasks)
       await lists.save({ saved: fresh.lists, removed: [] })
+      await goals.save({ saved: fresh.goals, removed: [] })
       await tags.save({ saved: fresh.tags, removed: [] })
       await prizes.save({ saved: fresh.prizes, removed: [] })
       await categories.save({ saved: fresh.categories, removed: [] })
@@ -154,6 +159,7 @@ function daysKnown(entries: ReturnType<typeof loadGuestLedger>['entries']): Know
 export function clearGuestAccount(): void {
   clearGuestTasks()
   clearGuestLists()
+  clearGuestGoals()
   clearGuestTags()
   clearGuestPrizes()
   clearGuestCategories()

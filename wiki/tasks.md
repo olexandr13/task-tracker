@@ -276,7 +276,7 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   (UI-31, UI-44) — on a woken wide-screen row (UI-53), and on a phone in the sheet as well
   (UI-48), adds a copy of the
   task carrying what it says: the same title, description, repeat rule, due date or day it starts
-  on (DUE-18), checklist items, tags, reward, urgent and time goal.
+  on (DUE-18), checklist items, tags, list, goal (GOAL-15), reward, urgent and time goal.
 - **TASK-52** The copy is a task of its own — its own id, stamped as created now — and each item on
   its checklist is its own too, so changing one never changes the other.
 - **TASK-53** It carries **none of what happened** to the original: it is not done, its checklist is

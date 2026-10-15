@@ -1,6 +1,7 @@
 import {
   hasTag,
   isHabit,
+  servesGoal,
   isInList,
   isDueTomorrow,
   isInPeriod,
@@ -12,6 +13,8 @@ import {
   tomorrowDueDay,
   type CompletionSpan,
   type CompletionSpans,
+  type Goal,
+  type GoalId,
   type List,
   type ListId,
   type LocalDay,
@@ -61,6 +64,7 @@ export type FixedView =
   | 'rewards/rules'
   | 'level'
   | 'lists'
+  | 'goals'
   | 'tags'
   | 'notes'
   | 'balance'
@@ -93,15 +97,22 @@ export type OneListView = `list/${ListId}`
  */
 export type TagView = `tag/${string}`
 
-export type View = FixedView | OneListView | TagView
+/**
+ * The tasks serving one goal (GOAL-10). Named by the goal's **id**, as a list's
+ * view is, so renaming a goal does not change its address.
+ */
+export type GoalView = `goal/${GoalId}`
 
-/** The views that show tasks: the box to add one, the rows, and the rail beside them. */
+export type View = FixedView | OneListView | TagView | GoalView
+
+/** The views that show tasks: the box to add one and the rows. Only the period views have the rail beside them (UI-2). */
 export type TaskView = Exclude<
   View,
   | 'habits'
   | RewardsView
   | 'level'
   | 'lists'
+  | 'goals'
   | 'tags'
   | 'notes'
   | 'balance'
@@ -184,24 +195,24 @@ export const UNDER_REFLECT = ['balance', 'activity', 'journal'] as const satisfi
 
 /**
  * The pages More's own page lists — the ones a phone's bar has no tab for — in
- * the order the sidebar lists them (UI-30, UI-45): Lists (UI-34), the Level
- * (LVL-10), Modes, with each mode's page under it (MODE-1), Organize,
+ * the order the sidebar lists them (UI-30, UI-45): Lists (UI-34), Goals
+ * (GOAL-19), the Level (LVL-10), Modes, with each mode's page under it (MODE-1), Organize,
  * with Tags and the notes under it (UI-81), Reflect, with Balance, the
  * activity log and the journal under it (UI-83), and Notifications, with the
  * notices waiting (NOTIF-1). The sidebar has an entry for every one of them,
  * and so none for More.
  */
-export const ON_MORE = ['lists', 'level', 'modes', 'organize', 'reflect', 'notifications'] as const satisfies readonly FixedView[]
+export const ON_MORE = ['lists', 'goals', 'level', 'modes', 'organize', 'reflect', 'notifications'] as const satisfies readonly FixedView[]
 
 /**
  * The pages the More tab stands for while one of them is open — the ones on its
  * page (`ON_MORE`) the bar reaches from nowhere else, and so everything under
- * Modes, Organize and Reflect too. Lists is listed on More but left out here: Tasks is the tab
+ * Goals, Modes, Organize and Reflect too. Lists is listed on More but left out here: Tasks is the tab
  * marked while it is open (UI-34), so More standing for it too would mark two at
  * once. Adding a page to More's page is deciding both: whether it is listed
  * there, and whether it is reached only from there.
  */
-export const UNDER_MORE = ['level', 'modes', 'organize', 'reflect', 'notifications'] as const satisfies readonly FixedView[]
+export const UNDER_MORE = ['goals', 'level', 'modes', 'organize', 'reflect', 'notifications'] as const satisfies readonly FixedView[]
 
 /** The views named after a period, which a phone keeps behind a single tab. */
 export type PeriodView = 'today' | 'tomorrow' | 'week' | 'month'
@@ -209,7 +220,9 @@ export type PeriodView = 'today' | 'tomorrow' | 'week' | 'month'
 export const PERIOD_VIEWS: readonly PeriodView[] = ['today', 'tomorrow', 'week', 'month']
 
 export function isTaskView(view: View): view is TaskView {
-  return view === 'tasks' || view === 'inbox' || isPeriodView(view) || isOneListView(view) || isTagView(view)
+  return (
+    view === 'tasks' || view === 'inbox' || isPeriodView(view) || isOneListView(view) || isTagView(view) || isGoalView(view)
+  )
 }
 
 export function isPeriodView(view: View): view is PeriodView {
@@ -224,8 +237,16 @@ export function isTagView(view: View): view is TagView {
   return view.startsWith('tag/')
 }
 
+export function isGoalView(view: View): view is GoalView {
+  return view.startsWith('goal/')
+}
+
 export function oneListView(id: ListId): OneListView {
   return `list/${id}`
+}
+
+export function goalView(id: GoalId): GoalView {
+  return `goal/${id}`
 }
 
 export function tagView(tag: string): TagView {
@@ -235,15 +256,16 @@ export function tagView(tag: string): TagView {
 /**
  * Whether being on `view` is being somewhere under `menu` in the navigation: on
  * it, or on one of the screens opened from it — a list or the Inbox under Lists,
- * a tag's tasks under Tags, the history, the wishlist and the rules under
+ * a tag's tasks under Tags, a goal's under Goals, the history, the wishlist and the rules under
  * Rewards, each mode's page under Modes, Tags, the notes and a tag's tasks
  * under Organize, Balance, the activity log and the journal under Reflect, and
- * Modes, Organize, Reflect, whatever is under them and Notifications under More.
+ * Goals, Modes, Organize, Reflect, whatever is under them and Notifications under More.
  */
 export function isUnder(view: View, menu: View): boolean {
   if (view === menu) return true
   if (menu === 'lists') return isOneListView(view) || view === 'inbox'
   if (menu === 'tags') return isTagView(view)
+  if (menu === 'goals') return isGoalView(view)
   if (menu === 'rewards') return isRewardsView(view)
   if (menu === 'modes') return isModesView(view)
   if (menu === 'organize') return (UNDER_ORGANIZE as readonly View[]).includes(view) || isTagView(view)
@@ -251,6 +273,7 @@ export function isUnder(view: View, menu: View): boolean {
   if (menu === 'more') {
     return (
       (UNDER_MORE as readonly View[]).includes(view) ||
+      isUnder(view, 'goals') ||
       isUnder(view, 'modes') ||
       isUnder(view, 'organize') ||
       isUnder(view, 'reflect')
@@ -288,16 +311,17 @@ export function sectionOf(view: View): SectionView | null {
  * tree whose top is the bar's tabs — the periods, Tasks, Habits, Rewards, More
  * and Settings. Under Tasks are Lists and the Trash, its two buttons (UI-34);
  * under Lists the Inbox and each list; under Rewards its five pages (RWD-19);
- * under More the Level, Modes, Organize, Reflect and Notifications (UI-45); under
- * Modes each mode's page (MODE-7); under Organize Tags and the notes (UI-81);
- * under Reflect Balance, the activity log and the journal (UI-83); and under
- * Tags each tag's tasks. This is what the back button climbs,
+ * under More Goals, the Level, Modes, Organize, Reflect and Notifications (UI-45); under
+ * Goals each goal's tasks (GOAL-10); under Modes each mode's page (MODE-7); under
+ * Organize Tags and the notes (UI-81); under Reflect Balance, the activity log and
+ * the journal (UI-83); and under Tags each tag's tasks. This is what the back button climbs,
  * so a page is left the way it was reached rather than the way it happened to
  * be arrived at.
  */
 export function parentView(view: View): View | null {
   if (isOneListView(view) || view === 'inbox') return 'lists'
   if (isTagView(view)) return 'tags'
+  if (isGoalView(view)) return 'goals'
   if (view === 'lists' || view === 'trash') return 'tasks'
   if ((UNDER_MORE as readonly View[]).includes(view)) return 'more'
   if ((UNDER_ORGANIZE as readonly View[]).includes(view)) return 'organize'
@@ -319,6 +343,11 @@ export function viewListId(view: OneListView): ListId {
   return view.slice('list/'.length)
 }
 
+/** The goal a goal's view is of. */
+export function viewGoalId(view: GoalView): GoalId {
+  return view.slice('goal/'.length)
+}
+
 /** The tag a tag's view is of. */
 export function viewTag(view: TagView): string {
   return view.slice('tag/'.length)
@@ -328,8 +357,9 @@ export function viewTag(view: TagView): string {
  * Whether a live task is one the view shows. Today, Week and Month are named
  * after the periods the progress bars count, and each shows its own; Tomorrow
  * shows what is due tomorrow and nothing gathered up from before; a list's
- * view shows what is filed under it, the Inbox what is filed nowhere, and a
- * tag's the tasks carrying it, whatever case it is named in.
+ * view shows what is filed under it, the Inbox what is filed nowhere, a
+ * tag's the tasks carrying it, whatever case it is named in, and a goal's the
+ * tasks serving it.
  *
  * `lists` is every list there is, which the Inbox needs: a task naming a list
  * that has gone is in the Inbox, so nothing is out of reach of every view at once.
@@ -339,6 +369,7 @@ export function showsTask(view: TaskView, task: Task, now: Date, lists: readonly
   if (view === 'inbox') return isInInbox(task, lists)
   if (isOneListView(view)) return isInList(task, viewListId(view))
   if (isTagView(view)) return hasTag(task, viewTag(view))
+  if (isGoalView(view)) return servesGoal(task, viewGoalId(view))
   if (view === 'tomorrow') return isDueTomorrow(task, now)
   return isInPeriod(task, view, now)
 }
@@ -367,7 +398,7 @@ export function viewShowingTask(task: Task, current: View, now: Date, lists: rea
 }
 
 /**
- * A list's spans — the Inbox's, one list's or one tag's: today's work apart,
+ * A list's spans — the Inbox's, one list's, one tag's or one goal's: today's work apart,
  * then the week and the month back from it. Yesterday is part of the week here
  * rather than a span of its own.
  */
@@ -381,9 +412,9 @@ const TASKS_FOLDED: readonly CompletionSpan[] = ['yesterday', 'last7Days', 'last
 
 const NONE_FOLDED: readonly CompletionSpan[] = []
 
-/** The views that are a list of tasks kept together, rather than a period's: the Inbox, a list's and a tag's. */
+/** The views that are a list of tasks kept together, rather than a period's: the Inbox, a list's, a tag's and a goal's. */
 function isListLike(view: TaskView): boolean {
-  return view === 'inbox' || isOneListView(view) || isTagView(view)
+  return view === 'inbox' || isOneListView(view) || isTagView(view) || isGoalView(view)
 }
 
 /**
@@ -416,8 +447,8 @@ export function foldedSpans(view: TaskView): readonly CompletionSpan[] {
  * The tasks a view's done spans are drawn from, as the server counts them, to
  * ask whether any of them is history not loaded yet (STORE-55): every task on
  * Tasks, the ones in no list for the Inbox, a list's own, a tag's — spelled as
- * the tag is kept, `known` being every tag there is. Null for a view with no
- * spans to fold.
+ * the tag is kept, `known` being every tag there is — and a goal's. Null for a
+ * view with no spans to fold.
  */
 export function historyScope(view: TaskView, known: readonly string[] = []): TaskScope | null {
   if (view === 'tasks') return { kind: 'all' }
@@ -427,6 +458,7 @@ export function historyScope(view: TaskView, known: readonly string[] = []): Tas
     const tag = viewTag(view)
     return { kind: 'tag', tag: known.find((name) => sameTag(name, tag)) ?? tag }
   }
+  if (isGoalView(view)) return { kind: 'goal', goalId: viewGoalId(view) }
   return null
 }
 
@@ -449,6 +481,11 @@ export function newTaskListId(view: TaskView): ListId | null {
   return isOneListView(view) ? viewListId(view) : null
 }
 
+/** The goal a task added to the view serves: a goal's view links it there (GOAL-11). Everywhere else, none. */
+export function newTaskGoalId(view: TaskView): GoalId | null {
+  return isGoalView(view) ? viewGoalId(view) : null
+}
+
 export const VIEW_LABELS: Record<FixedView, string> = {
   today: 'Today',
   tomorrow: 'Tomorrow',
@@ -465,6 +502,7 @@ export const VIEW_LABELS: Record<FixedView, string> = {
   'rewards/rules': 'Rules',
   level: 'Level',
   lists: 'Lists',
+  goals: 'Goals',
   tags: 'Tags',
   notes: 'Notes',
   balance: 'Balance',
@@ -486,13 +524,18 @@ export const VIEW_LABELS: Record<FixedView, string> = {
 /**
  * What a view is called: its name, for a tag's view the tag, and for a list's
  * the list's name — which only the lists themselves can say, so a view of a
- * list not among them is named as the Inbox it shows as.
+ * list not among them is named as the Inbox it shows as. A goal's is the goal's
+ * name, which only the goals can say, and Goals for one not among them.
  */
-export function viewLabel(view: View, lists: readonly List[] = []): string {
+export function viewLabel(view: View, lists: readonly List[] = [], goals: readonly Goal[] = []): string {
   if (isTagView(view)) return viewTag(view)
   if (isOneListView(view)) {
     const id = viewListId(view)
     return lists.find((list) => list.id === id)?.name ?? VIEW_LABELS.inbox
+  }
+  if (isGoalView(view)) {
+    const id = viewGoalId(view)
+    return goals.find((goal) => goal.id === id)?.name ?? VIEW_LABELS.goals
   }
   return VIEW_LABELS[view]
 }
@@ -505,10 +548,10 @@ function isFixedView(name: string): name is FixedView {
 }
 
 /**
- * Where a view lives in the address — `#/week`, `#/list/8f3…`, `#/tag/work` — so
+ * Where a view lives in the address — `#/week`, `#/list/8f3…`, `#/goal/2c9…`, `#/tag/work` — so
  * a reload, a bookmark or the back button lands on it. After the `#`, so any
  * host serves it as the one page the app is. A tag is escaped, being whatever
- * was typed; a list's id needs no escaping, being a UUID.
+ * was typed; a list's or a goal's id needs no escaping, being a UUID.
  */
 export function viewHash(view: View): string {
   return isTagView(view) ? `#/tag/${encodeURIComponent(viewTag(view))}` : `#/${view}`
@@ -524,6 +567,11 @@ export function viewFromHash(hash: string): View | null {
   if (name.startsWith('list/')) {
     const id = decoded(name.slice('list/'.length))
     return id !== null && id !== '' ? oneListView(id) : null
+  }
+
+  if (name.startsWith('goal/')) {
+    const id = decoded(name.slice('goal/'.length))
+    return id !== null && id !== '' ? goalView(id) : null
   }
 
   if (!name.startsWith('tag/')) return null
@@ -542,7 +590,7 @@ function decoded(part: string): string | null {
 }
 
 /** What each view says when it has nothing in it. */
-export function emptyMessage(view: TaskView, lists: readonly List[] = []): string {
+export function emptyMessage(view: TaskView, lists: readonly List[] = [], goals: readonly Goal[] = []): string {
   switch (view) {
     case 'today':
       return 'A fresh day. Add a task to get going.'
@@ -557,6 +605,7 @@ export function emptyMessage(view: TaskView, lists: readonly List[] = []): strin
     case 'inbox':
       return 'Nothing unfiled. Add a task, or find one in a list.'
     default:
+      if (isGoalView(view)) return `Nothing serves ${viewLabel(view, lists, goals)} yet. Add a task to move it forward.`
       return isOneListView(view)
         ? `Nothing in ${viewLabel(view, lists)} yet. Add a task to put it there.`
         : `Nothing tagged ${viewTag(view)} yet. Add a task to tag it.`
@@ -564,7 +613,7 @@ export function emptyMessage(view: TaskView, lists: readonly List[] = []): strin
 }
 
 /** What each view says once everything in it is done. */
-export function allDoneMessage(view: TaskView, lists: readonly List[] = []): string {
+export function allDoneMessage(view: TaskView, lists: readonly List[] = [], goals: readonly Goal[] = []): string {
   switch (view) {
     case 'today':
       return 'Everything for today is done. Great work!'
@@ -579,6 +628,7 @@ export function allDoneMessage(view: TaskView, lists: readonly List[] = []): str
     case 'inbox':
       return 'The Inbox is clear. Great work!'
     default:
+      if (isGoalView(view)) return `Every task for ${viewLabel(view, lists, goals)} is done. Goal reached!`
       return isOneListView(view)
         ? `Everything in ${viewLabel(view, lists)} is done. Great work!`
         : `Everything tagged ${viewTag(view)} is done. Great work!`

@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from 'react'
-import { FEATURE_PARENT, FEATURES, isFeatureOn, type Feature, type FeaturesOff } from '../../core'
-import { FEATURE_LABELS } from '../featureLabels'
+import { FEATURE_PARENT, isFeatureOn, type Feature, type FeaturesOff } from '../../core'
+import { FEATURE_GROUPS, FEATURE_LABELS } from '../featureLabels'
 import { VIEW_ICONS, type ViewIcon } from '../viewIcons'
 import { ChevronIcon } from './ChevronIcon'
 import { ClockIcon } from './ClockIcon'
@@ -15,6 +15,7 @@ const FEATURE_ICONS: Readonly<Record<Feature, ViewIcon>> = {
   cases: VIEW_ICONS['rewards/cases'],
   levels: VIEW_ICONS.level,
   lists: VIEW_ICONS.lists,
+  goals: VIEW_ICONS.goals,
   tags: VIEW_ICONS.tags,
   notes: VIEW_ICONS.notes,
   balance: VIEW_ICONS.balance,
@@ -53,7 +54,8 @@ const foldButton =
 
 /**
  * The switches under Features on Settings (FEAT-1): one for each part of the
- * app that can be done without, saying what it is under its name. A part of
+ * app that can be done without, saying what it is under its name, in groups by
+ * what the parts are for, each under a heading of its own (FEAT-11). A part of
  * another — Cases of Rewards, Balance of Tags — sits indented under it, and is
  * offered only while that one is on (FEAT-4): a switch that does nothing until
  * something else is turned on would only puzzle.
@@ -73,55 +75,66 @@ export function FeatureSwitches({ off, loading, onChange, settings = {} }: Featu
   if (loading) return <p className="text-sm text-neutral-400 dark:text-neutral-500">Loading…</p>
 
   return (
-    <div className="-mx-2 flex flex-col">
-      {FEATURES.map((feature) => {
-        const parent = FEATURE_PARENT[feature]
-        if (parent !== undefined && !isFeatureOn(off, parent)) return null
-
-        const { name, description } = FEATURE_LABELS[feature]
-        const Icon = FEATURE_ICONS[feature]
-        const own = isFeatureOn(off, feature) ? settings[feature] : undefined
-        const ownId = `${foldId}-${feature}`
-
+    <div className="-mx-2 flex flex-col gap-3">
+      {FEATURE_GROUPS.map((group) => {
+        const headingId = `${foldId}-${group.name}`
         return (
-          // Indented under what it is part of, so it reads as part of it.
-          <div key={feature} className={parent === undefined ? undefined : 'pl-8'}>
-            <div className="flex items-center">
-              <span className={gutter}>
-                {own !== undefined && (
-                  <button
-                    type="button"
-                    onClick={() => { own.onOpenChange(!own.open) }}
-                    aria-expanded={own.open}
-                    aria-controls={own.open ? ownId : undefined}
-                    aria-label={`${name} settings`}
-                    className={foldButton}
-                  >
-                    <ChevronIcon className={`size-4 transition-transform ${own.open ? '' : '-rotate-90'}`} />
-                  </button>
-                )}
-              </span>
-              <div className="min-w-0 flex-1">
-                <OptionSwitch
-                  icon={<Icon />}
-                  label={name}
-                  description={description}
-                  checked={!off.includes(feature)}
-                  onChange={(on) => { onChange(feature, on) }}
-                />
-              </div>
-            </div>
-            {own?.open === true && (
-              // A line down from the middle of the feature's icon, and the settings beside it under its name.
-              <div
-                id={ownId}
-                role="group"
-                aria-label={`${name} settings`}
-                className="ml-14 flex flex-col border-l border-neutral-200 pl-[17px] dark:border-neutral-700"
-              >
-                {own.children}
-              </div>
-            )}
+          <div key={group.name} role="group" aria-labelledby={headingId}>
+            {/* Level with the switches' icons, so the names under it read as its list. */}
+            <h3 id={headingId} className="pt-1 pb-0.5 pl-10 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+              {group.name}
+            </h3>
+            {group.features.map((feature) => {
+              const parent = FEATURE_PARENT[feature]
+              if (parent !== undefined && !isFeatureOn(off, parent)) return null
+
+              const { name, description } = FEATURE_LABELS[feature]
+              const Icon = FEATURE_ICONS[feature]
+              const own = isFeatureOn(off, feature) ? settings[feature] : undefined
+              const ownId = `${foldId}-${feature}`
+
+              return (
+                // Indented under what it is part of, so it reads as part of it.
+                <div key={feature} className={parent === undefined ? undefined : 'pl-8'}>
+                  <div className="flex items-center">
+                    <span className={gutter}>
+                      {own !== undefined && (
+                        <button
+                          type="button"
+                          onClick={() => { own.onOpenChange(!own.open) }}
+                          aria-expanded={own.open}
+                          aria-controls={own.open ? ownId : undefined}
+                          aria-label={`${name} settings`}
+                          className={foldButton}
+                        >
+                          <ChevronIcon className={`size-4 transition-transform ${own.open ? '' : '-rotate-90'}`} />
+                        </button>
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <OptionSwitch
+                        icon={<Icon />}
+                        label={name}
+                        description={description}
+                        checked={!off.includes(feature)}
+                        onChange={(on) => { onChange(feature, on) }}
+                      />
+                    </div>
+                  </div>
+                  {own?.open === true && (
+                    // A line down from the middle of the feature's icon, and the settings beside it under its name.
+                    <div
+                      id={ownId}
+                      role="group"
+                      aria-label={`${name} settings`}
+                      className="ml-14 flex flex-col border-l border-neutral-200 pl-[17px] dark:border-neutral-700"
+                    >
+                      {own.children}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )
       })}

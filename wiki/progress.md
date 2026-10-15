@@ -1,6 +1,6 @@
 # Progress
 
-Three bars in the rail beside the task list — below it on a phone — showing how much of each period is cleared. They are
+Three bars in the rail beside Today, Tomorrow, Week and Month (UI-2) — below the list on a phone — showing how much of each period is cleared. They are
 the picture of where the day, the week and the month stand. The points a task earns are counted
 separately, on the [Rewards](rewards.md) pages — where clearing a bar of its own earns a bonus (RWD-29).
 

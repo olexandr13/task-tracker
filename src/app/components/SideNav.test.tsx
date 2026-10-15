@@ -75,7 +75,7 @@ describe('SideNav', () => {
     expect(screen.getByText('PickMe')).toBeTruthy()
   })
 
-  it('groups the work, what pushes it along, Organize and Reflect, with each mode under Modes, Tags and the notes under Organize, Balance, the activity log and the journal under Reflect, none for any one tag and none for More (UI-30, UI-45, UI-81, UI-83, TAG-17, RWD-19, LST-13, MODE-1, MODE-7, NOTE-1, BAL-1, ACT-1, JRN-1)', () => {
+  it('groups the work, what pushes it along, Organize and Reflect, with each mode under Modes, Tags and the notes under Organize, Balance, the activity log and the journal under Reflect, none for any one tag or goal and none for More (UI-30, UI-45, UI-81, UI-83, TAG-17, GOAL-16, RWD-19, LST-13, MODE-1, MODE-7, NOTE-1, BAL-1, ACT-1, JRN-1)', () => {
     setup('today')
 
     const folds = [foldButton(), rewardsFoldButton(), modesFoldButton(), organizeFoldButton(), reflectFoldButton()]
@@ -89,6 +89,7 @@ describe('SideNav', () => {
       'Tasks',
       'Lists',
       'Inbox',
+      'Goals',
       'Level',
       'Rewards',
       'Cases',
@@ -588,7 +589,7 @@ describe('SideNav', () => {
 
     expect(rows([])).toEqual([
       'Today', 'Tomorrow', 'Week', 'Month', '—',
-      'Habits', 'Tasks', 'Lists', '—',
+      'Habits', 'Tasks', 'Lists', 'Goals', '—',
       'Level', 'Rewards', 'Modes', '—',
       'Organize', '—',
       'Reflect', '—',
@@ -598,7 +599,7 @@ describe('SideNav', () => {
     ])
     expect(rows(['balance', 'activity', 'journal'])).toEqual([
       'Today', 'Tomorrow', 'Week', 'Month', '—',
-      'Habits', 'Tasks', 'Lists', '—',
+      'Habits', 'Tasks', 'Lists', 'Goals', '—',
       'Level', 'Rewards', 'Modes', '—',
       'Organize', '—',
       'Notifications', '—',
@@ -607,7 +608,18 @@ describe('SideNav', () => {
     ])
     expect(rows(['levels', 'rewards', 'modes'])).toEqual([
       'Today', 'Tomorrow', 'Week', 'Month', '—',
+      'Habits', 'Tasks', 'Lists', 'Goals', '—',
+      'Organize', '—',
+      'Reflect', '—',
+      'Notifications', '—',
+      'Trash', '—',
+      'Settings',
+    ])
+    // Goals goes with its switch, the rest of its group staying (GOAL-20).
+    expect(rows(['goals'])).toEqual([
+      'Today', 'Tomorrow', 'Week', 'Month', '—',
       'Habits', 'Tasks', 'Lists', '—',
+      'Level', 'Rewards', 'Modes', '—',
       'Organize', '—',
       'Reflect', '—',
       'Notifications', '—',
@@ -617,7 +629,7 @@ describe('SideNav', () => {
     // Notifications is a group of its own, gone with its switch (NOTIF-8).
     expect(rows(['notifications'])).toEqual([
       'Today', 'Tomorrow', 'Week', 'Month', '—',
-      'Habits', 'Tasks', 'Lists', '—',
+      'Habits', 'Tasks', 'Lists', 'Goals', '—',
       'Level', 'Rewards', 'Modes', '—',
       'Organize', '—',
       'Reflect', '—',
@@ -628,7 +640,7 @@ describe('SideNav', () => {
     // activity log and the journal, Balance going with the tags (FEAT-4).
     expect(rows(['tags', 'notes'])).toEqual([
       'Today', 'Tomorrow', 'Week', 'Month', '—',
-      'Habits', 'Tasks', 'Lists', '—',
+      'Habits', 'Tasks', 'Lists', 'Goals', '—',
       'Level', 'Rewards', 'Modes', '—',
       'Reflect', '—',
       'Notifications', '—',

@@ -75,6 +75,8 @@ export function scopeFilters(scope: TaskScope): TaskFilter[] {
       return [['task.listId', '==', scope.listId]]
     case 'tag':
       return [['task.tags', 'array-contains', scope.tag]]
+    case 'goal':
+      return [['task.goalId', '==', scope.goalId]]
   }
 }
 

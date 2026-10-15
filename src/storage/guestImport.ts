@@ -3,6 +3,7 @@ import type { ActivityRepository } from './activityRepository'
 import type { CategoryRepository } from './categoryRepository'
 import type { CheckInRepository } from './checkInRepository'
 import type { FeatureRepository } from './featureRepository'
+import type { GoalRepository } from './goalRepository'
 import type { HabitSettingsRepository } from './habitSettingsRepository'
 import type { JournalRepository } from './journalRepository'
 import type { ListRepository } from './listRepository'
@@ -11,6 +12,7 @@ import { clearGuestAccount } from './localBackupRepository'
 import { loadGuestCategories } from './localCategoryRepository'
 import { loadGuestCheckIn } from './localCheckInRepository'
 import { loadGuestFeatures } from './localFeatureRepository'
+import { loadGuestGoals } from './localGoalRepository'
 import { loadGuestHabitRests } from './localHabitSettingsRepository'
 import { loadGuestJournal } from './localJournalRepository'
 import { loadGuestLists } from './localListRepository'
@@ -39,6 +41,7 @@ import type { XpRepository } from './xpRepository'
 export async function importGuestAccount(
   tasks: TaskRepository,
   lists: ListRepository,
+  goals: GoalRepository,
   tags: TagRepository,
   prizes: PrizeRepository,
   rewards: RewardRepository,
@@ -55,6 +58,7 @@ export async function importGuestAccount(
 ): Promise<void> {
   const guestTasks = loadGuestTasks()
   const guestLists = loadGuestLists()
+  const guestGoals = loadGuestGoals()
   const guestTags = loadGuestTags()
   const guestPrizes = loadGuestPrizes()
   const ledger = loadGuestLedger()
@@ -72,6 +76,7 @@ export async function importGuestAccount(
   const empty =
     guestTasks.length === 0 &&
     guestLists.length === 0 &&
+    guestGoals.length === 0 &&
     guestTags.length === 0 &&
     guestPrizes.length === 0 &&
     ledger.entries.length === 0 &&
@@ -101,6 +106,7 @@ export async function importGuestAccount(
 
   if (guestTasks.length > 0) await tasks.importTasks(guestTasks)
   if (guestLists.length > 0) await lists.save({ saved: guestLists, removed: [] })
+  if (guestGoals.length > 0) await goals.save({ saved: guestGoals, removed: [] })
   if (guestTags.length > 0) await tags.save({ saved: guestTags, removed: [] })
   if (guestPrizes.length > 0) await prizes.save({ saved: guestPrizes, removed: [] })
   if (guestCategories.length > 0) await categories.save({ saved: guestCategories, removed: [] })

@@ -10,13 +10,13 @@ import {
   rewardsPagesShown,
   sectionPagesShown,
 } from './features'
-import { oneListView, tagView } from './view'
+import { goalView, oneListView, tagView } from './view'
 
 /* Which pages a feature switched off takes away. FEAT ids refer to wiki/features.md. */
 
 describe('the pages there are (FEAT-2)', () => {
   it('is every one while nothing is switched off', () => {
-    for (const view of ['habits', 'rewards', 'rewards/cases', 'lists', 'inbox', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'organize', 'reflect', 'more'] as const) {
+    for (const view of ['habits', 'rewards', 'rewards/cases', 'lists', 'inbox', 'goals', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'organize', 'reflect', 'more'] as const) {
       expect(isViewOn(view, [])).toBe(true)
     }
   })
@@ -26,6 +26,8 @@ describe('the pages there are (FEAT-2)', () => {
     expect(isViewOn('rewards/history', ['rewards'])).toBe(false)
     expect(isViewOn(oneListView('list-1'), ['lists'])).toBe(false)
     expect(isViewOn('inbox', ['lists'])).toBe(false)
+    expect(isViewOn('goals', ['goals'])).toBe(false)
+    expect(isViewOn(goalView('goal-1'), ['goals'])).toBe(false)
     expect(isViewOn(tagView('work'), ['tags'])).toBe(false)
     expect(isViewOn('modes/nudge', ['modes'])).toBe(false)
     expect(isViewOn('journal', ['journal'])).toBe(false)
@@ -61,7 +63,7 @@ describe('the pages there are (FEAT-2)', () => {
     expect(isViewOn('more', ['lists', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes'])).toBe(true)
     expect(isViewOn('more', ['levels', 'lists', 'tags', 'notes', 'balance', 'activity', 'journal', 'notifications'])).toBe(true)
     expect(
-      isViewOn('more', ['levels', 'lists', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'notifications']),
+      isViewOn('more', ['levels', 'lists', 'goals', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'notifications']),
     ).toBe(false)
   })
 
@@ -71,7 +73,7 @@ describe('the pages there are (FEAT-2)', () => {
   })
 
   it('never takes the tasks, the trash or settings away', () => {
-    const everything = ['habits', 'rewards', 'lists', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'progress', 'quote', 'reminders'] as const
+    const everything = ['habits', 'rewards', 'lists', 'goals', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'progress', 'quote', 'reminders'] as const
     for (const view of ['today', 'week', 'month', 'tasks', 'trash', 'settings'] as const) {
       expect(isViewOn(view, everything)).toBe(true)
     }
@@ -86,6 +88,7 @@ describe('where the address of a page switched off lands (FEAT-2)', () => {
   it('climbs to the nearest page above it that is on', () => {
     expect(nearestViewOn('rewards/cases', ['cases'])).toBe('rewards')
     expect(nearestViewOn(oneListView('list-1'), ['lists'])).toBe('tasks')
+    expect(nearestViewOn(goalView('goal-1'), ['goals'])).toBe('more')
     expect(nearestViewOn('modes/check-in', ['activity'])).toBe('modes')
     expect(nearestViewOn('balance', ['balance'])).toBe('reflect')
     expect(nearestViewOn('journal', ['journal'])).toBe('reflect')
@@ -100,7 +103,7 @@ describe('where the address of a page switched off lands (FEAT-2)', () => {
     expect(nearestViewOn('habits', ['habits'])).toBe('today')
     expect(nearestViewOn('rewards/history', ['rewards'])).toBe('today')
     expect(
-      nearestViewOn('modes', ['levels', 'lists', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'notifications']),
+      nearestViewOn('modes', ['levels', 'lists', 'goals', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'notifications']),
     ).toBe('today')
   })
 
@@ -120,10 +123,10 @@ describe('what the lists of pages hold', () => {
   })
 
   it('leaves out More’s pages that are off, Reflect once Balance goes with the tags it divides time by (FEAT-4)', () => {
-    expect(morePagesShown([])).toEqual(['lists', 'level', 'modes', 'organize', 'reflect', 'notifications'])
-    expect(morePagesShown(['levels', 'notes', 'activity', 'journal', 'modes'])).toEqual(['lists', 'organize', 'reflect', 'notifications'])
-    expect(morePagesShown(['levels', 'tags', 'notes', 'modes', 'notifications'])).toEqual(['lists', 'reflect'])
-    expect(morePagesShown(['levels', 'tags', 'activity', 'journal'])).toEqual(['lists', 'modes', 'organize', 'notifications'])
+    expect(morePagesShown([])).toEqual(['lists', 'goals', 'level', 'modes', 'organize', 'reflect', 'notifications'])
+    expect(morePagesShown(['levels', 'notes', 'activity', 'journal', 'modes'])).toEqual(['lists', 'goals', 'organize', 'reflect', 'notifications'])
+    expect(morePagesShown(['levels', 'goals', 'tags', 'notes', 'modes', 'notifications'])).toEqual(['lists', 'reflect'])
+    expect(morePagesShown(['levels', 'goals', 'tags', 'activity', 'journal'])).toEqual(['lists', 'modes', 'organize', 'notifications'])
   })
 
   it('leaves out Organize’s pages that are off (UI-81)', () => {

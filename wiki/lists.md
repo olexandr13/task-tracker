@@ -36,7 +36,7 @@ reasons; requirements here are `LST-`.
 
 - **LST-8** Every list has **a view of its own**, opened from the Lists page (LST-13): the live
   tasks filed under it. It shows what Tasks shows otherwise (LIST-7) — the same rows, overdue
-  floating, done sinking, dragging, the rail — its done tasks divided as the Inbox's are (TASK-72),
+  floating, done sinking, dragging, no rail (UI-2) — its done tasks divided as the Inbox's are (TASK-72),
   and **Lists** stays marked in the sidebar while it is open. It is in
   the address as `#/list/{id}` (UI-36), by the list's id, so a rename does not break a bookmark.
 - **LST-9** A task added in a list's view **goes into that list**, and has no day, as in Tasks.

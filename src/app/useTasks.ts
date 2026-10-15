@@ -5,6 +5,7 @@ import {
   canRest,
   canSkipOccurrence,
   changeTimeEntry,
+  clearGoal,
   clearList,
   completeTask,
   createTask,
@@ -26,6 +27,7 @@ import {
   moveSubtask,
   moveTask,
   moveToEndOfHabits,
+  linkToGoal,
   moveToList,
   penaltyChanges,
   purgeExpired,
@@ -55,6 +57,7 @@ import {
   withPeriodBonuses,
   NO_BONUSES,
   type HabitRests,
+  type GoalId,
   type ListId,
   type LocalDay,
   type LocalTime,
@@ -281,6 +284,8 @@ export function useTasks(
         timeGoal?: number | null
         timeLog?: readonly { minutes: number; comment: string | null }[]
         subtasks?: readonly { title: string; done: boolean }[]
+        /** The goal it serves (GOAL-11), or none. */
+        goalId?: GoalId | null
       } = {},
     ) => {
       apply((current) => {
@@ -289,6 +294,9 @@ export function useTasks(
         // a new task with an hour and no day of any kind would have no moment to
         // be due at, so the hour is simply not taken.
         let task = moveToList(scheduleOn(createTask(title, repeat), day, new Date()), listId)
+        if (details.goalId !== undefined && details.goalId !== null) {
+          task = linkToGoal(task, details.goalId)
+        }
         if (time !== null && hasDueDay(task)) {
           task = setDueTime(task, time)
         }
@@ -551,6 +559,25 @@ export function useTasks(
     [apply],
   )
 
+  /** Links a task to a goal, or to none with null (GOAL-2). */
+  const changeGoal = useCallback(
+    (id: TaskId, goalId: GoalId | null) => {
+      apply((current) => current.map((task) => (task.id === id ? linkToGoal(task, goalId) : task)))
+    },
+    [apply],
+  )
+
+  /**
+   * Unlinks every task from a goal, the trash too, the tasks themselves staying
+   * (GOAL-17). The goal record is deleted separately (useGoals).
+   */
+  const clearGoalEverywhere = useCallback(
+    (goalId: GoalId) => {
+      apply((current) => clearGoal(current, goalId))
+    },
+    [apply],
+  )
+
   /** Marks a habit done on a day up to today, or not done. */
   const setHabitDay = useCallback(
     (id: TaskId, day: LocalDay, done: boolean) => {
@@ -681,6 +708,8 @@ export function useTasks(
     renameTagEverywhere,
     changeList,
     clearListEverywhere,
+    changeGoal,
+    clearGoalEverywhere,
     setHabitDay,
     addChecklistItem,
     setChecklistItemDone,

@@ -4,6 +4,7 @@ import {
   createTask,
   deleteTask,
   isHistory,
+  linkToGoal,
   moveToList,
   setDueDate,
   addTag,
@@ -135,14 +136,17 @@ describe('scopeFilters', () => {
   const filed = moveToList(task('report'), work)
   const tagged = addTag(task('walk'), 'rest')
   const loose = task('call')
+  const fit = '0b9e2f4a-6c1d-4e8b-a7f3-2d5c9e1b4a6f'
+  const serving = linkToGoal(task('run'), fit)
 
   it.each<[string, TaskScope]>([
     ['every task', { kind: 'all' }],
     ['a list', { kind: 'list', listId: work }],
     ['the Inbox', { kind: 'list', listId: null }],
     ['a tag', { kind: 'tag', tag: 'rest' }],
+    ['a goal', { kind: 'goal', goalId: fit }],
   ])('counts %s on the server as the app does (STORE-55)', (_name, scope) => {
-    for (const one of [filed, tagged, loose]) {
+    for (const one of [filed, tagged, loose, serving]) {
       const query = { key: 'scope', filters: scopeFilters(scope) }
       expect(matches(saved(one), query)).toBe(inScope(one, scope))
     }

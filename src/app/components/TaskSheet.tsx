@@ -29,6 +29,7 @@ import { describeTimeProgress } from '../durationLabels'
 import { describeDueDate, describeShortDate, describeTimeOfDay } from '../dueLabels'
 import { describeRepeatBriefly } from '../repeatLabels'
 import { useFeatureOn } from '../features'
+import { useKnownGoals } from '../goals'
 import { describeNoRest } from '../habitLabels'
 import { useRestLimit } from '../habitRests'
 import { describeReward, describeRewardHint, describeSkipCost, describeSkipCostHint } from '../rewardLabels'
@@ -41,6 +42,7 @@ import { BottomSheet } from './BottomSheet'
 import { CompletionBox } from './CompletionBox'
 import { CompletionRefusal } from './CompletionRefusal'
 import { DuplicateIcon } from './DuplicateIcon'
+import { GoalPicker } from './GoalPicker'
 import { ListPicker } from './ListPicker'
 import { RestRefusal } from './RestRefusal'
 import { RewardPicker } from './RewardPicker'
@@ -104,8 +106,10 @@ export function TaskSheet({
   timer,
   openTime = false,
 }: TaskSheetProps) {
-  // No row for a list, the tags or a reward while its feature is switched off on Settings (FEAT-3).
+  // No row for a list, a goal, the tags or a reward while its feature is switched off on Settings (FEAT-3).
   const listsOn = useFeatureOn('lists')
+  const goalsOn = useFeatureOn('goals')
+  const goals = useKnownGoals()
   const tagsOn = useFeatureOn('tags')
   const rewardsOn = useFeatureOn('rewards')
   const done = isComplete(task, now)
@@ -218,6 +222,22 @@ export function TaskSheet({
                         lists={lists}
                         onChange={(listId) => { actions.changeList(task.id, listId) }}
                         label={`List for "${task.title}"`}
+                        align="left"
+                      />
+                    ),
+                  },
+                ]
+              : []),
+            ...(goalsOn
+              ? [
+                  {
+                    name: 'Goal',
+                    control: (
+                      <GoalPicker
+                        goalId={task.goalId}
+                        goals={goals}
+                        onChange={(goalId) => { actions.changeGoal(task.id, goalId) }}
+                        label={`Goal for "${task.title}"`}
                         align="left"
                       />
                     ),

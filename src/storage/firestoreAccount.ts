@@ -10,6 +10,7 @@ import { collection, type CollectionReference, type Firestore } from 'firebase/f
 export const ACCOUNT_COLLECTIONS = [
   'tasks',
   'lists',
+  'goals',
   'tags',
   'prizes',
   'rewardDays',

@@ -11,11 +11,12 @@ import { MorePage } from './MorePage'
 afterEach(cleanup)
 
 describe('MorePage', () => {
-  it('links to Lists, the Level, Modes, Organize, Reflect and Notifications, in the sidebar\'s order (UI-30, UI-45, UI-81, UI-83, LST-24, LVL-10, MODE-1, NOTIF-1)', () => {
+  it('links to Lists, Goals, the Level, Modes, Organize, Reflect and Notifications, in the sidebar\'s order (UI-30, UI-45, UI-81, UI-83, LST-24, GOAL-19, LVL-10, MODE-1, NOTIF-1)', () => {
     render(<MorePage onOpen={vi.fn()} />)
 
     expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual([
       'Lists',
+      'Goals',
       'Level',
       'Modes',
       'Organize',
@@ -105,7 +106,7 @@ describe('MorePage', () => {
 
   it('lists no page switched off, nor Organize or Reflect once all it holds is (FEAT-2, UI-81, UI-83)', () => {
     // Balance goes with the tags it divides time by (FEAT-4).
-    const off: FeaturesOff = ['levels', 'tags', 'notes', 'modes', 'activity', 'journal', 'notifications']
+    const off: FeaturesOff = ['levels', 'goals', 'tags', 'notes', 'modes', 'activity', 'journal', 'notifications']
     render(
       <FeaturesContext value={off}>
         <MorePage onOpen={vi.fn()} />

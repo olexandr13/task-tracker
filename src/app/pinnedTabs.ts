@@ -1,6 +1,6 @@
-import { sameTag, type FeaturesOff, type List } from '../core'
+import { sameTag, type FeaturesOff, type Goal, type List } from '../core'
 import { isViewOn } from './features'
-import { isOneListView, isTagView, viewFromHash, viewHash, viewListId, viewTag, type View } from './view'
+import { isGoalView, isOneListView, isTagView, viewFromHash, viewGoalId, viewHash, viewListId, viewTag, type View } from './view'
 
 /**
  * The pinned tabs across the top of a wide screen (UI-75), as views: each saved
@@ -67,6 +67,8 @@ interface TabsShownOptions {
   readonly lists: readonly List[]
   /** Every tag there is: a tag's tab is drawn only while its tag is. */
   readonly tags: readonly string[]
+  /** Every goal there is: a goal's tab is drawn only while its goal is. */
+  readonly goals?: readonly Goal[]
 }
 
 interface TabsShown {
@@ -82,17 +84,18 @@ interface TabsShown {
  * says where you are and exactly one tab is marked.
  *
  * A tab is left out while its page is switched off (FEAT-2), or its list or tag
- * is gone — and kept, so it is back once the page is. Nothing is unpinned for
+ * or goal is gone — and kept, so it is back once the page is. Nothing is unpinned for
  * it: the lists arrive after the strip is first drawn, and unpinning what was
  * not there yet would lose every list's tab on every visit. The page open is
  * always drawn, so its tab does not wait for its list to arrive.
  */
-export function tabsShown({ pinned, view, off, lists, tags }: TabsShownOptions): TabsShown {
+export function tabsShown({ pinned, view, off, lists, tags, goals = [] }: TabsShownOptions): TabsShown {
   const isThere = (tab: View) => {
     if (tab === view) return true
     if (!isViewOn(tab, off)) return false
     if (isOneListView(tab)) return lists.some((list) => list.id === viewListId(tab))
     if (isTagView(tab)) return tags.some((tag) => sameTag(tag, viewTag(tab)))
+    if (isGoalView(tab)) return goals.some((goal) => goal.id === viewGoalId(tab))
     return true
   }
 

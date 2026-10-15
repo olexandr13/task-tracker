@@ -14,10 +14,18 @@ function saved(...without: string[]): Record<string, unknown> {
 }
 
 describe('migrateTasks', () => {
+  it('links a task saved before there were goals to none (STORE-1, GOAL-2)', () => {
+    const [task] = migrateTasks(19, [saved('goalId')]) ?? []
+
+    expect(task?.goalId).toBeNull()
+    expect(task?.dueDate).toBe('2026-09-20')
+  })
+
   it('gives each session of a task saved before comments none (STORE-1, TIME-23)', () => {
-    const [task] = migrateTasks(18, [{ ...saved(), timeLog: [{ id: 'a', seconds: 600, loggedAt: NOW.toISOString() }] }]) ?? []
+    const [task] = migrateTasks(18, [{ ...saved('goalId'), timeLog: [{ id: 'a', seconds: 600, loggedAt: NOW.toISOString() }] }]) ?? []
 
     expect(task?.timeLog).toEqual([{ id: 'a', seconds: 600, loggedAt: NOW.toISOString(), comment: null }])
+    expect(task?.goalId).toBeNull()
   })
 
   it('carries comments through from an older shape still (STORE-1)', () => {
