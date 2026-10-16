@@ -61,7 +61,8 @@ it is deleted, whether or not a task carries it.
   tasks carrying it, in any case. It shows what Tasks shows otherwise (LIST-7) — the same rows,
   urgent floating, overdue next, done sinking, dragging, no rail (UI-2) — its done tasks divided as the
   Inbox's are (TASK-72), headed with the tag's name, and **Tags** stays marked in
-  the sidebar while it is open. It is in the address as `#/tag/name` (UI-36), so it survives a
+  the sidebar while it is open; a **‹ Tags** link atop it goes back there (UI-85). It is in the
+  address as `#/tag/name` (UI-36), so it survives a
   reload even when no task carries the tag, when it says there is nothing tagged yet.
 - **TAG-14** A task added in a tag's list **carries that tag**, and has no day, as in Tasks.
 - **TAG-15** Once everything in a tag's list is done, it praises the work (TASK-50).

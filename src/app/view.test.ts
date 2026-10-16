@@ -17,6 +17,7 @@ import {
   sectionOf,
   showsTask,
   tagView,
+  upLinkOf,
   viewLabel,
   viewShowingTask,
 } from './view'
@@ -122,6 +123,21 @@ describe('sectionOf (UI-84)', () => {
   it('leaves out a tag\'s tasks, a step further down, and every page of no section', () => {
     for (const view of [tagView('work'), 'today', 'tasks', 'habits', 'level', 'more', 'notifications', 'trash', 'settings'] as const) {
       expect(sectionOf(view)).toBeNull()
+    }
+  })
+})
+
+describe('upLinkOf (UI-85)', () => {
+  it('links a goal\'s tasks back to Goals and a tag\'s back to Tags', () => {
+    expect(upLinkOf(goalView(createGoal('Get fit', NOW).id))).toBe('goals')
+    expect(upLinkOf(tagView('work'))).toBe('tags')
+  })
+
+  it('links nothing above a page with a strip, or of no section', () => {
+    const work = createList('Work', NOW)
+
+    for (const view of ['inbox', oneListView(work.id), 'rewards/cases', 'modes/nudge', 'tags', 'journal', 'goals', 'today', 'tasks', 'more', 'settings'] as const) {
+      expect(upLinkOf(view)).toBeNull()
     }
   })
 })

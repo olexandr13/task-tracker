@@ -53,7 +53,8 @@ A goal here is something many tasks add up to.
   sinking, dragging, no rail (UI-2) — its done tasks divided as the Inbox's are (TASK-72), and it is
   headed with a card naming the goal and showing **how far it has got** (GOAL-7). **Goals** stays
   marked in the sidebar while it is open; it has no entry of its own. It is in the address as
-  `#/goal/{id}` (UI-36), and back climbs to the Goals page (UI-37).
+  `#/goal/{id}` (UI-36), and back climbs to the Goals page (UI-37), as does the **‹ Goals** link
+  above the card (UI-85).
 - **GOAL-11** A task added in a goal's view — from the box, or from the Plus's sheet — **serves
   that goal**, and has no day, as in a list's view (LST-9).
 - **GOAL-12** A goal's view with nothing in it says nothing serves the goal yet and to add a task;
@@ -113,7 +114,8 @@ how far a goal has got), `src/app/goals.ts` (`GoalsContext`, every goal for what
 row or a sheet), `src/app/useGoals.ts` (the goals on screen), `src/app/useGoalHistory.ts` (counting
 each goal's history on the server), `src/app/useTasks.ts` (linking a task, unlinking a goal's tasks),
 `src/app/goalLabels.ts` (the wording), `src/app/components/GoalsPage.tsx` (the Goals page),
-`src/app/components/GoalHeader.tsx` (the head of a goal's view), `src/app/components/GoalProgressBar.tsx`
+`src/app/components/GoalHeader.tsx` (the head of a goal's view), `src/app/components/UpLink.tsx`
+(the link back to Goals), `src/app/components/GoalProgressBar.tsx`
 (the bar), `src/app/components/GoalPicker.tsx` (the panel on a woken row and a sheet),
 `src/app/components/TaskItem.tsx` (the Goal group of a task's menu), `src/app/components/TaskSheet.tsx`,
 `src/app/components/AddTaskSheet.tsx`, `src/app/view.ts` (Goals and a goal's view, their addresses

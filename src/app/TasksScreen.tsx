@@ -94,6 +94,7 @@ import { TaskList, type ListHistory } from './components/TaskList'
 import { TrashIcon } from './components/TrashIcon'
 import { TrashList } from './components/TrashList'
 import { UndoToast } from './components/UndoToast'
+import { UpLink } from './components/UpLink'
 import { ViewOptionsMenu } from './components/ViewOptionsMenu'
 import { footLink } from './footControls'
 import { CASE_DAILY_NOTICE, CASE_SHARE_NOTICE } from './caseLabels'
@@ -160,6 +161,7 @@ import {
   sectionOf,
   showsTask,
   tagView,
+  upLinkOf,
   VIEW_LABELS,
   viewGoalId,
   viewLabel,
@@ -630,6 +632,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const modesOn = modesShown(featuresOff).filter((mode) => modes[mode].on).length
   // The section whose strip runs across the top of this page, if it is in one (UI-84).
   const section = sectionOf(view)
+  const upLink = upLinkOf(view)
 
   // Same as the Procrastination switch on Modes (JUST-1, JUST-8): start when off, end when on.
   useLetterShortcut('p', procrastinationOn && view === 'today' && procrastination.available && !adding, () => {
@@ -1037,6 +1040,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                       onChange={setView}
                     />
                   )}
+                  {/* A goal's or a tag's tasks have no strip: a link back to the page they were opened from (UI-85). */}
+                  {upLink !== null && <UpLink to={upLink} onChange={setView} />}
                   {view === 'settings' ? (
                     <section aria-label="Settings">
                       <SettingsList

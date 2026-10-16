@@ -198,7 +198,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   in the sidebar's order, with the one you are on filled in. Tapping a pill goes to that page. The
   strip is on the section's own page and on each page directly under it: the Inbox and every list,
   the five rewards pages (RWD-30), each mode's page (MODE-7), Tags and Notes, Balance, the Activity
-  log and the Journal. A tag's tasks are a step further down, under Tags, and have none. It is on a
+  log and the Journal. A goal's tasks and a tag's are a step further down, under Goals and Tags, and
+  have a link back instead (UI-85). It is on a
   phone and a wide screen alike: a phone has no sidebar, so it is how to step between them there,
   and on a wide screen it saves going back to the sidebar to do it. The pills are a thumb's height
   on a phone and compact on a wide screen (UI-49). A strip longer than the screen is **scrolled
@@ -210,6 +211,14 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   Settings has no pill (FEAT-2), and a section left with nothing under it has no strip, as one pill
   would go nowhere. On a task view the strip sits above the box for adding a task, over the work
   rather than the rail. Cases keeps the dot saying a key is waiting (CHST-22).
+- **UI-85** A **goal's tasks** (GOAL-10) and a **tag's** (TAG-13) are a step below a section's
+  pages and have no strip (UI-84), so a **link back** sits where the strip would be: a chevron
+  pointing left and the name of the page they were opened from — **Goals** or **Tags**. Tapping it
+  goes there, as back does (UI-37), which matters most where nothing on screen goes back: an app
+  added to a phone's home screen has no back button of its own. A screen reader hears it as
+  *Back to Goals*. It is drawn as the strip's pills are, a thumb's height on a phone and compact on
+  a wide screen (UI-49). No other page has one: a section's pages step between themselves on the
+  strip, and the rest are reached from the bar or the sidebar.
 - **UI-8** The view you are on is marked, in the sidebar, the pinned tabs (UI-75) and the bottom bar
   alike.
 - **UI-32** The bottom bar has six tabs — fewer where a page is switched off, the rest sharing the
@@ -647,7 +656,7 @@ notch and the home indicator), `src/app/components/TaskList.tsx` (the room betwe
 add box, the View button beside it and the Plus), `src/app/components/AddTaskSheet.tsx` (the detailed add sheet), `src/app/letterShortcut.ts`
 and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet, `R` opens Rewards, `P` toggles
 Procrastination mode), `src/app/components/MorePage.tsx`, `OrganizePage.tsx` and `ReflectPage.tsx` (More's,
-Organize's and Reflect's lists of links, drawn by `PageLinks.tsx`), `src/app/components/SectionNav.tsx` (the strip across a section's pages, UI-84, its sections from `sectionOf` in `src/app/view.ts`), `src/app/components/ModesPage.tsx` and `ModePage.tsx` (the modes), `src/app/components/ViewMenu.tsx` (the View
+Organize's and Reflect's lists of links, drawn by `PageLinks.tsx`), `src/app/components/SectionNav.tsx` (the strip across a section's pages, UI-84, its sections from `sectionOf` in `src/app/view.ts`), `src/app/components/UpLink.tsx` (the link back atop a goal's or a tag's tasks, UI-85, its page from `upLinkOf` in `src/app/view.ts`), `src/app/components/ModesPage.tsx` and `ModePage.tsx` (the modes), `src/app/components/ViewMenu.tsx` (the View
 button and its panel), `src/app/components/ViewOptionsMenu.tsx` (the
 task views' options), `src/app/useDeviceSetting.ts` (keeping them on this device), `src/app/components/TagPicker.tsx` (the tag panel), `src/app/components/RewardPicker.tsx` (the reward panel), `src/app/components/TimePicker.tsx` (the time panel), `src/app/components/PickerPanel.tsx` (what all of them open: the aside beside a row, the sheet inside a sheet, UI-64), `src/app/usePanelPlacement.ts` (an aside kept inside the window, brought into view, and kept in its place on the screen as its row moves), `src/app/useLongPress.ts` (a press told from a
 long press), `src/app/useRowSwipe.ts` and `src/app/rowSwipe.ts` (a phone's swipe to complete or
@@ -668,7 +677,7 @@ line standing for a group of choices, and the way back out of the ones it opens)
 `public/favicon.svg` (the app's icon; the PNGs beside it are the same icon for installing),
 `src/app/components/AppLogo.tsx` (the mark in the sidebar).
 **Tested in:** `src/app/components/SheetActions.test.tsx` (the row of icons and its **i**), `src/app/components/InfoButton.test.tsx` (the **i** beside a heading and the sheet it opens), `src/app/components/PickerPanel.test.tsx` (the aside and the sheet), `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
-items are large enough for a finger), `src/app/components/MorePage.test.tsx`, `OrganizePage.test.tsx` and `ReflectPage.test.tsx` (More's, Organize's and Reflect's links), `src/app/components/SectionNav.test.tsx` (the strip across a section's pages), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
+items are large enough for a finger), `src/app/components/MorePage.test.tsx`, `OrganizePage.test.tsx` and `ReflectPage.test.tsx` (More's, Organize's and Reflect's links), `src/app/components/SectionNav.test.tsx` (the strip across a section's pages), `src/app/components/UpLink.test.tsx` (the link back atop a goal's or a tag's tasks), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
 view in the address, and back going a level up), `src/app/overlayHistory.test.ts` (back closing a sheet, and a sheet over a sheet first), `src/app/view.test.ts` (which view is above which), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel),
 `src/app/components/SettingsList.test.tsx` (the sections and their folding, the version, and the settings under Habits and Cases),
 `src/storage/settingsLayoutSchema.test.ts` (what is folded, read back), `src/app/useDeviceSetting.test.ts`,

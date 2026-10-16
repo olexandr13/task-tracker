@@ -307,6 +307,17 @@ export function sectionOf(view: View): SectionView | null {
 }
 
 /**
+ * The page linked atop `view` to go back to (UI-85): Goals above a goal's tasks
+ * and Tags above a tag's — the pages a step below a section's that have no strip
+ * of their own (UI-84), opened from a page listing them. Null elsewhere: a
+ * section's pages step between themselves on the strip, and a page of no section
+ * is reached from the bar or the sidebar.
+ */
+export function upLinkOf(view: View): View | null {
+  return isGoalView(view) || isTagView(view) ? parentView(view) : null
+}
+
+/**
  * The view one level above `view`, or null at the top (UI-37). The views make a
  * tree whose top is the bar's tabs — the periods, Tasks, Habits, Rewards, More
  * and Settings. Under Tasks are Lists and the Trash, its two buttons (UI-34);
