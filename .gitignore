@@ -33,3 +33,6 @@ firestore-debug.log*
 .env
 .env.*
 !.env.example
+
+# Scratch files: screen recordings and the like, never committed
+TEMP/
