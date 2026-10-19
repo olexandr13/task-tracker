@@ -204,8 +204,23 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   no heading, and it goes the moment the last tick is taken back.
 - **TASK-57** A repeating task is under the span of its latest completion while that completion
   still covers the occurrence in play (TASK-18); once the next occurrence comes it is back among the
-  tasks to do. A completion stamped later than today, by a device whose clock ran ahead, counts as
-  today's.
+  tasks to do, and the day it was done on stays under its span as a row of its own (TASK-75). A
+  completion stamped later than today, by a device whose clock ran ahead, counts as today's.
+- **TASK-75** Every **day a repeating task was done on** before the occurrence in play (RPT-27) is
+  **done work under the span that day falls in**, as a row of its own: a daily habit ticked off
+  yesterday is under **Done yesterday** while its row is back among the tasks to do today, and one
+  ticked every day this week is under **Done in the last 7 days** once for each day. The day the
+  task reads as done for is its own row's, so it is never listed twice. The row reads as a done
+  task's — the green box ticked, the title struck through — with the day beside the title:
+  **Yesterday**, or a short date such as **Sep 14**. Each counts in its span's heading, and inside
+  a span the latest comes first (TASK-70): a day has no time of its own, so it follows the work
+  finished later that same day. It is a **record, not the task**: its box is drawn rather than a
+  control, an earlier day being the Habits page's to change (RPT-28, HAB-16), and a tap or a click
+  anywhere on it **goes to the task's own row** and opens it, as going to it from the timer's chip
+  does (TIME-20). Tasks, the Inbox, lists, tags and goals list these days, wherever done work is
+  divided into spans (TASK-56, TASK-72); Today, Week and Month, keeping one run of one period's
+  work (TASK-69), do not. A task that happens once is its own record and has none, nor has one in
+  the trash.
 - **TASK-58** Nothing is rewritten when the day turns: what is under each heading follows from the
   day it is, so a page left open moves yesterday's work along on its next render (PRIN-2).
 - **TASK-65** Older done spans fade once opened: the rows of **Done yesterday** at 80% opacity,
@@ -281,7 +296,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
   its checklist is its own too, so changing one never changes the other.
 - **TASK-53** It carries **none of what happened** to the original: it is not done, its checklist is
   unticked, it has no time logged (TIME-9), and a repeating one starts with no history of done days
-  and no skipped occurrences (RPT-34), so a duplicated habit starts its streak afresh. A copy is another go at the same thing, not a second record of the first.
+  and no skipped occurrences (RPT-34), so a duplicated habit starts its streak afresh. It has never
+  been put off either (DUE-28). A copy is another go at the same thing, not a second record of the first.
 - **TASK-54** The copy goes **just below the original**, among the tasks still to do (TASK-17). The
   original is left exactly as it was.
 
@@ -311,14 +327,14 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 ---
 
 **Where it lives:** `src/core/task.ts` (the rules), `src/core/urgent.ts` (the mark), `src/core/completed.ts` (the spans done tasks are
-divided into), `src/app/view.ts` (`doneSpans` and `foldedSpans`: which spans each view divides them into, and which it folds away),
+divided into, and the days a repeating task was done on before — `pastCompletions`, `doneWork`, TASK-75), `src/app/view.ts` (`doneSpans` and `foldedSpans`: which spans each view divides them into, and which it folds away),
 `src/app/completionLabels.ts` (their headings and what an opened span says), `src/core/history.ts`
 (what is left to load, and whether a span holds all of its tasks), `src/app/useUnheldHistory.ts`
 (asking whether a view has work not loaded), `src/core/due.ts` and `src/core/day.ts` (due dates), `src/core/emphasis.ts` (bold and italic, written
 down and read back), `src/core/descriptionLists.ts` (lists, the same), `src/app/components/AddTaskForm.tsx`,
 `src/app/components/AddTaskSheet.tsx` (the detailed add sheet),
 `src/app/letterShortcut.ts` and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet),
-`TaskList.tsx`, `TaskItem.tsx`, `TaskSheet.tsx` (a phone's look at a task), `UrgentToggle.tsx`, `ContextMenu.tsx` (a task's menu), `TaskDescription.tsx`, `src/app/descriptionBox.ts` (the box a
+`TaskList.tsx`, `PastCompletionRow.tsx` (a day a repeating task was done on before, TASK-75), `TaskItem.tsx`, `TaskSheet.tsx` (a phone's look at a task), `UrgentToggle.tsx`, `ContextMenu.tsx` (a task's menu), `TaskDescription.tsx`, `src/app/descriptionBox.ts` (the box a
 description is written in), `src/app/useTasks.ts`, `src/app/TasksScreen.tsx` (ordering), `src/app/useUndoToast.ts`
 and `UndoToast.tsx` (undo after a completion or a deletion), `src/core/order.ts`
 (where a task sits, moving it, where a copy goes, and `sortForDisplay` — overdue above, urgent next, done below, latest finished first among them),
@@ -329,7 +345,7 @@ and `src/app/completionLabels.ts` (the Done one),
 `src/app/dragSensors.ts` (dragging, and what it leaves to a text box or a checklist).
 
 **Tested in:** `src/core/task.test.ts`, `src/core/urgent.test.ts`, `src/core/completed.test.ts`, `src/core/emphasis.test.ts`, `src/core/descriptionLists.test.ts`,
-`src/core/order.test.ts`, `src/app/taskDrop.test.ts` (what a drop does), `src/app/components/TaskList.test.tsx` (what a list says, and folding its spans),
+`src/core/order.test.ts`, `src/app/taskDrop.test.ts` (what a drop does), `src/app/components/TaskList.test.tsx` (what a list says, folding its spans, and the days a repeating task was done on before),
 `src/app/view.test.ts` (which spans each view uses and folds), `src/core/history.test.ts`,
 `src/app/useUnheldHistory.test.ts`,
 `src/app/components/TaskItem.test.tsx` (the row, and its menu), `src/app/components/UrgentToggle.test.tsx`,

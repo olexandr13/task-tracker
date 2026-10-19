@@ -453,7 +453,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   description — **set ones only**, and **not as buttons**: a tap on them is a tap on
   the row and opens the sheet (UI-48). Empty ones stay off, so a task with nothing set stays the
   box and the title alone. Tags have no resting mark: they are in the sheet (TAG-16), as urgent is
-  (TASK-62). An overdue date is red, as on a wide screen (DUE-10). The words those
+  (TASK-62). An overdue date is red, as on a wide screen (DUE-10). A task put off again and again
+  carries its **Put off 2×** beside the title, as on a wide screen (DUE-29). The words those
   icons stand for are not spelled out on the row at all: the words are inside the sheet (UI-42, UI-48).
 - **UI-27** The controls **line up down the list**: each is its icon alone, in a slot of its own
   that sits in the same place on every row, whatever the rows beside it hold — and whether or not

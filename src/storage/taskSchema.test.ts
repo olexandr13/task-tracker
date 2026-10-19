@@ -14,10 +14,18 @@ function saved(...without: string[]): Record<string, unknown> {
 }
 
 describe('migrateTasks', () => {
+  it('starts a task saved before put-offs were kept as never put off (STORE-1, DUE-28)', () => {
+    const [task] = migrateTasks(20, [saved('putOffDays')]) ?? []
+
+    expect(task?.putOffDays).toEqual([])
+    expect(task?.dueDate).toBe('2026-09-20')
+  })
+
   it('links a task saved before there were goals to none (STORE-1, GOAL-2)', () => {
-    const [task] = migrateTasks(19, [saved('goalId')]) ?? []
+    const [task] = migrateTasks(19, [saved('goalId', 'putOffDays')]) ?? []
 
     expect(task?.goalId).toBeNull()
+    expect(task?.putOffDays).toEqual([])
     expect(task?.dueDate).toBe('2026-09-20')
   })
 

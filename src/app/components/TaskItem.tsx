@@ -36,7 +36,7 @@ import {
   type TimeEntryId,
 } from '../../core'
 import { dateChoices, noDayNote, restsToday } from '../dateChoices'
-import { describeDueDate, describeTimeOfDay } from '../dueLabels'
+import { describeDueDate, describePutOff, describeTimeOfDay } from '../dueLabels'
 import { describeTimeProgress, describeTimerRunning } from '../durationLabels'
 import { useFeatureOn } from '../features'
 import { useKnownGoals } from '../goals'
@@ -168,6 +168,14 @@ const lineColumns =
  */
 const chip =
   'max-w-28 min-w-0 truncate rounded-full bg-neutral-100 px-1.5 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400'
+
+/**
+ * A task put off again and again (DUE-29), beside its title. A warning, though not
+ * the red of a day gone by, which is the date's to say. A wide screen's title
+ * already leaves room after it; a phone's does not, so the mark makes its own.
+ */
+const putOffChip =
+  'ml-1.5 shrink-0 rounded-full bg-orange-500/10 px-1.5 text-xs leading-5 whitespace-nowrap text-orange-700 md:ml-0 md:text-[10px] md:leading-4 dark:bg-orange-400/10 dark:text-orange-300'
 
 /** What a control holds, on the second line under it. */
 const detail = 'row-start-2 pb-1 text-[10px] leading-3 whitespace-nowrap text-neutral-400 tabular-nums dark:text-neutral-500'
@@ -323,6 +331,10 @@ export function TaskItem({
       </ul>
     ) : null
   const overdue = isOverdue(task, now)
+  // A one-off put off again and again says so beside its title (DUE-29), resting or
+  // woken, on a phone and a wide screen alike: it is about how the task has gone
+  // rather than what it holds, so it has no control and no slot of its own.
+  const putOff = describePutOff(task, now)
   // Each said once and shown two ways: spelled out under the controls, or read out
   // from a phone's marks. A repeating task's day is its rule's, so the rule is what is said.
   const scheduleDay =
@@ -893,6 +905,17 @@ export function TaskItem({
             </button>
           ) : (
             titleEditor
+          )}
+          {/* The words are for the tooltip and a screen reader; a phone's sheet says them too. */}
+          {putOff !== null && (
+            <span
+              title={putOff.detail}
+              aria-hidden={phone && isActive ? true : undefined}
+              className={putOffChip}
+            >
+              <span aria-hidden>{putOff.label}</span>
+              <span className="sr-only">{putOff.detail}</span>
+            </span>
           )}
         </div>
 

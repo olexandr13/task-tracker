@@ -1,4 +1,13 @@
-import { offsetDay, startOfLocalDay, toLocalDay, type LocalDay, type LocalTime } from '../core'
+import {
+  isComplete,
+  offsetDay,
+  startOfLocalDay,
+  timesPutOff,
+  toLocalDay,
+  type LocalDay,
+  type LocalTime,
+  type Task,
+} from '../core'
 
 /**
  * How a due date reads on screen. The days themselves live in ../core; wording
@@ -53,4 +62,35 @@ export function describeTimeOfDay(time: LocalTime): string {
 export function describeDueAt(day: LocalDay, time: LocalTime | null, now: Date): string {
   const date = describeDueDate(day, now)
   return time === null ? date : `${date} at ${describeTimeOfDay(time)}`
+}
+
+/**
+ * How many times a task is put off before its row says so (DUE-29). Once is an
+ * ordinary change of plan; twice is the start of a habit worth seeing.
+ */
+export const PUT_OFF_SHOWN_FROM = 2
+
+/** What a task put off says about it: the mark on its row, and the same in words. */
+export interface PutOffMark {
+  /** "Put off 3×", beside the title. */
+  readonly label: string
+  /** The sentences the mark stands for: its tooltip, a phone's sheet, and what a screen reader hears. */
+  readonly detail: string
+}
+
+/**
+ * What a task put off says about it (DUE-29), or null where it says nothing: a
+ * one-off still to do, put off at least `PUT_OFF_SHOWN_FROM` times. Done, it has
+ * been dealt with; repeating, its days are its rule's, and a one-off's put-offs
+ * carried into a rule would be about a different task.
+ */
+export function describePutOff(task: Task, now: Date): PutOffMark | null {
+  const times = timesPutOff(task)
+  const first = task.putOffDays[0]
+  if (task.repeat !== null || isComplete(task, now) || times < PUT_OFF_SHOWN_FROM || first === undefined) return null
+
+  return {
+    label: `Put off ${String(times)}×`,
+    detail: `You moved this task to a later day ${String(times)} times when it was due. The first time was ${describeShortDate(first, now)}.`,
+  }
 }

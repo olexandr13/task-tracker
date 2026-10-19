@@ -1,4 +1,5 @@
-import type { CompletionSpan } from '../core'
+import { offsetDay, toLocalDay, type CompletionSpan, type LocalDay } from '../core'
+import { describeShortDate } from './dueLabels'
 
 /**
  * What heads each span of done tasks. The spans themselves live in ../core;
@@ -17,6 +18,21 @@ export const COMPLETION_SPAN_LABELS: Record<CompletionSpan, string> = {
  * together instead of dividing them by when they were finished.
  */
 export const DONE_LABEL = 'Done'
+
+/**
+ * What a row standing for a day a repeating task was done on before says
+ * (TASK-75): the day beside the title — *Yesterday*, or a short date — and,
+ * for a screen reader, which task, which day, and where a tap on it goes.
+ */
+export function describePastCompletion(title: string, day: LocalDay, now: Date): { day: string; label: string } {
+  const today = toLocalDay(now)
+  const when =
+    day === today ? 'today' : day === offsetDay(today, -1) ? 'yesterday' : `on ${describeShortDate(day, now)}`
+  return {
+    day: when === 'today' ? 'Today' : when === 'yesterday' ? 'Yesterday' : describeShortDate(day, now),
+    label: `"${title}", done ${when}. Open the task`,
+  }
+}
 
 /** What an opened span says while the tasks finished in it are on their way (TASK-74). */
 export const SPAN_LOADING = 'Loading…'

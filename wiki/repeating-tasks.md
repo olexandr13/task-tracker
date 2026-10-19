@@ -140,7 +140,8 @@ and whether it reads as done is derived from the occurrence currently in play ra
 ## History
 
 - **RPT-27** A repeating task keeps the **days it was done on**: its local days, oldest first, each
-  day at most once. This is what [Habits](habits.md) read from.
+  day at most once. This is what [Habits](habits.md) read from, and what lists each day under the
+  done spans of Tasks and the lists (TASK-75).
 - **RPT-28** The history always agrees with the task's box. Completing a task adds the day, and it is
   always the box that does it — a checklist tick never completes one (CHK-9). Taking the completion
   back, from the box or by unticking an item, removes the days of the occurrence in play, and only

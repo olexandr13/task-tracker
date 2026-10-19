@@ -6,10 +6,13 @@ import { isRecord } from './plainData'
  * changes, and add a step below: storing the version means old saved data can be
  * upgraded rather than silently breaking.
  */
-export const SCHEMA_VERSION = 20
+export const SCHEMA_VERSION = 21
+
+/** Version 20 kept no put-off days: a task moved past the day it was due left no trace of it. */
+type TaskV20 = Omit<Task, 'putOffDays'>
 
 /** Version 19 had no goals: a task served nothing beyond itself. */
-type TaskV19 = Omit<Task, 'goalId'>
+type TaskV19 = Omit<TaskV20, 'goalId'>
 
 /**
  * Version 18 had no comment on a session: time logged said how long and when,
@@ -82,8 +85,13 @@ type TaskV2 = Omit<TaskV3, 'deletedAt'>
 /** Version 1 knew nothing about repeating either: every task happened once. */
 type TaskV1 = Omit<TaskV2, 'repeat'>
 
+/** Nothing remembers a task being put off before version 21, so none starts put off. */
+function fromV20(task: TaskV20): Task {
+  return { ...task, putOffDays: [] }
+}
+
 function fromV19(task: TaskV19): Task {
-  return { ...task, goalId: null }
+  return fromV20({ ...task, goalId: null })
 }
 
 function fromV18(task: TaskV18): Task {
@@ -221,6 +229,8 @@ export function migrateTasks(version: unknown, tasks: unknown): Task[] | null {
       return (tasks as TaskV18[]).map(fromV18)
     case 19:
       return (tasks as TaskV19[]).map(fromV19)
+    case 20:
+      return (tasks as TaskV20[]).map(fromV20)
     case SCHEMA_VERSION:
       return tasks as Task[]
     default:

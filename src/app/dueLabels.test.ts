@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
+import { completeTask, createTask, setDueDate, setRepeat } from '../core'
 import {
+  PUT_OFF_SHOWN_FROM,
   describeDueAt,
   describeDueDate,
   describeFullDate,
   describeMonth,
+  describePutOff,
   describeShortDate,
   describeTimeOfDay,
 } from './dueLabels'
@@ -59,5 +62,33 @@ describe('describeDueAt', () => {
 
   it('is the day alone where the task is due at no hour', () => {
     expect(describeDueAt('2026-09-16', null, WED_16)).toBe('Today')
+  })
+})
+
+describe('describePutOff (DUE-29)', () => {
+  const TUE = new Date(2026, 8, 15, 9, 0)
+  const due = setDueDate(createTask('file taxes', null, TUE), '2026-09-15', TUE)
+  const once = setDueDate(due, '2026-09-16', TUE)
+  const twice = setDueDate(once, '2026-09-17', WED_16)
+
+  it('says nothing of a task put off fewer times than it takes to show', () => {
+    expect(PUT_OFF_SHOWN_FROM).toBe(2)
+    expect(describePutOff(due, WED_16)).toBeNull()
+    expect(describePutOff(once, WED_16)).toBeNull()
+  })
+
+  it('marks one put off again, and says in words what the mark means and since when', () => {
+    expect(describePutOff(twice, WED_16)).toEqual({
+      label: 'Put off 2×',
+      detail: 'You moved this task to a later day 2 times when it was due. The first time was Sep 15.',
+    })
+  })
+
+  it('says nothing once the task is done', () => {
+    expect(describePutOff(completeTask(twice, WED_16), WED_16)).toBeNull()
+  })
+
+  it('says nothing on a task that has become a repeating one', () => {
+    expect(describePutOff(setRepeat(twice, { kind: 'daily' }, WED_16), WED_16)).toBeNull()
   })
 })

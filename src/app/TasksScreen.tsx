@@ -936,6 +936,10 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     renameSubtask: renameChecklistItem,
     removeSubtask: removeChecklistItem,
     moveSubtask: moveChecklistItem,
+    goTo: (id) => {
+      const task = live.find((candidate) => candidate.id === id)
+      if (task !== undefined) revealTask(task)
+    },
   }
 
   /**

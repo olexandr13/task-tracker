@@ -1,12 +1,15 @@
 import { useEffect, useEffectEvent, useId, useState, type ReactNode } from 'react'
 import {
+  doneWork,
   groupByCompletion,
   isComplete,
   isSpanHeld,
+  pastCompletionsBySpan,
   spanStart,
   splitOverdue,
   type CompletionSpan,
   type CompletionSpans,
+  type DoneWork,
   type List,
   type LocalDay,
   type Task,
@@ -16,6 +19,7 @@ import { COMPLETION_SPAN_LABELS, DONE_LABEL, SPAN_EMPTY, SPAN_LOADING } from '..
 import { OVERDUE_LABEL } from '../dueLabels'
 import { CelebrateIcon } from './CelebrateIcon'
 import { ChevronIcon } from './ChevronIcon'
+import { PastCompletionRow } from './PastCompletionRow'
 import { SortableTasks } from './SortableTasks'
 import { TaskItem } from './TaskItem'
 import type { TaskActions } from '../taskActions'
@@ -100,6 +104,8 @@ interface TaskListProps {
    * under a heading, or null for one run of them under a plain **Done**. The tasks
    * are then given in that order too: to do, then done today, yesterday and so on
    * (`groupByCompletion`). Each is drawn open unless it is one of `foldedSpans`.
+   * Divided, a span also holds the days its repeating tasks were done on before
+   * the occurrence in play (TASK-75).
    */
   doneSpans?: CompletionSpans | null
   /**
@@ -229,12 +235,29 @@ export function TaskList({
   }
 
   /**
+   * A row of done work: the task's own, or one of the days a repeating task was
+   * done on before, which goes to the task's own row (TASK-75).
+   */
+  function doneRow({ task, day }: DoneWork) {
+    if (day === null) return row(task)
+    return (
+      <PastCompletionRow
+        key={`${task.id} ${day}`}
+        task={task}
+        day={day}
+        now={now}
+        onOpen={() => { actions.goTo(task.id) }}
+      />
+    )
+  }
+
+  /**
    * The done work under its heading: a span of it, faded by how long ago it was
    * finished or folded away, where the view divides it that way — otherwise all
    * of it under a plain **Done**, so finished work reads as finished without the
    * list being scanned row by row.
    */
-  function doneRun(span: CompletionSpan, group: readonly Task[]) {
+  function doneRun(span: CompletionSpan, group: readonly DoneWork[]) {
     const label = doneSpans !== null ? COMPLETION_SPAN_LABELS[span] : DONE_LABEL
 
     if (foldedSpans.includes(span)) {
@@ -246,10 +269,11 @@ export function TaskList({
           held={isHeld(span)}
           shown={group.length > 0 || mayHoldMore(span)}
           fade={doneSpanClass(span)}
-          holdsReveal={reveal !== null && group.some((task) => task.id === reveal.taskId)}
+          // The task's own row is the one gone to, never a day it was done on before.
+          holdsReveal={reveal !== null && group.some((work) => work.day === null && work.task.id === reveal.taskId)}
           onReach={() => { history?.onReachBack(spanStart(span, now)) }}
         >
-          {group.map((task) => row(task))}
+          {group.map((work) => doneRow(work))}
         </FoldedRun>
       )
     }
@@ -264,7 +288,7 @@ export function TaskList({
           {label}
           <span className={doneCount}>{group.length}</span>
         </h2>
-        <ul className={rows}>{group.map((task) => row(task))}</ul>
+        <ul className={rows}>{group.map((work) => doneRow(work))}</ul>
       </section>
     )
   }
@@ -277,12 +301,21 @@ export function TaskList({
   const groups = headRuns ? groupByCompletion(tasks, doneSpans ?? [], now) : [{ span: null, tasks }]
 
   /**
+   * The days the repeating tasks were done on before the occurrence in play, by
+   * span, where the view divides its done work (TASK-75). One run under a plain
+   * **Done** is one period's, which has no place for every day ever done.
+   */
+  const past = headRuns && doneSpans !== null ? pastCompletionsBySpan(tasks, doneSpans, now) : null
+
+  /**
    * The runs in the order they are drawn. A folded span is drawn whether or not
    * it holds anything — it draws nothing while it has nothing to show — so one
    * opened as it loads keeps its place, and stays open, whatever it turns out to hold.
    */
   const runs: (CompletionSpan | null)[] = headRuns ? [null, ...(doneSpans ?? []), 'earlier'] : [null]
   const groupOf = (span: CompletionSpan | null) => groups.find((group) => group.span === span)?.tasks ?? []
+  /** A span's done tasks and its past days, latest first (TASK-70). */
+  const workOf = (span: CompletionSpan) => doneWork(groupOf(span), past?.get(span) ?? [])
 
   return (
     <>
@@ -298,9 +331,12 @@ export function TaskList({
       <div className="flex flex-col gap-3">
         <SortableTasks tasks={tasks}>
           {runs.map((span) => {
-            const group = groupOf(span)
-            if (span === null) return group.length > 0 ? todoRun(group) : null
-            return group.length > 0 || foldedSpans.includes(span) ? doneRun(span, group) : null
+            if (span === null) {
+              const group = groupOf(span)
+              return group.length > 0 ? todoRun(group) : null
+            }
+            const work = workOf(span)
+            return work.length > 0 || foldedSpans.includes(span) ? doneRun(span, work) : null
           })}
         </SortableTasks>
       </div>
@@ -310,7 +346,7 @@ export function TaskList({
 
 interface FoldedRunProps {
   label: string
-  /** How many of its tasks are held. */
+  /** How many of its rows are held: its tasks, and the days its repeating ones were done on before (TASK-75). */
   size: number
   /** Whether every task it could hold is, so `size` is how many it has. */
   held: boolean

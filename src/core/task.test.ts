@@ -34,6 +34,7 @@ import {
   setStartDay,
   setSubtaskDone,
   startedOn,
+  timesPutOff,
   uncompleteTask,
 } from './task'
 
@@ -421,6 +422,103 @@ describe('setDueDate', () => {
     const dated = setDueDate(createTask('stretch', null, NOW), '2026-09-20')
 
     expect(setRepeat(dated, { kind: 'daily' }, NOW).dueDate).toBeNull()
+  })
+})
+
+describe('putting a task off (DUE-28)', () => {
+  // Local moments, so the day each falls on is the same wherever the tests run.
+  const TUE = new Date(2026, 8, 15, 9, 0)
+  const TUE_EVENING = new Date(2026, 8, 15, 21, 0)
+  const WED = new Date(2026, 8, 16, 9, 0)
+  const dueTuesday = setDueDate(createTask('file taxes', null, TUE), '2026-09-15', TUE)
+
+  it('starts out never put off', () => {
+    expect(createTask('file taxes', null, TUE).putOffDays).toEqual([])
+    expect(timesPutOff(createTask('file taxes', null, TUE))).toBe(0)
+  })
+
+  it('puts off a task due today that is moved to a later day', () => {
+    const moved = setDueDate(dueTuesday, '2026-09-16', TUE)
+
+    expect(moved.putOffDays).toEqual(['2026-09-15'])
+    expect(timesPutOff(moved)).toBe(1)
+  })
+
+  it('puts off a task already overdue that is moved past today', () => {
+    const overdue = setDueDate(createTask('file taxes', null, TUE), '2026-09-10', TUE)
+
+    expect(setDueDate(overdue, '2026-09-20', TUE).putOffDays).toEqual(['2026-09-15'])
+  })
+
+  it('does not count giving an overdue task today, which is taking it on rather than off', () => {
+    const overdue = setDueDate(createTask('file taxes', null, TUE), '2026-09-10', TUE)
+
+    expect(setDueDate(overdue, '2026-09-15', TUE).putOffDays).toEqual([])
+  })
+
+  it('does not count moving a day still ahead, which is planning', () => {
+    const friday = setDueDate(createTask('file taxes', null, TUE), '2026-09-18', TUE)
+
+    expect(setDueDate(friday, '2026-09-25', TUE).putOffDays).toEqual([])
+    expect(setDueDate(friday, '2026-09-15', TUE).putOffDays).toEqual([])
+  })
+
+  it('does not count giving a day to a task that had none, or taking its day away', () => {
+    const undated = createTask('file taxes', null, TUE)
+
+    expect(setDueDate(undated, '2026-09-20', TUE).putOffDays).toEqual([])
+    expect(setDueDate(dueTuesday, null, TUE).putOffDays).toEqual([])
+  })
+
+  it('does not count a task already done, whose day no longer asks anything of it', () => {
+    const done = completeTask(dueTuesday, TUE)
+
+    expect(setDueDate(done, '2026-09-16', TUE).putOffDays).toEqual([])
+  })
+
+  it('counts a day once, however often the task is moved on it', () => {
+    const tomorrow = setDueDate(dueTuesday, '2026-09-16', TUE)
+    const again = setDueDate(setDueDate(tomorrow, '2026-09-15', TUE), '2026-09-17', TUE_EVENING)
+
+    expect(again.putOffDays).toEqual(['2026-09-15'])
+    expect(setDueDate(tomorrow, '2026-09-20', TUE_EVENING).putOffDays).toEqual(['2026-09-15'])
+  })
+
+  it('takes the day back when the task is moved back to today on it, so a mis-click leaves nothing', () => {
+    const tomorrow = setDueDate(dueTuesday, '2026-09-16', TUE)
+
+    expect(setDueDate(tomorrow, '2026-09-15', TUE).putOffDays).toEqual([])
+    expect(setDueDate(tomorrow, '2026-09-14', TUE).putOffDays).toEqual([])
+  })
+
+  it('keeps a day gone by when the task is moved back on a later one', () => {
+    const tomorrow = setDueDate(dueTuesday, '2026-09-16', TUE)
+
+    expect(setDueDate(tomorrow, '2026-09-16', WED).putOffDays).toEqual(['2026-09-15'])
+  })
+
+  it('counts each day the task is put off on', () => {
+    const tuesday = setDueDate(dueTuesday, '2026-09-16', TUE)
+    const wednesday = setDueDate(tuesday, '2026-09-17', WED)
+
+    expect(wednesday.putOffDays).toEqual(['2026-09-15', '2026-09-16'])
+    expect(timesPutOff(wednesday)).toBe(2)
+  })
+
+  it('stays through being finished and reopened', () => {
+    const moved = setDueDate(dueTuesday, '2026-09-16', TUE)
+
+    expect(uncompleteTask(completeTask(moved, WED), WED).putOffDays).toEqual(['2026-09-15'])
+  })
+
+  it('is counted through the schedule button too', () => {
+    expect(scheduleOn(dueTuesday, '2026-09-16', TUE).putOffDays).toEqual(['2026-09-15'])
+  })
+
+  it('never touches the task it was given', () => {
+    setDueDate(dueTuesday, '2026-09-16', TUE)
+
+    expect(dueTuesday.putOffDays).toEqual([])
   })
 })
 
@@ -905,6 +1003,15 @@ describe('duplicateTask', () => {
 
     expect(duplicateTask(habit, TUE_15).doneDays).toEqual([])
     expect(isComplete(duplicateTask(habit, TUE_15), TUE_15)).toBe(false)
+  })
+
+  it('has never been put off, whatever the original was (TASK-53, DUE-28)', () => {
+    const tuesday = new Date(2026, 8, 15, 9, 0)
+    const due = setDueDate(createTask('pack', null, tuesday), '2026-09-15', tuesday)
+    const putOff = setDueDate(due, '2026-09-16', tuesday)
+
+    expect(putOff.putOffDays).toEqual(['2026-09-15'])
+    expect(duplicateTask(putOff, tuesday).putOffDays).toEqual([])
   })
 
   it('never touches the task it was given', () => {

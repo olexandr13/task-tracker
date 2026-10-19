@@ -1624,6 +1624,46 @@ describe('a task row gone to from elsewhere', () => {
   })
 })
 
+/** A task due Tuesday and put off that day and the next: twice, which is when its row says so (DUE-28, DUE-29). */
+const PUT_OFF_TUE = new Date(2026, 8, 15, 9, 0)
+const PUT_OFF_WED = new Date(2026, 8, 16, 9, 0)
+function putOff(times: 1 | 2): Task {
+  const due = setDueDate(createTask(TASK, null, PUT_OFF_TUE), '2026-09-15', PUT_OFF_TUE)
+  const once = setDueDate(due, '2026-09-16', PUT_OFF_TUE)
+  return times === 1 ? once : setDueDate(once, '2026-09-17', PUT_OFF_WED)
+}
+const PUT_OFF_DETAIL = 'You moved this task to a later day 2 times when it was due. The first time was Sep 15.'
+
+describe('a task put off (DUE-29)', () => {
+  function renderRow(task: Task) {
+    render(
+      <ul>
+        <TaskItem actions={NO_TASK_ACTIONS} task={task} now={PUT_OFF_WED} knownTags={[]} lists={[]} />
+      </ul>,
+    )
+  }
+
+  it('says so beside its title, and what that means in its tooltip and to a screen reader', () => {
+    renderRow(putOff(2))
+
+    const mark = within(screen.getByRole('listitem')).getByText('Put off 2×')
+    expect(mark.parentElement?.getAttribute('title')).toBe(PUT_OFF_DETAIL)
+    expect(within(screen.getByRole('listitem')).getByText(PUT_OFF_DETAIL)).toBeDefined()
+  })
+
+  it('says nothing of a task put off only once', () => {
+    renderRow(putOff(1))
+
+    expect(screen.queryByText(/^Put off/)).toBeNull()
+  })
+
+  it('says nothing once the task is done', () => {
+    renderRow(completeTask(putOff(2), PUT_OFF_WED))
+
+    expect(screen.queryByText(/^Put off/)).toBeNull()
+  })
+})
+
 describe('on a phone, tapping a task', () => {
   const originalMatchMedia = window.matchMedia
 
@@ -1655,6 +1695,18 @@ describe('on a phone, tapping a task', () => {
   function sheet() {
     return screen.getByRole('dialog', { name: `Details of "${TASK}"` })
   }
+
+  it('marks a task put off on its row, and says what the mark means in its sheet (DUE-29)', () => {
+    stubScrollIntoView()
+    render(
+      <ul>
+        <TaskItem actions={NO_TASK_ACTIONS} task={putOff(2)} now={PUT_OFF_WED} knownTags={[]} lists={[]} revealed="task" />
+      </ul>,
+    )
+
+    expect(within(sheet()).getByText(PUT_OFF_DETAIL)).toBeDefined()
+    expect(screen.getByText('Put off 2×')).toBeDefined()
+  })
 
   it('opens the sheet when the task is gone to from elsewhere (TIME-20)', () => {
     const scrollIntoView = stubScrollIntoView()

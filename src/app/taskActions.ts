@@ -70,4 +70,10 @@ export interface TaskActions {
   readonly removeSubtask: (id: TaskId, subtaskId: SubtaskId) => void
   /** Puts a checklist item just before or just after another on the same task. */
   readonly moveSubtask: (id: TaskId, subtaskId: SubtaskId, targetId: SubtaskId, placement: Placement) => void
+  /**
+   * Brings the task's own row into view and opens it, as going to it from the
+   * timer's chip does (TIME-20): where a row standing for a day it was done on
+   * before leads (TASK-75). Nothing about the task changes.
+   */
+  readonly goTo: (id: TaskId) => void
 }

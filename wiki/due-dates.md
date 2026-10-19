@@ -221,6 +221,26 @@ puts a task in front of you on the right day instead of in a long list of everyt
   such a task off clears the red, and taking that tick back does not bring it back: the missed
   occurrence is passed over and the task moves to its next day (RPT-38).
 
+## Putting off
+
+- **DUE-28** A one-off still to do is **put off** when its day has come — today, or a day gone by —
+  and it is moved to a day after today instead of being done. The day it happens on is kept with
+  the task, once however often it is moved that day, so a task put off on three days has been put
+  off three times. Moving a day still ahead of it is planning, not putting off, and neither is
+  giving an overdue task today, which is taking it on; nor is giving a day to a task with none, or
+  taking its day away, which says it is no day's at all. Moving it **back to today or earlier on the
+  same day** takes that day's put-off back, so a mis-click on **Tomorrow** leaves nothing behind
+  (PRIN-10). What a task was put off stays through being finished and reopened, and a duplicate
+  starts with none (TASK-53). A repeating task is never put off: its days are its rule's, and a day
+  picked for it is the skip's and the start day's to say (RPT-34, DUE-18).
+- **DUE-29** A task **put off twice or more** says so on its row, beside the title: **Put off 2×**,
+  in orange — a warning, though not the red of a day gone by, which the date says (DUE-10). It is a
+  label, not a control: a click on it is a click on the row. Its tooltip, and what a screen reader
+  hears, says it in full: *You moved this task to a later day 2 times when it was due. The first
+  time was Sep 15.* A phone has no tooltip, so its sheet says the same sentence under the title
+  (UI-48). It shows on a resting row and a woken one, on a phone and a wide screen alike, and only
+  while the task is a one-off still to do: done, it has been dealt with.
+
 ## On a repeating task
 
 - **DUE-12** A repeating task's schedule button shows the looping arrows and reads its rule with
@@ -283,22 +303,22 @@ puts a task in front of you on the right day instead of in a long list of everyt
 
 ---
 
-**Where it lives:** `src/core/repeat.ts` (`sameRepeat`), `src/core/day.ts` (local days and the hours that hang on them — `LocalTime`, `atLocalTime`), `src/core/task.ts` (`setDueDate`,
+**Where it lives:** `src/core/repeat.ts` (`sameRepeat`), `src/core/day.ts` (local days and the hours that hang on them — `LocalTime`, `atLocalTime`), `src/core/task.ts` (`setDueDate`, which also keeps the days a task was put off on — DUE-28 — and `timesPutOff`,
 `setStartDay`, `scheduleOn` — the one day picked, read by whichever shape the task is — `pickableDays`, `pickableDaysFor` and `isPickable` — which days can be picked, DUE-27 —
 `startedOn`, `setDueTime` and `hasDueDay` — the hour and the day it needs — and `setRepeat`, which lets the day go with the shape it belonged to), `src/app/useTasks.ts` (`changeDay`, `changeTime`),
 `src/core/due.ts` (which day a task is due — `dueAgainOn` for one done for now, `dueFirstOn` for one whose rule has not come round since it was written — the moment it is due at — `dueMoment` — overdue, the two runs a list draws — `splitOverdue` — and the day Next week sets), `src/app/dueLabels.ts`
-(wording, the hour with its day — `describeDueAt` — and the **Overdue** heading), `src/app/components/TaskList.tsx` (the run it heads), `src/app/components/SchedulePicker.tsx` (the one control), `DueChoices.tsx` (the day: quick
+(wording, the hour with its day — `describeDueAt` — the **Overdue** heading, and a task put off — `describePutOff`, DUE-29), `src/app/components/TaskList.tsx` (the run it heads), `src/app/components/SchedulePicker.tsx` (the one control), `DueChoices.tsx` (the day: quick
 choices, the **i** that spells them out, and calendar, and a day turned down — DUE-27), `src/app/useRefusal.ts` (how long that stays), `InfoIcon.tsx` (the i), `PanelIconRow.tsx` and `src/app/panelControls.ts` (the row of icons, spread by how
 many it holds, and the tones an icon, a chosen one and the quiet i wear), `DueTimeChoices.tsx` (the hours), `PanelRow.tsx` and `PanelBack.tsx` (a line
 and the way back out of what it opens), `PickerPanel.tsx` (the aside or the sheet it all sits in),
 `DateCalendar.tsx` and `src/app/calendarMonth.ts` (the month calendar and the days it
 lays out, and which of them it fades), `ClockDial.tsx` and `src/app/clockDial.ts` (the clock face, which ring and
 angle each hour sits at on it, and the hour picked off it), `src/app/dateChoices.tsx` (the Date row, shared by the panel and the menu, and the lines said in place of a calendar or under it — `noDayNote`, `refusedDayNote`), `AddTaskForm.tsx`,
-`TaskItem.tsx`, `ContextMenu.tsx` (a row of icons).
+`TaskItem.tsx` (the put-off mark beside the title), `TaskSheet.tsx` (its sentence on a phone), `ContextMenu.tsx` (a row of icons).
 **Tested in:** `src/core/day.test.ts`, `src/core/due.test.ts`, `src/core/task.test.ts`,
 `src/app/dueLabels.test.ts`, `src/app/calendarMonth.test.ts`, `src/app/useTasks.test.ts` (the day
 picked, and one turned down), `src/app/components/SchedulePicker.test.tsx` (the day, the hour, the rule, the **i**, and the days
 on offer — DUE-27),
 `PanelIconRow.test.tsx` (the row's count), `DateCalendar.test.tsx`, `src/app/clockDial.test.ts` and `ClockDial.test.tsx` (the face and the
-hour picked off it), `AddTaskForm.test.tsx`, `TaskItem.test.tsx` (the Date row, on each kind of task — DUE-27), `src/core/progress.test.ts` (a moved occurrence's period),
+hour picked off it), `AddTaskForm.test.tsx`, `TaskItem.test.tsx` (the Date row, on each kind of task — DUE-27 — and the put-off mark, DUE-29), `src/storage/taskSchema.test.ts` (tasks saved before put-offs were kept), `src/core/progress.test.ts` (a moved occurrence's period),
 `TaskList.test.tsx` (the Overdue run).

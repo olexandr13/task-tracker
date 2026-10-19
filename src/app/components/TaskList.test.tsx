@@ -455,3 +455,95 @@ describe('a task moving between the runs while its row is open', () => {
     expect(screen.getByRole('button', { name: 'Time: 08:00' })).toBeDefined()
   })
 })
+
+describe('days a repeating task was done on before (TASK-75)', () => {
+  // As Tasks has them: today's work open, everything done before it folded.
+  const FOLDED = ['yesterday', 'last7Days', 'last30Days', 'earlier'] as const
+
+  /** A daily habit ticked off at each moment in turn. */
+  function habit(title: string, ...moments: Date[]): Task {
+    return moments.reduce((task, at) => completeTask(task, at), createTask(title, { kind: 'daily' }, new Date(2026, 8, 1)))
+  }
+
+  function list(tasks: Task[], doneSpans: CompletionSpans | null = ROLLING_SPANS, actions: TaskActions = NO_TASK_ACTIONS) {
+    return (
+      <TaskList
+        actions={actions}
+        tasks={tasks}
+        now={NOW}
+        doneSpans={doneSpans}
+        foldedSpans={doneSpans === null ? [] : FOLDED}
+        knownTags={[]}
+        lists={[]}
+        emptyMessage={EMPTY}
+        allDoneMessage={ALL_DONE}
+      />
+    )
+  }
+
+  const fold = (name: string) => screen.getByRole('button', { name: new RegExp(`^${name}`) })
+  const pastRow = (name: RegExp) => screen.getByRole('button', { name })
+
+  it('lists each day under the span it falls in, while the habit is to do again today', async () => {
+    const user = userEvent.setup()
+    render(list([habit('teeth', new Date(2026, 8, 14, 9, 0), new Date(2026, 8, 16, 21, 0))]))
+
+    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
+      'Done yesterday1',
+      'Done in the last 7 days1',
+    ])
+
+    await user.click(fold('Done yesterday'))
+    await user.click(fold('Done in the last 7 days'))
+
+    const yesterday = within(screen.getByRole('region', { name: 'Done yesterday' }))
+    expect(yesterday.getByRole('button', { name: '"teeth", done yesterday. Open the task' }).textContent).toBe('teethYesterday')
+    const week = within(screen.getByRole('region', { name: 'Done in the last 7 days' }))
+    expect(week.getByRole('button', { name: '"teeth", done on Sep 14. Open the task' }).textContent).toBe('teethSep 14')
+  })
+
+  it('keeps the habit’s own row for today, and its days before under their spans', async () => {
+    const user = userEvent.setup()
+    render(list([habit('teeth', new Date(2026, 8, 16, 9, 0), new Date(2026, 8, 17, 8, 0))]))
+
+    expect(screen.getAllByRole('heading').map((heading) => heading.textContent)).toEqual([
+      'Done today1',
+      'Done yesterday1',
+    ])
+    expect(within(screen.getByRole('region', { name: 'Done today' })).queryByRole('button', { name: /Open the task/ })).toBeNull()
+
+    await user.click(fold('Done yesterday'))
+
+    expect(pastRow(/"teeth", done yesterday/)).toBeTruthy()
+  })
+
+  it('puts a day after the work finished later that same day (TASK-70)', async () => {
+    const user = userEvent.setup()
+    const late = completeTask(createTask('call', null, NOW), new Date(2026, 8, 16, 20, 0))
+    render(list([late, habit('teeth', new Date(2026, 8, 16, 9, 0))]))
+
+    await user.click(fold('Done yesterday'))
+
+    const rows = within(screen.getByRole('region', { name: 'Done yesterday' })).getAllByRole('listitem')
+    expect(rows.map((row) => row.textContent?.includes('call') ? 'call' : row.textContent)).toEqual(['call', 'teethYesterday'])
+  })
+
+  it('goes to the habit’s own row from a day it was done on', async () => {
+    const user = userEvent.setup()
+    const goTo = vi.fn()
+    const task = habit('teeth', new Date(2026, 8, 16, 9, 0))
+    render(list([task], ROLLING_SPANS, { ...NO_TASK_ACTIONS, goTo }))
+
+    await user.click(fold('Done yesterday'))
+    await user.click(pastRow(/"teeth", done yesterday/))
+
+    expect(goTo).toHaveBeenCalledWith(task.id)
+  })
+
+  it('lists no days before where the view keeps one run of done work (TASK-69)', () => {
+    render(list([habit('teeth', new Date(2026, 8, 16, 9, 0))], null))
+
+    expect(screen.queryByRole('button', { name: /Open the task/ })).toBeNull()
+    expect(screen.queryByRole('heading')).toBeNull()
+  })
+})

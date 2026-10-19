@@ -26,7 +26,7 @@ import { noDayNote, restsToday, type SkipChoice } from '../dateChoices'
 import type { RepeatDraft } from '../repeatDraft'
 import { useRefusal } from '../useRefusal'
 import { describeTimeProgress } from '../durationLabels'
-import { describeDueDate, describeShortDate, describeTimeOfDay } from '../dueLabels'
+import { describeDueDate, describePutOff, describeShortDate, describeTimeOfDay } from '../dueLabels'
 import { describeRepeatBriefly } from '../repeatLabels'
 import { useFeatureOn } from '../features'
 import { useKnownGoals } from '../goals'
@@ -119,6 +119,7 @@ export function TaskSheet({
   const subtasksReady = !done && hasSubtasks(task) && !hasOpenSubtasks(task, now)
   const ready = timeReady ? 'time' : subtasksReady ? 'subtasks' : undefined
   const overdue = isOverdue(task, now)
+  const putOff = describePutOff(task, now)
   const sessions = currentEntries(task.timeLog, task.repeat, now)
   const timerRunning = timer?.isRunningFor(task.id) ?? false
   const timerStartedAt =
@@ -185,6 +186,10 @@ export function TaskSheet({
 
       {/* Under the title, where the box's own column ends, as it is on a row. */}
       {refused && <CompletionRefusal className="shrink-0 px-4 pb-3 pl-12" />}
+      {/* The row's mark in words (DUE-29): a phone has no tooltip to say them. */}
+      {putOff !== null && (
+        <p className="shrink-0 px-4 pb-3 pl-12 text-sm text-orange-700 dark:text-orange-300">{putOff.detail}</p>
+      )}
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <SheetActions

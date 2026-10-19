@@ -84,6 +84,15 @@ export interface Task {
    */
   readonly dueDate: LocalDay | null
   /**
+   * The local days a one-off was put off on, oldest first, each once: its day
+   * had come — today, or gone by — and it was moved to a day after today rather
+   * than done. Moving a day still ahead of it is planning, not putting off, and
+   * a day it is moved back to on the same day takes that day's put-off back. See
+   * `setDueDate`. Like `doneDays`, what it gathered stays through a change of
+   * shape, and only a one-off gathers any.
+   */
+  readonly putOffDays: readonly LocalDay[]
+  /**
    * The local day picked for a repeating task, or null for one whose rule runs
    * from where it was written. The task is due on that day itself, and the rule
    * takes over again from the first of its days after it: a Monday task given a
@@ -194,6 +203,7 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
     doneDays: [],
     skippedDays: [],
     dueDate: null,
+    putOffDays: [],
     startDay: null,
     dueTime: null,
     subtasks: [],
@@ -213,8 +223,8 @@ export function createTask(title: string, repeat: Repeat | null = null, now: Dat
  * A new task carrying what this one says — title, description, rule, due date
  * and hour, checklist, tags, list, goal, reward, urgent, time goal — and none of what has happened
  * to it. It is not done, its checklist is unticked, it has no time logged, a
- * repeating one has no history, and it is not in the trash: a copy is another go
- * at the same thing, not a second record of the first.
+ * repeating one has no history, it has never been put off, and it is not in the
+ * trash: a copy is another go at the same thing, not a second record of the first.
  *
  * Its place in the list is the caller's to give, as with `createTask`; see
  * `insertTask` in ./order. Returns a new task; the one passed in is never modified.
@@ -230,6 +240,7 @@ export function duplicateTask(task: Task, now: Date = new Date()): Task {
     completedAt: null,
     doneDays: [],
     skippedDays: [],
+    putOffDays: [],
     subtasks: task.subtasks.map((subtask) => ({ ...subtask, id: crypto.randomUUID(), createdAt: at, completedAt: null })),
     timeLog: [],
     deletedAt: null,
@@ -506,12 +517,18 @@ export class DueDateOnRepeatingTaskError extends Error {
 
 /**
  * Gives a one-off the day it is due, moves it, or takes the day away with null.
- * Nothing else changes: a task finished early or late keeps its completion, so
- * moving the date is never a way to undo a tick.
+ * A task finished early or late keeps its completion, so moving the date is
+ * never a way to undo a tick.
+ *
+ * A task still to do whose day has come — today, or gone by — and is moved to a
+ * day after today has been **put off**, and today joins `putOffDays`. Moving it
+ * back to today or earlier on the same day takes that back, so a mis-click on
+ * "Tomorrow" leaves nothing behind. Taking the date away is not putting it off:
+ * the task then asks for no day at all, which is a different thing to say.
  *
  * Returns a new task; the one passed in is never modified.
  */
-export function setDueDate(task: Task, dueDate: LocalDay | null): Task {
+export function setDueDate(task: Task, dueDate: LocalDay | null, now: Date = new Date()): Task {
   if (dueDate !== null && !isLocalDay(dueDate)) {
     throw new InvalidDayError(dueDate)
   }
@@ -528,7 +545,27 @@ export function setDueDate(task: Task, dueDate: LocalDay | null): Task {
   // one-off losing the only day it had — a repeating task's date is null
   // already, so it never gets this far — and its hour has nothing left to fall
   // on, so it goes too.
-  return { ...task, dueDate, dueTime: dueDate === null ? null : task.dueTime }
+  const putOffDays = settlePutOff(task, dueDate, toLocalDay(now))
+  return { ...task, dueDate, dueTime: dueDate === null ? null : task.dueTime, putOffDays }
+}
+
+/** Today added to the days the task was put off on, or taken back off them, as moving it to `dueDate` says. */
+function settlePutOff(task: Task, dueDate: LocalDay | null, today: LocalDay): readonly LocalDay[] {
+  if (dueDate === null || task.status === 'done') {
+    return task.putOffDays
+  }
+
+  if (dueDate <= today) {
+    return task.putOffDays.includes(today) ? task.putOffDays.filter((day) => day !== today) : task.putOffDays
+  }
+
+  const due = task.dueDate !== null && task.dueDate <= today
+  return !due || task.putOffDays.includes(today) ? task.putOffDays : [...task.putOffDays, today].sort()
+}
+
+/** How many days the task was put off on (`putOffDays`): what its row reads as "Put off 3×". */
+export function timesPutOff(task: Task): number {
+  return task.putOffDays.length
 }
 
 export class StartDayOnOneOffError extends Error {
@@ -584,7 +621,7 @@ export function setStartDay(task: Task, startDay: LocalDay | null): Task {
  */
 export function scheduleOn(task: Task, day: LocalDay | null, now: Date = new Date()): Task {
   if (task.repeat === null) {
-    return setDueDate(task, day)
+    return setDueDate(task, day, now)
   }
 
   if (day !== null && isLocalDay(day) && !isPickable(pickableDays(task, now), day)) {

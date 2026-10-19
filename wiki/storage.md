@@ -441,15 +441,16 @@ changes shape.
   it was done on, before a task could carry tags, before it could carry a reward, before there
   were lists to file it under, before a task could ask for time, before a repeating task's occurrence
   could be skipped, before a task could carry a priority, before priority became a single urgent
-  mark, before a task had an hour or a picked start day, before a session carried a comment, and
-  before a task could serve a goal. The order step keeps each task where it was: the saved list was already in
+  mark, before a task had an hour or a picked start day, before a session carried a comment,
+  before a task could serve a goal, and before the days a task was put off on were kept (DUE-28). The order step keeps each task where it was: the saved list was already in
   order. Tasks saved before due dates have no day. A repeating task saved before history was kept
   starts its history with the day of its last completion, the one day anything remembers. Tasks
   saved before tags have none, tasks saved before rewards have no reward, so none of what they
   did before earns anything, tasks saved before lists are in none — the Inbox, where a task
   starts anyway (LST-2) — tasks saved before time goals have no goal and no time logged,
   tasks saved before priority have no urgent mark, and a high priority from the ranked shape
-  becomes urgent; low and medium do not. Tasks saved before goals serve none.
+  becomes urgent; low and medium do not. Tasks saved before goals serve none. Tasks saved before
+  put-offs were kept start as never put off: nothing remembers the times they were.
 - **STORE-7** Data in a version the app does not recognise, or that cannot be parsed at all, is
   **ignored with a warning** rather than crashing, and left as it is: a task the app cannot read is
   not shown, and never overwritten or deleted by it.
