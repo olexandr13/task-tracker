@@ -6,6 +6,7 @@ import {
   isSkipPenalty,
   moneyFor,
   toLocalDay,
+  type CurrencyRate,
   type LocalDay,
   type Money,
   type Period,
@@ -166,11 +167,51 @@ export function describeEarnedOn(day: LocalDay, now: Date): string {
   return describeDueDate(day, now)
 }
 
+/** Each currency's sign, worked out once: asking `Intl` for it is not free. */
+const signs = new Map<string, string>()
+
 /**
- * What this many points come to in money: `25 UAH`, `0.21 UAH`, `1 730 UAH`.
- * Null while nothing says what a point is worth, which is where the money is
- * left unsaid rather than shown as nothing (RWD-32). Pennies are only spelled
- * out when there are any.
+ * The sign a currency is written with (RWD-50): `₴` for UAH, `$` for USD, `€`
+ * for EUR, `zł` for PLN — whichever currency code the browser knows one for —
+ * or the currency as it was written where it is no code, or a code with no
+ * sign of its own: `CHF`, `hours`, `€`.
+ */
+export function currencySign(currency: string): string {
+  const written = currency.trim()
+  if (!/^[a-z]{3}$/iu.test(written)) return written
+
+  let sign = signs.get(written)
+  if (sign === undefined) {
+    try {
+      sign =
+        new Intl.NumberFormat('en', { style: 'currency', currency: written, currencyDisplay: 'narrowSymbol' })
+          .formatToParts(1)
+          .find((part) => part.type === 'currency')?.value ?? written
+    } catch {
+      // A code no currency has.
+      sign = written
+    }
+    signs.set(written, sign)
+  }
+  return sign
+}
+
+/**
+ * A number with its currency (RWD-50): a sign of one character goes in front,
+ * as on a price tag — `$1 000`, `₴62.50`, `-$5` — and anything longer after it,
+ * as a word would — `100 zł`, `30 CHF`, `3 hours`.
+ */
+function withCurrency(amount: string, currency: string): string {
+  const sign = currencySign(currency)
+  if ([...sign].length !== 1) return `${amount} ${sign}`
+  return amount.startsWith('-') ? `-${sign}${amount.slice(1)}` : `${sign}${amount}`
+}
+
+/**
+ * What this many points come to in money, in the main currency: `₴25`,
+ * `₴0.21`, `₴1 730`. Null while nothing says what a point is worth, which is
+ * where the money is left unsaid rather than shown as nothing (RWD-32).
+ * Pennies are only spelled out when there are any.
  */
 export function describeMoney(points: number, value: PointValue | null): string | null {
   const money = moneyFor(points, value)
@@ -178,12 +219,29 @@ export function describeMoney(points: number, value: PointValue | null): string 
   return describeMoneyAmount({ amount: money, currency: value.currency })
 }
 
-/** An amount of money with what it is in: `30 000 UAH`, `62.50 €` (RWD-46). */
+/** An amount of money with its currency: `₴30 000`, `$62.50`, `100 zł` (RWD-46, RWD-50). */
 export function describeMoneyAmount(money: Money): string {
-  return `${describeAmount(money.amount)} ${money.currency}`
+  return withCurrency(describeAmount(money.amount), money.currency)
 }
 
-/** The rate itself, as the rules page says it: `1 point = 2.50 UAH`. */
+/**
+ * What one of another currency is worth in the main one, to as many as four
+ * places where it has them: `₴41.50`, `$0.0241`.
+ */
+function describeRateAmount(amount: number, currency: string): string {
+  const places = Number.isInteger(amount) ? 0 : 2
+  const written = amount
+    .toLocaleString('en-US', { minimumFractionDigits: places, maximumFractionDigits: 4 })
+    .replaceAll(',', THOUSANDS)
+  return withCurrency(written, currency)
+}
+
+/** The rate itself, as the rules page says it: `1 point = ₴2.50`. */
 export function describePointValue(value: PointValue): string {
   return `1 point = ${describeMoney(1, value) ?? ''}`
+}
+
+/** What one of another currency is worth, as Rules and the lists say it: `$1 = ₴41.50` (RWD-49). */
+export function describeCurrencyRate(rate: CurrencyRate, value: PointValue): string {
+  return `${withCurrency('1', rate.currency)} = ${describeRateAmount(rate.amount, value.currency)}`
 }

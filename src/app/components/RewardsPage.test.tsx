@@ -79,7 +79,7 @@ describe('the balance (RWD-17, RWD-32)', () => {
     cleanup()
 
     setup({ pointValue: createPointValue(2.5) })
-    expect(screen.getByText('worth 62.50 UAH')).toBeTruthy()
+    expect(screen.getByText('worth ₴62.50')).toBeTruthy()
   })
 })
 

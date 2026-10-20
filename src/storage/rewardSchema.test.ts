@@ -113,6 +113,18 @@ describe('readPointValue (STORE-42, STORE-24)', () => {
     expect(readPointValue(toStoredPointValue(value))).toEqual(value)
   })
 
+  it('reads back the other currencies (RWD-49)', () => {
+    const value = createPointValue(1, 'UAH', [{ currency: 'USD', amount: 41.5 }])
+
+    expect(readPointValue(toStoredPointValue(value))).toEqual(value)
+  })
+
+  it('reads one saved before there were other currencies as having none (RWD-49)', () => {
+    const saved = { version: REWARD_SCHEMA_VERSION, name: 'pointValue', value: { amount: 2.5, currency: 'UAH' } }
+
+    expect(readPointValue(saved)).toEqual(createPointValue(2.5, 'UAH'))
+  })
+
   it('trusts nothing in a version it does not know, or not shaped as a value (STORE-24)', () => {
     const saved = toStoredPointValue(createPointValue(2.5))
 
@@ -121,6 +133,11 @@ describe('readPointValue (STORE-42, STORE-24)', () => {
     expect(readPointValue({ ...saved, value: { amount: 0, currency: 'UAH' } })).toBeNull()
     expect(readPointValue({ ...saved, value: { amount: 2.5, currency: '' } })).toBeNull()
     expect(readPointValue({ ...saved, value: { amount: '2.5', currency: 'UAH' } })).toBeNull()
+    expect(readPointValue({ ...saved, value: { amount: 1, currency: 'UAH', otherCurrencies: 'USD' } })).toBeNull()
+    expect(readPointValue({ ...saved, value: { amount: 1, currency: 'UAH', otherCurrencies: [{ currency: 'USD' }] } })).toBeNull()
+    expect(
+      readPointValue({ ...saved, value: { amount: 1, currency: 'UAH', otherCurrencies: [{ currency: 'uah', amount: 1 }] } }),
+    ).toBeNull()
     expect(readPointValue(null)).toBeNull()
   })
 })

@@ -77,7 +77,9 @@ changes shape.
   setting**, named by the setting rather than by an id, for the same reason: two devices setting it
   write the one record. No record at all is nothing set, and the points are counted in points alone.
   It is kept under the ledger's version (STORE-24) and ignored, with a warning, when it cannot be
-  read.
+  read. The other currencies (RWD-49) are a field of that record, added without a new version: a
+  device not yet updated reads past them and still counts the main currency, and one saved before
+  them has none.
 - **STORE-48** Whether **Cases** counts tasks without points (CHST-32) is kept beside what a
   point is worth, as **one more record of the settings**, named `chest` — the name it was first
   saved under — for the same reason (STORE-42). No record at all is what an account starts with —

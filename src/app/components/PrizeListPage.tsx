@@ -1,6 +1,7 @@
-import { useState, type KeyboardEvent } from 'react'
+import { useId, useState, type KeyboardEvent } from 'react'
 import {
   canAfford,
+  currenciesOf,
   isAvailable,
   isPrizeName,
   MAX_PRIZE_MONEY,
@@ -12,6 +13,7 @@ import {
   priceOf,
   pricePoints,
   priceUnit,
+  usualCurrency,
   type PointValue,
   type PriceUnit,
   type Prize,
@@ -19,10 +21,12 @@ import {
   type PrizeKind,
   type PrizePrice,
 } from '../../core'
-import { describeUncounted, PRIZE_WORDS, type PrizeKindWords } from '../prizeLabels'
+import { describeUncounted, describeUncountedLink, PRIZE_WORDS, type PrizeKindWords } from '../prizeLabels'
 import {
+  currencySign,
   describeAmount,
   describeBoughtOn,
+  describeCurrencyRate,
   describeMoney,
   describeMoneyAmount,
   describePoints,
@@ -62,6 +66,9 @@ const field =
   'min-w-0 rounded-lg border border-neutral-300 bg-transparent px-2.5 py-2 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-blue-500 focus:outline-none md:px-2 md:py-1 md:text-sm dark:border-neutral-700 dark:text-neutral-100 dark:placeholder:text-neutral-500'
 const heading = 'text-sm font-medium text-neutral-700 dark:text-neutral-300'
 const unitLabel = 'shrink-0 text-sm text-neutral-500 dark:text-neutral-400'
+/** A currency to price in, beside the box: its radio is the one it wears the focus ring for. */
+const currencySegment =
+  'flex min-h-9 min-w-8 cursor-pointer items-center justify-center rounded-md px-2 text-sm text-neutral-500 transition-colors outline-offset-2 hover:text-neutral-900 has-checked:bg-white has-checked:font-medium has-checked:text-neutral-900 has-checked:shadow-sm has-focus-visible:outline-2 has-focus-visible:outline-blue-500 md:min-h-7 dark:text-neutral-400 dark:hover:text-neutral-100 dark:has-checked:bg-neutral-700 dark:has-checked:text-neutral-100'
 const link =
   'rounded-lg text-blue-600 underline-offset-2 transition-colors hover:underline dark:text-blue-400'
 const redeemButton =
@@ -89,8 +96,65 @@ function typedPrice(text: string, unit: PriceUnit): PrizePrice | null {
   return text.trim() === '' ? null : priceOf(Number(text), unit)
 }
 
+/** Whether two units are the same: both points, or the same currency. */
+function isSameUnit(a: PriceUnit, b: PriceUnit): boolean {
+  return a.in === 'points' ? b.in === 'points' : b.in === 'money' && a.currency === b.currency
+}
+
+interface CurrencySwitchProps {
+  /** Every currency a price can be set in, the main one first (RWD-49). */
+  currencies: readonly string[]
+  chosen: string
+  onChoose: (currency: string) => void
+  /** What the price is of, for a screen reader: `the new wish`, `the wish "A laptop"`. */
+  of: string
+}
+
+/**
+ * Which currency a price is in, beside its box (RWD-49): one segment a
+ * currency, each written as its sign (RWD-50). Each is a real radio behind its
+ * label, so the arrow keys move along them. A press keeps the caret in the box,
+ * so choosing a currency mid-change does not end the change.
+ */
+function CurrencySwitch({ currencies, chosen, onChoose, of }: CurrencySwitchProps) {
+  const name = useId()
+
+  return (
+    <div
+      role="radiogroup"
+      aria-label={`Currency of ${of}`}
+      className="flex shrink-0 gap-0.5 rounded-lg bg-neutral-100 p-0.5 dark:bg-neutral-800"
+    >
+      {currencies.map((currency) => (
+        <label
+          key={currency}
+          onMouseDown={(event) => { event.preventDefault() }}
+          title={currency}
+          className={currencySegment}
+        >
+          <input
+            type="radio"
+            name={name}
+            value={currency}
+            checked={currency === chosen}
+            onChange={() => { onChoose(currency) }}
+            aria-label={currency}
+            className="sr-only"
+          />
+          <span aria-hidden>{currencySign(currency)}</span>
+        </label>
+      ))}
+    </div>
+  )
+}
+
 interface PriceBoxProps {
   unit: PriceUnit
+  /** The currencies it can be in, where there is more than one to choose from (RWD-49). */
+  currencies: readonly string[]
+  onCurrency: (currency: string) => void
+  /** What the price is of, for a screen reader. */
+  of: string
   value: string
   onChange: (value: string) => void
   onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void
@@ -102,10 +166,22 @@ interface PriceBoxProps {
 
 /**
  * The box a price is typed in: a whole number of points, or money to the penny
- * with its currency written after it (RWD-47), so a number typed in it never
- * leaves a doubt what it is counted in.
+ * with its currency after it (RWD-47) — its sign, or a switch between the
+ * currencies there are (RWD-49) — so a number typed in it never leaves a doubt
+ * what it is counted in.
  */
-function PriceBox({ unit, value, onChange, onKeyDown, label, placeholder, className }: PriceBoxProps) {
+function PriceBox({
+  unit,
+  currencies,
+  onCurrency,
+  of,
+  value,
+  onChange,
+  onKeyDown,
+  label,
+  placeholder,
+  className,
+}: PriceBoxProps) {
   if (unit.in === 'points') {
     return (
       <input
@@ -143,9 +219,13 @@ function PriceBox({ unit, value, onChange, onKeyDown, label, placeholder, classN
         enterKeyHint="done"
         className={`${field} ${className} tabular-nums`}
       />
-      <span aria-hidden className={unitLabel}>
-        {unit.currency}
-      </span>
+      {currencies.length > 1 ? (
+        <CurrencySwitch currencies={currencies} chosen={unit.currency} onChoose={onCurrency} of={of} />
+      ) : (
+        <span aria-hidden title={unit.currency} className={unitLabel}>
+          {currencySign(unit.currency)}
+        </span>
+      )}
     </>
   )
 }
@@ -180,10 +260,10 @@ interface Draft {
   id: PrizeId
   name: string
   price: string
-  /** What the price box counts in (RWD-47). */
+  /** What the price box counts in (RWD-47, RWD-49). */
   unit: PriceUnit
-  /** What the price box started out saying: left as it was, the price is left as it is. */
-  startedAt: string
+  /** What the price box started out saying, and in: left as it was, the price is left as it is. */
+  startedAt: { price: string; unit: PriceUnit }
 }
 
 /**
@@ -198,8 +278,9 @@ interface Draft {
  * that is the point of writing it down. A wish already bought stays at the
  * end, marked as bought (RWD-40).
  *
- * A wish is priced in money wherever a point has a value (RWD-47), and costs as
- * many points as that money comes to at the rate; a prize is priced in points.
+ * Both are priced in money wherever a point has a value (RWD-47), in any of the
+ * currencies set on Rules (RWD-49), and cost as many points as that money comes
+ * to at the rate.
  *
  * The prizes page ends with a box for spending points on something that is on
  * neither list — a one-off treat — which is the same redemption by another name
@@ -234,8 +315,11 @@ export function PrizeListPage({
   if (asking !== null && asked === undefined) setAsking(null)
 
   const worth = describeMoney(balance, pointValue)
-  // What a new one is priced in: money for a wish once a point has a value (RWD-47).
-  const unit = priceUnit(kind, pointValue)
+  // What a new one is priced in: money once a point has a value (RWD-47), in the
+  // currency chosen beside the box, or else the one this list was last priced in (RWD-49).
+  const [currency, setCurrency] = useState<string | null>(null)
+  const currencies = currenciesOf(pointValue)
+  const unit = priceUnit(pointValue, null, currency ?? usualCurrency(prizes, pointValue))
   const typed = typedPrice(price, unit)
   const canAdd = isPrizeName(name) && typed !== null
 
@@ -252,22 +336,23 @@ export function PrizeListPage({
   }
 
   function startEditing(prize: Prize) {
-    // A wish is changed in money once a point has a value, whatever it was priced in before.
-    const editUnit = priceUnit(prize.kind, pointValue, prize.price)
+    // Changed in money once a point has a value, whatever it was priced in before.
+    const editUnit = priceUnit(pointValue, prize.price)
     const said = priceIn(prize.price, editUnit, pointValue)
     const text = said === null ? '' : String(said)
-    setEditing({ id: prize.id, name: prize.name, price: text, unit: editUnit, startedAt: text })
+    setEditing({ id: prize.id, name: prize.name, price: text, unit: editUnit, startedAt: { price: text, unit: editUnit } })
     setTaken(null)
   }
 
   function commitEditing() {
     if (editing === null) return
 
-    // A price box left as it started leaves the price as it is: a wish priced in
-    // points keeps its points through a rename.
-    const repriced = editing.price === editing.startedAt ? null : typedPrice(editing.price, editing.unit)
+    // A price box left as it started, in the currency it started in, leaves the
+    // price as it is: one priced in points keeps its points through a rename.
+    const unchanged = editing.price === editing.startedAt.price && isSameUnit(editing.unit, editing.startedAt.unit)
+    const repriced = unchanged ? null : typedPrice(editing.price, editing.unit)
     // Anything that will not do leaves the boxes open as they are, to fix or give up on.
-    if (!isPrizeName(editing.name) || (editing.price !== editing.startedAt && repriced === null)) return
+    if (!isPrizeName(editing.name) || (!unchanged && repriced === null)) return
     if (!onRename(editing.id, editing.name)) {
       setTaken(editing.id)
       return
@@ -305,7 +390,7 @@ export function PrizeListPage({
               against the points (RWD-32); it is set on Rules, a click away. */}
           {pointValue !== null && (
             <p className="text-xs text-neutral-500 tabular-nums dark:text-neutral-400">
-              Rate: {describePointValue(pointValue)}
+              Rate: {[describePointValue(pointValue), ...pointValue.otherCurrencies.map((rate) => describeCurrencyRate(rate, pointValue))].join(' · ')}
               {onOpenRules !== undefined && (
                 <>
                   {' · '}
@@ -328,7 +413,7 @@ export function PrizeListPage({
       </div>
 
       <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <input
             type="text"
             name="prize-name"
@@ -347,10 +432,13 @@ export function PrizeListPage({
             placeholder={words.addPlaceholder}
             aria-label={`Name of the new ${words.one}`}
             autoComplete="off"
-            className={`${field} flex-1`}
+            className={`${field} min-w-32 flex-1`}
           />
           <PriceBox
             unit={unit}
+            currencies={currencies}
+            onCurrency={setCurrency}
+            of={`the new ${words.one}`}
             value={price}
             onChange={setPrice}
             onKeyDown={(event) => {
@@ -401,7 +489,7 @@ export function PrizeListPage({
                       onBlur={(event) => {
                         if (!event.currentTarget.contains(event.relatedTarget)) commitEditing()
                       }}
-                      className="col-span-full flex min-w-0 items-center gap-2"
+                      className="col-span-full flex min-w-0 flex-wrap items-center gap-2"
                     >
                       <Icon className={glyph} />
                       <input
@@ -418,10 +506,13 @@ export function PrizeListPage({
                         autoFocus
                         aria-label={`Name of the ${words.one} "${prize.name}"`}
                         autoComplete="off"
-                        className={`${field} min-w-0 flex-1`}
+                        className={`${field} min-w-32 flex-1`}
                       />
                       <PriceBox
                         unit={editing.unit}
+                        currencies={currencies}
+                        onCurrency={(chosen) => { setEditing({ ...editing, unit: { in: 'money', currency: chosen } }) }}
+                        of={`the ${words.one} "${prize.name}"`}
                         value={editing.price}
                         onChange={(typedNow) => { setEditing({ ...editing, price: typedNow }) }}
                         onKeyDown={handleEditKeys}
@@ -519,11 +610,11 @@ export function PrizeListPage({
                 {uncounted !== null && editing?.id !== prize.id && (
                   <p className="col-span-full px-1 text-xs text-amber-700 dark:text-amber-400">
                     {describeUncounted(uncounted, pointValue)}
-                    {pointValue === null && onOpenRules !== undefined && (
+                    {onOpenRules !== undefined && (
                       <>
                         {' '}
                         <button type="button" onClick={onOpenRules} className={link}>
-                          Set what a point is worth
+                          {describeUncountedLink(uncounted, pointValue)}
                         </button>
                       </>
                     )}

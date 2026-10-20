@@ -27,6 +27,7 @@ import {
   renamePrize,
   repricePrize,
   sortPrizes,
+  usualCurrency,
   type Prize,
 } from './prize'
 import { createPointValue } from './pointValue'
@@ -332,23 +333,42 @@ describe('a wish priced in money (RWD-47)', () => {
   })
 })
 
-describe('what a price is typed in (RWD-47)', () => {
-  const UAH = createPointValue(10, 'UAH')
+describe('what a price is typed in (RWD-47, RWD-49)', () => {
+  const UAH = createPointValue(10, 'UAH', [{ currency: 'USD', amount: 41.5 }])
 
-  it('is the rate’s currency for a wish, wherever a point has a value', () => {
-    expect(priceUnit('wish', UAH)).toEqual({ in: 'money', currency: 'UAH' })
-    expect(priceUnit('wish', UAH, priceInPoints(200))).toEqual({ in: 'money', currency: 'UAH' })
-    expect(priceUnit('wish', UAH, priceInMoney(50, 'EUR'))).toEqual({ in: 'money', currency: 'UAH' })
+  it('is money for a prize and a wish alike, wherever a point has a value', () => {
+    expect(priceUnit(UAH)).toEqual({ in: 'money', currency: 'UAH' })
+    expect(priceUnit(UAH, priceInPoints(200))).toEqual({ in: 'money', currency: 'UAH' })
   })
 
-  it('is points for a prize, and for a wish while a point has no value', () => {
-    expect(priceUnit('prize', UAH)).toEqual({ in: 'points' })
-    expect(priceUnit('wish', null)).toEqual({ in: 'points' })
-    expect(priceUnit('wish', null, priceInPoints(200))).toEqual({ in: 'points' })
+  it('is the currency chosen, where the rate knows it, and else the main one', () => {
+    expect(priceUnit(UAH, null, 'usd')).toEqual({ in: 'money', currency: 'USD' })
+    expect(priceUnit(UAH, null, 'EUR')).toEqual({ in: 'money', currency: 'UAH' })
+  })
+
+  it('is the currency one is priced in, where the rate still knows it', () => {
+    expect(priceUnit(UAH, priceInMoney(1000, 'USD'), 'UAH')).toEqual({ in: 'money', currency: 'USD' })
+    expect(priceUnit(UAH, priceInMoney(50, 'EUR'))).toEqual({ in: 'money', currency: 'UAH' })
+  })
+
+  it('is points while a point has no value', () => {
+    expect(priceUnit(null)).toEqual({ in: 'points' })
+    expect(priceUnit(null, priceInPoints(200))).toEqual({ in: 'points' })
   })
 
   it('is its own currency for one priced in money while there is no rate to say it in another', () => {
-    expect(priceUnit('wish', null, priceInMoney(30000, 'UAH'))).toEqual({ in: 'money', currency: 'UAH' })
+    expect(priceUnit(null, priceInMoney(30000, 'UAH'))).toEqual({ in: 'money', currency: 'UAH' })
+  })
+
+  it('starts a new one in the currency the list was last priced in, where the rate knows it', () => {
+    const cake = createPrize('A cake', priceInMoney(500, 'UAH'), 'wish', NOW)
+    const laptop = createPrize('A laptop', priceInMoney(1000, 'USD'), 'wish', new Date(2026, 8, 18))
+    const trip = createPrize('A trip', priceInMoney(900, 'EUR'), 'wish', new Date(2026, 8, 19))
+
+    expect(usualCurrency([cake, laptop, trip], UAH)).toBe('USD')
+    expect(usualCurrency([cake], UAH)).toBe('UAH')
+    expect(usualCurrency([], UAH)).toBe('UAH')
+    expect(usualCurrency([laptop], null)).toBeNull()
   })
 
   it('starts the box at the price said in it, or empty where it cannot be said', () => {
@@ -368,5 +388,29 @@ describe('what a price is typed in (RWD-47)', () => {
     expect(priceOf(0, { in: 'money', currency: 'UAH' })).toBeNull()
     expect(priceOf(10.005, { in: 'money', currency: 'UAH' })).toBeNull()
     expect(priceOf(20, { in: 'points' })).toEqual({ in: 'points', points: 20 })
+  })
+})
+
+describe('prices in other currencies (RWD-49)', () => {
+  const UAH = createPointValue(1, 'UAH', [{ currency: 'USD', amount: 41.5 }])
+
+  it('costs the points its money comes to in the main currency', () => {
+    expect(pricePoints(wishInMoney('A laptop', 1000, 'USD'), UAH)).toBe(41500)
+  })
+
+  it('sorts among the rest by its points, whatever currency each is in', () => {
+    const laptop = wishInMoney('A laptop', 1000, 'USD')
+    const phone = wishInMoney('A new phone', 30000, 'UAH')
+    const headphones = wishInMoney('Headphones', 100, 'USD')
+
+    expect(sortPrizes([laptop, phone, headphones], UAH).map((one) => one.name)).toEqual([
+      'Headphones',
+      'A new phone',
+      'A laptop',
+    ])
+  })
+
+  it('cannot be bought once its currency is taken off', () => {
+    expect(pricePoints(wishInMoney('A laptop', 1000, 'USD'), createPointValue(1, 'UAH'))).toBeNull()
   })
 })

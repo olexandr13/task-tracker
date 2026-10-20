@@ -1,7 +1,10 @@
 import {
   BONUS_PERIODS,
   type CaseSettings,
+  createPointValue,
+  type CurrencyRate,
   DEFAULT_CASES,
+  InvalidPointValueError,
   isCurrency,
   isEarnedAmount,
   isLocalDay,
@@ -186,18 +189,37 @@ export function toStoredPointValue(value: PointValue): StoredPointValue {
   return { version: REWARD_SCHEMA_VERSION, name: POINT_VALUE, value }
 }
 
-/** A saved point value, or null when it can't be trusted. */
+/**
+ * A saved point value, or null when it can't be trusted.
+ *
+ * The other currencies (RWD-49) are a field added beside the rest rather than
+ * the version bumped, as with a redemption's `skip` above: a device not yet
+ * updated reads past them and still counts the main currency. One saved before
+ * there were any has none. Other currencies that are there but not what they
+ * should be can't be trusted either.
+ */
 export function readPointValue(data: unknown): PointValue | null {
   if (!isRecord(data) || data.version !== REWARD_SCHEMA_VERSION || data.name !== POINT_VALUE || !isRecord(data.value)) {
     return null
   }
 
-  const { amount, currency } = data.value
+  const { amount, currency, otherCurrencies = [] } = data.value
   if (typeof amount !== 'number' || !isPointAmount(amount) || typeof currency !== 'string' || !isCurrency(currency)) {
     return null
   }
+  if (!Array.isArray(otherCurrencies)) return null
 
-  return { amount, currency }
+  const others: CurrencyRate[] = []
+  for (const other of otherCurrencies as unknown[]) {
+    if (!isRecord(other) || typeof other.currency !== 'string' || typeof other.amount !== 'number') return null
+    others.push({ currency: other.currency, amount: other.amount })
+  }
+  try {
+    return createPointValue(amount, currency, others)
+  } catch (error) {
+    if (error instanceof InvalidPointValueError) return null
+    throw error
+  }
 }
 
 /**

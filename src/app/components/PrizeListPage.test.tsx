@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -99,7 +99,7 @@ describe('what a list shows (RWD-35, RWD-36)', () => {
   it('says what there is to spend, and what it is worth in money (RWD-32)', () => {
     setup({ balance: 25 })
 
-    expect(screen.getByText(/points to spend/).textContent).toContain('worth 62.50 UAH')
+    expect(screen.getByText(/points to spend/).textContent).toContain('worth ₴62.50')
   })
 
   it('says how far off one out of reach is (RWD-37)', () => {
@@ -112,17 +112,17 @@ describe('what a list shows (RWD-35, RWD-36)', () => {
     setup({ kind: 'wish', balance: 1730 })
 
     // A space a line never breaks at: one number, read the same in any country.
-    expect(screen.getByText(/points to spend/).textContent).toBe('1\u00A0730 points to spend — worth 4\u00A0325 UAH')
+    expect(screen.getByText(/points to spend/).textContent).toBe('1\u00A0730 points to spend — worth ₴4\u00A0325')
     const phone = screen.getByText('A new phone').closest('li')
     expect(phone?.textContent).toContain('5\u00A0000 points')
-    expect(phone?.textContent).toContain('12\u00A0500 UAH')
+    expect(phone?.textContent).toContain('₴12\u00A0500')
     expect(phone?.textContent).toContain('3\u00A0270 to go')
   })
 
   it('says the rate the money is counted at, and opens Rules to change it (RWD-32)', async () => {
     const { user, onOpenRules } = setup({ balance: 25 })
 
-    expect(screen.getByText(/^Rate:/).textContent).toBe('Rate: 1 point = 2.50 UAH · Change')
+    expect(screen.getByText(/^Rate:/).textContent).toBe('Rate: 1 point = ₴2.50 · Change')
     await user.click(screen.getByRole('button', { name: 'Change what a point is worth, on "Rules"' }))
     expect(onOpenRules).toHaveBeenCalledOnce()
   })
@@ -191,7 +191,7 @@ describe('redeeming (RWD-36, RWD-40)', () => {
 
 describe('keeping a list (RWD-33, RWD-34)', () => {
   it('adds one by name and price, to the list it belongs to', async () => {
-    const { user, onAdd } = setup({ kind: 'prize' })
+    const { user, onAdd } = setup({ kind: 'prize', pointValue: null })
 
     await user.type(screen.getByLabelText('Name of the new prize'), 'Tea')
     await user.type(screen.getByLabelText('Points the new prize costs'), '15')
@@ -236,7 +236,7 @@ describe('keeping a list (RWD-33, RWD-34)', () => {
   })
 
   it('renames and reprices one in place, on Enter', async () => {
-    const { user, onRename, onReprice } = setup()
+    const { user, onRename, onReprice } = setup({ pointValue: null })
 
     await user.click(screen.getByRole('button', { name: 'Change the prize "Chocolate"' }))
     const name = screen.getByLabelText('Name of the prize "Chocolate"')
@@ -303,7 +303,7 @@ describe('a wish priced in money (RWD-47)', () => {
     const { user, onAdd } = setup({ kind: 'wish' })
 
     const box = screen.getByLabelText('Price of the new wish, in UAH')
-    expect(box.parentElement?.textContent).toContain('UAH')
+    expect(box.parentElement?.textContent).toContain('₴')
     await user.type(screen.getByLabelText('Name of the new wish'), 'A bicycle')
     await user.type(box, '20000.50{Enter}')
 
@@ -334,7 +334,7 @@ describe('a wish priced in money (RWD-47)', () => {
 
     const laptop = screen.getByText('A laptop').closest('li')
     expect(laptop?.textContent).toContain('12\u00A0000 points')
-    expect(laptop?.textContent).toContain('30\u00A0000 UAH')
+    expect(laptop?.textContent).toContain('₴30\u00A0000')
     expect(laptop?.textContent).toContain('11\u00A0975 to go')
     expect(screen.getByRole('button', { name: 'Redeem A laptop for 12\u00A0000 points' }).hasAttribute('disabled')).toBe(true)
   })
@@ -351,20 +351,22 @@ describe('a wish priced in money (RWD-47)', () => {
     const { user, onOpenRules } = setup({ kind: 'wish', balance: 100000, pointValue: null, prizes: [LAPTOP] })
 
     const laptop = screen.getByText('A laptop').closest('li')
-    expect(laptop?.textContent).toContain('30\u00A0000 UAH')
-    expect(laptop?.textContent).toContain('Priced in UAH, and a point has no value yet, so it can\'t be bought.')
+    expect(laptop?.textContent).toContain('₴30\u00A0000')
+    expect(laptop?.textContent).toContain('Priced in ₴, and a point has no value yet, so it can\'t be bought.')
     expect(screen.getByRole('button', { name: 'Redeem A laptop' }).hasAttribute('disabled')).toBe(true)
 
     await user.click(screen.getByRole('button', { name: 'Set what a point is worth' }))
     expect(onOpenRules).toHaveBeenCalledOnce()
   })
 
-  it('says why it cannot be bought while a point is worth another currency', () => {
-    setup({ kind: 'wish', balance: 100000, pointValue: createPointValue(1, 'EUR'), prizes: [LAPTOP] })
+  it('says why it cannot be bought while its currency has no rate, and opens Rules to add one (RWD-48)', async () => {
+    const { user, onOpenRules } = setup({ kind: 'wish', balance: 100000, pointValue: createPointValue(1, 'EUR'), prizes: [LAPTOP] })
 
     expect(screen.getByText('A laptop').closest('li')?.textContent).toContain(
-      'Priced in UAH, but a point is worth EUR, so it can\'t be bought. Change its price to EUR.',
+      'Priced in ₴, which has no rate on "Rules", so it can\'t be bought. Add one there, or change its price.',
     )
+    await user.click(screen.getByRole('button', { name: 'Add a rate for ₴' }))
+    expect(onOpenRules).toHaveBeenCalledOnce()
   })
 
   it('is changed in money, starting from its price', async () => {
@@ -407,5 +409,71 @@ describe('a wish priced in money (RWD-47)', () => {
     await user.click(screen.getByRole('button', { name: 'Change the wish "A laptop"' }))
 
     expect(screen.getByLabelText<HTMLInputElement>('Price of the wish "A laptop", in EUR').value).toBe('')
+  })
+})
+
+describe('more than one currency (RWD-49)', () => {
+  /** ₴2.50 a point, and $1 = ₴41.50. */
+  const TWO = createPointValue(2.5, 'UAH', [{ currency: 'USD', amount: 41.5 }])
+  const HEADPHONES = createPrize('Headphones', priceInMoney(100, 'USD'), 'wish', new Date(2026, 8, 18))
+
+  it('prices a prize in money too, in the currency chosen beside the box', async () => {
+    const { user, onAdd } = setup({ kind: 'prize', pointValue: TWO })
+
+    await user.type(screen.getByLabelText('Name of the new prize'), 'Tea')
+    await user.type(screen.getByLabelText('Price of the new prize, in UAH'), '60')
+    await user.click(screen.getByRole('radio', { name: 'USD' }))
+    expect(screen.getByLabelText<HTMLInputElement>('Price of the new prize, in USD').value).toBe('60')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    expect(onAdd).toHaveBeenCalledExactlyOnceWith('Tea', { in: 'money', amount: 60, currency: 'USD' }, 'prize')
+  })
+
+  it('writes each currency as its sign beside the box', () => {
+    setup({ kind: 'wish', pointValue: TWO })
+
+    const choices = screen.getByRole('radiogroup', { name: 'Currency of the new wish' })
+    expect(choices.textContent).toBe('₴$')
+  })
+
+  it('starts a new one in the currency the list was last priced in', () => {
+    setup({ kind: 'wish', pointValue: TWO, prizes: [PHONE, HEADPHONES] })
+
+    expect(screen.getByRole('radio', { name: 'USD' })).toHaveProperty('checked', true)
+  })
+
+  it('shows a price in another currency with its sign, and the points it comes to', () => {
+    setup({ kind: 'wish', balance: 25, pointValue: TWO, prizes: [HEADPHONES] })
+
+    const row = screen.getByText('Headphones').closest('li')
+    // $100 is ₴4 150, 1 660 points at ₴2.50 each.
+    expect(row?.textContent).toContain('1\u00A0660 points')
+    expect(row?.textContent).toContain('$100')
+    expect(screen.getByText(/^Rate:/).textContent).toBe('Rate: 1 point = ₴2.50 · $1 = ₴41.50 · Change')
+  })
+
+  it('changes one in the currency it is priced in, and moves it to another', async () => {
+    const { user, onReprice } = setup({ kind: 'wish', pointValue: TWO, prizes: [HEADPHONES] })
+
+    await user.click(screen.getByRole('button', { name: 'Change the wish "Headphones"' }))
+    const price = screen.getByLabelText<HTMLInputElement>('Price of the wish "Headphones", in USD')
+    expect(price.value).toBe('100')
+    await user.click(within(screen.getByRole('radiogroup', { name: 'Currency of the wish "Headphones"' })).getByRole('radio', { name: 'UAH' }))
+    // Choosing a currency keeps the change going.
+    expect(screen.getByLabelText<HTMLInputElement>('Price of the wish "Headphones", in UAH').value).toBe('100')
+    await user.clear(screen.getByLabelText('Price of the wish "Headphones", in UAH'))
+    await user.type(screen.getByLabelText('Price of the wish "Headphones", in UAH'), '4000{Enter}')
+
+    expect(onReprice).toHaveBeenCalledExactlyOnceWith(HEADPHONES.id, { in: 'money', amount: 4000, currency: 'UAH' })
+  })
+
+  it('moves one to another currency at the same number, where only the currency is changed', async () => {
+    const { user, onReprice } = setup({ kind: 'wish', pointValue: TWO, prizes: [HEADPHONES] })
+
+    await user.click(screen.getByRole('button', { name: 'Change the wish "Headphones"' }))
+    await user.click(within(screen.getByRole('radiogroup', { name: 'Currency of the wish "Headphones"' })).getByRole('radio', { name: 'UAH' }))
+    await user.keyboard('{Enter}')
+
+    expect(onReprice).toHaveBeenCalledExactlyOnceWith(HEADPHONES.id, { in: 'money', amount: 100, currency: 'UAH' })
   })
 })

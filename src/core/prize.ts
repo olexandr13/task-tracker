@@ -27,6 +27,7 @@ import {
   isCurrency,
   isSameCurrency,
   isToThePenny,
+  knownCurrency,
   MAX_CURRENCY_LENGTH,
   moneyFor,
   pointsForMoney,
@@ -199,16 +200,39 @@ export function priceMoney(prize: Prize, value: PointValue | null): Money | null
 }
 
 /**
- * What one's price is typed in (RWD-47). A **wish** is priced in the rate's
- * currency wherever a point has a value, since the big things are priced in
- * shops; a **prize** is small enough to count in points. One already priced in
- * money with no rate to say it in another is changed in its own currency, and
- * anything else in points. `price` is the one being changed, or null for a new one.
+ * What one's price is typed in (RWD-47, RWD-49). Wherever a point has a value,
+ * prizes and wishes alike are priced in money: one being changed in the
+ * currency it is priced in, where the rate knows it, and otherwise — as a new
+ * one — in `currency`, the one chosen beside the box, where the rate knows that,
+ * or else the main one. While a point has no value, one priced in money is
+ * changed in its own currency and anything else is priced in points.
+ * `price` is the one being changed, or null for a new one.
  */
-export function priceUnit(kind: PrizeKind, value: PointValue | null, price: PrizePrice | null = null): PriceUnit {
-  if (kind === 'wish' && value !== null) return { in: 'money', currency: value.currency }
-  if (price?.in === 'money') return { in: 'money', currency: price.currency }
-  return { in: 'points' }
+export function priceUnit(
+  value: PointValue | null,
+  price: PrizePrice | null = null,
+  currency: string | null = null,
+): PriceUnit {
+  if (value === null) return price?.in === 'money' ? { in: 'money', currency: price.currency } : { in: 'points' }
+  const own = price?.in === 'money' ? knownCurrency(value, price.currency) : null
+  const chosen = currency === null ? null : knownCurrency(value, currency)
+  return { in: 'money', currency: own ?? chosen ?? value.currency }
+}
+
+/**
+ * The currency a new one on a list starts in (RWD-49): the one the latest added
+ * there was priced in, where the rate still knows it, so a list kept in dollars
+ * stays in dollars and one kept in hryvnias in hryvnias; otherwise the main
+ * one. Null while a point has no value, when prices are in points.
+ */
+export function usualCurrency(prizes: readonly Prize[], value: PointValue | null): string | null {
+  if (value === null) return null
+  const newestFirst = [...prizes].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  for (const prize of newestFirst) {
+    const known = prize.price.in === 'money' ? knownCurrency(value, prize.price.currency) : null
+    if (known !== null) return known
+  }
+  return value.currency
 }
 
 /**

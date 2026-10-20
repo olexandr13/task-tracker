@@ -116,7 +116,7 @@ describe('what a point is worth (RWD-31)', () => {
 
     await user.type(screen.getByLabelText('Money one point is worth'), '2')
 
-    expect(onChangePointValue).toHaveBeenCalledExactlyOnceWith({ amount: 2, currency: 'UAH' })
+    expect(onChangePointValue).toHaveBeenCalledExactlyOnceWith({ amount: 2, currency: 'UAH', otherCurrencies: [] })
   })
 
   it('saves a currency of its own', async () => {
@@ -126,7 +126,7 @@ describe('what a point is worth (RWD-31)', () => {
     await user.clear(currency)
     await user.type(currency, 'PLN')
 
-    expect(onChangePointValue).toHaveBeenLastCalledWith({ amount: 2, currency: 'PLN' })
+    expect(onChangePointValue).toHaveBeenLastCalledWith({ amount: 2, currency: 'PLN', otherCurrencies: [] })
   })
 
   it('saves nothing while the boxes do not say a rate yet', async () => {
@@ -143,7 +143,7 @@ describe('what a point is worth (RWD-31)', () => {
     setup(NO_BONUSES, createPointValue(2.5))
 
     expect((screen.getByLabelText('Money one point is worth') as HTMLInputElement).value).toBe('2.5')
-    expect(screen.getByText(/100 points are 250 UAH/)).toBeTruthy()
+    expect(screen.getByText(/100 points are ₴250/)).toBeTruthy()
   })
 
   it('forgets the rate, leaving the points counted in points (RWD-32)', async () => {
@@ -162,5 +162,87 @@ describe('what a point is worth (RWD-31)', () => {
     await user.tab()
 
     expect(amount.value).toBe('2.5')
+  })
+})
+
+describe('other currencies (RWD-49)', () => {
+  const UAH = createPointValue(1, 'UAH')
+  const WITH_USD = createPointValue(1, 'UAH', [{ currency: 'USD', amount: 41.5 }])
+
+  it('offers none until a point has a value', () => {
+    setup()
+
+    expect(screen.queryByRole('button', { name: 'Add a currency' })).toBeNull()
+  })
+
+  it('adds one with what one of it is worth in the main currency, on Enter', async () => {
+    const { user, onChangePointValue } = setup(NO_BONUSES, UAH)
+
+    await user.click(screen.getByRole('button', { name: 'Add a currency' }))
+    // Asking to add one puts the caret in its name.
+    await user.keyboard('USD')
+    await user.type(screen.getByLabelText('What one of it is worth in UAH'), '41.5{Enter}')
+
+    expect(onChangePointValue).toHaveBeenCalledExactlyOnceWith(WITH_USD)
+  })
+
+  it('says what will not do rather than adding it', async () => {
+    const { user, onChangePointValue } = setup(NO_BONUSES, WITH_USD)
+
+    await user.click(screen.getByRole('button', { name: 'Add a currency' }))
+    await user.keyboard('usd')
+    await user.type(screen.getByLabelText('What one of it is worth in UAH'), '40')
+    await user.click(screen.getByRole('button', { name: 'Add' }))
+
+    expect(screen.getByRole('alert').textContent).toBe('There is usd here already.')
+    expect(onChangePointValue).not.toHaveBeenCalled()
+  })
+
+  it('gives up on a new one with Escape', async () => {
+    const { user, onChangePointValue } = setup(NO_BONUSES, UAH)
+
+    await user.click(screen.getByRole('button', { name: 'Add a currency' }))
+    await user.keyboard('EUR{Escape}')
+
+    expect(screen.queryByLabelText('New currency')).toBeNull()
+    expect(onChangePointValue).not.toHaveBeenCalled()
+  })
+
+  it('saves a rate as it is typed', async () => {
+    const { user, onChangePointValue } = setup(NO_BONUSES, WITH_USD)
+    const rate = screen.getByLabelText('What one USD is worth in UAH')
+
+    await user.clear(rate)
+    await user.type(rate, '42')
+
+    expect(onChangePointValue).toHaveBeenLastCalledWith(createPointValue(1, 'UAH', [{ currency: 'USD', amount: 42 }]))
+  })
+
+  it('takes one off with its ×', async () => {
+    const { user, onChangePointValue } = setup(NO_BONUSES, WITH_USD)
+
+    await user.click(screen.getByRole('button', { name: 'Remove USD' }))
+
+    expect(onChangePointValue).toHaveBeenCalledExactlyOnceWith(UAH)
+  })
+
+  it('keeps the other currencies when the main rate changes', async () => {
+    const { user, onChangePointValue } = setup(NO_BONUSES, WITH_USD)
+    const amount = screen.getByLabelText('Money one point is worth')
+
+    await user.clear(amount)
+    await user.type(amount, '2')
+
+    expect(onChangePointValue).toHaveBeenLastCalledWith(createPointValue(2, 'UAH', [{ currency: 'USD', amount: 41.5 }]))
+  })
+
+  it('will not make the main currency one of the others', async () => {
+    const { user, onChangePointValue } = setup(NO_BONUSES, WITH_USD)
+    const currency = screen.getByLabelText('What that money is')
+
+    await user.clear(currency)
+    await user.type(currency, 'USD')
+
+    expect(onChangePointValue).not.toHaveBeenCalledWith(expect.objectContaining({ currency: 'USD' }))
   })
 })
