@@ -145,26 +145,30 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   of the list, struck through and marked **Bought today** (or the day it was bought), with nothing
   to redeem and nothing to change; the **×** still takes it off the list, and what it was bought
   with stays in the history either way (RWD-38).
-- **RWD-33** Each one is a **name** — up to 60 characters, on one line — and a **price**, a whole
-  number of points from 1. There are none of either to begin with. No two can share a name,
+- **RWD-33** Each one is a **name** — up to 60 characters, on one line — and a **price**: a prize's
+  a whole number of points from 1, a wish's **in money** once a point has a value (RWD-47) and in
+  points until then. There are none of either to begin with. No two can share a name,
   whatever its case and whichever list they are on, so there is never a second Chocolate to wonder
   about; the box says **There is a prize called that already.** rather than making one.
 - **RWD-34** One is **changed in place**: the pencil beside it opens its name and its price
-  together, Enter or leaving them both keeps the change, Escape gives it up. The **×** takes it off
+  together, Enter or leaving them both keeps the change, Escape gives it up. A price box left as it
+  opened leaves the price as it was, so a rename never reprices. The **×** takes it off
   its list, asking first in the app's own sheet (UI-74), since there is nothing to undo it from:
   **Delete the prize "Coffee"?** — or **the wish** on the wishlist — then `It comes off this list.`
   and `The times you redeemed it stay in "History".` **Delete** goes ahead; anything else leaves it
   on the list. Renaming, repricing or deleting
   one **never rewrites what it was already redeemed for**: that redemption keeps the name and the
   points it was made with, as a completion keeps what it earned (RWD-3, RWD-17).
-- **RWD-35** Each list shows **what can still be bought first, cheapest first**, then by name, so
-  what is within reach heads the list and what is being saved up for follows it. What has been
-  bought comes last.
+- **RWD-35** Each list shows **what can still be bought first, cheapest first** in points at the
+  rate as it stands (RWD-47), then by name, so what is within reach heads the list and what is being
+  saved up for follows it. A wish no rate can count in points follows the rest (RWD-48). What has
+  been bought comes last.
 - **RWD-36** **Redeem** beside one spends its price on its name, there and then. It is **off while
   the balance does not cover it** (RWD-16), and the row says how many points are still to earn —
   `4 975 to go` — and off for a wish already bought. A row reads across in **columns** that line
   up from row to row, the same whatever the name or the price: the price in points with its unit —
-  `100 000 points` — then in money where a point has a value (RWD-32), **Redeem**, and what is
+  `100 000 points` — then in money where a point has a value (RWD-32), or as it was set for a wish
+  priced in money (RWD-47), **Redeem**, and what is
   still to go, so a long price never pushes the button along. A phone has room for the price in
   points alone, written as a bare number. Under the **Prizes** list, **Something else**
   is the plain redeem form (RWD-15), for a treat that is not worth writing down; the wishlist has
@@ -178,6 +182,26 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   wishlist, **Saving up for** the cheapest one it does not, with how far off it is. With neither
   list started it offers to name something instead.
 
+- **RWD-47** Once a point has a value (RWD-31), a **wish is priced in money**: the price box on the
+  wishlist is in the rate's currency, which is written after it, and takes money to the penny, from
+  0.01 to 1 000 000 000 — `30 000 UAH`, what the phone costs in a shop. What it costs **in points
+  follows from the rate as it stands**: the fewest whole points worth at least that much, so at
+  `1 point = 10 UAH` the phone is **3 000 points** and a `25 UAH` cake is 3. A point made worth more
+  brings every wish priced in money nearer without anything being repriced; one already bought
+  keeps the points it was bought for in History (RWD-34). While a point has no value, a wish is
+  priced in points, and a **prize is always priced in points**: it is small enough to count in them.
+  A wish priced in points stays so until its price is changed: its pencil opens the price in money,
+  starting at what its points come to, and keeping a new amount prices it in money from then on.
+  A currency is the same one whatever its case: `uah` is `UAH`.
+- **RWD-48** A wish priced in money that **no rate counts** — the value taken away, or set in another
+  currency — **cannot be redeemed**, and says why on a line under it rather than leaving a dimmed
+  Redeem to explain itself: `Priced in UAH, and a point has no value yet, so it can't be bought.`,
+  with **Set what a point is worth**, which opens Rules; or `Priced in UAH, but a point is worth
+  EUR, so it can't be bought. Change its price to EUR.` Its pencil then opens the price box **empty**
+  in the rate's currency, since its number would mean something else there. It shows its money as
+  it was set — on a phone, where the points would be — and `— points` beside it, sorts after the
+  wishes that can be counted (RWD-35), and is never what is being saved up for (RWD-37).
+
 ## What a point is worth
 
 - **RWD-31** A point can be given a **value in money** — `1 point = 1 UAH` — set on **Rules**
@@ -185,8 +209,9 @@ ledger of its own, so earned stays earned whatever becomes of the task afterward
   characters, written however it is written. There is none to begin with. Both boxes are saved as
   they are typed, once they say something that can be a rate; a box left saying anything else goes
   back to what is saved. The **×** forgets the rate again.
-- **RWD-32** The value **counts nothing**. It changes no balance, no earning and no redemption — it
-  only spells the points out in money beside them: the balance on how the points stand and on both
+- **RWD-32** The value **counts nothing** but what a wish priced in money costs (RWD-47). It
+  changes no balance, no earning and no redemption already made — elsewhere it only spells the
+  points out in money beside them: the balance on how the points stand and on both
   lists, and each prize's and wish's price. Both lists also say the **rate** itself under the
   balance — `Rate: 1 point = 10 UAH` — so a price in money can be checked against the points, with
   **Change** beside it, which opens Rules (RWD-39). With no value set, nothing says it, the rate

@@ -8,6 +8,7 @@ import {
   createNote,
   createPointValue,
   createPrize,
+  priceInPoints,
   createRedemption,
   createTag,
   createTask,
@@ -34,7 +35,7 @@ const FIT = createGoal('Get fit', AT)
 const COFFEE = createRedemption(3, 'Coffee', 12, AT)
 const ERRANDS = createTag('errands', AT)
 const GARDEN = createTag('garden', AT)
-const CHOCOLATE = createPrize('Chocolate', 20, 'prize', AT)
+const CHOCOLATE = createPrize('Chocolate', priceInPoints(20), 'prize', AT)
 const UAH = createPointValue(2.5)
 const WARMING_UP = startWarmUp(AT)
 const NUDGING: NudgePreference = { on: true, quietHours: 3, window: null }

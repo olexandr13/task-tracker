@@ -6,6 +6,7 @@ import {
   BONUS_IDS,
   createPointValue,
   createPrize,
+  priceInPoints,
   createRedemption,
   NO_BONUSES,
   type PeriodBonuses,
@@ -25,8 +26,8 @@ const EARNED: RewardEntry[] = [
   { taskId: 'run', day: '2026-09-17', points: 20 },
   { taskId: 'read', day: '2026-09-16', points: 10 },
 ]
-const CHOCOLATE = createPrize('Chocolate', 20, 'prize', NOW)
-const PHONE = createPrize('A new phone', 5000, 'wish', NOW)
+const CHOCOLATE = createPrize('Chocolate', priceInPoints(20), 'prize', NOW)
+const PHONE = createPrize('A new phone', priceInPoints(5000), 'wish', NOW)
 
 function setup({
   entries = EARNED,

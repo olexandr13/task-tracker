@@ -7,6 +7,7 @@ import {
   moneyFor,
   toLocalDay,
   type LocalDay,
+  type Money,
   type Period,
   type PointValue,
   type Redemption,
@@ -174,7 +175,12 @@ export function describeEarnedOn(day: LocalDay, now: Date): string {
 export function describeMoney(points: number, value: PointValue | null): string | null {
   const money = moneyFor(points, value)
   if (money === null || value === null) return null
-  return `${describeAmount(money)} ${value.currency}`
+  return describeMoneyAmount({ amount: money, currency: value.currency })
+}
+
+/** An amount of money with what it is in: `30 000 UAH`, `62.50 €` (RWD-46). */
+export function describeMoneyAmount(money: Money): string {
+  return `${describeAmount(money.amount)} ${money.currency}`
 }
 
 /** The rate itself, as the rules page says it: `1 point = 2.50 UAH`. */

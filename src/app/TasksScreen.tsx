@@ -7,6 +7,7 @@ import {
   findGoal,
   goalProgress,
   isModeAvailable,
+  pricePoints,
   prizesOfKind,
   groupByCompletion,
   habitTasks,
@@ -717,7 +718,10 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
    * (RWD-40). Undoing gives the points back and puts a bought wish back with them.
    */
   function handleRedeemPrize(prize: Prize) {
-    const spent = rewards.redeem(prize.points, prize.name)
+    // What it costs at the rate as it stands, for one priced in money (RWD-47).
+    const points = pricePoints(prize, rewards.pointValue)
+    if (points === null) return
+    const spent = rewards.redeem(points, prize.name)
     if (spent === null) return
 
     if (prize.kind === 'wish') prizes.buy(prize.id)
@@ -1153,7 +1157,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                           // Keyed by the list, so the add box starts empty on each.
                           key={view}
                           kind={view === 'rewards/wishlist' ? 'wish' : 'prize'}
-                          prizes={prizesOfKind(prizes.prizes, view === 'rewards/wishlist' ? 'wish' : 'prize')}
+                          prizes={prizesOfKind(prizes.prizes, view === 'rewards/wishlist' ? 'wish' : 'prize', rewards.pointValue)}
                           balance={rewards.balance}
                           pointValue={rewards.pointValue}
                           now={now}

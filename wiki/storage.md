@@ -102,11 +102,13 @@ changes shape.
   own (BAK-14).
 - **STORE-43** Each prize and each wish (RWD-33, RWD-40) is saved as **its own record**, in one
   collection of its own beside the ledger — the record says which kind it is, and when a wish was
-  bought — inside a versioned envelope like a list's (STORE-26). Changes are written **record by
+  bought, and its price, in points or in money with its currency (RWD-47) — inside a versioned
+  envelope like a list's (STORE-26). Changes are written **record by
   record**, as with the lists (STORE-28). It has **its own version**, apart from the ledger's: a
   redemption keeps the name and the price it was made under, so one renamed, repriced or deleted
   never rewrites one. A record saved before the two kinds were told apart is read as a **prize**,
-  never bought — the kind it was written as. One the app cannot read is ignored with a warning and
+  never bought — the kind it was written as — and one saved before a wish could be priced in money
+  as priced in its points. One the app cannot read is ignored with a warning and
   left as it is (STORE-7).
 - **STORE-25** What a change earns — and what a skip costs (HAB-34) — is recorded by the device that
   made the change. A change arriving from another device is not recorded again. The ledger is readable and writable by the account

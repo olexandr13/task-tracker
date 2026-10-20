@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createPrize, markBought, type Prize } from '../core'
+import { createPrize, markBought, priceInMoney, priceInPoints, type Prize } from '../core'
 import type { PrizeChanges, PrizeRepository } from '../storage/prizeRepository'
 import { expectConsole } from '../test/consoleGuard'
 import type { ReportProblem } from './storageProblem'
@@ -16,8 +16,8 @@ const AT = new Date('2026-09-17T09:00:00.000Z')
 
 afterEach(cleanup)
 
-const CHOCOLATE = createPrize('Chocolate', 20, 'prize', AT)
-const PHONE = createPrize('A new phone', 5000, 'prize', AT)
+const CHOCOLATE = createPrize('Chocolate', priceInPoints(20), 'prize', AT)
+const PHONE = createPrize('A new phone', priceInPoints(5000), 'prize', AT)
 
 /** A prize repository the test drives: it hands prizes over, or fails, on demand. */
 function fakePrizeRepository({ saveFails = false } = {}) {
@@ -53,27 +53,27 @@ function setUp(saved: Prize[] = [], options?: { saveFails?: boolean; onProblem?:
 }
 
 describe('the wishlist on screen (RWD-33, RWD-35)', () => {
-  it('shows what is saved, cheapest first', () => {
+  it('shows what is saved', () => {
     const { result } = setUp([PHONE, CHOCOLATE])
 
-    expect(result.current.prizes.map((prize) => prize.name)).toEqual(['Chocolate', 'A new phone'])
+    expect(result.current.prizes.map((prize) => prize.name)).toEqual(['A new phone', 'Chocolate'])
     expect(result.current.isLoading).toBe(false)
   })
 
   it('adds a prize and saves it', () => {
     const { result, written } = setUp()
 
-    act(() => { expect(result.current.add('Chocolate', 20, 'prize')).toBe(true) })
+    act(() => { expect(result.current.add('Chocolate', priceInPoints(20), 'prize')).toBe(true) })
 
     expect(result.current.prizes.map((prize) => prize.name)).toEqual(['Chocolate'])
     expect(written).toHaveLength(1)
-    expect(written[0].saved[0]).toMatchObject({ name: 'Chocolate', points: 20 })
+    expect(written[0].saved[0]).toMatchObject({ name: 'Chocolate', price: { in: 'points', points: 20 } })
   })
 
   it('refuses a second prize of the same name, whatever its case (RWD-33)', () => {
     const { result, written } = setUp([CHOCOLATE])
 
-    act(() => { expect(result.current.add('  chocolate ', 30, 'prize')).toBe(false) })
+    act(() => { expect(result.current.add('  chocolate ', priceInPoints(30), 'prize')).toBe(false) })
 
     expect(result.current.prizes).toHaveLength(1)
     expect(written).toHaveLength(0)
@@ -83,10 +83,18 @@ describe('the wishlist on screen (RWD-33, RWD-35)', () => {
     const { result, written } = setUp([CHOCOLATE])
 
     act(() => { expect(result.current.rename(CHOCOLATE.id, 'A bar of chocolate')).toBe(true) })
-    act(() => { result.current.reprice(CHOCOLATE.id, 25) })
+    act(() => { result.current.reprice(CHOCOLATE.id, priceInPoints(25)) })
 
-    expect(result.current.prizes[0]).toMatchObject({ name: 'A bar of chocolate', points: 25 })
+    expect(result.current.prizes[0]).toMatchObject({ name: 'A bar of chocolate', price: { in: 'points', points: 25 } })
     expect(written).toHaveLength(2)
+  })
+
+  it('prices a wish in money and saves it (RWD-47)', () => {
+    const { result, written } = setUp()
+
+    act(() => { expect(result.current.add('A new phone', priceInMoney(30000, 'UAH'), 'wish')).toBe(true) })
+
+    expect(written[0].saved[0]).toMatchObject({ name: 'A new phone', price: { in: 'money', amount: 30000, currency: 'UAH' } })
   })
 
   it('refuses a rename onto another prize’s name (RWD-33)', () => {
@@ -110,16 +118,16 @@ describe('the wishlist on screen (RWD-33, RWD-35)', () => {
     const { result } = setUp()
 
     act(() => {
-      result.current.add('Chocolate', 20, 'prize')
-      result.current.add('Coffee', 10, 'prize')
+      result.current.add('Chocolate', priceInPoints(20), 'prize')
+      result.current.add('Coffee', priceInPoints(10), 'prize')
     })
 
-    expect(result.current.prizes.map((prize) => prize.name)).toEqual(['Coffee', 'Chocolate'])
+    expect(result.current.prizes.map((prize) => prize.name)).toEqual(['Chocolate', 'Coffee'])
   })
 })
 
 describe('buying a wish (RWD-40)', () => {
-  const PHONE_WISH = createPrize('A new phone', 5000, 'wish', AT)
+  const PHONE_WISH = createPrize('A new phone', priceInPoints(5000), 'wish', AT)
 
   it('marks it bought, which takes it off what the points can buy', () => {
     const { result, written } = setUp([PHONE_WISH])
@@ -151,7 +159,7 @@ describe('buying a wish (RWD-40)', () => {
   it('adds to whichever list it was asked for', () => {
     const { result } = setUp()
 
-    act(() => { result.current.add('A bicycle', 2000, 'wish') })
+    act(() => { result.current.add('A bicycle', priceInPoints(2000), 'wish') })
 
     expect(result.current.prizes[0]).toMatchObject({ name: 'A bicycle', kind: 'wish' })
   })
@@ -174,7 +182,7 @@ describe('when the repository refuses (STORE-13)', () => {
     const onProblem = vi.fn()
     const { result } = setUp([], { saveFails: true, onProblem })
 
-    act(() => { result.current.add('Chocolate', 20, 'prize') })
+    act(() => { result.current.add('Chocolate', priceInPoints(20), 'prize') })
     await act(async () => { await Promise.resolve() })
 
     expect(onProblem).toHaveBeenCalledWith('save')

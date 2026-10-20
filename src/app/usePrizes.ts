@@ -6,10 +6,10 @@ import {
   putBack,
   renamePrize,
   repricePrize,
-  sortPrizes,
   type Prize,
   type PrizeId,
   type PrizeKind,
+  type PrizePrice,
 } from '../core'
 import type { PrizeChanges, PrizeRepository } from '../storage/prizeRepository'
 import { changesBetween, hasChanges } from '../storage/recordChanges'
@@ -35,6 +35,10 @@ function persist(repository: PrizeRepository, changes: PrizeChanges, onProblem: 
  * (useRewards). What is in here is what spending them does to the record — a
  * prize is left to come round again, a wish is marked bought (RWD-36, RWD-40).
  *
+ * The prizes are kept in no order of their own: what is cheapest depends on
+ * what a point is worth (RWD-47), so the pages that show them sort them at the
+ * rate (`prizesOfKind`).
+ *
  * A load or a save the repository refuses is told to `onProblem` (STORE-13).
  */
 export function usePrizes(repository: PrizeRepository, onProblem: ReportProblem = ignoreProblems) {
@@ -47,7 +51,7 @@ export function usePrizes(repository: PrizeRepository, onProblem: ReportProblem 
   useEffect(() => {
     return repository.subscribe(
       (saved) => {
-        latest.current = sortPrizes(saved)
+        latest.current = saved
         setPrizes(latest.current)
         setIsLoading(false)
       },
@@ -62,7 +66,7 @@ export function usePrizes(repository: PrizeRepository, onProblem: ReportProblem 
   const apply = useCallback(
     (change: (current: Prize[]) => Prize[]) => {
       const before = latest.current
-      const next = sortPrizes(change(before))
+      const next = change(before)
       latest.current = next
       setPrizes(next)
       persist(repository, changesBetween(before, next), onProblem)
@@ -76,10 +80,10 @@ export function usePrizes(repository: PrizeRepository, onProblem: ReportProblem 
    * rather than making a second Chocolate.
    */
   const add = useCallback(
-    (name: string, points: number, kind: PrizeKind): boolean => {
+    (name: string, price: PrizePrice, kind: PrizeKind): boolean => {
       if (isPrizeNameTaken(latest.current, name)) return false
 
-      const made = createPrize(name, points, kind)
+      const made = createPrize(name, price, kind)
       apply((current) => [...current, made])
       return true
     },
@@ -97,10 +101,13 @@ export function usePrizes(repository: PrizeRepository, onProblem: ReportProblem 
     [apply],
   )
 
-  /** Changes what a prize costs. What it was already redeemed for keeps the price it was redeemed at. */
+  /**
+   * Changes what a prize costs, in points or in money (RWD-47). What it was
+   * already redeemed for keeps the price it was redeemed at.
+   */
   const reprice = useCallback(
-    (id: PrizeId, points: number) => {
-      apply((current) => current.map((prize) => (prize.id === id ? repricePrize(prize, points) : prize)))
+    (id: PrizeId, price: PrizePrice) => {
+      apply((current) => current.map((prize) => (prize.id === id ? repricePrize(prize, price) : prize)))
     },
     [apply],
   )

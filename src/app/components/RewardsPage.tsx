@@ -84,9 +84,9 @@ export function RewardsPage({
 }: RewardsPageProps) {
   const balance = pointsBalance(entries, redemptions)
   const worth = describeMoney(balance, pointValue)
-  const withinReach = affordablePrizes(prizesOfKind(prizes, 'prize'), balance)
-  const wishes = prizesOfKind(prizes, 'wish')
-  const saving = nextPrize(wishes, balance) ?? nextPrize(prizesOfKind(prizes, 'prize'), balance)
+  const withinReach = affordablePrizes(prizesOfKind(prizes, 'prize', pointValue), balance, pointValue)
+  const wishes = prizesOfKind(prizes, 'wish', pointValue)
+  const saving = nextPrize(wishes, balance, pointValue) ?? nextPrize(prizesOfKind(prizes, 'prize', pointValue), balance, pointValue)
 
   return (
     <div className="flex flex-col gap-6">
@@ -171,7 +171,7 @@ export function RewardsPage({
             </button>
           </div>
           <p className="text-sm text-neutral-900 dark:text-neutral-100">
-            {prizesOfKind(prizes, 'prize').length === 0
+            {prizesOfKind(prizes, 'prize', pointValue).length === 0
               ? 'Nothing to spend points on yet.'
               : withinReach.length === 0
                 ? 'Nothing within reach yet.'
@@ -195,7 +195,7 @@ export function RewardsPage({
               ? wishes.length === 0
                 ? 'Nothing wished for yet.'
                 : 'Everything on it is within reach.'
-              : `Saving up for ${saving.name}: ${describePoints(pointsShort(saving, balance))} to go.`}
+              : `Saving up for ${saving.name}: ${describePoints(pointsShort(saving, balance, pointValue) ?? 0)} to go.`}
           </p>
           <p className={note}>The big ones, bought once.</p>
         </div>

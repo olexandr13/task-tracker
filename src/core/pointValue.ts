@@ -11,6 +11,14 @@
  * saved would be rewritten if it were.
  */
 
+/** An amount of money and what it is in: `30 000 UAH`. */
+export interface Money {
+  /** More than nothing, to two decimal places. */
+  readonly amount: number
+  /** What the money is: `UAH`, `€`. Whatever it is written as. */
+  readonly currency: string
+}
+
 /** What one point is worth. */
 export interface PointValue {
   /** Money for one point, more than nothing, to two decimal places. */
@@ -38,18 +46,26 @@ export class InvalidPointValueError extends Error {
   }
 }
 
+/** Whether an amount of money is no finer than a penny: two decimal places at most. */
+export function isToThePenny(amount: number): boolean {
+  // Asked in a way that floating point can answer: 0.07 × 100 is not exactly 7.
+  return Number.isFinite(amount) && Math.abs(Math.round(amount * 100) - amount * 100) < 1e-9
+}
+
 /** Whether one point can be worth this: more than nothing, not absurd, and no finer than a penny. */
 export function isPointAmount(amount: number): boolean {
-  if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_POINT_AMOUNT) return false
-  // Two decimal places at most, asked in a way that floating point can answer:
-  // 0.07 × 100 is not exactly 7.
-  return Math.abs(Math.round(amount * 100) - amount * 100) < 1e-9
+  return Number.isFinite(amount) && amount > 0 && amount <= MAX_POINT_AMOUNT && isToThePenny(amount)
 }
 
 /** Whether `currency` can name what the amount is in: something other than space, on one line, short. */
 export function isCurrency(currency: string): boolean {
   const trimmed = currency.trim()
   return trimmed.length > 0 && trimmed.length <= MAX_CURRENCY_LENGTH && !/[\r\n]/u.test(trimmed)
+}
+
+/** Whether two currencies are the same one, whatever the case they are written in: `uah` is `UAH`. */
+export function isSameCurrency(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase()
 }
 
 /** What one point is worth, as it is saved: the amount to the penny, the currency trimmed. */
@@ -75,4 +91,16 @@ export function createPointValue(amount: number, currency: string = DEFAULT_CURR
  */
 export function moneyFor(points: number, value: PointValue | null): number | null {
   return value === null ? null : Math.round(points * value.amount * 100) / 100
+}
+
+/**
+ * How many points this much money comes to at the rate (RWD-47): the fewest
+ * whole points worth at least that much, so what is priced in money is never
+ * had for less than it costs. Null while nothing says what a point is worth, or
+ * while the money is in a currency the rate is not.
+ */
+export function pointsForMoney(amount: number, currency: string, value: PointValue | null): number | null {
+  if (value === null || !isSameCurrency(currency, value.currency)) return null
+  // Counted in pennies, which are whole, so a division that comes out even is exact.
+  return Math.ceil(Math.round(amount * 100) / Math.round(value.amount * 100))
 }

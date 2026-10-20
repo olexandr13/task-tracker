@@ -6,6 +6,8 @@ import {
   createPointValue,
   createPrize,
   markBought,
+  priceInMoney,
+  priceInPoints,
   prizesOfKind,
   type PointValue,
   type Prize,
@@ -23,10 +25,12 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-const CHOCOLATE = createPrize('Chocolate', 20, 'prize', AT)
-const COFFEE = createPrize('Coffee', 50, 'prize', AT)
-const PHONE = createPrize('A new phone', 5000, 'wish', AT)
-const TRIP = markBought(createPrize('A trip', 100, 'wish', AT), AT)
+const CHOCOLATE = createPrize('Chocolate', priceInPoints(20), 'prize', AT)
+const COFFEE = createPrize('Coffee', priceInPoints(50), 'prize', AT)
+const PHONE = createPrize('A new phone', priceInPoints(5000), 'wish', AT)
+const TRIP = markBought(createPrize('A trip', priceInPoints(100), 'wish', AT), AT)
+/** A wish priced in money (RWD-47): 30 000 UAH, 12 000 points at 2.50 UAH a point. */
+const LAPTOP = createPrize('A laptop', priceInMoney(30000, 'UAH'), 'wish', AT)
 
 function setup({
   kind = 'prize' as PrizeKind,
@@ -47,7 +51,7 @@ function setup({
   render(
     <PrizeListPage
       kind={kind}
-      prizes={prizesOfKind(prizes, kind)}
+      prizes={prizesOfKind(prizes, kind, pointValue)}
       balance={balance}
       pointValue={pointValue}
       now={AT}
@@ -187,13 +191,13 @@ describe('redeeming (RWD-36, RWD-40)', () => {
 
 describe('keeping a list (RWD-33, RWD-34)', () => {
   it('adds one by name and price, to the list it belongs to', async () => {
-    const { user, onAdd } = setup({ kind: 'wish' })
+    const { user, onAdd } = setup({ kind: 'prize' })
 
-    await user.type(screen.getByLabelText('Name of the new wish'), 'A bicycle')
-    await user.type(screen.getByLabelText('Points the new wish costs'), '2000')
+    await user.type(screen.getByLabelText('Name of the new prize'), 'Tea')
+    await user.type(screen.getByLabelText('Points the new prize costs'), '15')
     await user.click(screen.getByRole('button', { name: 'Add' }))
 
-    expect(onAdd).toHaveBeenCalledExactlyOnceWith('A bicycle', 2000, 'wish')
+    expect(onAdd).toHaveBeenCalledExactlyOnceWith('Tea', { in: 'points', points: 15 }, 'prize')
   })
 
   it('will not add one without both a name and a price', async () => {
@@ -211,7 +215,7 @@ describe('keeping a list (RWD-33, RWD-34)', () => {
     render(
       <PrizeListPage
         kind="prize"
-        prizes={prizesOfKind([CHOCOLATE], 'prize')}
+        prizes={prizesOfKind([CHOCOLATE], 'prize', null)}
         balance={25}
         pointValue={null}
         now={AT}
@@ -243,7 +247,7 @@ describe('keeping a list (RWD-33, RWD-34)', () => {
     await user.type(price, '25{Enter}')
 
     expect(onRename).toHaveBeenCalledWith(CHOCOLATE.id, 'A bar of chocolate')
-    expect(onReprice).toHaveBeenCalledWith(CHOCOLATE.id, 25)
+    expect(onReprice).toHaveBeenCalledWith(CHOCOLATE.id, { in: 'points', points: 25 })
   })
 
   it('leaves one as it was when the change is given up on with Escape', async () => {
@@ -291,5 +295,117 @@ describe('keeping a list (RWD-33, RWD-34)', () => {
 
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(onDelete).not.toHaveBeenCalled()
+  })
+})
+
+describe('a wish priced in money (RWD-47)', () => {
+  it('is priced in the rate’s currency once a point has a value, the currency written after the box', async () => {
+    const { user, onAdd } = setup({ kind: 'wish' })
+
+    const box = screen.getByLabelText('Price of the new wish, in UAH')
+    expect(box.parentElement?.textContent).toContain('UAH')
+    await user.type(screen.getByLabelText('Name of the new wish'), 'A bicycle')
+    await user.type(box, '20000.50{Enter}')
+
+    expect(onAdd).toHaveBeenCalledExactlyOnceWith('A bicycle', { in: 'money', amount: 20000.5, currency: 'UAH' }, 'wish')
+  })
+
+  it('is priced in points while a point has no value', async () => {
+    const { user, onAdd } = setup({ kind: 'wish', pointValue: null })
+
+    await user.type(screen.getByLabelText('Name of the new wish'), 'A bicycle')
+    await user.type(screen.getByLabelText('Points the new wish costs'), '2000{Enter}')
+
+    expect(onAdd).toHaveBeenCalledExactlyOnceWith('A bicycle', { in: 'points', points: 2000 }, 'wish')
+  })
+
+  it('will not add money finer than a penny', async () => {
+    const { user, onAdd } = setup({ kind: 'wish' })
+
+    await user.type(screen.getByLabelText('Name of the new wish'), 'A bicycle')
+    await user.type(screen.getByLabelText('Price of the new wish, in UAH'), '10.005{Enter}')
+
+    expect(onAdd).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(true)
+  })
+
+  it('costs the points its money comes to at the rate, and says its money as it was set', () => {
+    setup({ kind: 'wish', balance: 25, prizes: [LAPTOP] })
+
+    const laptop = screen.getByText('A laptop').closest('li')
+    expect(laptop?.textContent).toContain('12\u00A0000 points')
+    expect(laptop?.textContent).toContain('30\u00A0000 UAH')
+    expect(laptop?.textContent).toContain('11\u00A0975 to go')
+    expect(screen.getByRole('button', { name: 'Redeem A laptop for 12\u00A0000 points' }).hasAttribute('disabled')).toBe(true)
+  })
+
+  it('is redeemed once the balance covers its points at the rate', async () => {
+    const { user, onRedeem } = setup({ kind: 'wish', balance: 12000, prizes: [LAPTOP] })
+
+    await user.click(screen.getByRole('button', { name: 'Redeem A laptop for 12\u00A0000 points' }))
+
+    expect(onRedeem).toHaveBeenCalledExactlyOnceWith(LAPTOP)
+  })
+
+  it('says why it cannot be bought while a point has no value, and opens Rules to give it one', async () => {
+    const { user, onOpenRules } = setup({ kind: 'wish', balance: 100000, pointValue: null, prizes: [LAPTOP] })
+
+    const laptop = screen.getByText('A laptop').closest('li')
+    expect(laptop?.textContent).toContain('30\u00A0000 UAH')
+    expect(laptop?.textContent).toContain('Priced in UAH, and a point has no value yet, so it can\'t be bought.')
+    expect(screen.getByRole('button', { name: 'Redeem A laptop' }).hasAttribute('disabled')).toBe(true)
+
+    await user.click(screen.getByRole('button', { name: 'Set what a point is worth' }))
+    expect(onOpenRules).toHaveBeenCalledOnce()
+  })
+
+  it('says why it cannot be bought while a point is worth another currency', () => {
+    setup({ kind: 'wish', balance: 100000, pointValue: createPointValue(1, 'EUR'), prizes: [LAPTOP] })
+
+    expect(screen.getByText('A laptop').closest('li')?.textContent).toContain(
+      'Priced in UAH, but a point is worth EUR, so it can\'t be bought. Change its price to EUR.',
+    )
+  })
+
+  it('is changed in money, starting from its price', async () => {
+    const { user, onReprice } = setup({ kind: 'wish', prizes: [LAPTOP] })
+
+    await user.click(screen.getByRole('button', { name: 'Change the wish "A laptop"' }))
+    const price = screen.getByLabelText<HTMLInputElement>('Price of the wish "A laptop", in UAH')
+    expect(price.value).toBe('30000')
+    await user.clear(price)
+    await user.type(price, '28000{Enter}')
+
+    expect(onReprice).toHaveBeenCalledExactlyOnceWith(LAPTOP.id, { in: 'money', amount: 28000, currency: 'UAH' })
+  })
+
+  it('changes a wish priced in points in money too, starting from what its points come to', async () => {
+    const { user, onReprice } = setup({ kind: 'wish' })
+
+    await user.click(screen.getByRole('button', { name: 'Change the wish "A new phone"' }))
+    const price = screen.getByLabelText<HTMLInputElement>('Price of the wish "A new phone", in UAH')
+    expect(price.value).toBe('12500')
+    await user.clear(price)
+    await user.type(price, '30000{Enter}')
+
+    expect(onReprice).toHaveBeenCalledExactlyOnceWith(PHONE.id, { in: 'money', amount: 30000, currency: 'UAH' })
+  })
+
+  it('leaves the price as it is when only the name is changed', async () => {
+    const { user, onRename, onReprice } = setup({ kind: 'wish' })
+
+    await user.click(screen.getByRole('button', { name: 'Change the wish "A new phone"' }))
+    await user.type(screen.getByLabelText('Name of the wish "A new phone"'), ' X{Enter}')
+
+    expect(onRename).toHaveBeenCalledExactlyOnceWith(PHONE.id, 'A new phone X')
+    expect(onReprice).not.toHaveBeenCalled()
+  })
+
+  it('starts the box empty where its money is in a currency the rate is not in', async () => {
+    const { user } = setup({ kind: 'wish', pointValue: createPointValue(1, 'EUR'), prizes: [LAPTOP] })
+
+    await user.click(screen.getByRole('button', { name: 'Change the wish "A laptop"' }))
+
+    expect(screen.getByLabelText<HTMLInputElement>('Price of the wish "A laptop", in EUR').value).toBe('')
   })
 })

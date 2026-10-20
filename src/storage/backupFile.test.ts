@@ -9,6 +9,7 @@ import {
   createNote,
   createPointValue,
   createPrize,
+  priceInPoints,
   createRedemption,
   createTag,
   createJournalEntry,
@@ -55,7 +56,7 @@ const ENTRIES: RewardEntry[] = [
   { taskId: DONE.id, day: '2026-09-19', points: 5 },
 ]
 const TREAT = createRedemption(3, 'Coffee', 12, AT)
-const CHOCOLATE = createPrize('Chocolate', 20, 'prize', AT)
+const CHOCOLATE = createPrize('Chocolate', priceInPoints(20), 'prize', AT)
 const BONUSES: PeriodBonuses = { today: 10, week: 40, month: null }
 const UAH = createPointValue(2.5)
 const WARMING_UP = startWarmUp(AT)

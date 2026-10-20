@@ -5,8 +5,10 @@ import {
   InvalidPointValueError,
   isCurrency,
   isPointAmount,
+  isSameCurrency,
   MAX_POINT_AMOUNT,
   moneyFor,
+  pointsForMoney,
 } from './pointValue'
 
 /* What a point is worth. RWD ids refer to wiki/rewards.md. */
@@ -60,5 +62,26 @@ describe('what points come to in money (RWD-32)', () => {
 
   it('follows a balance below zero (RWD-17)', () => {
     expect(moneyFor(-4, UAH)).toBe(-10)
+  })
+})
+
+describe('what money comes to in points (RWD-47)', () => {
+  const UAH = createPointValue(2.5)
+
+  it('is the fewest whole points worth at least that much', () => {
+    expect(pointsForMoney(25, 'UAH', UAH)).toBe(10)
+    expect(pointsForMoney(26, 'UAH', UAH)).toBe(11)
+    expect(pointsForMoney(0.21, 'UAH', createPointValue(0.07))).toBe(3)
+  })
+
+  it('is nothing at all while no rate is set, or the rate is in another currency', () => {
+    expect(pointsForMoney(25, 'UAH', null)).toBeNull()
+    expect(pointsForMoney(25, 'EUR', UAH)).toBeNull()
+  })
+
+  it('takes a currency written in another case for the same one', () => {
+    expect(isSameCurrency(' uah', 'UAH')).toBe(true)
+    expect(isSameCurrency('UAH', 'EUR')).toBe(false)
+    expect(pointsForMoney(25, 'uah', UAH)).toBe(10)
   })
 })
