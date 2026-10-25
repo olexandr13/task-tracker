@@ -180,8 +180,10 @@ export function TaskSheet({
           onBlocked={refuse}
           onComplete={() => { actions.complete(task.id) }}
           onUncomplete={() => { actions.uncomplete(task.id) }}
+          // Level with the title's first line, however many lines it runs to.
+          className="mt-1.5"
         />
-        <div className="flex min-h-8 min-w-0 flex-1 items-center">{title}</div>
+        <div className="flex min-h-8 min-w-0 flex-1 items-start py-0.5">{title}</div>
       </div>
 
       {/* Under the title, where the box's own column ends, as it is on a row. */}

@@ -65,6 +65,7 @@ import { ProcrastinationPanel } from './components/ProcrastinationMode'
 import { GoalHeader } from './components/GoalHeader'
 import { GoalsPage } from './components/GoalsPage'
 import { ListsPage } from './components/ListsPage'
+import { Loading } from './components/Loading'
 import { ModePage } from './components/ModePage'
 import { ModesPage } from './components/ModesPage'
 import { MorePage } from './components/MorePage'
@@ -102,6 +103,7 @@ import { CASE_DAILY_NOTICE, CASE_SHARE_NOTICE } from './caseLabels'
 import { DEV_FLAGS } from './devFlags'
 import { describeEarningTitle } from './rewardLabels'
 import { POINTS_NOT_LOADED, TASKS_NOT_LOADED } from './storageProblem'
+import { usePageSnapshotScreen } from './pageSnapshot'
 import { changePinned, moveTab, pinnedViews, pinTab, unpinTab } from './pinnedTabs'
 import type { SkipOutcome, TaskActions } from './taskActions'
 import { useLetterShortcut } from './useLetterShortcut'
@@ -217,6 +219,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   useEffect(() => {
     void storage.moveBrowserDataIn()
   }, [storage])
+  // A reload's picture of the page stays over it until nothing here is still loading (UI-86).
+  usePageSnapshotScreen()
   // A load or a save the service refused, said on screen until dismissed (STORE-13).
   const storageProblem = useStorageProblem()
   // The points come first: what clearing Today is worth is part of what a change
@@ -1137,7 +1141,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   ) : isRewardsView(view) ? (
                     <section aria-label={viewLabel(view)} className="flex flex-col gap-5">
                       {rewards.isLoading ? (
-                        <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                        <Loading />
                       ) : rewards.loadFailed ? (
                         // Zeros here would read as points lost, rather than as points unread (RWD-22).
                         <p className="py-10 text-center text-neutral-500 dark:text-neutral-400">{POINTS_NOT_LOADED}</p>
@@ -1209,7 +1213,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                       )}
                     </section>
                   ) : isLoading ? (
-                    <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                    <Loading />
                   ) : isTaskView(view) ? (
                     <>
                       {/* A goal's view is headed with the goal and how far it has got (GOAL-10). */}
@@ -1295,7 +1299,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   ) : view === 'lists' ? (
                     <section aria-label="Lists">
                       {lists.isLoading ? (
-                        <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                        <Loading />
                       ) : (
                         <ListsPage
                           lists={summarizeLists(lists.lists, live, now)}
@@ -1315,7 +1319,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   ) : view === 'goals' ? (
                     <section aria-label="Goals">
                       {goals.isLoading ? (
-                        <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                        <Loading />
                       ) : (
                         <GoalsPage
                           goals={summarizeGoals(goals.goals, live, now, goalHistory)}
@@ -1329,7 +1333,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   ) : view === 'tags' ? (
                     <section aria-label="Tags">
                       {savedTags.isLoading ? (
-                        <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                        <Loading />
                       ) : (
                         <TagList
                           tags={summarizeTags(tags, live, now)}
@@ -1343,7 +1347,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   ) : view === 'balance' ? (
                     <section aria-label="Balance">
                       {categories.isLoading ? (
-                        <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                        <Loading />
                       ) : (
                         <BalancePage
                           categories={categories.categories}
@@ -1365,7 +1369,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   ) : view === 'activity' ? (
                     <section aria-label="Activity log">
                       {activities.isLoading || checkIn.isLoading ? (
-                        <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                        <Loading />
                       ) : (
                         <ActivityPage
                           // Opened afresh from a check-in, on the hour it asked about.
@@ -1385,7 +1389,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   ) : view === 'notes' ? (
                     <section aria-label="Notes">
                       {notes.isLoading ? (
-                        <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                        <Loading />
                       ) : (
                         <NotesPage
                           notes={notes.notes}
@@ -1399,7 +1403,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                   ) : view === 'journal' ? (
                     <section aria-label="Journal">
                       {journal.isLoading ? (
-                        <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+                        <Loading />
                       ) : (
                         <JournalPage
                           entries={journal.entries}
@@ -1481,7 +1485,9 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                       </aside>
                     )}
 
-                    {on.quote && <QuoteCard quote={quote} dimmed={dimChrome} />}
+                    {/* Not beside a list still loading, as the bars are not: alone, it reads as the page.
+                        Nor before the switches have said it is on, so a quote switched off never flashes (QUOTE-11). */}
+                    {on.quote && !isLoading && !features.isLoading && <QuoteCard quote={quote} dimmed={dimChrome} />}
                   </div>
                 )}
               </div>

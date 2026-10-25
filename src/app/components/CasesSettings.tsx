@@ -1,4 +1,5 @@
 import { COUNT_UNPAID_DESCRIPTION, COUNT_UNPAID_LABEL, PRACTICE_DESCRIPTION, PRACTICE_LABEL } from '../caseLabels'
+import { Loading } from './Loading'
 import { OptionSwitch } from './OptionSwitch'
 
 /** Practice (CHST-21), where the build offers it: whether it is on, and the way to turn it. */
@@ -32,7 +33,7 @@ export function CasesSettings({ counting, onCountUnpaidChange, practice }: Cases
   return (
     <>
       {counting.loading ? (
-        <p className="px-2 py-2 text-sm text-neutral-400 dark:text-neutral-500">Loading…</p>
+        <Loading size="line" />
       ) : (
         <OptionSwitch
           label={COUNT_UNPAID_LABEL}

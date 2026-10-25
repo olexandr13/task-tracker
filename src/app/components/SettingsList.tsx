@@ -10,6 +10,7 @@ import { AccountSummary } from './AccountSummary'
 import { BackupActions } from './BackupActions'
 import { CasesSettings, type CasesPractice } from './CasesSettings'
 import { FeatureSwitches, type FeatureSettings } from './FeatureSwitches'
+import { Loading } from './Loading'
 import { OptionSwitch } from './OptionSwitch'
 import { SettingsSection } from './SettingsSection'
 import { ThemePicker } from './ThemePicker'
@@ -96,7 +97,7 @@ export function SettingsList({
           />
           {/* The account's: until it has said, no switch whose press would save a guess over it. */}
           {habitRests.loading ? (
-            <p className="px-2 py-2 text-sm text-neutral-400 dark:text-neutral-500">Loading…</p>
+            <Loading size="line" />
           ) : (
             <OptionSwitch
               label={LIMIT_RESTS_LABEL}

@@ -52,7 +52,7 @@ and whether it reads as done is derived from the occurrence currently in play ra
   and the change is saved straight away — no separate confirm step. Picking a date for it from its
   schedule button leaves the rule alone: that date is the day the occurrence in play is due on, this
   time only — a habit's, the day it starts (DUE-18) — and only the days that can be are offered
-  (DUE-27). A task given a **daily** rule becomes a habit and moves to the end of the habits (HAB-30).
+  (DUE-27). A task given a **daily** rule becomes a habit and keeps its place in the list (HAB-30).
 - **RPT-13** Giving a rule to a one-off that was finished today keeps that completion: it is still
   done today.
 - **RPT-14** Dropping the rule while the task is **not** currently done clears the stale completion

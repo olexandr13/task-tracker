@@ -13,8 +13,10 @@ import { localStorageTaskTimerRepository } from './localStorageTaskTimerReposito
 import { localStorageThemeRepository } from './localStorageThemeRepository'
 import { localStorageViewOptionsRepository } from './localStorageViewOptionsRepository'
 import type { NudgeDeviceRepository } from './nudgeDeviceRepository'
+import type { PageSnapshotRepository } from './pageSnapshotRepository'
 import type { PinnedTabsRepository } from './pinnedTabsRepository'
 import type { QuoteRepository } from './quoteRepository'
+import { sessionStoragePageSnapshotRepository } from './sessionStoragePageSnapshotRepository'
 import type { SettingsLayoutRepository } from './settingsLayoutRepository'
 import type { SideNavRepository } from './sideNavRepository'
 import type { TaskTimerRepository } from './taskTimerRepository'
@@ -24,9 +26,9 @@ import type { ViewOptionsRepository } from './viewOptionsRepository'
 /**
  * What is kept on this device rather than in the account: how things are shown
  * here — Settings' folds and the pinned tabs among them — what is running here, what the nudge has already said here, what the
- * cases keeps here, what the check-in keeps here, and today's quote (STORE-30,
- * STORE-31, STORE-36, STORE-40, STORE-46, STORE-49, STORE-54, STORE-57, STORE-59).
- * The same whoever is signed in, and never synced.
+ * cases keeps here, what the check-in keeps here, today's quote, and the page as
+ * this tab last left it (STORE-30, STORE-31, STORE-36, STORE-40, STORE-46,
+ * STORE-49, STORE-54, STORE-57, STORE-59, STORE-68). Never synced.
  */
 export interface DeviceStorage {
   readonly viewOptions: ViewOptionsRepository
@@ -45,6 +47,8 @@ export interface DeviceStorage {
   readonly checkIn: CheckInDeviceRepository
   readonly quote: QuoteRepository
   readonly theme: ThemeRepository
+  /** The page as this tab last left it, shown again while a reload gathers it (STORE-68). */
+  readonly pageSnapshot: PageSnapshotRepository
 }
 
 export const deviceStorage: DeviceStorage = {
@@ -59,4 +63,5 @@ export const deviceStorage: DeviceStorage = {
   checkIn: localStorageCheckInDeviceRepository,
   quote: localStorageQuoteRepository,
   theme: localStorageThemeRepository,
+  pageSnapshot: sessionStoragePageSnapshotRepository,
 }

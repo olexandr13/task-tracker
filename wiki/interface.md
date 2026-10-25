@@ -610,6 +610,16 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   warm-up (WARM-9).
 - **UI-14** The whole screen is drawn for one moment, so the list order, each row, the three bars,
   the trash countdown and the quote can never disagree about which day it is.
+- **UI-86** **A reload keeps the page on screen.** The page as it was left (STORE-68) is shown
+  again the moment the reloaded app starts, frozen, while the sign-in is read back and the account's
+  data arrives underneath; once nothing on the page is still loading, it fades into the live page in
+  a moment — at once with reduced motion. A thin blue line across the top says it is catching up,
+  and nothing in it can be pressed: a press always reaches the live page, never a copy that may be
+  behind it. It is shown only on the **same view, the same day and the same size of screen** it was
+  left on, so it never pictures a page other than the one about to be drawn; a new tab, a closed and
+  reopened app, or a page still loading when it was left starts with `Loading…` instead (TASK-20).
+  Signed out by then, the sign-in screen is shown at once. Should the page still be loading after
+  **six seconds**, it is shown as it is.
 - **UI-39** The app's icon, shown in the browser tab, is a **progress ring** about three-quarters full
   around a check, drawn in the app's blue on a dark tile, so it reads well on light and dark tab bars.
   The same icon stands for the app once installed on a home screen or a desktop (OFF-10).
@@ -650,7 +660,7 @@ phone's look at a task, and a wide screen's dialog), `src/app/components/SheetAc
 names them, UI-63), `src/app/components/InfoButton.tsx` (the **i** beside a heading that opens a
 sheet with what the page explains, UI-73), `src/app/components/ConfirmSheet.tsx` (asking before what
 cannot be taken back, UI-74), `src/app/sheetDrag.ts` and `src/app/useSheetDrag.ts`
-(pulling a sheet down to close it), `src/app/usePhoneLayout.ts` (whether the screen is a phone's, and
+(pulling a sheet down to close it), `src/app/pageSnapshot.ts` and `components/Loading.tsx` (the page kept through a reload), `src/app/usePhoneLayout.ts` (whether the screen is a phone's, and
 how high above the bar the Plus and the notices float), `index.html` (the page running under the
 notch and the home indicator), `src/app/components/TaskList.tsx` (the room between rows), `src/app/components/ContextMenu.tsx` (a task's menu), `src/app/components/FloatingPanel.tsx` (a menu or panel floating where the pointer was), `src/app/textOffsetAtPoint.ts` (which character a click landed on), `src/app/components/SideNav.tsx`,
 `src/app/components/BottomNav.tsx` (the phone's bar), `src/app/components/AddTaskForm.tsx` (the one-line
@@ -677,7 +687,7 @@ the sheet's pickers), `src/app/components/PanelRow.tsx` and `src/app/components/
 line standing for a group of choices, and the way back out of the ones it opens), `src/app/usePageLock.ts` (the page held still under a sheet or a panel, UI-68), `src/styles.css`,
 `public/favicon.svg` (the app's icon; the PNGs beside it are the same icon for installing),
 `src/app/components/AppLogo.tsx` (the mark in the sidebar).
-**Tested in:** `src/app/components/SheetActions.test.tsx` (the row of icons and its **i**), `src/app/components/InfoButton.test.tsx` (the **i** beside a heading and the sheet it opens), `src/app/components/PickerPanel.test.tsx` (the aside and the sheet), `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
+**Tested in:** `src/app/pageSnapshot.test.ts` (the page kept through a reload), `src/app/components/SheetActions.test.tsx` (the row of icons and its **i**), `src/app/components/InfoButton.test.tsx` (the **i** beside a heading and the sheet it opens), `src/app/components/PickerPanel.test.tsx` (the aside and the sheet), `src/app/components/BottomNav.test.tsx` (the bottom bar, and that a phone's menu
 items are large enough for a finger), `src/app/components/MorePage.test.tsx`, `OrganizePage.test.tsx` and `ReflectPage.test.tsx` (More's, Organize's and Reflect's links), `src/app/components/SectionNav.test.tsx` (the strip across a section's pages), `src/app/components/UpLink.test.tsx` (the link back atop a goal's or a tag's tasks), `src/app/components/SideNav.test.tsx` (the sidebar, and the mark on it), `src/app/useView.test.ts` (the
 view in the address, and back going a level up), `src/app/overlayHistory.test.ts` (back closing a sheet, and a sheet over a sheet first), `src/app/view.test.ts` (which view is above which), `src/app/components/ViewOptionsMenu.test.tsx` (the View panel),
 `src/app/components/SettingsList.test.tsx` (the sections and their folding, the version, and the settings under Habits and Cases),

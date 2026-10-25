@@ -186,8 +186,9 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-50** A list whose tasks are all done shows a praise banner above the done tasks: a soft
   green panel with a spark icon and clear, high-contrast praise. The moment one is open again, the
   praise goes.
-- **TASK-20** Until the saved tasks have loaded, the list area says it is loading rather than
-  flashing an empty list.
+- **TASK-20** Until the saved tasks have loaded, the list area says `Loading…` rather than
+  flashing an empty list, with nothing beside it — no bars, no quote — so a page still arriving
+  never reads as an empty one. After a reload, the page as it was stays over it instead (UI-86).
 - **TASK-56** On **Tasks**, the done tasks are divided by when they were finished, each span under
   a small, muted gray heading with its count, the spans set close together: **Done today**, **Done yesterday**, **Done in the last 7 days**, **Done
   in the last 30 days** and **Done earlier**, most recent first. The spans count back in local days

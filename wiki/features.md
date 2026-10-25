@@ -125,9 +125,9 @@ thing every account keeps.
   machine's (STORE-56). They are in the **backup** (BAK-20). As guest they are kept in this browser
   and moved into the account on signing in (STORE-37, STORE-38).
 - **FEAT-8** Until the account has said how they stand, **everything reads as on**, and the card
-  says `Loading…` and offers no switch. A part switched off may show for that moment, but nothing is
-  hidden on a guess, no address is sent elsewhere on one (FEAT-2), and a switch drawn on a guess
-  would send the guess back to the account.
+  says `Loading…` and offers no switch. A part switched off may show for that moment — all but the
+  quote, which waits (QUOTE-11) — but nothing is hidden on a guess, no address is sent elsewhere on
+  one (FEAT-2), and a switch drawn on a guess would send the guess back to the account.
 
 ---
 

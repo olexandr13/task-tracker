@@ -155,13 +155,11 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   ticking it off and opening its sheet all still work: a pointer has to move a few pixels, or a
   finger to hold for a moment, before a card is picked up at all (TASK-39), and letting go never
   unfolds the card. The grip is outside the line that folds, so it only ever carries the card.
-- **HAB-30** A habit taken on **joins the habits at the end**, so the page reads in the order they
-  were taken on. One written in the add box or the sheet goes at the end of the task list, as any
-  new task does (TASK-17). A task **given a daily rule**, which is what makes it a habit (HAB-1),
-  moves to just after the last habit instead of keeping the place it had among the tasks (RPT-12).
-  Only the task's own `order` changes (TASK-43), as a drag changes it: a task filed after the
-  habits stays after them, and a habit whose rule changes while it stays a habit — daily swapped
-  for all seven weekdays (HAB-1) — keeps its place.
+- **HAB-30** A habit written in the add box or the sheet goes at the end of the task list, as any
+  new task does (TASK-17), and so **joins the habits at the end**. A task **given a daily rule**,
+  which is what makes it a habit (HAB-1), **keeps the place it had** among the tasks (RPT-12): the
+  list does not move it while it is being changed. On this page it sits among the habits where
+  that place falls (HAB-28), and a drag moves it from there.
 
 ## Skipping a day
 
@@ -281,8 +279,7 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 
 ---
 
-**Where it lives:** `src/core/habit.ts` (what a habit is, streaks, rates, the weeks, the last days, `setDoneOnDay`,
-`moveToEndOfHabits`),
+**Where it lives:** `src/core/habit.ts` (what a habit is, streaks, rates, the weeks, the last days, `setDoneOnDay`),
 `src/core/habitRest.ts` (limited rests: how many a habit has, which skips they covered, `canRest`, HAB-36 to HAB-40),
 `src/core/task.ts` (`doneDays`, kept in step by `settleHistory`; `forgetRestsAhead`, HAB-33), `src/app/components/HabitList.tsx`
 (the page and its cards, and a timed habit's clock — see [Time goals](time-goals.md)), `src/app/components/HabitGrid.tsx`, `src/app/components/ChevronIcon.tsx`, `src/app/components/MoreVerticalIcon.tsx`, `src/app/components/TaskSheet.tsx` (editing a habit), `src/app/habitLabels.ts` (wording),

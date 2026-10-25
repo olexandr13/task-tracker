@@ -1,8 +1,10 @@
+import { useEffect } from 'react'
 import { firebaseApp } from '../storage/firebaseApp'
 import { createFirebaseAuthService } from '../storage/firebaseAuthService'
 import { createAppAuthService } from '../storage/appAuthService'
 import { deviceStorage } from '../storage/deviceStorage'
 import { SignInScreen } from './components/SignInScreen'
+import { pageSnapshot } from './pageSnapshot'
 import { TasksScreen } from './TasksScreen'
 import { useAuth } from './useAuth'
 import { useTheme } from './useTheme'
@@ -18,9 +20,14 @@ export function App() {
   const state = useAuth(auth)
   // The device's theme, worn on every screen — the way in included — whoever is signed in.
   const [theme, setTheme] = useTheme(deviceStorage.theme)
+  // The way in is never pictured: a reload that finds nobody signed in shows it at once (UI-86).
+  useEffect(() => {
+    if (state.status === 'signed-out') pageSnapshot.drop()
+  }, [state.status])
 
-  // A saved session takes a moment to read back. Showing nothing for it beats
-  // flashing the sign-in screen at someone who is already signed in.
+  // A saved session takes a moment to read back. Showing nothing for it — or,
+  // after a reload, the page as it was (UI-86) — beats flashing the sign-in
+  // screen at someone who is already signed in.
   if (state.status === 'checking') {
     return null
   }

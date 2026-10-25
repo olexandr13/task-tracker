@@ -15,6 +15,7 @@ import {
 import type { XpStanding } from '../useXp'
 import { InfoButton } from './InfoButton'
 import { LevelIcon } from './LevelIcon'
+import { Loading } from './Loading'
 
 const card = 'rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
 interface LevelPageProps {
@@ -51,7 +52,7 @@ export function LevelPage({ standing, failed, startedOn, now }: LevelPageProps) 
       {failed ? (
         <p className="py-10 text-center text-neutral-500 dark:text-neutral-400">{XP_NOT_LOADED}</p>
       ) : standing === null ? (
-        <p className="py-10 text-center text-neutral-400 dark:text-neutral-600">Loading…</p>
+        <Loading />
       ) : (
         <section aria-label="Your level" className={`${card} flex flex-col gap-3 px-4 py-4`}>
           <div className="flex items-center gap-3">

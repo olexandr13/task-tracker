@@ -4,6 +4,7 @@ import { FEATURE_GROUPS, FEATURE_LABELS } from '../featureLabels'
 import { VIEW_ICONS, type ViewIcon } from '../viewIcons'
 import { ChevronIcon } from './ChevronIcon'
 import { ClockIcon } from './ClockIcon'
+import { Loading } from './Loading'
 import { OptionSwitch } from './OptionSwitch'
 import { ProgressIcon } from './ProgressIcon'
 import { QuoteIcon } from './QuoteIcon'
@@ -72,7 +73,7 @@ const foldButton =
 export function FeatureSwitches({ off, loading, onChange, settings = {} }: FeatureSwitchesProps) {
   const foldId = useId()
 
-  if (loading) return <p className="text-sm text-neutral-400 dark:text-neutral-500">Loading…</p>
+  if (loading) return <Loading size="line" />
 
   return (
     <div className="-mx-2 flex flex-col gap-3">

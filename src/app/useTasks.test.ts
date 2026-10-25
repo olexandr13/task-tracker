@@ -431,13 +431,14 @@ describe('useTasks, a task taken on as a habit (HAB-30)', () => {
     return habitTasks(tasks).map((task) => task.title)
   }
 
-  it('puts it after the habits already kept, wherever it sat', () => {
+  it('keeps the place it had among the tasks', () => {
     const { oneOff, tasks } = saved()
     const { result } = setUp(tasks)
 
     act(() => { result.current.changeRepeat(oneOff.id, DAILY) })
 
-    expect(habits(result.current.tasks)).toEqual(['stretch', 'read', 'call the bank'])
+    expect(result.current.tasks.map((task) => task.order)).toEqual([0, 1024, 2048])
+    expect(habits(result.current.tasks)).toEqual(['call the bank', 'stretch', 'read'])
   })
 
   it('leaves a habit where it is when its rule changes and it stays a habit', () => {

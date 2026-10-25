@@ -426,6 +426,14 @@ changes shape.
   opened after. A change made in one reaches the others at once, and a change made in another builds
   on it rather than putting back what that window opened with. So a tab pinned in the new version is
   still there after the old window unpins one of its own.
+- **STORE-68** **The page as it was left** (UI-86) — what the page showed, the view it was on, the
+  day and whether the screen was a phone's — is kept in the tab's `sessionStorage`, not
+  `localStorage`: it survives a reload and goes with the tab, so it never outlives the visit it
+  pictures, and it fills storage of its own rather than the settings'. It is kept each time the tab
+  is hidden or left, and only when every part of the page had arrived: the sign-in screen and a page
+  still loading keep **nothing**, so a reload after signing out shows no one's tasks. A page too
+  long to be worth keeping, or one the browser refuses, keeps nothing either. It has a version of
+  its own, and one the app cannot read is no page: the reload waits, as it did before.
 
 ## A copy outside the account
 
@@ -539,7 +547,8 @@ limit on rests), `src/app/useHabitRests.ts`, `checkInDeviceRepository.ts`,
 `localStorageHabitViewOptionsRepository.ts` (Habits'), `src/storage/sideNavRepository.ts`,
 `sideNavSchema.ts` and `localStorageSideNavRepository.ts` (the sidebar's layout),
 `src/storage/themeRepository.ts`, `themeSchema.ts` and `localStorageThemeRepository.ts` (the theme; `index.html`
-reads it too, before the page is drawn), `src/app/useTasks.ts`, `src/app/useLists.ts`,
+reads it too, before the page is drawn), `src/storage/pageSnapshotRepository.ts` and
+`sessionStoragePageSnapshotRepository.ts` (the page as it was left), `src/app/useTasks.ts`, `src/app/useLists.ts`,
 `src/app/useTags.ts` (keeping the tags tasks carry; all three build each change on the one before,
 STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/StorageProblemNotice.tsx`
 (saying what was refused). Who may read what: `firestore.rules`.
@@ -550,6 +559,7 @@ STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/S
 `src/app/components/StorageProblemNotice.test.tsx` (what is said when the service refuses),
 `src/storage/localTaskImport.test.ts` (the move, and upgrading older data),
 `src/storage/localTaskRepository.test.ts` (the guest's tasks),
+`src/storage/sessionStoragePageSnapshotRepository.test.ts` (the page as it was left),
 `src/storage/habitSettingsSchema.test.ts` (the limit on rests),
 `src/storage/xpSchema.test.ts` and `localXpRepository.test.ts` (XP, and the guest's),
 `src/storage/rewardSchema.test.ts`
