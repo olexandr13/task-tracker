@@ -1,9 +1,9 @@
 /**
- * The journal: what went well today, what was achieved, and what there is to be
- * grateful for — a few lines of each, written while the day is still fresh
- * (JRN-1).
+ * The journal: what was realized today, what went well, what was achieved, and
+ * what there is to be grateful for — a few lines of each, written while the day
+ * is still fresh (JRN-1).
  *
- * A line belongs to one local day and one of the three sections, written the
+ * A line belongs to one local day and one of the sections, written the
  * way a due date is (./day), so the 2nd stays the 2nd wherever it is read. Each
  * section asks for about five lines (`JOURNAL_GOAL`); that is something to aim
  * at, not a limit.
@@ -17,8 +17,8 @@
 
 import { offsetDay, toLocalDay, type LocalDay } from './day'
 
-/** The three things a day is written up by, in the order the page asks for them. */
-export const JOURNAL_SECTIONS = ['good', 'achievements', 'gratitude'] as const
+/** The things a day is written up by, in the order the page asks for them. */
+export const JOURNAL_SECTIONS = ['insights', 'good', 'achievements', 'gratitude'] as const
 
 export type JournalSection = (typeof JOURNAL_SECTIONS)[number]
 

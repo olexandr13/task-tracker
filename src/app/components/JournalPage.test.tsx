@@ -36,10 +36,10 @@ function section(name: string) {
 }
 
 describe('JournalPage', () => {
-  it('asks for good things, achievements and gratitude, five of each (JRN-1, JRN-3)', () => {
+  it('asks for insights, good things, achievements and gratitude, five of each (JRN-1, JRN-3)', () => {
     render(<Journal />)
 
-    for (const name of ['Good things today', 'Achievements', 'Gratitude']) {
+    for (const name of ['Insights', 'Good things today', 'Achievements', 'Gratitude']) {
       expect(section(name).getByRole('img', { name: '0 of 5 written' })).toBeDefined()
     }
     expect(section('Good things today').getByRole('textbox', { name: 'Add a good thing' })).toBeDefined()

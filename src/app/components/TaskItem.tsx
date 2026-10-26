@@ -267,9 +267,11 @@ export function TaskItem({
   // Where the task's menu was opened, while it is open.
   const [menuAt, setMenuAt] = useState<{ x: number; y: number; fromKeyboard: boolean } | null>(null)
   // What last pressed on the row, a mouse or a finger, which a click does not say
-  // everywhere; and where a finger went down, to tell holding it from dragging it.
+  // everywhere; where a finger went down, while it is down; and whether it has
+  // left that spot since, to tell holding it from dragging it.
   const pointer = useRef('mouse')
   const touchedAt = useRef<{ x: number; y: number } | null>(null)
+  const touchStrayed = useRef(false)
   // Where the tag panel opens from the menu: where the menu was, while it is open.
   const [tagsAt, setTagsAt] = useState<{ x: number; y: number } | null>(null)
   // Where the date panel opens from the menu, the same way.
@@ -608,16 +610,24 @@ export function TaskItem({
     else setMenuAt({ x: event.clientX, y: event.clientY, fromKeyboard: false })
   }
 
+  /** A finger that leaves where it went down is dragging, even if it comes back. */
+  function handleTouchMove(event: TouchEvent<HTMLLIElement>) {
+    const start = touchedAt.current
+    const touch = event.touches[0]
+    if (start === null || touch === undefined) return
+    if (!isHeldInPlace(start, { x: touch.clientX, y: touch.clientY })) touchStrayed.current = true
+  }
+
   /**
    * A finger held on the row until it is picked up (TaskDragAndDrop) and let go
-   * where it went down opens the task's menu there, as a right-click would; moved,
+   * without moving opens the task's menu there, as a right-click would; moved,
    * it was a drag. Letting go is kept from also clicking what the menu opens over.
    */
   function handleTouchEnd(event: TouchEvent<HTMLLIElement>) {
     const start = touchedAt.current
     const end = event.changedTouches[0]
     touchedAt.current = null
-    if (!isDragging || start === null || end === undefined) return
+    if (!isDragging || start === null || end === undefined || touchStrayed.current) return
 
     const at = { x: end.clientX, y: end.clientY }
     if (!isHeldInPlace(start, at)) return
@@ -660,6 +670,10 @@ export function TaskItem({
     if (isInTextEntry(event.target) || isDragging) return
 
     event.preventDefault()
+    // The phone's own long press. On a row a finger can pick up, letting go is
+    // what opens the menu (UI-44): a hold that drifted too far to pick the row up,
+    // but not so far that the phone stopped counting it, was a drag going wrong.
+    if (touchedAt.current !== null && listeners !== undefined) return
     // The context-menu key presses no button, so there is no pointer to open at:
     // it opens under the task's line instead.
     if (event.button !== 2 && event.buttons === 0) {
@@ -774,12 +788,17 @@ export function TaskItem({
         swipe.onTouchStart(event)
         const touch = event.touches[0]
         touchedAt.current = touch === undefined ? null : { x: touch.clientX, y: touch.clientY }
+        touchStrayed.current = false
       }}
+      onTouchMove={handleTouchMove}
       onTouchEnd={(event) => {
         swipe.onTouchEnd(event)
         handleTouchEnd(event)
       }}
-      onTouchCancel={swipe.onTouchCancel}
+      onTouchCancel={() => {
+        swipe.onTouchCancel()
+        touchedAt.current = null
+      }}
       onFocus={handleFocus}
       onBlur={handleBlur}
       onContextMenu={handleContextMenu}

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useState } from 'react'
@@ -195,6 +195,29 @@ describe('skipping today (HAB-31)', () => {
     await user.click(screen.getByRole('button', { name: 'Edit "stretch"' }))
 
     expect(screen.queryByRole('button', { name: /^Skip/ })).toBeNull()
+  })
+})
+
+describe('a long press on a card (HAB-25, HAB-29)', () => {
+  const sheet = () => screen.queryByRole('button', { name: 'Delete "stretch"' })
+
+  it('from a mouse, a right-click, opens its sheet', () => {
+    setup([stretch()])
+
+    fireEvent.contextMenu(screen.getByRole('listitem'), { button: 2, buttons: 2 })
+
+    expect(sheet()).not.toBeNull()
+  })
+
+  it('from a finger, the phone\'s own, opens nothing: holding a card picks it up', () => {
+    setup([stretch()])
+    const card = screen.getByRole('listitem')
+
+    fireEvent.touchStart(card, { touches: [{ clientX: 40, clientY: 10 }] })
+    const allowed = fireEvent.contextMenu(card)
+
+    expect(sheet()).toBeNull()
+    expect(allowed).toBe(false)
   })
 })
 

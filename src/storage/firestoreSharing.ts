@@ -13,7 +13,7 @@ import {
 import { normalizeEmail, type List, type ListId, type ListOwner, type LocalDay, type Task, type TaskId } from '../core'
 import { commitInBatches, type BatchWrite } from './firestoreBatches'
 import { accountCollection } from './firestoreAccount'
-import { readRecords, type RecordKind } from './firestoreRecords'
+import { deleteRecord, readRecords, writeRecord, type RecordKind } from './firestoreRecords'
 import type { ListRepository } from './listRepository'
 import { readList, toStoredList } from './listSchema'
 import { readShare, toStoredShare, type ListShare } from './shareSchema'
@@ -32,6 +32,7 @@ import { readStoredTask, toStoredTask } from './taskSchema'
 
 const TASK: RecordKind<Task> = { noun: 'task', read: readStoredTask, write: toStoredTask }
 const SHARE: RecordKind<ListShare> = { noun: 'share', read: readShare, write: toStoredShare }
+const LIST: RecordKind<List> = { noun: 'list', read: readList, write: toStoredList }
 
 /**
  * Whom lists are shared with: one document per shared list, at
@@ -235,10 +236,10 @@ export function createFirestoreSharing(
     save(changes) {
       const writes = routeListChanges(changes, owner, ownShares, new Set(owners.keys()))
       return commitInBatches(firestore, [
-        ...writes.lists.saved.map((list) => (batch: WriteBatch) => batch.set(doc(ownLists, list.id), toStoredList(list))),
+        ...writes.lists.saved.map((list) => (batch: WriteBatch) => { writeRecord(batch, doc(ownLists, list.id), LIST, list) }),
         ...writes.shares.saved.map((share) => (batch: WriteBatch) => batch.set(doc(shares, share.listId), toStoredShare(share))),
         ...writes.shares.removed.map((id) => (batch: WriteBatch) => batch.delete(doc(shares, id))),
-        ...writes.lists.removed.map((id) => (batch: WriteBatch) => batch.delete(doc(ownLists, id))),
+        ...writes.lists.removed.map((id) => (batch: WriteBatch) => { deleteRecord(batch, doc(ownLists, id)) }),
         ...writes.left.map((id) => (batch: WriteBatch) => batch.update(doc(shares, id), { 'share.members': arrayRemove(email) })),
       ])
     },
@@ -291,8 +292,17 @@ export function createFirestoreSharing(
       const deletes: BatchWrite[] = []
       for (const [accountId, { saved, removed }] of routeTaskChanges(changes, owner.id, owners, keptIn)) {
         const kept = accountCollection(firestore, accountId, 'tasks')
-        writes.push(...saved.map((task) => (batch: WriteBatch) => batch.set(doc(kept, task.id), toStoredTask(task))))
-        deletes.push(...removed.map((id) => (batch: WriteBatch) => batch.delete(doc(kept, id))))
+        for (const task of saved) {
+          const at = doc(kept, task.id)
+          // Filed in from another account it is written whole: whatever was once
+          // read here is gone, deleted when it was filed away.
+          const movedIn = (keptIn.get(task.id) ?? accountId) !== accountId
+          writes.push((batch) => {
+            if (movedIn) batch.set(at, toStoredTask(task))
+            else writeRecord(batch, at, TASK, task)
+          })
+        }
+        deletes.push(...removed.map((id) => (batch: WriteBatch) => { deleteRecord(batch, doc(kept, id)) }))
       }
       // Written before deleted, so a task moved between accounts is never only deleted.
       return commitInBatches(firestore, [...writes, ...deletes])

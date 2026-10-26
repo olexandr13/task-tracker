@@ -21,9 +21,17 @@ changes shape.
   `localStorage` (see [Daily quote](daily-quote.md)).
 - **STORE-4** Each task is saved as its own record, inside a versioned envelope: the version, and
   the task. The version is what makes a change of shape survivable.
-- **STORE-16** Changes are saved **task by task**: a change writes only the tasks it touched. When
-  two devices change the same task, the later write wins; changes to different tasks never undo
-  one another.
+- **STORE-16** Changes are saved **task by task, and field by field**: a change writes only the
+  tasks it touched, and of each only what it changed — a move only the task's place (TASK-43),
+  ticking it off only what completing changes. So changes to different tasks, or to different parts
+  of one task, never undo one another: a task moved on one device keeps its new place when another
+  device renames it or ticks it off, even one that had not heard of the move yet, and every device
+  shows the same order. When two devices change the same part of the same task, the later write
+  wins. A task this device has not read yet is written whole. So is one kept in an older shape
+  (STORE-4), which brings it up to today's — and so that every task is written field by field, the
+  app brings each task it reads in an older shape up to today's once, as it opens: read from the
+  server and written back in one go, so nothing another device wrote in between is lost. With no
+  connection that waits for the next time.
 - **STORE-17** The account's tasks are readable and writable by that account alone — save the
   tasks in a list it shares, which the people it is shared with read and write too, for as long as
   it is (STORE-67). Another account signed in on the same browser sees its own tasks, not these.
@@ -124,9 +132,10 @@ changes shape.
 - **STORE-27** The lists have **their own version**, apart from the tasks' and the ledger's — a list
   and a task have no reason to change shape together. A list in a version the app does not
   recognise, or not shaped as it should be, is ignored with a warning and left as it is (STORE-7).
-- **STORE-28** Changes are written **list by list**, as with the tasks (STORE-16): a device writes
-  only the lists it changed, the later write wins on the same list, and changes to different lists
-  never undo one another. The lists are readable and writable by the account alone (STORE-17), open
+- **STORE-28** Changes are written **list by list**, and field by field, as with the tasks
+  (STORE-16): a device writes only what it changed of the lists it changed — a list moved, its place
+  alone — so changes to different lists, or to different parts of one, never undo one another, and
+  the later write wins on the same part of the same list. The lists are readable and writable by the account alone (STORE-17), open
   offline and wait for a connection like the tasks (STORE-18).
 - **STORE-29** Deleting a list is two changes — its tasks back to the Inbox, then the list itself —
   and the tasks go first. If the second is lost, a task naming a list that is gone reads as being in
@@ -508,7 +517,7 @@ changes shape.
 **Where it lives:** `src/storage/accountStorage.ts` (which service keeps an account's data, and
 moving what the browser kept into it), `deviceStorage.ts` and `localStorageSetting.ts` (what is kept
 on the device alone), `src/storage/taskRepository.ts` (the interface), `recordChanges.ts` (what a
-change comes to, record by record), `firestoreRecords.ts` (one document per record), `taskQueries.ts` and `heldTasks.ts` (what is
+change comes to, record by record), `firestoreRecords.ts` (one document per record) and `recordFields.ts` (what of a record a change writes), `taskQueries.ts` and `heldTasks.ts` (what is
 loaded of the tasks, asked in parts and put together),
 `firestoreTaskRepository.ts` (the account's tasks), `localTaskRepository.ts` (the guest's),
 `shareSchema.ts` (whom a list is shared with), `sharing.ts` (where a change to shared lists and
@@ -553,6 +562,7 @@ reads it too, before the page is drawn), `src/storage/pageSnapshotRepository.ts`
 STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/StorageProblemNotice.tsx`
 (saying what was refused). Who may read what: `firestore.rules`.
 **Tested in:** `src/storage/taskRepository.test.ts` (what a change writes),
+`src/storage/recordFields.test.ts` and `src/storage/firestoreRecords.test.ts` (writing only the fields a change changed),
 `src/storage/taskQueries.test.ts` and `src/storage/heldTasks.test.ts` (what is loaded of the tasks),
 `src/app/useTasks.test.ts` and `src/app/useLists.test.ts` (changes made in one go, and refusals),
 `src/app/useRewards.test.ts`, `src/app/storageProblem.test.ts` and

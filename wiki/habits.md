@@ -131,7 +131,8 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   (UI-48): title, schedule, list, tags, checklist, description, reward, urgent, duplicate, skip
   (HAB-31) and delete. Editing stays on Habits; a change that stops the task being a habit (HAB-1) takes it off
   the page. Closing the sheet, or deleting the task from it, puts the card away again. A screen
-  reader hears the ⋮ as `Edit "stretch"`.
+  reader hears the ⋮ as `Edit "stretch"`. A right-click on the card opens the sheet too; a phone's
+  own long press does not, a finger held on a card being one picking it up (HAB-29).
 - **HAB-26** Escape closes that sheet (UI-9, UI-10), **including while the title is being edited**:
   the edit is dropped as it is anywhere else (TASK-9) and the sheet goes in the same press. The box
   looks much like the title it replaces, so dropping the edit alone would read as nothing having

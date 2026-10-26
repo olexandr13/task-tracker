@@ -33,6 +33,13 @@ describe('a saved day (STORE-60)', () => {
     expect(readJournalDay(day)).toEqual([SUNNY, RAN])
   })
 
+  it('reads an insight in the version that came before the section did', () => {
+    const insight = { ...createJournalEntry('insights', 'Mornings are for deep work', '2026-10-10', AT), id: 'insight' }
+    const saved = { version: 1, day: '2026-10-10', entries: { insight: { section: 'insights', text: 'Mornings are for deep work', writtenAt: AT.toISOString() } } }
+
+    expect(readJournalDay(saved)).toEqual([insight])
+  })
+
   it('reads a day whose every line was taken out as nothing written', () => {
     expect(readJournalDay({ version: JOURNAL_SCHEMA_VERSION, day: '2026-10-10' })).toEqual([])
   })

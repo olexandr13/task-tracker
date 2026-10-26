@@ -18,7 +18,7 @@ export const JOURNAL_HEADING = 'Journal'
 
 /** What the page is for and how it is used, in plain sentences, one thing each (UI-73). */
 export const JOURNAL_INTRO = [
-  'Write down what went well today, what you achieved, and what you are grateful for.',
+  'Write down what you realized today, what went well, what you achieved, and what you are grateful for.',
   `Aim for ${String(JOURNAL_GOAL)} of each. Fewer is fine, and so is more: a new line is always waiting under the last one.`,
   'Type on a line and press Enter to go on to the next. Clicking away keeps what you typed.',
   'Press a line to change it. Empty it, or press its "×", to delete it.',
@@ -40,6 +40,14 @@ interface SectionLabels {
 }
 
 export const JOURNAL_SECTION_LABELS: Readonly<Record<JournalSection, SectionLabels>> = {
+  insights: {
+    title: 'Insights',
+    pastTitle: 'Insights',
+    emoji: '💡',
+    line: 'Insight',
+    add: 'Add an insight',
+    placeholder: 'Something you realized or learned',
+  },
   good: {
     title: 'Good things today',
     pastTitle: 'Good things',

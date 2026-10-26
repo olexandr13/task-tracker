@@ -19,7 +19,7 @@ export const FEATURE_LABELS: Readonly<Record<Feature, { readonly name: string; r
   notes: { name: 'Notes', description: 'The Notes page, for anything you want to write down and keep.' },
   balance: { name: 'Balance', description: 'How the time you log splits between your categories.' },
   activity: { name: 'Activity log', description: 'Your day hour by hour: what you did and for how long.' },
-  journal: { name: 'Journal', description: 'Good things, achievements and gratitude, written down each day.' },
+  journal: { name: 'Journal', description: 'Insights, good things, achievements and gratitude, written down each day.' },
   modes: { name: 'Modes', description: 'Procrastination, Warm-up, Nudge and Check-in.' },
   notifications: { name: 'Notifications', description: 'A page with the notices waiting for you, and whether this browser shows notifications.' },
   progress: { name: 'Progress bars', description: 'How today, this week and this month are going, beside your tasks.' },

@@ -265,7 +265,7 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-39** With a mouse, a drag starts only once the pointer has moved a few pixels, so a click
   is still a click. With a finger, you hold for a moment first, so a vertical swipe still scrolls
   the page and a horizontal one can complete or delete the task (UI-60); let go there without
-  moving, and it opens the task's menu instead (UI-44).
+  having moved, and it opens the task's menu instead (UI-44).
   Letting go never opens the row, the sheet, or starts editing its title.
 - **TASK-40** From the keyboard, the grip picks the row up with Space or Enter. The arrow keys move
   it, Space or Enter drops it, and Escape puts it back. Screen readers hear the task's title and its
@@ -284,7 +284,8 @@ renamed, it is described, it is completed, it is moved, it is duplicated, it is 
 - **TASK-42** A task keeps its place while it is in the trash: restoring it puts it back where it
   was. New tasks still join the end (TASK-7).
 - **TASK-43** A move changes the moved task's `order` and nothing else, so it counts for nothing in
-  any period's bar.
+  any period's bar. That is all it writes, too (STORE-16): the new order shows on every device signed
+  in (STORE-2), and changing something else about the task on another device does not put it back.
 
 ## Duplicating
 

@@ -761,10 +761,9 @@ describe('a finger on a task row, which has no right-click', () => {
       vi.useRealTimers()
     })
 
-    /** A row inside what picks rows up, as on screen, and a finger held on it and let go `drift` pixels on. */
-    function holdRow(drift: number) {
+    /** A row inside what picks rows up, as on screen. */
+    function renderRow(task: Task = createTask(TASK, { kind: 'daily' }, NOW)) {
       vi.useFakeTimers()
-      const task = createTask(TASK, { kind: 'daily' }, NOW)
       render(
         <TaskDragAndDrop tasks={[task]} onMove={nothing} onFile={nothing}>
           <ul>
@@ -772,12 +771,20 @@ describe('a finger on a task row, which has no right-click', () => {
           </ul>
         </TaskDragAndDrop>,
       )
-      const row = screen.getByRole('listitem')
+      return screen.getByRole('listitem')
+    }
+
+    /** A finger held on such a row until it is picked up, moved `drifts` pixels on in turn, and let go at the last. */
+    function holdRow(...drifts: number[]) {
+      const row = renderRow()
 
       fireEvent.touchStart(row, { touches: [{ clientX: 40, clientY: 10 }] })
       act(() => { vi.advanceTimersByTime(300) })
-      const end = { clientX: 40 + drift, clientY: 10 }
-      fireEvent.touchMove(row, { touches: [end] })
+      let end = { clientX: 40, clientY: 10 }
+      for (const drift of drifts) {
+        end = { clientX: 40 + drift, clientY: 10 }
+        fireEvent.touchMove(row, { touches: [end] })
+      }
       return fireEvent.touchEnd(row, { touches: [], changedTouches: [end] })
     }
 
@@ -793,6 +800,35 @@ describe('a finger on a task row, which has no right-click', () => {
       holdRow(40)
 
       expect(menu()).toBeNull()
+    })
+
+    it('and moved, then let go back where it was, is still a drag (UI-44, TASK-39)', () => {
+      holdRow(40, 1)
+
+      expect(menu()).toBeNull()
+    })
+
+    it('opens nothing on the phone\'s own long press, even when the row was not picked up (UI-44)', () => {
+      const row = renderRow()
+
+      // Further than a pickup allows, but not as far as a phone allows a long press.
+      fireEvent.touchStart(row, { touches: [{ clientX: 40, clientY: 10 }] })
+      fireEvent.touchMove(row, { touches: [{ clientX: 47, clientY: 10 }] })
+      act(() => { vi.advanceTimersByTime(500) })
+      const allowed = fireEvent.contextMenu(row, { clientX: 47, clientY: 10 })
+
+      expect(menu()).toBeNull()
+      expect(allowed).toBe(false)
+    })
+
+    it('done, which cannot be picked up, opens the task\'s menu on the phone\'s own long press (UI-44)', () => {
+      const row = renderRow(completeTask(createTask(TASK, null, NOW), NOW))
+
+      fireEvent.touchStart(row, { touches: [{ clientX: 40, clientY: 10 }] })
+      act(() => { vi.advanceTimersByTime(500) })
+      fireEvent.contextMenu(row, { clientX: 40, clientY: 10 })
+
+      expect(menu()).not.toBeNull()
     })
   })
 })

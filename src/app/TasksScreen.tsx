@@ -232,7 +232,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // The activity log, hour by hour (ACT-1), ahead of the tasks: time logged on
   // a task is written into it as well (ACT-21), switched off or not (FEAT-5).
   const activities = useActivities(storage.activities, storageProblem.report, xp.record)
-  // Today's good things, achievements and gratitude, and the week before (JRN-1).
+  // Today's insights, good things, achievements and gratitude, and the week before (JRN-1).
   const journal = useJournal(storage.journal, storageProblem.report, xp.record)
   // Anything written down to keep (NOTE-1).
   const notes = useNotes(storage.notes, storageProblem.report)

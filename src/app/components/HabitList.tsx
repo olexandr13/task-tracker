@@ -256,6 +256,8 @@ function HabitCard({
   const caret = useRef<number | null>(null)
   const input = useRef<HTMLInputElement>(null)
   const card = useRef<HTMLLIElement>(null)
+  // Whether a finger is on the card, which the phone's own long press does not say.
+  const fingerDown = useRef(false)
   const recordId = useId()
   const isTitleEditing = editedTitle !== null
   const { setNodeRef, setActivatorNodeRef, listeners, attributes, isDragging, transform, transition } =
@@ -383,8 +385,17 @@ function HabitCard({
       // grip, which is where these listeners check a key press came from — so
       // the grid's own arrow keys and Space (HAB-19) are left alone.
       {...listeners}
+      onTouchStart={(event) => {
+        listeners?.onTouchStart?.(event)
+        fingerDown.current = true
+      }}
+      onTouchEnd={() => { fingerDown.current = false }}
+      onTouchCancel={() => { fingerDown.current = false }}
       onContextMenu={(event) => {
         event.preventDefault()
+        // The phone's own long press: a finger held on the card is picking it up
+        // (HAB-29), and the ⋮ is there for the sheet.
+        if (fingerDown.current) return
         setIsEditing(true)
       }}
       className={[

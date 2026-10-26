@@ -43,8 +43,9 @@ describe('a line (JRN-2)', () => {
     expect(isJournalText('x'.repeat(MAX_JOURNAL_TEXT_LENGTH + 1))).toBe(false)
   })
 
-  it('belongs to one of the three sections', () => {
+  it('belongs to one of the sections', () => {
     expect(isJournalSection('gratitude')).toBe(true)
+    expect(isJournalSection('insights')).toBe(true)
     expect(isJournalSection('regrets')).toBe(false)
   })
 

@@ -539,8 +539,10 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   Home and End move between items — a group's too, left and right stepping along a row of icons as
   down and up do — and focus goes back where it was when it closes.
 - **UI-44** A finger has no right-click, so on a touch screen the task's menu (UI-31) opens at the
-  finger by **holding a row** until it is picked up (TASK-39) and letting go where it was — moved
-  first, it is a drag. On a wide screen a **tap on a woken row** on its own line (UI-28) opens it
+  finger by **holding a row** until it is picked up (TASK-39) and letting go without moving — moved
+  first, it is a drag, even let go back where it started. The phone's own long press opens nothing
+  on a row that can be picked up, so a hold that wobbled too far to pick the row up never opens the
+  menu under a finger about to drag; a done row, which cannot be picked up, opens it on one. On a wide screen a **tap on a woken row** on its own line (UI-28) opens it
   too, so a double tap opens it on any row. On a phone a tap opens the sheet instead (UI-48); the
   menu is still there on a hold. It is the same menu, the Date row, Duplicate, Tags and List alike,
   the row staying as it was behind it, and letting go clicks nothing the menu opens over. A mouse

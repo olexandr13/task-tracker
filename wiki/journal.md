@@ -1,9 +1,9 @@
 # Journal
 
-The day's good side, written down while it is still fresh: what **went well**, what was
-**achieved**, and what there is to be **grateful** for — about five lines of each. The tasks say
-what was meant to be done; the journal says what was good about the day, so an evening ends on what
-went right rather than on what is left.
+The day's good side, written down while it is still fresh: what was **understood** along the way,
+what **went well**, what was **achieved**, and what there is to be **grateful** for —
+about five lines of each. The tasks say what was meant to be done; the journal says what was good
+about the day and what it taught, so an evening ends on what went right rather than on what is left.
 
 ## The page
 
@@ -11,16 +11,17 @@ went right rather than on what is left.
   under **Reflect**, after Balance and the Activity log (UI-30, UI-83), and a row on Reflect's page
   (UI-83). It opens on the heading **Journal** with an **i** beside it (UI-73), saying in plain
   sentences what the page is for and how it is used, and under the heading the day it is writing
-  about — `Saturday, October 10`. Then come three cards, one for each **section**, in this order:
-  ☀️ **Good things today**, 🏆 **Achievements** and 🙏 **Gratitude**; then the button to the week
+  about — `Saturday, October 10`. Then come four cards, one for each **section**, in this order:
+  💡 **Insights** — what the day made clear, a lesson or a conclusion — ☀️ **Good things today**,
+  🏆 **Achievements** and 🙏 **Gratitude**; then the button to the week
   gone by (JRN-6). It has no box for adding a task, no Plus and no rail: it is not a list of tasks.
 
 ## Writing it
 
 - **JRN-2** A **line** is one thing, on one line, of up to 200 characters, its spaces — line breaks
   pasted in too — squeezed to one. Under a section's lines one more is always **waiting** for the
-  next, its placeholder saying what goes there — *Something good that happened*, *Something you got
-  done*, *Something you’re grateful for*. **Enter** writes what was typed and leaves the caret on the
+  next, its placeholder saying what goes there — *Something you realized or learned*, *Something good that
+  happened*, *Something you got done*, *Something you’re grateful for*. **Enter** writes what was typed and leaves the caret on the
   waiting line for the one after, so five can be written straight down; clicking away keeps what was
   typed, as a rename does; Enter on an empty line does nothing, and **Escape** empties it. A line is
   saved once, as it is left, not a keystroke at a time.

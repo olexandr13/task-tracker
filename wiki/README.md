@@ -32,7 +32,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Time goals](time-goals.md) | A length of time a task asks for, sessions logged against it, and the hint to tick it off |
 | [Balance](balance.md) | Where the logged time went: categories named by the owner, bound to tags, and the time each took and the tasks completed in each today, this week or this month |
 | [Activity log](activity-log.md) | The day hour by hour: what was done and for how long, the records added and changed, and what they add up to over a day, a week or a month |
-| [Journal](journal.md) | Good things, achievements and gratitude, about five of each a day, and the week before kept to look back on |
+| [Journal](journal.md) | Insights, good things, achievements and gratitude, about five of each a day, and the week before kept to look back on |
 | [Notes](notes.md) | Anything written down to keep: newest first, changed in place, bold, italic and lists from buttons over the box |
 | [Check-ins](check-ins.md) | The top of every hour asking what was done: the hours it keeps to, the notice, and the notification while the app is open |
 | [Reminders](reminders.md) | The hour a task is due at coming round: what is said, when, and how it reaches you |

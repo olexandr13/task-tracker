@@ -35,8 +35,8 @@ interface JournalPageProps {
 }
 
 /**
- * The journal (JRN-1): today's good things, achievements and gratitude, a few
- * lines each, and — on asking — the week before, to read back (JRN-6).
+ * The journal (JRN-1): today's insights, good things, achievements and
+ * gratitude, a few lines each, and — on asking — the week before, to read back (JRN-6).
  *
  * Whether the week is shown is not kept: the page opens on today alone, the day
  * being written.

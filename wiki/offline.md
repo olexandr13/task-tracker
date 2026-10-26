@@ -24,9 +24,10 @@ reaches the account by itself once there is a connection again.
   refresh, a closed app or a restarted phone.
 - **OFF-3** Kept changes are **sent by themselves** as soon as there is a connection again, next
   time the app is open. There is nothing to press.
-- **OFF-14** A change made offline is written when it arrives, so on the **same** task it wins over
-  a change made meanwhile on another device (STORE-16). Changes to different tasks never undo one
-  another, however long a device was offline.
+- **OFF-14** A change made offline is written when it arrives, so on the **same** part of the same
+  task it wins over a change made meanwhile on another device (STORE-16). Changes to different
+  tasks, or to different parts of one — a task moved on one device and ticked off on the other —
+  never undo one another, however long a device was offline.
 
 ## Saying where changes stand
 

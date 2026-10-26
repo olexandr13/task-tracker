@@ -6,7 +6,9 @@ import { isRecord } from './plainData'
  * everything else's; bump it whenever a shape below changes, and upgrade on
  * reading (STORE-5).
  *
- * - 1: the section, what was written, and when.
+ * - 1: the section, what was written, and when. The `insights` section came
+ *   later within it: it only adds a section a line may be in, so every day
+ *   saved before it reads as it was.
  */
 export const JOURNAL_SCHEMA_VERSION = 1
 
