@@ -12,6 +12,7 @@ import { FolderIcon } from './FolderIcon'
 import { PeopleIcon } from './PeopleIcon'
 import { InboxIcon } from './InboxIcon'
 import { KeyWaitingMark } from './KeyWaitingMark'
+import { TelegramLink } from './TelegramLink'
 
 /**
  * The views, grouped by what they are for (UI-30): when — the ones named after
@@ -273,6 +274,8 @@ export function SideNav({
           </Fragment>
         ))}
       </ul>
+      {/* How to reach the author, at the foot under Settings (UI-87). */}
+      <TelegramLink className={`mt-3 ml-1.5${dimmed ? ` ${dim}` : ''}`} />
     </nav>
   )
 }

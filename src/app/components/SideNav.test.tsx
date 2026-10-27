@@ -518,6 +518,16 @@ describe('SideNav', () => {
     expect(screen.getByText('PickMe').closest('div')?.className).toMatch(/opacity-25/)
   })
 
+  it('links to the author\'s Telegram at its foot, after Settings, and fades it with the rest (UI-87, JUST-5)', () => {
+    setup('today', [], true, true)
+
+    const link = screen.getByRole('link', { name: 'Write to the author on Telegram, @olexandr13' })
+    expect(link.getAttribute('href')).toBe('https://t.me/olexandr13')
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(screen.getByRole('button', { name: 'Settings' }).compareDocumentPosition(link) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(link.className).toMatch(/opacity-25/)
+  })
+
   it('leaves every entry at full strength while the mode is off (JUST-5)', () => {
     setup('today')
 

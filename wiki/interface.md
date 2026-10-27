@@ -368,6 +368,11 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   Journal is two taps from More, and **More** stays marked on Reflect and everything under it. A
   page under it switched off on Settings is not listed, and Reflect goes from the sidebar and from
   More once all three are off (FEAT-2) — Balance going with Tags too (FEAT-4).
+- **UI-87** A **speech bubble** sits at the foot of the sidebar, under Settings, and on a phone
+  under the links on **More**'s page. It opens the author's Telegram, **@olexandr13**, in a new tab,
+  for a question, an idea or something that does not work. It is a link, not a page: nothing in the
+  app changes when it is pressed. Pointed at, it names the account; it fades with the sidebar while
+  Procrastination mode is on (JUST-5), as everything there but Today does.
 
 ## Pinned tabs
 
@@ -665,6 +670,7 @@ cannot be taken back, UI-74), `src/app/sheetDrag.ts` and `src/app/useSheetDrag.t
 (pulling a sheet down to close it), `src/app/pageSnapshot.ts` and `components/Loading.tsx` (the page kept through a reload), `src/app/usePhoneLayout.ts` (whether the screen is a phone's, and
 how high above the bar the Plus and the notices float), `index.html` (the page running under the
 notch and the home indicator), `src/app/components/TaskList.tsx` (the room between rows), `src/app/components/ContextMenu.tsx` (a task's menu), `src/app/components/FloatingPanel.tsx` (a menu or panel floating where the pointer was), `src/app/textOffsetAtPoint.ts` (which character a click landed on), `src/app/components/SideNav.tsx`,
+`src/app/components/TelegramLink.tsx` (the speech bubble to the author's Telegram, UI-87),
 `src/app/components/BottomNav.tsx` (the phone's bar), `src/app/components/AddTaskForm.tsx` (the one-line
 add box, the View button beside it and the Plus), `src/app/components/AddTaskSheet.tsx` (the detailed add sheet), `src/app/letterShortcut.ts`
 and `src/app/useLetterShortcut.ts` (`N` and `H` open the sheet, `R` opens Rewards, `P` toggles
