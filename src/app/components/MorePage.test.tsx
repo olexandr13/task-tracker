@@ -98,14 +98,6 @@ describe('MorePage', () => {
     expect(organize.className).toContain('text-lg')
   })
 
-  it('links to the author\'s Telegram under the pages, a phone having no sidebar (UI-87)', () => {
-    render(<MorePage onOpen={vi.fn()} />)
-
-    const link = screen.getByRole('link', { name: 'Write to the author on Telegram, @olexandr13' })
-    expect(link.getAttribute('href')).toBe('https://t.me/olexandr13')
-    expect(link.getAttribute('rel')).toBe('noopener noreferrer')
-  })
-
   it('has no entry for the rewards: they have a tab and a sidebar entry of their own (RWD-19)', () => {
     render(<MorePage onOpen={vi.fn()} />)
 

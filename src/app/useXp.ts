@@ -4,6 +4,7 @@ import {
   clearXp,
   hasXp,
   joinXp,
+  leastXp,
   levelOf,
   offsetDay,
   settleXp,
@@ -113,7 +114,15 @@ export function useXp(repository: XpRepository, onProblem: ReportProblem = ignor
     [repository, failed],
   )
 
-  return { status, progress, record, recordTasks, settle }
+  /** Lets go of XP lost below a total of zero (LVL-17). */
+  const lift = useCallback(
+    (least: number) => {
+      repository.lift(least).catch(failed)
+    },
+    [repository, failed],
+  )
+
+  return { status, progress, record, recordTasks, settle, lift }
 }
 
 export type XpState = ReturnType<typeof useXp>
@@ -123,7 +132,8 @@ export type XpState = ReturnType<typeof useXp>
  * have loaded — null until then — and the days gone by counted against them,
  * whenever there is a day not counted yet. Nothing is counted before they are
  * known: a day counted against a list not loaded yet would find nothing done on
- * it, and never look again.
+ * it, and never look again. XP lost below zero is let go of once the points
+ * are known (LVL-17).
  */
 export function useLevel(
   xp: XpState,
@@ -132,7 +142,7 @@ export function useLevel(
   rests: HabitRests | undefined,
 ): XpStanding | null {
   const today = toLocalDay(new Date())
-  const { settle, progress } = xp
+  const { settle, lift, progress } = xp
   const yesterday = offsetDay(today, -1)
   const waiting =
     progress !== null &&
@@ -143,6 +153,13 @@ export function useLevel(
     if (!waiting || tasks === null || rests === undefined) return
     settle(tasks, rests)
   }, [settle, waiting, tasks, rests])
+
+  const least = progress === null || points === null ? null : leastXp(progress, points)
+  const below = least !== null && progress !== null && progress.xp < least
+
+  useEffect(() => {
+    if (below && least !== null) lift(least)
+  }, [lift, below, least])
 
   return useMemo((): XpStanding | null => {
     if (progress === null || points === null) return null

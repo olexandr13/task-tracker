@@ -26,6 +26,7 @@ import {
   completionXp,
   habitDayXp,
   journalXp,
+  leastXp,
   levelFloor,
   levelOf,
   levelStep,
@@ -118,6 +119,12 @@ describe('where XP stands (LVL-1)', () => {
     ]
     expect(pointsXp(entries, '2026-09-15')).toBe(5)
     expect(totalXp({ ...begun, xp: 20 }, entries)).toBe(25)
+  })
+
+  it('never puts the total below zero, and keeps no more lost than the points gave (LVL-17)', () => {
+    const entries = [{ taskId: 'a', day: '2026-09-15', points: 5 }]
+    expect(totalXp({ ...begun, xp: -40 }, entries)).toBe(0)
+    expect(leastXp(begun, entries)).toBe(-5)
   })
 })
 

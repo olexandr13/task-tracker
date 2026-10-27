@@ -284,7 +284,7 @@ changes shape.
   history** of XP is kept. What a change gives is added with the database's own increment, so two
   devices adding at once both count, offline too; counting the days gone by is done as one step
   against the record as saved, so two devices counting the same day count it once, and it waits for a
-  connection. What the points gave is not copied here but read off the points ledger (LVL-9), and so
+  connection; so is letting go of XP lost below zero (LVL-17). What the points gave is not copied here but read off the points ledger (LVL-9), and so
   is the level (LVL-3). **No record at all is XP not begun.** It has **its own version**, and one the
   app cannot read is ignored with a warning (STORE-7). Version 1 kept a ledger of every record a day
   at a time, in `xpDays`, and the day XP began under `start`; beginning moves them in once — the

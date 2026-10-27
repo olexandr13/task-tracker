@@ -58,6 +58,11 @@ function fakeRepository(initial: XpProgress | null = { ...startXp('2026-09-17'),
       listener?.(progress)
       return Promise.resolve()
     },
+    lift(least) {
+      if (progress !== null && progress.xp < least) progress = { ...progress, xp: least }
+      listener?.(progress)
+      return Promise.resolve()
+    },
     importProgress: () => Promise.resolve(),
   }
   return { repository, added, begun, current: () => progress }
@@ -142,10 +147,19 @@ describe('useLevel', () => {
 
   it('counts the days gone by once the tasks are known, and the last day counted (LVL-12, LVL-13)', () => {
     const habit = setReward(createTask('stretch', { kind: 'daily' }, new Date(2026, 8, 14, 9, 0)), 1)
-    const { repository, current } = fakeRepository(startXp('2026-09-15'))
+    const { repository, current } = fakeRepository({ ...startXp('2026-09-15'), xp: 40 })
     levelOf(repository, [habit])
 
     // Tuesday and Wednesday missed, twice 3 each, and nothing at all finished on either.
-    expect(current()).toMatchObject({ xp: -12 - 20, settledThrough: '2026-09-16' })
+    expect(current()).toMatchObject({ xp: 40 - 12 - 20, settledThrough: '2026-09-16' })
+  })
+
+  it('lets go of XP lost below zero, so what is gained after counts from zero (LVL-17)', () => {
+    const { repository, current } = fakeRepository({ ...startXp('2026-09-17'), xp: -50 })
+    const { result } = levelOf(repository, [])
+
+    // The 30 points give 30 XP: kept at -30, the total is zero.
+    expect(current()).toMatchObject({ xp: -30 })
+    expect(result.current?.total).toBe(0)
   })
 })

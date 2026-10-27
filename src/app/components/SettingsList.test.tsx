@@ -68,11 +68,11 @@ describe('the sections (UI-35)', () => {
     expect(screen.getByText(`Version ${__APP_VERSION__}`)).not.toBeNull()
   })
 
-  it('puts Account, Features and Appearance in that order, each open to begin with', () => {
+  it('puts Account, Features, Appearance and Contact in that order, each open to begin with', () => {
     renderSettings()
 
     const headings = screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)
-    expect(headings).toEqual(['Account', 'Features', 'Appearance'])
+    expect(headings).toEqual(['Account', 'Features', 'Appearance', 'Contact'])
     for (const name of headings) {
       expect(screen.getByRole('button', { name: name ?? '' }).getAttribute('aria-expanded')).toBe('true')
     }
@@ -90,6 +90,15 @@ describe('the sections (UI-35)', () => {
     renderSettings()
 
     expect(section('Appearance').getByRole('radiogroup', { name: 'Theme' })).not.toBeNull()
+  })
+
+  it('links to the author\'s Telegram under Contact, in a new tab (UI-87)', () => {
+    renderSettings()
+
+    const link = section('Contact').getByRole('link', { name: 'Write to the author on Telegram, @olexandr13' })
+    expect(link.getAttribute('href')).toBe('https://t.me/olexandr13')
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer')
   })
 
   it('folds a section away from its heading, and keeps it folded (STORE-57)', async () => {

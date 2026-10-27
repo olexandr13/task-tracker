@@ -24,6 +24,17 @@ describe('createLocalXpRepository (STORE-37, STORE-64)', () => {
     expect(seen.at(-1)).toEqual({ xp: -2, startedOn: '2026-10-01', settledThrough: '2026-10-01', addsOn: '2026-10-02', adds: 3 })
   })
 
+  it('lifts the XP kept to the least it may be, and never lowers it (LVL-17)', async () => {
+    const repository = createLocalXpRepository()
+    await repository.begin('2026-10-01')
+    await repository.add({ xp: -40, adds: null })
+    await repository.lift(-10)
+    expect(loadGuestXpProgress()).toMatchObject({ xp: -10 })
+
+    await repository.lift(-20)
+    expect(loadGuestXpProgress()).toMatchObject({ xp: -10 })
+  })
+
   it('does not begin again once begun, nor take on another’s from elsewhere', async () => {
     const repository = createLocalXpRepository()
     await repository.begin('2026-10-01')

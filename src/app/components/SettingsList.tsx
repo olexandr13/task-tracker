@@ -13,6 +13,7 @@ import { FeatureSwitches, type FeatureSettings } from './FeatureSwitches'
 import { Loading } from './Loading'
 import { OptionSwitch } from './OptionSwitch'
 import { SettingsSection } from './SettingsSection'
+import { TelegramLink } from './TelegramLink'
 import { ThemePicker } from './ThemePicker'
 
 interface SettingsListProps {
@@ -45,8 +46,8 @@ interface SettingsListProps {
  * The settings page (UI-35), in sections that fold away: **Account** — who is
  * signed in and the way out, and the account's data as a file to keep and a
  * file to bring back — then **Features**, which parts of the app are in use
- * (FEAT-1), then **Appearance**, the theme. Under them, which build of the app
- * this is. Anything else there is to set goes in the section it belongs to,
+ * (FEAT-1), then **Appearance**, the theme, then **Contact**, how to write to
+ * the author (UI-87). Under them, which build of the app this is. Anything else there is to set goes in the section it belongs to,
  * and a setting of one feature goes under that feature's switch (FEAT-10):
  * how the habit cards start out and whether rests are limited under Habits
  * (HAB-23, HAB-36), counting tasks without points under Cases (CHST-32), and
@@ -145,6 +146,10 @@ export function SettingsList({
 
       <SettingsSection title="Appearance" {...fold('appearance')}>
         <ThemePicker theme={theme} onChange={onThemeChange} />
+      </SettingsSection>
+
+      <SettingsSection title="Contact" {...fold('contact')}>
+        <TelegramLink />
       </SettingsSection>
 
       <p className="px-1 text-xs text-neutral-500 dark:text-neutral-400">Version {__APP_VERSION__}</p>

@@ -41,8 +41,9 @@ async function whenOnline(run: () => Promise<void>): Promise<void> {
  *
  * What a change gives is added with Firestore's own increment, so two devices
  * adding at once both count, offline too. Counting the days gone by and
- * beginning are done in a transaction, so two devices counting the same days
- * count them once; offline they wait for the next time.
+ * beginning, and lifting it back to zero, are done in a transaction, so two
+ * devices counting the same days count them once; offline they wait for the
+ * next time.
  *
  * Version 1 kept a ledger a day at a time in `xpDays`, and the day XP began
  * under `start`. Beginning moves them in — the records added up — and lets go
@@ -102,6 +103,17 @@ export function createFirestoreXpRepository(firestore: Firestore, accountId: str
           const settled = count(stored)
           if (settled === null) return
           transaction.update(progress, { xp: stored.xp + settled.xp, settledThrough: settled.settledThrough })
+        }),
+      )
+    },
+
+    lift(least) {
+      return whenOnline(() =>
+        runTransaction(firestore, async (transaction) => {
+          const saved = await transaction.get(progress)
+          const stored = saved.exists() ? readXpProgress(saved.data()) : null
+          if (stored === null || stored.xp >= least) return
+          transaction.update(progress, { xp: least })
         }),
       )
     },

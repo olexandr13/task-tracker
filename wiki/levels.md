@@ -3,7 +3,7 @@
 XP for nearly everything done in the app, and the level it adds up to. Points ([Rewards](rewards.md))
 are a currency: earned and spent. XP is a record of effort: it is never spent, so buying a prize never
 costs a level, but it is **lost** — for a habit skipped or missed, a day with nothing finished, a task
-left overdue — so a level can drop as well as rise.
+left overdue — so a level can drop as well as rise, though XP never goes below zero (LVL-17).
 
 Each action is worth a little, and more for more work. The amounts below are the rules' own; the
 page's **i** says them from the same numbers (LVL-15).
@@ -25,7 +25,7 @@ page's **i** says them from the same numbers (LVL-15).
 - **LVL-3** Going from **level 0 to 1 takes 100 XP**, and every level after takes **10% more** than
   the one before, rounded to a whole number: 110, 121, 133… So level 4 is reached at 464 XP, level 9
   at 1 357. There is **no top level**. The level is read off the total each time it is shown, never
-  kept, so **losing XP can take a level back**. A total below zero is level 0, nothing into it.
+  kept, so **losing XP can take a level back**, down to level 0 at 0 XP (LVL-17).
 
 ## What gives XP
 
@@ -79,6 +79,14 @@ is, being still in play. Two devices open at once count each day once.
   finished later still counts as overdue on the days it was not, and moving its due date afterwards
   changes nothing already counted.
 
+- **LVL-17** **XP never goes below zero.** What is lost beyond zero is **let go of**, not owed: the
+  XP in all stops at **0**, and what is gained after counts from there. Since the points' own XP
+  (LVL-9) is part of the total, it is the total that stops at zero, whatever an earning taken back or
+  deleted on History takes with it. So taking back something lost at zero — a skip taken back, a
+  missed day marked done afterwards — gives its XP all the same, as undoing does elsewhere (LVL-1).
+  Two devices letting go of it at once let it go once; offline the total still reads 0, and the XP is
+  let go of on the next connection.
+
 ## The page
 
 - **LVL-10** **Level** is a page of its own, at `#/level` (UI-36), with an entry in the sidebar
@@ -96,7 +104,7 @@ is, being still in play. Two devices open at once count each day once.
   of **what takes XP away**, each line what is done and what it is worth — `Clear everything this
   month +100`, `A day ends with no task finished −10` — then what a habit's day is worth, that
   spending points never costs XP, that everyone starts at level 0 and how much each level takes, that
-  a level can drop, and the day XP began. Every amount is read off the rules themselves, so the
+  a level can drop but XP never goes below zero, and the day XP began. Every amount is read off the rules themselves, so the
   explanation never says one thing while another is counted.
 - **LVL-16** **Levels** has a switch on Settings (FEAT-1). Switched off, the page, its entry and its
   row are gone and no toast is said (FEAT-2), but XP is **still counted**, as points are while Rewards

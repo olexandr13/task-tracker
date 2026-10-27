@@ -113,5 +113,5 @@ export const XP_NOTES: readonly string[] = [
   `A habit’s worth is what doing it gives: ${String(XP_DONE)}, more for its time goal and checklist, and 1 for each of its points. A 1-point habit with no goal is worth ${String(XP_DONE + 1)}.`,
   'Spending points on prizes never costs XP.',
   `Everyone starts at level 0. Level 1 takes ${String(XP_FIRST_STEP)} XP, each level after takes ${String(Math.round((XP_GROWTH - 1) * 100))}% more than the one before, and there is no top level.`,
-  'Lose XP and your level can drop too.',
+  'Lose XP and your level can drop too, but XP never goes below 0.',
 ]

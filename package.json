@@ -1,7 +1,7 @@
 {
   "name": "task-tracker",
   "private": true,
-  "version": "0.162.0",
+  "version": "0.164.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

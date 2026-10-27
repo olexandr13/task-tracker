@@ -5,9 +5,10 @@
  * Points (./reward) are a currency: earned and spent. XP is a record of effort:
  * it is never spent, so a prize bought never costs a level, but it is lost —
  * for a habit skipped or missed, a day with nothing finished, a task left
- * overdue — so a level can drop as well as rise. Each action is worth a little,
- * and more for more work: a task with a time goal or a checklist is worth more
- * to finish, and every point a task earns is worth one XP besides.
+ * overdue — so a level can drop as well as rise, though XP never goes below
+ * zero. Each action is worth a little, and more for more work: a task with a
+ * time goal or a checklist is worth more to finish, and every point a task
+ * earns is worth one XP besides.
  *
  * No history of it is kept: only where it stands (`XpProgress`) — the XP in
  * all, the day it began, the last day gone by that was counted, and how many
@@ -67,7 +68,10 @@ export const XP_OVERDUE_A_DAY = 10
 
 /** Where XP stands: all that is kept of it. */
 export interface XpProgress {
-  /** Everything gained and lost, but for what the points gave (`pointsXp`). Below zero is allowed. */
+  /**
+   * Everything gained and lost, but for what the points gave (`pointsXp`).
+   * Below zero is allowed, down to what takes the points' XP back (`leastXp`).
+   */
   readonly xp: number
   /** The day XP began (LVL-2): nothing before it counts. */
   readonly startedOn: LocalDay
@@ -436,9 +440,17 @@ export function pointsXp(entries: readonly RewardEntry[], startedOn: LocalDay): 
   return entries.reduce((sum, entry) => sum + (entry.day >= startedOn ? entry.points : 0), 0)
 }
 
-/** XP in all: everything gained and lost, and what the points gave. */
+/** XP in all: everything gained and lost, and what the points gave — never below zero (LVL-17). */
 export function totalXp(progress: XpProgress, entries: readonly RewardEntry[]): number {
-  return progress.xp + pointsXp(entries, progress.startedOn)
+  return Math.max(0, progress.xp + pointsXp(entries, progress.startedOn))
+}
+
+/**
+ * The least `XpProgress.xp` may be: what puts the total at zero (LVL-17). XP
+ * lost below it is let go of, so what is gained after counts from zero.
+ */
+export function leastXp(progress: XpProgress, entries: readonly RewardEntry[]): number {
+  return -pointsXp(entries, progress.startedOn)
 }
 
 // Levels

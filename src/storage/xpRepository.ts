@@ -32,6 +32,11 @@ export interface XpRepository {
    * two devices counting the same days count them once (LVL-12 to LVL-14).
    */
   settle(count: XpSettling): Promise<void>
+  /**
+   * Raises the XP kept to `least` where it is below it, against the record as
+   * saved, so two devices raising it at once raise it once (LVL-17).
+   */
+  lift(least: number): Promise<void>
   /** Takes on where XP stands from elsewhere — the guest's, a backup file's — only where it has not begun already. */
   importProgress(progress: XpProgress): Promise<void>
 }

@@ -109,6 +109,12 @@ export function createLocalXpRepository(): XpRepository {
       writeStore({ ...stored, xp: stored.xp + settled.xp, settledThrough: settled.settledThrough })
     },
 
+    async lift(least) {
+      const stored = readStore()
+      if (stored === null || stored.xp >= least) return
+      writeStore({ ...stored, xp: least })
+    },
+
     async importProgress(progress) {
       if (readStore() !== null) return
       writeStore(progress)
