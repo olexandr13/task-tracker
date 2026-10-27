@@ -107,8 +107,8 @@ than allowed to speak past the parts (CHK-11).
 ## Renaming and removing
 
 - **CHK-19** Clicking an item's title turns it into a text box in place, with the caret at the end.
-  Enter (which also opens a line under it, CHK-26), or clicking away, keeps it; Escape drops the
-  edit; an empty box is an abandoned edit, not a request for a nameless item.
+  Enter (which also opens a line under it, CHK-26), or clicking away — off the box, or off the row
+  altogether, which puts the checklist away with it — keeps it; Escape drops the edit; an empty box is an abandoned edit, not a request for a nameless item.
 - **CHK-20** A rename changes the title alone — same id, same tick — so it can neither finish a task
   nor reopen one.
 - **CHK-21** An item is removed outright. There is no undo and no trash for a checklist item: it is
@@ -120,7 +120,7 @@ than allowed to speak past the parts (CHK-11).
 - **CHK-26** Enter in an item's text box opens a **blank line under it**, caret in it, looking like
   an item but not one yet — there are no nameless items (CHK-2). Typing and pressing Enter adds the
   item there and opens the next line under it, so a list can be written straight down from the
-  middle as well as from the foot. Clicking away keeps what was typed; Escape drops it; Enter on the
+  middle as well as from the foot. Clicking away, off the row included, keeps what was typed; Escape drops it; Enter on the
   empty line closes it, and Backspace on it closes it and goes back to the item above, as CHK-25.
 
 ## Moving

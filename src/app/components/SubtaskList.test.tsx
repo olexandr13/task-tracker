@@ -25,14 +25,22 @@ const TASK = 'ship it'
 
 afterEach(cleanup)
 
-/** A checklist holding its own task, so every change goes through the same rules the app uses. */
+/**
+ * A checklist holding its own task, so every change goes through the same rules the app uses.
+ * The toggle puts it away on the press, before any blur, as resting a row does (./TaskItem).
+ */
 function Checklist({ titles }: { titles: readonly string[] }) {
   const [task, setTask] = useState(() =>
     titles.reduce((current, title) => addSubtask(current, title, NOW), createTask(TASK, null, NOW)),
   )
+  const [isOpen, setIsOpen] = useState(true)
 
   return (
-    <SubtaskList
+    <>
+    <button type="button" onPointerDown={() => { setIsOpen(!isOpen) }}>
+      Toggle the checklist
+    </button>
+    {isOpen && <SubtaskList
       subtasks={task.subtasks}
       repeat={task.repeat}
       now={NOW}
@@ -44,7 +52,8 @@ function Checklist({ titles }: { titles: readonly string[] }) {
       onMove={(id, targetId, placement) => {
         setTask((current) => moveSubtask(current, id, targetId, placement))
       }}
-    />
+    />}
+    </>
   )
 }
 
@@ -95,6 +104,10 @@ async function startEditing(user: ReturnType<typeof userEvent.setup>, title: str
   return editBox(title)
 }
 
+async function toggleChecklist(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: 'Toggle the checklist' }))
+}
+
 describe('adding from the foot of the list', () => {
   it('adds to the end on Enter and keeps the box focused for the next one (CHK-6, CHK-7)', async () => {
     const user = setup(['one'])
@@ -137,6 +150,17 @@ describe('editing an item', () => {
 
     await startEditing(user, 'two')
     await user.keyboard('{Backspace}{Backspace}{Backspace}three{Escape}')
+    expect(rows()).toEqual(['ones', 'two'])
+  })
+
+  it('keeps a rename when the checklist is put away mid-edit, as resting the row does', async () => {
+    const user = setup(['one', 'two'])
+
+    await startEditing(user, 'one')
+    await user.keyboard('s')
+    await toggleChecklist(user)
+    await toggleChecklist(user)
+
     expect(rows()).toEqual(['ones', 'two'])
   })
 })
@@ -250,6 +274,17 @@ describe('Enter in an item (CHK-26)', () => {
     await startEditing(user, 'one')
     await user.keyboard('{Enter}two')
     await user.click(document.body)
+
+    expect(rows()).toEqual(['one', 'two', 'three'])
+  })
+
+  it('keeps what was typed when the checklist is put away, once', async () => {
+    const user = setup(['one', 'three'])
+
+    await startEditing(user, 'one')
+    await user.keyboard('{Enter}two')
+    await toggleChecklist(user)
+    await toggleChecklist(user)
 
     expect(rows()).toEqual(['one', 'two', 'three'])
   })

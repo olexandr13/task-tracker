@@ -84,6 +84,18 @@ export function SubtaskItem({
     element.setSelectionRange(element.value.length, element.value.length)
   }, [isEditing])
 
+  // Resting the row puts the checklist away with it, and removing a focused box
+  // is not reliably a blur. Keeping the edit on the way out makes clicking off
+  // the row the same as clicking off the box, as ./TaskDescription does.
+  const keepOnUnmount = useRef(() => {})
+  useEffect(() => {
+    keepOnUnmount.current = () => {
+      const trimmed = draft?.trim() ?? ''
+      if (trimmed.length > 0) onRename(subtask.id, trimmed)
+    }
+  })
+  useEffect(() => () => { keepOnUnmount.current() }, [])
+
   function endEdit() {
     setDraft(null)
     onEditEnd(subtask.id)

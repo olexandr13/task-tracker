@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { subtaskCheckbox, subtaskRow, subtaskTitleBox } from './SubtaskItem'
 
 interface SubtaskDraftProps {
@@ -20,6 +20,27 @@ interface SubtaskDraftProps {
  */
 export function SubtaskDraft({ taskTitle, onAdd, onClose, onBackspaceWhenEmpty }: SubtaskDraftProps) {
   const [title, setTitle] = useState('')
+  // What is typed and not yet added. Resting the row puts the line away with it,
+  // and removing a focused box is not reliably a blur, so this is added on the
+  // way out too. Escape, Enter and a blur clear it as they close the line, so it
+  // is added once and never after being dropped.
+  const unsaved = useRef('')
+  const addOnUnmount = useRef(onAdd)
+  useEffect(() => {
+    addOnUnmount.current = onAdd
+  })
+  useEffect(
+    () => () => {
+      const trimmed = unsaved.current.trim()
+      if (trimmed.length > 0) addOnUnmount.current(trimmed)
+    },
+    [],
+  )
+
+  function change(next: string) {
+    unsaved.current = next
+    setTitle(next)
+  }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'Enter') {
@@ -30,13 +51,14 @@ export function SubtaskDraft({ taskTitle, onAdd, onClose, onBackspaceWhenEmpty }
         return
       }
       onAdd(trimmed)
-      setTitle('')
+      change('')
       return
     }
 
     if (event.key === 'Escape') {
       // Closing the line unmounts the box, so the blur that follows cannot save it.
       event.stopPropagation()
+      unsaved.current = ''
       onClose()
       return
     }
@@ -49,6 +71,7 @@ export function SubtaskDraft({ taskTitle, onAdd, onClose, onBackspaceWhenEmpty }
   }
 
   function handleBlur() {
+    unsaved.current = ''
     const trimmed = title.trim()
     if (trimmed.length > 0) {
       onAdd(trimmed)
@@ -64,7 +87,7 @@ export function SubtaskDraft({ taskTitle, onAdd, onClose, onBackspaceWhenEmpty }
         type="text"
         name="subtask-title"
         value={title}
-        onChange={(event) => { setTitle(event.target.value) }}
+        onChange={(event) => { change(event.target.value) }}
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
         // Only ever opened by a key press, so taking the caret is what was asked for.
