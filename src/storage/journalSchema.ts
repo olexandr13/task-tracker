@@ -7,8 +7,8 @@ import { isRecord } from './plainData'
  * reading (STORE-5).
  *
  * - 1: the section, what was written, and when. The `insights` section came
- *   later within it: it only adds a section a line may be in, so every day
- *   saved before it reads as it was.
+ *   later within it, and so did `improve`: each only adds a section a line
+ *   may be in, so every day saved before it reads as it was.
  */
 export const JOURNAL_SCHEMA_VERSION = 1
 

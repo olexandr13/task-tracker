@@ -280,7 +280,7 @@ describe('journalXp (LVL-8)', () => {
     expect(journalXp([first], [first, line('gratitude')], [day])).toBe(0)
   })
 
-  it('gives 2 more once every section has its five lines, and takes them back as one goes', () => {
+  it('gives 2 more once every section has its lines, and takes them back as one goes', () => {
     const full = JOURNAL_SECTIONS.flatMap((section) => Array.from({ length: JOURNAL_GOAL }, () => line(section)))
     expect(journalXp(full.slice(1), full, [day])).toBe(2)
     expect(journalXp(full, full.slice(1), [day])).toBe(-2)

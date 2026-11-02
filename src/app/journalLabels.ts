@@ -18,7 +18,7 @@ export const JOURNAL_HEADING = 'Journal'
 
 /** What the page is for and how it is used, in plain sentences, one thing each (UI-73). */
 export const JOURNAL_INTRO = [
-  'Write down what you realized today, what went well, what you achieved, and what you are grateful for.',
+  'Write down what you realized today, what went well, what you achieved, what you are grateful for, and what you would change or improve.',
   `Aim for ${String(JOURNAL_GOAL)} of each. Fewer is fine, and so is more: a new line is always waiting under the last one.`,
   'Type on a line and press Enter to go on to the next. Clicking away keeps what you typed.',
   'Press a line to change it. Empty it, or press its "×", to delete it.',
@@ -72,9 +72,17 @@ export const JOURNAL_SECTION_LABELS: Readonly<Record<JournalSection, SectionLabe
     add: 'Add something you’re grateful for',
     placeholder: 'Something you’re grateful for',
   },
+  improve: {
+    title: 'What to change/improve',
+    pastTitle: 'What to change/improve',
+    emoji: '🌱',
+    line: 'Change',
+    add: 'Add something to change or improve',
+    placeholder: 'Something to do differently next time',
+  },
 }
 
-/** How far a section has come towards its lines (JRN-3), for a screen reader: `3 of 5 written`. */
+/** How far a section has come towards its lines (JRN-3), for a screen reader: `2 of 3 written`. */
 export function describeGoal(count: number): string {
   return count >= JOURNAL_GOAL
     ? `${String(count)} written, ${String(JOURNAL_GOAL)} reached`

@@ -50,7 +50,7 @@ page's **i** says them from the same numbers (LVL-15).
   category deleted with its time (BAL-10). A session let go of with time (TIME-8) was spent all the
   same, and keeps it.
 - **LVL-8** **Writing in the journal** gives **1** for a day with anything written in it, and **2
-  more** once every section of that day has its five lines (JRN-3). Deleting lines takes back what the
+  more** once every section of that day has its three lines (JRN-3). Deleting lines takes back what the
   day no longer earns. The journal letting go of its older days (JRN-8) takes nothing.
 - **LVL-9** **Every point earned** since XP began gives **1 XP**: a task's reward (RWD-9), a period's
   bonus (RWD-25) and what Cases paid (RWD-44) alike. It is read off the points ledger itself, so an

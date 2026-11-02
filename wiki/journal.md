@@ -1,9 +1,9 @@
 # Journal
 
 The day's good side, written down while it is still fresh: what was **understood** along the way,
-what **went well**, what was **achieved**, and what there is to be **grateful** for —
-about five lines of each. The tasks say what was meant to be done; the journal says what was good
-about the day and what it taught, so an evening ends on what went right rather than on what is left.
+what **went well**, what was **achieved**, what there is to be **grateful** for, and what to
+**change or improve** — about three lines of each. The tasks say what was meant to be done; the journal says what was good
+about the day and what it taught, so an evening ends on what went right, and on one thing to do better, rather than on what is left.
 
 ## The page
 
@@ -11,9 +11,10 @@ about the day and what it taught, so an evening ends on what went right rather t
   under **Reflect**, after Balance and the Activity log (UI-30, UI-83), and a row on Reflect's page
   (UI-83). It opens on the heading **Journal** with an **i** beside it (UI-73), saying in plain
   sentences what the page is for and how it is used, and under the heading the day it is writing
-  about — `Saturday, October 10`. Then come four cards, one for each **section**, in this order:
+  about — `Saturday, October 10`. Then come five cards, one for each **section**, in this order:
   💡 **Insights** — what the day made clear, a lesson or a conclusion — ☀️ **Good things today**,
-  🏆 **Achievements** and 🙏 **Gratitude**; then the button to the week
+  🏆 **Achievements**, 🙏 **Gratitude** and 🌱 **What to change/improve** — what to do differently
+  next time; then the button to the week
   gone by (JRN-6). It has no box for adding a task, no Plus and no rail: it is not a list of tasks.
 
 ## Writing it
@@ -21,16 +22,16 @@ about the day and what it taught, so an evening ends on what went right rather t
 - **JRN-2** A **line** is one thing, on one line, of up to 200 characters, its spaces — line breaks
   pasted in too — squeezed to one. Under a section's lines one more is always **waiting** for the
   next, its placeholder saying what goes there — *Something you realized or learned*, *Something good that
-  happened*, *Something you got done*, *Something you’re grateful for*. **Enter** writes what was typed and leaves the caret on the
-  waiting line for the one after, so five can be written straight down; clicking away keeps what was
+  happened*, *Something you got done*, *Something you’re grateful for*, *Something to do differently next time*. **Enter** writes what was typed and leaves the caret on the
+  waiting line for the one after, so three can be written straight down; clicking away keeps what was
   typed, as a rename does; Enter on an empty line does nothing, and **Escape** empties it. A line is
   saved once, as it is left, not a keystroke at a time.
-- **JRN-3** Each section asks for **five**: its lines are **numbered**, and until there are five
+- **JRN-3** Each section asks for **three**: its lines are **numbered**, and until there are three
   the numbers still to fill are drawn faint under the waiting line, a press on one putting the caret
-  there. Five **dots** beside the heading fill blue as lines are written and turn **green** at five;
-  past five, they say how many more — `+2`. Five is something to aim at, **not a limit**: there is
-  always a waiting line, and fewer is fine too. A screen reader hears the dots as `3 of 5 written`,
-  or `6 written, 5 reached`.
+  there. Three **dots** beside the heading fill blue as lines are written and turn **green** at three;
+  past three, they say how many more — `+2`. Three is something to aim at, **not a limit**: there is
+  always a waiting line, and fewer is fine too. A screen reader hears the dots as `2 of 3 written`,
+  or `4 written, 3 reached`.
 - **JRN-4** A line written **reads as text and is changed in place**: pressing it puts the caret in
   it. What is typed is kept as the caret leaves — by a click elsewhere, **Enter** or **↓**, which
   move to the line below, or **↑**, which moves to the line above. **Escape** puts the line back as

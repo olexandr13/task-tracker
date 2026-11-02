@@ -36,11 +36,11 @@ function section(name: string) {
 }
 
 describe('JournalPage', () => {
-  it('asks for insights, good things, achievements and gratitude, five of each (JRN-1, JRN-3)', () => {
+  it('asks for insights, good things, achievements, gratitude and what to improve, three of each (JRN-1, JRN-3)', () => {
     render(<Journal />)
 
-    for (const name of ['Insights', 'Good things today', 'Achievements', 'Gratitude']) {
-      expect(section(name).getByRole('img', { name: '0 of 5 written' })).toBeDefined()
+    for (const name of ['Insights', 'Good things today', 'Achievements', 'Gratitude', 'What to change/improve']) {
+      expect(section(name).getByRole('img', { name: '0 of 3 written' })).toBeDefined()
     }
     expect(section('Good things today').getByRole('textbox', { name: 'Add a good thing' })).toBeDefined()
   })
@@ -56,18 +56,18 @@ describe('JournalPage', () => {
     expect(section('Achievements').getByRole('textbox', { name: 'Achievement 1' })).toHaveProperty('value', 'Ran 5 km')
     expect(section('Achievements').getByRole('textbox', { name: 'Achievement 2' })).toHaveProperty('value', 'Fixed the bike')
     expect(document.activeElement).toBe(waiting)
-    expect(section('Achievements').getByRole('img', { name: '2 of 5 written' })).toBeDefined()
+    expect(section('Achievements').getByRole('img', { name: '2 of 3 written' })).toBeDefined()
   })
 
-  it('keeps going past five, and says the goal is reached (JRN-3)', async () => {
-    const lines = ['a', 'b', 'c', 'd', 'e'].map((text) => createJournalEntry('gratitude', text, TODAY, NOW))
+  it('keeps going past three, and says the goal is reached (JRN-3)', async () => {
+    const lines = ['a', 'b', 'c'].map((text) => createJournalEntry('gratitude', text, TODAY, NOW))
     const user = userEvent.setup()
     render(<Journal initial={lines} />)
 
     await user.click(section('Gratitude').getByRole('textbox', { name: 'Add something you’re grateful for' }))
     await user.keyboard('f{Enter}')
 
-    expect(section('Gratitude').getByRole('img', { name: '6 written, 5 reached' })).toBeDefined()
+    expect(section('Gratitude').getByRole('img', { name: '4 written, 3 reached' })).toBeDefined()
   })
 
   it('changes a line in place, keeping it on leaving and putting it back on Escape (JRN-4)', async () => {

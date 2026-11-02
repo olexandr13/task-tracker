@@ -335,7 +335,7 @@ export function activityXp(before: readonly ActivityEntry[], after: readonly Act
   return worth(after) - worth(before)
 }
 
-/** What a day of the journal is worth: one for anything written, and two more once every section has its five lines. */
+/** What a day of the journal is worth: one for anything written, and two more once every section has its lines (JRN-3). */
 function journalDayXp(entries: readonly JournalEntry[], day: LocalDay): number {
   const lines = JOURNAL_SECTIONS.map((section) => journalLines(entries, day, section).length)
   return (
