@@ -70,6 +70,7 @@ export type FixedView =
   | 'balance'
   | 'activity'
   | 'journal'
+  | 'assistant'
   | 'more'
   | 'organize'
   | 'reflect'
@@ -118,6 +119,7 @@ export type TaskView = Exclude<
   | 'balance'
   | 'activity'
   | 'journal'
+  | 'assistant'
   | 'more'
   | 'organize'
   | 'reflect'
@@ -187,11 +189,12 @@ export const UNDER_ORGANIZE = ['tags', 'notes'] as const satisfies readonly Fixe
 /**
  * The pages under Reflect, in the order it lists them (UI-83): Balance, where
  * the time logged divides between work and rest (BAL-1), the activity log,
- * where each hour of the day is written down (ACT-1), and the journal, where
- * the day's good things are (JRN-1). Looking back at the day, kept apart from
+ * where each hour of the day is written down (ACT-1), the journal, where
+ * the day's good things are (JRN-1), and the assistant, which reads all of it
+ * and suggests what to do next (AI-1). Looking back at the day, kept apart from
  * the work itself.
  */
-export const UNDER_REFLECT = ['balance', 'activity', 'journal'] as const satisfies readonly FixedView[]
+export const UNDER_REFLECT = ['balance', 'activity', 'journal', 'assistant'] as const satisfies readonly FixedView[]
 
 /**
  * The pages More's own page lists — the ones a phone's bar has no tab for — in
@@ -519,6 +522,7 @@ export const VIEW_LABELS: Record<FixedView, string> = {
   balance: 'Balance',
   activity: 'Activity log',
   journal: 'Journal',
+  assistant: 'Assistant',
   more: 'More',
   organize: 'Organize',
   reflect: 'Reflect',

@@ -372,7 +372,7 @@ changes shape.
   refuses storage keeps them for as long as the page is open.
 - **STORE-31** How the sidebar is laid out — whether the lists under Lists (LST-26), the pages
   under Rewards (RWD-19), Tags and Notes under Organize (UI-81), the modes under Modes
-  (MODE-7) and Balance, the Activity log and the Journal under Reflect (UI-83) are folded — is kept the same way, and
+  (MODE-7) and Balance, the Activity log, the Journal and the Assistant under Reflect (UI-83) are folded — is kept the same way, and
   for the same reasons: in this
   browser's `localStorage`, not in the account, under a version of its own, read at once when the
   app opens, and back to the default — unfolded — when it cannot be read. A layout saved before
@@ -443,6 +443,14 @@ changes shape.
   still loading keep **nothing**, so a reload after signing out shows no one's tasks. A page too
   long to be worth keeping, or one the browser refuses, keeps nothing either. It has a version of
   its own, and one the app cannot read is no page: the reload waits, as it did before.
+- **STORE-69** What the **assistant** keeps — the Gemini API key (AI-2) and the conversation, each
+  turn with when it was said (AI-7, AI-11) — is kept in this browser's `localStorage`, under a version of its
+  own, and **nowhere else**: not in the account, not synced, not in the backup. The key is the
+  owner's own, for a service outside the app, so each device is given it by hand, and it is never in
+  the app's code or in any committed file. A device with no key and no conversation keeps no record
+  at all. A key that cannot be read is no key, and is given again; a conversation that cannot be
+  read is let go of on its own, the key beside it kept. A record from when only the last answer was
+  kept becomes a conversation of that question and its answer.
 
 ## A copy outside the account
 
@@ -557,7 +565,9 @@ limit on rests), `src/app/useHabitRests.ts`, `checkInDeviceRepository.ts`,
 `sideNavSchema.ts` and `localStorageSideNavRepository.ts` (the sidebar's layout),
 `src/storage/themeRepository.ts`, `themeSchema.ts` and `localStorageThemeRepository.ts` (the theme; `index.html`
 reads it too, before the page is drawn), `src/storage/pageSnapshotRepository.ts` and
-`sessionStoragePageSnapshotRepository.ts` (the page as it was left), `src/app/useTasks.ts`, `src/app/useLists.ts`,
+`sessionStoragePageSnapshotRepository.ts` (the page as it was left),
+`src/storage/assistantDeviceRepository.ts`, `assistantDeviceSchema.ts` and
+`localStorageAssistantDeviceRepository.ts` (the assistant's key and conversation), `src/app/useTasks.ts`, `src/app/useLists.ts`,
 `src/app/useTags.ts` (keeping the tags tasks carry; all three build each change on the one before,
 STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/StorageProblemNotice.tsx`
 (saying what was refused). Who may read what: `firestore.rules`.
@@ -570,6 +580,7 @@ STORE-39), `src/app/storageProblem.ts`, `useStorageProblem.ts` and `components/S
 `src/storage/localTaskImport.test.ts` (the move, and upgrading older data),
 `src/storage/localTaskRepository.test.ts` (the guest's tasks),
 `src/storage/sessionStoragePageSnapshotRepository.test.ts` (the page as it was left),
+`src/storage/assistantDeviceSchema.test.ts` (the assistant's key and conversation),
 `src/storage/habitSettingsSchema.test.ts` (the limit on rests),
 `src/storage/xpSchema.test.ts` and `localXpRepository.test.ts` (XP, and the guest's),
 `src/storage/rewardSchema.test.ts`

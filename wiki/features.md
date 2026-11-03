@@ -10,7 +10,7 @@ thing every account keeps.
 - **FEAT-1** **Settings** has a **Features** section, under Account (UI-35), with **one switch for each
   part** of the app that can be done without: **Habits**, **Lists**, **Goals** (GOAL-20), **Progress bars**, **Daily
   quote**, **Levels** (LVL-16), **Rewards**, **Cases**, **Modes**, **Tags**, **Balance**, **Notes**,
-  **Activity log**, **Journal**, **Notifications** (NOTIF-8) and **Reminders**, in groups (FEAT-11). Each carries the glyph its page is
+  **Activity log**, **Journal**, **Assistant** (AI-9), **Notifications** (NOTIF-8) and **Reminders**, in groups (FEAT-11). Each carries the glyph its page is
   navigated by — Reminders, with no page, the clock of the hour coming round — its name, and a line saying what it
   is in plain words — *Points for finished tasks, and prizes and a wishlist to spend them on*. A
   switch turns its part on or off **at once, with no confirm**: nothing is lost either way (FEAT-5).
@@ -23,7 +23,7 @@ thing every account keeps.
   - **Tasks** — Habits, Lists, Goals, Progress bars and Daily quote;
   - **Motivation** — Levels, Rewards with Cases under it, and Modes;
   - **Organize** — Tags with Balance under it, and Notes;
-  - **Reflect** — the Activity log and the Journal;
+  - **Reflect** — the Activity log, the Journal and the Assistant;
   - **Notices** — Notifications and Reminders.
 
   A part of another sits **right under it** in that one's group (FEAT-4), whatever group its page
@@ -32,7 +32,8 @@ thing every account keeps.
 - **FEAT-10** A part with **settings of its own** keeps them **under its switch**, one step down
   the same tree, rather than on a card of its own: **Habits** holds how the habit cards start out
   (HAB-23) and whether rests are limited (HAB-36), **Cases** whether tasks without points count
-  (CHST-32), and practice where a build offers it (CHST-21). A
+  (CHST-32), and practice where a build offers it (CHST-21), and **Assistant** the Gemini key, this
+  device's alone (AI-2). A
   **chevron** in front of the part's switch, named *Habits settings* or *Cases settings*, folds them
   away and brings them back; they start folded, and what is folded is kept on this device
   (STORE-57). Unfolded, they sit under the part's name, joined to it by a line down from its icon.
@@ -50,10 +51,10 @@ thing every account keeps.
   the bar between them (UI-32); its entry in the Tasks and Rewards tabs' menus (UI-43, UI-67) and in
   the strip across its section's pages (UI-84); its row on **More** (UI-45), **Organize** (UI-81) or
   **Reflect** (UI-83) — and Organize itself, once Tags and Notes are both off, Reflect, once
-  Balance, the Activity log and the Journal are, and More, once every page on it is; its pinned tab, which is kept and comes back with it (UI-77); and its letter: **H** with Habits, **R** with Rewards, **C** with Cases (UI-56, UI-57, UI-72), **P** with the modes (UI-58). An **address** naming it — a bookmark,
+  Balance, the Activity log, the Journal and the Assistant are, and More, once every page on it is; its pinned tab, which is kept and comes back with it (UI-77); and its letter: **H** with Habits, **R** with Rewards, **C** with Cases (UI-56, UI-57, UI-72), **P** with the modes (UI-58). An **address** naming it — a bookmark,
   a reload, a notification pressed — opens the **nearest page above it** that is on instead (UI-37):
   Rewards for Cases, Tasks for a list or the Inbox, More for Goals or a goal's tasks, Modes for a mode, Organize for Tags or Notes,
-  Reflect for Balance, the Activity log or the Journal, More for Modes, Organize, Reflect or
+  Reflect for Balance, the Activity log, the Journal or the Assistant, More for Modes, Organize, Reflect or
   Notifications — or Today, where nothing above it is on — and
   the address is put right to match.
 - **FEAT-3** What a part shows **anywhere else** goes with it:
@@ -86,6 +87,8 @@ thing every account keeps.
   - **Notifications** — the count of notices waiting beside its entry and on More (UI-82). The
     notices themselves and the browser's notifications are not part of it, and carry on: they go with
     Reminders, the modes and Cases, each by its own switch (NOTIF-8).
+  - **Assistant** — the key box under its switch on Settings (AI-2), and, while it is on, what the
+    switched-off parts would have told it: a part off is not sent (AI-5).
 - **FEAT-5** **Nothing is deleted.** A task keeps its list, its goal, its tags and its reward; the points,
   prizes, Balance categories and activity log all stay where they are; and a switch turned back on
   finds everything as it was. A task finished while Rewards is off still earns its points, and they
@@ -93,7 +96,8 @@ thing every account keeps.
   is off, and the level is where it stands when Levels is back (LVL-16). A task added while it is
   off still starts at the reward set for new tasks (RWD-45). Time logged on a task while the
   Activity log is off is still written into it (ACT-21). The journal keeps its last week while it is
-  off, the older days going as ever (JRN-8), and the notes stay as they are (NOTE-10). The backup holds everything
+  off, the older days going as ever (JRN-8), the notes stay as they are (NOTE-10), and the
+  assistant's key and conversation stay on the device (AI-9). The backup holds everything
   whatever is switched off (BAK-2).
 
 ## Parts of another
@@ -141,7 +145,7 @@ address lands), `src/app/featureLabels.ts` (the wording and the groups), `src/ap
 rail), `SideNav.tsx`, `BottomNav.tsx`, `MorePage.tsx`, `OrganizePage.tsx`, `ReflectPage.tsx`, `SectionNav.tsx`, `ModesPage.tsx` (the
 navigation), `TaskItem.tsx`, `TaskSheet.tsx`, `AddTaskSheet.tsx`, `TaskDescription.tsx`,
 `ProcrastinationMode.tsx`, `RewardsPage.tsx`, `ActivityPage.tsx` (what goes with a part),
-`src/app/useReminders.ts` and `useQuote.ts` (reminders and the quote, off), `TasksScreen.tsx` (the
+`src/app/useReminders.ts` and `useQuote.ts` (reminders and the quote, off), `AssistantSettings.tsx` (the assistant's key, under its switch), `TasksScreen.tsx` (the
 limit on rests going with Habits).
 **Tested in:** `src/core/feature.test.ts`, `src/app/featureLabels.test.ts`, `src/storage/featureSchema.test.ts`,
 `src/storage/backupFile.test.ts`,

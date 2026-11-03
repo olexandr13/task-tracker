@@ -33,6 +33,7 @@ export const FEATURES = [
   'progress',
   'quote',
   'reminders',
+  'assistant',
 ] as const
 
 export type Feature = (typeof FEATURES)[number]

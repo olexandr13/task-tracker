@@ -58,10 +58,10 @@ describe('SectionNav (UI-84)', () => {
     expect(marked().map((button) => button.textContent)).toEqual(['Notes'])
   })
 
-  it('lists Reflect with Balance, the activity log and the journal (UI-83)', () => {
+  it('lists Reflect with Balance, the activity log, the journal and the assistant (UI-83)', () => {
     setup('reflect', 'reflect')
 
-    expect(pills()).toEqual(['Reflect', 'Balance', 'Activity log', 'Journal'])
+    expect(pills()).toEqual(['Reflect', 'Balance', 'Activity log', 'Journal', 'Assistant'])
     expect(marked().map((button) => button.textContent)).toEqual(['Reflect'])
   })
 
@@ -90,12 +90,12 @@ describe('SectionNav (UI-84)', () => {
   it('has no pill for a page switched off (FEAT-2)', () => {
     setup('reflect', 'balance', { off: ['journal'] })
 
-    expect(pills()).toEqual(['Reflect', 'Balance', 'Activity log'])
+    expect(pills()).toEqual(['Reflect', 'Balance', 'Activity log', 'Assistant'])
   })
 
   it('draws nothing when nothing under the section is left to go to (FEAT-2)', () => {
     // Balance goes with the tags it divides time by (FEAT-4): Reflect alone would be one pill going nowhere.
-    setup('reflect', 'reflect', { off: ['tags', 'activity', 'journal'] })
+    setup('reflect', 'reflect', { off: ['tags', 'activity', 'journal', 'assistant'] })
 
     expect(screen.queryByRole('navigation')).toBeNull()
   })

@@ -41,11 +41,13 @@ import {
 import { createAccountStorage } from '../storage/accountStorage'
 import type { Account } from '../storage/authService'
 import { deviceStorage } from '../storage/deviceStorage'
+import { geminiAssistantSource } from '../storage/geminiAssistantSource'
 import { quotableQuoteSource } from '../storage/quotableQuoteSource'
 import type { Theme } from '../storage/themeRepository'
 import { ActivityPage } from './components/ActivityPage'
 import { AddTaskForm } from './components/AddTaskForm'
 import { AddTaskSheet } from './components/AddTaskSheet'
+import { AssistantPage } from './components/AssistantPage'
 import { BalancePage } from './components/BalancePage'
 import { BottomNav } from './components/BottomNav'
 import { CheckInSettings } from './components/CheckInSettings'
@@ -109,6 +111,7 @@ import type { SkipOutcome, TaskActions } from './taskActions'
 import { useLetterShortcut } from './useLetterShortcut'
 import { ABOVE_PHONE_BAR, usePhoneLayout } from './usePhoneLayout'
 import { useActivities } from './useActivities'
+import { useAssistant } from './useAssistant'
 import { useBackup } from './useBackup'
 import { useCheckIn } from './useCheckIn'
 import { useCategories } from './useCategories'
@@ -236,6 +239,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   const journal = useJournal(storage.journal, storageProblem.report, xp.record)
   // Anything written down to keep (NOTE-1).
   const notes = useNotes(storage.notes, storageProblem.report)
+  // Suggestions from Gemini, on a key kept on this device alone (AI-1, AI-2).
+  const assistant = useAssistant(geminiAssistantSource, deviceStorage.assistant)
   const {
     tasks,
     heldSince,
@@ -877,6 +882,26 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     undo.show({ kind: 'activity', entry })
   }
 
+  /**
+   * Asks the assistant (AI-1) about everything the screen holds, less the parts
+   * switched off on Settings (AI-5): what is hidden here is not sent away either.
+   */
+  function handleAskAssistant(question: string): Promise<boolean> {
+    return assistant.ask(
+      {
+        tasks,
+        lists: on.lists ? lists.lists : [],
+        goals: on.goals ? goals.goals : [],
+        journal: on.journal ? journal.entries : [],
+        activities: on.activity ? activities.entries : [],
+        notes: on.notes ? notes.notes : [],
+        rests: restLimit,
+      },
+      question,
+      now,
+    )
+  }
+
   /** Takes a line out of the journal, with a few seconds to take it back (JRN-5). */
   function handleRemoveJournalLine(entry: JournalEntry) {
     journal.remove(entry.id)
@@ -1073,6 +1098,8 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                         casesPractice={
                           DEV_FLAGS.casesPractice ? { practising: casesPractice, onChange: setCasesPractice } : undefined
                         }
+                        assistantKey={assistant.apiKey}
+                        onAssistantKeyChange={assistant.setKey}
                         features={{ off: featuresOff, loading: features.isLoading }}
                         onFeatureChange={features.turn}
                         layout={settingsLayout}
@@ -1413,6 +1440,19 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                           onRemove={handleRemoveJournalLine}
                         />
                       )}
+                    </section>
+                  ) : view === 'assistant' ? (
+                    <section aria-label="Assistant">
+                      <AssistantPage
+                        hasKey={assistant.apiKey !== null}
+                        messages={assistant.messages}
+                        pending={assistant.pending}
+                        problem={assistant.problem}
+                        now={now}
+                        onAsk={handleAskAssistant}
+                        onNewChat={assistant.clear}
+                        onOpenSettings={() => { setView('settings') }}
+                      />
                     </section>
                   ) : view === 'notifications' ? (
                     <section aria-label="Notifications">

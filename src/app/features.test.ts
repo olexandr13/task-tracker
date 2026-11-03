@@ -16,7 +16,7 @@ import { goalView, oneListView, tagView } from './view'
 
 describe('the pages there are (FEAT-2)', () => {
   it('is every one while nothing is switched off', () => {
-    for (const view of ['habits', 'rewards', 'rewards/cases', 'lists', 'inbox', 'goals', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'organize', 'reflect', 'more'] as const) {
+    for (const view of ['habits', 'rewards', 'rewards/cases', 'lists', 'inbox', 'goals', 'tags', 'notes', 'balance', 'activity', 'journal', 'assistant', 'modes', 'organize', 'reflect', 'more'] as const) {
       expect(isViewOn(view, [])).toBe(true)
     }
   })
@@ -31,6 +31,7 @@ describe('the pages there are (FEAT-2)', () => {
     expect(isViewOn(tagView('work'), ['tags'])).toBe(false)
     expect(isViewOn('modes/nudge', ['modes'])).toBe(false)
     expect(isViewOn('journal', ['journal'])).toBe(false)
+    expect(isViewOn('assistant', ['assistant'])).toBe(false)
     expect(isViewOn('notes', ['notes'])).toBe(false)
   })
 
@@ -55,7 +56,8 @@ describe('the pages there are (FEAT-2)', () => {
   it('takes Reflect away once everything under it is (UI-83)', () => {
     expect(isViewOn('reflect', ['balance', 'activity'])).toBe(true)
     expect(isViewOn('reflect', ['tags', 'activity'])).toBe(true)
-    expect(isViewOn('reflect', ['balance', 'activity', 'journal'])).toBe(false)
+    expect(isViewOn('reflect', ['balance', 'activity', 'journal'])).toBe(true)
+    expect(isViewOn('reflect', ['balance', 'activity', 'journal', 'assistant'])).toBe(false)
   })
 
   it('takes More away once everything on it is', () => {
@@ -63,7 +65,7 @@ describe('the pages there are (FEAT-2)', () => {
     expect(isViewOn('more', ['lists', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes'])).toBe(true)
     expect(isViewOn('more', ['levels', 'lists', 'tags', 'notes', 'balance', 'activity', 'journal', 'notifications'])).toBe(true)
     expect(
-      isViewOn('more', ['levels', 'lists', 'goals', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'notifications']),
+      isViewOn('more', ['levels', 'lists', 'goals', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'notifications', 'assistant']),
     ).toBe(false)
   })
 
@@ -92,7 +94,9 @@ describe('where the address of a page switched off lands (FEAT-2)', () => {
     expect(nearestViewOn('modes/check-in', ['activity'])).toBe('modes')
     expect(nearestViewOn('balance', ['balance'])).toBe('reflect')
     expect(nearestViewOn('journal', ['journal'])).toBe('reflect')
-    expect(nearestViewOn('journal', ['balance', 'activity', 'journal'])).toBe('more')
+    expect(nearestViewOn('journal', ['balance', 'activity', 'journal'])).toBe('reflect')
+    expect(nearestViewOn('assistant', ['assistant'])).toBe('reflect')
+    expect(nearestViewOn('journal', ['balance', 'activity', 'journal', 'assistant'])).toBe('more')
     expect(nearestViewOn('notes', ['notes'])).toBe('organize')
     expect(nearestViewOn('tags', ['tags'])).toBe('organize')
     expect(nearestViewOn('notes', ['tags', 'notes'])).toBe('more')
@@ -103,7 +107,7 @@ describe('where the address of a page switched off lands (FEAT-2)', () => {
     expect(nearestViewOn('habits', ['habits'])).toBe('today')
     expect(nearestViewOn('rewards/history', ['rewards'])).toBe('today')
     expect(
-      nearestViewOn('modes', ['levels', 'lists', 'goals', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'notifications']),
+      nearestViewOn('modes', ['levels', 'lists', 'goals', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'notifications', 'assistant']),
     ).toBe('today')
   })
 
@@ -126,7 +130,7 @@ describe('what the lists of pages hold', () => {
     expect(morePagesShown([])).toEqual(['lists', 'goals', 'level', 'modes', 'organize', 'reflect', 'notifications'])
     expect(morePagesShown(['levels', 'notes', 'activity', 'journal', 'modes'])).toEqual(['lists', 'goals', 'organize', 'reflect', 'notifications'])
     expect(morePagesShown(['levels', 'goals', 'tags', 'notes', 'modes', 'notifications'])).toEqual(['lists', 'reflect'])
-    expect(morePagesShown(['levels', 'goals', 'tags', 'activity', 'journal'])).toEqual(['lists', 'modes', 'organize', 'notifications'])
+    expect(morePagesShown(['levels', 'goals', 'tags', 'activity', 'journal', 'assistant'])).toEqual(['lists', 'modes', 'organize', 'notifications'])
   })
 
   it('leaves out Organize’s pages that are off (UI-81)', () => {
@@ -136,9 +140,10 @@ describe('what the lists of pages hold', () => {
   })
 
   it('leaves out Reflect’s pages that are off, Balance with the tags (UI-83, FEAT-4)', () => {
-    expect(reflectPagesShown([])).toEqual(['balance', 'activity', 'journal'])
-    expect(reflectPagesShown(['tags'])).toEqual(['activity', 'journal'])
-    expect(reflectPagesShown(['balance', 'activity', 'journal'])).toEqual([])
+    expect(reflectPagesShown([])).toEqual(['balance', 'activity', 'journal', 'assistant'])
+    expect(reflectPagesShown(['tags'])).toEqual(['activity', 'journal', 'assistant'])
+    expect(reflectPagesShown(['assistant'])).toEqual(['balance', 'activity', 'journal'])
+    expect(reflectPagesShown(['balance', 'activity', 'journal', 'assistant'])).toEqual([])
   })
 
   it('heads each section\'s strip with the section, then what is under it in the sidebar (UI-84)', () => {
@@ -151,7 +156,7 @@ describe('what the lists of pages hold', () => {
     ])
     expect(sectionPagesShown('modes', ['habits'])).toEqual(['modes', 'modes/procrastination', 'modes/nudge', 'modes/check-in'])
     expect(sectionPagesShown('organize', [])).toEqual(['organize', 'tags', 'notes'])
-    expect(sectionPagesShown('reflect', ['journal'])).toEqual(['reflect', 'balance', 'activity'])
+    expect(sectionPagesShown('reflect', ['journal'])).toEqual(['reflect', 'balance', 'activity', 'assistant'])
   })
 
   it('lists the Inbox and every list, in the sidebar\'s order, on the Lists strip (UI-84, LST-13)', () => {

@@ -65,8 +65,8 @@ about the day and what it taught, so an evening ends on what went right, and on 
   next render, and the day before is in the history (JRN-6). Anything half typed on a line not yet
   left is let go of with the old day.
 - **JRN-10** **Journal** can be switched off on Settings (FEAT-1). Off, the page goes from the
-  sidebar and from Reflect (FEAT-2), and an address naming it opens Reflect — or More, once Balance
-  and the Activity log are off too (UI-37); what was written
+  sidebar and from Reflect (FEAT-2), and an address naming it opens Reflect — or More, once Balance,
+  the Activity log and the Assistant are off too (UI-37); what was written
   stays, the week kept as ever (JRN-8).
 
 ---

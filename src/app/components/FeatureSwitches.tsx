@@ -22,6 +22,7 @@ const FEATURE_ICONS: Readonly<Record<Feature, ViewIcon>> = {
   balance: VIEW_ICONS.balance,
   activity: VIEW_ICONS.activity,
   journal: VIEW_ICONS.journal,
+  assistant: VIEW_ICONS.assistant,
   modes: VIEW_ICONS.modes,
   notifications: VIEW_ICONS.notifications,
   progress: ProgressIcon,

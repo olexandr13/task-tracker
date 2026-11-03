@@ -41,6 +41,8 @@ function Settings({ from, onFoldChange, ...props }: Partial<Props> & { from: Set
       onHabitRestsChange={vi.fn()}
       casesCounting={{ countUnpaid: true, loading: false }}
       onCasesCountUnpaidChange={vi.fn()}
+      assistantKey={null}
+      onAssistantKeyChange={vi.fn()}
       features={{ off: [], loading: false }}
       onFeatureChange={vi.fn()}
       {...props}
@@ -161,7 +163,7 @@ describe('the features (FEAT-1)', () => {
     expect(names('Tasks')).toEqual(['Habits', 'Lists', 'Goals', 'Progress bars', 'Daily quote'])
     expect(names('Motivation')).toEqual(['Levels', 'Rewards', 'Cases', 'Modes'])
     expect(names('Organize')).toEqual(['Tags', 'Balance', 'Notes'])
-    expect(names('Reflect')).toEqual(['Activity log', 'Journal'])
+    expect(names('Reflect')).toEqual(['Activity log', 'Journal', 'Assistant'])
     expect(names('Notices')).toEqual(['Notifications', 'Reminders'])
   })
 
@@ -201,7 +203,7 @@ describe('the features (FEAT-1)', () => {
     const arrows = features()
       .getAllByRole('button', { name: / settings$/ })
       .map((button) => button.getAttribute('aria-label'))
-    expect(arrows).toEqual(['Habits settings', 'Cases settings'])
+    expect(arrows).toEqual(['Habits settings', 'Cases settings', 'Assistant settings'])
   })
 
   it('leaves out the settings of a feature switched off (FEAT-3)', () => {
@@ -322,5 +324,29 @@ describe('under Cases (CHST-21, CHST-32)', () => {
     expect(cases().getByText('Loading…')).not.toBeNull()
     // Practice is this screen's alone, so it waits for nothing.
     expect(cases().getByRole('switch', { name: 'Practice mode' })).not.toBeNull()
+  })
+})
+
+describe('the assistant’s key (AI-2)', () => {
+  it('takes a key under the Assistant’s switch, never drawing it back', async () => {
+    const onAssistantKeyChange = vi.fn()
+    const user = renderSettings({ onAssistantKeyChange, from: { assistant: true } })
+
+    const box = screen.getByLabelText('Gemini API key')
+    expect(box.getAttribute('type')).toBe('password')
+    await user.type(box, 'key-1234{Enter}')
+
+    expect(onAssistantKeyChange).toHaveBeenCalledWith('key-1234')
+  })
+
+  it('names a saved key by its last four characters, and removes it', async () => {
+    const onAssistantKeyChange = vi.fn()
+    const user = renderSettings({ assistantKey: 'secret-abcd', onAssistantKeyChange, from: { assistant: true } })
+
+    expect(screen.getByText('Key saved on this device, ending in abcd')).not.toBeNull()
+    expect(document.body.textContent).not.toContain('secret')
+    await user.click(screen.getByRole('button', { name: 'Remove key' }))
+
+    expect(onAssistantKeyChange).toHaveBeenCalledWith(null)
   })
 })

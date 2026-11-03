@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import { ActivityIcon } from './components/ActivityIcon'
+import { AssistantIcon } from './components/AssistantIcon'
 import { BalanceIcon } from './components/BalanceIcon'
 import { BellIcon } from './components/BellIcon'
 import { CalendarIcon } from './components/CalendarIcon'
@@ -67,6 +68,7 @@ export const VIEW_ICONS: Record<FixedView, ViewIcon> = {
   balance: BalanceIcon,
   activity: ActivityIcon,
   journal: JournalIcon,
+  assistant: AssistantIcon,
   more: MoreIcon,
   organize: OrganizeIcon,
   reflect: ReflectIcon,

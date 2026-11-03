@@ -7,6 +7,7 @@ import { FEATURES_HINT } from '../featureLabels'
 import { LIMIT_RESTS_DESCRIPTION, LIMIT_RESTS_LABEL } from '../habitLabels'
 import type { BackupStatus } from '../useBackup'
 import { AccountSummary } from './AccountSummary'
+import { AssistantSettings } from './AssistantSettings'
 import { BackupActions } from './BackupActions'
 import { CasesSettings, type CasesPractice } from './CasesSettings'
 import { FeatureSwitches, type FeatureSettings } from './FeatureSwitches'
@@ -34,6 +35,9 @@ interface SettingsListProps {
   onCasesCountUnpaidChange: (countUnpaid: boolean) => void
   /** Cases practice (CHST-21), only where the build offers it (`DEV_FLAGS`). */
   casesPractice?: CasesPractice
+  /** The assistant's key on this device (AI-2), or null. */
+  assistantKey: string | null
+  onAssistantKeyChange: (apiKey: string | null) => void
   /** The features switched off (FEAT-1), and whether the account has said yet (FEAT-8). */
   features: { readonly off: FeaturesOff; readonly loading: boolean }
   onFeatureChange: (feature: Feature, on: boolean) => void
@@ -50,8 +54,9 @@ interface SettingsListProps {
  * the author (UI-87). Under them, which build of the app this is. Anything else there is to set goes in the section it belongs to,
  * and a setting of one feature goes under that feature's switch (FEAT-10):
  * how the habit cards start out and whether rests are limited under Habits
- * (HAB-23, HAB-36), counting tasks without points under Cases (CHST-32), and
- * practice beside it where the build offers it (CHST-21).
+ * (HAB-23, HAB-36), counting tasks without points under Cases (CHST-32),
+ * practice beside it where the build offers it (CHST-21), and the Gemini key,
+ * this device's alone, under the Assistant (AI-2).
  *
  * A feature's settings go with it while it is switched off (FEAT-3), as its
  * pages do.
@@ -74,6 +79,8 @@ export function SettingsList({
   casesCounting,
   onCasesCountUnpaidChange,
   casesPractice,
+  assistantKey,
+  onAssistantKeyChange,
   features,
   onFeatureChange,
   layout,
@@ -119,6 +126,10 @@ export function SettingsList({
           practice={casesPractice}
         />
       ),
+    },
+    assistant: {
+      ...fold('assistant'),
+      children: <AssistantSettings apiKey={assistantKey} onChange={onAssistantKeyChange} />,
     },
   }
 

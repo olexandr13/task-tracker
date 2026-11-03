@@ -25,6 +25,7 @@ export const FEATURE_LABELS: Readonly<Record<Feature, { readonly name: string; r
   progress: { name: 'Progress bars', description: 'How today, this week and this month are going, beside your tasks.' },
   quote: { name: 'Daily quote', description: 'A new quote every day, beside your tasks.' },
   reminders: { name: 'Reminders', description: 'A notice when the hour a task is due at comes round.' },
+  assistant: { name: 'Assistant', description: 'Ask Gemini anything: what to do now, how your day or week went, and more.' },
 }
 
 /**
@@ -38,7 +39,7 @@ export const FEATURE_GROUPS: readonly { readonly name: string; readonly features
   { name: 'Tasks', features: ['habits', 'lists', 'goals', 'progress', 'quote'] },
   { name: 'Motivation', features: ['levels', 'rewards', 'cases', 'modes'] },
   { name: 'Organize', features: ['tags', 'balance', 'notes'] },
-  { name: 'Reflect', features: ['activity', 'journal'] },
+  { name: 'Reflect', features: ['activity', 'journal', 'assistant'] },
   { name: 'Notices', features: ['notifications', 'reminders'] },
 ]
 

@@ -11,10 +11,10 @@ import { ReflectPage } from './ReflectPage'
 afterEach(cleanup)
 
 describe('ReflectPage', () => {
-  it('links to Balance, the activity log and the journal, in the sidebar\'s order (UI-83, BAL-1, ACT-1, JRN-1)', () => {
+  it('links to Balance, the activity log, the journal and the assistant, in the sidebar\'s order (UI-83, BAL-1, ACT-1, JRN-1, AI-1)', () => {
     render(<ReflectPage onOpen={vi.fn()} />)
 
-    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Balance', 'Activity log', 'Journal'])
+    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Balance', 'Activity log', 'Journal', 'Assistant'])
   })
 
   it('opens each page it lists (UI-83)', async () => {
@@ -25,8 +25,9 @@ describe('ReflectPage', () => {
     await user.click(screen.getByRole('button', { name: 'Balance' }))
     await user.click(screen.getByRole('button', { name: 'Activity log' }))
     await user.click(screen.getByRole('button', { name: 'Journal' }))
+    await user.click(screen.getByRole('button', { name: 'Assistant' }))
 
-    expect(onOpen.mock.calls).toEqual([['balance'], ['activity'], ['journal']])
+    expect(onOpen.mock.calls).toEqual([['balance'], ['activity'], ['journal'], ['assistant']])
   })
 
   it('lists each as a link large enough for a finger (UI-49, UI-83)', () => {
@@ -38,7 +39,7 @@ describe('ReflectPage', () => {
   })
 
   it('lists no page switched off, Balance going with the tags (FEAT-2, FEAT-4)', () => {
-    const off: FeaturesOff = ['tags', 'journal']
+    const off: FeaturesOff = ['tags', 'journal', 'assistant']
     render(
       <FeaturesContext value={off}>
         <ReflectPage onOpen={vi.fn()} />

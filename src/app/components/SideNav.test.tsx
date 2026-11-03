@@ -109,6 +109,7 @@ describe('SideNav', () => {
       'Balance',
       'Activity log',
       'Journal',
+      'Assistant',
       'Notifications',
       'Trash',
       'Settings',
@@ -597,7 +598,7 @@ describe('SideNav', () => {
       'Trash', '—',
       'Settings',
     ])
-    expect(rows(['balance', 'activity', 'journal'])).toEqual([
+    expect(rows(['balance', 'activity', 'journal', 'assistant'])).toEqual([
       'Today', 'Tomorrow', 'Week', 'Month', '—',
       'Habits', 'Tasks', 'Lists', 'Goals', '—',
       'Level', 'Rewards', 'Modes', '—',

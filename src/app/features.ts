@@ -124,6 +124,7 @@ export function isViewOn(view: View, off: FeaturesOff): boolean {
   if (view === 'balance') return on('balance')
   if (view === 'activity') return on('activity')
   if (view === 'journal') return on('journal')
+  if (view === 'assistant') return on('assistant')
   if (view === 'notifications') return on('notifications')
   if (view === 'modes') return on('modes')
   if (isModesView(view)) return isModeViewOn(off, view)

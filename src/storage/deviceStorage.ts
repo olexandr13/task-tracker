@@ -1,6 +1,8 @@
+import type { AssistantDeviceRepository } from './assistantDeviceRepository'
 import type { CheckInDeviceRepository } from './checkInDeviceRepository'
 import type { CaseDeviceRepository } from './caseDeviceRepository'
 import type { HabitViewOptionsRepository } from './habitViewOptionsRepository'
+import { localStorageAssistantDeviceRepository } from './localStorageAssistantDeviceRepository'
 import { localStorageCheckInDeviceRepository } from './localStorageCheckInDeviceRepository'
 import { localStorageCaseDeviceRepository } from './localStorageCaseDeviceRepository'
 import { localStorageHabitViewOptionsRepository } from './localStorageHabitViewOptionsRepository'
@@ -26,9 +28,10 @@ import type { ViewOptionsRepository } from './viewOptionsRepository'
 /**
  * What is kept on this device rather than in the account: how things are shown
  * here — Settings' folds and the pinned tabs among them — what is running here, what the nudge has already said here, what the
- * cases keeps here, what the check-in keeps here, today's quote, and the page as
- * this tab last left it (STORE-30, STORE-31, STORE-36, STORE-40, STORE-46,
- * STORE-49, STORE-54, STORE-57, STORE-59, STORE-68). Never synced.
+ * cases keeps here, what the check-in keeps here, today's quote, the
+ * assistant's key and conversation, and the page as this tab last left it
+ * (STORE-30, STORE-31, STORE-36, STORE-40, STORE-46, STORE-49, STORE-54,
+ * STORE-57, STORE-59, STORE-68, STORE-69). Never synced.
  */
 export interface DeviceStorage {
   readonly viewOptions: ViewOptionsRepository
@@ -46,6 +49,8 @@ export interface DeviceStorage {
   /** What the check-in keeps here: the notice dismissed (STORE-54). */
   readonly checkIn: CheckInDeviceRepository
   readonly quote: QuoteRepository
+  /** The assistant's key, given on this device alone, and the conversation (STORE-69). */
+  readonly assistant: AssistantDeviceRepository
   readonly theme: ThemeRepository
   /** The page as this tab last left it, shown again while a reload gathers it (STORE-68). */
   readonly pageSnapshot: PageSnapshotRepository
@@ -62,6 +67,7 @@ export const deviceStorage: DeviceStorage = {
   cases: localStorageCaseDeviceRepository,
   checkIn: localStorageCheckInDeviceRepository,
   quote: localStorageQuoteRepository,
+  assistant: localStorageAssistantDeviceRepository,
   theme: localStorageThemeRepository,
   pageSnapshot: sessionStoragePageSnapshotRepository,
 }

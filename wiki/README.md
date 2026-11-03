@@ -33,6 +33,7 @@ lets this be read as a description of the app rather than a wish list.
 | [Balance](balance.md) | Where the logged time went: categories named by the owner, bound to tags, and the time each took and the tasks completed in each today, this week or this month |
 | [Activity log](activity-log.md) | The day hour by hour: what was done and for how long, the records added and changed, and what they add up to over a day, a week or a month |
 | [Journal](journal.md) | Insights, good things, achievements, gratitude and what to change or improve, about three of each a day, and the week before kept to look back on |
+| [Assistant](assistant.md) | A conversation with Gemini that answers anything — what to do, how a day or week went — knowing the tasks, habits, goals, journal, time and notes; suggestions to ask with one press; a key given on each device |
 | [Notes](notes.md) | Anything written down to keep: newest first, changed in place, bold, italic and lists from buttons over the box |
 | [Check-ins](check-ins.md) | The top of every hour asking what was done: the hours it keeps to, the notice, and the notification while the app is open |
 | [Reminders](reminders.md) | The hour a task is due at coming round: what is said, when, and how it reaches you |

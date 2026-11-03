@@ -106,7 +106,7 @@ describe('MorePage', () => {
 
   it('lists no page switched off, nor Organize or Reflect once all it holds is (FEAT-2, UI-81, UI-83)', () => {
     // Balance goes with the tags it divides time by (FEAT-4).
-    const off: FeaturesOff = ['levels', 'goals', 'tags', 'notes', 'modes', 'activity', 'journal', 'notifications']
+    const off: FeaturesOff = ['levels', 'goals', 'tags', 'notes', 'modes', 'activity', 'journal', 'notifications', 'assistant']
     render(
       <FeaturesContext value={off}>
         <MorePage onOpen={vi.fn()} />

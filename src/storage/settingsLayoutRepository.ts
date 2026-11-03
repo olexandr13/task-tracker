@@ -4,7 +4,7 @@
  * it starts below; no version changes, a layout saved before it simply never
  * mentions it.
  */
-export const SETTINGS_FOLDS = ['account', 'features', 'appearance', 'contact', 'habits', 'cases'] as const
+export const SETTINGS_FOLDS = ['account', 'features', 'appearance', 'contact', 'habits', 'cases', 'assistant'] as const
 
 export type SettingsFold = (typeof SETTINGS_FOLDS)[number]
 
@@ -29,6 +29,7 @@ export const SETTINGS_FOLD_STARTS_OPEN: Readonly<Record<SettingsFold, boolean>> 
   contact: true,
   habits: false,
   cases: false,
+  assistant: false,
 }
 
 /** Whether one part of Settings is open, as the layout has it. */
