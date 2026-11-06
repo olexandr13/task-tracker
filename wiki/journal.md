@@ -1,8 +1,8 @@
 # Journal
 
 The day's good side, written down while it is still fresh: what was **understood** along the way,
-what **went well**, what was **achieved**, what there is to be **grateful** for, and what to
-**change or improve** — about three lines of each. The tasks say what was meant to be done; the journal says what was good
+what **went well**, what was **achieved**, what there is to be **grateful** for, what to
+**change or improve**, and whatever else is on the mind — about three lines of each. The tasks say what was meant to be done; the journal says what was good
 about the day and what it taught, so an evening ends on what went right, and on one thing to do better, rather than on what is left.
 
 ## The page
@@ -11,18 +11,18 @@ about the day and what it taught, so an evening ends on what went right, and on 
   under **Reflect**, after Balance and the Activity log (UI-30, UI-83), and a row on Reflect's page
   (UI-83). It opens on the heading **Journal** with an **i** beside it (UI-73), saying in plain
   sentences what the page is for and how it is used, and under the heading the day it is writing
-  about — `Saturday, October 10`. Then come five cards, one for each **section**, in this order:
+  about — `Saturday, October 10`. Then come six cards, one for each **section**, in this order:
   💡 **Insights** — what the day made clear, a lesson or a conclusion — ☀️ **Good things today**,
-  🏆 **Achievements**, 🙏 **Gratitude** and 🌱 **What to change/improve** — what to do differently
-  next time; then the button to the week
+  🏆 **Achievements**, 🙏 **Gratitude**, 🌱 **What to change/improve** — what to do differently
+  next time — and 💭 **Thoughts**, anything else on the mind; then the button to the week
   gone by (JRN-6). It has no box for adding a task, no Plus and no rail: it is not a list of tasks.
 
 ## Writing it
 
-- **JRN-2** A **line** is one thing, on one line, of up to 200 characters, its spaces — line breaks
-  pasted in too — squeezed to one. Under a section's lines one more is always **waiting** for the
+- **JRN-2** A **line** is one thing, of up to 200 characters, its spaces — line breaks
+  pasted in too — squeezed to one. A line too long for the card **wraps**, growing taller to show it whole. Under a section's lines one more is always **waiting** for the
   next, its placeholder saying what goes there — *Something you realized or learned*, *Something good that
-  happened*, *Something you got done*, *Something you’re grateful for*, *Something to do differently next time*. **Enter** writes what was typed and leaves the caret on the
+  happened*, *Something you got done*, *Something you’re grateful for*, *Something to do differently next time*, *Anything else on your mind*. **Enter** writes what was typed and leaves the caret on the
   waiting line for the one after, so three can be written straight down; clicking away keeps what was
   typed, as a rename does; Enter on an empty line does nothing, and **Escape** empties it. A line is
   saved once, as it is left, not a keystroke at a time.
@@ -34,12 +34,12 @@ about the day and what it taught, so an evening ends on what went right, and on 
   or `4 written, 3 reached`.
 - **JRN-4** A line written **reads as text and is changed in place**: pressing it puts the caret in
   it. What is typed is kept as the caret leaves — by a click elsewhere, **Enter** or **↓**, which
-  move to the line below, or **↑**, which moves to the line above. **Escape** puts the line back as
+  move to the line below, or **↑**, which moves to the line above — in a line that wraps, ↑ and ↓ go
+  through its rows first, and move to another line from its first or last character. **Backspace** in an
+  empty line stays there. **Escape** puts the line back as
   it was. A line keeps its place among the others however it is changed.
 - **JRN-5** A line is **deleted** by its **×** — on a wide screen shown on the line pointed at or
-  being written, on a phone always there (UI-47) — or by **emptying it** and leaving it.
-  **Backspace** in an empty line moves the caret to the end of the line above, so a line emptied
-  that way goes too. Either way the few seconds' **Undo** a deleted task has (UI-38) names it:
+  being written, on a phone always there (UI-47) — or by **emptying it** and leaving it. Either way the few seconds' **Undo** a deleted task has (UI-38) names it:
   `Deleted “Coffee with Anna”`.
 
 ## Looking back

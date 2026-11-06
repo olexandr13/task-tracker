@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useId, useRef, useState, type KeyboardEvent, type TextareaHTMLAttributes } from 'react'
 import {
   isJournalText,
   JOURNAL_GOAL,
@@ -13,14 +13,45 @@ import { deleteControl } from '../rowControls'
 const card = 'rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
 
 /** One numbered line: the number in a narrow column, so the text of every line starts in one place. */
-const row = 'flex items-center gap-3 border-b border-neutral-100 last:border-b-0 dark:border-neutral-800'
+const row = 'flex items-baseline gap-3 border-b border-neutral-100 last:border-b-0 dark:border-neutral-800'
 const number = 'w-4 shrink-0 text-right text-sm text-neutral-400 tabular-nums dark:text-neutral-500'
-/** A phone's text a size that does not zoom the page on focus (UI-47); a wide screen's the list's. */
-const lineBox =
-  'min-w-0 flex-1 bg-transparent py-2.5 text-base text-neutral-800 placeholder:text-neutral-400 focus:outline-none md:py-1.5 md:text-sm dark:text-neutral-100 dark:placeholder:text-neutral-500'
+/**
+ * A line's text, wrapped to show it whole. A phone's a size that does not zoom
+ * the page on focus (UI-47); a wide screen's the list's.
+ */
+const lineText = 'col-start-1 row-start-1 py-2.5 text-base break-words whitespace-pre-wrap md:py-1.5 md:text-sm'
+const lineBox = `${lineText} resize-none overflow-hidden bg-transparent text-neutral-800 placeholder:text-neutral-400 focus:outline-none dark:text-neutral-100 dark:placeholder:text-neutral-500`
 
 /** Where the caret goes in a line it is moved to. */
 type Caret = 'end' | 'keep'
+
+type LineBoxProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'className' | 'rows'> & {
+  value: string
+  boxRef: (box: HTMLTextAreaElement | null) => void
+}
+
+/**
+ * A line's box, as tall as its text: a copy of the text, unseen, sits in the
+ * same place and sets the height, so a long line wraps rather than running out
+ * of sight.
+ */
+function LineBox({ value, boxRef, placeholder, ...props }: LineBoxProps) {
+  return (
+    <div className="grid min-w-0 flex-1">
+      <span aria-hidden="true" className={`invisible ${lineText}`}>{`${value === '' ? (placeholder ?? '') : value} `}</span>
+      <textarea ref={boxRef} rows={1} value={value} placeholder={placeholder} className={lineBox} {...props} />
+    </div>
+  )
+}
+
+/** Whether ↑ or ↓ leaves the box: at once in a line on one row, from the first or last character in one wrapped. */
+function leavesBox(box: HTMLTextAreaElement, key: 'ArrowUp' | 'ArrowDown'): boolean {
+  const style = getComputedStyle(box)
+  const rows = (box.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)) / parseFloat(style.lineHeight)
+  if (!(rows >= 1.5)) return true
+  if (box.selectionStart !== box.selectionEnd) return false
+  return key === 'ArrowUp' ? box.selectionStart === 0 : box.selectionEnd === box.value.length
+}
 
 interface JournalSectionProps {
   section: Section
@@ -35,14 +66,13 @@ interface JournalSectionProps {
  * One section of today's journal (JRN-2, JRN-3): its lines, numbered, each
  * changed in place, and under them a line waiting for the next — then, until
  * there are as many as it asks for, the numbers still to fill, faint. The dots
- * by the heading say how far it has come. Enter goes on down the lines, and
- * Backspace in an empty one goes back up.
+ * by the heading say how far it has come. Enter goes on down the lines.
  */
 export function JournalSection({ section, lines, onAdd, onChange, onRemove }: JournalSectionProps) {
   const labels = JOURNAL_SECTION_LABELS[section]
   const headingId = useId()
   // Every line's box, the waiting one last, so the caret can be handed up and down.
-  const boxes = useRef<(HTMLInputElement | null)[]>([])
+  const boxes = useRef<(HTMLTextAreaElement | null)[]>([])
   const count = lines.length
   const reached = count >= JOURNAL_GOAL
   const still = Math.max(0, JOURNAL_GOAL - count - 1)
@@ -111,7 +141,7 @@ export function JournalSection({ section, lines, onAdd, onChange, onRemove }: Jo
         {Array.from({ length: still }, (_, index) => (
           <li key={`still-${String(index)}`} aria-hidden="true" onClick={() => { moveTo(count) }} className={`${row} cursor-text`}>
             <span className={`${number} text-neutral-300 dark:text-neutral-600`}>{count + 2 + index}</span>
-            <span className="h-11 flex-1 md:h-8" />
+            <span className="flex-1 py-2.5 text-base md:py-1.5 md:text-sm">{'\u00a0'}</span>
           </li>
         ))}
       </ol>
@@ -123,7 +153,7 @@ interface JournalLineProps {
   entry: JournalEntry
   number: number
   label: string
-  boxRef: (box: HTMLInputElement | null) => void
+  boxRef: (box: HTMLTextAreaElement | null) => void
   onUp: () => void
   onDown: () => void
   onChange: (id: JournalEntryId, text: string) => void
@@ -154,14 +184,14 @@ function JournalLine({ entry, number: shown, label, boxRef, onUp, onDown, onChan
     else onRemove(entry)
   }
 
-  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'Enter' || event.key === 'ArrowDown') {
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === 'Enter' || (event.key === 'ArrowDown' && leavesBox(event.currentTarget, 'ArrowDown'))) {
       // Leaving the line keeps it, by its blur.
       event.preventDefault()
       onDown()
       return
     }
-    if (event.key === 'ArrowUp') {
+    if (event.key === 'ArrowUp' && leavesBox(event.currentTarget, 'ArrowUp')) {
       event.preventDefault()
       onUp()
       return
@@ -170,21 +200,14 @@ function JournalLine({ entry, number: shown, label, boxRef, onUp, onDown, onChan
       event.stopPropagation()
       dropping.current = true
       event.currentTarget.blur()
-      return
-    }
-    if (event.key === 'Backspace' && event.currentTarget.value === '') {
-      // Otherwise the key goes on to delete a character from the line above.
-      event.preventDefault()
-      onUp()
     }
   }
 
   return (
     <li className={`group ${row}`}>
       <span className={number}>{shown}</span>
-      <input
-        ref={boxRef}
-        type="text"
+      <LineBox
+        boxRef={boxRef}
         name="journal-line"
         value={draft ?? entry.text}
         maxLength={MAX_JOURNAL_TEXT_LENGTH}
@@ -194,7 +217,6 @@ function JournalLine({ entry, number: shown, label, boxRef, onUp, onDown, onChan
         aria-label={label}
         autoComplete="off"
         enterKeyHint="next"
-        className={lineBox}
       />
       <button
         type="button"
@@ -213,7 +235,7 @@ interface JournalNewLineProps {
   number: number
   label: string
   placeholder: string
-  boxRef: (box: HTMLInputElement | null) => void
+  boxRef: (box: HTMLTextAreaElement | null) => void
   onUp: () => void
   onAdd: (text: string) => void
 }
@@ -233,13 +255,13 @@ function JournalNewLine({ number: shown, label, placeholder, boxRef, onUp, onAdd
     setText('')
   }
 
-  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === 'Enter') {
       event.preventDefault()
       write()
       return
     }
-    if (event.key === 'ArrowUp' || (event.key === 'Backspace' && text === '')) {
+    if (event.key === 'ArrowUp' && leavesBox(event.currentTarget, 'ArrowUp')) {
       event.preventDefault()
       onUp()
       return
@@ -255,9 +277,8 @@ function JournalNewLine({ number: shown, label, placeholder, boxRef, onUp, onAdd
   return (
     <li className={row}>
       <span className={number}>{shown}</span>
-      <input
-        ref={boxRef}
-        type="text"
+      <LineBox
+        boxRef={boxRef}
         name="journal-line"
         value={text}
         maxLength={MAX_JOURNAL_TEXT_LENGTH}
@@ -274,7 +295,6 @@ function JournalNewLine({ number: shown, label, placeholder, boxRef, onUp, onAdd
         placeholder={placeholder}
         autoComplete="off"
         enterKeyHint="next"
-        className={lineBox}
       />
     </li>
   )

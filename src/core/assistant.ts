@@ -263,6 +263,7 @@ const JOURNAL_NAMES: Readonly<Record<JournalSection, string>> = {
   achievements: 'achievement',
   gratitude: 'grateful for',
   improve: 'to change/improve',
+  thoughts: 'thought',
 }
 
 /** The journal the app still keeps (JRN-8), a day at a time, latest first. */

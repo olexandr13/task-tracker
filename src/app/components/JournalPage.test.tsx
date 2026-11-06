@@ -36,13 +36,14 @@ function section(name: string) {
 }
 
 describe('JournalPage', () => {
-  it('asks for insights, good things, achievements, gratitude and what to improve, three of each (JRN-1, JRN-3)', () => {
+  it('asks for insights, good things, achievements, gratitude, what to improve and thoughts, three of each (JRN-1, JRN-3)', () => {
     render(<Journal />)
 
-    for (const name of ['Insights', 'Good things today', 'Achievements', 'Gratitude', 'What to change/improve']) {
+    for (const name of ['Insights', 'Good things today', 'Achievements', 'Gratitude', 'What to change/improve', 'Thoughts']) {
       expect(section(name).getByRole('img', { name: '0 of 3 written' })).toBeDefined()
     }
     expect(section('Good things today').getByRole('textbox', { name: 'Add a good thing' })).toBeDefined()
+    expect(section('Thoughts').getByRole('textbox', { name: 'Add a thought' })).toHaveProperty('placeholder', 'Anything else on your mind')
   })
 
   it('writes a line on Enter and leaves the caret waiting for the next (JRN-2)', async () => {
@@ -99,6 +100,22 @@ describe('JournalPage', () => {
     await user.keyboard('{Backspace}{Enter}')
     expect(onRemove).toHaveBeenLastCalledWith(sunny)
     expect(section('Good things today').queryByRole('textbox', { name: 'Good thing 1' })).toBeNull()
+  })
+
+  it('keeps the caret in an empty line on Backspace, Enter going on down (JRN-4)', async () => {
+    const sunny = createJournalEntry('good', 'Sun came out', TODAY, NOW)
+    const user = userEvent.setup()
+    render(<Journal initial={[sunny]} />)
+
+    const waiting = section('Good things today').getByRole('textbox', { name: 'Add a good thing' })
+    await user.click(waiting)
+    await user.keyboard('{Backspace}{Backspace}')
+    expect(document.activeElement).toBe(waiting)
+    expect(section('Good things today').getByRole('textbox', { name: 'Good thing 1' })).toHaveProperty('value', 'Sun came out')
+
+    await user.click(section('Good things today').getByRole('textbox', { name: 'Good thing 1' }))
+    await user.keyboard('{Enter}')
+    expect(document.activeElement).toBe(waiting)
   })
 
   it('keeps the week gone by out of sight until asked for, latest day first (JRN-6)', async () => {
