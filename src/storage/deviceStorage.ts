@@ -5,6 +5,7 @@ import type { HabitViewOptionsRepository } from './habitViewOptionsRepository'
 import { localStorageAssistantDeviceRepository } from './localStorageAssistantDeviceRepository'
 import { localStorageCheckInDeviceRepository } from './localStorageCheckInDeviceRepository'
 import { localStorageCaseDeviceRepository } from './localStorageCaseDeviceRepository'
+import { localStorageJournalLayoutRepository } from './localStorageJournalLayoutRepository'
 import { localStorageHabitViewOptionsRepository } from './localStorageHabitViewOptionsRepository'
 import { localStorageNudgeRepository } from './localStorageNudgeRepository'
 import { localStoragePinnedTabsRepository } from './localStoragePinnedTabsRepository'
@@ -14,6 +15,7 @@ import { localStorageSideNavRepository } from './localStorageSideNavRepository'
 import { localStorageTaskTimerRepository } from './localStorageTaskTimerRepository'
 import { localStorageThemeRepository } from './localStorageThemeRepository'
 import { localStorageViewOptionsRepository } from './localStorageViewOptionsRepository'
+import type { JournalLayoutRepository } from './journalLayoutRepository'
 import type { NudgeDeviceRepository } from './nudgeDeviceRepository'
 import type { PageSnapshotRepository } from './pageSnapshotRepository'
 import type { PinnedTabsRepository } from './pinnedTabsRepository'
@@ -27,11 +29,11 @@ import type { ViewOptionsRepository } from './viewOptionsRepository'
 
 /**
  * What is kept on this device rather than in the account: how things are shown
- * here — Settings' folds and the pinned tabs among them — what is running here, what the nudge has already said here, what the
+ * here — Settings' folds, the journal's layout and the pinned tabs among them — what is running here, what the nudge has already said here, what the
  * cases keeps here, what the check-in keeps here, today's quote, the
  * assistant's key and conversation, and the page as this tab last left it
  * (STORE-30, STORE-31, STORE-36, STORE-40, STORE-46, STORE-49, STORE-54,
- * STORE-57, STORE-59, STORE-68, STORE-69). Never synced.
+ * STORE-57, STORE-59, STORE-68, STORE-69, STORE-70). Never synced.
  */
 export interface DeviceStorage {
   readonly viewOptions: ViewOptionsRepository
@@ -41,6 +43,8 @@ export interface DeviceStorage {
   readonly pinnedTabs: PinnedTabsRepository
   /** Which parts of Settings are folded (STORE-57). */
   readonly settingsLayout: SettingsLayoutRepository
+  /** The order of the journal's sections, and which are folded (STORE-70). */
+  readonly journalLayout: JournalLayoutRepository
   readonly taskTimer: TaskTimerRepository
   /** What the nudge keeps here: when it last spoke, and the notice it left standing (NUDGE-6). */
   readonly nudge: NudgeDeviceRepository
@@ -62,6 +66,7 @@ export const deviceStorage: DeviceStorage = {
   sideNav: localStorageSideNavRepository,
   pinnedTabs: localStoragePinnedTabsRepository,
   settingsLayout: localStorageSettingsLayoutRepository,
+  journalLayout: localStorageJournalLayoutRepository,
   taskTimer: localStorageTaskTimerRepository,
   nudge: localStorageNudgeRepository,
   cases: localStorageCaseDeviceRepository,

@@ -1,3 +1,5 @@
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { useId, useRef, useState, type KeyboardEvent, type TextareaHTMLAttributes } from 'react'
 import {
   isJournalText,
@@ -8,9 +10,14 @@ import {
   type JournalSection as Section,
 } from '../../core'
 import { describeGoal, JOURNAL_SECTION_LABELS } from '../journalLabels'
-import { deleteControl } from '../rowControls'
+import { deleteControl, dragGrip } from '../rowControls'
+import { ChevronIcon } from './ChevronIcon'
+import { GripIcon } from './GripIcon'
 
 const card = 'rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900'
+
+/** In the page's gutter, level with the heading, so it takes nothing from the card. */
+const grip = `${dragGrip} top-3`
 
 /** One numbered line: the number in a narrow column, so the text of every line starts in one place. */
 const row = 'flex items-baseline gap-3 border-b border-neutral-100 last:border-b-0 dark:border-neutral-800'
@@ -57,6 +64,9 @@ interface JournalSectionProps {
   section: Section
   /** The section's lines for today, in the order they were written. */
   lines: readonly JournalEntry[]
+  /** Folded down to its heading (JRN-12). */
+  folded: boolean
+  onFold: (section: Section, folded: boolean) => void
   onAdd: (section: Section, text: string) => void
   onChange: (id: JournalEntryId, text: string) => void
   onRemove: (entry: JournalEntry) => void
@@ -67,10 +77,19 @@ interface JournalSectionProps {
  * changed in place, and under them a line waiting for the next — then, until
  * there are as many as it asks for, the numbers still to fill, faint. The dots
  * by the heading say how far it has come. Enter goes on down the lines.
+ *
+ * The heading folds the card away and brings it back (JRN-12), and is where it
+ * is picked up to move it among the others (JRN-11) — with a pointer anywhere on
+ * the heading, from the keyboard by the grip beside it. The lines are never a
+ * place it is picked up from: a press there is writing.
  */
-export function JournalSection({ section, lines, onAdd, onChange, onRemove }: JournalSectionProps) {
+export function JournalSection({ section, lines, folded, onFold, onAdd, onChange, onRemove }: JournalSectionProps) {
   const labels = JOURNAL_SECTION_LABELS[section]
   const headingId = useId()
+  const bodyId = useId()
+  const { setNodeRef, setActivatorNodeRef, listeners, attributes, isDragging, transform, transition } = useSortable({
+    id: section,
+  })
   // Every line's box, the waiting one last, so the caret can be handed up and down.
   const boxes = useRef<(HTMLTextAreaElement | null)[]>([])
   const count = lines.length
@@ -86,13 +105,57 @@ export function JournalSection({ section, lines, onAdd, onChange, onRemove }: Jo
   }
 
   return (
-    <section aria-labelledby={headingId} className={`${card} flex flex-col gap-1 px-4 pt-3 pb-1.5`}>
-      <div className="flex items-center justify-between gap-3">
-        <h3 id={headingId} className="flex items-center gap-2 text-base text-neutral-900 dark:text-neutral-100">
-          <span aria-hidden="true">{labels.emoji}</span>
-          {labels.title}
+    <section
+      ref={setNodeRef}
+      aria-labelledby={headingId}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
+      className={[
+        `group/card relative ${card} flex flex-col gap-1 px-4`,
+        !folded && 'pb-1.5',
+        isDragging && 'z-10 shadow-lg',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {/* Shown on hover, and where the keyboard reaches it; a phone holds the heading instead. */}
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        {...attributes}
+        {...listeners}
+        aria-label={`Move “${labels.title}”`}
+        title="Drag to move"
+        className={
+          isDragging ? `${grip} opacity-100` : `${grip} opacity-0 group-hover/card:opacity-100 focus-visible:opacity-100`
+        }
+      >
+        <GripIcon className="size-3.5" />
+      </button>
+
+      <div
+        // A pointer picks the card up anywhere on its heading: a few pixels with a
+        // mouse, a held moment with a finger, so a press is still a fold. The keys
+        // only move it from the grip, which is where these listeners check.
+        {...listeners}
+        onContextMenu={(event) => { event.preventDefault() }}
+        className="relative flex min-h-12 touch-manipulation items-center justify-between gap-3 select-none"
+      >
+        <h3 id={headingId} className="text-base text-neutral-900 dark:text-neutral-100">
+          <button
+            type="button"
+            onClick={() => { onFold(section, !folded) }}
+            aria-expanded={!folded}
+            aria-controls={folded ? undefined : bodyId}
+            className="group flex items-center gap-2 py-3 text-left outline-none after:absolute after:inset-0 after:rounded-xl after:content-[''] focus-visible:after:outline-2 focus-visible:after:outline-blue-500"
+          >
+            <ChevronIcon
+              className={`size-4 shrink-0 text-neutral-400 transition-transform group-hover:text-neutral-700 dark:group-hover:text-neutral-200 ${folded ? '-rotate-90' : ''}`}
+            />
+            <span aria-hidden="true">{labels.emoji}</span>
+            {labels.title}
+          </button>
         </h3>
-        <span role="img" aria-label={describeGoal(count)} title={describeGoal(count)} className="flex items-center gap-1">
+        <span role="img" aria-label={describeGoal(count)} title={describeGoal(count)} className="relative flex items-center gap-1">
           {Array.from({ length: JOURNAL_GOAL }, (_, index) => (
             <span
               key={index}
@@ -113,38 +176,40 @@ export function JournalSection({ section, lines, onAdd, onChange, onRemove }: Jo
         </span>
       </div>
 
-      <ol className="flex flex-col">
-        {lines.map((entry, index) => (
-          <JournalLine
-            key={entry.id}
-            entry={entry}
-            number={index + 1}
-            label={`${labels.line} ${String(index + 1)}`}
-            boxRef={(box) => { boxes.current[index] = box }}
-            onUp={() => { moveTo(index - 1, 'end') }}
-            onDown={() => { moveTo(index + 1) }}
-            onChange={onChange}
-            onRemove={onRemove}
+      {!folded && (
+        <ol id={bodyId} className="-mt-3 flex flex-col">
+          {lines.map((entry, index) => (
+            <JournalLine
+              key={entry.id}
+              entry={entry}
+              number={index + 1}
+              label={`${labels.line} ${String(index + 1)}`}
+              boxRef={(box) => { boxes.current[index] = box }}
+              onUp={() => { moveTo(index - 1, 'end') }}
+              onDown={() => { moveTo(index + 1) }}
+              onChange={onChange}
+              onRemove={onRemove}
+            />
+          ))}
+
+          <JournalNewLine
+            number={count + 1}
+            label={labels.add}
+            placeholder={labels.placeholder}
+            boxRef={(box) => { boxes.current[count] = box }}
+            onUp={() => { moveTo(count - 1, 'end') }}
+            onAdd={(text) => { onAdd(section, text) }}
           />
-        ))}
 
-        <JournalNewLine
-          number={count + 1}
-          label={labels.add}
-          placeholder={labels.placeholder}
-          boxRef={(box) => { boxes.current[count] = box }}
-          onUp={() => { moveTo(count - 1, 'end') }}
-          onAdd={(text) => { onAdd(section, text) }}
-        />
-
-        {/* The lines still to fill towards the goal, a press on any one opening the waiting line. */}
-        {Array.from({ length: still }, (_, index) => (
-          <li key={`still-${String(index)}`} aria-hidden="true" onClick={() => { moveTo(count) }} className={`${row} cursor-text`}>
-            <span className={`${number} text-neutral-300 dark:text-neutral-600`}>{count + 2 + index}</span>
-            <span className="flex-1 py-2.5 text-base md:py-1.5 md:text-sm">{'\u00a0'}</span>
-          </li>
-        ))}
-      </ol>
+          {/* The lines still to fill towards the goal, a press on any one opening the waiting line. */}
+          {Array.from({ length: still }, (_, index) => (
+            <li key={`still-${String(index)}`} aria-hidden="true" onClick={() => { moveTo(count) }} className={`${row} cursor-text`}>
+              <span className={`${number} text-neutral-300 dark:text-neutral-600`}>{count + 2 + index}</span>
+              <span className="flex-1 py-2.5 text-base md:py-1.5 md:text-sm">{'\u00a0'}</span>
+            </li>
+          ))}
+        </ol>
+      )}
     </section>
   )
 }

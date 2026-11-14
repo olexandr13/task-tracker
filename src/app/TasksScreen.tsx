@@ -42,6 +42,7 @@ import { createAccountStorage } from '../storage/accountStorage'
 import type { Account } from '../storage/authService'
 import { deviceStorage } from '../storage/deviceStorage'
 import { geminiAssistantSource } from '../storage/geminiAssistantSource'
+import { foldJournalSection, moveJournalSection } from '../storage/journalLayoutRepository'
 import { quotableQuoteSource } from '../storage/quotableQuoteSource'
 import type { Theme } from '../storage/themeRepository'
 import { ActivityPage } from './components/ActivityPage'
@@ -378,6 +379,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
     setPinnedTabs((latest) => ({ pinned: changePinned(latest.pinned, change) }))
   }
   const [settingsLayout, setSettingsLayout] = useDeviceSetting(deviceStorage.settingsLayout)
+  const [journalLayout, setJournalLayout] = useDeviceSetting(deviceStorage.journalLayout)
   // A phone has no add box and no task View settings (UI-54, UI-41): both are a
   // wide screen's, where a row of details has room under every task.
   const phone = usePhoneLayout()
@@ -643,6 +645,13 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
   // The section whose strip runs across the top of this page, if it is in one (UI-84).
   const section = sectionOf(view)
   const upLink = upLinkOf(view)
+  // How much is still to do in the Inbox and each list, beside its pill in the Lists strip (LST-18).
+  const listCounts: Partial<Record<View, number>> | undefined = section === 'lists'
+    ? Object.fromEntries([
+        ['inbox', countInboxOpen(live, lists.lists, now)],
+        ...summarizeLists(lists.lists, live, now).map(({ list, open }) => [oneListView(list.id), open]),
+      ])
+    : undefined
 
   // Same as the Procrastination switch on Modes (JUST-1, JUST-8): start when off, end when on.
   useLetterShortcut('p', procrastinationOn && view === 'today' && procrastination.available && !adding, () => {
@@ -1073,6 +1082,7 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                       section={section}
                       view={view}
                       lists={lists.lists}
+                      counts={listCounts}
                       keyWaiting={keyWaiting}
                       onChange={setView}
                     />
@@ -1435,6 +1445,13 @@ export function TasksScreen({ account, onSignOut, theme, onThemeChange }: TasksS
                         <JournalPage
                           entries={journal.entries}
                           now={now}
+                          layout={journalLayout}
+                          onMove={(section, over) => {
+                            setJournalLayout((latest) => moveJournalSection(latest, section, over))
+                          }}
+                          onFold={(section, folded) => {
+                            setJournalLayout((latest) => foldJournalSection(latest, section, folded))
+                          }}
                           onAdd={(section, text, day) => { journal.add(section, text, day) }}
                           onChange={journal.change}
                           onRemove={handleRemoveJournalLine}

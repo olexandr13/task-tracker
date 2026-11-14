@@ -31,7 +31,7 @@ const TODAY = toLocalDay(NOW)
 
 describe('parentView', () => {
   it('puts the bar\'s tabs at the top (UI-37, UI-32)', () => {
-    for (const view of ['today', 'tomorrow', 'week', 'month', 'tasks', 'habits', 'rewards', 'more', 'settings'] as const) {
+    for (const view of ['today', 'tomorrow', 'week', 'month', 'tasks', 'habits', 'rewards', 'more', 'reflect'] as const) {
       expect(parentView(view)).toBeNull()
       expect(rootView(view)).toBe(view)
     }
@@ -51,14 +51,15 @@ describe('parentView', () => {
     }
   })
 
-  it('puts Modes, Organize and Reflect under More, Tags and the notes under Organize, Balance, the activity log and the journal under Reflect, a tag\'s tasks under Tags and a mode\'s page under Modes (UI-45, UI-81, UI-83, MODE-1, MODE-7, NOTE-1, BAL-1)', () => {
+  it('puts Modes, Organize and Settings under More, Tags and the notes under Organize, Balance, the activity log, the journal and the assistant under Reflect, a tag\'s tasks under Tags and a mode\'s page under Modes (UI-45, UI-81, UI-83, UI-88, MODE-1, MODE-7, NOTE-1, BAL-1)', () => {
     expect(parentView('modes')).toBe('more')
     expect(parentView('organize')).toBe('more')
-    expect(parentView('reflect')).toBe('more')
+    expect(parentView('settings')).toBe('more')
     expect(parentView('journal')).toBe('reflect')
     expect(parentView('balance')).toBe('reflect')
     expect(parentView('activity')).toBe('reflect')
-    expect(rootView('journal')).toBe('more')
+    expect(parentView('assistant')).toBe('reflect')
+    expect(rootView('journal')).toBe('reflect')
     expect(parentView('tags')).toBe('organize')
     expect(parentView('notes')).toBe('organize')
     expect(parentView('modes/check-in')).toBe('modes')
@@ -97,11 +98,13 @@ describe('isUnder', () => {
     }
   })
 
-  it('holds Modes, Organize, Reflect and everything under them under More, and not Lists (UI-45, UI-34)', () => {
-    for (const view of ['more', 'modes', 'modes/warm-up', 'organize', 'tags', tagView('work'), 'notes', 'reflect', 'balance', 'activity', 'journal'] as const) {
+  it('holds Modes, Organize, Settings and everything under them under More, and not Lists or Reflect (UI-45, UI-34, UI-88)', () => {
+    for (const view of ['more', 'modes', 'modes/warm-up', 'organize', 'tags', tagView('work'), 'notes', 'settings'] as const) {
       expect(isUnder(view, 'more')).toBe(true)
     }
-    expect(isUnder('lists', 'more')).toBe(false)
+    for (const view of ['lists', 'reflect', 'balance', 'activity', 'journal', 'assistant'] as const) {
+      expect(isUnder(view, 'more')).toBe(false)
+    }
   })
 })
 

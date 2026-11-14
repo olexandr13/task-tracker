@@ -214,6 +214,37 @@ export function habitLastDays(task: Task, days: number, now: Date = new Date(), 
   })
 }
 
+export interface HabitsToday {
+  /** Habits done today. */
+  readonly done: number
+  /** Habits today asks of: the ones done, and the ones still to do since they started. */
+  readonly due: number
+}
+
+/**
+ * How many habits are done today, out of how many today asks of (HAB-41). A
+ * habit resting today asked nothing of the day, and neither did one whose rule
+ * starts later, so neither is in the count — unless it was done anyway, which
+ * counts as done. A skip no rest was left to pay for leaves today to do.
+ */
+export function habitsToday(habits: readonly Task[], now: Date = new Date(), rests: HabitRests = null): HabitsToday {
+  const today = toLocalDay(now)
+  let done = 0
+  let due = 0
+
+  for (const habit of habits) {
+    const [{ state }] = habitLastDays(habit, 1, now, rests)
+    if (state === 'done') {
+      done += 1
+      due += 1
+    } else if (state === 'pending' && startedOn(habit) <= today) {
+      due += 1
+    }
+  }
+
+  return { done, due }
+}
+
 function stateOf(
   day: LocalDay,
   today: LocalDay,

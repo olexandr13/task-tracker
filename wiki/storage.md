@@ -384,6 +384,12 @@ changes shape.
   has been folded or unfolded is kept, so a part of Settings added later starts as it should — a
   section open, a feature's settings folded — without a new version; a part Settings no longer has
   is read past. A layout that cannot be read is no layout: everything as it starts.
+- **STORE-70** The **journal's layout** — the order of its sections and which are folded (JRN-11,
+  JRN-12) — is kept the same way as Settings' folds (STORE-57): in this browser's `localStorage`,
+  not in the account, under a version of its own, read at once when the app opens, so no card moves
+  or folds once the page is drawn. A section the journal no longer has is read past; one it never
+  mentions — added since — goes last and starts open, without a new version. A layout that cannot be
+  read is no layout: the sections in their first order, none folded.
 - **STORE-59** The **pinned tabs** (UI-75) are kept the same way as the sidebar's layout
   (STORE-31): in this browser's `localStorage`, not in the account, under a version of their own,
   read at once when the app opens. A phone has no tabs, and how many a screen has room for is that
@@ -429,8 +435,8 @@ changes shape.
   It is read **before the page is first drawn**, so the app never opens in the other theme first. A
   theme the app cannot read is ignored, and the system followed until one is picked again.
 - **STORE-61** How the app is shown on this device — the View options, how the habits view is
-  shown, the sidebar's folds, the pinned tabs, Settings' folds and the theme — and what Cases keeps
-  here (STORE-30, STORE-31, STORE-36, STORE-59, STORE-57, STORE-40, STORE-49) are **the same in every
+  shown, the sidebar's folds, the pinned tabs, Settings' folds, the journal's layout and the theme — and what Cases keeps
+  here (STORE-30, STORE-31, STORE-36, STORE-59, STORE-57, STORE-70, STORE-40, STORE-49) are **the same in every
   window** of the app on it: two browser tabs, or a window opened before the app was updated and one
   opened after. A change made in one reaches the others at once, and a change made in another builds
   on it rather than putting back what that window opened with. So a tab pinned in the new version is

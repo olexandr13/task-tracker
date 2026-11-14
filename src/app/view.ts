@@ -201,21 +201,22 @@ export const UNDER_REFLECT = ['balance', 'activity', 'journal', 'assistant'] as 
  * the order the sidebar lists them (UI-30, UI-45): Lists (UI-34), Goals
  * (GOAL-19), the Level (LVL-10), Modes, with each mode's page under it (MODE-1), Organize,
  * with Tags and the notes under it (UI-81), Reflect, with Balance, the
- * activity log and the journal under it (UI-83), and Notifications, with the
- * notices waiting (NOTIF-1). The sidebar has an entry for every one of them,
- * and so none for More.
+ * activity log, the journal and the assistant under it (UI-83), Notifications,
+ * with the notices waiting (NOTIF-1), and Settings (UI-35). The sidebar has an
+ * entry for every one of them, and so none for More.
  */
-export const ON_MORE = ['lists', 'goals', 'level', 'modes', 'organize', 'reflect', 'notifications'] as const satisfies readonly FixedView[]
+export const ON_MORE = ['lists', 'goals', 'level', 'modes', 'organize', 'reflect', 'notifications', 'settings'] as const satisfies readonly FixedView[]
 
 /**
  * The pages the More tab stands for while one of them is open — the ones on its
  * page (`ON_MORE`) the bar reaches from nowhere else, and so everything under
- * Goals, Modes, Organize and Reflect too. Lists is listed on More but left out here: Tasks is the tab
- * marked while it is open (UI-34), so More standing for it too would mark two at
+ * Goals, Modes and Organize too. Lists and Reflect are listed on More but left
+ * out here: Tasks is the tab marked while Lists is open (UI-34), and Reflect has
+ * a tab of its own (UI-88), so More standing for them too would mark two at
  * once. Adding a page to More's page is deciding both: whether it is listed
  * there, and whether it is reached only from there.
  */
-export const UNDER_MORE = ['goals', 'level', 'modes', 'organize', 'reflect', 'notifications'] as const satisfies readonly FixedView[]
+export const UNDER_MORE = ['goals', 'level', 'modes', 'organize', 'notifications', 'settings'] as const satisfies readonly FixedView[]
 
 /** The views named after a period, which a phone keeps behind a single tab. */
 export type PeriodView = 'today' | 'tomorrow' | 'week' | 'month'
@@ -278,8 +279,7 @@ export function isUnder(view: View, menu: View): boolean {
       (UNDER_MORE as readonly View[]).includes(view) ||
       isUnder(view, 'goals') ||
       isUnder(view, 'modes') ||
-      isUnder(view, 'organize') ||
-      isUnder(view, 'reflect')
+      isUnder(view, 'organize')
     )
   }
   return false
@@ -323,12 +323,12 @@ export function upLinkOf(view: View): View | null {
 /**
  * The view one level above `view`, or null at the top (UI-37). The views make a
  * tree whose top is the bar's tabs — the periods, Tasks, Habits, Rewards, More
- * and Settings. Under Tasks are Lists and the Trash, its two buttons (UI-34);
+ * and Reflect (UI-32). Under Tasks are Lists and the Trash, its two buttons (UI-34);
  * under Lists the Inbox and each list; under Rewards its five pages (RWD-19);
- * under More Goals, the Level, Modes, Organize, Reflect and Notifications (UI-45); under
+ * under More Goals, the Level, Modes, Organize, Notifications and Settings (UI-45); under
  * Goals each goal's tasks (GOAL-10); under Modes each mode's page (MODE-7); under
- * Organize Tags and the notes (UI-81); under Reflect Balance, the activity log and
- * the journal (UI-83); and under Tags each tag's tasks. This is what the back button climbs,
+ * Organize Tags and the notes (UI-81); under Reflect Balance, the activity log, the
+ * journal and the assistant (UI-83); and under Tags each tag's tasks. This is what the back button climbs,
  * so a page is left the way it was reached rather than the way it happened to
  * be arrived at.
  */

@@ -18,7 +18,7 @@ in. Both are on **Settings**, under the account in its **Account** section (UI-3
   (RWD-31), the reward a new task starts with (RWD-45), the warm-up under way (WARM-1), how the owner asked to be nudged (NUDGE-9), the
   check-in's setting (CHECKIN-9), the feature switches (FEAT-1) and where XP stands (LVL-1) — and all of it whatever is
   switched off (FEAT-5). What is kept on this device alone — the View options (STORE-30),
-  the sidebar (STORE-31), the cached quote, what the nudge has already said here (STORE-46) and what
+  the sidebar (STORE-31), the journal's layout (STORE-70), the cached quote, what the nudge has already said here (STORE-46) and what
   the check-in keeps here (STORE-54) — is not the account's, and is not in it. Neither is
   **Procrastination mode** (STORE-45), which the account does keep: it is the state of one
   afternoon, and a mode restored from a file made last month would be off by the time it was read. A record the app cannot

@@ -22,6 +22,7 @@ export const JOURNAL_INTRO = [
   `Aim for ${String(JOURNAL_GOAL)} of each. Fewer is fine, and so is more: a new line is always waiting under the last one.`,
   'Type on a line and press Enter to go on to the next. Clicking away keeps what you typed.',
   'Press a line to change it. Empty it, or press its "×", to delete it.',
+  'Press a section’s name to fold it away, and again to bring it back. Drag a section by its name to move it up or down. Both are kept on this device.',
   `The journal keeps today and the ${String(JOURNAL_HISTORY_DAYS)} days before it, and deletes older days. Press "Show the last ${String(JOURNAL_HISTORY_DAYS)} days" to read them.`,
 ] as const
 

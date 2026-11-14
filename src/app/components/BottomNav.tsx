@@ -1,6 +1,6 @@
 import { useRef, useState, type ComponentProps } from 'react'
 import { sortLists, type List } from '../../core'
-import { isViewOn, rewardsPagesShown, useFeaturesOff } from '../features'
+import { isViewOn, reflectPagesShown, rewardsPagesShown, useFeaturesOff } from '../features'
 import { useLongPress } from '../useLongPress'
 import { KeyWaitingMark } from './KeyWaitingMark'
 import {
@@ -37,7 +37,7 @@ const pillOn = 'bg-neutral-200/80 dark:bg-neutral-800'
 const pillOff = 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
 
 /** The tabs that open a menu of their own. */
-type TabMenu = 'period' | 'tasks' | 'rewards'
+type TabMenu = 'period' | 'tasks' | 'rewards' | 'reflect'
 
 type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
 
@@ -45,21 +45,23 @@ type TabPress = ReturnType<typeof useLongPress<HTMLButtonElement>>
  * A phone's navigation: a bar along the bottom, in reach of a thumb, where the
  * sidebar would be on a wide screen.
  *
- * The tabs run from Settings on the left to the period on the right. Today,
+ * The tabs run from Rewards on the left to the period on the right. Today,
  * Tomorrow, Week and Month share that last tab, which shows the one last chosen and goes to it
  * on a tap. The lists and the trash have no tab — they are reached from
  * Tasks, so Tasks stays marked while either is open, or one list or the Inbox.
  * **Rewards** has a tab of its own, which stays marked while any of its five
  * pages is open (RWD-19), and a menu of those pages (UI-67), the strip across
- * the top of them being the other way to them (RWD-30). The tags
- * have no tab: they are under More, which goes to its own page on a tap and
- * stays marked while that page, the Tags page or a tag's tasks are open. The
- * sidebar has no More: it lists each of those pages itself (UI-30).
+ * the top of them being the other way to them (RWD-30). **Reflect** has a tab
+ * of its own too, marked on it and on the four pages under it (UI-88). The tags
+ * and Settings have no tab: they are under More, which goes to its own page on a
+ * tap and stays marked while that page, the Tags page, a tag's tasks or Settings
+ * are open. The sidebar has no More: it lists each of those pages itself (UI-30).
  *
- * The period tab, Tasks and Rewards each have a menu of what the sidebar has in
- * their place: the four periods; Lists with the Inbox and every list indented
- * under it, then the trash; and Rewards with the history, the prizes, the
- * wishlist and the rules indented under it. Holding the tab opens it, and so
+ * The period tab, Tasks, Rewards and Reflect each have a menu of what the
+ * sidebar has in their place: the four periods; Lists with the Inbox and every
+ * list indented under it, then the trash; Rewards with the history, the prizes,
+ * the wishlist and the rules indented under it; and Reflect with Balance, the
+ * activity log, the journal and the assistant indented under it. Holding the tab opens it, and so
  * does tapping it again once its page is on screen, a tap there having nowhere
  * further to go — so a double tap opens it from anywhere. It opens as a panel
  * across the width of the screen, rising from the bar and resting on it
@@ -75,6 +77,7 @@ export function BottomNav({ view, lists, keyWaiting = false, dimmed = false, onC
   const off = useFeaturesOff()
   const listsOn = isViewOn('lists', off)
   const rewardsPages = rewardsPagesShown(off)
+  const reflectPages = reflectPagesShown(off)
   // The period the period tab goes back to after leaving it: the last one on
   // screen, Today to begin with.
   const [period, setPeriod] = useState<PeriodView>(isPeriodView(view) ? view : 'today')
@@ -146,6 +149,17 @@ export function BottomNav({ view, lists, keyWaiting = false, dimmed = false, onC
     onLongPress: (button, fromKeyboard) => { openMenu('rewards', button, fromKeyboard) },
   })
 
+  const reflectPress = useLongPress<HTMLButtonElement>({
+    onPress: (button, fromKeyboard) => {
+      if (closesMenu('reflect', fromKeyboard)) return
+      // As Rewards: from a page under it a tap goes to Reflect itself, and from
+      // there, having nowhere further to go, it opens the menu (UI-88).
+      if (view === 'reflect') openMenu('reflect', button, fromKeyboard)
+      else onChange('reflect')
+    },
+    onLongPress: (button, fromKeyboard) => { openMenu('reflect', button, fromKeyboard) },
+  })
+
   /**
    * A page's entry in a tab's menu: its name and icon, going there — and Cases
    * marked while a key is waiting, as the tab is (CHST-22).
@@ -193,10 +207,16 @@ export function BottomNav({ view, lists, keyWaiting = false, dimmed = false, onC
     { ...pageItem('rewards'), under: rewardsPages.map(pageItem) },
   ]
 
+  // Reflect with its pages under it, as the sidebar keeps them (UI-30, UI-88).
+  const reflectItems: ContextMenuEntry[] = [
+    { ...pageItem('reflect'), under: reflectPages.map(pageItem) },
+  ]
+
   const menus: Record<TabMenu, { label: string; items: ContextMenuEntry[] }> = {
     period: { label: 'Period', items: periodItems },
     tasks: { label: VIEW_LABELS.tasks, items: tasksItems },
     rewards: { label: VIEW_LABELS.rewards, items: rewardsItems },
+    reflect: { label: VIEW_LABELS.reflect, items: reflectItems },
   }
 
   return (
@@ -208,14 +228,6 @@ export function BottomNav({ view, lists, keyWaiting = false, dimmed = false, onC
       >
         {/* As many equal columns as there are tabs: a tab switched off leaves no gap (FEAT-2). */}
         <ul className="mx-auto grid max-w-md auto-cols-fr grid-flow-col">
-          <li>
-            <Tab
-              label={VIEW_LABELS.settings}
-              icon={VIEW_ICONS.settings}
-              active={view === 'settings'}
-              onClick={() => { onChange('settings') }}
-            />
-          </li>
           {isViewOn('rewards', off) && (
             <li>
               <Tab
@@ -235,6 +247,17 @@ export function BottomNav({ view, lists, keyWaiting = false, dimmed = false, onC
                 icon={VIEW_ICONS.more}
                 active={isUnder(view, 'more')}
                 onClick={() => { onChange('more') }}
+              />
+            </li>
+          )}
+          {isViewOn('reflect', off) && (
+            <li>
+              <Tab
+                label={VIEW_LABELS.reflect}
+                icon={VIEW_ICONS.reflect}
+                active={isUnder(view, 'reflect') || menu?.of === 'reflect'}
+                description={`Hold, or tap again, for ${describePages(reflectPages)}`}
+                {...noticingMenu(reflectPress)}
               />
             </li>
           )}
@@ -281,6 +304,12 @@ export function BottomNav({ view, lists, keyWaiting = false, dimmed = false, onC
       )}
     </>
   )
+}
+
+/** Pages named in a sentence — `Balance, Activity log and Journal` — for what a tab's menu holds. */
+function describePages(pages: readonly FixedView[]): string {
+  const names = pages.map((page) => VIEW_LABELS[page])
+  return names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1) ?? ''}`
 }
 
 type TabProps = {

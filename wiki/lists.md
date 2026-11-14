@@ -100,7 +100,8 @@ reasons; requirements here are `LST-`.
   them first.
 - **LST-18** Beside each list is how many of its tasks are **still to do**, a repeating one for its
   current occurrence. A list whose tasks are all done shows no number, and is still listed. The
-  Inbox carries its own count the same way.
+  Inbox carries its own count the same way. So do the Inbox's and each list's pills in the strip
+  atop the Lists pages (UI-84), so a list's own view says how much is left in it.
 - **LST-19** Beside each list is a button that **renames** it in place (LST-6), and one that
   **deletes** it, after asking in the app's own sheet (UI-74): **Delete the list "Work"?**, then
   `Its tasks go back to the Inbox.` and `The tasks themselves are not deleted.` **Delete** goes

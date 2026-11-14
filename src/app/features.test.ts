@@ -60,13 +60,11 @@ describe('the pages there are (FEAT-2)', () => {
     expect(isViewOn('reflect', ['balance', 'activity', 'journal', 'assistant'])).toBe(false)
   })
 
-  it('takes More away once everything on it is', () => {
+  it('keeps More however much is switched off: Settings is on it (UI-45)', () => {
     expect(isViewOn('more', ['lists', 'tags', 'balance', 'activity', 'journal', 'modes'])).toBe(true)
-    expect(isViewOn('more', ['lists', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes'])).toBe(true)
-    expect(isViewOn('more', ['levels', 'lists', 'tags', 'notes', 'balance', 'activity', 'journal', 'notifications'])).toBe(true)
     expect(
       isViewOn('more', ['levels', 'lists', 'goals', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'notifications', 'assistant']),
-    ).toBe(false)
+    ).toBe(true)
   })
 
   it('takes Notifications away with its switch (NOTIF-8)', () => {
@@ -96,7 +94,7 @@ describe('where the address of a page switched off lands (FEAT-2)', () => {
     expect(nearestViewOn('journal', ['journal'])).toBe('reflect')
     expect(nearestViewOn('journal', ['balance', 'activity', 'journal'])).toBe('reflect')
     expect(nearestViewOn('assistant', ['assistant'])).toBe('reflect')
-    expect(nearestViewOn('journal', ['balance', 'activity', 'journal', 'assistant'])).toBe('more')
+    expect(nearestViewOn('journal', ['balance', 'activity', 'journal', 'assistant'])).toBe('today')
     expect(nearestViewOn('notes', ['notes'])).toBe('organize')
     expect(nearestViewOn('tags', ['tags'])).toBe('organize')
     expect(nearestViewOn('notes', ['tags', 'notes'])).toBe('more')
@@ -106,9 +104,7 @@ describe('where the address of a page switched off lands (FEAT-2)', () => {
   it('lands on Today when nothing above it is on', () => {
     expect(nearestViewOn('habits', ['habits'])).toBe('today')
     expect(nearestViewOn('rewards/history', ['rewards'])).toBe('today')
-    expect(
-      nearestViewOn('modes', ['levels', 'lists', 'goals', 'tags', 'notes', 'balance', 'activity', 'journal', 'modes', 'notifications', 'assistant']),
-    ).toBe('today')
+    expect(nearestViewOn('balance', ['balance', 'activity', 'journal', 'assistant'])).toBe('today')
   })
 
   it('lands on More for Notifications switched off (NOTIF-8)', () => {
@@ -127,10 +123,10 @@ describe('what the lists of pages hold', () => {
   })
 
   it('leaves out More’s pages that are off, Reflect once Balance goes with the tags it divides time by (FEAT-4)', () => {
-    expect(morePagesShown([])).toEqual(['lists', 'goals', 'level', 'modes', 'organize', 'reflect', 'notifications'])
-    expect(morePagesShown(['levels', 'notes', 'activity', 'journal', 'modes'])).toEqual(['lists', 'goals', 'organize', 'reflect', 'notifications'])
-    expect(morePagesShown(['levels', 'goals', 'tags', 'notes', 'modes', 'notifications'])).toEqual(['lists', 'reflect'])
-    expect(morePagesShown(['levels', 'goals', 'tags', 'activity', 'journal', 'assistant'])).toEqual(['lists', 'modes', 'organize', 'notifications'])
+    expect(morePagesShown([])).toEqual(['lists', 'goals', 'level', 'modes', 'organize', 'reflect', 'notifications', 'settings'])
+    expect(morePagesShown(['levels', 'notes', 'activity', 'journal', 'modes'])).toEqual(['lists', 'goals', 'organize', 'reflect', 'notifications', 'settings'])
+    expect(morePagesShown(['levels', 'goals', 'tags', 'notes', 'modes', 'notifications'])).toEqual(['lists', 'reflect', 'settings'])
+    expect(morePagesShown(['levels', 'goals', 'tags', 'activity', 'journal', 'assistant'])).toEqual(['lists', 'modes', 'organize', 'notifications', 'settings'])
   })
 
   it('leaves out Organize’s pages that are off (UI-81)', () => {

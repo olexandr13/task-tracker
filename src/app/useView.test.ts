@@ -213,7 +213,7 @@ describe('useView', () => {
     const before = window.history.length
     act(() => { result.current[1]('habits') })
     act(() => { result.current[1]('today') })
-    act(() => { result.current[1]('settings') })
+    act(() => { result.current[1]('reflect') })
     await historySettles()
     expect(window.history.length).toBe(before)
 

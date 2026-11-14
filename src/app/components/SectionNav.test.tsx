@@ -21,12 +21,17 @@ const HOME = createList('Home', new Date('2026-09-02T00:00:00.000Z'))
 function setup(
   section: SectionView,
   view: View,
-  { lists = [], off = [], keyWaiting = false }: { lists?: readonly List[]; off?: FeaturesOff; keyWaiting?: boolean } = {},
+  {
+    lists = [],
+    off = [],
+    keyWaiting = false,
+    counts,
+  }: { lists?: readonly List[]; off?: FeaturesOff; keyWaiting?: boolean; counts?: Partial<Record<View, number>> } = {},
 ) {
   const onChange = vi.fn()
   render(
     <FeaturesContext value={off}>
-      <SectionNav section={section} view={view} lists={lists} keyWaiting={keyWaiting} onChange={onChange} />
+      <SectionNav section={section} view={view} lists={lists} counts={counts} keyWaiting={keyWaiting} onChange={onChange} />
     </FeaturesContext>,
   )
   return { user: userEvent.setup(), onChange }
@@ -70,6 +75,18 @@ describe('SectionNav (UI-84)', () => {
 
     expect(pills()).toEqual(['Lists', 'Inbox', 'Work', 'Home'])
     expect(marked().map((button) => button.textContent)).toEqual(['Home'])
+  })
+
+  it('says beside the Inbox and each list how much is still to do in it, nothing when none is (LST-18)', () => {
+    setup('lists', oneListView(WORK.id), {
+      lists: [HOME, WORK],
+      counts: { inbox: 0, [oneListView(WORK.id)]: 3, [oneListView(HOME.id)]: 12 },
+    })
+
+    expect(pills()).toEqual(['Lists', 'Inbox', 'Work3', 'Home12'])
+    expect(screen.getByRole('button', { name: 'Work: 3 to do' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('button', { name: 'Home: 12 to do' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Inbox' })).toBeDefined()
   })
 
   it('goes to another page of the section', async () => {

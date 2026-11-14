@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { changeJournalText, createJournalEntry, type JournalEntry } from '../../core'
+import {
+  DEFAULT_JOURNAL_LAYOUT,
+  foldJournalSection,
+  moveJournalSection,
+  type JournalLayout,
+} from '../../storage/journalLayoutRepository'
 import { JournalPage } from './JournalPage'
 
 /* The journal page. JRN ids refer to wiki/journal.md. */
@@ -15,12 +21,24 @@ const NOW = new Date(2026, 9, 10, 21, 0)
 const TODAY = '2026-10-10'
 
 /** The page over a journal of its own, the rules applied as the screen would apply them. */
-function Journal({ initial = [], onRemove = vi.fn() }: { initial?: JournalEntry[]; onRemove?: (entry: JournalEntry) => void }) {
+function Journal({
+  initial = [],
+  initialLayout = DEFAULT_JOURNAL_LAYOUT,
+  onRemove = vi.fn(),
+}: {
+  initial?: JournalEntry[]
+  initialLayout?: JournalLayout
+  onRemove?: (entry: JournalEntry) => void
+}) {
   const [entries, setEntries] = useState(initial)
+  const [layout, setLayout] = useState(initialLayout)
   return (
     <JournalPage
       entries={entries}
       now={NOW}
+      layout={layout}
+      onMove={(moved, over) => { setLayout((current) => moveJournalSection(current, moved, over)) }}
+      onFold={(folded, isFolded) => { setLayout((current) => foldJournalSection(current, folded, isFolded)) }}
       onAdd={(section, text, day) => { setEntries((current) => [...current, createJournalEntry(section, text, day, new Date())]) }}
       onChange={(id, text) => { setEntries((current) => current.map((entry) => (entry.id === id ? changeJournalText(entry, text) : entry))) }}
       onRemove={(entry) => {
@@ -141,5 +159,51 @@ describe('JournalPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Show the last 7 days' }))
     expect(screen.getByText('Nothing written in the last 7 days.')).toBeDefined()
+  })
+
+  it('draws the sections in the order they were moved into, the week gone by too (JRN-11)', async () => {
+    const yesterday = [
+      createJournalEntry('insights', 'Sleep matters', '2026-10-09', NOW),
+      createJournalEntry('thoughts', 'Rain tomorrow', '2026-10-09', NOW),
+    ]
+    const layout = moveJournalSection(DEFAULT_JOURNAL_LAYOUT, 'thoughts', 'insights')
+    const user = userEvent.setup()
+    render(<Journal initial={yesterday} initialLayout={layout} />)
+
+    const titles = () => screen.getAllByRole('button', { expanded: true }).map((button) => button.textContent)
+    expect(titles().slice(0, 2)).toEqual(['💭Thoughts', '💡Insights'])
+    expect(screen.getByRole('button', { name: 'Move “Thoughts”' })).toBeDefined()
+
+    await user.click(screen.getByRole('button', { name: 'Show the last 7 days' }))
+    const yesterdayCard = within(screen.getByRole('region', { name: 'Yesterday' }))
+    expect(yesterdayCard.getAllByRole('heading', { level: 4 }).map((heading) => heading.textContent)).toEqual([
+      '💭Thoughts',
+      '💡Insights',
+    ])
+  })
+
+  it('folds a section down to its heading and brings it back, its dots still showing (JRN-12)', async () => {
+    const sunny = createJournalEntry('good', 'Sun came out', TODAY, NOW)
+    const user = userEvent.setup()
+    render(<Journal initial={[sunny]} />)
+
+    const heading = section('Good things today').getByRole('button', { name: 'Good things today' })
+    expect(heading.getAttribute('aria-expanded')).toBe('true')
+
+    await user.click(heading)
+    expect(heading.getAttribute('aria-expanded')).toBe('false')
+    expect(section('Good things today').queryByRole('textbox')).toBeNull()
+    expect(section('Good things today').getByRole('img', { name: '1 of 3 written' })).toBeDefined()
+    expect(section('Insights').getByRole('textbox', { name: 'Add an insight' })).toBeDefined()
+
+    await user.click(heading)
+    expect(section('Good things today').getByRole('textbox', { name: 'Good thing 1' })).toHaveProperty('value', 'Sun came out')
+  })
+
+  it('opens with the sections folded as they were left (JRN-12)', () => {
+    render(<Journal initialLayout={foldJournalSection(DEFAULT_JOURNAL_LAYOUT, 'thoughts', true)} />)
+
+    expect(section('Thoughts').queryByRole('textbox')).toBeNull()
+    expect(section('Thoughts').getByRole('button', { name: 'Thoughts' }).getAttribute('aria-expanded')).toBe('false')
   })
 })

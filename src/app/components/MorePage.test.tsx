@@ -11,7 +11,7 @@ import { MorePage } from './MorePage'
 afterEach(cleanup)
 
 describe('MorePage', () => {
-  it('links to Lists, Goals, the Level, Modes, Organize, Reflect and Notifications, in the sidebar\'s order (UI-30, UI-45, UI-81, UI-83, LST-24, GOAL-19, LVL-10, MODE-1, NOTIF-1)', () => {
+  it('links to Lists, Goals, the Level, Modes, Organize, Reflect, Notifications and Settings, in the sidebar\'s order (UI-30, UI-45, UI-81, UI-83, LST-24, GOAL-19, LVL-10, MODE-1, NOTIF-1)', () => {
     render(<MorePage onOpen={vi.fn()} />)
 
     expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual([
@@ -22,6 +22,7 @@ describe('MorePage', () => {
       'Organize',
       'Reflect',
       'Notifications',
+      'Settings',
     ])
   })
 
@@ -79,6 +80,14 @@ describe('MorePage', () => {
     for (const name of ['Balance', 'Activity log', 'Journal']) expect(screen.queryByRole('button', { name })).toBeNull()
   })
 
+  it('opens Settings, which has no tab of its own (UI-45, UI-35)', async () => {
+    const onOpen = vi.fn()
+    render(<MorePage onOpen={onOpen} />)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Settings' }))
+    expect(onOpen).toHaveBeenCalledExactlyOnceWith('settings')
+  })
+
   it('opens the lists, which a phone reaches nowhere else without a hold (LST-24)', async () => {
     const onOpen = vi.fn()
     render(<MorePage onOpen={onOpen} />)
@@ -113,7 +122,7 @@ describe('MorePage', () => {
       </FeaturesContext>,
     )
 
-    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Lists'])
+    expect(screen.getAllByRole('button').map((link) => link.textContent)).toEqual(['Lists', 'Settings'])
   })
 
   it('keeps Organize while any of what it holds is on (FEAT-2, UI-81)', () => {

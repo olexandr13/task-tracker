@@ -4,6 +4,7 @@ import {
   habitLastDays,
   habitRate,
   habitStats,
+  habitsToday,
   hasOpenSubtasks,
   hasSubtasks,
   isComplete,
@@ -19,7 +20,7 @@ import {
   type Task,
   type TaskId,
 } from '../../core'
-import { describeDays, describeNextRest, describeRate, describeRests, HABIT_DAY_LABELS } from '../habitLabels'
+import { describeDays, describeHabitsToday, describeNextRest, describeRate, describeRests, HABIT_DAY_LABELS } from '../habitLabels'
 import { useRestLimit } from '../habitRests'
 import { toDraft, toRepeat, type RepeatDraft } from '../repeatDraft'
 import { dragGrip } from '../rowControls'
@@ -129,6 +130,8 @@ export function HabitList({
   // one grid is open — it names shades that otherwise are not on the page.
   const [openOverrides, setOpenOverrides] = useState<ReadonlyMap<TaskId, boolean>>(() => new Map())
   const [appliedDefault, setAppliedDefault] = useState(showDetails)
+  // A skip no rest paid for leaves today to do (HAB-40), so the count reads the limit too (HAB-41).
+  const rests = useRestLimit()
   if (appliedDefault !== showDetails) {
     setAppliedDefault(showDetails)
     setOpenOverrides(new Map())
@@ -155,9 +158,28 @@ export function HabitList({
   }
 
   const anyOpen = habits.some((habit) => isOpen(habit.id))
+  const today = habitsToday(habits, now, rests)
+  const allDone = today.due > 0 && today.done === today.due
 
   return (
     <div className="flex flex-col gap-3">
+      {/* How today stands across every habit (HAB-41); nothing to count while today asks nothing. */}
+      {today.due > 0 && (
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <span className="sr-only">{describeHabitsToday(today)}</span>
+          <span aria-hidden="true">
+            <span
+              className={`font-semibold tabular-nums ${
+                allDone ? 'text-green-700 dark:text-green-400' : 'text-neutral-900 dark:text-neutral-100'
+              }`}
+            >
+              {String(today.done)}/{String(today.due)}
+            </span>{' '}
+            done today
+          </span>
+        </p>
+      )}
+
       <SortableTasks tasks={habits}>
         <ul className="flex flex-col gap-3">
           {habits.map((habit) => (

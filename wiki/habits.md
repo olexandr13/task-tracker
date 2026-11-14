@@ -13,6 +13,12 @@ It is the task itself, read over time from the days it was done on (RPT-27).
   the cards a line says they are the tasks that repeat every day. Ticking one off does not move
   it, and the order can be changed from here (HAB-27).
 - **HAB-3** With no habits, the page says a task given a daily repeat is tracked there.
+- **HAB-41** Above the cards a line says **how many habits are done today, out of those today
+  asks of**: `3/7 done today`, the count turning green once every one is done. A habit **resting**
+  today (HAB-31) asked nothing of the day, and neither did one whose rule starts later (HAB-12), so
+  neither is in the count — unless it was done anyway, which counts as done. While rests are
+  limited, a skip no rest paid for (HAB-40) leaves today still to do. While today asks nothing of
+  any habit the line is not there. A screen reader hears it as `3 of 7 habits done today`.
 
 ## A habit's card
 
@@ -280,7 +286,7 @@ It is the task itself, read over time from the days it was done on (RPT-27).
 
 ---
 
-**Where it lives:** `src/core/habit.ts` (what a habit is, streaks, rates, the weeks, the last days, `setDoneOnDay`),
+**Where it lives:** `src/core/habit.ts` (what a habit is, streaks, rates, the weeks, the last days, `habitsToday`, `setDoneOnDay`),
 `src/core/habitRest.ts` (limited rests: how many a habit has, which skips they covered, `canRest`, HAB-36 to HAB-40),
 `src/core/task.ts` (`doneDays`, kept in step by `settleHistory`; `forgetRestsAhead`, HAB-33), `src/app/components/HabitList.tsx`
 (the page and its cards, and a timed habit's clock — see [Time goals](time-goals.md)), `src/app/components/HabitGrid.tsx`, `src/app/components/ChevronIcon.tsx`, `src/app/components/MoreVerticalIcon.tsx`, `src/app/components/TaskSheet.tsx` (editing a habit), `src/app/habitLabels.ts` (wording),

@@ -48,13 +48,14 @@ thing every account keeps.
 
 - **FEAT-2** A page switched off is **gone from everywhere it is reached from**: its entry in the
   sidebar, with whatever is folded under it (UI-30); its tab on a phone's bar, the tabs left sharing
-  the bar between them (UI-32); its entry in the Tasks and Rewards tabs' menus (UI-43, UI-67) and in
+  the bar between them (UI-32); its entry in the Tasks, Rewards and Reflect tabs' menus (UI-43, UI-67, UI-88) and in
   the strip across its section's pages (UI-84); its row on **More** (UI-45), **Organize** (UI-81) or
   **Reflect** (UI-83) — and Organize itself, once Tags and Notes are both off, Reflect, once
-  Balance, the Activity log, the Journal and the Assistant are, and More, once every page on it is; its pinned tab, which is kept and comes back with it (UI-77); and its letter: **H** with Habits, **R** with Rewards, **C** with Cases (UI-56, UI-57, UI-72), **P** with the modes (UI-58). An **address** naming it — a bookmark,
+  Balance, the Activity log, the Journal and the Assistant are, with its tab; More stays, Settings
+  being on it; its pinned tab, which is kept and comes back with it (UI-77); and its letter: **H** with Habits, **R** with Rewards, **C** with Cases (UI-56, UI-57, UI-72), **P** with the modes (UI-58). An **address** naming it — a bookmark,
   a reload, a notification pressed — opens the **nearest page above it** that is on instead (UI-37):
   Rewards for Cases, Tasks for a list or the Inbox, More for Goals or a goal's tasks, Modes for a mode, Organize for Tags or Notes,
-  Reflect for Balance, the Activity log, the Journal or the Assistant, More for Modes, Organize, Reflect or
+  Reflect for Balance, the Activity log, the Journal or the Assistant, More for Modes, Organize or
   Notifications — or Today, where nothing above it is on — and
   the address is put right to match.
 - **FEAT-3** What a part shows **anywhere else** goes with it:

@@ -5,6 +5,7 @@ import {
   startOfLocalDay,
   type HabitDayState,
   type HabitRate,
+  type HabitsToday,
   type LocalDay,
   type RestStanding,
 } from '../core'
@@ -26,6 +27,11 @@ export const HABIT_DAY_LABELS: Record<HabitDayState, string> = {
 /** "1 day", "5 days". */
 export function describeDays(count: number): string {
   return count === 1 ? '1 day' : `${String(count)} days`
+}
+
+/** "3 of 7 habits done today": the page's count (HAB-41), as a screen reader hears it. */
+export function describeHabitsToday({ done, due }: HabitsToday): string {
+  return `${String(done)} of ${String(due)} ${due === 1 ? 'habit' : 'habits'} done today`
 }
 
 /** "No rests", "1 rest", "2 rests": what a habit has to spend while rests are limited (HAB-39). */

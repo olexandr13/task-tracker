@@ -48,7 +48,7 @@ device alone.
   sign-in button carries — then the name, the email address and which service it was. Neither the
   Google picture nor the name of it is shown; the app does not keep the picture at all. A line the
   account has not got is left out rather than left blank. Settings has a place in the sidebar and a
-  tab in the phone's bar alike, so the account is one tap away on a phone as well.
+  row on More's page on a phone (UI-45), so the account is two taps away there.
 - **AUTH-10** It is all on the page, not behind a button: a page of settings has the room to say it
   outright, so there is no panel to open and nothing to close. The mark is decorative — the lines
   beside it say who it is, so a screen reader hears it once.

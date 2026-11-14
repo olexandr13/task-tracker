@@ -358,6 +358,24 @@ describe('HabitList', () => {
     expect(card.compareDocumentPosition(caption) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('says at its head how many habits are done today, out of those due (HAB-41)', () => {
+    const read = createTask('read', { kind: 'daily' }, WED_16)
+    const walk = createTask('walk', { kind: 'daily' }, WED_16)
+    const resting = skipOccurrence(createTask('rest', { kind: 'daily' }, WED_16), WED_16)
+    setup([completeTask(read, WED_16), walk, resting])
+
+    const count = screen.getByText('1 of 2 habits done today')
+    const card = screen.getByRole('heading', { name: 'read' })
+    expect(count.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByText('1/2')).toBeTruthy()
+  })
+
+  it('counts nothing while today asks nothing of any habit (HAB-41)', () => {
+    setup([skipOccurrence(createTask('rest', { kind: 'daily' }, WED_16), WED_16)])
+
+    expect(screen.queryByText(/done today/)).toBeNull()
+  })
+
   it('ticks today off, and takes it back (HAB-4)', async () => {
     const habit = createTask('stretch', { kind: 'daily' }, WED_16)
     const { user, onComplete } = setup([habit])

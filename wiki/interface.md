@@ -157,8 +157,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   each tag, opened from Tags, and one for each goal, opened from Goals (GOAL-10). Each is named and carries an
   icon — every tag's view the same `#` as Tags, every list the same folder as Lists, every goal the same target as Goals, **Habits**
   the looping arrows a repeating task wears (HAB-1), and each mode the glyph it wears everywhere
-  else. On a phone **Goals**, **Modes**, **Organize**, **Reflect** and
-  **Notifications** are reached from **More** (UI-45); the sidebar gives each an entry of
+  else. On a phone **Goals**, **Modes**, **Organize**, **Notifications** and **Settings** are
+  reached from **More** (UI-45), and **Reflect** has a tab of its own (UI-88); the sidebar gives each an entry of
   its own, Modes with each mode under it (MODE-7), Organize with Tags and Notes under it (UI-81),
   Reflect with Balance, the Activity log, the Journal and the Assistant under it (UI-83), and has no More
   (UI-30); **Rewards** has an entry of its own in
@@ -223,8 +223,8 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   alike.
 - **UI-32** The bottom bar has six tabs — fewer where a page is switched off, the rest sharing the
   bar (FEAT-2) — each an icon over its name, from left to right:
-  **Settings**, **Rewards** (UI-67), **More** (UI-45), **Tasks** (UI-43), **Habits** and **the
-  period** (UI-33). The Rewards tab goes to how the points stand and stays marked on any of the
+  **Rewards** (UI-67), **More** (UI-45), **Reflect** (UI-88), **Tasks** (UI-43), **Habits** and
+  **the period** (UI-33). Settings has no tab: it is the last row on More's page (UI-45). The Rewards tab goes to how the points stand and stays marked on any of the
   rewards pages, which are reached from its own menu (UI-67) and from the strip across the top of
   them (UI-84).
 - **UI-33** Today, Tomorrow, Week and Month share the last tab. It shows the one last on screen —
@@ -270,12 +270,12 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   `#/rewards/wishlist`, `#/level`, `#/list/{id}`, `#/goal/{id}`, `#/tag/work` — so reloading the page
   keeps you on it, and a bookmark or a link opens on it. An address naming no view opens on Today.
 - **UI-37** **Back goes one level up**, not to the view before. The views make a tree: at the top
-  the bar's tabs — the period views, Tasks, Habits, Rewards, More and Settings; under Tasks the
+  the bar's tabs — the period views, Tasks, Habits, Rewards, More and Reflect; under Tasks the
   Lists page and the Trash (UI-34), and under Lists the Inbox and each list; under Rewards its five
-  pages (RWD-19); under More Goals, the Level, Modes, Organize, Reflect and Notifications (UI-45); under
+  pages (RWD-19); under More Goals, the Level, Modes, Organize, Notifications and Settings (UI-45); under
   Goals each goal's tasks (GOAL-10); under Modes each mode's page (MODE-7); under Organize Tags and Notes (UI-81); under Reflect Balance, the
   Activity log, the Journal and the Assistant (UI-83); and under Tags each tag's tasks. So from a mode's page back
-  goes to Modes, then to More; from the Journal to Reflect, then to More; from a list to
+  goes to Modes, then to More; from Settings to More; from the Journal to Reflect; from a list to
   Lists, then to Tasks; and from a tab back **leaves the app**, as it leaves any other. It is the
   same wherever you came from — a phone's back button, the browser's, or a keyboard's — and the
   same after a reload or from a link: nothing is kept of the views you went through, so back never
@@ -303,6 +303,15 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   only opens the menu where it has nowhere further to go. The strip across the top of the rewards
   pages stays (UI-84), for anyone who does not know the tab's menu is there, as **Lists** is on
   More's page as well as in the Tasks tab's menu (UI-34, UI-45).
+- **UI-88** **Reflect** (UI-83) has a **tab of its own** on a phone, marked with its crescent moon,
+  between More and Tasks (UI-32), so the Journal and the Activity log — written in every day — are
+  not behind More. A tap goes to Reflect's page, and the tab stays marked there and on **Balance**,
+  the **Activity log**, the **Journal** and the **Assistant**; More does not. It has a menu, opened
+  as the Rewards tab's is (UI-67): held down, or tapped again while Reflect's page is on screen, and
+  closed by a tap on Reflect while open. It holds **Reflect** with its four pages **indented under
+  it**, each with its icon, so any of them is two taps from anywhere. A screen reader hears what the
+  menu holds on the tab. A page switched off is not in the menu, and the tab goes once all four are
+  (FEAT-2). Reflect is at the top of the views (UI-37): back from it leaves the app, as from any tab.
 - **UI-66** A tab's menu (UI-33, UI-43, UI-67) opens as **a panel across the width of the screen, rising
   from the bar and resting on it** — not as a slab floating over the middle of the page, which
   belongs to neither the list behind it nor the bar that opened it. It **stops at the bar** rather
@@ -324,20 +333,21 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   closes first, leaving the one it came from. Closing the sheet any other way (UI-9, UI-48) drops
   that extra step, so the next back is the same as if the sheet had not been opened. It is the same
   wherever back comes from — a phone's back button, the browser's, or a keyboard's.
-- **UI-45** The bar has no entry for Goals, the Level, Modes — each mode's page — Organize — the tags and the notes — Reflect — the Balance page, the Activity log, the Journal and the Assistant — or Notifications:
+- **UI-45** The bar has no entry for Goals, the Level, Modes — each mode's page — Organize — the tags and the notes — Notifications or Settings:
   they are under **More**, a tab marked with three dots. More is **on a phone only** — the sidebar
   lists each of them itself, and so has no More (UI-30, UI-81).
-  **A tap opens More's page** — seven links, **Lists**, **Goals** (GOAL-19), **Level** (LVL-10), **Modes**, **Organize**,
-  **Reflect** and **Notifications**, in the sidebar's order, each with its icon, large enough
+  **A tap opens More's page** — eight links, **Lists**, **Goals** (GOAL-19), **Level** (LVL-10), **Modes**, **Organize**,
+  **Reflect**, **Notifications** and **Settings** (UI-35), in the sidebar's order, each with its icon, large enough
   for a thumb (UI-49) and a chevron at its end marking it as a page to go to. The **Modes** row says
   how many modes are on — `2 on` — so whether any is can be seen without opening it (MODE-1).
   Choosing any of them goes there.
-  **Lists** is only a way in: it is reached from the
-  Tasks tab as well (UI-34, LST-24), so **Tasks** is what stays marked once it is open, and More is
-  not, or two tabs would be marked at once. **More** stays marked while its own page, Goals or a goal's tasks, the Level,
-  the Modes page or one mode's page, Organize or anything under it — the Tags page, a tag's view,
-  the Notes page — Reflect or anything under it — the Balance page, the Activity log, the Journal, the Assistant —
-  or Notifications is open; in the sidebar those mark themselves (TAG-17, UI-81, UI-83, MODE-7). The views
+  **Lists** and **Reflect** are only ways in: Lists is reached from the Tasks tab as well (UI-34,
+  LST-24) and Reflect has a tab of its own (UI-88), so **Tasks** or **Reflect** is what stays marked
+  once one of them is open, and More is not, or two tabs would be marked at once. **More** stays
+  marked while its own page, Goals or a goal's tasks, the Level, the Modes page or one mode's page,
+  Organize or anything under it — the Tags page, a tag's view, the Notes page — Notifications or
+  Settings is open; in the sidebar those mark themselves (TAG-17, UI-81, MODE-7). With Settings on
+  it, More is always there, however much else is switched off (FEAT-2). The views
   are one tree on both (UI-37), so on a wide screen back from one of them still climbs to More's
   page, which opens there as it does on a phone, with nothing in the sidebar marked — as back from
   Lists climbs to Tasks. Procrastination and the warm-up were rows
@@ -365,10 +375,10 @@ How the screen is laid out, and the behaviour that is not tied to one feature.
   is looked back on from. In the sidebar it is a group of its own, after Organize, with the four
   **indented under it** and a chevron that folds them away (UI-30). Clicking **Reflect** itself opens
   **its page**, at `#/reflect` (UI-36): four links, **Balance**, **Activity log**, **Journal** and **Assistant**,
-  in the sidebar's order, drawn as More's are (UI-45). On a phone it is a row on More's page, so the
-  Journal is two taps from More, and **More** stays marked on Reflect and everything under it. A
-  page under it switched off on Settings is not listed, and Reflect goes from the sidebar and from
-  More once all four are off (FEAT-2) — Balance going with Tags too (FEAT-4).
+  in the sidebar's order, drawn as More's are (UI-45). On a phone it has **a tab of its own** in the
+  bar, with a menu of its pages (UI-88), and is a row on More's page as well. A
+  page under it switched off on Settings is not listed, and Reflect goes from the sidebar, the bar
+  and More once all four are off (FEAT-2) — Balance going with Tags too (FEAT-4).
 - **UI-87** **Settings** ends with a **Contact** section (UI-35): a sentence asking for a question,
   an idea or something that does not work, and under it a button, **Write on Telegram,
   @olexandr13**, with a speech bubble in front of the words. It opens the author's Telegram in a new

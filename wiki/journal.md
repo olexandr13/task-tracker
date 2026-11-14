@@ -11,7 +11,8 @@ about the day and what it taught, so an evening ends on what went right, and on 
   under **Reflect**, after Balance and the Activity log (UI-30, UI-83), and a row on Reflect's page
   (UI-83). It opens on the heading **Journal** with an **i** beside it (UI-73), saying in plain
   sentences what the page is for and how it is used, and under the heading the day it is writing
-  about — `Saturday, October 10`. Then come six cards, one for each **section**, in this order:
+  about — `Saturday, October 10`. Then come six cards, one for each **section**, at first in this
+  order (they can be moved, JRN-11):
   💡 **Insights** — what the day made clear, a lesson or a conclusion — ☀️ **Good things today**,
   🏆 **Achievements**, 🙏 **Gratitude**, 🌱 **What to change/improve** — what to do differently
   next time — and 💭 **Thoughts**, anything else on the mind; then the button to the week
@@ -42,12 +43,31 @@ about the day and what it taught, so an evening ends on what went right, and on 
   being written, on a phone always there (UI-47) — or by **emptying it** and leaving it. Either way the few seconds' **Undo** a deleted task has (UI-38) names it:
   `Deleted “Coffee with Anna”`.
 
+## Arranging the page
+
+- **JRN-11** The section cards are put in a new **order** by **dragging** them by their
+  **heading**: with a mouse once it has moved a few pixels, with a finger after holding it a
+  moment, so a press on the heading still folds it (JRN-12) and a swipe still scrolls; the lines
+  are never where a card is picked up, a press there being writing. A **grip** in the margin to the
+  heading's left shows when the pointer is over the card, and is where the keyboard reaches it:
+  Space or Enter picks the card up, the arrow keys move it, Space or Enter drops it and Escape puts
+  it back, a screen reader hearing the section's name and its place — `position 2 of 6`. The card
+  rides straight up and down while the others slide aside to show where it will land. The days gone
+  by (JRN-6) list their sections in the same order. The order is kept on this device (STORE-70).
+- **JRN-12** A section's **heading folds** its card away and brings it back: the whole heading row
+  is the button, with a chevron in front of the name that points down while it is open and to the
+  side while it is folded, as a section of Settings does (UI-35). A folded card is its heading
+  alone — its **dots** still saying how far it has come (JRN-3) — and nothing written is lost; the
+  days gone by still show it. Which sections are folded is kept on this device (STORE-70), so the
+  page opens as it was left. Every section starts open.
+
 ## Looking back
 
 - **JRN-6** Under the cards, **Show the last 7 days** shows the week gone by, and **Hide the last 7
   days** puts it away again. It is **hidden** whenever the page is opened: which way it was left is
   not kept. Each day with anything written is a card of its own, **latest first** — `Yesterday`,
-  then `Thu, Oct 8` — holding its sections' lines in the order they were written, a section with
+  then `Thu, Oct 8` — holding its sections, in the page's order (JRN-11), and each section's lines
+  in the order they were written, a section with
   nothing in it left out. The days gone by are **read, not changed**. With nothing written all week
   it says `Nothing written in the last 7 days.`
 
@@ -65,7 +85,7 @@ about the day and what it taught, so an evening ends on what went right, and on 
   next render, and the day before is in the history (JRN-6). Anything half typed on a line not yet
   left is let go of with the old day.
 - **JRN-10** **Journal** can be switched off on Settings (FEAT-1). Off, the page goes from the
-  sidebar and from Reflect (FEAT-2), and an address naming it opens Reflect — or More, once Balance,
+  sidebar and from Reflect (FEAT-2), and an address naming it opens Reflect — or Today, once Balance,
   the Activity log and the Assistant are off too (UI-37); what was written
   stays, the week kept as ever (JRN-8).
 
@@ -75,11 +95,14 @@ about the day and what it taught, so an evening ends on what went right, and on 
 history), `src/app/useJournal.ts` (holding it, and letting the old days go),
 `src/app/components/JournalPage.tsx` (the page and the history),
 `src/app/components/JournalSection.tsx` (a section's lines, the waiting line, the dots),
-`src/app/journalLabels.ts` (wording), `src/app/components/JournalIcon.tsx`, `src/app/useUndoToast.ts`,
+`src/app/journalLabels.ts` (wording), `src/storage/journalLayoutRepository.ts` and
+`src/storage/journalLayoutSchema.ts` (the order and folds kept on this device),
+`src/app/components/JournalIcon.tsx`, `src/app/useUndoToast.ts`,
 `src/app/TasksScreen.tsx`, `src/app/view.ts`, `src/app/components/SideNav.tsx`,
 `src/app/components/ReflectPage.tsx`; saving: [Storage](storage.md).
 **Tested in:** `src/core/journal.test.ts`, `src/app/useJournal.test.ts`,
 `src/app/components/JournalPage.test.tsx`, `src/storage/journalSchema.test.ts`,
+`src/storage/journalLayoutSchema.test.ts`,
 `src/storage/backupFile.test.ts`, `src/storage/backupRepository.test.ts`, `src/app/features.test.ts`,
 `src/app/components/SideNav.test.tsx`, `src/app/components/ReflectPage.test.tsx`,
 `src/app/components/BottomNav.test.tsx`.

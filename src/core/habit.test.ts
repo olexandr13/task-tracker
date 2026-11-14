@@ -3,6 +3,7 @@ import {
   habitLastDays,
   habitRate,
   habitStats,
+  habitsToday,
   habitTasks,
   habitWeeks,
   isHabit,
@@ -284,6 +285,39 @@ describe('habitLastDays (HAB-21)', () => {
 
   it('reads today as done once it is', () => {
     expect(habitLastDays(habit(['2026-09-16']), 7, WED_16).at(-1)?.state).toBe('done')
+  })
+})
+
+describe('habitsToday (HAB-41)', () => {
+  it('counts the habits done today out of those today asks of', () => {
+    const habits = [habit(['2026-09-16']), habit(['2026-09-15']), habit([])]
+
+    expect(habitsToday(habits, WED_16)).toEqual({ done: 1, due: 3 })
+  })
+
+  it('leaves out a habit resting today, and one whose rule starts later', () => {
+    const resting = { ...habit(['2026-09-15']), skippedDays: ['2026-09-16'] }
+    const later = setStartDay(habit([]), '2026-09-17')
+
+    expect(habitsToday([habit(['2026-09-16']), resting, later], WED_16)).toEqual({ done: 1, due: 1 })
+  })
+
+  it('counts a day done before the habit starts as done (HAB-12)', () => {
+    const early = { ...setStartDay(habit([]), '2026-09-17'), doneDays: ['2026-09-16'] }
+
+    expect(habitsToday([early], WED_16)).toEqual({ done: 1, due: 1 })
+  })
+
+  it('leaves today to do where a skip had no rest to pay for it (HAB-40)', () => {
+    // Started Sat 12: Sun 13 spends the one rest, today has none to spend.
+    const task = { ...habit(['2026-09-12', '2026-09-14', '2026-09-15'], DAILY, SAT_12), skippedDays: ['2026-09-13', '2026-09-16'] }
+
+    expect(habitsToday([task], WED_16, { since: '2026-06-01' })).toEqual({ done: 0, due: 1 })
+    expect(habitsToday([task], WED_16)).toEqual({ done: 0, due: 0 })
+  })
+
+  it('is nothing of nothing with no habits', () => {
+    expect(habitsToday([], WED_16)).toEqual({ done: 0, due: 0 })
   })
 })
 

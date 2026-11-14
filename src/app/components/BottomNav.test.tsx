@@ -63,6 +63,8 @@ const tasksMenu = () => screen.queryByRole('menu', { name: 'Tasks' })
 const moreTab = () => screen.getByRole('button', { name: 'More' })
 const rewardsTab = () => screen.getByRole('button', { name: 'Rewards' })
 const rewardsMenu = () => screen.queryByRole('menu', { name: 'Rewards' })
+const reflectTab = () => screen.getByRole('button', { name: 'Reflect' })
+const reflectMenu = () => screen.queryByRole('menu', { name: 'Reflect' })
 
 async function hold(user: ReturnType<typeof userEvent.setup>, target: HTMLElement, ms: number) {
   await user.pointer({ keys: '[TouchA>]', target })
@@ -71,10 +73,10 @@ async function hold(user: ReturnType<typeof userEvent.setup>, target: HTMLElemen
 }
 
 describe('BottomNav', () => {
-  it('has six tabs — Settings, Rewards, More, Tasks, Habits and the period — and marks the one you are on (UI-32, UI-8)', () => {
+  it('has six tabs — Rewards, More, Reflect, Tasks, Habits and the period — and marks the one you are on (UI-32, UI-8)', () => {
     setup('habits')
 
-    expect(tabs().map((tab) => tab.textContent)).toEqual(['Settings', 'Rewards', 'More', 'Tasks', 'Habits', 'Today'])
+    expect(tabs().map((tab) => tab.textContent)).toEqual(['Rewards', 'More', 'Reflect', 'Tasks', 'Habits', 'Today'])
     expect(screen.getByRole('button', { name: 'Habits' }).getAttribute('aria-current')).toBe('page')
     expect(periodTab().getAttribute('aria-current')).toBeNull()
   })
@@ -111,8 +113,8 @@ describe('BottomNav', () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith('rewards')
   })
 
-  it('keeps More marked while Organize, the tags, a tag\'s list, the notes, the modes, Reflect, Balance, the activity log or the journal are open (UI-45, UI-81, UI-83, TAG-17, MODE-1, NOTE-1, BAL-1, ACT-1, JRN-1)', () => {
-    for (const view of ['organize', 'tags', 'tag/work', 'notes', 'reflect', 'balance', 'activity', 'journal', 'modes', 'modes/warm-up', 'modes/check-in'] as const) {
+  it('keeps More marked while Organize, the tags, a tag\'s list, the notes, the modes or Settings are open (UI-45, UI-81, TAG-17, MODE-1, NOTE-1, UI-35)', () => {
+    for (const view of ['organize', 'tags', 'tag/work', 'notes', 'modes', 'modes/warm-up', 'modes/check-in', 'settings'] as const) {
       setup(view)
       expect(moreTab().getAttribute('aria-current')).toBe('page')
       expect(tasksTab().getAttribute('aria-current')).toBeNull()
@@ -425,6 +427,85 @@ describe('the Rewards tab', () => {
   })
 })
 
+describe('the Reflect tab', () => {
+  it('is marked on Reflect and on every page under it, and More is not (UI-88, UI-8)', () => {
+    for (const view of ['reflect', 'balance', 'activity', 'journal', 'assistant'] as const) {
+      setup(view)
+      expect(reflectTab().getAttribute('aria-current')).toBe('page')
+      expect(moreTab().getAttribute('aria-current')).toBeNull()
+      cleanup()
+    }
+  })
+
+  it('goes to Reflect on a tap from anywhere, a page under it included (UI-88)', async () => {
+    for (const view of ['today', 'journal'] as const) {
+      const { user, onChange } = setup(view)
+      await user.click(reflectTab())
+      expect(onChange).toHaveBeenCalledExactlyOnceWith('reflect')
+      expect(reflectMenu()).toBeNull()
+      cleanup()
+    }
+  })
+
+  it('opens its menu on a tap once Reflect is on screen: Reflect with its four pages under it (UI-88)', async () => {
+    const { user, onChange } = setup('reflect')
+
+    await user.click(reflectTab())
+
+    const under = within(reflectMenu() as HTMLElement).getByRole('group', { name: 'Reflect' })
+    expect(within(under).getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Reflect',
+      'Balance',
+      'Activity log',
+      'Journal',
+      'Assistant',
+    ])
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('opens its menu when held, from anywhere, and goes where it says (UI-88)', async () => {
+    const { user, onChange } = setup('habits')
+
+    await hold(user, reflectTab(), LONG_PRESS_MS)
+    expect(reflectTab().getAttribute('aria-current')).toBe('page')
+    expect(onChange).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('menuitem', { name: 'Journal' }))
+    expect(onChange).toHaveBeenCalledExactlyOnceWith('journal')
+    expect(reflectMenu()).toBeNull()
+  })
+
+  it('closes its menu on a tap on Reflect, rather than opening it again (UI-88)', async () => {
+    const { user, onChange } = setup('habits')
+
+    await hold(user, reflectTab(), LONG_PRESS_MS)
+    await user.click(reflectTab())
+
+    expect(reflectMenu()).toBeNull()
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('says what its menu holds, less what is switched off (UI-88, FEAT-2)', () => {
+    render(
+      <FeaturesContext value={['activity', 'assistant']}>
+        <BottomNav view="today" lists={[]} onChange={vi.fn()} />
+      </FeaturesContext>,
+    )
+
+    expect(reflectTab().getAttribute('aria-description')).toBe('Hold, or tap again, for Balance and Journal')
+  })
+
+  it('is not there once everything under Reflect is switched off (FEAT-2)', () => {
+    render(
+      <FeaturesContext value={['balance', 'activity', 'journal', 'assistant']}>
+        <BottomNav view="today" lists={[]} onChange={vi.fn()} />
+      </FeaturesContext>,
+    )
+
+    expect(screen.queryByRole('button', { name: 'Reflect' })).toBeNull()
+  })
+})
+
 describe('a tab\'s menu as a panel on the bar (UI-66)', () => {
   /** The panel itself: the menu's own sheet, which the handle and the choices sit in. */
   const sheet = (open: HTMLElement | null) => (open as HTMLElement).closest('.sheet-enter') as HTMLElement
@@ -521,10 +602,10 @@ describe('the More tab', () => {
       </FeaturesContext>,
     )
 
-    expect(tabs().map((tab) => tab.textContent)).toEqual(['Settings', 'More', 'Tasks', 'Today'])
+    expect(tabs().map((tab) => tab.textContent)).toEqual(['More', 'Reflect', 'Tasks', 'Today'])
   })
 
-  it('has no More tab once everything on its page is switched off (FEAT-2)', () => {
+  it('keeps More once everything else on its page is switched off: Settings is on it (FEAT-2, UI-45)', () => {
     const off: FeaturesOff = ['levels', 'lists', 'goals', 'tags', 'notes', 'activity', 'journal', 'modes', 'notifications', 'assistant']
     render(
       <FeaturesContext value={off}>
@@ -532,7 +613,7 @@ describe('the More tab', () => {
       </FeaturesContext>,
     )
 
-    expect(screen.queryByRole('button', { name: 'More' })).toBeNull()
+    expect(tabs().map((tab) => tab.textContent)).toEqual(['Rewards', 'More', 'Tasks', 'Habits', 'Today'])
   })
 
   it('offers only the trash from the Tasks tab while lists are switched off (FEAT-2)', async () => {
